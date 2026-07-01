@@ -55,5 +55,7 @@
   - Real Chest Storage click opened the 12-slot modal; Escape closed it and returned focus to the trigger.
   - Mobile portrait check at 390px wide had no horizontal overflow, 41px board tiles, and the requested vertical order.
 - Browser console/runtime status: no runtime errors observed during the successful local interaction checks; the browser wrapper itself only exposed read-only page evaluation.
-- Vercel preview URL to check after deploy: https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html
-- GitHub Pages URL to check after push: https://xxxerxxxes666.github.io/bloom-tycoon/playable/midnight_bloom_prototype.html
+- Deployed to Vercel production as `dpl_EGk472e1UJyoeeovykqAohvWMUA4`.
+- Re-pointed the canonical alias so https://bloom-tycoon.vercel.app now serves the new deployment.
+- Vercel playable checked: https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html returned `200 OK` and downloaded HTML contained the new plaque, invalid-swap message, Chest footer hint, and `B` review-hook comment.
+- GitHub Pages playable checked: https://xxxerxxxes666.github.io/bloom-tycoon/playable/midnight_bloom_prototype.html returned `200 OK` and downloaded HTML contained the same new audit strings.
