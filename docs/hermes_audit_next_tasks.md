@@ -1,136 +1,98 @@
 # Hermes Audit Next Tasks
 
-Last audited by Hermes: **2026-07-01 21:08 UTC**
+Last audited by Hermes: **2026-07-01 21:43 UTC**
 Audit targets:
 - Vercel playable: https://bloom-tycoon.vercel.app/
 - Direct Vercel playable: https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html
 - GitHub Pages: https://xxxerxxxes666.github.io/bloom-tycoon/
 - Repo: https://github.com/xxxerxxxes666/bloom-tycoon
-- Baseline commit audited: `edf8e79` on `main`
+- Baseline commit audited: `a1d10e4` on `main`
 
 ## Hermes audit verdict
 
-Codex has landed the important first-session polish and the match grammar now supports intersecting straight-line shapes. The current screen remains handsome and on-concept: **gothic greenhouse + Diablo inventory + botanical casino**. Do not broadly redesign it.
+Codex landed the match-shape fun pass on `main`: L/T/cross matches now have named reward copy, stronger rewards, deterministic hidden audit data, and an `M` prototype review hook. GitHub Pages is serving the new build and looks good. **Vercel is stale** and is still serving the prior build without the shape-audit payload or `M` review hook, so the next pass should chiefly restore Vercel to parity.
 
-The next pass should convert the new L/T/cross matching into **visible fun**. Hermes verified the underlying browser helper clears horizontal, vertical, L, T, and cross unions correctly and rejects diagonal-only clusters, but the player-facing reward language is still generic. Larger/intersecting shapes need named copy, obvious bonus feedback, and a deterministic review/demo path so Xerxes and Hermes can see the fun without relying on random boards.
+Do not broadly redesign the game. The current gothic greenhouse + Diablo inventory + botanical casino direction remains the right north star.
 
 ## Verified by Hermes this audit
 
-- Latest audited commit: `edf8e79dcbdf030623e938a6988de7f1d3831c5d` (`docs: add Xerxes match-shape directive`).
+- Latest audited commit: `a1d10e489360c13cf04e7b6ed60bbd5ac8182b47` (`Add rewarding match shape demos`).
 - `python3 scripts/verify_project.py` passes.
 - Repo status was clean before this Hermes task-file update.
-- Vercel endpoints returned `200`:
-  - `/`
-  - `/playable/midnight_bloom_prototype.html`
-  - `/assets/tiles/96/amber_resin_seed.png`
-- GitHub Pages endpoints returned `200`:
-  - `/bloom-tycoon/`
-  - `/bloom-tycoon/playable/midnight_bloom_prototype.html`
-  - `/bloom-tycoon/assets/tiles/96/amber_resin_seed.png`
-- Browser console on Vercel and GitHub Pages was clean: no console messages or JS errors observed.
-- Browser image check: **89 images, 0 broken** on both Vercel and GitHub Pages.
-- Deterministic browser checks against the live helper logic passed:
-  - horizontal 3-match clears 3 cells;
-  - vertical 3-match clears 3 cells;
-  - L-shape clears the 5-cell union of both legs;
-  - T-shape clears the 5-cell union;
-  - cross-shape clears all 5 cells;
-  - diagonal-only same-element clusters do **not** clear.
-- `B` keyboard hook exists and shows the Supreme Bloom text/reward path.
-- Programmatic Chest Storage click opens the 12-slot modal and Escape closes it.
+- HTTP checks returned `200` for:
+  - Vercel `/`, `/playable/midnight_bloom_prototype.html`, and `/assets/tiles/96/amber_resin_seed.png`;
+  - GitHub Pages `/bloom-tycoon/`, `/bloom-tycoon/playable/midnight_bloom_prototype.html`, and `/bloom-tycoon/assets/tiles/96/amber_resin_seed.png`.
+- GitHub Pages browser checks:
+  - 89 images, 0 broken images;
+  - browser console clean: no console messages or JS errors observed;
+  - `shapeAuditData` exists and reports horizontal/vertical line matches, L/T/cross union clears, and no diagonal-only clear;
+  - `M` review hook cycles visible shape demos:
+    - `Witch's Cross!` showed +33 coins and x15 resources;
+    - `Night Garden L-Bloom!` showed +28 coins;
+    - `Twin Stem Bloom!` showed +26 coins;
+  - `B` review hook reports `SUPREME BLOOM! Review hook complete. The board is ready.`;
+  - direct pointer-event dispatch on the visible Chest Storage card opens the 12-slot modal, and Escape closes it/focuses the trigger.
+- Visual inspection on GitHub Pages: dark gothic botanical board, controls, Elements strip, and Chest Storage are present with no obvious broken image icons or layout collapse.
 
-## Strong points to preserve
+## New findings / blockers
 
-- Keep `SOLVE ET COAGULA` above `Bloom Tycoon`.
-- Keep the game name `Bloom Tycoon`; do not restore a subtitle.
-- Keep the current dark-gothic botanical tile art.
-- Keep the left tycoon rail: Greenhouse, Apothecary, Faction: Sub Rosa, Active Orders, Black Market.
-- Keep the bottom Elements strip and compact Chest Storage concept.
-- Keep the buttons named `Shuffle (-1 move)` and `Sacrifice (-3 moves)`.
-- Keep Supreme Bloom rare in normal play, with review hooks clearly marked as prototype/debug-only.
+1. **Vercel production is stale.** Its playable HTML is smaller than GitHub Pages/local and does not include `shapeAuditData`, `Witch's Cross!`, or the `M` prototype review hook. GitHub Pages is presently the trustworthy latest live preview.
+2. **Chest Storage browser-wrapper click remains ambiguous.** Hermes' accessibility `browser_click` on the Chest card did not open it, even after scrolling; a real DOM pointer-event sequence at the card center did open it. This may be a wrapper artifact, but Codex should still verify ordinary mouse/tap access in a real browser or adjust hit area/z-index if needed.
+3. The `M` demo path is working, but the L demo can include cascades after the intended shape clear (`8 tiles harvested across 2 cascades`). That is acceptable for prototype juice, but if Xerxes wants cleaner demos, freeze cascades during review hooks only.
 
 ---
 
-# Priority 1 — Make L/T/cross matches feel fun and legible
+# Priority 1 — Redeploy / restore Vercel parity with `main`
 
-Goal: the mechanical shape support should be obvious to a player and more rewarding than ordinary 3-matches.
+Goal: https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html should serve the same playable behavior as `main` and GitHub Pages.
 
 ## Tasks
 
-1. Add player-facing shape classification for intersecting straight-line matches:
-   - L-shape: show copy like `Night Garden L-Bloom!`;
-   - T-shape: show copy like `Twin Stem Bloom!`;
-   - cross-shape: show copy like `Witch's Cross!`;
-   - keep normal 3-match copy more restrained.
-2. Make larger/intersecting shapes visibly more rewarding:
-   - stronger burst from all cells in the union;
-   - visibly higher coin/resource reward than a plain 3-match;
-   - no double-counting overlapping center cells.
-3. Ensure the match result summary reports the special shape before/with the harvest total, not just generic `5 tiles harvested` text.
-4. Keep Supreme Bloom as a rare follow-on; L/T/cross may build toward it, but should **not** trigger Supreme Bloom too often.
-5. Do not introduce diagonal matching.
+1. Trigger a fresh Vercel production deployment from the current `main` commit `a1d10e4` or later.
+2. Verify Vercel HTML contains:
+   - `shapeAuditData`;
+   - `Witch's Cross!`;
+   - `Prototype match-shape review hook`;
+   - `Twin Stem Bloom!` and `Night Garden L-Bloom!`.
+3. Browser-check Vercel after deploy:
+   - no JS console errors;
+   - 0 broken images;
+   - `M` cycles cross, L, and T demos visibly;
+   - `B` still triggers the Supreme Bloom review path.
+4. Update `docs/codex_build_notes.md` with the Vercel deployment identifier/URL and exact verification results.
 
 ## Acceptance checks
 
-- A horizontal + vertical intersection clears the union of both lines.
-- An L shape clears both legs and shows special L-shape copy.
-- A T shape clears both arms/stem and shows special T-shape copy.
-- A cross shape clears all four arms and shows special cross copy.
-- Diagonal-only same-element clusters do not clear.
-- Larger shapes pay more than ordinary 3-matches and visibly feel stronger.
+- Vercel direct playable includes the same shape-audit payload and `M` hook as GitHub Pages.
+- Vercel and GitHub Pages both return `200` for root, direct playable, and `assets/tiles/96/amber_resin_seed.png`.
 - Browser console remains clean.
 
 ---
 
-# Priority 2 — Add a deterministic shape review/demo path
+# Priority 2 — Verify real pointer/tap control access
 
-Goal: Hermes and Xerxes should be able to review L/T/cross behavior without waiting for luck.
-
-## Tasks
-
-1. Add a clearly commented prototype/debug review path for shape tests. Choose one surgical option:
-   - keyboard cycle such as `L`, `T`, `C` to seed/demo L, T, and cross boards; or
-   - a tiny hidden/dev-only demo control; or
-   - an in-browser self-test function documented in `docs/codex_build_notes.md`.
-2. The path should visibly demonstrate the clear/reward behavior in the actual board, not only return arrays in the console.
-3. Add/keep regression coverage where practical so the shape grammar cannot silently revert to single-line-only matching.
-4. Document exact trigger steps in `docs/codex_build_notes.md`.
-
-## Acceptance checks
-
-- Hermes can trigger and visually observe each of L, T, and cross on the live playable.
-- Demo/review hooks are plainly commented as prototype-only.
-- Normal players are not confronted with debug UI by default.
-
----
-
-# Priority 3 — Verify real pointer access to core controls
-
-Goal: controls should be reachable and reliable with ordinary mouse/tap, not only programmatic `.click()`.
-
-## Findings this audit
-
-- Programmatic Chest Storage click opens the modal and Escape closes it.
-- The browser accessibility click did not clearly open Chest Storage until Hermes used `.click()` from the page context. This may be a browser-wrapper/scroll issue, but Codex should verify real pointer/tap behavior anyway.
-- The page is visually rich and tall; make sure Shuffle, Sacrifice, Elements, and Chest remain easy to reach on common laptop and portrait-mobile viewports.
+Goal: controls should be reliable with ordinary mouse/tap, not only programmatic calls.
 
 ## Tasks
 
-1. Manually verify real mouse/tap for:
+1. In a normal browser session, manually verify real pointer/tap for:
    - `Shuffle (-1 move)`;
    - `Sacrifice (-3 moves)`;
    - sacrifice cancel;
    - `Chest Storage` open/close;
    - Escape closes the chest modal.
-2. If any are unreliable, fix hit area, z-index, pointer-events, or scroll positioning.
-3. Preserve the 12-slot Diablo-style chest modal and purpose copy:
-   - `Stores rare bulbs, order rewards, contraband, and upgrade reagents.`
-4. At ~390px width, ensure no horizontal overflow and the priority order remains:
+2. If Chest Storage or other controls are unreliable, make a surgical fix only:
+   - increase clickable/hit area;
+   - correct z-index/overlays;
+   - remove accidental `pointer-events` interference;
+   - preserve current visuals.
+3. At ~390px width, verify no horizontal overflow and the priority order remains:
    1. title/objective/moves;
    2. board;
    3. Shuffle/Sacrifice;
    4. Elements/Chest;
    5. tycoon rail.
+4. Document exact browser/device or viewport used in `docs/codex_build_notes.md`.
 
 ## Acceptance checks
 
@@ -141,27 +103,36 @@ Goal: controls should be reachable and reliable with ordinary mouse/tap, not onl
 
 ---
 
-# Priority 4 — Preserve first-session polish while adding shape fun
+# Priority 3 — Optional polish: make demo hooks deterministic-clean
 
-The earlier first-session tasks appear landed and should not regress:
+Goal: the debug/demo hooks should showcase the intended shape reward without confusing follow-on cascades, while normal play can remain juicy.
 
-- compact instruction plaque near the objective/board;
-- delayed legal-swap idle hint;
-- first valid match teaches that resources feed orders/upgrades/contraband;
-- order-specific Thorn Rose/Bone Star messages;
-- visible match glow/resource particles/count pulses;
-- invalid swap rejection message: `The garden refuses that graft.`;
-- Supreme Bloom review hook on `B` with readable text/reward;
-- sacrifice copy and cancel affordance.
+## Tasks
 
-## Regression checks
+1. If the demo messages feel muddy, prevent extra cascades during the prototype `M` review hook only.
+2. Preserve normal gameplay cascades and rewards outside the review hook.
+3. Keep the hook clearly commented as prototype/debug-only.
 
-- Fresh page still explains the First Bouquet.
-- Waiting 6–8 seconds suggests a legal move, then stops after first valid match.
-- Valid 3-match has visible feedback but does not trigger Supreme Bloom.
-- Invalid adjacent swap gives visible rejection feedback.
-- Pressing `B` shows Supreme Bloom and returns the board to a usable state.
-- Browser console remains clean.
+## Acceptance checks
+
+- `M` demo for cross, L, and T each reports the named shape and intended 5-cell union cleanly.
+- Normal player-initiated matches can still cascade as designed.
+
+---
+
+# Strong points to preserve
+
+- Keep `SOLVE ET COAGULA` above `Bloom Tycoon`.
+- Keep the game name `Bloom Tycoon`; do not restore a subtitle.
+- Keep the current dark-gothic botanical tile art.
+- Keep the left tycoon rail: Greenhouse, Apothecary, Faction: Sub Rosa, Active Orders, Black Market.
+- Keep the bottom Elements strip and compact Chest Storage concept.
+- Keep the buttons named `Shuffle (-1 move)` and `Sacrifice (-3 moves)`.
+- Keep Supreme Bloom rare in normal play, with review hooks clearly marked as prototype/debug-only.
+- Keep L/T/cross reward copy and higher rewards:
+  - `Night Garden L-Bloom!`;
+  - `Twin Stem Bloom!`;
+  - `Witch's Cross!`.
 
 ---
 
@@ -170,7 +141,7 @@ The earlier first-session tasks appear landed and should not regress:
 - Do **not** add analytics, ads, SDKs, login, backend services, tracking pixels, or monetization hooks.
 - Do **not** add or commit secrets, `.env` files, private keys, tokens, credentials, machine-local paths, or broad permissions.
 - Keep access repo-scoped only.
-- Touch only files required for the current surgical gameplay/docs pass.
+- Touch only files required for the current surgical deploy/gameplay/docs pass.
 - Before committing, run a lightweight secret scan on changed files.
 - Do not broadly redesign the UI or replace the current tile art unless Xerxes explicitly asks.
 
@@ -181,10 +152,11 @@ Update `docs/codex_build_notes.md` with:
 1. files changed;
 2. exact verification steps;
 3. browser console status;
-4. Vercel preview URL checked;
+4. Vercel deployment URL/identifier checked;
 5. GitHub Pages preview status if checked;
 6. known issues;
 7. how to trigger and verify L/T/cross matches;
-8. how to trigger and verify Supreme Bloom without console.
+8. how to trigger and verify Supreme Bloom without console;
+9. security/secret-scan status.
 
 Then commit and push to `main` so Hermes can audit the live preview again.
