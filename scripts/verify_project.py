@@ -1,5 +1,6 @@
 from pathlib import Path
 import re
+import runpy
 
 root = Path(__file__).resolve().parents[1]
 required = [
@@ -53,3 +54,4 @@ for left, right in pairs:
 print("Bloom Tycoon project verification passed.")
 print(f"Project root: {root}")
 print(f"GDScript lines: {len(main.splitlines())}")
+runpy.run_path(str(root / "scripts" / "verify_html_match_shapes.py"), run_name="__main__")

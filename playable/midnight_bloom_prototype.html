@@ -757,6 +757,20 @@
       animation: resource-pop 920ms cubic-bezier(0.14, 0.82, 0.2, 1) forwards;
     }
 
+    .board-particle.shape-sigil {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 7;
+      color: #f0c477;
+      font-size: var(--font-size, 24px);
+      text-shadow:
+        0 0 8px #000,
+        0 0 14px #9b1d22,
+        0 0 18px #d7b16d;
+      animation: shape-sigil 1120ms cubic-bezier(0.12, 0.82, 0.18, 1) forwards;
+    }
+
     .board-particle.blood-pop,
     .board-particle.blood-aura,
     .board-particle.shard-pop,
@@ -1658,6 +1672,30 @@
       }
     }
 
+    @keyframes shape-sigil {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.42) rotate(-18deg);
+      }
+      18% {
+        opacity: 1;
+      }
+      58% {
+        opacity: 1;
+        transform:
+          translate(calc(-50% + var(--dx, 0px) * 0.45), calc(-50% + var(--dy, -42px) * 0.45))
+          scale(1.35)
+          rotate(var(--spin, 0deg));
+      }
+      100% {
+        opacity: 0;
+        transform:
+          translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, -92px)))
+          scale(0.86)
+          rotate(var(--spin, 0deg));
+      }
+    }
+
     @keyframes cell-burst {
       0% {
         opacity: 0;
@@ -2008,6 +2046,7 @@
       <div class="first-session-plaque" id="firstSessionPlaque">
         Match Thorn Rose and Bone Star to complete the First Bouquet.
       </div>
+      <script type="application/json" id="shapeAuditData"></script>
       <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
       <div class="board" id="board"></div>
       <div class="controls">
@@ -2122,6 +2161,7 @@
     let supremeChargeActive = false;
     let hasMadeValidMove = false;
     let firstBouquetComplete = false;
+    let shapeDemoIndex = 0;
     let greenhouse = { level: 4, xp: 1240, next: 2000 };
     let apothecary = { level: 2, xp: 420, next: 1000 };
 
@@ -2610,7 +2650,7 @@
         }
         const group = groups.get(root);
         segment.cells.forEach((cell) => group.cellsByKey.set(cell.join(","), cell));
-        group.runs.push({ direction: segment.direction, len: segment.cells.length });
+        group.runs.push({ direction: segment.direction, len: segment.cells.length, cells: segment.cells });
       });
 
       groups.forEach((group) => {
@@ -2619,6 +2659,84 @@
         shapes.push({ len: cells.length, val: group.val, cells, runs: group.runs });
       });
       return shapes.sort((a, b) => b.len - a.len);
+    }
+
+    function analyzeMatchShape(match) {
+      const runs = Array.isArray(match.runs) ? match.runs : [];
+      const horizontalRuns = runs.filter((run) => run.direction === "horizontal");
+      const verticalRuns = runs.filter((run) => run.direction === "vertical");
+      const cellKeys = new Set(match.cells.map((cell) => cell.join(",")));
+      const intersections = [];
+
+      horizontalRuns.forEach((horizontal) => {
+        const horizontalKeys = new Set(horizontal.cells.map((cell) => cell.join(",")));
+        verticalRuns.forEach((vertical) => {
+          vertical.cells.forEach((cell) => {
+            const key = cell.join(",");
+            if (horizontalKeys.has(key)) {
+              intersections.push(cell);
+            }
+          });
+        });
+      });
+
+      if (!intersections.length) {
+        return {
+          kind: "line",
+          label: match.len >= 5 ? "Five-stem line" : "Line Bloom",
+          coinMultiplier: 1,
+          resourceMultiplier: 1,
+          rank: match.len >= 5 ? 4 : 1
+        };
+      }
+
+      const bestArms = intersections.reduce((best, [x, y]) => {
+        const arms = [
+          cellKeys.has(`${x - 1},${y}`),
+          cellKeys.has(`${x + 1},${y}`),
+          cellKeys.has(`${x},${y - 1}`),
+          cellKeys.has(`${x},${y + 1}`)
+        ].filter(Boolean).length;
+        return Math.max(best, arms);
+      }, 0);
+
+      if (bestArms >= 4) {
+        return {
+          kind: "cross",
+          label: "Witch's Cross!",
+          coinMultiplier: 3.25,
+          resourceMultiplier: 3,
+          rank: 3
+        };
+      }
+
+      if (bestArms === 3) {
+        return {
+          kind: "t",
+          label: "Twin Stem Bloom!",
+          coinMultiplier: 2.6,
+          resourceMultiplier: 2,
+          rank: 2
+        };
+      }
+
+      return {
+        kind: "l",
+        label: "Night Garden L-Bloom!",
+        coinMultiplier: 2.15,
+        resourceMultiplier: 2,
+        rank: 2
+      };
+    }
+
+    function isShapeMatch(shape) {
+      return shape && shape.kind !== "line";
+    }
+
+    function bestShape(shapes) {
+      return shapes
+        .filter(isShapeMatch)
+        .sort((a, b) => (b.rank - a.rank) || (b.coinMultiplier - a.coinMultiplier))[0] || null;
     }
 
     function findRunSegments() {
@@ -2684,6 +2802,8 @@
         cascades: 0,
         gained: Array(flowers.length).fill(0),
         rareCells: [],
+        shapeBonuses: [],
+        shapeCells: [],
         reshuffled: false
       };
     }
@@ -2696,13 +2816,20 @@
 
       const clear = {};
       const waveRareCells = new Set();
+      const waveShapeCells = new Set();
+      const shapeBonuses = [];
       let rareWave = false;
 
       // Match collection loop: unique matched cells feed orders and future crafting systems.
       foundMatches.forEach((match) => {
-        if (match.len >= 5) {
+        const shape = analyzeMatchShape(match);
+        if (shape.kind === "line" && match.len >= 5) {
           rareWave = true;
           match.cells.forEach((cell) => waveRareCells.add(cell.join(",")));
+        }
+        if (isShapeMatch(shape)) {
+          shapeBonuses.push(shape);
+          match.cells.forEach((cell) => waveShapeCells.add(cell.join(",")));
         }
         match.cells.forEach((cell) => {
           clear[cell.join(",")] = cell;
@@ -2710,20 +2837,28 @@
       });
 
       const clearCells = Object.values(clear);
+      const strongestShape = bestShape(shapeBonuses);
       return {
         clearCells,
         clearKeys: clearCells.map((cell) => cell.join(",")),
         rare: rareWave,
         rareCells: [...waveRareCells].map((cell) => cell.split(",").map(Number)),
-        rareKeys: waveRareCells
+        rareKeys: waveRareCells,
+        shapeBonuses,
+        strongestShape,
+        shapeCells: [...waveShapeCells].map((cell) => cell.split(",").map(Number)),
+        shapeKeys: waveShapeCells,
+        coinMultiplier: strongestShape ? strongestShape.coinMultiplier : 1,
+        resourceMultiplier: strongestShape ? strongestShape.resourceMultiplier : 1
       };
     }
 
     function collectWaveRewards(wave, result, cascadeIndex, forcedRareCells = []) {
+      const resourceMultiplier = wave.resourceMultiplier || 1;
       wave.clearCells.forEach(([x, y]) => {
         const flowerId = board[y][x];
-        counts[flowerId] += 1;
-        result.gained[flowerId] += 1;
+        counts[flowerId] += resourceMultiplier;
+        result.gained[flowerId] += resourceMultiplier;
         elementPulseTargets.add(flowerId);
         queueResourceBurst(x, y, flowerId, cascadeIndex);
       });
@@ -2731,9 +2866,12 @@
       const cleared = wave.clearCells.length;
       const effectRareCells = dedupeCells([...wave.rareCells, ...forcedRareCells]);
       const isRareWave = wave.rare || effectRareCells.length > 0;
-      const coinsEarned = cleared * (isRareWave ? 12 : 2);
+      const coinsEarned = Math.round(cleared * (isRareWave ? 12 : 2) * (wave.coinMultiplier || 1));
       coins += coinsEarned;
       queueCoinBurst(wave.clearCells, coinsEarned, cascadeIndex);
+      if (wave.strongestShape) {
+        queueShapeBurst(wave.shapeCells, wave.strongestShape, cascadeIndex);
+      }
       if (isRareWave) {
         queueSuperBloomBoardEffects(effectRareCells, cascadeIndex);
       }
@@ -2746,6 +2884,8 @@
       result.cleared += cleared;
       result.coinsEarned += coinsEarned;
       result.cascades += 1;
+      result.shapeBonuses.push(...wave.shapeBonuses);
+      result.shapeCells.push(...wave.shapeCells);
       effectRareCells.forEach((cell) => {
         result.rareCells.push(cell);
       });
@@ -2764,6 +2904,7 @@
       }
       result.reshuffled = ensurePlayableBoardAfterCascade();
       result.rareCells = dedupeCells(result.rareCells);
+      result.shapeCells = dedupeCells(result.shapeCells);
       return result;
     }
 
@@ -2949,6 +3090,38 @@
       });
     }
 
+    function queueShapeBurst(cells, shape, cascadeIndex = 0) {
+      const baseDelay = cascadeIndex * 120;
+      const sigil = shape.kind === "cross" ? "✣" : shape.kind === "t" ? "♆" : "⌞";
+      cells.slice(0, 12).forEach(([x, y], cellIndex) => {
+        boardParticles.push({
+          type: "shape-sigil",
+          text: sigil,
+          x,
+          y,
+          dx: (Math.random() - 0.5) * 86,
+          dy: -72 - Math.random() * 74,
+          size: shape.kind === "cross" ? 36 : 30,
+          fontSize: shape.kind === "cross" ? 28 : 24,
+          spin: (Math.random() - 0.5) * 120,
+          delay: baseDelay + cellIndex * 18
+        });
+        if (cellIndex % 2 === 0) {
+          boardParticles.push({
+            type: "blood-aura",
+            x,
+            y,
+            dx: 0,
+            dy: 0,
+            size: shape.kind === "cross" ? 74 : 58,
+            spin: Math.random() * 360,
+            scale: 1.08 + Math.random() * 0.24,
+            delay: baseDelay + cellIndex * 14
+          });
+        }
+      });
+    }
+
     function queueSuperBloomBoardEffects(cells, cascadeIndex = 0) {
       // Super Bloom FX is reserved for 5+ shapes and blooms from the matched cells themselves.
       const baseDelay = cascadeIndex * 120;
@@ -3020,10 +3193,21 @@
       const orderText = orderGainMessage(result.gained);
       const cascadeText = result.cascades > 1 ? ` across ${result.cascades} cascades` : "";
       const reshuffleText = result.reshuffled ? " The board re-seeded itself with a legal move." : "";
+      const shapeText = shapeBonusMessage(result);
+      const shapePrefix = shapeText ? `<strong>${shapeText}</strong> ` : "";
       if (orderText) {
-        return `<strong>${orderText}</strong> +${result.coinsEarned} coins${cascadeText}.${gainMarkup(result.gained)}${reshuffleText}`;
+        return `${shapePrefix}<strong>${orderText}</strong> +${result.coinsEarned} coins${cascadeText}.${gainMarkup(result.gained)}${reshuffleText}`;
       }
-      return `<strong>${result.cleared}</strong> tiles harvested${cascadeText}. +${result.coinsEarned} coins.${gainMarkup(result.gained)}${reshuffleText}`;
+      return `${shapePrefix}<strong>${result.cleared}</strong> tiles harvested${cascadeText}. +${result.coinsEarned} coins.${gainMarkup(result.gained)}${reshuffleText}`;
+    }
+
+    function shapeBonusMessage(result) {
+      const shape = bestShape(result.shapeBonuses || []);
+      if (!shape) {
+        return "";
+      }
+      const cells = result.shapeCells.length || result.cleared;
+      return `${shape.label} ${cells} cells burned bright; Supreme Bloom stirs.`;
     }
 
     function orderGainMessage(gained) {
@@ -3415,6 +3599,71 @@
       }, 460);
     }
 
+    function makeShapeAuditBoard(shapeCells) {
+      const baseValues = [0, 1, 3, 4, 5];
+      const demo = Array.from({ length: BOARD_SIZE }, (_, y) => (
+        Array.from({ length: BOARD_SIZE }, (_, x) => baseValues[(x + y * 2) % baseValues.length])
+      ));
+      shapeCells.forEach(([x, y]) => {
+        demo[y][x] = 2;
+      });
+      return demo;
+    }
+
+    function makeShapeDemoBoard(kind) {
+      const shapeCells = {
+        cross: [[3, 3], [2, 3], [4, 3], [3, 2], [3, 4]],
+        t: [[2, 3], [3, 3], [4, 3], [3, 4], [3, 5]],
+        l: [[2, 2], [3, 2], [4, 2], [2, 3], [2, 4]]
+      }[kind] || [];
+      return makeShapeAuditBoard(shapeCells);
+    }
+
+    function demoMatchShape(forcedKind = "") {
+      if (isResolving) {
+        return;
+      }
+      const demoKinds = ["cross", "l", "t"];
+      const kind = demoKinds.includes(forcedKind)
+        ? forcedKind
+        : demoKinds[shapeDemoIndex % demoKinds.length];
+      shapeDemoIndex += 1;
+      cancelSacrifice(false);
+      clearIdleHint();
+      selected = null;
+      board = makeShapeDemoBoard(kind);
+      harvestFlashCells.clear();
+      fallAnimations.clear();
+      superBloomCells.clear();
+      boardParticles = [];
+      const demoNames = {
+        cross: "Witch's Cross",
+        l: "Night Garden L-Bloom",
+        t: "Twin Stem Bloom"
+      };
+      ritualMessage = `<strong>Prototype match-shape review:</strong> ${demoNames[kind]} resolving. Press M again for another shape.`;
+      isResolving = true;
+      render();
+      window.setTimeout(async () => {
+        let result = null;
+        try {
+          result = await resolveAnimated();
+          ritualMessage = result.matched
+            ? `<strong>Shape demo complete:</strong> ${harvestSummary(result)}`
+            : "Shape demo did not find a match.";
+          if (result.matched) {
+            pulseOrderCounts(result.gained);
+          }
+        } finally {
+          isResolving = false;
+          render();
+          if (result && result.matched) {
+            scheduleBoardParticleClear();
+          }
+        }
+      }, 260);
+    }
+
     function showSupreme(originCells = []) {
       // Supreme Bloom is intentionally rare: 5+ HTML matches or the forced Sacrifice test path.
       const supreme = $("supreme");
@@ -3624,6 +3873,44 @@
       };
     }
 
+    function analyzeBoardSnapshot(candidateBoard) {
+      if (!isValidBoard(candidateBoard)) {
+        return [];
+      }
+      const previousBoard = board.map((row) => row.slice());
+      try {
+        board = candidateBoard.map((row) => row.slice());
+        return matches().map((match) => ({
+          len: match.len,
+          val: match.val,
+          cells: match.cells,
+          shape: analyzeMatchShape(match)
+        }));
+      } finally {
+        board = previousBoard;
+      }
+    }
+
+    function refreshShapeAuditData() {
+      const auditEl = $("shapeAuditData");
+      if (!auditEl) {
+        return;
+      }
+      const cases = {
+        horizontal: [[1, 1], [2, 1], [3, 1]],
+        vertical: [[4, 1], [4, 2], [4, 3]],
+        l: [[2, 2], [3, 2], [4, 2], [2, 3], [2, 4]],
+        t: [[2, 3], [3, 3], [4, 3], [3, 4], [3, 5]],
+        cross: [[3, 3], [2, 3], [4, 3], [3, 2], [3, 4]],
+        diagonal: [[2, 2], [3, 3], [4, 4]]
+      };
+      const results = {};
+      Object.entries(cases).forEach(([name, cells]) => {
+        results[name] = analyzeBoardSnapshot(makeShapeAuditBoard(cells));
+      });
+      auditEl.textContent = JSON.stringify(results);
+    }
+
     function openChest() {
       cancelSacrifice(false);
       renderChest();
@@ -3656,6 +3943,10 @@
         closeChest();
       } else if (event.key === "Escape" && sacrificeState.active) {
         cancelSacrifice();
+      } else if (event.key.toLowerCase() === "m" && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        // Prototype match-shape review hook; remove or gate before production.
+        event.preventDefault();
+        demoMatchShape();
       } else if (event.key.toLowerCase() === "b" && !event.metaKey && !event.ctrlKey && !event.altKey) {
         // Prototype review hook; remove or gate before production.
         event.preventDefault();
@@ -3664,6 +3955,7 @@
     });
 
     window.triggerSupremeBloom = showSupreme;
+    refreshShapeAuditData();
 
     loadProgress();
     if (!board.length || matches().length || !hasLegalMoves()) {
