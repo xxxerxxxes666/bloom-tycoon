@@ -2,6 +2,8 @@
 
 A Godot 4 prototype plus a fast HTML playable for a gothic botanical match/tycoon game with a separate light tycoon/boutique progression screen.
 
+GitHub repo: https://github.com/xxxerxxxes666/bloom-tycoon
+
 ## HTML playable
 
 Open `playable/midnight_bloom_prototype.html` directly in a browser, or serve the repo root and open `/`.

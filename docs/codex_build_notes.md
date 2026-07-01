@@ -18,4 +18,12 @@
 - Live URL: https://bloom-tycoon.vercel.app/
 - Disabled SSO deployment protection so Hermes can open the URL directly.
 - Verified the root page, `playable/midnight_bloom_prototype.html`, and `assets/tiles/96/amber_resin_seed.png` return `200 OK`.
-- GitHub repo creation is still waiting on browser login or a GitHub token/CLI auth path.
+- GitHub repo creation was completed in the next pass below.
+
+## 2026-07-01 GitHub repo creation
+
+- Installed a local GitHub CLI in ignored `work/tools/` to avoid requiring a system install.
+- Authenticated GitHub CLI as `xxxerxxxes666`.
+- Created the public GitHub repo `xxxerxxxes666/bloom-tycoon`.
+- Added `origin` and pushed `main`.
+- GitHub URL: https://github.com/xxxerxxxes666/bloom-tycoon
