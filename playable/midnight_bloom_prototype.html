@@ -254,6 +254,23 @@
       animation: order-pulse 900ms ease-out both;
     }
 
+    .first-session-plaque {
+      width: min(650px, 100%);
+      margin: 12px auto 0;
+      padding: 9px 16px;
+      color: #cdb28a;
+      text-align: center;
+      font-size: 14px;
+      letter-spacing: 0.25px;
+      border-top: 1px solid #3d3026;
+      border-bottom: 1px solid #3d3026;
+      background:
+        linear-gradient(90deg, #0000, #120b09 14%, #17100d 50%, #120b09 86%, #0000),
+        radial-gradient(circle at 50% 50%, #3a0d0d55 0, #0000 68%);
+      box-shadow: inset 0 0 16px #000, 0 0 12px #000;
+      text-shadow: 0 2px 0 #000;
+    }
+
     .xp {
       height: 10px;
       background: #050505;
@@ -605,6 +622,15 @@
       outline: 2px solid #d4a05c;
     }
 
+    .tile.idle-hint {
+      outline: 2px solid #d7b16d;
+      animation: idle-hint-pulse 1.35s ease-in-out infinite;
+    }
+
+    .tile.invalid-swap {
+      animation: invalid-swap 720ms ease-out both;
+    }
+
     .tile.legal-target {
       outline: 2px solid #5f8338;
       box-shadow:
@@ -653,7 +679,7 @@
     }
 
     .tile.harvest-flash {
-      animation: harvest-flash 420ms ease-out;
+      animation: harvest-flash 540ms ease-out;
     }
 
     .tile.super-bloom-hot {
@@ -719,6 +745,16 @@
       font-size: var(--font-size, 15px);
       text-shadow: 0 0 8px #000, 0 0 10px #d8a657;
       animation: coin-pop 880ms cubic-bezier(0.14, 0.8, 0.22, 1) forwards;
+    }
+
+    .board-particle.resource-pop {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--bright-gold);
+      font-size: var(--font-size, 18px);
+      text-shadow: 0 0 8px #000, 0 0 12px currentColor;
+      animation: resource-pop 920ms cubic-bezier(0.14, 0.82, 0.2, 1) forwards;
     }
 
     .board-particle.blood-pop,
@@ -934,7 +970,7 @@
 
     .sacrifice-option.selected {
       border-color: #c96a5a;
-      box-shadow: inset 0 0 14px #000, 0 0 14px #7d1717;
+      box-shadow: inset 0 0 14px #000, 0 0 14px #7d1717, 0 0 8px #d7b16d55;
     }
 
     .sacrifice-option.profitable .sacrifice-hits {
@@ -948,6 +984,15 @@
       border: 1px solid #3d3026;
       background: #080606;
       padding: 6px 10px;
+      min-width: 78px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .sacrifice-cancel:focus-visible,
+    .sacrifice-cancel:hover {
+      color: #f0d6a6;
+      border-color: #c96a5a;
     }
 
     .ritual-log {
@@ -1074,6 +1119,10 @@
       text-shadow: 0 0 8px #300;
     }
 
+    .element-count.element-pulse {
+      animation: element-pulse 900ms ease-out both;
+    }
+
     .element .small {
       display: block;
       min-height: 42px;
@@ -1104,6 +1153,15 @@
       cursor: pointer;
       position: relative;
       overflow: hidden;
+      z-index: 2;
+      pointer-events: auto;
+      touch-action: manipulation;
+    }
+
+    .chest-access:focus-visible,
+    .chest-access:hover {
+      color: #f0d6a6;
+      transform: translateY(-1px);
     }
 
     .chest-kicker {
@@ -1189,6 +1247,10 @@
     .supreme.on {
       display: flex;
       animation: supreme-fade 2.05s ease-out forwards;
+    }
+
+    .board.supreme-charge {
+      animation: supreme-charge 360ms ease-out both;
     }
 
     .supreme::before,
@@ -1371,6 +1433,14 @@
       color: #8f775f;
       font-size: 13px;
       letter-spacing: 0.3px;
+    }
+
+    .modal-footer-note {
+      margin: 12px 0 0;
+      color: #7b5634;
+      font-size: 12px;
+      text-align: center;
+      letter-spacing: 0.35px;
     }
 
     .modal-close {
@@ -1571,6 +1641,23 @@
       }
     }
 
+    @keyframes resource-pop {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.48);
+      }
+      18% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+        transform:
+          translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, -74px)))
+          scale(1.2)
+          rotate(var(--spin, 0deg));
+      }
+    }
+
     @keyframes cell-burst {
       0% {
         opacity: 0;
@@ -1608,12 +1695,88 @@
         box-shadow: inset 0 0 14px #000, 0 0 0 #0000;
       }
       35% {
-        box-shadow: inset 0 0 16px #000, 0 0 18px #9b1d22, 0 0 8px #d7b16d;
+        box-shadow:
+          inset 0 0 16px #000,
+          inset 0 0 0 2px #d7b16d88,
+          0 0 20px #9b1d22,
+          0 0 12px #d7b16d,
+          0 0 26px #692d8688;
         transform: scale(1.03);
       }
       100% {
         box-shadow: inset 0 0 14px #000, 0 0 0 #0000;
         transform: scale(1);
+      }
+    }
+
+    @keyframes idle-hint-pulse {
+      0%,
+      100% {
+        box-shadow: inset 0 0 14px #000, 0 0 0 #0000;
+        filter: saturate(1);
+      }
+      50% {
+        box-shadow:
+          inset 0 0 14px #000,
+          0 0 18px #d7b16d,
+          0 0 11px #5f8338;
+        filter: saturate(1.22) brightness(1.06);
+      }
+    }
+
+    @keyframes invalid-swap {
+      0%,
+      100% {
+        transform: translateX(0);
+        box-shadow: inset 0 0 14px #000;
+      }
+      20% {
+        transform: translateX(-4px);
+        box-shadow: inset 0 0 14px #000, 0 0 16px #9b1d22;
+      }
+      45% {
+        transform: translateX(4px);
+        box-shadow: inset 0 0 14px #000, 0 0 18px #d23535;
+      }
+      70% {
+        transform: translateX(-2px);
+      }
+    }
+
+    @keyframes element-pulse {
+      0% {
+        transform: scale(1);
+        color: #b24a4a;
+      }
+      34% {
+        transform: scale(1.18);
+        color: #f1cf8f;
+        text-shadow: 0 0 12px #9b1d22, 0 0 10px #d7b16d;
+      }
+      100% {
+        transform: scale(1);
+        color: #b24a4a;
+      }
+    }
+
+    @keyframes supreme-charge {
+      0% {
+        filter: brightness(1);
+        box-shadow:
+          inset 0 0 28px #000,
+          0 0 0 1px #000,
+          0 0 22px #000;
+      }
+      68% {
+        filter: brightness(0.72) saturate(1.35);
+        box-shadow:
+          inset 0 0 38px #000,
+          0 0 0 1px #000,
+          0 0 28px #9b1d22,
+          0 0 44px #3b0000;
+      }
+      100% {
+        filter: brightness(0.92) saturate(1.1);
       }
     }
 
@@ -1696,25 +1859,48 @@
     }
 
     @media (max-width: 760px) {
+      body {
+        padding: 0;
+      }
+
       .game {
         grid-template-columns: 1fr;
+        width: 100vw;
+        min-height: 100vh;
+        gap: 10px;
+        padding: 8px;
       }
 
       .left {
         grid-row: auto;
+        order: 3;
       }
 
       .main {
         grid-column: 1;
+        order: 1;
+        padding: 4px 0 0;
       }
 
       .bottom {
         grid-column: 1;
         grid-template-columns: 1fr;
+        order: 2;
       }
 
       .title {
-        font-size: 44px;
+        font-size: 42px;
+        margin: 12px 0 14px;
+      }
+
+      .sigil {
+        letter-spacing: 7px;
+        font-size: 12px;
+      }
+
+      .objective {
+        padding: 10px 14px;
+        font-size: 16px;
       }
 
       .hero {
@@ -1722,12 +1908,16 @@
       }
 
       .board {
-        max-width: 96vw;
+        max-width: calc(100vw - 18px);
+        gap: 4px;
+        padding: 7px;
+        margin-top: 12px;
       }
 
       .btn {
         min-width: min(250px, 100%);
         padding: 12px 18px;
+        font-size: 17px;
       }
 
       .elements {
@@ -1815,6 +2005,9 @@
         <span class="objective-separator">·</span>
         <span>Moves 16</span>
       </div>
+      <div class="first-session-plaque" id="firstSessionPlaque">
+        Match Thorn Rose and Bone Star to complete the First Bouquet.
+      </div>
       <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
       <div class="board" id="board"></div>
       <div class="controls">
@@ -1867,11 +2060,12 @@
         <div>
           <h2 class="modal-title" id="chestModalTitle">Chest Storage</h2>
           <div class="small" id="chestModalSummary">8 / 12 Slots</div>
-          <p class="modal-note">Sealed botanical storage for order rewards and contraband.</p>
+          <p class="modal-note">Stores rare bulbs, order rewards, contraband, and upgrade reagents.</p>
         </div>
         <button class="modal-close" id="closeChest" type="button" aria-label="Close chest storage">×</button>
       </div>
       <div class="slot-grid" id="slotGrid"></div>
+      <p class="modal-footer-note">Future: combine stored relics into stronger botanical elements.</p>
     </div>
   </div>
 
@@ -1916,9 +2110,17 @@
     let boardParticles = [];
     let fallClearTimer = null;
     let boardParticleClearTimer = null;
+    let supremeChargeTimer = null;
+    let idleHintTimer = null;
+    let invalidSwapTimer = null;
     let superBloomCells = new Set();
+    let invalidSwapCells = new Set();
+    let idleHintCells = new Set();
     let orderPulseTargets = new Set();
+    let elementPulseTargets = new Set();
     let isResolving = false;
+    let supremeChargeActive = false;
+    let hasMadeValidMove = false;
     let firstBouquetComplete = false;
     let greenhouse = { level: 4, xp: 1240, next: 2000 };
     let apothecary = { level: 2, xp: 420, next: 1000 };
@@ -2127,6 +2329,57 @@
       return legalMoves().length > 0;
     }
 
+    function clearIdleHint() {
+      if (idleHintTimer && window.clearTimeout) {
+        window.clearTimeout(idleHintTimer);
+      }
+      idleHintTimer = null;
+      if (idleHintCells.size) {
+        idleHintCells.clear();
+      }
+    }
+
+    function scheduleIdleHint() {
+      clearIdleHint();
+      if (hasMadeValidMove || isResolving || sacrificeState.active) {
+        return;
+      }
+      idleHintTimer = window.setTimeout(() => {
+        if (hasMadeValidMove || isResolving || sacrificeState.active) {
+          return;
+        }
+        const [a, b] = legalMoves()[0] || [];
+        if (!a || !b) {
+          return;
+        }
+        idleHintCells = new Set([`${a.x},${a.y}`, `${b.x},${b.y}`]);
+        render();
+      }, 7000);
+    }
+
+    function notePlayerInteraction() {
+      clearIdleHint();
+      if (!hasMadeValidMove) {
+        scheduleIdleHint();
+      }
+    }
+
+    function markInvalidSwap(a, b) {
+      if (invalidSwapTimer && window.clearTimeout) {
+        window.clearTimeout(invalidSwapTimer);
+      }
+      invalidSwapCells = new Set([`${a.x},${a.y}`, `${b.x},${b.y}`]);
+      render();
+      invalidSwapTimer = window.setTimeout(() => {
+        if (!invalidSwapCells.size) {
+          return;
+        }
+        invalidSwapCells.clear();
+        invalidSwapTimer = null;
+        render();
+      }, 880);
+    }
+
     function ensurePlayableBoardAfterCascade() {
       if (!matches().length && hasLegalMoves()) {
         return false;
@@ -2139,6 +2392,7 @@
     function render() {
       const boardEl = $("board");
       boardEl.innerHTML = "";
+      boardEl.classList.toggle("supreme-charge", supremeChargeActive);
 
       for (let y = 0; y < BOARD_SIZE; y += 1) {
         for (let x = 0; x < BOARD_SIZE; x += 1) {
@@ -2153,11 +2407,13 @@
           const profitableClass = sacrificeState.active && wouldSacrificeHarvest(x, y) ? "sacrifice-profitable" : "";
           const harvestClass = harvestFlashCells.has(`${x},${y}`) ? "harvest-flash" : "";
           const superClass = superBloomCells.has(`${x},${y}`) ? "super-bloom-hot" : "";
+          const invalidClass = invalidSwapCells.has(`${x},${y}`) ? "invalid-swap" : "";
+          const idleHintClass = idleHintCells.has(`${x},${y}`) ? "idle-hint" : "";
           const transmuteClass = transmuteFlashCell === `${x},${y}` ? "transmute-flash" : "";
           const fallKey = `${x},${y}`;
           const fallRows = fallAnimations.get(fallKey) || 0;
           const fallClass = fallRows ? "fall-in" : "";
-          tile.className = `tile ${selectedClass} ${legalClass} ${sacrificeClass} ${profitableClass} ${harvestClass} ${superClass} ${transmuteClass} ${fallClass}`;
+          tile.className = `tile ${selectedClass} ${legalClass} ${sacrificeClass} ${profitableClass} ${harvestClass} ${superClass} ${invalidClass} ${idleHintClass} ${transmuteClass} ${fallClass}`;
           tile.disabled = isResolving;
           if (fallRows) {
             tile.style.setProperty("--fall-y", `${-fallRows * 112}%`);
@@ -2231,7 +2487,7 @@
           ${iconMarkup(index, "", flower[0], "element-icon-wrap")}
           <b>${flower[0]}</b>
           <span class="small">${flower[2]}</span><br>
-          <span class="element-count">x${baseElementCounts[index] + counts[index]}</span>
+          <span class="element-count ${elementPulseTargets.has(index) ? "element-pulse" : ""}">x${baseElementCounts[index] + counts[index]}</span>
         </div>
       `).join("");
       renderSacrificeOptions();
@@ -2245,6 +2501,7 @@
       if (isResolving) {
         return;
       }
+      notePlayerInteraction();
       if (sacrificeState.active) {
         if (sacrificeState.choice === null) {
           $("sacrificeStatus").textContent = "Choose the replacement element first.";
@@ -2277,12 +2534,16 @@
 
       const target = { x, y };
       if (!isLegalSwap(selected, target)) {
+        const source = selected;
         selected = null;
-        ritualMessage = "That switch will not bloom. Only match-making swaps are allowed.";
-        render();
+        ritualMessage = "The garden refuses that graft.";
+        markInvalidSwap(source, target);
         return;
       }
 
+      clearIdleHint();
+      const isFirstValidMove = !hasMadeValidMove;
+      hasMadeValidMove = true;
       swapBoardCells(selected, target);
       moves -= 1;
       selected = null;
@@ -2291,7 +2552,10 @@
       let result = null;
       try {
         result = await resolveAnimated();
-        ritualMessage = harvestSummary(result) + awardRareBloomDrop(result);
+        const firstMoveCopy = isFirstValidMove
+          ? "<strong>Good.</strong> Resources feed orders, upgrades, and contraband. "
+          : "";
+        ritualMessage = firstMoveCopy + harvestSummary(result) + awardRareBloomDrop(result);
         pulseOrderCounts(result.gained);
         maybeCompleteFirstBouquet();
       } finally {
@@ -2460,6 +2724,8 @@
         const flowerId = board[y][x];
         counts[flowerId] += 1;
         result.gained[flowerId] += 1;
+        elementPulseTargets.add(flowerId);
+        queueResourceBurst(x, y, flowerId, cascadeIndex);
       });
 
       const cleared = wave.clearCells.length;
@@ -2470,6 +2736,9 @@
       queueCoinBurst(wave.clearCells, coinsEarned, cascadeIndex);
       if (isRareWave) {
         queueSuperBloomBoardEffects(effectRareCells, cascadeIndex);
+      }
+      if (elementPulseTargets.size) {
+        scheduleElementPulseClear();
       }
 
       result.matched = true;
@@ -2523,8 +2792,12 @@
       if (boardParticleClearTimer && window.clearTimeout) {
         window.clearTimeout(boardParticleClearTimer);
       }
+      if (supremeChargeTimer && window.clearTimeout) {
+        window.clearTimeout(supremeChargeTimer);
+      }
       fallClearTimer = null;
       boardParticleClearTimer = null;
+      supremeChargeTimer = null;
     }
 
     function resolve() {
@@ -2581,10 +2854,10 @@
         render();
 
         if (effectRareCells.length) {
-          window.setTimeout(() => showSupreme(effectRareCells), 150);
+          chargeSupreme(effectRareCells);
         }
 
-        await delay(wave.rare ? 290 : 160);
+        await delay(wave.rare ? 340 : 240);
         clearWaveCells(wave);
         render();
         await delay(560);
@@ -2660,6 +2933,22 @@
       }
     }
 
+    function queueResourceBurst(x, y, flowerId, cascadeIndex = 0) {
+      const flower = flowers[flowerId] || flowers[0];
+      boardParticles.push({
+        type: "resource-pop",
+        text: flower[3],
+        x,
+        y,
+        dx: 36 + Math.random() * 56,
+        dy: 84 + Math.random() * 38,
+        size: 22,
+        fontSize: 20,
+        spin: (Math.random() - 0.5) * 60,
+        delay: cascadeIndex * 120 + Math.random() * 80
+      });
+    }
+
     function queueSuperBloomBoardEffects(cells, cascadeIndex = 0) {
       // Super Bloom FX is reserved for 5+ shapes and blooms from the matched cells themselves.
       const baseDelay = cascadeIndex * 120;
@@ -2721,6 +3010,7 @@
         fallAnimations.clear();
         harvestFlashCells.clear();
         superBloomCells.clear();
+        invalidSwapCells.clear();
         transmuteFlashCell = "";
         render();
       }, 1250);
@@ -2817,6 +3107,16 @@
       }, 950);
     }
 
+    function scheduleElementPulseClear() {
+      window.setTimeout(() => {
+        if (!elementPulseTargets.size) {
+          return;
+        }
+        elementPulseTargets.clear();
+        render();
+      }, 950);
+    }
+
     function scheduleHarvestFlashClear() {
       window.setTimeout(() => {
         if (!harvestFlashCells.size) {
@@ -2833,6 +3133,7 @@
       if (isResolving) {
         return;
       }
+      notePlayerInteraction();
       cancelSacrifice(false);
       if (!spendMoves(1, "Shuffle")) {
         return;
@@ -2844,12 +3145,14 @@
       ritualMessage = "The greenhouse table shuffles. One move is spent.";
       build();
       render();
+      scheduleIdleHint();
     }
 
     function renewBouquet() {
       if (isResolving) {
         return;
       }
+      clearIdleHint();
       selected = null;
       sacrificeState = { active: false, choice: null };
       harvestFlashCells.clear();
@@ -2859,10 +3162,12 @@
       transmuteFlashCell = "";
       moves = 16;
       counts = [0, 0, 0, 0, 0, 0];
+      hasMadeValidMove = false;
       firstBouquetComplete = false;
       ritualMessage = "A new First Bouquet is laid on the altar.";
       build();
       render();
+      scheduleIdleHint();
     }
 
     function sacrifice() {
@@ -2870,8 +3175,10 @@
       if (isResolving) {
         return;
       }
+      clearIdleHint();
       if (sacrificeState.active) {
         cancelSacrifice();
+        scheduleIdleHint();
         return;
       }
       if (!canSpendMoves(3)) {
@@ -3068,6 +3375,44 @@
         left: boardRect.left - supremeRect.left + ((cell[0] + 0.5) / BOARD_SIZE) * boardRect.width,
         top: boardRect.top - supremeRect.top + ((cell[1] + 0.5) / BOARD_SIZE) * boardRect.height
       };
+    }
+
+    function chargeSupreme(originCells = []) {
+      if (supremeChargeTimer && window.clearTimeout) {
+        window.clearTimeout(supremeChargeTimer);
+      }
+      supremeChargeActive = true;
+      render();
+      supremeChargeTimer = window.setTimeout(() => {
+        supremeChargeActive = false;
+        showSupreme(originCells);
+        render();
+      }, 340);
+    }
+
+    function demoSupremeBloom() {
+      if (isResolving) {
+        return;
+      }
+      cancelSacrifice(false);
+      clearIdleHint();
+      const [a, b] = legalMoves()[0] || [{ x: 3, y: 3 }, { x: 4, y: 3 }];
+      const originCells = dedupeCells([
+        [a.x, a.y],
+        [b.x, b.y],
+        [3, 3],
+        [4, 3],
+        [3, 4]
+      ]);
+      isResolving = true;
+      coins += 12;
+      ritualMessage = "<strong>Prototype review hook:</strong> Supreme Bloom gathers. +12 ✪";
+      chargeSupreme(originCells);
+      window.setTimeout(() => {
+        isResolving = false;
+        ritualMessage = "<strong>SUPREME BLOOM!</strong> Review hook complete. The board is ready.";
+        render();
+      }, 460);
     }
 
     function showSupreme(originCells = []) {
@@ -3311,6 +3656,10 @@
         closeChest();
       } else if (event.key === "Escape" && sacrificeState.active) {
         cancelSacrifice();
+      } else if (event.key.toLowerCase() === "b" && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        // Prototype review hook; remove or gate before production.
+        event.preventDefault();
+        demoSupremeBloom();
       }
     });
 
@@ -3322,6 +3671,7 @@
     }
     render();
     renderChest();
+    scheduleIdleHint();
   </script>
 </body>
 </html>
