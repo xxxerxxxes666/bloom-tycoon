@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="42%" r="68%">
+      <stop offset="0%" stop-color="#5a334f"/>
+      <stop offset="58%" stop-color="#211024"/>
+      <stop offset="100%" stop-color="#120814"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="24" y1="18" x2="102" y2="112" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff0c8"/>
+      <stop offset="0.45" stop-color="#d8a657"/>
+      <stop offset="1" stop-color="#8c6030"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="30" fill="url(#glow)"/>
+  <circle cx="64" cy="63" r="43" fill="none" stroke="#5a334f" stroke-width="3" opacity="0.9"/>
+  <path d="M64 24 C73 42 73 51 64 64 C55 51 55 42 64 24Z" fill="url(#gold)"/>
+  <path d="M64 104 C55 86 55 77 64 64 C73 77 73 86 64 104Z" fill="url(#gold)" opacity="0.92"/>
+  <path d="M24 64 C42 55 51 55 64 64 C51 73 42 73 24 64Z" fill="#9f2348"/>
+  <path d="M104 64 C86 73 77 73 64 64 C77 55 86 55 104 64Z" fill="#e8b6c9"/>
+  <path d="M36 36 C55 42 60 49 64 64 C49 60 42 55 36 36Z" fill="#6f3aa5"/>
+  <path d="M92 92 C73 86 68 79 64 64 C79 68 86 73 92 92Z" fill="#4f9f79"/>
+  <circle cx="64" cy="64" r="11" fill="#fff7ea"/>
+  <circle cx="64" cy="64" r="5" fill="#d8a657"/>
+</svg>

@@ -1,0 +1,3327 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bloom Tycoon</title>
+  <link rel="icon" href="data:,">
+  <style>
+    :root {
+      --ink: #d8c7aa;
+      --muted: #95836b;
+      --gold: #b9874d;
+      --bright-gold: #d7b16d;
+      --blood: #9b1d22;
+      --violet: #692d86;
+      --moss: #5f8338;
+      --panel: #090909ee;
+      --line: #4b3426;
+      --line-bright: #7b5634;
+      --black: #050404;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 50% 0, #150a09 0, #050404 44%, #000 100%),
+        repeating-linear-gradient(90deg, #080606 0 1px, #030202 1px 3px);
+      color: var(--ink);
+      font-family: Georgia, "Times New Roman", serif;
+      display: flex;
+      justify-content: center;
+      padding: 8px;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    button:focus-visible {
+      outline: 2px solid #d7b16d;
+      outline-offset: 3px;
+    }
+
+    .game {
+      width: min(1024px, calc(100vw - 16px));
+      min-height: 1510px;
+      background:
+        radial-gradient(circle at 72% 30%, #1c0707 0, #090707 34%, #030303 76%),
+        linear-gradient(90deg, #070605, #0c0908 50%, #050404);
+      border: 2px solid #3d2a1c;
+      box-shadow:
+        inset 0 0 90px #000,
+        inset 0 0 0 1px #000,
+        0 0 70px #000;
+      display: grid;
+      grid-template-columns: 290px 1fr;
+      grid-template-rows: auto 1fr auto;
+      gap: 12px;
+      padding: 10px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .game::before {
+      content: "";
+      position: absolute;
+      inset: 7px;
+      border: 1px solid #1f1712;
+      pointer-events: none;
+      box-shadow: inset 0 0 0 1px #000;
+    }
+
+    .game::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(45deg, #0000 0 48%, #4b342626 49% 51%, #0000 52%),
+        repeating-linear-gradient(90deg, #0000 0 17px, #6b4a2f10 18px, #0000 19px);
+      opacity: 0.7;
+    }
+
+    .frame,
+    .side-card,
+    .bottom-card,
+    .tile,
+    .btn,
+    .modal-panel,
+    .chest-access {
+      border: 1px solid #3d3026;
+      background:
+        linear-gradient(180deg, #12100e, #070605 58%, #030303),
+        radial-gradient(circle at 50% 0, #3b180e55 0, #0000 52%);
+      box-shadow:
+        inset 0 0 22px #000,
+        inset 0 0 0 1px #000,
+        0 0 0 1px #000;
+    }
+
+    .hero {
+      height: 285px;
+      background: url("../docs/references/user_diablo2_garden_reference.jpg") left top / 1210px auto;
+      border: 2px solid #3d3026;
+      filter: contrast(1.08) saturate(0.86);
+      position: relative;
+      box-shadow: inset 0 0 36px #000, 0 0 0 1px #000;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 8px;
+      border: 1px solid #6b4a2f80;
+      box-shadow: inset 0 0 30px #000;
+    }
+
+    .left {
+      grid-row: 1 / 3;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .side-card {
+      padding: 15px 15px 14px;
+      min-height: 112px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .side-card::before,
+    .bottom-card::before,
+    .chest-access::before,
+    .modal-panel::before {
+      content: "";
+      position: absolute;
+      inset: 6px;
+      border: 1px solid #6b4a2f55;
+      pointer-events: none;
+    }
+
+    .side-card::after,
+    .bottom-card::after,
+    .chest-access::after {
+      content: "✦";
+      position: absolute;
+      right: 12px;
+      top: 9px;
+      color: #6b4a2f;
+      font-size: 12px;
+      text-shadow: 0 0 8px #000;
+      pointer-events: none;
+    }
+
+    .side-card h3,
+    .bottom-card h3,
+    .chest-access h3 {
+      margin: 0;
+      color: #d0b27a;
+      text-transform: uppercase;
+      font-size: 16px;
+      letter-spacing: 1.2px;
+      text-shadow: 0 0 10px #3a120d, 0 2px 0 #000;
+    }
+
+    .panel-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 2px;
+    }
+
+    .panel-title h3 {
+      flex: 1;
+    }
+
+    .panel-gate {
+      width: 28px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+      color: #d0b27a;
+      border: 1px solid #5e412d;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 50% 35%, #23150f 0, #070504 72%);
+      box-shadow: inset 0 0 10px #000, 0 0 10px #000;
+      text-shadow: 0 0 8px #000;
+    }
+
+    .panel-icon {
+      width: 42px;
+      height: 42px;
+      object-fit: contain;
+      flex: 0 0 auto;
+      border: 1px solid #3d3026;
+      background: radial-gradient(circle at 50% 40%, #1a100d, #050404 68%);
+      padding: 3px;
+      box-shadow: inset 0 0 12px #000, 0 0 10px #000;
+      filter: drop-shadow(0 0 6px #000);
+    }
+
+    .small {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .order-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .order-icon {
+      width: 30px;
+      height: 30px;
+      object-fit: contain;
+      flex: 0 0 auto;
+      filter: drop-shadow(0 0 5px #000);
+    }
+
+    .order-copy {
+      line-height: 1.15;
+    }
+
+    .order-line.complete .order-copy {
+      color: #d0b27a;
+    }
+
+    .order-line.complete .order-icon {
+      filter: drop-shadow(0 0 7px #5f8338) drop-shadow(0 0 5px #000);
+    }
+
+    .order-line.complete .order-copy::after {
+      content: "  SEALED";
+      color: #709d45;
+      font-size: 11px;
+      letter-spacing: 0.8px;
+    }
+
+    .order-pulse {
+      animation: order-pulse 900ms ease-out both;
+    }
+
+    .xp {
+      height: 10px;
+      background: #050505;
+      border: 1px solid #4a3626;
+      margin: 11px 0;
+      position: relative;
+      box-shadow: inset 0 0 8px #000;
+    }
+
+    .xp-fill {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, #35104c, #8a2db0 62%, #d69d55);
+      width: 55%;
+      box-shadow: 0 0 8px #76289c;
+    }
+
+    .faction-fill {
+      width: 55%;
+    }
+
+    .main {
+      grid-column: 2;
+      min-width: 0;
+      position: relative;
+      z-index: 1;
+      padding: 6px 8px 0;
+    }
+
+    .sigil {
+      text-align: center;
+      letter-spacing: 12px;
+      color: #9b7653;
+      font-size: 15px;
+      margin-top: 8px;
+      text-shadow: 0 0 12px #000;
+    }
+
+    .title {
+      text-align: center;
+      font-size: 74px;
+      line-height: 1;
+      color: var(--gold);
+      text-shadow: 0 3px 0 #000, 0 0 22px #5b1b15, 0 0 1px #f1cf8f;
+      margin: 18px 0 24px;
+      font-weight: bold;
+    }
+
+    .objective {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 9px;
+      text-align: center;
+      border: 1px solid #3d3026;
+      padding: 13px 16px;
+      font-size: 23px;
+      color: #e4c89b;
+      background:
+        linear-gradient(90deg, #0000, #17100d 12%, #100b0a 88%, #0000),
+        radial-gradient(circle at 50% 50%, #2a0d0a88 0, #0000 64%);
+      box-shadow: inset 0 0 20px #000, 0 0 0 1px #000, 0 0 18px #140604;
+      position: relative;
+    }
+
+    .objective::before,
+    .objective::after {
+      content: "◆";
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #7b5634;
+      font-size: 13px;
+    }
+
+    .objective::before {
+      left: 12px;
+    }
+
+    .objective::after {
+      right: 12px;
+    }
+
+    .objective.complete {
+      border-color: #5d6f32;
+      box-shadow: inset 0 0 20px #000, 0 0 14px #2f4d19;
+    }
+
+    .objective.low-moves:not(.complete) {
+      border-color: #6b2723;
+      box-shadow: inset 0 0 20px #000, 0 0 14px #5a0f0f;
+    }
+
+    .objective-separator {
+      color: #6b4a2f;
+    }
+
+    .objective-target {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      color: #e4c89b;
+      white-space: nowrap;
+    }
+
+    .objective-text {
+      color: #d0b27a;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    .objective-icon {
+      width: 34px;
+      height: 34px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 6px #000);
+      border: 1px solid #3d3026;
+      background: #090707;
+      padding: 2px;
+    }
+
+    .progress {
+      height: 22px;
+      border: 1px solid #6b4a2f;
+      background: #070606;
+      margin: 17px 42px;
+      padding: 3px;
+      box-shadow: inset 0 0 12px #000, 0 0 0 1px #000;
+      position: relative;
+    }
+
+    .progress::before,
+    .progress::after {
+      content: "";
+      position: absolute;
+      top: -7px;
+      width: 18px;
+      height: 18px;
+      border: 1px solid #6b4a2f;
+      background: #050404;
+      transform: rotate(45deg);
+      box-shadow: inset 0 0 10px #000;
+    }
+
+    .progress::before {
+      left: -12px;
+    }
+
+    .progress::after {
+      right: -12px;
+    }
+
+    .bar {
+      height: 100%;
+      width: 60%;
+      position: relative;
+      background: linear-gradient(90deg, #29052f, #8921a8 58%, #c78348);
+      box-shadow: inset 0 0 8px #000, 0 0 10px #6f208d;
+    }
+
+    .bar::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        repeating-linear-gradient(90deg, #0000 0 17px, #f2d18a33 18px, #0000 19px),
+        linear-gradient(90deg, #ffffff22, #0000 36%);
+      mix-blend-mode: screen;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 6px;
+      margin: 18px auto 16px;
+      max-width: 650px;
+      padding: 10px;
+      border: 2px solid #33261f;
+      background:
+        radial-gradient(circle at 50% 50%, #130908 0, #050404 66%),
+        linear-gradient(180deg, #16100e, #050404);
+      box-shadow:
+        inset 0 0 28px #000,
+        0 0 0 1px #000,
+        0 0 22px #000;
+      position: relative;
+    }
+
+    .board::before {
+      content: "";
+      position: absolute;
+      inset: 5px;
+      border: 1px solid #6b4a2f55;
+      pointer-events: none;
+    }
+
+    .board::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(135deg, #b9874d 0 12px, #0000 12px) left top / 48px 48px no-repeat,
+        linear-gradient(225deg, #b9874d 0 12px, #0000 12px) right top / 48px 48px no-repeat,
+        linear-gradient(45deg, #b9874d 0 12px, #0000 12px) left bottom / 48px 48px no-repeat,
+        linear-gradient(315deg, #b9874d 0 12px, #0000 12px) right bottom / 48px 48px no-repeat;
+      opacity: 0.5;
+    }
+
+    .tile {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(circle at 50% 42%, #18110f 0, #060505 64%),
+        linear-gradient(180deg, #13100d, #050404);
+      border-color: #4a392c;
+      position: relative;
+      z-index: 1;
+      cursor: pointer;
+      overflow: hidden;
+      box-shadow:
+        inset 0 0 14px #000,
+        inset 0 0 0 1px #000,
+        0 0 0 1px #160f0c;
+    }
+
+    .tile::before {
+      content: "";
+      position: absolute;
+      inset: 5px;
+      border: 1px solid #6b4a2f35;
+      pointer-events: none;
+    }
+
+    .tile::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle, #ffffff16 0, #0000 52%),
+        linear-gradient(135deg, #0000 0 46%, #8b5f3433 49%, #0000 53%);
+      opacity: 0;
+      transition: opacity 120ms ease;
+    }
+
+    .tile:hover::after,
+    .tile.sel::after {
+      opacity: 1;
+    }
+
+    .tile img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 0 7px #000) drop-shadow(0 0 2px #2b0b08);
+      position: relative;
+      z-index: 1;
+    }
+
+    .icon-wrap {
+      --icon-color: #b9874d;
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+      color: var(--icon-color);
+    }
+
+    .tile .icon-wrap {
+      width: 94%;
+      height: 94%;
+      z-index: 1;
+    }
+
+    .element-icon-wrap {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto;
+    }
+
+    .sacrifice-icon-wrap {
+      width: 46px;
+      height: 46px;
+      margin: 0 auto 4px;
+    }
+
+    .slot-icon-wrap {
+      width: 42px;
+      height: 42px;
+    }
+
+    .gain-icon-wrap {
+      width: 21px;
+      height: 21px;
+    }
+
+    .objective-target .icon-wrap {
+      width: auto;
+      height: auto;
+    }
+
+    .fallback-glyph {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      font-size: clamp(24px, 6vw, 52px);
+      line-height: 1;
+      text-shadow: 0 0 12px #000, 0 0 18px currentColor, 0 2px 0 #000;
+      filter: saturate(1.2);
+    }
+
+    .icon-wrap.asset-missing {
+      border: 1px solid #4a392c;
+      background:
+        radial-gradient(circle at 50% 38%, #1d0d0a 0, #090606 58%, #030202 100%);
+      box-shadow: inset 0 0 16px #000, 0 0 12px #000;
+    }
+
+    .icon-wrap.asset-missing img {
+      display: none;
+    }
+
+    .icon-wrap.asset-missing .fallback-glyph {
+      display: inline-flex;
+    }
+
+    .static-fallback-glyph {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 42px;
+      height: 42px;
+      flex: 0 0 auto;
+      color: var(--bright-gold);
+      border: 1px solid #3d3026;
+      background: radial-gradient(circle at 50% 38%, #1d0d0a 0, #090606 58%, #030202 100%);
+      box-shadow: inset 0 0 16px #000, 0 0 12px #000;
+      text-shadow: 0 0 12px #000, 0 0 16px currentColor;
+      font-size: 24px;
+    }
+
+    .tile.sel {
+      outline: 2px solid #d4a05c;
+    }
+
+    .tile.legal-target {
+      outline: 2px solid #5f8338;
+      box-shadow:
+        inset 0 0 14px #000,
+        0 0 0 1px #160f0c,
+        0 0 16px #5f8338,
+        0 0 9px #b9874d;
+    }
+
+    .tile.legal-target::after {
+      opacity: 1;
+      background:
+        radial-gradient(circle, #d7b16d20 0, #0000 60%),
+        linear-gradient(135deg, #0000 0 45%, #5f833866 49%, #0000 55%);
+    }
+
+    .tile.sacrifice-target {
+      outline: 2px solid #9b1d22;
+      box-shadow:
+        inset 0 0 14px #000,
+        0 0 0 1px #160f0c,
+        0 0 18px #7a1010;
+    }
+
+    .tile.sacrifice-profitable {
+      outline-color: #d7b16d;
+      box-shadow:
+        inset 0 0 14px #000,
+        0 0 0 1px #160f0c,
+        0 0 24px #d7b16d,
+        0 0 18px #9b1d22,
+        0 0 32px #3a0505;
+      animation: profitable-pulse 1.2s ease-in-out infinite;
+    }
+
+    .tile.sacrifice-profitable::before {
+      border-color: #d7b16d88;
+      box-shadow: inset 0 0 12px #8f1414;
+    }
+
+    .tile.sacrifice-profitable::after {
+      opacity: 1;
+      background:
+        radial-gradient(circle, #d7b16d22 0, #0000 58%),
+        linear-gradient(135deg, #0000 0 43%, #ff2d1d66 49%, #0000 55%);
+    }
+
+    .tile.harvest-flash {
+      animation: harvest-flash 420ms ease-out;
+    }
+
+    .tile.super-bloom-hot {
+      z-index: 3;
+      animation: super-tile-throb 620ms ease-out both;
+    }
+
+    .tile.super-bloom-hot::before {
+      border-color: #ff3a2d99;
+      box-shadow:
+        inset 0 0 18px #9b1d22,
+        0 0 20px #8f0000,
+        0 0 34px #2c0000;
+    }
+
+    .tile.super-bloom-hot::after {
+      opacity: 1;
+      background:
+        radial-gradient(circle, #ff2d1d34 0, #9b1d2218 38%, #0000 68%),
+        repeating-conic-gradient(from 12deg, #0000 0 18deg, #ff2d1d44 19deg 21deg, #0000 22deg 40deg);
+    }
+
+    .tile.transmute-flash {
+      animation: transmute-flash 520ms ease-out;
+    }
+
+    .tile.fall-in {
+      animation: tile-fall 420ms cubic-bezier(0.12, 0.78, 0.18, 1) both;
+      animation-delay: var(--fall-delay, 0ms);
+    }
+
+    .harvest-mote {
+      position: absolute;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #f0c477 0, #9b1d22 45%, #0000 72%);
+      box-shadow: 0 0 10px #b9874d, 0 0 16px #641111;
+      pointer-events: none;
+      z-index: 3;
+      transform: translate(-50%, -50%);
+      animation: harvest-mote 520ms ease-out forwards;
+    }
+
+    .board-particle {
+      position: absolute;
+      left: var(--left);
+      top: var(--top);
+      width: var(--size, 12px);
+      height: var(--size, 12px);
+      pointer-events: none;
+      z-index: 4;
+      transform: translate(-50%, -50%);
+      animation-delay: var(--delay, 0ms);
+    }
+
+    .board-particle.coin-pop {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 6;
+      color: #ffdc82;
+      font-size: var(--font-size, 15px);
+      text-shadow: 0 0 8px #000, 0 0 10px #d8a657;
+      animation: coin-pop 880ms cubic-bezier(0.14, 0.8, 0.22, 1) forwards;
+    }
+
+    .board-particle.blood-pop,
+    .board-particle.blood-aura,
+    .board-particle.shard-pop,
+    .board-particle.slash-pop {
+      animation: cell-burst 980ms cubic-bezier(0.12, 0.82, 0.18, 1) forwards;
+    }
+
+    .board-particle.blood-aura {
+      z-index: 0;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle, #ff2d1d64 0, #9b1d2242 24%, #31000026 52%, #0000 73%),
+        repeating-conic-gradient(from 8deg, #0000 0 11deg, #b0000048 12deg 14deg, #0000 15deg 25deg);
+      filter: blur(0.4px);
+      box-shadow: 0 0 28px #8f0000, 0 0 45px #270000;
+    }
+
+    .board-particle.blood-pop {
+      z-index: 5;
+      border-radius: 58% 42% 66% 34%;
+      background: radial-gradient(circle at 38% 32%, #ff6b59 0, #9b1d22 42%, #240000 78%);
+      box-shadow: 0 0 12px #b00000, 0 0 22px #4a0000;
+    }
+
+    .board-particle.shard-pop {
+      z-index: 5;
+      clip-path: polygon(50% 0, 100% 58%, 54% 100%, 0 42%);
+      background: linear-gradient(135deg, #330000, #d3191e 48%, #f0b35f);
+      box-shadow: 0 0 12px #ff2d1d;
+    }
+
+    .board-particle.slash-pop {
+      z-index: 5;
+      width: calc(var(--size, 12px) * 4);
+      height: 3px;
+      background: linear-gradient(90deg, #0000, #fff0b8, #ff2d1d, #0000);
+      box-shadow: 0 0 14px #ff2d1d, 0 0 24px #700;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      justify-content: center;
+      margin: 8px 8px 10px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      color: #dbc5a2;
+      min-width: 250px;
+      max-width: 100%;
+      padding: 18px 32px;
+      font-size: 20px;
+      cursor: pointer;
+      background:
+        linear-gradient(180deg, #221326, #0a0609),
+        radial-gradient(circle at 50% 0, #6f208d66 0, #0000 50%);
+      border-color: #5e3c62;
+      position: relative;
+      text-shadow: 0 2px 0 #000, 0 0 10px #000;
+    }
+
+    .btn-icon {
+      width: 34px;
+      height: 34px;
+      object-fit: contain;
+      flex: 0 0 auto;
+      filter: drop-shadow(0 0 7px #000);
+    }
+
+    .btn span {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .btn::before,
+    .btn::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      width: 22px;
+      height: 22px;
+      border: 1px solid #6b4a2f;
+      transform: translateY(-50%) rotate(45deg);
+      background: #080606;
+      box-shadow: inset 0 0 10px #000;
+    }
+
+    .btn::before {
+      left: 12px;
+    }
+
+    .btn::after {
+      right: 12px;
+    }
+
+    .btn:hover,
+    .chest-access:hover,
+    .sacrifice-option:hover,
+    .sacrifice-cancel:hover,
+    .renew-btn:hover,
+    .modal-close:hover {
+      border-color: #8a633e;
+      box-shadow: inset 0 0 18px #000, 0 0 16px #6e221b66;
+    }
+
+    .btn.red {
+      background:
+        linear-gradient(180deg, #310908, #0a0303),
+        radial-gradient(circle at 50% 0, #9b1d2260 0, #0000 50%);
+      border-color: #6b2723;
+    }
+
+    .btn.armed {
+      border-color: #c96a5a;
+      box-shadow: inset 0 0 20px #000, 0 0 18px #7d1717;
+    }
+
+    .btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+      filter: grayscale(0.6);
+    }
+
+    .sacrifice-panel {
+      display: none;
+      max-width: 650px;
+      margin: 0 auto 14px;
+      padding: 14px 16px;
+      border: 1px solid #5d2b25;
+      background:
+        radial-gradient(circle at 50% 0, #3a0909 0, #0a0505 58%),
+        linear-gradient(180deg, #120807, #050404);
+      box-shadow: inset 0 0 22px #000, 0 0 18px #000;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .sacrifice-panel::before {
+      content: "";
+      position: absolute;
+      inset: 5px;
+      border: 1px solid #8a332a55;
+      pointer-events: none;
+    }
+
+    .sacrifice-panel.open {
+      display: block;
+    }
+
+    .sacrifice-copy {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+      color: #d8c7aa;
+      font-size: 14px;
+    }
+
+    .sacrifice-status {
+      color: #c96a5a;
+    }
+
+    .sacrifice-options {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .sacrifice-option {
+      min-width: 0;
+      min-height: 88px;
+      color: #d8c7aa;
+      cursor: pointer;
+      border: 1px solid #3d3026;
+      background: radial-gradient(circle at 50% 30%, #1a0b09 0, #050404 68%);
+      box-shadow: inset 0 0 14px #000;
+      padding: 7px 5px;
+      text-align: center;
+      position: relative;
+    }
+
+    .sacrifice-option img {
+      width: 42px;
+      height: 42px;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto 4px;
+      filter: drop-shadow(0 0 7px #000);
+    }
+
+    .sacrifice-option span {
+      display: block;
+      font-size: 11px;
+      line-height: 1.05;
+      color: #d0b27a;
+      text-transform: uppercase;
+    }
+
+    .sacrifice-hits {
+      margin-top: 5px;
+      color: #775f48 !important;
+      font-size: 10px !important;
+      letter-spacing: 0.5px;
+    }
+
+    .sacrifice-option.selected {
+      border-color: #c96a5a;
+      box-shadow: inset 0 0 14px #000, 0 0 14px #7d1717;
+    }
+
+    .sacrifice-option.profitable .sacrifice-hits {
+      color: #d7b16d !important;
+      text-shadow: 0 0 8px #7d1717;
+    }
+
+    .sacrifice-cancel {
+      color: #b9a17d;
+      cursor: pointer;
+      border: 1px solid #3d3026;
+      background: #080606;
+      padding: 6px 10px;
+    }
+
+    .ritual-log {
+      max-width: 650px;
+      min-height: 36px;
+      margin: 0 auto 14px;
+      padding: 8px 16px;
+      border-top: 1px solid #30221a;
+      border-bottom: 1px solid #30221a;
+      color: #b9a17d;
+      text-align: center;
+      font-size: 14px;
+      background: linear-gradient(90deg, #0000, #090706, #0000);
+      text-shadow: 0 2px 0 #000;
+    }
+
+    .ritual-log strong {
+      color: #d0b27a;
+      font-weight: normal;
+    }
+
+    .gain-list {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      flex-wrap: wrap;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
+    .gain-token {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      color: #d0b27a;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .gain-token img {
+      width: 21px;
+      height: 21px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 5px #000);
+    }
+
+    .renew-btn {
+      display: none;
+      margin: 0 auto 14px;
+      color: #d8c7aa;
+      cursor: pointer;
+      border: 1px solid #3d3026;
+      background: linear-gradient(180deg, #14100e, #060504);
+      padding: 8px 18px;
+      box-shadow: inset 0 0 14px #000;
+    }
+
+    .renew-btn.visible {
+      display: block;
+    }
+
+    .bottom {
+      grid-column: 1 / 3;
+      display: grid;
+      grid-template-columns: 1fr 280px;
+      gap: 12px;
+      align-items: stretch;
+      position: relative;
+      z-index: 1;
+    }
+
+    .bottom-card {
+      padding: 18px 18px 14px;
+      min-width: 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .elements-heading {
+      text-align: center;
+      letter-spacing: 13px;
+      color: var(--gold);
+      margin-bottom: 12px;
+      text-shadow: 0 0 10px #000;
+      text-transform: uppercase;
+    }
+
+    .elements {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 10px;
+      text-align: center;
+    }
+
+    .element {
+      min-width: 0;
+      padding: 0 6px 2px;
+      border-right: 1px solid #3d302666;
+    }
+
+    .element:last-child {
+      border-right: 0;
+    }
+
+    .element img {
+      width: 58px;
+      height: 58px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 8px #000);
+    }
+
+    .element b {
+      display: block;
+      color: #d0b27a;
+      font-size: 14px;
+      text-transform: uppercase;
+      text-shadow: 0 0 8px #000;
+    }
+
+    .element-count {
+      color: #b24a4a;
+      font-size: 19px;
+      text-shadow: 0 0 8px #300;
+    }
+
+    .element .small {
+      display: block;
+      min-height: 42px;
+      line-height: 1.15;
+    }
+
+    .coins {
+      text-align: center;
+      font-size: 34px;
+      color: #d3b06f;
+      margin: 14px auto 0;
+      width: min(430px, 90%);
+      padding: 7px 14px;
+      border: 1px solid #3d3026;
+      background: linear-gradient(90deg, #0000, #090807, #0000);
+      box-shadow: inset 0 0 14px #000;
+      text-shadow: 0 2px 0 #000;
+    }
+
+    .chest-access {
+      appearance: none;
+      width: 100%;
+      min-width: 0;
+      min-height: 100%;
+      color: var(--ink);
+      padding: 22px 14px 16px;
+      text-align: center;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .chest-kicker {
+      display: block;
+      margin-top: 4px;
+      color: #b9a17d;
+    }
+
+    .chest-access > .small {
+      display: block;
+    }
+
+    .chest {
+      display: block;
+      width: 145px;
+      height: 90px;
+      margin: 22px auto 14px;
+      background:
+        radial-gradient(circle at 50% 22%, #6a211d55 0, #0000 34%),
+        linear-gradient(180deg, #2b120f, #100606);
+      border: 2px solid #8a633e;
+      border-radius: 8px;
+      position: relative;
+      box-shadow: inset 0 0 24px #000, 0 0 20px #000, 0 0 14px #4f1111;
+    }
+
+    .chest::before {
+      content: "";
+      position: absolute;
+      left: 38px;
+      right: 38px;
+      top: -24px;
+      height: 32px;
+      border: 6px solid #6b4a2f;
+      border-bottom: 0;
+      border-radius: 24px 24px 0 0;
+    }
+
+    .chest span {
+      position: absolute;
+      left: 24px;
+      right: 24px;
+      top: 24px;
+      background: linear-gradient(90deg, #5a3821, #d2a25a, #5a3821);
+      height: 10px;
+    }
+
+    .chest::after {
+      content: "✦";
+      position: absolute;
+      left: 58px;
+      top: 39px;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #d2a25a;
+      font-size: 15px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 50% 38%, #8f1818 0, #3b0606 68%);
+      border: 1px solid #d2a25a;
+      text-shadow: 0 0 12px #000;
+      box-shadow: inset 0 0 8px #000, 0 0 14px #4f1111;
+    }
+
+    .supreme {
+      pointer-events: none;
+      display: none;
+      position: absolute;
+      inset: 0;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background:
+        radial-gradient(circle at 52% 55%, #980000dd 0, #520000bb 12%, #25000078 23%, #0000 43%),
+        radial-gradient(circle at 50% 64%, #ff2d1d66 0, #0000 26%),
+        repeating-conic-gradient(from 13deg at 50% 60%, #0000 0 8deg, #8f000038 9deg 10deg, #0000 11deg 24deg);
+      z-index: 8;
+      overflow: hidden;
+    }
+
+    .supreme.on {
+      display: flex;
+      animation: supreme-fade 2.05s ease-out forwards;
+    }
+
+    .supreme::before,
+    .supreme::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 59%;
+      width: min(640px, 110%);
+      height: 3px;
+      background: linear-gradient(90deg, #0000, #ff2d1d, #ffb15c, #ff2d1d, #0000);
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 22px #f00, 0 0 50px #a00000;
+    }
+
+    .supreme::after {
+      transform: translate(-50%, -50%) rotate(90deg);
+      width: min(500px, 90%);
+    }
+
+    .burst {
+      position: relative;
+      z-index: 2;
+      color: #e0714e;
+      text-shadow: 0 0 18px #f00, 0 0 4px #000, 0 3px 0 #210000;
+      letter-spacing: 1px;
+      transform: translateY(10px);
+    }
+
+    .burst::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 54%;
+      width: 230px;
+      height: 230px;
+      border: 1px solid #d7b16d66;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle, #0000 0 34%, #9b1d2244 35% 37%, #0000 39%),
+        repeating-conic-gradient(from -8deg, #0000 0 13deg, #ff2d1d55 14deg 16deg, #0000 17deg 29deg);
+      box-shadow: inset 0 0 35px #2b0000, 0 0 28px #8f1111;
+      transform: translate(-50%, -50%) scale(0.6);
+      z-index: -1;
+    }
+
+    .supreme.on .burst {
+      animation: jackpot-pop 900ms cubic-bezier(0.16, 0.92, 0.22, 1) both;
+    }
+
+    .supreme.on .burst::before {
+      animation: blood-sigil-pop 1.35s ease-out both;
+    }
+
+    .burst-title {
+      display: block;
+      font-size: 42px;
+      line-height: 0.95;
+    }
+
+    .burst-reward {
+      display: block;
+      margin-top: 12px;
+      font-size: 28px;
+      color: #d7b96f;
+      text-shadow: 0 0 14px #ff2d1d, 0 2px 0 #000;
+    }
+
+    .supreme-particles {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .particle {
+      position: absolute;
+      left: 50%;
+      top: 61%;
+      width: var(--size);
+      height: var(--size);
+      opacity: 0;
+      transform: translate(-50%, -50%) rotate(var(--spin));
+      animation: particle-flight 1.5s cubic-bezier(0.12, 0.76, 0.2, 1) forwards;
+      animation-delay: var(--delay);
+    }
+
+    .particle.petal {
+      border: 1px solid #ff6b59;
+      border-radius: 90% 10% 90% 10%;
+      background: linear-gradient(135deg, #3b0000, #c51618 52%, #ff816b);
+      box-shadow: 0 0 10px #e11a16;
+    }
+
+    .particle.shard {
+      clip-path: polygon(50% 0, 100% 58%, 54% 100%, 0 42%);
+      background: linear-gradient(135deg, #3b0000, #e01d1d 45%, #ffb05c);
+      box-shadow: 0 0 12px #ff2d1d;
+    }
+
+    .particle.coin {
+      border: 1px solid #ffd47e;
+      border-radius: 50%;
+      background: radial-gradient(circle, #ffe0a0 0, #b9874d 58%, #4a2d12 100%);
+      box-shadow: 0 0 10px #d8a657;
+    }
+
+    .particle.spark {
+      height: 2px;
+      background: linear-gradient(90deg, #0000, #ffcc7c, #ff2d1d, #0000);
+      box-shadow: 0 0 8px #ff2d1d;
+    }
+
+    .particle.slash {
+      width: calc(var(--size) * 4);
+      height: 3px;
+      background: linear-gradient(90deg, #0000, #fff0b8, #ff2d1d, #0000);
+      box-shadow: 0 0 16px #ff2d1d, 0 0 28px #700;
+    }
+
+    .particle.thorn {
+      clip-path: polygon(50% 0, 68% 38%, 100% 50%, 68% 62%, 50% 100%, 32% 62%, 0 50%, 32% 38%);
+      background: linear-gradient(135deg, #140000, #9b1d22 48%, #d7b16d);
+      box-shadow: 0 0 10px #9b1d22;
+    }
+
+    .particle.blood {
+      border-radius: 58% 42% 64% 36%;
+      background: radial-gradient(circle at 40% 35%, #ff6b59 0, #a90c12 38%, #310000 70%);
+      box-shadow: 0 0 13px #b00000, 0 0 21px #4a0000;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background:
+        radial-gradient(circle at 50% 48%, #240807b8 0, #050404f2 58%, #000 100%);
+    }
+
+    .modal.open {
+      display: flex;
+    }
+
+    .modal-panel {
+      width: min(620px, 96vw);
+      max-height: min(760px, 94vh);
+      overflow: auto;
+      padding: 18px;
+      position: relative;
+      background:
+        linear-gradient(180deg, #111, #050505),
+        radial-gradient(circle at 50% 0, #3b100d, #0000 50%);
+      border-color: #654328;
+      box-shadow: inset 0 0 28px #000, 0 0 80px #000;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .modal-title {
+      margin: 0;
+      color: #d0b27a;
+      font-size: 24px;
+      text-transform: uppercase;
+      letter-spacing: 1.6px;
+    }
+
+    .modal-note {
+      margin: 4px 0 0;
+      color: #8f775f;
+      font-size: 13px;
+      letter-spacing: 0.3px;
+    }
+
+    .modal-close {
+      width: 38px;
+      height: 38px;
+      color: var(--ink);
+      cursor: pointer;
+      border: 1px solid #3d3026;
+      background: linear-gradient(180deg, #1b1218, #080606);
+      box-shadow: inset 0 0 14px #000;
+    }
+
+    .slot-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .slot {
+      min-height: 108px;
+      border: 1px solid #3d3026;
+      background:
+        radial-gradient(circle at 50% 20%, #2b0d0b 0, #090707 58%),
+        linear-gradient(180deg, #111, #050505);
+      box-shadow: inset 0 0 18px #000;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .slot::after {
+      content: "";
+      position: absolute;
+      inset: 5px;
+      border: 1px solid #6b4a2f33;
+      pointer-events: none;
+    }
+
+    .slot[data-rarity="rare"],
+    .slot[data-rarity="order"] {
+      border-color: #8a633e;
+      box-shadow: inset 0 0 18px #000, 0 0 12px #6f481f55;
+    }
+
+    .slot[data-rarity="contraband"],
+    .slot[data-rarity="faction"] {
+      border-color: #692d86;
+      box-shadow: inset 0 0 18px #000, 0 0 12px #692d8655;
+    }
+
+    .slot[data-rarity="uncommon"] {
+      border-color: #4b6332;
+    }
+
+    .slot-item-top {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+
+    .slot-icon {
+      width: 42px;
+      height: 42px;
+      object-fit: contain;
+      flex: 0 0 auto;
+      border: 1px solid #3d3026;
+      background: #080606;
+      padding: 3px;
+      filter: drop-shadow(0 0 6px #000);
+    }
+
+    .slot.empty {
+      border-style: dashed;
+      color: #5f5043;
+      justify-content: center;
+      text-align: center;
+      min-height: 108px;
+    }
+
+    .slot-name {
+      color: #d0b27a;
+      font-size: 14px;
+      line-height: 1.15;
+    }
+
+    .slot-meta {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 6px;
+    }
+
+    .slot-rarity {
+      color: #d7b16d;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      font-size: 10px;
+    }
+
+    .slot-tags {
+      color: #7b5634;
+      font-size: 11px;
+      margin-top: 5px;
+    }
+
+    .slot-qty {
+      color: #b24a4a;
+      font-size: 18px;
+      text-align: right;
+    }
+
+    @keyframes supreme-fade {
+      0% {
+        opacity: 0;
+        transform: scale(0.88);
+      }
+      12% {
+        opacity: 1;
+        transform: scale(1.03);
+      }
+      76% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+        transform: scale(1.12);
+      }
+    }
+
+    @keyframes particle-flight {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.35) rotate(var(--spin));
+      }
+      16% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+        transform:
+          translate(calc(-50% + var(--dx)), calc(-50% + var(--dy)))
+          scale(var(--scale))
+          rotate(calc(var(--spin) + 260deg));
+      }
+    }
+
+    @keyframes jackpot-pop {
+      0% {
+        opacity: 0;
+        transform: translateY(24px) scale(0.72);
+        filter: blur(2px);
+      }
+      30% {
+        opacity: 1;
+        transform: translateY(0) scale(1.12);
+        filter: blur(0);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(10px) scale(1);
+      }
+    }
+
+    @keyframes tile-fall {
+      0% {
+        opacity: 0.35;
+        transform: translateY(var(--fall-y, -120%)) scale(0.96);
+        filter: brightness(1.18);
+      }
+      70% {
+        opacity: 1;
+        transform: translateY(4px) scale(1.01);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: brightness(1);
+      }
+    }
+
+    @keyframes coin-pop {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.45);
+      }
+      18% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+        transform:
+          translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, -70px)))
+          scale(1.25)
+          rotate(var(--spin, 0deg));
+      }
+    }
+
+    @keyframes cell-burst {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.35) rotate(var(--spin, 0deg));
+      }
+      16% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+        transform:
+          translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, 0px)))
+          scale(var(--scale, 1.2))
+          rotate(calc(var(--spin, 0deg) + 260deg));
+      }
+    }
+
+    @keyframes blood-sigil-pop {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.35) rotate(-22deg);
+      }
+      32% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.06) rotate(5deg);
+      }
+      100% {
+        opacity: 0.55;
+        transform: translate(-50%, -50%) scale(1.18) rotate(18deg);
+      }
+    }
+
+    @keyframes harvest-flash {
+      0% {
+        box-shadow: inset 0 0 14px #000, 0 0 0 #0000;
+      }
+      35% {
+        box-shadow: inset 0 0 16px #000, 0 0 18px #9b1d22, 0 0 8px #d7b16d;
+        transform: scale(1.03);
+      }
+      100% {
+        box-shadow: inset 0 0 14px #000, 0 0 0 #0000;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes order-pulse {
+      0% {
+        color: #d8c7aa;
+        text-shadow: 0 0 0 #0000;
+      }
+      28% {
+        color: #f1cf8f;
+        text-shadow: 0 0 12px #9b1d22, 0 0 8px #d7b16d;
+      }
+      100% {
+        color: #d0b27a;
+        text-shadow: 0 0 0 #0000;
+      }
+    }
+
+    @keyframes super-tile-throb {
+      0% {
+        transform: scale(0.96);
+        filter: saturate(1);
+        box-shadow: inset 0 0 14px #000, 0 0 0 #0000;
+      }
+      34% {
+        transform: scale(1.07);
+        filter: saturate(1.65) brightness(1.08);
+        box-shadow:
+          inset 0 0 18px #000,
+          0 0 24px #ff2d1d,
+          0 0 38px #650000;
+      }
+      100% {
+        transform: scale(1);
+        filter: saturate(1.12);
+        box-shadow:
+          inset 0 0 14px #000,
+          0 0 12px #8f1111;
+      }
+    }
+
+    @keyframes harvest-mote {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -30%) scale(0.4);
+      }
+      30% {
+        opacity: 0.9;
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -120%) scale(1.2);
+      }
+    }
+
+    @keyframes transmute-flash {
+      0% {
+        filter: saturate(1);
+      }
+      35% {
+        box-shadow: inset 0 0 18px #000, 0 0 22px #9b1d22, 0 0 14px #6f208d;
+        transform: scale(1.05);
+        filter: saturate(1.4);
+      }
+      100% {
+        box-shadow: inset 0 0 14px #000;
+        transform: scale(1);
+        filter: saturate(1);
+      }
+    }
+
+    @keyframes profitable-pulse {
+      0%,
+      100% {
+        filter: saturate(1);
+      }
+      50% {
+        filter: saturate(1.3) brightness(1.08);
+      }
+    }
+
+    @media (max-width: 760px) {
+      .game {
+        grid-template-columns: 1fr;
+      }
+
+      .left {
+        grid-row: auto;
+      }
+
+      .main {
+        grid-column: 1;
+      }
+
+      .bottom {
+        grid-column: 1;
+        grid-template-columns: 1fr;
+      }
+
+      .title {
+        font-size: 44px;
+      }
+
+      .hero {
+        height: 150px;
+      }
+
+      .board {
+        max-width: 96vw;
+      }
+
+      .btn {
+        min-width: min(250px, 100%);
+        padding: 12px 18px;
+      }
+
+      .elements {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .sacrifice-options {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .slot-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="game">
+    <aside class="left" aria-label="Tycoon progress">
+      <div class="hero frame" aria-hidden="true"></div>
+
+      <!-- Left panel progression placeholders stay separate from the chest system. -->
+      <div class="side-card">
+        <div class="panel-title">
+          <img class="panel-icon" src="../assets/tiles/96/withered_sun_medallion.png" alt="">
+          <h3>Greenhouse</h3>
+          <span class="panel-gate" aria-hidden="true">›</span>
+        </div>
+        <div class="small" id="greenhouseLevel">Level 4</div>
+        <div class="xp"><span class="xp-fill" id="greenhouseXpFill"></span></div>
+        <div class="small" id="greenhouseXpText">1,240 / 2,000 XP</div>
+      </div>
+
+      <div class="side-card">
+        <div class="panel-title">
+          <img class="panel-icon" src="../assets/tiles/96/purple_nightshade_bloom.png" alt="">
+          <h3>Apothecary</h3>
+          <span class="panel-gate" aria-hidden="true">›</span>
+        </div>
+        <div class="small" id="apothecaryLevel">Level 2</div>
+        <div class="xp"><span class="xp-fill" id="apothecaryXpFill"></span></div>
+        <div class="small" id="apothecaryXpText">420 / 1,000 XP</div>
+      </div>
+
+      <div class="side-card">
+        <div class="panel-title">
+          <img class="panel-icon" src="../assets/tiles/96/bone_white_thorn_star.png" alt="">
+          <h3>Faction: Sub Rosa</h3>
+        </div>
+        <div class="small">Level 3 · Trusted</div>
+        <div class="xp"><span class="xp-fill faction-fill"></span></div>
+        <div class="small">Next Rank: +10% Rare Order Value</div>
+      </div>
+
+      <div class="side-card">
+        <div class="panel-title">
+          <img class="panel-icon" src="../assets/tiles/96/crimson_rose_rune.png" alt="">
+          <h3>Active Orders</h3>
+        </div>
+        <div class="small order-line" id="orderThorn">
+          <img class="order-icon" src="../assets/tiles/96/crimson_rose_rune.png" alt="Thorn Rose">
+          <span class="order-copy">Velvet Funeral: <span id="o1">0/8</span> Thorn Rose</span>
+        </div>
+        <div class="small order-line" id="orderBone">
+          <img class="order-icon" src="../assets/tiles/96/bone_white_thorn_star.png" alt="Bone Star">
+          <span class="order-copy">Saint's Offering: <span id="o2">0/6</span> Bone Star</span>
+        </div>
+      </div>
+
+      <div class="side-card">
+        <div class="panel-title">
+          <img class="panel-icon" src="../assets/tiles/96/amber_resin_seed.png" alt="">
+          <h3>Black Market</h3>
+          <span class="panel-gate" aria-hidden="true">›</span>
+        </div>
+        <div class="small">Rare bulbs & contraband</div>
+      </div>
+    </aside>
+
+    <section class="main" aria-label="Match board">
+      <div class="sigil">SOLVE ET COAGULA</div>
+      <h1 class="title">Bloom Tycoon</h1>
+      <div class="objective" id="objective">
+        <span class="objective-text">Collect Thorn Rose 0/8 and Bone Star 0/6</span>
+        <span class="objective-separator">·</span>
+        <span>Moves 16</span>
+      </div>
+      <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
+      <div class="board" id="board"></div>
+      <div class="controls">
+        <button class="btn" id="shuffleBtn" type="button">
+          <img class="btn-icon" src="../assets/tiles/96/bone_white_thorn_star.png" alt="">
+          <span>Shuffle (-1 move)</span>
+        </button>
+        <button class="btn red" id="sacrificeBtn" type="button">
+          <img class="btn-icon" src="../assets/tiles/96/bloodroot_ruby_shard.png" alt="">
+          <span>Sacrifice (-3 moves)</span>
+        </button>
+      </div>
+      <div class="sacrifice-panel" id="sacrificePanel" aria-live="polite">
+        <div class="sacrifice-copy">
+          <span id="sacrificeStatus">Choose an offering element, then replace one glowing tile. Costs 3 moves. Strong offerings may trigger Supreme Bloom.</span>
+          <button class="sacrifice-cancel" id="sacrificeCancel" type="button">Cancel</button>
+        </div>
+        <div class="sacrifice-options" id="sacrificeOptions"></div>
+      </div>
+      <div class="ritual-log" id="ritualLog">Match botanical elements to feed the First Bouquet.</div>
+      <button class="renew-btn" id="renewBtn" type="button">Renew Bouquet</button>
+      <div class="supreme" id="supreme" aria-live="polite">
+        <div class="supreme-particles" id="supremeParticles"></div>
+        <div class="burst">
+          <span class="burst-title" aria-label="SUPREME BLOOM!">SUPREME <br>BLOOM!</span>
+          <span class="burst-reward">+12 ✪</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="bottom" aria-label="Resources and storage">
+      <div class="bottom-card">
+        <div class="elements-heading">ELEMENTS</div>
+        <div class="elements" id="elements"></div>
+        <div class="coins">✪ <span id="coins">2450</span> <span class="small">+18% bonus</span></div>
+      </div>
+
+      <button class="chest-access" id="chestTrigger" type="button" aria-haspopup="dialog" aria-controls="chestModal" aria-expanded="false">
+        <h3>Chest Storage</h3>
+        <span class="chest-kicker" id="chestSummary">8 / 12 Slots</span>
+        <span class="chest" aria-hidden="true"><span></span></span>
+        <span class="small">Open storage</span>
+      </button>
+    </section>
+  </main>
+
+  <div class="modal" id="chestModal" role="dialog" aria-modal="true" aria-labelledby="chestModalTitle" aria-hidden="true">
+    <div class="modal-panel">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title" id="chestModalTitle">Chest Storage</h2>
+          <div class="small" id="chestModalSummary">8 / 12 Slots</div>
+          <p class="modal-note">Sealed botanical storage for order rewards and contraband.</p>
+        </div>
+        <button class="modal-close" id="closeChest" type="button" aria-label="Close chest storage">×</button>
+      </div>
+      <div class="slot-grid" id="slotGrid"></div>
+    </div>
+  </div>
+
+  <script>
+    const flowers = [
+      ["Sol Rot", "../assets/tiles/96/withered_sun_medallion.png", "Withered sun brings golden growth.", "☉", "#d8a657"],
+      ["Bone Star", "../assets/tiles/96/bone_white_thorn_star.png", "Celestial thorns pierce the earth.", "✦", "#e5dbc8"],
+      ["Nightshade", "../assets/tiles/96/purple_nightshade_bloom.png", "Toxic beauty. Handle with care.", "✹", "#7d49b2"],
+      ["Bloodroot", "../assets/tiles/96/bloodroot_ruby_shard.png", "A thirst for life... and more.", "♦", "#c02036"],
+      ["Amber Seed", "../assets/tiles/96/amber_resin_seed.png", "Ancient resin holds essence.", "◆", "#c78348"],
+      ["Thorn Rose", "../assets/tiles/96/crimson_rose_rune.png", "Love that blooms in darkness.", "✧", "#b01857"]
+    ];
+
+    const SAVE_KEY = "bloomTycoonPlayableStateV1";
+    const BOARD_SIZE = 8;
+    const MAX_BOARD_BUILD_ATTEMPTS = 650;
+    const baseElementCounts = [42, 37, 28, 33, 24, 31];
+    const chestState = {
+      capacity: 12,
+      items: [
+        { id: "velvet-reliquary", name: "Velvet Reliquary", qty: 1, rarity: "Rare", source: "Order reward", flowerId: 5, tags: ["order", "container"] },
+        { id: "bloodroot-cutting", name: "Bloodroot Cutting", qty: 2, rarity: "Uncommon", source: "Match drop", flowerId: 3, tags: ["botanical", "bloodroot"] },
+        { id: "ambered-bulb", name: "Ambered Bulb", qty: 1, rarity: "Rare", source: "Black Market", flowerId: 4, tags: ["bulb", "amber"] },
+        { id: "bone-star-thread", name: "Bone Star Thread", qty: 3, rarity: "Common", source: "Saint's Offering", flowerId: 1, tags: ["botanical", "bone-star"] },
+        { id: "nightshade-vial", name: "Nightshade Vial", qty: 1, rarity: "Uncommon", source: "Apothecary", flowerId: 2, tags: ["vial", "nightshade"] },
+        { id: "thorn-rose-wax", name: "Thorn Rose Wax", qty: 2, rarity: "Common", source: "Velvet Funeral", flowerId: 5, tags: ["botanical", "thorn-rose"] },
+        { id: "sub-rosa-seal", name: "Sub Rosa Seal", qty: 1, rarity: "Faction", source: "Client favor", flowerId: 0, tags: ["faction", "key"] },
+        { id: "black-market-scrip", name: "Black Market Scrip", qty: 4, rarity: "Contraband", source: "Market", flowerId: 4, tags: ["currency", "contraband"] }
+      ]
+    };
+
+    let board = [];
+    let selected = null;
+    let moves = 16;
+    let coins = 2450;
+    let counts = [0, 0, 0, 0, 0, 0];
+    let sacrificeState = { active: false, choice: null };
+    let ritualMessage = "Match botanical elements to feed the First Bouquet.";
+    let harvestFlashCells = new Set();
+    let transmuteFlashCell = "";
+    let fallAnimations = new Map();
+    let boardParticles = [];
+    let fallClearTimer = null;
+    let boardParticleClearTimer = null;
+    let superBloomCells = new Set();
+    let orderPulseTargets = new Set();
+    let isResolving = false;
+    let firstBouquetComplete = false;
+    let greenhouse = { level: 4, xp: 1240, next: 2000 };
+    let apothecary = { level: 2, xp: 420, next: 1000 };
+
+    const $ = (id) => document.getElementById(id);
+    const rand = () => Math.floor(Math.random() * flowers.length);
+
+    function iconMarkup(flowerId, className, alt = "", wrapClass = "") {
+      const flower = flowers[flowerId] || flowers[0];
+      return `
+        <span class="icon-wrap ${wrapClass}" style="--icon-color: ${flower[4]}" data-fallback-wrap>
+          <span class="fallback-glyph" aria-hidden="true">${flower[3]}</span>
+          <img class="${className}" src="${flower[1]}" alt="${alt}" data-fallback-img>
+        </span>
+      `;
+    }
+
+    function applyImageFallbacks(root = document) {
+      if (!root || !root.querySelectorAll) {
+        return;
+      }
+      root.querySelectorAll("img").forEach((img) => {
+        if (img.dataset.fallbackReady) {
+          return;
+        }
+        img.dataset.fallbackReady = "true";
+        const markMissing = () => markMissingImage(img);
+        img.addEventListener("error", markMissing, { once: true });
+        if (img.complete && img.naturalWidth === 0) {
+          markMissing();
+        }
+      });
+    }
+
+    function markMissingImage(img) {
+      const wrap = img.closest ? img.closest("[data-fallback-wrap]") : null;
+      if (wrap) {
+        wrap.classList.add("asset-missing");
+        return;
+      }
+      const flower = flowerForImage(img);
+      const glyph = document.createElement("span");
+      glyph.className = "static-fallback-glyph";
+      glyph.style.color = flower[4];
+      glyph.textContent = flower[3];
+      glyph.setAttribute("aria-hidden", "true");
+      img.style.display = "none";
+      if (img.parentNode && !img.nextElementSibling?.classList?.contains("static-fallback-glyph")) {
+        img.parentNode.insertBefore(glyph, img.nextSibling);
+      }
+    }
+
+    function flowerForImage(img) {
+      const source = img.getAttribute("src") || "";
+      const alt = img.getAttribute("alt") || "";
+      return flowers.find((flower) => source.includes(flower[1].split("/").pop()) || alt === flower[0]) || flowers[0];
+    }
+
+    function targetMarkup(flowerId, current, needed) {
+      const flower = flowers[flowerId];
+      const displayCount = Math.min(current, needed);
+      const pulseClass = orderPulseTargets.has(flowerId) ? "order-pulse" : "";
+      return `
+        <span class="objective-target ${pulseClass}">
+          ${iconMarkup(flowerId, "objective-icon", flower[0])}
+          ${flower[0]} ${displayCount}/${needed}
+        </span>
+      `;
+    }
+
+    function build() {
+      // Board generation follows the match-3 contract: no free starting matches,
+      // but at least one adjacent swap must create a harvest.
+      for (let attempts = 0; attempts < MAX_BOARD_BUILD_ATTEMPTS; attempts += 1) {
+        buildOpeningBoard();
+        if (!matches().length && hasLegalMoves()) {
+          return;
+        }
+      }
+
+      buildOpeningBoard();
+      if (!seedGuaranteedLegalMove()) {
+        buildDeterministicLegalBoard();
+      }
+    }
+
+    function buildOpeningBoard() {
+      board = [];
+      for (let y = 0; y < BOARD_SIZE; y += 1) {
+        const row = [];
+        for (let x = 0; x < BOARD_SIZE; x += 1) {
+          row.push(pickOpeningTile(x, y, row));
+        }
+        board.push(row);
+      }
+    }
+
+    function boardSnapshot() {
+      return board.map((row) => row.slice());
+    }
+
+    function restoreBoard(snapshot) {
+      board = snapshot.map((row) => row.slice());
+    }
+
+    function seedGuaranteedLegalMove() {
+      const original = boardSnapshot();
+      for (let offset = 0; offset < flowers.length; offset += 1) {
+        for (let y = 0; y <= BOARD_SIZE - 4; y += 1) {
+          for (let x = 0; x <= BOARD_SIZE - 4; x += 1) {
+            restoreBoard(original);
+            writeLegalMovePatch(x, y, offset);
+            if (!matches().length && hasLegalMoves()) {
+              return true;
+            }
+          }
+        }
+      }
+      restoreBoard(original);
+      return false;
+    }
+
+    function writeLegalMovePatch(originX, originY, offset) {
+      const pattern = [
+        [0, 0, 1, 2],
+        [2, 1, 0, 3],
+        [3, 4, 2, 1],
+        [1, 2, 3, 4]
+      ];
+      pattern.forEach((row, dy) => {
+        row.forEach((value, dx) => {
+          board[originY + dy][originX + dx] = (value + offset) % flowers.length;
+        });
+      });
+    }
+
+    function buildDeterministicLegalBoard() {
+      board = [];
+      for (let y = 0; y < BOARD_SIZE; y += 1) {
+        const row = [];
+        for (let x = 0; x < BOARD_SIZE; x += 1) {
+          row.push((x + y * 2) % flowers.length);
+        }
+        board.push(row);
+      }
+      writeLegalMovePatch(0, 0, 0);
+    }
+
+    function pickOpeningTile(x, y, row) {
+      // Opening boards avoid pre-existing triples so player actions create the first harvest.
+      let candidate = rand();
+      let guard = 0;
+      while (wouldCreateOpeningMatch(x, y, row, candidate) && guard < 20) {
+        candidate = rand();
+        guard += 1;
+      }
+      return candidate;
+    }
+
+    function wouldCreateOpeningMatch(x, y, row, candidate) {
+      const horizontal = x >= 2 && row[x - 1] === candidate && row[x - 2] === candidate;
+      const vertical = y >= 2 && board[y - 1][x] === candidate && board[y - 2][x] === candidate;
+      return horizontal || vertical;
+    }
+
+    function isAdjacent(a, b) {
+      return Math.abs(a.x - b.x) + Math.abs(a.y - b.y) === 1;
+    }
+
+    function swapBoardCells(a, b) {
+      const previous = board[a.y][a.x];
+      board[a.y][a.x] = board[b.y][b.x];
+      board[b.y][b.x] = previous;
+    }
+
+    function isLegalSwap(a, b) {
+      // Standard switch-match rule: a normal swap is legal only if the moved tiles create a match.
+      if (!isAdjacent(a, b) || board[a.y][a.x] === board[b.y][b.x]) {
+        return false;
+      }
+      swapBoardCells(a, b);
+      const createsMoveMatch = matches().some((match) => match.cells.some(([mx, my]) =>
+        (mx === a.x && my === a.y) || (mx === b.x && my === b.y)
+      ));
+      swapBoardCells(a, b);
+      return createsMoveMatch;
+    }
+
+    function legalMoves() {
+      const movesOut = [];
+      for (let y = 0; y < BOARD_SIZE; y += 1) {
+        for (let x = 0; x < BOARD_SIZE; x += 1) {
+          const current = { x, y };
+          if (x < BOARD_SIZE - 1 && isLegalSwap(current, { x: x + 1, y })) {
+            movesOut.push([current, { x: x + 1, y }]);
+          }
+          if (y < BOARD_SIZE - 1 && isLegalSwap(current, { x, y: y + 1 })) {
+            movesOut.push([current, { x, y: y + 1 }]);
+          }
+        }
+      }
+      return movesOut;
+    }
+
+    function hasLegalMoves() {
+      return legalMoves().length > 0;
+    }
+
+    function ensurePlayableBoardAfterCascade() {
+      if (!matches().length && hasLegalMoves()) {
+        return false;
+      }
+      fallAnimations.clear();
+      build();
+      return true;
+    }
+
+    function render() {
+      const boardEl = $("board");
+      boardEl.innerHTML = "";
+
+      for (let y = 0; y < BOARD_SIZE; y += 1) {
+        for (let x = 0; x < BOARD_SIZE; x += 1) {
+          const value = board[y][x];
+          const tile = document.createElement("button");
+          tile.type = "button";
+          tile.dataset.x = x;
+          tile.dataset.y = y;
+          const selectedClass = selected && selected.x === x && selected.y === y ? "sel" : "";
+          const legalClass = selected && !sacrificeState.active && isLegalSwap(selected, { x, y }) ? "legal-target" : "";
+          const sacrificeClass = sacrificeState.active && sacrificeState.choice !== null ? "sacrifice-target" : "";
+          const profitableClass = sacrificeState.active && wouldSacrificeHarvest(x, y) ? "sacrifice-profitable" : "";
+          const harvestClass = harvestFlashCells.has(`${x},${y}`) ? "harvest-flash" : "";
+          const superClass = superBloomCells.has(`${x},${y}`) ? "super-bloom-hot" : "";
+          const transmuteClass = transmuteFlashCell === `${x},${y}` ? "transmute-flash" : "";
+          const fallKey = `${x},${y}`;
+          const fallRows = fallAnimations.get(fallKey) || 0;
+          const fallClass = fallRows ? "fall-in" : "";
+          tile.className = `tile ${selectedClass} ${legalClass} ${sacrificeClass} ${profitableClass} ${harvestClass} ${superClass} ${transmuteClass} ${fallClass}`;
+          tile.disabled = isResolving;
+          if (fallRows) {
+            tile.style.setProperty("--fall-y", `${-fallRows * 112}%`);
+            tile.style.setProperty("--fall-delay", `${Math.min(130, y * 12)}ms`);
+          }
+          const profitLabel = profitableClass ? " profitable sacrifice target" : "";
+          const legalLabel = legalClass ? " legal match swap target" : "";
+          tile.setAttribute("aria-label", `${flowers[value][0]} tile${profitLabel}${legalLabel}`);
+          tile.innerHTML = iconMarkup(value, "", flowers[value][0], "tile-icon-wrap");
+          tile.addEventListener("click", () => tap(x, y));
+          boardEl.appendChild(tile);
+        }
+      }
+      applyImageFallbacks(boardEl);
+
+      harvestFlashCells.forEach((cell) => {
+        const [x, y] = cell.split(",").map(Number);
+        const mote = document.createElement("span");
+        mote.className = "harvest-mote";
+        mote.style.left = `${((x + 0.5) / BOARD_SIZE) * 100}%`;
+        mote.style.top = `${((y + 0.5) / BOARD_SIZE) * 100}%`;
+        boardEl.appendChild(mote);
+      });
+
+      boardParticles.forEach((particle) => {
+        const effect = document.createElement("span");
+        effect.className = `board-particle ${particle.type}`;
+        effect.textContent = particle.text || "";
+        effect.style.setProperty("--left", `${((particle.x + 0.5) / BOARD_SIZE) * 100}%`);
+        effect.style.setProperty("--top", `${((particle.y + 0.5) / BOARD_SIZE) * 100}%`);
+        effect.style.setProperty("--dx", `${particle.dx || 0}px`);
+        effect.style.setProperty("--dy", `${particle.dy || 0}px`);
+        effect.style.setProperty("--size", `${particle.size || 12}px`);
+        effect.style.setProperty("--font-size", `${particle.fontSize || 15}px`);
+        effect.style.setProperty("--spin", `${particle.spin || 0}deg`);
+        effect.style.setProperty("--scale", `${particle.scale || 1.2}`);
+        effect.style.setProperty("--delay", `${particle.delay || 0}ms`);
+        boardEl.appendChild(effect);
+      });
+
+      $("objective").innerHTML = `
+        <span class="objective-text">${firstBouquetComplete ? "First Bouquet Complete" : "Collect"}</span>
+        ${targetMarkup(5, counts[5], 8)}
+        <span>and</span>
+        ${targetMarkup(1, counts[1], 6)}
+        <span class="objective-separator">·</span>
+        <span>Moves ${moves}</span>
+      `;
+      const thornProgress = Math.min(counts[5], 8);
+      const boneProgress = Math.min(counts[1], 6);
+      $("objective").classList.toggle("complete", firstBouquetComplete);
+      $("objective").classList.toggle("low-moves", moves <= 3);
+      $("o1").textContent = `${thornProgress}/8`;
+      $("o2").textContent = `${boneProgress}/6`;
+      $("o1").classList.toggle("order-pulse", orderPulseTargets.has(5));
+      $("o2").classList.toggle("order-pulse", orderPulseTargets.has(1));
+      $("orderThorn").classList.toggle("complete", thornProgress >= 8);
+      $("orderBone").classList.toggle("complete", boneProgress >= 6);
+      $("bar").style.width = `${Math.min(100, ((thornProgress + boneProgress) / 14) * 100)}%`;
+      $("coins").textContent = coins;
+      $("shuffleBtn").disabled = isResolving || moves < 1;
+      $("sacrificeBtn").disabled = isResolving || moves < 3;
+      $("sacrificeBtn").classList.toggle("armed", sacrificeState.active);
+      $("sacrificeBtn").setAttribute("aria-pressed", sacrificeState.active ? "true" : "false");
+      $("ritualLog").innerHTML = ritualMessage;
+      $("renewBtn").classList.toggle("visible", moves <= 0 || firstBouquetComplete);
+      updateChestSummary();
+      renderTycoonPanels();
+      $("elements").innerHTML = flowers.map((flower, index) => `
+        <div class="element">
+          ${iconMarkup(index, "", flower[0], "element-icon-wrap")}
+          <b>${flower[0]}</b>
+          <span class="small">${flower[2]}</span><br>
+          <span class="element-count">x${baseElementCounts[index] + counts[index]}</span>
+        </div>
+      `).join("");
+      renderSacrificeOptions();
+      applyImageFallbacks($("elements"));
+      applyImageFallbacks($("objective"));
+      applyImageFallbacks(document);
+      saveProgress();
+    }
+
+    async function tap(x, y) {
+      if (isResolving) {
+        return;
+      }
+      if (sacrificeState.active) {
+        if (sacrificeState.choice === null) {
+          $("sacrificeStatus").textContent = "Choose the replacement element first.";
+          return;
+        }
+        performSacrifice(x, y);
+        return;
+      }
+
+      if (moves <= 0) {
+        selected = null;
+        ritualMessage = "No moves remain. The bouquet withers unless the run is renewed.";
+        render();
+        return;
+      }
+
+      if (!selected) {
+        selected = { x, y };
+        render();
+        return;
+      }
+
+      const dx = Math.abs(selected.x - x);
+      const dy = Math.abs(selected.y - y);
+      if (dx + dy !== 1) {
+        selected = { x, y };
+        render();
+        return;
+      }
+
+      const target = { x, y };
+      if (!isLegalSwap(selected, target)) {
+        selected = null;
+        ritualMessage = "That switch will not bloom. Only match-making swaps are allowed.";
+        render();
+        return;
+      }
+
+      swapBoardCells(selected, target);
+      moves -= 1;
+      selected = null;
+      isResolving = true;
+      render();
+      let result = null;
+      try {
+        result = await resolveAnimated();
+        ritualMessage = harvestSummary(result) + awardRareBloomDrop(result);
+        pulseOrderCounts(result.gained);
+        maybeCompleteFirstBouquet();
+      } finally {
+        isResolving = false;
+        render();
+        if (result && result.matched) {
+          scheduleBoardParticleClear();
+        }
+      }
+    }
+
+    function matches() {
+      // Match grammar: collect every horizontal/vertical run of 3+ and union
+      // overlapping same-element runs so T, L, and cross shapes clear together.
+      const runSegments = findRunSegments();
+      const shapes = [];
+      const parents = runSegments.map((_, index) => index);
+      const findParent = (index) => {
+        if (parents[index] !== index) {
+          parents[index] = findParent(parents[index]);
+        }
+        return parents[index];
+      };
+      const union = (a, b) => {
+        const rootA = findParent(a);
+        const rootB = findParent(b);
+        if (rootA !== rootB) {
+          parents[rootB] = rootA;
+        }
+      };
+      const cellOwners = new Map();
+
+      runSegments.forEach((segment, index) => {
+        segment.cells.forEach((cell) => {
+          const key = cell.join(",");
+          const owners = cellOwners.get(key) || [];
+          owners.forEach((ownerIndex) => union(index, ownerIndex));
+          owners.push(index);
+          cellOwners.set(key, owners);
+        });
+      });
+
+      const groups = new Map();
+      runSegments.forEach((segment, index) => {
+        const root = findParent(index);
+        if (!groups.has(root)) {
+          groups.set(root, {
+            val: segment.val,
+            cellsByKey: new Map(),
+            runs: []
+          });
+        }
+        const group = groups.get(root);
+        segment.cells.forEach((cell) => group.cellsByKey.set(cell.join(","), cell));
+        group.runs.push({ direction: segment.direction, len: segment.cells.length });
+      });
+
+      groups.forEach((group) => {
+        const cells = [...group.cellsByKey.values()]
+          .sort((a, b) => (a[1] - b[1]) || (a[0] - b[0]));
+        shapes.push({ len: cells.length, val: group.val, cells, runs: group.runs });
+      });
+      return shapes.sort((a, b) => b.len - a.len);
+    }
+
+    function findRunSegments() {
+      const segments = [];
+      for (let y = 0; y < BOARD_SIZE; y += 1) {
+        let start = 0;
+        for (let x = 1; x <= BOARD_SIZE; x += 1) {
+          if (x === BOARD_SIZE || board[y][x] !== board[y][start]) {
+            if (board[y][start] !== null && x - start >= 3) {
+              const cells = [];
+              for (let mx = start; mx < x; mx += 1) {
+                cells.push([mx, y]);
+              }
+              segments.push({ val: board[y][start], direction: "horizontal", cells });
+            }
+            start = x;
+          }
+        }
+      }
+
+      for (let x = 0; x < BOARD_SIZE; x += 1) {
+        let start = 0;
+        for (let y = 1; y <= BOARD_SIZE; y += 1) {
+          if (y === BOARD_SIZE || board[y][x] !== board[start][x]) {
+            if (board[start][x] !== null && y - start >= 3) {
+              const cells = [];
+              for (let my = start; my < y; my += 1) {
+                cells.push([x, my]);
+              }
+              segments.push({ val: board[start][x], direction: "vertical", cells });
+            }
+            start = y;
+          }
+        }
+      }
+      return segments;
+    }
+
+    function wouldSacrificeHarvest(x, y) {
+      if (!sacrificeState.active || sacrificeState.choice === null) {
+        return false;
+      }
+      return wouldSacrificeHarvestAs(x, y, sacrificeState.choice);
+    }
+
+    function wouldSacrificeHarvestAs(x, y, flowerId) {
+      if (flowerId === null || board[y][x] === flowerId) {
+        return false;
+      }
+      const original = board[y][x];
+      board[y][x] = flowerId;
+      const createsMatch = matches().some((match) => match.cells.some(([mx, my]) => mx === x && my === y));
+      board[y][x] = original;
+      return createsMatch;
+    }
+
+    function createResolveResult() {
+      return {
+        matched: false,
+        rare: false,
+        cleared: 0,
+        coinsEarned: 0,
+        cascades: 0,
+        gained: Array(flowers.length).fill(0),
+        rareCells: [],
+        reshuffled: false
+      };
+    }
+
+    function scanMatchWave() {
+      const foundMatches = matches();
+      if (!foundMatches.length) {
+        return null;
+      }
+
+      const clear = {};
+      const waveRareCells = new Set();
+      let rareWave = false;
+
+      // Match collection loop: unique matched cells feed orders and future crafting systems.
+      foundMatches.forEach((match) => {
+        if (match.len >= 5) {
+          rareWave = true;
+          match.cells.forEach((cell) => waveRareCells.add(cell.join(",")));
+        }
+        match.cells.forEach((cell) => {
+          clear[cell.join(",")] = cell;
+        });
+      });
+
+      const clearCells = Object.values(clear);
+      return {
+        clearCells,
+        clearKeys: clearCells.map((cell) => cell.join(",")),
+        rare: rareWave,
+        rareCells: [...waveRareCells].map((cell) => cell.split(",").map(Number)),
+        rareKeys: waveRareCells
+      };
+    }
+
+    function collectWaveRewards(wave, result, cascadeIndex, forcedRareCells = []) {
+      wave.clearCells.forEach(([x, y]) => {
+        const flowerId = board[y][x];
+        counts[flowerId] += 1;
+        result.gained[flowerId] += 1;
+      });
+
+      const cleared = wave.clearCells.length;
+      const effectRareCells = dedupeCells([...wave.rareCells, ...forcedRareCells]);
+      const isRareWave = wave.rare || effectRareCells.length > 0;
+      const coinsEarned = cleared * (isRareWave ? 12 : 2);
+      coins += coinsEarned;
+      queueCoinBurst(wave.clearCells, coinsEarned, cascadeIndex);
+      if (isRareWave) {
+        queueSuperBloomBoardEffects(effectRareCells, cascadeIndex);
+      }
+
+      result.matched = true;
+      result.rare = result.rare || isRareWave;
+      result.cleared += cleared;
+      result.coinsEarned += coinsEarned;
+      result.cascades += 1;
+      effectRareCells.forEach((cell) => {
+        result.rareCells.push(cell);
+      });
+    }
+
+    function clearWaveCells(wave) {
+      wave.clearCells.forEach(([x, y]) => {
+        board[y][x] = null;
+      });
+      collapseColumns();
+    }
+
+    function finishResolve(result) {
+      if (!result.matched) {
+        return result;
+      }
+      result.reshuffled = ensurePlayableBoardAfterCascade();
+      result.rareCells = dedupeCells(result.rareCells);
+      return result;
+    }
+
+    function dedupeCells(cells) {
+      const seen = new Set();
+      return cells.filter((cell) => {
+        const key = cell.join(",");
+        if (seen.has(key)) {
+          return false;
+        }
+        seen.add(key);
+        return true;
+      });
+    }
+
+    function delay(ms) {
+      return new Promise((resolveDelay) => {
+        window.setTimeout(resolveDelay, ms);
+      });
+    }
+
+    function cancelFxTimers() {
+      if (fallClearTimer && window.clearTimeout) {
+        window.clearTimeout(fallClearTimer);
+      }
+      if (boardParticleClearTimer && window.clearTimeout) {
+        window.clearTimeout(boardParticleClearTimer);
+      }
+      fallClearTimer = null;
+      boardParticleClearTimer = null;
+    }
+
+    function resolve() {
+      cancelFxTimers();
+      fallAnimations.clear();
+      boardParticles = [];
+      superBloomCells.clear();
+      const result = createResolveResult();
+      const flashedCells = new Set();
+
+      while (result.cascades < 20) {
+        const wave = scanMatchWave();
+        if (!wave) {
+          break;
+        }
+
+        wave.clearKeys.forEach((key) => {
+          flashedCells.add(key);
+        });
+        collectWaveRewards(wave, result, result.cascades);
+        clearWaveCells(wave);
+      }
+
+      harvestFlashCells = flashedCells;
+      return finishResolve(result);
+    }
+
+    async function resolveAnimated(options = {}) {
+      cancelFxTimers();
+      fallAnimations.clear();
+      boardParticles = [];
+      harvestFlashCells.clear();
+      superBloomCells.clear();
+      const result = createResolveResult();
+
+      while (result.cascades < 20) {
+        const wave = scanMatchWave();
+        if (!wave) {
+          break;
+        }
+
+        fallAnimations.clear();
+        harvestFlashCells.clear();
+        superBloomCells.clear();
+
+        const forcedRareCells = result.cascades === 0 ? (options.forceSupremeCells || []) : [];
+        const effectRareCells = dedupeCells([...wave.rareCells, ...forcedRareCells]);
+        collectWaveRewards(wave, result, result.cascades, forcedRareCells);
+        if (boardParticles.length > 180) {
+          boardParticles = boardParticles.slice(-180);
+        }
+        harvestFlashCells = new Set(wave.clearKeys);
+        superBloomCells = new Set(effectRareCells.map((cell) => cell.join(",")));
+        render();
+
+        if (effectRareCells.length) {
+          window.setTimeout(() => showSupreme(effectRareCells), 150);
+        }
+
+        await delay(wave.rare ? 290 : 160);
+        clearWaveCells(wave);
+        render();
+        await delay(560);
+      }
+
+      harvestFlashCells.clear();
+      superBloomCells.clear();
+      fallAnimations.clear();
+      return finishResolve(result);
+    }
+
+    function collapseColumns() {
+      for (let x = 0; x < BOARD_SIZE; x += 1) {
+        const remaining = [];
+        for (let y = BOARD_SIZE - 1; y >= 0; y -= 1) {
+          if (board[y][x] !== null) {
+            remaining.push({ value: board[y][x], fromY: y });
+          }
+        }
+        for (let y = BOARD_SIZE - 1; y >= 0; y -= 1) {
+          if (remaining.length) {
+            const tile = remaining.shift();
+            board[y][x] = tile.value;
+            recordFall(x, y, y - tile.fromY);
+          } else {
+            board[y][x] = rand();
+            recordFall(x, y, y + 1);
+          }
+        }
+      }
+    }
+
+    function recordFall(x, y, rows) {
+      if (rows <= 0) {
+        return;
+      }
+      const key = `${x},${y}`;
+      fallAnimations.set(key, Math.max(fallAnimations.get(key) || 0, rows));
+    }
+
+    function queueCoinBurst(cells, coinsEarned, cascadeIndex = 0) {
+      // Match reward FX: coins originate from the harvested cells, then lift out of the board.
+      const baseDelay = cascadeIndex * 120;
+      cells.slice(0, 18).forEach(([x, y], index) => {
+        boardParticles.push({
+          type: "coin-pop",
+          text: "✪",
+          x,
+          y,
+          dx: (Math.random() - 0.5) * 68,
+          dy: -42 - Math.random() * 66,
+          size: 18,
+          fontSize: 16,
+          spin: (Math.random() - 0.5) * 180,
+          delay: baseDelay + index * 16
+        });
+      });
+
+      if (coinsEarned > 0 && cells.length) {
+        const [x, y] = cells[Math.floor(cells.length / 2)];
+        boardParticles.push({
+          type: "coin-pop",
+          text: `+${coinsEarned}`,
+          x,
+          y,
+          dx: 0,
+          dy: -94,
+          size: 52,
+          fontSize: 20,
+          spin: 0,
+          delay: baseDelay + 90
+        });
+      }
+    }
+
+    function queueSuperBloomBoardEffects(cells, cascadeIndex = 0) {
+      // Super Bloom FX is reserved for 5+ shapes and blooms from the matched cells themselves.
+      const baseDelay = cascadeIndex * 120;
+      cells.slice(0, 14).forEach(([x, y], cellIndex) => {
+        boardParticles.push({
+          type: "blood-aura",
+          x,
+          y,
+          dx: 0,
+          dy: 0,
+          size: 82 + Math.random() * 34,
+          spin: Math.random() * 360,
+          scale: 1.18 + Math.random() * 0.35,
+          delay: baseDelay + cellIndex * 8
+        });
+        for (let i = 0; i < 12; i += 1) {
+          const angle = Math.random() * Math.PI * 2;
+          const distance = 28 + Math.random() * 118;
+          const type = ["blood-pop", "blood-pop", "blood-pop", "shard-pop", "slash-pop", "slash-pop"][i % 6];
+          boardParticles.push({
+            type,
+            x,
+            y,
+            dx: Math.cos(angle) * distance,
+            dy: Math.sin(angle) * distance - Math.random() * 22,
+            size: type === "slash-pop" ? 13 + Math.random() * 12 : 8 + Math.random() * 20,
+            spin: Math.random() * 360,
+            scale: 1 + Math.random() * 1.65,
+            delay: baseDelay + cellIndex * 8 + Math.random() * 70
+          });
+        }
+      });
+    }
+
+    function scheduleFallAnimationClear() {
+      if (fallClearTimer && window.clearTimeout) {
+        window.clearTimeout(fallClearTimer);
+      }
+      fallClearTimer = window.setTimeout(() => {
+        if (!fallAnimations.size) {
+          return;
+        }
+        fallAnimations.clear();
+        if (!harvestFlashCells.size && !boardParticles.length && !transmuteFlashCell) {
+          render();
+        }
+      }, 560);
+    }
+
+    function scheduleBoardParticleClear() {
+      if (boardParticleClearTimer && window.clearTimeout) {
+        window.clearTimeout(boardParticleClearTimer);
+      }
+      boardParticleClearTimer = window.setTimeout(() => {
+        if (!boardParticles.length) {
+          return;
+        }
+        boardParticles = [];
+        fallAnimations.clear();
+        harvestFlashCells.clear();
+        superBloomCells.clear();
+        transmuteFlashCell = "";
+        render();
+      }, 1250);
+    }
+
+    function harvestSummary(result) {
+      const orderText = orderGainMessage(result.gained);
+      const cascadeText = result.cascades > 1 ? ` across ${result.cascades} cascades` : "";
+      const reshuffleText = result.reshuffled ? " The board re-seeded itself with a legal move." : "";
+      if (orderText) {
+        return `<strong>${orderText}</strong> +${result.coinsEarned} coins${cascadeText}.${gainMarkup(result.gained)}${reshuffleText}`;
+      }
+      return `<strong>${result.cleared}</strong> tiles harvested${cascadeText}. +${result.coinsEarned} coins.${gainMarkup(result.gained)}${reshuffleText}`;
+    }
+
+    function orderGainMessage(gained) {
+      const messages = [];
+      if (gained[5] > 0) {
+        messages.push(`+${gained[5]} Thorn Rose added to Velvet Funeral.`);
+      }
+      if (gained[1] > 0) {
+        messages.push(`+${gained[1]} Bone Star added to Saint's Offering.`);
+      }
+      return messages.join(" ");
+    }
+
+    function gainMarkup(gained) {
+      const tokens = gained
+        .map((amount, index) => ({ amount, flower: flowers[index] }))
+        .filter((entry) => entry.amount > 0)
+        .map((entry) => `
+          <span class="gain-token">
+            ${iconMarkup(flowers.indexOf(entry.flower), "", entry.flower[0], "gain-icon-wrap")}
+            x${entry.amount}
+          </span>
+        `);
+      return tokens.length ? `<span class="gain-list">${tokens.join("")}</span>` : "";
+    }
+
+    function renderTycoonPanels() {
+      $("greenhouseLevel").textContent = `Level ${greenhouse.level}`;
+      $("greenhouseXpText").textContent = `${greenhouse.xp.toLocaleString()} / ${greenhouse.next.toLocaleString()} XP`;
+      $("greenhouseXpFill").style.width = `${Math.min(100, (greenhouse.xp / greenhouse.next) * 100)}%`;
+      $("apothecaryLevel").textContent = `Level ${apothecary.level}`;
+      $("apothecaryXpText").textContent = `${apothecary.xp.toLocaleString()} / ${apothecary.next.toLocaleString()} XP`;
+      $("apothecaryXpFill").style.width = `${Math.min(100, (apothecary.xp / apothecary.next) * 100)}%`;
+    }
+
+    function maybeCompleteFirstBouquet() {
+      if (firstBouquetComplete || counts[5] < 8 || counts[1] < 6) {
+        return false;
+      }
+      firstBouquetComplete = true;
+      coins += 120;
+      grantTycoonXp(180, 60);
+      addChestItem({
+        id: "first-bouquet-coffer",
+        name: "First Bouquet Coffer",
+        qty: 1,
+        rarity: "Order",
+        source: "First Bouquet",
+        flowerId: 5,
+        tags: ["order", "reward"]
+      });
+      ritualMessage = "<strong>First Bouquet fulfilled.</strong> +120 coins, +180 Greenhouse XP, +60 Apothecary XP, and a coffer placed in Chest Storage.";
+      return true;
+    }
+
+    function grantTycoonXp(greenhouseAmount, apothecaryAmount) {
+      greenhouse.xp = Math.min(greenhouse.next, greenhouse.xp + greenhouseAmount);
+      apothecary.xp = Math.min(apothecary.next, apothecary.xp + apothecaryAmount);
+    }
+
+    function pulseOrderCounts(gained) {
+      orderPulseTargets.clear();
+      if (gained[5] > 0) {
+        orderPulseTargets.add(5);
+      }
+      if (gained[1] > 0) {
+        orderPulseTargets.add(1);
+      }
+      if (orderPulseTargets.size) {
+        scheduleOrderPulseClear();
+      }
+    }
+
+    function scheduleOrderPulseClear() {
+      window.setTimeout(() => {
+        if (!orderPulseTargets.size) {
+          return;
+        }
+        orderPulseTargets.clear();
+        render();
+      }, 950);
+    }
+
+    function scheduleHarvestFlashClear() {
+      window.setTimeout(() => {
+        if (!harvestFlashCells.size) {
+          return;
+        }
+        harvestFlashCells.clear();
+        if (!fallAnimations.size && !boardParticles.length && !transmuteFlashCell) {
+          render();
+        }
+      }, 620);
+    }
+
+    function shuffleBoard() {
+      if (isResolving) {
+        return;
+      }
+      cancelSacrifice(false);
+      if (!spendMoves(1, "Shuffle")) {
+        return;
+      }
+      harvestFlashCells.clear();
+      fallAnimations.clear();
+      superBloomCells.clear();
+      boardParticles = [];
+      ritualMessage = "The greenhouse table shuffles. One move is spent.";
+      build();
+      render();
+    }
+
+    function renewBouquet() {
+      if (isResolving) {
+        return;
+      }
+      selected = null;
+      sacrificeState = { active: false, choice: null };
+      harvestFlashCells.clear();
+      fallAnimations.clear();
+      superBloomCells.clear();
+      boardParticles = [];
+      transmuteFlashCell = "";
+      moves = 16;
+      counts = [0, 0, 0, 0, 0, 0];
+      firstBouquetComplete = false;
+      ritualMessage = "A new First Bouquet is laid on the altar.";
+      build();
+      render();
+    }
+
+    function sacrifice() {
+      // Sacrifice transmutation: choose one element, delete one tile, and replace it at a cost.
+      if (isResolving) {
+        return;
+      }
+      if (sacrificeState.active) {
+        cancelSacrifice();
+        return;
+      }
+      if (!canSpendMoves(3)) {
+        ritualMessage = "Sacrifice requires 3 moves. The altar refuses an empty hand.";
+        render();
+        return;
+      }
+      selected = null;
+      sacrificeState = { active: true, choice: null };
+      ritualMessage = "Sacrifice armed. Choose an offering element, then replace one glowing tile. Costs 3 moves. Strong offerings may trigger Supreme Bloom.";
+      render();
+      $("sacrificeStatus").textContent = "Choose an offering element, then replace one glowing tile. Costs 3 moves. Strong offerings may trigger Supreme Bloom.";
+    }
+
+    function renderSacrificeOptions() {
+      const panel = $("sacrificePanel");
+      const options = $("sacrificeOptions");
+      panel.classList.toggle("open", sacrificeState.active);
+      if (!sacrificeState.active) {
+        options.innerHTML = "";
+        return;
+      }
+
+      const profitableByFlower = flowers.map((_, index) => countProfitableSacrificeTargets(index));
+      options.innerHTML = flowers.map((flower, index) => {
+        const profitableTargets = profitableByFlower[index];
+        const optionClasses = [
+          "sacrifice-option",
+          sacrificeState.choice === index ? "selected" : "",
+          profitableTargets ? "profitable" : ""
+        ].filter(Boolean).join(" ");
+        const targetCopy = profitableTargets
+          ? `${profitableTargets} glow${profitableTargets === 1 ? "" : "s"}`
+          : "No glow";
+        return `
+          <button class="${optionClasses}" type="button" data-flower-id="${index}" aria-pressed="${sacrificeState.choice === index ? "true" : "false"}">
+            ${iconMarkup(index, "", flower[0], "sacrifice-icon-wrap")}
+            <span>${flower[0]}</span>
+            <span class="sacrifice-hits">${targetCopy}</span>
+          </button>
+        `;
+      }).join("");
+
+      options.querySelectorAll(".sacrifice-option").forEach((button) => {
+        button.addEventListener("click", () => chooseSacrifice(Number(button.dataset.flowerId)));
+      });
+      applyImageFallbacks(options);
+    }
+
+    function chooseSacrifice(flowerId) {
+      sacrificeState.choice = flowerId;
+      const profitableTargets = countProfitableSacrificeTargets();
+      const targetCopy = profitableTargets
+        ? `${profitableTargets} harvest vessel${profitableTargets === 1 ? "" : "s"} glow.`
+        : "No glowing vessels for this offering. Choose another element.";
+      ritualMessage = `<strong>${flowers[flowerId][0]}</strong> selected for sacrifice. ${targetCopy} Replace a glowing tile to spend 3 moves. Strong offerings may trigger Supreme Bloom.`;
+      $("sacrificeStatus").textContent = `${flowers[flowerId][0]} chosen · ${targetCopy}`;
+      render();
+    }
+
+    function countProfitableSacrificeTargets(flowerId = sacrificeState.choice) {
+      if (flowerId === null) {
+        return 0;
+      }
+      let total = 0;
+      for (let y = 0; y < BOARD_SIZE; y += 1) {
+        for (let x = 0; x < BOARD_SIZE; x += 1) {
+          if (wouldSacrificeHarvestAs(x, y, flowerId)) {
+            total += 1;
+          }
+        }
+      }
+      return total;
+    }
+
+    function sacrificeBloomCells(x, y) {
+      const cells = new Map();
+      const addCell = (cx, cy) => {
+        if (cx >= 0 && cx < BOARD_SIZE && cy >= 0 && cy < BOARD_SIZE) {
+          cells.set(`${cx},${cy}`, [cx, cy]);
+        }
+      };
+      const targetMatch = matches().find((match) => match.cells.some(([mx, my]) => mx === x && my === y));
+      if (targetMatch) {
+        targetMatch.cells.forEach(([mx, my]) => addCell(mx, my));
+      }
+      [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [2, 0], [-2, 0], [0, 2], [0, -2]].forEach(([dx, dy]) => {
+        if (cells.size < 5) {
+          addCell(x + dx, y + dy);
+        }
+      });
+      return [...cells.values()];
+    }
+
+    function cancelSacrifice(refocus = true) {
+      if (!sacrificeState.active) {
+        return;
+      }
+      sacrificeState = { active: false, choice: null };
+      ritualMessage = "Sacrifice cancelled. No moves spent.";
+      render();
+      if (refocus) {
+        $("sacrificeBtn").focus();
+      }
+    }
+
+    async function performSacrifice(x, y) {
+      if (isResolving) {
+        return;
+      }
+      const original = board[y][x];
+      if (original === sacrificeState.choice) {
+        ritualMessage = `Already ${flowers[original][0]}. Choose another vessel.`;
+        $("sacrificeStatus").textContent = ritualMessage;
+        render();
+        return;
+      }
+      if (!wouldSacrificeHarvestAs(x, y, sacrificeState.choice)) {
+        const replacementName = flowers[sacrificeState.choice][0];
+        ritualMessage = `<strong>Ritual warning:</strong> ${replacementName} will not bloom there. Choose one of the glowing vessels.`;
+        $("sacrificeStatus").textContent = `${replacementName} will not bloom there · choose a glowing tile.`;
+        render();
+        return;
+      }
+      if (!spendMoves(3, "Sacrifice")) {
+        return;
+      }
+      board[y][x] = sacrificeState.choice;
+      transmuteFlashCell = `${x},${y}`;
+      const replacementName = flowers[sacrificeState.choice][0];
+      const forcedSupremeCells = sacrificeBloomCells(x, y);
+      sacrificeState = { active: false, choice: null };
+      selected = null;
+      isResolving = true;
+      render();
+      let result = null;
+      try {
+        await delay(180);
+        result = await resolveAnimated({ forceSupremeCells: forcedSupremeCells });
+        ritualMessage = result.matched
+          ? `<strong>Sacrifice complete:</strong> ${replacementName} claimed the tile. ${harvestSummary(result)}${awardRareBloomDrop(result)}`
+          : `<strong>Sacrifice complete:</strong> ${replacementName} replaced the tile. No harvest yet.`;
+        if (result.matched) {
+          pulseOrderCounts(result.gained);
+          maybeCompleteFirstBouquet();
+        }
+      } finally {
+        isResolving = false;
+        render();
+        scheduleTransmuteFlashClear();
+        if (result && result.matched) {
+          scheduleBoardParticleClear();
+        }
+      }
+    }
+
+    function scheduleTransmuteFlashClear() {
+      window.setTimeout(() => {
+        if (!transmuteFlashCell) {
+          return;
+        }
+        transmuteFlashCell = "";
+        if (!fallAnimations.size && !harvestFlashCells.size && !boardParticles.length) {
+          render();
+        }
+      }, 560);
+    }
+
+    function canSpendMoves(cost) {
+      return moves >= cost;
+    }
+
+    function spendMoves(cost, label) {
+      if (!canSpendMoves(cost)) {
+        ritualMessage = `${label} requires ${cost} move${cost === 1 ? "" : "s"}.`;
+        render();
+        return false;
+      }
+      moves -= cost;
+      return true;
+    }
+
+    function supremeOriginForCell(cell, supreme) {
+      const boardEl = $("board");
+      if (!cell || !boardEl || !boardEl.getBoundingClientRect || !supreme.getBoundingClientRect) {
+        return null;
+      }
+      const boardRect = boardEl.getBoundingClientRect();
+      const supremeRect = supreme.getBoundingClientRect();
+      if (!boardRect.width || !boardRect.height) {
+        return null;
+      }
+      return {
+        left: boardRect.left - supremeRect.left + ((cell[0] + 0.5) / BOARD_SIZE) * boardRect.width,
+        top: boardRect.top - supremeRect.top + ((cell[1] + 0.5) / BOARD_SIZE) * boardRect.height
+      };
+    }
+
+    function showSupreme(originCells = []) {
+      // Supreme Bloom is intentionally rare: 5+ HTML matches or the forced Sacrifice test path.
+      const supreme = $("supreme");
+      const particleLayer = $("supremeParticles");
+      particleLayer.innerHTML = "";
+
+      for (let i = 0; i < 84; i += 1) {
+        const particle = document.createElement("span");
+        const type = ["blood", "petal", "shard", "spark", "coin", "slash", "thorn"][i % 7];
+        const origin = originCells.length
+          ? supremeOriginForCell(originCells[i % originCells.length], supreme)
+          : null;
+        const angle = (Math.PI * 2 * i) / 84 + (Math.random() - 0.5) * 0.62;
+        const distance = 80 + Math.random() * 310;
+        const dx = Math.cos(angle) * distance;
+        const dy = Math.sin(angle) * distance * 0.66 - Math.random() * 40;
+        particle.className = `particle ${type}`;
+        if (origin) {
+          particle.style.left = `${origin.left}px`;
+          particle.style.top = `${origin.top}px`;
+        }
+        particle.style.setProperty("--dx", `${dx}px`);
+        particle.style.setProperty("--dy", `${dy}px`);
+        particle.style.setProperty("--size", `${6 + Math.random() * 18}px`);
+        particle.style.setProperty("--spin", `${Math.random() * 360}deg`);
+        particle.style.setProperty("--scale", `${0.8 + Math.random() * 1.45}`);
+        particle.style.setProperty("--delay", `${Math.random() * 0.18}s`);
+        particleLayer.appendChild(particle);
+      }
+
+      supreme.classList.remove("on");
+      void supreme.offsetWidth;
+      supreme.classList.add("on");
+      window.setTimeout(() => {
+        supreme.classList.remove("on");
+        particleLayer.innerHTML = "";
+      }, 2200);
+    }
+
+    function renderChest() {
+      updateChestSummary();
+
+      // Chest storage is structured now so later systems can collect, combine, upgrade, or consume items.
+      const slots = chestState.items.map((item, index) => normalizeChestItem(item, index)).filter(Boolean);
+      while (slots.length < chestState.capacity) {
+        slots.push(null);
+      }
+
+      $("slotGrid").innerHTML = slots.map((item, index) => {
+        if (!item) {
+          return `<div class="slot empty"><span>Empty</span><span class="slot-meta">Slot ${index + 1}</span></div>`;
+        }
+        const flower = flowers[item.flowerId] || flowers[0];
+        const rarityKey = item.rarity.toLowerCase().replace(/\s+/g, "-");
+        const tags = item.tags.length ? item.tags.join(" / ") : "stored";
+        return `
+          <div class="slot" data-rarity="${rarityKey}">
+            <div class="slot-item-top">
+              ${iconMarkup(item.flowerId, "slot-icon", flower[0], "slot-icon-wrap")}
+              <div>
+                <div class="slot-rarity">${item.rarity}</div>
+                <div class="slot-name">${item.name}</div>
+                <div class="slot-meta">${item.source}</div>
+                <div class="slot-tags">${tags}</div>
+              </div>
+            </div>
+            <div class="slot-qty">x${item.qty}</div>
+          </div>
+        `;
+      }).join("");
+      applyImageFallbacks($("slotGrid"));
+    }
+
+    function updateChestSummary() {
+      const used = chestState.items.length;
+      const summary = `${used} / ${chestState.capacity} Slots`;
+      $("chestSummary").textContent = summary;
+      $("chestModalSummary").textContent = summary;
+    }
+
+    function addChestItem(item) {
+      const normalizedItem = normalizeChestItem(item, chestState.items.length);
+      if (!normalizedItem) {
+        return false;
+      }
+      const existing = chestState.items.find((stored) => stored.id === normalizedItem.id);
+      if (existing) {
+        existing.qty += normalizedItem.qty;
+        return true;
+      }
+      if (chestState.items.length >= chestState.capacity) {
+        ritualMessage = "Chest Storage is full. The reward waits in the shadows.";
+        return false;
+      }
+      chestState.items.push(normalizedItem);
+      return true;
+    }
+
+    function awardRareBloomDrop(result) {
+      if (!result.rare) {
+        return "";
+      }
+      const stored = addChestItem({
+        id: "supreme-bloom-shard",
+        name: "Supreme Bloom Shard",
+        qty: 1,
+        rarity: "Rare",
+        source: "Supreme Bloom",
+        flowerId: 3,
+        tags: ["rare", "jackpot", "crafting"]
+      });
+      return stored
+        ? " <strong>Supreme Bloom Shard</strong> sealed in Chest Storage."
+        : " <strong>Supreme Bloom Shard</strong> could not be stored.";
+    }
+
+    function normalizeChestItem(item, index = 0) {
+      if (!item || typeof item !== "object") {
+        return null;
+      }
+      const safeFlowerId = Number.isInteger(item.flowerId) && item.flowerId >= 0 && item.flowerId < flowers.length
+        ? item.flowerId
+        : 0;
+      const tags = Array.isArray(item.tags)
+        ? item.tags.map((tag) => String(tag)).filter(Boolean).slice(0, 4)
+        : ["stored"];
+      return {
+        id: String(item.id || `stored-item-${index}`),
+        name: String(item.name || "Sealed Parcel"),
+        qty: Math.max(1, Number(item.qty) || 1),
+        rarity: String(item.rarity || "Common"),
+        source: String(item.source || "Chest"),
+        flowerId: safeFlowerId,
+        tags
+      };
+    }
+
+    function saveProgress() {
+      if (typeof localStorage === "undefined") {
+        return;
+      }
+      const state = {
+        board,
+        moves,
+        coins,
+        counts,
+        firstBouquetComplete,
+        greenhouse,
+        apothecary,
+        chestItems: chestState.items
+      };
+      try {
+        localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+      } catch (error) {
+        // Local file storage can be unavailable in some browsers; gameplay should continue.
+      }
+    }
+
+    function loadProgress() {
+      if (typeof localStorage === "undefined") {
+        return;
+      }
+      try {
+        const raw = localStorage.getItem(SAVE_KEY);
+        if (!raw) {
+          return;
+        }
+        const state = JSON.parse(raw);
+        if (isValidBoard(state.board)) {
+          board = state.board;
+        }
+        if (Array.isArray(state.counts) && state.counts.length === flowers.length) {
+          counts = state.counts.map((count) => Math.max(0, Number(count) || 0));
+        }
+        moves = Math.max(0, Number(state.moves) || moves);
+        coins = Math.max(0, Number(state.coins) || coins);
+        firstBouquetComplete = Boolean(state.firstBouquetComplete);
+        greenhouse = validProgressState(state.greenhouse, greenhouse);
+        apothecary = validProgressState(state.apothecary, apothecary);
+        if (Array.isArray(state.chestItems)) {
+          chestState.items = state.chestItems
+            .slice(0, chestState.capacity)
+            .map((item, index) => normalizeChestItem(item, index))
+            .filter(Boolean);
+        }
+      } catch (error) {
+        ritualMessage = "Saved ledger was unreadable. Starting from the current altar state.";
+      }
+    }
+
+    function isValidBoard(candidate) {
+      return Array.isArray(candidate)
+        && candidate.length === BOARD_SIZE
+        && candidate.every((row) => Array.isArray(row)
+          && row.length === BOARD_SIZE
+          && row.every((tile) => Number.isInteger(tile) && tile >= 0 && tile < flowers.length));
+    }
+
+    function validProgressState(candidate, fallback) {
+      if (!candidate || typeof candidate !== "object") {
+        return fallback;
+      }
+      return {
+        level: Math.max(1, Number(candidate.level) || fallback.level),
+        xp: Math.max(0, Number(candidate.xp) || fallback.xp),
+        next: Math.max(1, Number(candidate.next) || fallback.next)
+      };
+    }
+
+    function openChest() {
+      cancelSacrifice(false);
+      renderChest();
+      $("chestModal").classList.add("open");
+      $("chestModal").setAttribute("aria-hidden", "false");
+      $("chestTrigger").setAttribute("aria-expanded", "true");
+      $("closeChest").focus();
+    }
+
+    function closeChest() {
+      $("chestModal").classList.remove("open");
+      $("chestModal").setAttribute("aria-hidden", "true");
+      $("chestTrigger").setAttribute("aria-expanded", "false");
+      $("chestTrigger").focus();
+    }
+
+    $("shuffleBtn").addEventListener("click", shuffleBoard);
+    $("sacrificeBtn").addEventListener("click", sacrifice);
+    $("sacrificeCancel").addEventListener("click", () => cancelSacrifice());
+    $("renewBtn").addEventListener("click", renewBouquet);
+    $("chestTrigger").addEventListener("click", openChest);
+    $("closeChest").addEventListener("click", closeChest);
+    $("chestModal").addEventListener("click", (event) => {
+      if (event.target === $("chestModal")) {
+        closeChest();
+      }
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && $("chestModal").classList.contains("open")) {
+        closeChest();
+      } else if (event.key === "Escape" && sacrificeState.active) {
+        cancelSacrifice();
+      }
+    });
+
+    window.triggerSupremeBloom = showSupreme;
+
+    loadProgress();
+    if (!board.length || matches().length || !hasLegalMoves()) {
+      build();
+    }
+    render();
+    renderChest();
+  </script>
+</body>
+</html>
