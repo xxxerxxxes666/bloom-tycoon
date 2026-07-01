@@ -3,6 +3,7 @@
 A Godot 4 prototype plus a fast HTML playable for a gothic botanical match/tycoon game with a separate light tycoon/boutique progression screen.
 
 GitHub repo: https://github.com/xxxerxxxes666/bloom-tycoon
+GitHub Pages preview: https://xxxerxxxes666.github.io/bloom-tycoon/
 
 ## HTML playable
 
@@ -97,6 +98,8 @@ Godot smoke test passed: match board and shop upgrade loop initialize correctly.
 2. In GitHub, open **Settings > Pages**.
 3. Set **Build and deployment** to deploy from the `main` branch at `/`.
 4. Open the published Pages URL. The root `index.html` redirects to the playable, and the direct path is `/playable/midnight_bloom_prototype.html`.
+
+Current Pages URL: https://xxxerxxxes666.github.io/bloom-tycoon/
 
 ### Vercel
 

@@ -27,3 +27,6 @@
 - Created the public GitHub repo `xxxerxxxes666/bloom-tycoon`.
 - Added `origin` and pushed `main`.
 - GitHub URL: https://github.com/xxxerxxxes666/bloom-tycoon
+- Enabled GitHub Pages from `main` at `/`.
+- GitHub Pages URL: https://xxxerxxxes666.github.io/bloom-tycoon/
+- Verified the Pages root page, playable HTML, and `assets/tiles/96/amber_resin_seed.png` return `200 OK`.
