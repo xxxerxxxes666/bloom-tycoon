@@ -14,6 +14,8 @@
 
 - Read `docs/hermes_audit_next_tasks.md` before making this pass.
 - Deployed the static repo to Vercel.
-- Live URL: https://i-want-you-to-prepare-bloom.vercel.app/
+- Renamed the Vercel project to `bloom-tycoon`.
+- Live URL: https://bloom-tycoon.vercel.app/
+- Disabled SSO deployment protection so Hermes can open the URL directly.
 - Verified the root page, `playable/midnight_bloom_prototype.html`, and `assets/tiles/96/amber_resin_seed.png` return `200 OK`.
 - GitHub repo creation is still waiting on browser login or a GitHub token/CLI auth path.

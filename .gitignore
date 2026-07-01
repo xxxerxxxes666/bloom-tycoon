@@ -16,6 +16,7 @@ node_modules/
 dist/
 build/
 .vercel/
+.env*
 
 # Keep source assets tracked. Do not add broad image ignores here;
 # assets/tiles/48 and assets/tiles/96 are required for the HTML playable.

@@ -6,7 +6,7 @@ A Godot 4 prototype plus a fast HTML playable for a gothic botanical match/tycoo
 
 Open `playable/midnight_bloom_prototype.html` directly in a browser, or serve the repo root and open `/`.
 
-Live Vercel preview: https://i-want-you-to-prepare-bloom.vercel.app/
+Live Vercel preview: https://bloom-tycoon.vercel.app/
 
 For a local static preview:
 
@@ -102,6 +102,9 @@ Godot smoke test passed: match board and shop upgrade loop initialize correctly.
 2. Use the static/default project settings. No build command is required.
 3. Leave the output directory as the repo root.
 4. Open the Vercel deployment URL. The root `index.html` redirects to the playable.
+
+Current Vercel project: `xerxes-florals/bloom-tycoon`
+Current public URL: https://bloom-tycoon.vercel.app/
 
 ## Hermes/Codex workflow
 
