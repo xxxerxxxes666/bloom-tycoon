@@ -57,6 +57,49 @@ The next Codex pass should focus on **first-session playability and reviewable i
 5. **Desktop is strong; mobile portrait still needs a real pass.** CSS has a `max-width: 760px` breakpoint, but the approved art direction is mobile portrait. The narrow layout needs explicit verification at ~390px width.
 6. **Repo handoff file is still the starter note.** This file now replaces the starter note with actionable tasks. Codex should read this file before coding and update `docs/codex_build_notes.md` after the pass.
 
+
+
+---
+
+# Xerxes gameplay directive — include in next Codex pass
+
+Xerxes specifically wants the game to become **more fun**, not merely more polished. Prioritize game feel and rewarding match shapes.
+
+## Match-shape requirement
+
+The match system must support intersecting straight-line matches:
+
+- normal horizontal 3+ matches;
+- normal vertical 3+ matches;
+- **L-shaped matches** made from intersecting horizontal/vertical runs;
+- **T-shaped matches** made from intersecting horizontal/vertical runs;
+- **cross-shaped matches** made from intersecting horizontal/vertical runs;
+- no diagonal matching.
+
+If the current code already claims this, verify it in browser with deterministic tests and add/keep regression tests so it cannot break. The player should visibly understand that the full L/T/cross shape cleared, not only one line.
+
+## Fun requirement
+
+Make these larger/intersecting shapes more exciting than ordinary 3-matches:
+
+1. L/T/cross clear should create a stronger visual burst than a 3-match.
+2. Award more coins/resources for larger shapes.
+3. Show special copy such as:
+   - `Witch's Cross!`
+   - `Night Garden L-Bloom!`
+   - `Twin Stem Bloom!`
+4. Use these shapes as stepping stones toward Supreme Bloom, but do **not** trigger Supreme Bloom too often.
+5. Add at least one clear review/demo path so Hermes can verify L/T/cross behavior without relying on luck.
+
+Acceptance checks:
+- A horizontal + vertical intersection clears the union of both lines.
+- An L shape clears both legs.
+- A cross shape clears all four arms.
+- Diagonal-only same-element clusters do not clear.
+- Larger shapes feel more rewarding than ordinary 3-matches.
+- Browser console remains clean.
+
+
 ---
 
 # Priority 1 — Make the first 30 seconds playable
