@@ -6,6 +6,8 @@ A Godot 4 prototype plus a fast HTML playable for a gothic botanical match/tycoo
 
 Open `playable/midnight_bloom_prototype.html` directly in a browser, or serve the repo root and open `/`.
 
+Live Vercel preview: https://i-want-you-to-prepare-bloom.vercel.app/
+
 For a local static preview:
 
 ```bash
