@@ -333,3 +333,25 @@
 - How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly to cycle Cross, L, and T demos; each should report the named shape reward copy.
 - How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit 84 particles, then return the board to play.
 - Security/secret-scan status: lightweight scan ran on changed files with no findings.
+
+## 2026-07-02 GitHub Pages Actions deployment repair
+
+- Legacy GitHub Pages branch builds failed for the gameplay commit `9782e07` while continuing to serve the previous `a79fb0d` artifact, so Pages did not receive the new Bone Star hint HTML.
+- Files changed:
+  - `.github/workflows/pages.yml`
+  - `scripts/verify_project.py`
+  - `docs/codex_build_notes.md`
+- Added a GitHub Actions workflow using official Pages actions: checkout, configure Pages, upload the static repo artifact, and deploy Pages.
+- Switched the repo Pages config from `build_type: legacy` to `build_type: workflow` through the GitHub API.
+- `python3 scripts/verify_project.py` now requires `.github/workflows/pages.yml`.
+- Verification run:
+  - `python3 scripts/verify_project.py`
+  - `git diff --check`
+  - Lightweight secret scan on changed files.
+  - Confirmed GitHub Pages config reads `build_type: workflow`.
+  - Confirmed the workflow is active as `Deploy GitHub Pages`.
+- Pages workflow status:
+  - Push run `28608011646` started before the Pages config switch fully settled, uploaded the artifact, then remained stuck in Deploy; it was cancelled manually.
+  - Manual workflow dispatch `28608326445` uploaded the artifact successfully, then GitHub returned `Deployment cancelled` from `actions/deploy-pages@v4`.
+- Known issue: Vercel is current for the Bone Star hint build, but GitHub Pages still serves the previous 130,222-byte HTML until a workflow Pages deployment completes successfully.
+- Security/secret-scan status: lightweight scan ran on changed files with no findings.
