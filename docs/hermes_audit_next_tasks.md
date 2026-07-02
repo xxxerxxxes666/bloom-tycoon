@@ -100,58 +100,61 @@ Do this next, surgically:
 
 # Hermes Audit Next Tasks
 
-Last audited by Hermes: **2026-07-02 19:20 UTC**
+Last audited by Hermes: **2026-07-02 19:52 UTC**
 Audit targets:
 - Vercel playable: https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html
 - GitHub Pages playable: https://xxxerxxxes666.github.io/bloom-tycoon/playable/midnight_bloom_prototype.html
 - Repo: https://github.com/xxxerxxxes666/bloom-tycoon
-- Latest audited commit: `d889ba6f` (`feat: add Cursed Thorn blocker round`)
+- Latest audited commit: `9637c4c` (`feat: add Black Candle Vine line relic`)
 
 ## Hermes audit verdict
 
-New Codex work landed. The Cursed Thorn blocker slice is live and working on both Vercel and GitHub Pages. No deploy-parity blocker remains.
+New Codex work landed. The 4-line Black Candle Vine relic slice is live and marker-matched on Vercel and GitHub Pages. No deploy-parity blocker remains.
 
-Core gameplay is working: first bouquet can complete, `Next Bouquet` starts Round 2, Round 2 shows 3 Cursed Thorns, an adjacent Nightshade match clears the thorns with visible/logged feedback, `Shape Bloom` works, `B` triggers Supreme Bloom, Chest opens/closes, Sacrifice opens/cancels, and mobile portrait has no horizontal overflow.
+Core gameplay is still working: first real Thorn Rose/Bone Star moves complete Round 1, `Next Bouquet` starts Round 2, Cursed Thorns appear and clear from an adjacent match, `Shape Bloom` now proves Black Candle Vine, `M` cycles Cross/L/T demos, `B` triggers Supreme Bloom, Chest opens/closes, Sacrifice opens/cancels, and mobile portrait has no horizontal overflow.
 
 ## Verified by Hermes this audit
 
 - Fetched/reset local clone to `origin/main` with the repo-scoped SSH key.
 - `python3 scripts/verify_project.py` passes.
 - `git diff --check` passes.
-- Latest commit audited: `d889ba6 feat: add Cursed Thorn blocker round`.
+- Latest commit audited: `9637c4c feat: add Black Candle Vine line relic`.
 - Vercel root/playable/key tile asset return `200`.
 - GitHub Pages root/playable/key tile asset return `200`.
-- Static marker parity: both hosted playables contain `Cursed Thorn`, `thornGoal`, `cursed-thorn-overlay`, `damageAdjacentThorns`, `Shape Bloom`, `Complete Bouquet`, `Next Bouquet`, `shapeAuditData`, `seedCurrentTargetMoves`, `writeTargetLegalMovePatch`, `SAP`, `MANA`, and `BLOOD`.
+- Static marker parity: both hosted playables contain `Black Candle Vine`, `lineRelicForMatch`, `queueLineRelicBurst`, `lineRelicMessage`, `line4`, `Cursed Thorn`, `Shape Bloom`, `Complete Bouquet`, `Next Bouquet`, `shapeAuditData`, `seedCurrentTargetMoves`, `writeTargetLegalMovePatch`, `SAP`, `MANA`, and `BLOOD`.
 - Vercel browser checks:
-  - 64 board tiles, 0 broken images, no console/page errors observed.
+  - 64 board tiles, 91 images, 0 broken images, no console/page errors observed.
   - Real first Thorn Rose swap advanced Thorn Rose to `3/3` and showed the Bone Star hint.
-  - Real Bone Star hinted swap completed Round 1 and showed `Next Bouquet`.
+  - Real Bone Star swap completed Round 1 and showed `Next Bouquet`.
   - Round 2 showed `Cursed Thorn 0/3` and 3 thorn blockers.
-  - Adjacent Nightshade swap cleared all 3 thorns, updated `Cursed Thorn 3/3`, and logged `3 Cursed Thorns cracked and burned away`.
-  - `Shape Bloom` showed a named shape demo; `B` showed `SUPREME BLOOM! Review hook complete. The board is ready.`
-  - Sacrifice opened/cancelled; Chest Storage opened with `aria-expanded=true` / modal `aria-hidden=false` and closed cleanly.
-  - Hidden-iframe mobile portrait at ~390px showed no horizontal overflow.
+  - Adjacent Nightshade swap cleared all 3 thorns, updated `Cursed Thorn 3/3`, and logged Cursed Thorn feedback.
+  - `Shape Bloom` showed `Black Candle Vine swept row 4`.
+  - `M` cycled `Witch's Cross!`, `Night Garden L-Bloom!`, and `Twin Stem Bloom!`.
+  - `B` showed `SUPREME BLOOM! Review hook complete. The board is ready.`
+  - Chest Storage opened with `aria-expanded=true` / modal `aria-hidden=false` and closed with Escape.
+  - Sacrifice opened and Cancel remained present in the sacrifice panel.
+  - Hidden-iframe mobile portrait at ~390px showed no horizontal overflow, 64 tiles, 0 broken images, and ~39px tiles.
 - GitHub Pages browser checks:
-  - 64 board tiles, 0 broken images, no console/page errors observed.
-  - Visible `Complete Bouquet` and `Next Bouquet` reached Round 2.
-  - Round 2 showed 3 Cursed Thorns; adjacent Nightshade swap cleared them to `Cursed Thorn 3/3`.
-  - `Shape Bloom` showed `Twin Stem Bloom!`; `B` showed Supreme Bloom; Chest opened.
+  - 64 board tiles, 91 images, 0 broken images, no console/page errors observed.
+  - Static markers matched Vercel.
+  - `Shape Bloom` showed `Black Candle Vine swept row 4`.
 
 ## Current next priority for Codex
 
-Proceed to the next small strategic gameplay slice: make 4-in-a-line matches create a clear line-clearing botanical relic.
+Proceed to the next small strategic gameplay slice: add a rare 5-line seed/rune reward without making Supreme Bloom common.
 
-1. Add a visible 4-line reward that creates or triggers a gothic line-clearing relic without making Supreme Bloom common.
-2. Preserve existing L/T/cross rewards, Cursed Thorn behavior, repeatable bouquet loop, and review hooks: `Shape Bloom`, `Complete Bouquet`, `N`, `M`, and `B`.
-3. Make the reward understandable in the ritual log and board feedback: name it, show what row/column it clears, and show resource/order progress.
-4. Add/update static verifier checks for the new 4-line relic markers.
-5. Verify both normal player flow and review hooks in browser before pushing.
+1. Add a visible 5-in-a-line reward with a gothic rare-seed/rune name and clear board feedback.
+2. Keep 4-line `Black Candle Vine` as the line-clearing relic, and preserve L/T/cross rewards, Cursed Thorn behavior, repeatable bouquet loop, and review hooks: `Shape Bloom`, `Complete Bouquet`, `N`, `M`, and `B`.
+3. Add a deterministic review path or source-level fixture so Hermes can verify the 5-line reward without random board luck.
+4. Make the ritual log explain what the rare seed/rune did and what resources/order progress it earned.
+5. Add/update static verifier checks for the new 5-line reward markers.
+6. Verify both normal player flow and review hooks in browser before pushing.
 
-### Acceptance checks for the 4-line relic pass
+### Acceptance checks for the 5-line reward pass
 
-- Vercel and GitHub Pages direct playable HTML contain the new 4-line relic markers after deployment.
-- A deterministic 4-line setup or review path proves the relic appears/triggers.
-- L/T/cross `Shape Bloom`, `M`, and `B` still work.
+- Vercel and GitHub Pages direct playable HTML contain the new 5-line reward markers after deployment.
+- A deterministic setup or review path proves the 5-line reward appears/triggers.
+- 4-line `Black Candle Vine`, L/T/cross `Shape Bloom`, `M`, and `B` still work.
 - Round 1 first-move/Bone Star flow still completes.
 - Round 2 Cursed Thorn objective still appears and thorns clear via adjacent matches.
 - Chest and Sacrifice still open/cancel/close correctly.
@@ -170,6 +173,7 @@ Proceed to the next small strategic gameplay slice: make 4-in-a-line matches cre
 - Keep the bottom Elements strip and compact Chest Storage concept.
 - Keep the buttons named `Shuffle (-1 move)`, `Sacrifice (-3 moves)`, `Complete Bouquet`, and `Shape Bloom`.
 - Keep Cursed Thorn as the first gothic blocker: adjacent matches damage/clear it with cracked vine, red/gold pulse, and ritual-log feedback.
+- Keep 4-line `Black Candle Vine` as the line-clearing botanical relic.
 - Keep Supreme Bloom rare in normal play, with review hooks clearly marked as prototype/debug-only.
 - Keep L/T/cross reward copy:
   - `Night Garden L-Bloom!`;
