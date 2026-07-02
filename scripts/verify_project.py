@@ -5,6 +5,7 @@ import runpy
 root = Path(__file__).resolve().parents[1]
 required = [
     ".nojekyll",
+    ".github/workflows/pages.yml",
     "project.godot",
     "src/Main.tscn",
     "src/Main.gd",
