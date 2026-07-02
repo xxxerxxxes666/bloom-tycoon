@@ -100,53 +100,60 @@ Do this next, surgically:
 
 # Hermes Audit Next Tasks
 
-Last audited by Hermes: **2026-07-02 18:40 UTC**
+Last audited by Hermes: **2026-07-02 19:20 UTC**
 Audit targets:
 - Vercel playable: https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html
 - GitHub Pages playable: https://xxxerxxxes666.github.io/bloom-tycoon/playable/midnight_bloom_prototype.html
 - Repo: https://github.com/xxxerxxxes666/bloom-tycoon
-- Latest audited commit: `bee9ac95ec115183be963871877e9e103270a54e` (`docs: add long-term gameplay framework`)
+- Latest audited commit: `d889ba6f` (`feat: add Cursed Thorn blocker round`)
 
 ## Hermes audit verdict
 
-New work landed since the prior audit. Vercel is current for the visible `Shape Bloom` / stronger vial pass and the new long-term framework docs. GitHub Pages is serving older playable HTML: it lacks `Shape Bloom`, `SAP`, and `MANA` markers even though it returns `200`.
+New Codex work landed. The Cursed Thorn blocker slice is live and working on both Vercel and GitHub Pages. No deploy-parity blocker remains.
 
-Vercel core gameplay is working in this audit: the first target move advances Thorn Rose, the hinted Bone Star move completes the First Bouquet, `Next Bouquet` starts Round 2, `Shape Bloom` triggers the Witch's Cross demo, `B` triggers Supreme Bloom, Sacrifice opens/cancels, Chest Storage expands, and mobile portrait has no horizontal overflow.
+Core gameplay is working: first bouquet can complete, `Next Bouquet` starts Round 2, Round 2 shows 3 Cursed Thorns, an adjacent Nightshade match clears the thorns with visible/logged feedback, `Shape Bloom` works, `B` triggers Supreme Bloom, Chest opens/closes, Sacrifice opens/cancels, and mobile portrait has no horizontal overflow.
 
 ## Verified by Hermes this audit
 
 - Fetched/reset local clone to `origin/main` with the repo-scoped SSH key.
 - `python3 scripts/verify_project.py` passes.
-- Latest repo commits since the prior audited `b88d5bb`: `de9fbbf feat: make vials and shape demos visible`, then `bee9ac9 docs: add long-term gameplay framework`.
+- `git diff --check` passes.
+- Latest commit audited: `d889ba6 feat: add Cursed Thorn blocker round`.
 - Vercel root/playable/key tile asset return `200`.
 - GitHub Pages root/playable/key tile asset return `200`.
-- Static marker parity:
-  - Vercel playable contains `Shape Bloom`, `SAP`, `MANA`, `BLOOD`, `Complete Bouquet`, `Next Bouquet`, `shapeAuditData`, `seedCurrentTargetMoves`, and `writeTargetLegalMovePatch`.
-  - GitHub Pages playable contains the older core-loop markers but is missing `Shape Bloom`, `SAP`, and `MANA`.
-- Browser checks:
-  - Vercel: 64 board tiles, 91 images, 0 broken images, no console/page errors observed.
-  - Vercel first target move diagnostic advanced Thorn Rose to `3/3` and showed the Bone Star hint.
-  - Vercel Bone Star hint move completed Bone Star to `2/2`; `Next Bouquet` started Round 2 with a fresh 64-tile board.
-  - Vercel `Shape Bloom` showed `Witch's Cross`; `B` showed `SUPREME BLOOM! Review hook complete. The board is ready.` with 84 particles.
-  - Vercel Sacrifice opened and Cancel exited; Chest Storage changed to `aria-expanded=true` / modal `aria-hidden=false`.
-  - Vercel hidden-iframe mobile portrait at ~390px showed no horizontal overflow.
-  - GitHub Pages: 64 board tiles, 90 images, 0 broken images, no console/page errors observed, but the visible `Shape Bloom` button is absent.
+- Static marker parity: both hosted playables contain `Cursed Thorn`, `thornGoal`, `cursed-thorn-overlay`, `damageAdjacentThorns`, `Shape Bloom`, `Complete Bouquet`, `Next Bouquet`, `shapeAuditData`, `seedCurrentTargetMoves`, `writeTargetLegalMovePatch`, `SAP`, `MANA`, and `BLOOD`.
+- Vercel browser checks:
+  - 64 board tiles, 0 broken images, no console/page errors observed.
+  - Real first Thorn Rose swap advanced Thorn Rose to `3/3` and showed the Bone Star hint.
+  - Real Bone Star hinted swap completed Round 1 and showed `Next Bouquet`.
+  - Round 2 showed `Cursed Thorn 0/3` and 3 thorn blockers.
+  - Adjacent Nightshade swap cleared all 3 thorns, updated `Cursed Thorn 3/3`, and logged `3 Cursed Thorns cracked and burned away`.
+  - `Shape Bloom` showed a named shape demo; `B` showed `SUPREME BLOOM! Review hook complete. The board is ready.`
+  - Sacrifice opened/cancelled; Chest Storage opened with `aria-expanded=true` / modal `aria-hidden=false` and closed cleanly.
+  - Hidden-iframe mobile portrait at ~390px showed no horizontal overflow.
+- GitHub Pages browser checks:
+  - 64 board tiles, 0 broken images, no console/page errors observed.
+  - Visible `Complete Bouquet` and `Next Bouquet` reached Round 2.
+  - Round 2 showed 3 Cursed Thorns; adjacent Nightshade swap cleared them to `Cursed Thorn 3/3`.
+  - `Shape Bloom` showed `Twin Stem Bloom!`; `B` showed Supreme Bloom; Chest opened.
 
 ## Current next priority for Codex
 
-First fix deploy parity. Do **not** implement Cursed Thorn or more gameplay until GitHub Pages serves the same visible-control build as Vercel.
+Proceed to the next small strategic gameplay slice: make 4-in-a-line matches create a clear line-clearing botanical relic.
 
-1. Re-run/repair the GitHub Pages workflow so Pages serves commit `bee9ac95ec115183be963871877e9e103270a54e` or newer.
-2. Verify Pages direct playable HTML contains `Shape Bloom`, `SAP`, `MANA`, `BLOOD`, `Complete Bouquet`, `Next Bouquet`, and `shapeAuditData`.
-3. Verify Pages in browser: visible `Shape Bloom` button, `Shape Bloom` demo, `B` Supreme Bloom, Chest Storage, Sacrifice cancel, first-move Thorn Rose/Bone Star flow, and mobile portrait no horizontal overflow.
-4. Only after Pages/Vercel parity is restored, resume the gameplay framework slice below: simple `Cursed Thorn` blocker objective in one round, adjacent-match damage/clear feedback, and preserved `Shape Bloom`, `Complete Bouquet`, `N`, `M`, `B` review hooks.
+1. Add a visible 4-line reward that creates or triggers a gothic line-clearing relic without making Supreme Bloom common.
+2. Preserve existing L/T/cross rewards, Cursed Thorn behavior, repeatable bouquet loop, and review hooks: `Shape Bloom`, `Complete Bouquet`, `N`, `M`, and `B`.
+3. Make the reward understandable in the ritual log and board feedback: name it, show what row/column it clears, and show resource/order progress.
+4. Add/update static verifier checks for the new 4-line relic markers.
+5. Verify both normal player flow and review hooks in browser before pushing.
 
-### Acceptance checks for the parity pass
+### Acceptance checks for the 4-line relic pass
 
-- Vercel and GitHub Pages direct playable HTML contain the same visible-control/vial markers.
-- Both hosts show the visible `Shape Bloom` button.
-- Both hosts keep the first bouquet loop working: Thorn Rose move → Bone Star hint/move → reward ceremony → `Next Bouquet` Round 2.
-- `Shape Bloom`, `M`, `B`, `N`, and `Complete Bouquet` remain working review hooks.
+- Vercel and GitHub Pages direct playable HTML contain the new 4-line relic markers after deployment.
+- A deterministic 4-line setup or review path proves the relic appears/triggers.
+- L/T/cross `Shape Bloom`, `M`, and `B` still work.
+- Round 1 first-move/Bone Star flow still completes.
+- Round 2 Cursed Thorn objective still appears and thorns clear via adjacent matches.
 - Chest and Sacrifice still open/cancel/close correctly.
 - Mobile portrait has no horizontal overflow.
 - No console errors, no broken images.
@@ -162,6 +169,7 @@ First fix deploy parity. Do **not** implement Cursed Thorn or more gameplay unti
 - Keep the gothic vial-style Greenhouse/Apothecary/Faction progress meters, including the stronger SAP/MANA/BLOOD readability.
 - Keep the bottom Elements strip and compact Chest Storage concept.
 - Keep the buttons named `Shuffle (-1 move)`, `Sacrifice (-3 moves)`, `Complete Bouquet`, and `Shape Bloom`.
+- Keep Cursed Thorn as the first gothic blocker: adjacent matches damage/clear it with cracked vine, red/gold pulse, and ritual-log feedback.
 - Keep Supreme Bloom rare in normal play, with review hooks clearly marked as prototype/debug-only.
 - Keep L/T/cross reward copy:
   - `Night Garden L-Bloom!`;
