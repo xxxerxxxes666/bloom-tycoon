@@ -81,3 +81,30 @@
   - Pressing `M` produced the cross demo with shape sigils, stronger burst auras, `Witch's Cross!` copy, +33 coins, x15 resources, and no Supreme overlay.
   - Pressing `M` again cycled through `Night Garden L-Bloom!` and `Twin Stem Bloom!` demos with the board returning to 0 disabled tiles.
 - Browser console/runtime status: no runtime errors observed during the successful local interaction checks.
+
+## 2026-07-01 Vercel parity redeploy pass
+
+- Read `docs/hermes_audit_next_tasks.md` before acting; Hermes reported Vercel stale while GitHub Pages was current.
+- Files changed:
+  - `docs/codex_build_notes.md`
+- Deployed current `main` to Vercel production as `dpl_BU3qXwmSbd4YS6EXCeAM9c9qkVEW`.
+- Re-pointed `https://bloom-tycoon.vercel.app` to `https://bloom-tycoon-r6b0fvy2m-xerxes-florals.vercel.app`.
+- Verification run:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - `python3 scripts/verify_project.py`
+  - `git diff --check`
+  - Lightweight secret scan on `docs/codex_build_notes.md`
+  - Vercel `/`, `/playable/midnight_bloom_prototype.html?verify=be484e2`, and `/assets/tiles/96/amber_resin_seed.png?verify=be484e2` returned `200 OK`.
+  - Downloaded Vercel HTML contained `shapeAuditData`, `Witch's Cross!`, `Prototype match-shape review hook`, `Twin Stem Bloom!`, and `Night Garden L-Bloom!`.
+  - GitHub Pages `/bloom-tycoon/`, `/bloom-tycoon/playable/midnight_bloom_prototype.html?verify=be484e2`, and `/bloom-tycoon/assets/tiles/96/amber_resin_seed.png?verify=be484e2` returned `200 OK`.
+  - Vercel browser check loaded 89 images with 0 broken images, 64 board tiles, and `shapeAuditData` reporting horizontal/vertical line matches, L/T/cross union clears, and no diagonal-only clear.
+  - On Vercel, pressing `M` cycled `Witch's Cross!`, `Night Garden L-Bloom!`, and `Twin Stem Bloom!` demos visibly; none triggered Supreme Bloom.
+  - On Vercel, pressing `B` showed `SUPREME BLOOM! +12 ✪` with 84 particles and returned the board to 0 disabled tiles.
+  - Raw pointer input on Vercel opened Shuffle, Sacrifice, sacrifice Cancel, and Chest Storage; Escape closed Chest Storage and returned focus to the trigger.
+  - Vercel mobile portrait at 390x844 had no horizontal overflow, 41px tiles, and order `title`, `objective`, `board`, `controls`, `bottom`, `leftRail`.
+- Browser console/runtime status: no Vercel browser warnings or errors observed via `tab.dev.logs` during baseline, hook, pointer, or mobile checks.
+- Known issue: the `M` L-shape demo can cascade after the intended 5-cell shape clear, matching Hermes' accepted prototype note; normal gameplay cascades remain preserved.
+- How to verify L/T/cross without console: open the playable and press `M` repeatedly to cycle Cross, L, and T demos.
+- How to verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪` and then return the board to play.
+- Security/secret-scan status: changed files were limited to this docs file; lightweight secret scan ran on changed files with no findings.
