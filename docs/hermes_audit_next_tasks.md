@@ -100,61 +100,65 @@ Do this next, surgically:
 
 # Hermes Audit Next Tasks
 
-Last audited by Hermes: **2026-07-02 19:52 UTC**
+Last audited by Hermes: **2026-07-02 20:28 UTC**
 Audit targets:
 - Vercel playable: https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html
 - GitHub Pages playable: https://xxxerxxxes666.github.io/bloom-tycoon/playable/midnight_bloom_prototype.html
 - Repo: https://github.com/xxxerxxxes666/bloom-tycoon
-- Latest audited commit: `9637c4c` (`feat: add Black Candle Vine line relic`)
+- Latest audited commit: `6de305b` (`docs: record Eclipse Seed Rune Pages parity`)
+- Latest gameplay commit audited: `6bf9ed9` (`feat: add Eclipse Seed Rune reward`)
 
 ## Hermes audit verdict
 
-New Codex work landed. The 4-line Black Candle Vine relic slice is live and marker-matched on Vercel and GitHub Pages. No deploy-parity blocker remains.
+New Codex work landed. The 5-line `Eclipse Seed Rune` slice is live and marker-matched on Vercel and GitHub Pages. No deploy-parity blocker remains.
 
-Core gameplay is still working: first real Thorn Rose/Bone Star moves complete Round 1, `Next Bouquet` starts Round 2, Cursed Thorns appear and clear from an adjacent match, `Shape Bloom` now proves Black Candle Vine, `M` cycles Cross/L/T demos, `B` triggers Supreme Bloom, Chest opens/closes, Sacrifice opens/cancels, and mobile portrait has no horizontal overflow.
+Core gameplay is still working: first real Thorn Rose/Bone Star moves complete Round 1, `Next Bouquet` starts Round 2, Cursed Thorns appear and clear from adjacent matches, `Shape Bloom` proves the new Eclipse Seed Rune reward, `M` cycles Eclipse Seed Rune → Black Candle Vine → Cross/L/T demos, `B` triggers Supreme Bloom, Chest opens/closes, Sacrifice opens/cancels, and mobile portrait has no horizontal overflow.
 
 ## Verified by Hermes this audit
 
 - Fetched/reset local clone to `origin/main` with the repo-scoped SSH key.
 - `python3 scripts/verify_project.py` passes.
 - `git diff --check` passes.
-- Latest commit audited: `9637c4c feat: add Black Candle Vine line relic`.
+- Latest commit audited: `6de305b docs: record Eclipse Seed Rune Pages parity`.
+- Latest gameplay commit audited: `6bf9ed9 feat: add Eclipse Seed Rune reward`.
 - Vercel root/playable/key tile asset return `200`.
 - GitHub Pages root/playable/key tile asset return `200`.
-- Static marker parity: both hosted playables contain `Black Candle Vine`, `lineRelicForMatch`, `queueLineRelicBurst`, `lineRelicMessage`, `line4`, `Cursed Thorn`, `Shape Bloom`, `Complete Bouquet`, `Next Bouquet`, `shapeAuditData`, `seedCurrentTargetMoves`, `writeTargetLegalMovePatch`, `SAP`, `MANA`, and `BLOOD`.
+- Static marker parity: both hosted playables contain `Eclipse Seed Rune`, `rareSeedRuneForMatch`, `queueRareSeedRuneBurst`, `rareSeedRuneMessage`, `line5`, `Black Candle Vine`, `Cursed Thorn`, `Shape Bloom`, `Complete Bouquet`, `Next Bouquet`, `shapeAuditData`, `seedCurrentTargetMoves`, `writeTargetLegalMovePatch`, `SAP`, `MANA`, and `BLOOD`.
 - Vercel browser checks:
   - 64 board tiles, 91 images, 0 broken images, no console/page errors observed.
   - Real first Thorn Rose swap advanced Thorn Rose to `3/3` and showed the Bone Star hint.
   - Real Bone Star swap completed Round 1 and showed `Next Bouquet`.
   - Round 2 showed `Cursed Thorn 0/3` and 3 thorn blockers.
-  - Adjacent Nightshade swap cleared all 3 thorns, updated `Cursed Thorn 3/3`, and logged Cursed Thorn feedback.
-  - `Shape Bloom` showed `Black Candle Vine swept row 4`.
-  - `M` cycled `Witch's Cross!`, `Night Garden L-Bloom!`, and `Twin Stem Bloom!`.
-  - `B` showed `SUPREME BLOOM! Review hook complete. The board is ready.`
+  - Adjacent target swaps cleared all 3 thorns, updated `Cursed Thorn 3/3`, and logged Cursed Thorn feedback.
+  - `Shape Bloom` showed `Eclipse Seed Rune awakened from a five-line row 4 and sealed in Chest Storage`.
+  - `M` cycled `Eclipse Seed Rune`, `Black Candle Vine`, `Witch's Cross!`, `Night Garden L-Bloom!`, and `Twin Stem Bloom!`.
+  - `B` showed `SUPREME BLOOM!` and returned the board to play.
   - Chest Storage opened with `aria-expanded=true` / modal `aria-hidden=false` and closed with Escape.
-  - Sacrifice opened and Cancel remained present in the sacrifice panel.
+  - Sacrifice opened and Cancel closed it.
   - Hidden-iframe mobile portrait at ~390px showed no horizontal overflow, 64 tiles, 0 broken images, and ~39px tiles.
 - GitHub Pages browser checks:
   - 64 board tiles, 91 images, 0 broken images, no console/page errors observed.
   - Static markers matched Vercel.
-  - `Shape Bloom` showed `Black Candle Vine swept row 4`.
+  - `Shape Bloom` showed `Eclipse Seed Rune awakened from a five-line row 4 and sealed in Chest Storage`.
 
 ## Current next priority for Codex
 
-Proceed to the next small strategic gameplay slice: add a rare 5-line seed/rune reward without making Supreme Bloom common.
+Proceed to the next small strategic gameplay slice: make the earned `Eclipse Seed Rune` matter in the tycoon loop without adding accounts, backend, analytics, ads, or broad systems.
 
-1. Add a visible 5-in-a-line reward with a gothic rare-seed/rune name and clear board feedback.
-2. Keep 4-line `Black Candle Vine` as the line-clearing relic, and preserve L/T/cross rewards, Cursed Thorn behavior, repeatable bouquet loop, and review hooks: `Shape Bloom`, `Complete Bouquet`, `N`, `M`, and `B`.
-3. Add a deterministic review path or source-level fixture so Hermes can verify the 5-line reward without random board luck.
-4. Make the ritual log explain what the rare seed/rune did and what resources/order progress it earned.
-5. Add/update static verifier checks for the new 5-line reward markers.
-6. Verify both normal player flow and review hooks in browser before pushing.
+1. Add a small, visible Chest-to-upgrade payoff for `Eclipse Seed Rune` after it is earned: either plant/consume one rune for Greenhouse progress or unlock a one-round gothic boon such as `Rune-Tended Soil`.
+2. Keep the implementation local/static and reversible: no backend, no accounts, no trackers, no secrets, no SDKs.
+3. Preserve current reward hierarchy: exact 5-line = `Eclipse Seed Rune`, 4-line = `Black Candle Vine`, L/T/cross = shape rewards, 6+ straight line or `B`/Sacrifice only = Supreme Bloom.
+4. Add clear ritual-log copy explaining what the rune did and why the next bouquet is better.
+5. Keep review hooks: `Shape Bloom`, `Complete Bouquet`, `N`, `M`, and `B`.
+6. Add/update static verifier checks for the new rune payoff markers.
+7. Verify normal first-move flow, Round 2 Cursed Thorn flow, rune payoff, Chest/Sacrifice, review hooks, host parity, and mobile portrait before pushing.
 
-### Acceptance checks for the 5-line reward pass
+### Acceptance checks for the rune payoff pass
 
-- Vercel and GitHub Pages direct playable HTML contain the new 5-line reward markers after deployment.
-- A deterministic setup or review path proves the 5-line reward appears/triggers.
-- 4-line `Black Candle Vine`, L/T/cross `Shape Bloom`, `M`, and `B` still work.
+- Vercel and GitHub Pages direct playable HTML contain the new rune payoff markers after deployment.
+- A deterministic path earns `Eclipse Seed Rune`, stores it in Chest, then visibly spends/applies it.
+- The payoff changes a clear local game value such as Greenhouse XP/progress, next-round starting moves, or a one-round boon label.
+- 5-line `Eclipse Seed Rune`, 4-line `Black Candle Vine`, L/T/cross `Shape Bloom`, `M`, and `B` still work.
 - Round 1 first-move/Bone Star flow still completes.
 - Round 2 Cursed Thorn objective still appears and thorns clear via adjacent matches.
 - Chest and Sacrifice still open/cancel/close correctly.
