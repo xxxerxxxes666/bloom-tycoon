@@ -355,3 +355,15 @@
   - Manual workflow dispatch `28608326445` uploaded the artifact successfully, then GitHub returned `Deployment cancelled` from `actions/deploy-pages@v4`.
 - Known issue: Vercel is current for the Bone Star hint build, but GitHub Pages still serves the previous 130,222-byte HTML until a workflow Pages deployment completes successfully.
 - Security/secret-scan status: lightweight scan ran on changed files with no findings.
+
+## 2026-07-02 Hermes fun/clarity patch
+
+- Hermes patched directly after Xerxes reported the game still did not feel changed or fun.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Made left progress meters much more obvious as Diablo-inspired glass liquid vials: SAP, MANA, BLOOD.
+- Added visible `Shape Bloom` button so L/T/cross match demos are discoverable without knowing the hidden `M` key.
+- Kept `Complete Bouquet`, `N`, `M`, and `B` review hooks.
+- Security: no secrets, no trackers, no backend, no new permissions.

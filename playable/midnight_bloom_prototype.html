@@ -272,52 +272,58 @@
     }
 
     .xp {
-      height: 34px;
+      height: 58px;
       margin: 12px 0 8px;
-      padding: 5px 7px;
+      padding: 8px 13px;
       position: relative;
       overflow: hidden;
-      border: 1px solid #7b5634;
-      border-radius: 999px;
+      border: 2px solid #9a6b37;
+      border-radius: 30px 30px 34px 34px;
       background:
-        radial-gradient(circle at 16% 50%, #24150c 0 10px, #0000 11px),
-        radial-gradient(circle at 84% 50%, #24150c 0 10px, #0000 11px),
-        linear-gradient(180deg, #2c2118, #080606 48%, #030202);
+        radial-gradient(ellipse at 10% 50%, #120807 0 18px, #0000 19px),
+        radial-gradient(ellipse at 90% 50%, #120807 0 18px, #0000 19px),
+        linear-gradient(180deg, #3a2819, #090606 48%, #020101);
       box-shadow:
-        inset 0 0 0 1px #000,
-        inset 0 0 16px #000,
+        inset 0 0 0 2px #000,
+        inset 0 0 28px #000,
         0 0 0 1px #000,
-        0 0 14px #000;
+        0 0 18px #000,
+        0 0 10px #7f4b1d55;
     }
 
     .xp::before {
-      content: "";
+      content: attr(data-vial);
       position: absolute;
-      inset: 4px 7px 17px;
-      z-index: 2;
-      border-radius: 999px;
-      background: linear-gradient(180deg, #fff4c044, #fff4c012 54%, #0000);
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 4;
+      color: #f3d29b;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 1.4px;
+      text-shadow: 0 2px 0 #000, 0 0 7px #000;
       pointer-events: none;
-      mix-blend-mode: screen;
     }
 
     .xp::after {
       content: "";
       position: absolute;
-      inset: 3px;
+      inset: 5px 10px 23px;
       z-index: 3;
-      border: 1px solid #d0a35b55;
       border-radius: 999px;
-      box-shadow: inset 0 0 8px #000, inset 0 -8px 14px #0008;
+      background: linear-gradient(180deg, #fff7cc7a, #fff7cc25 45%, #0000);
+      box-shadow: inset 0 0 7px #fff0b422;
       pointer-events: none;
+      mix-blend-mode: screen;
     }
 
     .xp-fill {
       display: block;
       height: 100%;
       width: 55%;
-      min-width: 18px;
-      border-radius: 999px;
+      min-width: 24px;
+      border-radius: 999px 18px 18px 999px;
       position: relative;
       z-index: 1;
       background:
@@ -2134,7 +2140,7 @@
           <span class="panel-gate" aria-hidden="true">›</span>
         </div>
         <div class="small" id="greenhouseLevel">Level 4</div>
-        <div class="xp"><span class="xp-fill" id="greenhouseXpFill"></span></div>
+        <div class="xp vial-meter" data-vial="SAP"><span class="xp-fill" id="greenhouseXpFill"></span></div>
         <div class="small" id="greenhouseXpText">1,240 / 2,000 XP</div>
       </div>
 
@@ -2145,7 +2151,7 @@
           <span class="panel-gate" aria-hidden="true">›</span>
         </div>
         <div class="small" id="apothecaryLevel">Level 2</div>
-        <div class="xp"><span class="xp-fill apothecary-fill" id="apothecaryXpFill"></span></div>
+        <div class="xp vial-meter" data-vial="MANA"><span class="xp-fill apothecary-fill" id="apothecaryXpFill"></span></div>
         <div class="small" id="apothecaryXpText">420 / 1,000 XP</div>
       </div>
 
@@ -2155,7 +2161,7 @@
           <h3>Faction: Sub Rosa</h3>
         </div>
         <div class="small" id="factionLevel">Level 3 · Trusted</div>
-        <div class="xp"><span class="xp-fill faction-fill" id="factionXpFill"></span></div>
+        <div class="xp vial-meter" data-vial="BLOOD"><span class="xp-fill faction-fill" id="factionXpFill"></span></div>
         <div class="small" id="factionXpText">510 / 1,200 Favor</div>
       </div>
 
@@ -2203,6 +2209,10 @@
         <button class="btn demo" id="demoCompleteBtn" type="button">
           <img class="btn-icon" src="../assets/tiles/96/crimson_rose_rune.png" alt="">
           <span>Complete Bouquet</span>
+        </button>
+        <button class="btn demo" id="shapeBloomBtn" type="button">
+          <img class="btn-icon" src="../assets/tiles/96/purple_nightshade_bloom.png" alt="">
+          <span>Shape Bloom</span>
         </button>
       </div>
       <div class="sacrifice-panel" id="sacrificePanel" aria-live="polite">
@@ -2852,6 +2862,7 @@
       $("shuffleBtn").disabled = isResolving || roundComplete || moves < 1;
       $("sacrificeBtn").disabled = isResolving || roundComplete || moves < 3;
       $("demoCompleteBtn").disabled = isResolving || roundComplete;
+      $("shapeBloomBtn").disabled = isResolving || roundComplete;
       $("sacrificeBtn").classList.toggle("armed", sacrificeState.active);
       $("sacrificeBtn").setAttribute("aria-pressed", sacrificeState.active ? "true" : "false");
       $("ritualLog").innerHTML = ritualMessage;
@@ -4364,6 +4375,7 @@
     $("shuffleBtn").addEventListener("click", shuffleBoard);
     $("sacrificeBtn").addEventListener("click", sacrifice);
     $("demoCompleteBtn").addEventListener("click", demoCompleteBouquet);
+    $("shapeBloomBtn").addEventListener("click", () => demoMatchShape());
     $("sacrificeCancel").addEventListener("click", () => cancelSacrifice());
     $("renewBtn").addEventListener("click", renewBouquet);
     $("chestTrigger").addEventListener("click", openChest);
