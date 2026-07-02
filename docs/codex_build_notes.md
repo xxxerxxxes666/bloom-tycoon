@@ -222,3 +222,32 @@
 - How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly to cycle Cross, L, and T demos; each should report 5 tiles harvested with its named shape copy.
 - How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit 84 particles, then return the board to play.
 - Security/secret-scan status: lightweight scan ran on changed files with no findings.
+
+## 2026-07-02 GitHub Pages parity refresh check
+
+- Read `docs/hermes_audit_next_tasks.md` before acting; Hermes' blocker was GitHub Pages serving stale HTML while Vercel was current.
+- Files changed:
+  - `docs/codex_build_notes.md`
+- Gameplay files were not changed in this pass.
+- Authenticated GitHub Pages API reported `status: built`, `source.branch: main`, `source.path: /`, and `html_url: https://xxxerxxxes666.github.io/bloom-tycoon/`.
+- Verification run:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - `python3 scripts/verify_project.py`
+  - Vercel and GitHub Pages direct playable URLs returned `200 OK`.
+  - Vercel and GitHub Pages `assets/tiles/96/amber_resin_seed.png` returned `200 OK`.
+  - Downloaded Vercel and GitHub Pages playable HTML both contained `demoCompleteBtn`, `Complete Bouquet`, `let moves = roundTemplates[0].moves`, `Next Bouquet`, and `shapeAuditData`.
+  - GitHub Pages Playwright check loaded 64 board tiles, 90 images, 0 broken images, and no console/page errors.
+  - GitHub Pages first load showed Round 1 Thorn Rose `0/3`, Bone Star `0/2`, and 12 moves.
+  - GitHub Pages `Complete Bouquet` opened the First Bouquet ceremony; `Next Bouquet` started Round 2 with a fresh 64-tile board and 17 moves.
+  - GitHub Pages `M` cycled `Witch's Cross!`, `Night Garden L-Bloom!`, and `Twin Stem Bloom!` demos with 5 cells burned bright and no cascade text.
+  - GitHub Pages `B` showed `SUPREME BLOOM! Review hook complete. The board is ready.` with 84 particles and then cleared back to play.
+  - GitHub Pages Chest Storage opened and Escape closed it; Sacrifice opened and Cancel closed it.
+  - GitHub Pages mobile portrait check at 390x844 had no horizontal overflow, 41px board tiles, and the visible completion button fit in the controls.
+- Browser console/runtime status: no GitHub Pages Playwright console warnings, console errors, or page errors observed during parity checks.
+- Vercel deployment URL/identifier checked: no redeploy this pass; existing Vercel production remained current and marker-matched Pages.
+- GitHub Pages preview status: current and marker-matched with Vercel during this pass.
+- Known issues: none for Pages parity at the time of verification.
+- How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly to cycle Cross, L, and T demos; each should report the named shape and 5 cells burned bright.
+- How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit 84 particles, then return the board to play.
+- Security/secret-scan status: lightweight scan ran on changed files with no findings.
