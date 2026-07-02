@@ -175,3 +175,16 @@
 - How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly to cycle Cross, L, and T demos; each should report 5 tiles harvested with its named shape copy.
 - How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit 84 particles, then return the board to play.
 - Security/secret-scan status: lightweight scan ran on changed files with no findings.
+
+## 2026-07-02 Hermes emergency visible-gameplay patch
+
+- Hermes patched directly because Xerxes reported the live game still felt like it was doing nothing.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Made Round 1 much faster: Thorn Rose 3 and Bone Star 2, with 12 moves.
+- Added prototype review key `N` to instantly fulfill the current bouquet and show the win/Next Bouquet state.
+- Kept `M` for L/T/cross demos and `B` for Supreme Bloom.
+- Verification required by Hermes: open live playable, press `N`, confirm reward ceremony and `Next Bouquet`; click it and confirm Round 2 starts with fresh objectives.
+- Security: no secrets, no trackers, no backend, no new permissions.

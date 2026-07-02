@@ -2260,10 +2260,10 @@
     const roundTemplates = [
       {
         name: "First Bouquet",
-        moves: 16,
+        moves: 12,
         targets: [
-          { flowerId: 5, needed: 8, order: "Velvet Funeral" },
-          { flowerId: 1, needed: 6, order: "Saint's Offering" }
+          { flowerId: 5, needed: 3, order: "Velvet Funeral" },
+          { flowerId: 1, needed: 2, order: "Saint's Offering" }
         ],
         reward: { coins: 120, greenhouse: 180, apothecary: 60, faction: 35, item: "First Bouquet Coffer", flowerId: 5 }
       },
@@ -3664,6 +3664,26 @@
       scheduleIdleHint();
     }
 
+    function demoCompleteBouquet() {
+      // Prototype review hook; remove or gate before production.
+      if (isResolving || roundComplete) {
+        return;
+      }
+      const plan = activeRoundPlan();
+      plan.targets.forEach((target) => {
+        counts[target.flowerId] = Math.max(counts[target.flowerId], target.needed);
+        orderPulseTargets.add(target.flowerId);
+        elementPulseTargets.add(target.flowerId);
+      });
+      notePlayerInteraction();
+      if (maybeCompleteRound()) {
+        ritualMessage += " <strong>Press Next Bouquet to keep playing.</strong>";
+      }
+      render();
+      scheduleOrderPulseClear();
+      scheduleElementPulseClear();
+    }
+
     function sacrifice() {
       // Sacrifice transmutation: choose one element, delete one tile, and replace it at a cost.
       if (isResolving) {
@@ -4271,6 +4291,10 @@
         // Prototype review hook; remove or gate before production.
         event.preventDefault();
         demoSupremeBloom();
+      } else if (event.key.toLowerCase() === "n" && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        // Prototype review hook; remove or gate before production.
+        event.preventDefault();
+        demoCompleteBouquet();
       }
     });
 

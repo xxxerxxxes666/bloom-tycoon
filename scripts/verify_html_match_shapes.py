@@ -156,6 +156,8 @@ def verify_source_hooks():
         "resolveAnimated({ maxCascades: 1 })",
         "const roundTemplates",
         "function maybeCompleteRound",
+        "function demoCompleteBouquet",
+        "event.key.toLowerCase() === \"n\"",
         "Next Bouquet",
         "roundCeremony",
         "factionXpFill",
