@@ -163,6 +163,8 @@ def verify_source_hooks():
         "event.key.toLowerCase() === \"n\"",
         "function seedCurrentTargetMoves",
         "writeTargetLegalMovePatch",
+        "function findTargetLegalMove",
+        "function nextTargetMoveHint",
         "Next Bouquet",
         "roundCeremony",
         "factionXpFill",

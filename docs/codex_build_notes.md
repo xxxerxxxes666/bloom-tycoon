@@ -298,3 +298,38 @@
 - How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly to cycle Cross, L, and T demos; each should report the named shape reward copy.
 - How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit 84 particles, then return the board to play.
 - Security/secret-scan status: lightweight scan ran on changed files with no findings.
+
+## 2026-07-02 Codex post-first-move Bone Star hint pass
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes' current priority was post-first-move clarity after the seeded Thorn Rose swap.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added a tiny next-target hint path that prefers the seeded target move before falling back to any legal target-element move.
+- After the first Thorn Rose move completes, the ritual log now says `Bone Star remains. Swap the glowing tiles to feed Saint's Offering.` and the top-right seeded Bone Star swap tiles use the existing idle-hint glow.
+- Preserved Round 1 counts, `Complete Bouquet`, `N`, `M`, `B`, the repeatable round loop, and the current UI layout.
+- Verification run:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - JS parse check over executable HTML scripts
+  - `python3 scripts/verify_project.py`
+  - `git diff --check`
+  - Local static preview at `http://127.0.0.1:4173/playable/midnight_bloom_prototype.html`
+  - Local Playwright check loaded 64 board tiles, 90 images, 0 broken images, and fresh Round 1 objectives Thorn Rose `0/3`, Bone Star `0/2`, 12 moves.
+  - Local real mouse Thorn Rose swap advanced Thorn Rose to `3/3`, left Bone Star at `0/2`, set moves to 11, displayed the Bone Star/Saint's Offering hint copy, and highlighted the top-right seeded Bone Star swap.
+  - Local real mouse Bone Star swap completed Bone Star to `2/2`, opened the First Bouquet reward ceremony, and showed `Next Bouquet`.
+  - Local `Next Bouquet` started Round 2 with Nightshade/Amber Seed/Thorn Rose objectives and 17 moves.
+  - Local `M` and `B` hooks still worked; `B` emitted 84 Supreme particles.
+  - Local Sacrifice opened and Cancel exited; Chest Storage opened and Escape closed it.
+  - Local mobile portrait at 390x844 had no horizontal overflow and 41px board tiles.
+- Browser console/runtime status: no local or Vercel Playwright console warnings, console errors, or page errors observed during post-first-move, hook, pointer, or mobile checks.
+- Deployed to Vercel production as `dpl_GouvYotKrFxfQuqau3R7ojRmCkKC`.
+- Vercel deployment URL: https://bloom-tycoon-lo50ma2qm-xerxes-florals.vercel.app
+- Explicitly re-pointed `https://bloom-tycoon.vercel.app` to that deployment.
+- Vercel Playwright check confirmed the hint markers, Bone Star/Saint's Offering copy, top-right Bone Star glow after the Thorn Rose swap, real Bone Star completion, `M`, `B`, 90 images, 0 broken images, and 390x844 mobile with no horizontal overflow.
+- GitHub Pages preview status before push: current for the previous build and marker-matched through `a79fb0d`; this pass must be rechecked after the new commit publishes.
+- Known issues: none found locally or on Vercel for the post-first-move clarity path.
+- How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly to cycle Cross, L, and T demos; each should report the named shape reward copy.
+- How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit 84 particles, then return the board to play.
+- Security/secret-scan status: lightweight scan ran on changed files with no findings.

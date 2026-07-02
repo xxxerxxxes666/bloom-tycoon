@@ -2656,6 +2656,55 @@
       return movesOut;
     }
 
+    function targetMoveCreatesHarvest(a, b, flowerId) {
+      swapBoardCells(a, b);
+      const createsTargetMatch = matches().some((match) =>
+        match.val === flowerId && match.cells.some(([mx, my]) =>
+          (mx === a.x && my === a.y) || (mx === b.x && my === b.y)
+        )
+      );
+      swapBoardCells(a, b);
+      return createsTargetMatch;
+    }
+
+    function seededTargetMoveCandidate(targetIndex, flowerId) {
+      const originX = targetIndex === 0 ? 0 : targetIndex === 1 ? 4 : null;
+      if (originX === null) {
+        return null;
+      }
+      const seededMove = [{ x: originX + 1, y: 0 }, { x: originX + 1, y: 1 }];
+      return isLegalSwap(...seededMove) && targetMoveCreatesHarvest(...seededMove, flowerId)
+        ? seededMove
+        : null;
+    }
+
+    function findTargetLegalMove(flowerId, targetIndex = -1) {
+      const seededMove = seededTargetMoveCandidate(targetIndex, flowerId);
+      if (seededMove) {
+        return seededMove;
+      }
+      return legalMoves().find(([a, b]) => targetMoveCreatesHarvest(a, b, flowerId)) || null;
+    }
+
+    function nextTargetMoveHint() {
+      if (roundComplete) {
+        return "";
+      }
+      const plan = activeRoundPlan();
+      const remainingTargetIndex = plan.targets.findIndex((target) => targetProgress(target) < target.needed);
+      const remainingTarget = plan.targets[remainingTargetIndex];
+      if (!remainingTarget) {
+        return "";
+      }
+      const move = findTargetLegalMove(remainingTarget.flowerId, remainingTargetIndex);
+      if (!move) {
+        return "";
+      }
+      const [a, b] = move;
+      idleHintCells = new Set([`${a.x},${a.y}`, `${b.x},${b.y}`]);
+      return ` <strong>${flowers[remainingTarget.flowerId][0]} remains.</strong> Swap the glowing tiles to feed ${remainingTarget.order}.`;
+    }
+
     function hasLegalMoves() {
       return legalMoves().length > 0;
     }
@@ -2890,7 +2939,9 @@
           : "";
         ritualMessage = firstMoveCopy + harvestSummary(result) + awardRareBloomDrop(result);
         pulseOrderCounts(result.gained);
-        maybeCompleteRound();
+        if (!maybeCompleteRound()) {
+          ritualMessage += nextTargetMoveHint();
+        }
       } finally {
         isResolving = false;
         render();
