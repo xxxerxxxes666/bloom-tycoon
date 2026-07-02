@@ -272,24 +272,93 @@
     }
 
     .xp {
-      height: 10px;
-      background: #050505;
-      border: 1px solid #4a3626;
-      margin: 11px 0;
+      height: 34px;
+      margin: 12px 0 8px;
+      padding: 5px 7px;
       position: relative;
-      box-shadow: inset 0 0 8px #000;
+      overflow: hidden;
+      border: 1px solid #7b5634;
+      border-radius: 999px;
+      background:
+        radial-gradient(circle at 16% 50%, #24150c 0 10px, #0000 11px),
+        radial-gradient(circle at 84% 50%, #24150c 0 10px, #0000 11px),
+        linear-gradient(180deg, #2c2118, #080606 48%, #030202);
+      box-shadow:
+        inset 0 0 0 1px #000,
+        inset 0 0 16px #000,
+        0 0 0 1px #000,
+        0 0 14px #000;
+    }
+
+    .xp::before {
+      content: "";
+      position: absolute;
+      inset: 4px 7px 17px;
+      z-index: 2;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #fff4c044, #fff4c012 54%, #0000);
+      pointer-events: none;
+      mix-blend-mode: screen;
+    }
+
+    .xp::after {
+      content: "";
+      position: absolute;
+      inset: 3px;
+      z-index: 3;
+      border: 1px solid #d0a35b55;
+      border-radius: 999px;
+      box-shadow: inset 0 0 8px #000, inset 0 -8px 14px #0008;
+      pointer-events: none;
     }
 
     .xp-fill {
       display: block;
       height: 100%;
-      background: linear-gradient(90deg, #35104c, #8a2db0 62%, #d69d55);
       width: 55%;
-      box-shadow: 0 0 8px #76289c;
+      min-width: 18px;
+      border-radius: 999px;
+      position: relative;
+      z-index: 1;
+      background:
+        radial-gradient(circle at 26% 22%, #f3d879aa 0, #0000 18%),
+        linear-gradient(180deg, #9dc25b, #526f24 48%, #1c260c);
+      box-shadow:
+        inset 0 7px 8px #f6e29a25,
+        inset 0 -11px 14px #0009,
+        0 0 12px #6b8f31;
+      transition: width 280ms ease;
+    }
+
+    .xp-fill::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background:
+        repeating-linear-gradient(90deg, #0000 0 13px, #fff3b626 14px, #0000 16px),
+        linear-gradient(90deg, #0008, #0000 18%, #fff3b624 58%, #0008);
+      mix-blend-mode: screen;
+    }
+
+    .apothecary-fill {
+      background:
+        radial-gradient(circle at 28% 22%, #f4d8ffaa 0, #0000 18%),
+        linear-gradient(180deg, #2e72b5, #54298d 52%, #180d33);
+      box-shadow:
+        inset 0 7px 8px #e6c3ff25,
+        inset 0 -11px 14px #0009,
+        0 0 12px #4a46a8;
     }
 
     .faction-fill {
-      width: 55%;
+      background:
+        radial-gradient(circle at 28% 22%, #ffd5b0aa 0, #0000 18%),
+        linear-gradient(180deg, #d94d43, #8a1418 52%, #310000);
+      box-shadow:
+        inset 0 7px 8px #ffd2a425,
+        inset 0 -11px 14px #0009,
+        0 0 12px #8a1418;
     }
 
     .main {
@@ -1028,6 +1097,73 @@
       font-weight: normal;
     }
 
+    .round-ceremony {
+      max-width: 650px;
+      margin: 0 auto 14px;
+      padding: 15px 18px 14px;
+      color: #d8c7aa;
+      text-align: center;
+      border: 1px solid #7b5634;
+      background:
+        radial-gradient(circle at 50% 0, #3b100dcc 0, #120807 48%, #050404 100%),
+        linear-gradient(180deg, #19100c, #060504);
+      box-shadow:
+        inset 0 0 24px #000,
+        0 0 0 1px #000,
+        0 0 22px #4f111155;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .round-ceremony[hidden] {
+      display: none;
+    }
+
+    .round-ceremony::before {
+      content: "";
+      position: absolute;
+      inset: 6px;
+      border: 1px solid #d0a35b44;
+      pointer-events: none;
+    }
+
+    .ceremony-title {
+      display: block;
+      color: #d7b16d;
+      font-size: 20px;
+      text-transform: uppercase;
+      letter-spacing: 1.4px;
+      text-shadow: 0 0 12px #4f1111, 0 2px 0 #000;
+    }
+
+    .ceremony-copy {
+      display: block;
+      margin-top: 5px;
+      color: #b9a17d;
+      font-size: 14px;
+    }
+
+    .ceremony-rewards {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .reward-token {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      min-height: 26px;
+      padding: 4px 9px;
+      color: #d8c7aa;
+      border: 1px solid #3d3026;
+      background: #080606;
+      box-shadow: inset 0 0 10px #000;
+      font-size: 12px;
+    }
+
     .gain-list {
       display: inline-flex;
       align-items: center;
@@ -1060,9 +1196,14 @@
       color: #d8c7aa;
       cursor: pointer;
       border: 1px solid #3d3026;
-      background: linear-gradient(180deg, #14100e, #060504);
-      padding: 8px 18px;
-      box-shadow: inset 0 0 14px #000;
+      background:
+        radial-gradient(circle at 50% 0, #7b563455 0, #0000 55%),
+        linear-gradient(180deg, #19100c, #060504);
+      padding: 10px 22px;
+      min-width: 180px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      box-shadow: inset 0 0 14px #000, 0 0 12px #000;
     }
 
     .renew-btn.visible {
@@ -1996,7 +2137,7 @@
           <span class="panel-gate" aria-hidden="true">›</span>
         </div>
         <div class="small" id="apothecaryLevel">Level 2</div>
-        <div class="xp"><span class="xp-fill" id="apothecaryXpFill"></span></div>
+        <div class="xp"><span class="xp-fill apothecary-fill" id="apothecaryXpFill"></span></div>
         <div class="small" id="apothecaryXpText">420 / 1,000 XP</div>
       </div>
 
@@ -2005,9 +2146,9 @@
           <img class="panel-icon" src="../assets/tiles/96/bone_white_thorn_star.png" alt="">
           <h3>Faction: Sub Rosa</h3>
         </div>
-        <div class="small">Level 3 · Trusted</div>
-        <div class="xp"><span class="xp-fill faction-fill"></span></div>
-        <div class="small">Next Rank: +10% Rare Order Value</div>
+        <div class="small" id="factionLevel">Level 3 · Trusted</div>
+        <div class="xp"><span class="xp-fill faction-fill" id="factionXpFill"></span></div>
+        <div class="small" id="factionXpText">510 / 1,200 Favor</div>
       </div>
 
       <div class="side-card">
@@ -2015,14 +2156,7 @@
           <img class="panel-icon" src="../assets/tiles/96/crimson_rose_rune.png" alt="">
           <h3>Active Orders</h3>
         </div>
-        <div class="small order-line" id="orderThorn">
-          <img class="order-icon" src="../assets/tiles/96/crimson_rose_rune.png" alt="Thorn Rose">
-          <span class="order-copy">Velvet Funeral: <span id="o1">0/8</span> Thorn Rose</span>
-        </div>
-        <div class="small order-line" id="orderBone">
-          <img class="order-icon" src="../assets/tiles/96/bone_white_thorn_star.png" alt="Bone Star">
-          <span class="order-copy">Saint's Offering: <span id="o2">0/6</span> Bone Star</span>
-        </div>
+        <div id="activeOrders"></div>
       </div>
 
       <div class="side-card">
@@ -2039,12 +2173,12 @@
       <div class="sigil">SOLVE ET COAGULA</div>
       <h1 class="title">Bloom Tycoon</h1>
       <div class="objective" id="objective">
-        <span class="objective-text">Collect Thorn Rose 0/8 and Bone Star 0/6</span>
+        <span class="objective-text">Round 1 · Collect Thorn Rose 0/8 and Bone Star 0/6</span>
         <span class="objective-separator">·</span>
         <span>Moves 16</span>
       </div>
       <div class="first-session-plaque" id="firstSessionPlaque">
-        Match Thorn Rose and Bone Star to complete the First Bouquet.
+        Match Thorn Rose and Bone Star to complete Round 1: First Bouquet.
       </div>
       <script type="application/json" id="shapeAuditData"></script>
       <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
@@ -2067,7 +2201,8 @@
         <div class="sacrifice-options" id="sacrificeOptions"></div>
       </div>
       <div class="ritual-log" id="ritualLog">Match botanical elements to feed the First Bouquet.</div>
-      <button class="renew-btn" id="renewBtn" type="button">Renew Bouquet</button>
+      <div class="round-ceremony" id="roundCeremony" hidden></div>
+      <button class="renew-btn" id="renewBtn" type="button">Next Bouquet</button>
       <div class="supreme" id="supreme" aria-live="polite">
         <div class="supreme-particles" id="supremeParticles"></div>
         <div class="burst">
@@ -2122,8 +2257,58 @@
     const BOARD_SIZE = 8;
     const MAX_BOARD_BUILD_ATTEMPTS = 650;
     const baseElementCounts = [42, 37, 28, 33, 24, 31];
+    const roundTemplates = [
+      {
+        name: "First Bouquet",
+        moves: 16,
+        targets: [
+          { flowerId: 5, needed: 8, order: "Velvet Funeral" },
+          { flowerId: 1, needed: 6, order: "Saint's Offering" }
+        ],
+        reward: { coins: 120, greenhouse: 180, apothecary: 60, faction: 35, item: "First Bouquet Coffer", flowerId: 5 }
+      },
+      {
+        name: "Moonlit Wreath",
+        moves: 17,
+        targets: [
+          { flowerId: 2, needed: 8, order: "Moonlit Wreath" },
+          { flowerId: 4, needed: 7, order: "Amber Keepsake" },
+          { flowerId: 5, needed: 5, order: "Velvet Thread" }
+        ],
+        reward: { coins: 150, greenhouse: 150, apothecary: 130, faction: 45, item: "Moonlit Wreath Cache", flowerId: 2 }
+      },
+      {
+        name: "Bloodroot Compact",
+        moves: 15,
+        targets: [
+          { flowerId: 3, needed: 9, order: "Bloodroot Compact" },
+          { flowerId: 0, needed: 8, order: "Solar Ash" }
+        ],
+        reward: { coins: 180, greenhouse: 210, apothecary: 90, faction: 60, item: "Bloodroot Compact", flowerId: 3 }
+      },
+      {
+        name: "Saint's Night Ledger",
+        moves: 14,
+        targets: [
+          { flowerId: 1, needed: 10, order: "Saint's Ledger" },
+          { flowerId: 2, needed: 9, order: "Nightshade Ink" },
+          { flowerId: 4, needed: 7, order: "Amber Seal" }
+        ],
+        reward: { coins: 215, greenhouse: 190, apothecary: 160, faction: 75, item: "Saint's Night Ledger", flowerId: 1 }
+      },
+      {
+        name: "Sub Rosa Grand Bouquet",
+        moves: 13,
+        targets: [
+          { flowerId: 5, needed: 11, order: "Grand Velvet Funeral" },
+          { flowerId: 3, needed: 10, order: "Ruby Root Tithe" },
+          { flowerId: 0, needed: 8, order: "Sol Rot Candle" }
+        ],
+        reward: { coins: 260, greenhouse: 240, apothecary: 170, faction: 95, item: "Sub Rosa Grand Cache", flowerId: 0 }
+      }
+    ];
     const chestState = {
-      capacity: 12,
+      capacity: 16,
       items: [
         { id: "velvet-reliquary", name: "Velvet Reliquary", qty: 1, rarity: "Rare", source: "Order reward", flowerId: 5, tags: ["order", "container"] },
         { id: "bloodroot-cutting", name: "Bloodroot Cutting", qty: 2, rarity: "Uncommon", source: "Match drop", flowerId: 3, tags: ["botanical", "bloodroot"] },
@@ -2160,13 +2345,18 @@
     let isResolving = false;
     let supremeChargeActive = false;
     let hasMadeValidMove = false;
-    let firstBouquetComplete = false;
+    let currentRound = 1;
+    let roundComplete = false;
     let shapeDemoIndex = 0;
     let greenhouse = { level: 4, xp: 1240, next: 2000 };
     let apothecary = { level: 2, xp: 420, next: 1000 };
+    let faction = { level: 3, xp: 510, next: 1200, title: "Trusted" };
 
     const $ = (id) => document.getElementById(id);
-    const rand = () => Math.floor(Math.random() * flowers.length);
+    const rand = () => {
+      const pool = roundTilePool(activeRoundPlan());
+      return pool[Math.floor(Math.random() * pool.length)];
+    };
 
     function iconMarkup(flowerId, className, alt = "", wrapClass = "") {
       const flower = flowers[flowerId] || flowers[0];
@@ -2219,6 +2409,44 @@
       return flowers.find((flower) => source.includes(flower[1].split("/").pop()) || alt === flower[0]) || flowers[0];
     }
 
+    function activeRoundPlan() {
+      return buildRoundPlan(currentRound);
+    }
+
+    function buildRoundPlan(roundNumber) {
+      const safeRound = Math.max(1, Number(roundNumber) || 1);
+      const template = roundTemplates[(safeRound - 1) % roundTemplates.length];
+      const cycle = Math.floor((safeRound - 1) / roundTemplates.length);
+      return {
+        round: safeRound,
+        name: cycle ? `${template.name} ${cycle + 1}` : template.name,
+        moves: Math.max(11, template.moves - Math.min(2, cycle)),
+        targets: template.targets.map((target) => ({
+          ...target,
+          needed: target.needed + cycle * 2
+        })),
+        reward: {
+          ...template.reward,
+          coins: template.reward.coins + cycle * 55,
+          greenhouse: template.reward.greenhouse + cycle * 35,
+          apothecary: template.reward.apothecary + cycle * 30,
+          faction: template.reward.faction + cycle * 20
+        }
+      };
+    }
+
+    function roundTilePool(plan) {
+      const targetIds = (plan?.targets || []).map((target) => target.flowerId);
+      return flowers.flatMap((_, index) => {
+        const weight = targetIds.includes(index) ? 3 : 1;
+        return Array(weight).fill(index);
+      });
+    }
+
+    function targetProgress(target) {
+      return Math.min(counts[target.flowerId], target.needed);
+    }
+
     function targetMarkup(flowerId, current, needed) {
       const flower = flowers[flowerId];
       const displayCount = Math.min(current, needed);
@@ -2229,6 +2457,27 @@
           ${flower[0]} ${displayCount}/${needed}
         </span>
       `;
+    }
+
+    function goalMarkup(plan = activeRoundPlan()) {
+      return plan.targets.map((target, index) => {
+        const joiner = index ? "<span>and</span>" : "";
+        return `${joiner}${targetMarkup(target.flowerId, counts[target.flowerId], target.needed)}`;
+      }).join("");
+    }
+
+    function goalCopy(plan = activeRoundPlan()) {
+      const names = plan.targets.map((target) => flowers[target.flowerId][0]);
+      const list = names.length > 2
+        ? `${names.slice(0, -1).join(", ")}, and ${names[names.length - 1]}`
+        : names.join(" and ");
+      return `Match ${list} to complete Round ${plan.round}: ${plan.name}.`;
+    }
+
+    function roundProgress(plan = activeRoundPlan()) {
+      const earned = plan.targets.reduce((sum, target) => sum + targetProgress(target), 0);
+      const needed = plan.targets.reduce((sum, target) => sum + target.needed, 0);
+      return { earned, needed, pct: needed ? Math.min(100, (earned / needed) * 100) : 0 };
     }
 
     function build() {
@@ -2454,7 +2703,7 @@
           const fallRows = fallAnimations.get(fallKey) || 0;
           const fallClass = fallRows ? "fall-in" : "";
           tile.className = `tile ${selectedClass} ${legalClass} ${sacrificeClass} ${profitableClass} ${harvestClass} ${superClass} ${invalidClass} ${idleHintClass} ${transmuteClass} ${fallClass}`;
-          tile.disabled = isResolving;
+          tile.disabled = isResolving || roundComplete;
           if (fallRows) {
             tile.style.setProperty("--fall-y", `${-fallRows * 112}%`);
             tile.style.setProperty("--fall-delay", `${Math.min(130, y * 12)}ms`);
@@ -2494,32 +2743,28 @@
         boardEl.appendChild(effect);
       });
 
+      const plan = activeRoundPlan();
+      const progress = roundProgress(plan);
       $("objective").innerHTML = `
-        <span class="objective-text">${firstBouquetComplete ? "First Bouquet Complete" : "Collect"}</span>
-        ${targetMarkup(5, counts[5], 8)}
-        <span>and</span>
-        ${targetMarkup(1, counts[1], 6)}
+        <span class="objective-text">Round ${plan.round} · ${roundComplete ? "Bouquet Complete" : "Collect"}</span>
+        ${goalMarkup(plan)}
         <span class="objective-separator">·</span>
         <span>Moves ${moves}</span>
       `;
-      const thornProgress = Math.min(counts[5], 8);
-      const boneProgress = Math.min(counts[1], 6);
-      $("objective").classList.toggle("complete", firstBouquetComplete);
+      $("objective").classList.toggle("complete", roundComplete);
       $("objective").classList.toggle("low-moves", moves <= 3);
-      $("o1").textContent = `${thornProgress}/8`;
-      $("o2").textContent = `${boneProgress}/6`;
-      $("o1").classList.toggle("order-pulse", orderPulseTargets.has(5));
-      $("o2").classList.toggle("order-pulse", orderPulseTargets.has(1));
-      $("orderThorn").classList.toggle("complete", thornProgress >= 8);
-      $("orderBone").classList.toggle("complete", boneProgress >= 6);
-      $("bar").style.width = `${Math.min(100, ((thornProgress + boneProgress) / 14) * 100)}%`;
+      $("firstSessionPlaque").textContent = goalCopy(plan);
+      renderActiveOrders(plan);
+      renderRoundCeremony(plan);
+      $("bar").style.width = `${progress.pct}%`;
       $("coins").textContent = coins;
-      $("shuffleBtn").disabled = isResolving || moves < 1;
-      $("sacrificeBtn").disabled = isResolving || moves < 3;
+      $("shuffleBtn").disabled = isResolving || roundComplete || moves < 1;
+      $("sacrificeBtn").disabled = isResolving || roundComplete || moves < 3;
       $("sacrificeBtn").classList.toggle("armed", sacrificeState.active);
       $("sacrificeBtn").setAttribute("aria-pressed", sacrificeState.active ? "true" : "false");
       $("ritualLog").innerHTML = ritualMessage;
-      $("renewBtn").classList.toggle("visible", moves <= 0 || firstBouquetComplete);
+      $("renewBtn").textContent = roundComplete ? "Next Bouquet" : "Renew Bouquet";
+      $("renewBtn").classList.toggle("visible", moves <= 0 || roundComplete);
       updateChestSummary();
       renderTycoonPanels();
       $("elements").innerHTML = flowers.map((flower, index) => `
@@ -2539,6 +2784,11 @@
 
     async function tap(x, y) {
       if (isResolving) {
+        return;
+      }
+      if (roundComplete) {
+        ritualMessage = "The bouquet is sealed. Press Next Bouquet to continue.";
+        render();
         return;
       }
       notePlayerInteraction();
@@ -2597,7 +2847,7 @@
           : "";
         ritualMessage = firstMoveCopy + harvestSummary(result) + awardRareBloomDrop(result);
         pulseOrderCounts(result.gained);
-        maybeCompleteFirstBouquet();
+        maybeCompleteRound();
       } finally {
         isResolving = false;
         render();
@@ -3213,12 +3463,11 @@
 
     function orderGainMessage(gained) {
       const messages = [];
-      if (gained[5] > 0) {
-        messages.push(`+${gained[5]} Thorn Rose added to Velvet Funeral.`);
-      }
-      if (gained[1] > 0) {
-        messages.push(`+${gained[1]} Bone Star added to Saint's Offering.`);
-      }
+      activeRoundPlan().targets.forEach((target) => {
+        if (gained[target.flowerId] > 0) {
+          messages.push(`+${gained[target.flowerId]} ${flowers[target.flowerId][0]} added to ${target.order}.`);
+        }
+      });
       return messages.join(" ");
     }
 
@@ -3235,6 +3484,44 @@
       return tokens.length ? `<span class="gain-list">${tokens.join("")}</span>` : "";
     }
 
+    function renderActiveOrders(plan = activeRoundPlan()) {
+      $("activeOrders").innerHTML = plan.targets.map((target) => {
+        const flower = flowers[target.flowerId];
+        const progress = targetProgress(target);
+        const complete = progress >= target.needed;
+        const pulse = orderPulseTargets.has(target.flowerId);
+        return `
+          <div class="small order-line ${complete ? "complete" : ""} ${pulse ? "order-pulse" : ""}">
+            <img class="order-icon" src="${flower[1]}" alt="${flower[0]}">
+            <span class="order-copy">${target.order}: ${progress}/${target.needed} ${flower[0]}</span>
+          </div>
+        `;
+      }).join("");
+      applyImageFallbacks($("activeOrders"));
+    }
+
+    function renderRoundCeremony(plan = activeRoundPlan()) {
+      const ceremony = $("roundCeremony");
+      if (!roundComplete) {
+        ceremony.hidden = true;
+        ceremony.innerHTML = "";
+        return;
+      }
+      const reward = plan.reward;
+      ceremony.hidden = false;
+      ceremony.innerHTML = `
+        <span class="ceremony-title">${plan.name} fulfilled</span>
+        <span class="ceremony-copy">The client pays. The greenhouse deepens. A sealed reward enters Chest Storage.</span>
+        <span class="ceremony-rewards">
+          <span class="reward-token">✪ +${reward.coins}</span>
+          <span class="reward-token">Greenhouse +${reward.greenhouse} XP</span>
+          <span class="reward-token">Apothecary +${reward.apothecary} XP</span>
+          <span class="reward-token">Sub Rosa +${reward.faction} Favor</span>
+          <span class="reward-token">${reward.item}</span>
+        </span>
+      `;
+    }
+
     function renderTycoonPanels() {
       $("greenhouseLevel").textContent = `Level ${greenhouse.level}`;
       $("greenhouseXpText").textContent = `${greenhouse.xp.toLocaleString()} / ${greenhouse.next.toLocaleString()} XP`;
@@ -3242,41 +3529,55 @@
       $("apothecaryLevel").textContent = `Level ${apothecary.level}`;
       $("apothecaryXpText").textContent = `${apothecary.xp.toLocaleString()} / ${apothecary.next.toLocaleString()} XP`;
       $("apothecaryXpFill").style.width = `${Math.min(100, (apothecary.xp / apothecary.next) * 100)}%`;
+      $("factionLevel").textContent = `Level ${faction.level} · ${faction.title || "Trusted"}`;
+      $("factionXpText").textContent = `${faction.xp.toLocaleString()} / ${faction.next.toLocaleString()} Favor`;
+      $("factionXpFill").style.width = `${Math.min(100, (faction.xp / faction.next) * 100)}%`;
     }
 
-    function maybeCompleteFirstBouquet() {
-      if (firstBouquetComplete || counts[5] < 8 || counts[1] < 6) {
+    function maybeCompleteRound() {
+      const plan = activeRoundPlan();
+      if (roundComplete || !plan.targets.every((target) => counts[target.flowerId] >= target.needed)) {
         return false;
       }
-      firstBouquetComplete = true;
-      coins += 120;
-      grantTycoonXp(180, 60);
+      roundComplete = true;
+      coins += plan.reward.coins;
+      grantTycoonXp(plan.reward.greenhouse, plan.reward.apothecary, plan.reward.faction);
       addChestItem({
-        id: "first-bouquet-coffer",
-        name: "First Bouquet Coffer",
+        id: `round-${plan.round}-${plan.reward.item.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+        name: plan.reward.item,
         qty: 1,
         rarity: "Order",
-        source: "First Bouquet",
-        flowerId: 5,
+        source: plan.name,
+        flowerId: plan.reward.flowerId,
         tags: ["order", "reward"]
       });
-      ritualMessage = "<strong>First Bouquet fulfilled.</strong> +120 coins, +180 Greenhouse XP, +60 Apothecary XP, and a coffer placed in Chest Storage.";
+      ritualMessage = `<strong>${plan.name} fulfilled.</strong> +${plan.reward.coins} coins, +${plan.reward.greenhouse} Greenhouse XP, +${plan.reward.apothecary} Apothecary XP, +${plan.reward.faction} Sub Rosa Favor, and ${plan.reward.item} placed in Chest Storage.`;
       return true;
     }
 
-    function grantTycoonXp(greenhouseAmount, apothecaryAmount) {
-      greenhouse.xp = Math.min(greenhouse.next, greenhouse.xp + greenhouseAmount);
-      apothecary.xp = Math.min(apothecary.next, apothecary.xp + apothecaryAmount);
+    function grantTycoonXp(greenhouseAmount, apothecaryAmount, factionAmount = 0) {
+      addProgress(greenhouse, greenhouseAmount);
+      addProgress(apothecary, apothecaryAmount);
+      addProgress(faction, factionAmount);
+      faction.title = faction.level >= 5 ? "Favored" : "Trusted";
+    }
+
+    function addProgress(track, amount) {
+      track.xp += Math.max(0, Number(amount) || 0);
+      while (track.xp >= track.next) {
+        track.xp -= track.next;
+        track.level += 1;
+        track.next = Math.round(track.next * 1.28);
+      }
     }
 
     function pulseOrderCounts(gained) {
       orderPulseTargets.clear();
-      if (gained[5] > 0) {
-        orderPulseTargets.add(5);
-      }
-      if (gained[1] > 0) {
-        orderPulseTargets.add(1);
-      }
+      activeRoundPlan().targets.forEach((target) => {
+        if (gained[target.flowerId] > 0) {
+          orderPulseTargets.add(target.flowerId);
+        }
+      });
       if (orderPulseTargets.size) {
         scheduleOrderPulseClear();
       }
@@ -3318,6 +3619,11 @@
       if (isResolving) {
         return;
       }
+      if (roundComplete) {
+        ritualMessage = "The bouquet is sealed. Press Next Bouquet to continue.";
+        render();
+        return;
+      }
       notePlayerInteraction();
       cancelSacrifice(false);
       if (!spendMoves(1, "Shuffle")) {
@@ -3337,6 +3643,8 @@
       if (isResolving) {
         return;
       }
+      const nextRound = roundComplete ? currentRound + 1 : currentRound;
+      const plan = buildRoundPlan(nextRound);
       clearIdleHint();
       selected = null;
       sacrificeState = { active: false, choice: null };
@@ -3345,11 +3653,12 @@
       superBloomCells.clear();
       boardParticles = [];
       transmuteFlashCell = "";
-      moves = 16;
+      currentRound = nextRound;
+      moves = plan.moves;
       counts = [0, 0, 0, 0, 0, 0];
       hasMadeValidMove = false;
-      firstBouquetComplete = false;
-      ritualMessage = "A new First Bouquet is laid on the altar.";
+      roundComplete = false;
+      ritualMessage = `<strong>Round ${plan.round}: ${plan.name}</strong> begins. ${goalCopy(plan)}`;
       build();
       render();
       scheduleIdleHint();
@@ -3358,6 +3667,11 @@
     function sacrifice() {
       // Sacrifice transmutation: choose one element, delete one tile, and replace it at a cost.
       if (isResolving) {
+        return;
+      }
+      if (roundComplete) {
+        ritualMessage = "The bouquet is sealed. Press Next Bouquet to continue.";
+        render();
         return;
       }
       clearIdleHint();
@@ -3508,7 +3822,7 @@
           : `<strong>Sacrifice complete:</strong> ${replacementName} replaced the tile. No harvest yet.`;
         if (result.matched) {
           pulseOrderCounts(result.gained);
-          maybeCompleteFirstBouquet();
+          maybeCompleteRound();
         }
       } finally {
         isResolving = false;
@@ -3811,9 +4125,11 @@
         moves,
         coins,
         counts,
-        firstBouquetComplete,
+        currentRound,
+        roundComplete,
         greenhouse,
         apothecary,
+        faction,
         chestItems: chestState.items
       };
       try {
@@ -3841,9 +4157,12 @@
         }
         moves = Math.max(0, Number(state.moves) || moves);
         coins = Math.max(0, Number(state.coins) || coins);
-        firstBouquetComplete = Boolean(state.firstBouquetComplete);
+        currentRound = Math.max(1, Number(state.currentRound) || 1);
+        roundComplete = Boolean(state.roundComplete || state.firstBouquetComplete);
         greenhouse = validProgressState(state.greenhouse, greenhouse);
         apothecary = validProgressState(state.apothecary, apothecary);
+        faction = validProgressState(state.faction, faction);
+        faction.title = typeof state.faction?.title === "string" ? state.faction.title : (faction.level >= 5 ? "Favored" : "Trusted");
         if (Array.isArray(state.chestItems)) {
           chestState.items = state.chestItems
             .slice(0, chestState.capacity)

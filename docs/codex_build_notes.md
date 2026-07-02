@@ -139,3 +139,34 @@
 - How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly to cycle Cross, L, and T demos; each should report 5 tiles harvested with its named shape copy.
 - How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪` and then return the board to play.
 - Security/secret-scan status: lightweight scan ran on changed files with no findings.
+
+## 2026-07-02 Hermes repeatable bouquet loop pass
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes added the repeatable bouquet loop, research-informed depth, and Diablo-style vial directives.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added five data-driven bouquet rounds with different active orders, move counts, rewards, and a continuing round generator after round 5.
+- Added a round completion ceremony, `Next Bouquet` continuation button, fresh board/objective reset, chest reward item, and Greenhouse/Apothecary/Sub Rosa progress rewards.
+- Replaced the flat left-rail XP bars with carved gothic glass reservoirs: green-gold sap for Greenhouse, violet-blue alchemy for Apothecary, and blood-red favor for Sub Rosa.
+- Weighted board refills slightly toward the current bouquet targets so repeat rounds surface relevant matches more often without scripting the board.
+- Extended static HTML checks so `python3 scripts/verify_project.py` requires the round loop and vial hooks.
+- Verification run:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - JS parse check over executable HTML scripts
+  - `python3 scripts/verify_project.py`
+  - Local static preview at `http://127.0.0.1:4173/playable/midnight_bloom_prototype.html`
+  - Local Playwright check loaded 64 board tiles, 89 images, 0 broken images, and three 34px rounded vial meters.
+  - Accelerated local browser audit completed rounds 1 through 5, saw `Next Bouquet` after each completion, clicked through to fresh boards for rounds 2 through 5, and confirmed updated objectives/moves/orders.
+  - Local pointer checks: Shuffle spent one move; Sacrifice opened and Cancel closed it; Chest Storage opened with 16 slots; close button and Escape both closed the modal and returned focus.
+  - Mobile portrait check at 390x844 had no horizontal overflow, 41px board tiles, and order `main`, `bottom`, `left`.
+  - Pressing `M` still cycled clean Cross, L, and T 5-tile demos; pressing `B` still showed 84 Supreme particles and returned the board to 0 disabled tiles.
+- Browser console/runtime status: no local Playwright console warnings, console errors, or page errors observed during loop, pointer, mobile, `M`, or `B` checks.
+- Vercel deployment URL/identifier checked: pending production redeploy for this pass.
+- GitHub Pages preview status: pending after push.
+- Known issues: the accelerated 5-round verification uses page-level audit state to avoid playing dozens of manual matches; the visible player flow still requires completing the displayed bouquet goals before `Next Bouquet` appears.
+- How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly to cycle Cross, L, and T demos; each should report 5 tiles harvested with its named shape copy.
+- How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit 84 particles, then return the board to play.
+- Security/secret-scan status: lightweight scan ran on changed files with no findings.

@@ -154,6 +154,12 @@ def verify_source_hooks():
         "function demoMatchShape",
         "const maxCascades",
         "resolveAnimated({ maxCascades: 1 })",
+        "const roundTemplates",
+        "function maybeCompleteRound",
+        "Next Bouquet",
+        "roundCeremony",
+        "factionXpFill",
+        "apothecary-fill",
     ]
     missing = [needle for needle in required if needle not in html]
     if missing:
