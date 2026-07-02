@@ -157,6 +157,48 @@ Codex should use proven match-game loop basics:
 - Security: no secrets, no external trackers, no new backend, no broad permissions.
 
 
+
+
+---
+
+# Hermes research directive — make the game deeper and more fun
+
+Hermes will steer Codex using research-informed match-3/tycoon design, not just visual taste.
+
+## Design principles to apply now
+
+Use proven match-game patterns:
+
+- clear level goal before the first move;
+- visible progress after every useful match;
+- satisfying cascade and combo feedback;
+- escalating objectives after each win;
+- immediate `Next Bouquet` continuation;
+- short reward ceremony after success;
+- near-win tension when moves run low;
+- special shapes and rare jackpot moments;
+- light meta progression that makes every round feed the tycoon layer.
+
+## Systems Codex should gradually build toward
+
+- 5+ repeatable bouquet rounds now;
+- L/T/cross combo rewards;
+- order completion rewards;
+- chest item drops;
+- Greenhouse/Apothecary/Faction progress;
+- Black Market unlock later;
+- boosters later, but only after core fun works;
+- daily/retention mechanics later, not now.
+
+## Immediate priority
+
+Do not chase big new systems until the repeatable loop is playable:
+
+`match → collect → complete bouquet → reward → next bouquet → slightly harder board`
+
+Security remains required: no secrets, no trackers, no backend, no broad permissions.
+
+
 ---
 
 # Priority 1 — Real pointer/tap and mobile control verification
