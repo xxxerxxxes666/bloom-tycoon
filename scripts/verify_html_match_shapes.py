@@ -161,6 +161,11 @@ def verify_source_hooks():
         "Complete Bouquet",
         "shapeBloomBtn",
         "Shape Bloom",
+        "Black Candle Vine",
+        "function lineRelicForMatch",
+        "function queueLineRelicBurst",
+        "function lineRelicMessage",
+        "line4",
         "Cursed Thorn",
         "thornGoal",
         "cursed-thorn-overlay",
@@ -187,6 +192,7 @@ def verify_source_hooks():
 verify_source_hooks()
 assert_single_shape("horizontal line", [(1, 1), (2, 1), (3, 1)], "line")
 assert_single_shape("vertical line", [(4, 1), (4, 2), (4, 3)], "line")
+assert_single_shape("four line relic", [(2, 3), (3, 3), (4, 3), (5, 3)], "line")
 assert_single_shape("l shape", [(2, 2), (3, 2), (4, 2), (2, 3), (2, 4)], "l")
 assert_single_shape("t shape", [(2, 3), (3, 3), (4, 3), (3, 4), (3, 5)], "t")
 assert_single_shape("cross shape", [(3, 3), (2, 3), (4, 3), (3, 2), (3, 4)], "cross")

@@ -399,3 +399,35 @@
 - How to trigger and verify L/T/cross matches without console: open the playable and press `M`, or click `Shape Bloom`, repeatedly to cycle Cross, L, and T demos; each should report the named shape reward copy.
 - How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit the review-hook particle burst, then return the board to play.
 - Security/secret-scan status: lightweight scan ran on changed files with no findings.
+
+## 2026-07-02 Codex 4-line Black Candle Vine slice
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested the next small strategic slice: make 4-in-a-line matches trigger a gothic line-clearing relic while preserving Cursed Thorn, L/T/cross, and review hooks.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added `Black Candle Vine`: a pure 4-in-a-line match immediately sweeps its row or column, grants resource/order progress for the cleared line, and reports the swept lane in the ritual log.
+- Added line-relic particles and static audit markers: `lineRelicForMatch`, `queueLineRelicBurst`, `lineRelicMessage`, and `line4`.
+- Updated `Shape Bloom` / `M` review cycling so the first demo proves the 4-line relic, then Cross, L, and T remain available on repeated triggers.
+- Verification run:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - JS parse check over executable HTML scripts.
+  - `python3 scripts/verify_project.py`
+  - `git diff --check`
+  - Local static preview at `http://127.0.0.1:4173/playable/midnight_bloom_prototype.html`
+  - Local Playwright check: `Shape Bloom` triggered `Black Candle Vine swept row 4`; repeated `M` triggered `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom`; `B` triggered Supreme Bloom.
+  - Local Playwright first-bouquet flow: seeded Thorn Rose swap advanced Thorn Rose to `3/3`, hinted Bone Star swap completed Round 1, and `Next Bouquet` started Round 2.
+  - Local Playwright Round 2: `Cursed Thorn 0/3` appeared with 3 blockers; adjacent Nightshade swap cleared them to `Cursed Thorn 3/3` with Cursed Thorn feedback.
+  - Local Playwright Chest Storage opened/closed, Sacrifice opened/cancelled, and mobile 390x844 had no horizontal overflow with 40.5px tiles.
+  - Vercel marker check for `https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html?verify=line-relic` returned `200` with `Black Candle Vine`, `lineRelicForMatch`, `queueLineRelicBurst`, `lineRelicMessage`, `line4`, `Cursed Thorn`, and `Shape Bloom`.
+- Browser console/runtime status: no local Playwright console warnings, console errors, or page errors observed during line relic, shape hooks, first-bouquet, Cursed Thorn, Chest/Sacrifice, or mobile checks.
+- Deployed to Vercel production as `dpl_DbyVT1VRkVJuK9kqRkXNCahgJHPz`.
+- Vercel deployment URL: https://bloom-tycoon-m5512izue-xerxes-florals.vercel.app
+- Explicitly re-pointed `https://bloom-tycoon.vercel.app` to that deployment.
+- GitHub Pages preview status before this commit: Pages was current for the previous Cursed Thorn build at `d889ba6`. This Black Candle Vine pass still needs the post-push Pages workflow to publish and be marker-checked.
+- Known issues: none found locally or on Vercel for the 4-line relic slice; GitHub Pages needs post-push confirmation after this commit publishes.
+- How to trigger and verify L/T/cross matches without console: click `Shape Bloom` once for Black Candle Vine, then press `M` or click `Shape Bloom` repeatedly to cycle `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom`.
+- How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit the review-hook particle burst, then return the board to play.
+- Security/secret-scan status: lightweight scan ran on changed files with no findings.
