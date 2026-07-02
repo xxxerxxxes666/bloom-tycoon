@@ -108,3 +108,29 @@
 - How to verify L/T/cross without console: open the playable and press `M` repeatedly to cycle Cross, L, and T demos.
 - How to verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪` and then return the board to play.
 - Security/secret-scan status: changed files were limited to this docs file; lightweight secret scan ran on changed files with no findings.
+
+## 2026-07-02 Hermes deterministic demo hook pass
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes' remaining actionable item was optional polish for clean deterministic `M` demos.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added an optional `maxCascades` limit to `resolveAnimated()` and used `{ maxCascades: 1 }` only in the prototype `M` review hook.
+- Preserved normal gameplay and Sacrifice cascade behavior by leaving regular `resolveAnimated()` calls at the default 20-cascade cap.
+- Extended the HTML match-shape regression source checks to require the new cascade-limit hook.
+- Verification run:
+  - `git fetch origin main`
+  - `python3 scripts/verify_project.py`
+  - `git diff --check`
+  - Local static checks returned `200 OK` for `/playable/midnight_bloom_prototype.html` and `/assets/tiles/96/amber_resin_seed.png`.
+  - Local Playwright Chromium check loaded 64 board tiles, 89 images, 0 broken images, `shapeAuditData`, `const maxCascades`, and `resolveAnimated({ maxCascades: 1 })`.
+  - Pressing `M` three times reported clean 5-tile demos in order: `Witch's Cross!`, `Night Garden L-Bloom!`, and `Twin Stem Bloom!`.
+  - The same `M` demo pass had 0 disabled tiles after each demo, no Supreme overlay, and no `cascade` text in the ritual messages.
+- Browser console/runtime status: no local Playwright console warnings, console errors, or page errors observed during the `M` demo verification.
+- Vercel deployment URL/identifier checked: pending production redeploy for this pass.
+- GitHub Pages preview status: pending after push.
+- Known issues: none for deterministic demo cascades; normal player-initiated matches can still cascade by design.
+- How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly to cycle Cross, L, and T demos; each should report 5 tiles harvested with its named shape copy.
+- How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪` and then return the board to play.
+- Security/secret-scan status: lightweight scan ran on changed files with no findings.

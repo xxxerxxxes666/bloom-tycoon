@@ -2973,8 +2973,9 @@
       harvestFlashCells.clear();
       superBloomCells.clear();
       const result = createResolveResult();
+      const maxCascades = Math.max(1, Number(options.maxCascades) || 20);
 
-      while (result.cascades < 20) {
+      while (result.cascades < maxCascades) {
         const wave = scanMatchWave();
         if (!wave) {
           break;
@@ -3647,7 +3648,7 @@
       window.setTimeout(async () => {
         let result = null;
         try {
-          result = await resolveAnimated();
+          result = await resolveAnimated({ maxCascades: 1 });
           ritualMessage = result.matched
             ? `<strong>Shape demo complete:</strong> ${harvestSummary(result)}`
             : "Shape demo did not find a match.";

@@ -152,6 +152,8 @@ def verify_source_hooks():
         "Night Garden L-Bloom!",
         "Twin Stem Bloom!",
         "function demoMatchShape",
+        "const maxCascades",
+        "resolveAnimated({ maxCascades: 1 })",
     ]
     missing = [needle for needle in required if needle not in html]
     if missing:
