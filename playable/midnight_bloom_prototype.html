@@ -957,6 +957,14 @@
       border-color: #6b2723;
     }
 
+    .btn.demo {
+      background:
+        linear-gradient(180deg, #243516, #080c05),
+        radial-gradient(circle at 50% 0, #a5c85466 0, #0000 50%);
+      border-color: #64783d;
+      min-width: 220px;
+    }
+
     .btn.armed {
       border-color: #c96a5a;
       box-shadow: inset 0 0 20px #000, 0 0 18px #7d1717;
@@ -2175,7 +2183,7 @@
       <div class="objective" id="objective">
         <span class="objective-text">Round 1 · Collect Thorn Rose 0/8 and Bone Star 0/6</span>
         <span class="objective-separator">·</span>
-        <span>Moves 16</span>
+        <span>Moves 12</span>
       </div>
       <div class="first-session-plaque" id="firstSessionPlaque">
         Match Thorn Rose and Bone Star to complete Round 1: First Bouquet.
@@ -2191,6 +2199,10 @@
         <button class="btn red" id="sacrificeBtn" type="button">
           <img class="btn-icon" src="../assets/tiles/96/bloodroot_ruby_shard.png" alt="">
           <span>Sacrifice (-3 moves)</span>
+        </button>
+        <button class="btn demo" id="demoCompleteBtn" type="button">
+          <img class="btn-icon" src="../assets/tiles/96/crimson_rose_rune.png" alt="">
+          <span>Complete Bouquet</span>
         </button>
       </div>
       <div class="sacrifice-panel" id="sacrificePanel" aria-live="polite">
@@ -2323,7 +2335,7 @@
 
     let board = [];
     let selected = null;
-    let moves = 16;
+    let moves = roundTemplates[0].moves;
     let coins = 2450;
     let counts = [0, 0, 0, 0, 0, 0];
     let sacrificeState = { active: false, choice: null };
@@ -2760,6 +2772,7 @@
       $("coins").textContent = coins;
       $("shuffleBtn").disabled = isResolving || roundComplete || moves < 1;
       $("sacrificeBtn").disabled = isResolving || roundComplete || moves < 3;
+      $("demoCompleteBtn").disabled = isResolving || roundComplete;
       $("sacrificeBtn").classList.toggle("armed", sacrificeState.active);
       $("sacrificeBtn").setAttribute("aria-pressed", sacrificeState.active ? "true" : "false");
       $("ritualLog").innerHTML = ritualMessage;
@@ -4269,6 +4282,7 @@
 
     $("shuffleBtn").addEventListener("click", shuffleBoard);
     $("sacrificeBtn").addEventListener("click", sacrifice);
+    $("demoCompleteBtn").addEventListener("click", demoCompleteBouquet);
     $("sacrificeCancel").addEventListener("click", () => cancelSacrifice());
     $("renewBtn").addEventListener("click", renewBouquet);
     $("chestTrigger").addEventListener("click", openChest);

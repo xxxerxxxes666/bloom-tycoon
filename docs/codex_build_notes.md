@@ -188,3 +188,32 @@
 - Kept `M` for L/T/cross demos and `B` for Supreme Bloom.
 - Verification required by Hermes: open live playable, press `N`, confirm reward ceremony and `Next Bouquet`; click it and confirm Round 2 starts with fresh objectives.
 - Security: no secrets, no trackers, no backend, no new permissions.
+
+## 2026-07-02 Codex visible one-click bouquet pass
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; the urgent task was to make the live game visibly react within one click/key press.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added a visible prototype `Complete Bouquet` button beside Shuffle/Sacrifice, wired to the same review-only completion path as the `N` key.
+- Aligned first-load Round 1 moves to 12 by initializing `moves` from the first round template.
+- Extended static HTML checks to require the visible button and first-round move initialization.
+- Verification run:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - JS parse check over executable HTML scripts
+  - `python3 scripts/verify_project.py`
+  - Local static checks returned `200 OK` for `/playable/midnight_bloom_prototype.html` and `/assets/tiles/96/amber_resin_seed.png`.
+  - Local Playwright one-click check loaded 64 board tiles, 90 images, 0 broken images, Round 1 objective `0/3` Thorn Rose and `0/2` Bone Star with 12 moves, and enabled `Complete Bouquet`.
+  - Clicking `Complete Bouquet` showed the First Bouquet ceremony, disabled the demo button, showed `Next Bouquet`, added a chest reward, and appended `Press Next Bouquet to keep playing.`
+  - Clicking `Next Bouquet` started Round 2 with fresh board, 17 moves, new objectives, hidden ceremony, enabled demo button, and 0 disabled tiles.
+  - Pressing `N` on Round 2 still completed the bouquet and showed `Next Bouquet`.
+  - Mobile portrait check at 390x844 had no horizontal overflow, 41px board tiles, and the `Complete Bouquet` button fit inside the controls.
+- Browser console/runtime status: no local Playwright console warnings, console errors, or page errors observed during one-click, `N`, or mobile checks.
+- Vercel deployment URL/identifier checked: pending production redeploy for this pass.
+- GitHub Pages preview status: pending after push.
+- Known issues: `Complete Bouquet` is intentionally a visible prototype review control so Xerxes/Hermes can confirm progress immediately; remove or gate before production.
+- How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly to cycle Cross, L, and T demos; each should report 5 tiles harvested with its named shape copy.
+- How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit 84 particles, then return the board to play.
+- Security/secret-scan status: lightweight scan ran on changed files with no findings.
