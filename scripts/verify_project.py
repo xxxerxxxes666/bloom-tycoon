@@ -4,6 +4,7 @@ import runpy
 
 root = Path(__file__).resolve().parents[1]
 required = [
+    ".nojekyll",
     "project.godot",
     "src/Main.tscn",
     "src/Main.gd",
