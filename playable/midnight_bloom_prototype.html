@@ -945,6 +945,20 @@
       animation: line-relic-sweep 840ms cubic-bezier(0.12, 0.82, 0.18, 1) forwards;
     }
 
+    .board-particle.seed-rune {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 7;
+      color: #f0d58b;
+      font-size: var(--font-size, 22px);
+      text-shadow:
+        0 0 8px #000,
+        0 0 14px #9b1d22,
+        0 0 22px #d7b16d;
+      animation: seed-rune-awaken 1080ms cubic-bezier(0.12, 0.82, 0.18, 1) forwards;
+    }
+
     .board-particle.blood-pop,
     .board-particle.blood-aura,
     .board-particle.shard-pop,
@@ -2062,6 +2076,31 @@
           scaleX(var(--scale, 4.8))
           scaleY(1)
           rotate(var(--spin, 0deg));
+      }
+    }
+
+    @keyframes seed-rune-awaken {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.35) rotate(-42deg);
+      }
+      18% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.18) rotate(8deg);
+      }
+      56% {
+        opacity: 1;
+        transform:
+          translate(calc(-50% + var(--dx, 0px) * 0.42), calc(-50% + var(--dy, -46px) * 0.42))
+          scale(1.38)
+          rotate(var(--spin, 0deg));
+      }
+      100% {
+        opacity: 0;
+        transform:
+          translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, -86px)))
+          scale(0.72)
+          rotate(calc(var(--spin, 0deg) + 140deg));
       }
     }
 
@@ -3457,6 +3496,8 @@
         shapeCells: [],
         lineRelics: [],
         lineRelicCells: [],
+        rareSeedRunes: [],
+        rareSeedRuneCells: [],
         thornsDamaged: 0,
         thornsCleared: 0,
         thornCells: [],
@@ -3475,6 +3516,8 @@
       const waveShapeCells = new Set();
       const lineRelicClearCells = new Map();
       const lineRelics = [];
+      const rareSeedRunes = [];
+      const rareSeedRuneCells = new Map();
       const shapeBonuses = [];
       let rareWave = false;
 
@@ -3482,11 +3525,16 @@
       foundMatches.forEach((match) => {
         const shape = analyzeMatchShape(match);
         const lineRelic = lineRelicForMatch(match, shape);
+        const rareSeedRune = rareSeedRuneForMatch(match, shape);
         if (lineRelic) {
           lineRelics.push(lineRelic);
           lineRelic.cells.forEach((cell) => lineRelicClearCells.set(cell.join(","), cell));
         }
-        if (shape.kind === "line" && match.len >= 5) {
+        if (rareSeedRune) {
+          rareSeedRunes.push(rareSeedRune);
+          rareSeedRune.cells.forEach((cell) => rareSeedRuneCells.set(cell.join(","), cell));
+        }
+        if (shape.kind === "line" && match.len >= 6) {
           rareWave = true;
           match.cells.forEach((cell) => waveRareCells.add(cell.join(",")));
         }
@@ -3517,7 +3565,10 @@
         lineRelics,
         lineRelicCells: [...lineRelicClearCells.values()],
         lineRelicKeys: new Set(lineRelicClearCells.keys()),
-        coinMultiplier: strongestShape ? strongestShape.coinMultiplier : 1,
+        rareSeedRunes,
+        rareSeedRuneCells: [...rareSeedRuneCells.values()],
+        rareSeedRuneKeys: new Set(rareSeedRuneCells.keys()),
+        coinMultiplier: Math.max(strongestShape ? strongestShape.coinMultiplier : 1, rareSeedRunes.length ? 2.5 : 1),
         resourceMultiplier: strongestShape ? strongestShape.resourceMultiplier : 1
       };
     }
@@ -3544,6 +3595,25 @@
       };
     }
 
+    function rareSeedRuneForMatch(match, shape) {
+      if (!shape || shape.kind !== "line" || match.len !== 5 || !Array.isArray(match.runs) || match.runs.length !== 1) {
+        return null;
+      }
+      const run = match.runs[0];
+      if (!run || run.len !== 5) {
+        return null;
+      }
+      const direction = run.direction === "vertical" ? "vertical" : "horizontal";
+      const fixed = direction === "vertical" ? run.cells[0][0] : run.cells[0][1];
+      return {
+        name: "Eclipse Seed Rune",
+        direction,
+        fixed,
+        cells: run.cells,
+        flowerId: match.val
+      };
+    }
+
     function collectWaveRewards(wave, result, cascadeIndex, forcedRareCells = []) {
       const resourceMultiplier = wave.resourceMultiplier || 1;
       wave.clearCells.forEach(([x, y]) => {
@@ -3566,6 +3636,10 @@
       if (wave.lineRelics.length) {
         queueLineRelicBurst(wave.lineRelics, cascadeIndex);
       }
+      if (wave.rareSeedRunes.length) {
+        queueRareSeedRuneBurst(wave.rareSeedRunes, cascadeIndex);
+        storeRareSeedRunes(wave.rareSeedRunes, result);
+      }
       if (isRareWave) {
         queueSuperBloomBoardEffects(effectRareCells, cascadeIndex);
       }
@@ -3585,6 +3659,22 @@
       result.lineRelicCells.push(...wave.lineRelicCells);
       effectRareCells.forEach((cell) => {
         result.rareCells.push(cell);
+      });
+    }
+
+    function storeRareSeedRunes(runes, result) {
+      runes.forEach((rune) => {
+        const stored = addChestItem({
+          id: "eclipse-seed-rune",
+          name: "Eclipse Seed Rune",
+          qty: 1,
+          rarity: "Rare",
+          source: "Five-line harvest",
+          flowerId: rune.flowerId,
+          tags: ["rare", "seed-rune", "line5"]
+        });
+        result.rareSeedRunes.push({ ...rune, stored });
+        result.rareSeedRuneCells.push(...rune.cells);
       });
     }
 
@@ -3653,6 +3743,7 @@
       result.rareCells = dedupeCells(result.rareCells);
       result.shapeCells = dedupeCells(result.shapeCells);
       result.lineRelicCells = dedupeCells(result.lineRelicCells);
+      result.rareSeedRuneCells = dedupeCells(result.rareSeedRuneCells);
       result.thornCells = dedupeCells(result.thornCells);
       return result;
     }
@@ -3932,8 +4023,42 @@
       });
     }
 
+    function queueRareSeedRuneBurst(runes, cascadeIndex = 0) {
+      const baseDelay = cascadeIndex * 120;
+      runes.forEach((rune, runeIndex) => {
+        const center = rune.direction === "vertical"
+          ? [rune.fixed, rune.cells.reduce((sum, cell) => sum + cell[1], 0) / rune.cells.length]
+          : [rune.cells.reduce((sum, cell) => sum + cell[0], 0) / rune.cells.length, rune.fixed];
+        boardParticles.push({
+          type: "blood-aura",
+          x: center[0],
+          y: center[1],
+          dx: 0,
+          dy: 0,
+          size: 88,
+          spin: Math.random() * 360,
+          scale: 1.12,
+          delay: baseDelay + runeIndex * 92
+        });
+        rune.cells.forEach(([x, y], cellIndex) => {
+          boardParticles.push({
+            type: "seed-rune",
+            text: cellIndex === 2 ? "◆" : "✦",
+            x,
+            y,
+            dx: (Math.random() - 0.5) * 78,
+            dy: -58 - Math.random() * 64,
+            size: cellIndex === 2 ? 38 : 28,
+            fontSize: cellIndex === 2 ? 28 : 21,
+            spin: (Math.random() - 0.5) * 190,
+            delay: baseDelay + runeIndex * 92 + cellIndex * 20
+          });
+        });
+      });
+    }
+
     function queueSuperBloomBoardEffects(cells, cascadeIndex = 0) {
-      // Super Bloom FX is reserved for 5+ shapes and blooms from the matched cells themselves.
+      // Super Bloom FX is reserved for 6+ straight lines and forced review/sacrifice paths.
       const baseDelay = cascadeIndex * 120;
       cells.slice(0, 14).forEach(([x, y], cellIndex) => {
         boardParticles.push({
@@ -4007,8 +4132,9 @@
       const reshuffleText = result.reshuffled ? " The board re-seeded itself with a legal move." : "";
       const shapeText = shapeBonusMessage(result);
       const lineRelicText = lineRelicMessage(result);
+      const seedRuneText = rareSeedRuneMessage(result);
       const thornText = thornDamageMessage(result);
-      const bonusText = [shapeText, lineRelicText].filter(Boolean).join(" ");
+      const bonusText = [shapeText, lineRelicText, seedRuneText].filter(Boolean).join(" ");
       const shapePrefix = bonusText ? `<strong>${bonusText}</strong> ` : "";
       if (orderText) {
         return `${shapePrefix}<strong>${orderText}</strong>${thornText} +${result.coinsEarned} coins${cascadeText}.${gainMarkup(result.gained)}${reshuffleText}`;
@@ -4032,6 +4158,18 @@
       const labels = result.lineRelics.map((relic) => {
         const lane = relic.direction === "vertical" ? `column ${relic.fixed + 1}` : `row ${relic.fixed + 1}`;
         return `${relic.name} swept ${lane}`;
+      });
+      return `${labels.join("; ")}.`;
+    }
+
+    function rareSeedRuneMessage(result) {
+      if (!result.rareSeedRunes || !result.rareSeedRunes.length) {
+        return "";
+      }
+      const labels = result.rareSeedRunes.map((rune) => {
+        const lane = rune.direction === "vertical" ? `column ${rune.fixed + 1}` : `row ${rune.fixed + 1}`;
+        const storage = rune.stored ? "sealed in Chest Storage" : "could not fit in Chest Storage";
+        return `${rune.name} awakened from a five-line ${lane} and ${storage}`;
       });
       return `${labels.join("; ")}.`;
     }
@@ -4563,6 +4701,7 @@
 
     function makeShapeDemoBoard(kind) {
       const shapeCells = {
+        line5: [[1, 3], [2, 3], [3, 3], [4, 3], [5, 3]],
         line4: [[2, 3], [3, 3], [4, 3], [5, 3]],
         cross: [[3, 3], [2, 3], [4, 3], [3, 2], [3, 4]],
         t: [[2, 3], [3, 3], [4, 3], [3, 4], [3, 5]],
@@ -4575,7 +4714,7 @@
       if (isResolving) {
         return;
       }
-      const demoKinds = ["line4", "cross", "l", "t"];
+      const demoKinds = ["line5", "line4", "cross", "l", "t"];
       const kind = demoKinds.includes(forcedKind)
         ? forcedKind
         : demoKinds[shapeDemoIndex % demoKinds.length];
@@ -4589,6 +4728,7 @@
       superBloomCells.clear();
       boardParticles = [];
       const demoNames = {
+        line5: "Eclipse Seed Rune",
         line4: "Black Candle Vine",
         cross: "Witch's Cross",
         l: "Night Garden L-Bloom",
@@ -4618,7 +4758,7 @@
     }
 
     function showSupreme(originCells = []) {
-      // Supreme Bloom is intentionally rare: 5+ HTML matches or the forced Sacrifice test path.
+      // Supreme Bloom is intentionally rare: 6+ HTML matches or the forced Sacrifice/review paths.
       const supreme = $("supreme");
       const particleLayer = $("supremeParticles");
       particleLayer.innerHTML = "";
@@ -4866,6 +5006,7 @@
         horizontal: [[1, 1], [2, 1], [3, 1]],
         vertical: [[4, 1], [4, 2], [4, 3]],
         line4: [[2, 3], [3, 3], [4, 3], [5, 3]],
+        line5: [[1, 3], [2, 3], [3, 3], [4, 3], [5, 3]],
         l: [[2, 2], [3, 2], [4, 2], [2, 3], [2, 4]],
         t: [[2, 3], [3, 3], [4, 3], [3, 4], [3, 5]],
         cross: [[3, 3], [2, 3], [4, 3], [3, 2], [3, 4]],
