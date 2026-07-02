@@ -503,8 +503,8 @@
 - Deployed to Vercel production as `dpl_25wBqXmTN11z7Y6edRCKLc6y94ps`.
 - Vercel deployment URL: https://bloom-tycoon-3ldg66oap-xerxes-florals.vercel.app
 - Explicitly re-pointed `https://bloom-tycoon.vercel.app` to that deployment.
-- GitHub Pages preview status before this commit: latest Pages deployment was current for the previous Eclipse Seed Rune build at `6de305b`. This Rune-Tended Soil pass still needs the post-push Pages workflow to publish and be marker-checked.
-- Known issues: none found locally or on Vercel for the rune payoff slice; GitHub Pages needs post-push confirmation after this commit publishes.
+- GitHub Pages preview status after gameplay push: workflow `28620655267` succeeded; `/bloom-tycoon/`, `/bloom-tycoon/playable/midnight_bloom_prototype.html?verify=rune-tended-soil-791e4f7`, and `/bloom-tycoon/assets/tiles/96/amber_resin_seed.png?verify=rune-tended-soil-791e4f7` returned `200`, and the playable contained `Rune-Tended Soil`, `plantEclipseSeedRune`, `data-action="plant-eclipse-seed-rune"`, `pendingRuneTendedSoil`, `activeRuneTendedSoil`, `Eclipse Seed Rune`, `Black Candle Vine`, and `Cursed Thorn`.
+- Known issues: none found locally, on Vercel, or on GitHub Pages for the rune payoff slice. GitHub Pages deploy emitted a non-blocking Node.js 20 deprecation warning from the Pages action runtime.
 - How to trigger and verify the rune payoff without console: click `Shape Bloom`, open Chest Storage, click `Plant Rune`, then use `Complete Bouquet` and `Next Bouquet`; Round 2 should show `Rune-Tended Soil +1 Move` and 18 moves.
 - How to trigger and verify L/T/cross matches without console: after the rune payoff flow, press `M` repeatedly; the cycle still includes `Black Candle Vine`, `Witch's Cross!`, `Night Garden L-Bloom!`, `Twin Stem Bloom!`, and `Eclipse Seed Rune`.
 - How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit the review-hook particle burst, then return the board to play.
