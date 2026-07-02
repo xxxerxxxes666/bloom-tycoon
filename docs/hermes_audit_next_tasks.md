@@ -1,57 +1,56 @@
 # Hermes Audit Next Tasks
 
-Last audited by Hermes: **2026-07-02 16:45 UTC**
+Last audited by Hermes: **2026-07-02 17:05 UTC**
 Audit targets:
 - Vercel playable: https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html
 - GitHub Pages playable: https://xxxerxxxes666.github.io/bloom-tycoon/playable/midnight_bloom_prototype.html
 - Repo: https://github.com/xxxerxxxes666/bloom-tycoon
-- Latest audited commit: `ac0e67673a8030f88d8b5ab76da8799620c78834` (`feat: seed obvious bouquet target moves`)
+- Latest audited commit: `9dfc8c63a42c051b33d153fe888262b000aee31d` (`docs: record first-move verification pass`)
 
 ## Hermes audit verdict
 
-Vercel and GitHub Pages are current and marker-matched. The old GitHub Pages stale blocker is resolved.
+Vercel and GitHub Pages are current and marker-matched. The prior GitHub Pages publish blocker is resolved.
 
-The latest build includes the visible `Complete Bouquet` control, the repeatable bouquet loop, and seeded obvious target-element opening moves. Keep the current gothic greenhouse + Diablo-vial progress direction.
+The Round 1 first real move is now useful: the seeded top-left Thorn Rose swap advances Velvet Funeral from `0/3` to `3/3`, drops moves from 12 to 11, and gives clear harvest feedback. No urgent live blocker found.
 
 ## Verified by Hermes this audit
 
 - `python3 scripts/verify_project.py` passes.
-- Vercel and GitHub Pages direct playables return `200`.
-- Vercel and GitHub Pages `assets/tiles/96/amber_resin_seed.png` return `200`.
-- Downloaded Vercel and Pages HTML both contain `demoCompleteBtn`, `Complete Bouquet`, `let moves = roundTemplates[0].moves`, `Next Bouquet`, and `shapeAuditData`.
+- Vercel and GitHub Pages root/playable/key tile asset return `200`.
+- Downloaded Vercel and Pages HTML both contain `demoCompleteBtn`, `Complete Bouquet`, `let moves = roundTemplates[0].moves`, `Next Bouquet`, `shapeAuditData`, `seedCurrentTargetMoves`, `writeTargetLegalMovePatch`, and `const maxCascades`.
 - Browser checks on both hosts:
   - 64 board tiles, 90 images, 0 broken images;
   - no console or page errors observed;
   - Round 1 shows Thorn Rose `0/3`, Bone Star `0/2`, and 12 moves;
+  - first real seeded swap advances Thorn Rose to `3/3` and leaves the board enabled;
   - `Complete Bouquet` opens the First Bouquet reward ceremony;
   - `Next Bouquet` starts Round 2 with fresh objectives and a 64-tile board;
-  - `M` still triggers the L/T/cross demo path;
-  - `B` shows `SUPREME BLOOM! Review hook complete. The board is ready.`;
+  - `M` triggers the Witch's Cross L/T/cross demo path;
+  - `B` shows `SUPREME BLOOM! Review hook complete. The board is ready.` with 84 particles;
   - Chest Storage opens and Escape closes it;
   - Sacrifice opens and Cancel exits it;
   - hidden-iframe mobile portrait audit at ~390px shows no horizontal overflow.
 
 ## Current next priority for Codex
 
-Priority 1 is **real-player first move verification and polish**. Do not add new systems until the first real move feels clearly useful.
+Priority 1 is **post-first-move clarity**. Keep it surgical: the first move works, so help the player see the next useful step without using `Complete Bouquet`, `N`, `M`, or `B`.
 
 ### Do now
 
-1. In a normal browser, reload the live playable and inspect the Round 1 opening board.
-2. Confirm there is an obvious legal move involving current target elements (`Thorn Rose` or `Bone Star`) without using `Complete Bouquet`, `N`, `M`, or `B`.
-3. Make the first useful move with a real mouse/tap.
-4. Verify the move visibly advances the displayed bouquet objective and gives immediate feedback.
-5. If the first target move is not obvious or does not reliably progress objectives, make a surgical patch only:
+1. In a normal browser, reload the live playable and make the seeded top-left Thorn Rose swap.
+2. Confirm Thorn Rose completes and the UI clearly points the player toward the remaining Bone Star objective.
+3. If the next Bone Star move is not obvious after the first swap, make a small polish patch only:
+   - highlight or hint the seeded Bone Star move after Thorn Rose completes;
    - keep Round 1 short: Thorn Rose `3`, Bone Star `2`, 12 moves;
    - preserve `Complete Bouquet`, `N`, `M`, and `B` as prototype review hooks;
-   - improve only the seeded opening-board helper, target highlighting, or first-move hint;
-   - do not redesign the UI or add new economy systems.
-6. Recheck both hosts after deploy for marker parity and first-load behavior.
+   - do not redesign the UI or add economy/backend systems.
+4. Recheck both hosts after deploy for marker parity and first-load behavior.
 
 ### Acceptance checks
 
-- First reload shows at least one obvious legal target-element move.
-- One real swap can visibly progress Thorn Rose or Bone Star in Round 1.
+- Fresh Round 1 still shows an obvious first target-element move.
+- The first real swap advances Thorn Rose to `3/3`.
+- After that swap, the remaining Bone Star objective has an obvious next move or hint.
 - `Complete Bouquet` still opens the ceremony and `Next Bouquet` still starts Round 2.
 - `M` and `B` hooks still work.
 - Chest and Sacrifice still open/cancel/close correctly.
