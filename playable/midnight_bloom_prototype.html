@@ -834,6 +834,37 @@
         linear-gradient(45deg, #0000 0 44%, #5f833888 50%, #0000 56%);
     }
 
+    .tile.moonwater-target {
+      outline: 2px solid #7fb2c9;
+      box-shadow:
+        inset 0 0 16px #000,
+        0 0 0 1px #160f0c,
+        0 0 18px #5bb6d0,
+        0 0 26px #d7b16d55;
+    }
+
+    .tile.moonwater-area {
+      outline: 2px solid #c8d9a5;
+      box-shadow:
+        inset 0 0 16px #000,
+        0 0 0 1px #160f0c,
+        0 0 16px #7fb2c9,
+        0 0 24px #5f833866;
+    }
+
+    .tile.moonwater-center::before {
+      border-color: #d7b16daa;
+      box-shadow: inset 0 0 12px #31566b, 0 0 18px #7fb2c9;
+    }
+
+    .tile.moonwater-target::after,
+    .tile.moonwater-area::after {
+      opacity: 1;
+      background:
+        radial-gradient(circle, #7fb2c932 0, #0000 58%),
+        repeating-conic-gradient(from 18deg, #0000 0 12deg, #d7b16d55 13deg 15deg, #0000 16deg 32deg);
+    }
+
     .tile.sacrifice-target {
       outline: 2px solid #9b1d22;
       box-shadow:
@@ -996,6 +1027,20 @@
         0 0 14px #9b1d22,
         0 0 22px #d7b16d;
       animation: seed-rune-awaken 1080ms cubic-bezier(0.12, 0.82, 0.18, 1) forwards;
+    }
+
+    .board-particle.moonwater-drop {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 7;
+      color: #d7e9ec;
+      font-size: var(--font-size, 18px);
+      text-shadow:
+        0 0 8px #000,
+        0 0 14px #5bb6d0,
+        0 0 20px #d7b16d;
+      animation: resource-pop 980ms cubic-bezier(0.14, 0.82, 0.2, 1) forwards;
     }
 
     .board-particle.blood-pop,
@@ -2524,6 +2569,10 @@
           <img class="btn-icon" src="../assets/tiles/96/bone_white_thorn_star.png" alt="">
           <span>Pruning Shears (x<span id="pruningShearsCount">1</span>)</span>
         </button>
+        <button class="btn booster" id="moonwaterFlaskBtn" type="button" aria-pressed="false">
+          <img class="btn-icon" src="../assets/tiles/96/purple_nightshade_bloom.png" alt="">
+          <span>Moonwater Flask (x<span id="moonwaterFlaskCount">1</span>)</span>
+        </button>
         <button class="btn demo" id="demoCompleteBtn" type="button">
           <img class="btn-icon" src="../assets/tiles/96/crimson_rose_rune.png" alt="">
           <span>Complete Bouquet</span>
@@ -2681,8 +2730,9 @@
     let cursedThorns = [];
     let clearedCursedThorns = 0;
     let sacrificeState = { active: false, choice: null };
-    let boosters = { pruningShears: 1 };
+    let boosters = { pruningShears: 1, moonwaterFlask: 1 };
     let activeBooster = "";
+    let moonwaterPreviewCenter = null;
     let ritualMessage = "Match botanical elements to feed the First Bouquet.";
     let harvestFlashCells = new Set();
     let transmuteFlashCell = "";
@@ -3247,6 +3297,9 @@
           const sacrificeClass = sacrificeState.active && sacrificeState.choice !== null ? "sacrifice-target" : "";
           const profitableClass = sacrificeState.active && wouldSacrificeHarvest(x, y) ? "sacrifice-profitable" : "";
           const shearsClass = activeBooster === "pruningShears" ? "shears-target" : "";
+          const moonwaterTargetClass = activeBooster === "moonwaterFlask" && isMoonwaterCenter(x, y) ? "moonwater-target" : "";
+          const moonwaterAreaClass = activeBooster === "moonwaterFlask" && moonwaterPreviewCenter && inMoonwaterPatch(x, y, moonwaterPreviewCenter.x, moonwaterPreviewCenter.y) ? "moonwater-area" : "";
+          const moonwaterCenterClass = activeBooster === "moonwaterFlask" && moonwaterPreviewCenter && moonwaterPreviewCenter.x === x && moonwaterPreviewCenter.y === y ? "moonwater-center" : "";
           const harvestClass = harvestFlashCells.has(`${x},${y}`) ? "harvest-flash" : "";
           const superClass = superBloomCells.has(`${x},${y}`) ? "super-bloom-hot" : "";
           const invalidClass = invalidSwapCells.has(`${x},${y}`) ? "invalid-swap" : "";
@@ -3260,7 +3313,7 @@
           const fallKey = `${x},${y}`;
           const fallRows = fallAnimations.get(fallKey) || 0;
           const fallClass = fallRows ? "fall-in" : "";
-          tile.className = `tile ${selectedClass} ${legalClass} ${sacrificeClass} ${profitableClass} ${shearsClass} ${harvestClass} ${superClass} ${invalidClass} ${idleHintClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass}`;
+          tile.className = `tile ${selectedClass} ${legalClass} ${sacrificeClass} ${profitableClass} ${shearsClass} ${moonwaterTargetClass} ${moonwaterAreaClass} ${moonwaterCenterClass} ${harvestClass} ${superClass} ${invalidClass} ${idleHintClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass}`;
           tile.disabled = isResolving || roundComplete;
           if (fallRows) {
             tile.style.setProperty("--fall-y", `${-fallRows * 112}%`);
@@ -3269,12 +3322,17 @@
           const profitLabel = profitableClass ? " profitable sacrifice target" : "";
           const legalLabel = legalClass ? " legal match swap target" : "";
           const shearsLabel = shearsClass ? " Pruning Shears target" : "";
+          const moonwaterLabel = moonwaterTargetClass ? " Moonwater Flask 3x3 center" : moonwaterAreaClass ? " inside Moonwater Flask 3x3 patch" : "";
           const thornLabel = thorn ? " with Cursed Thorn blocker" : thornClearedClass ? " where a Cursed Thorn cracked" : "";
-          tile.setAttribute("aria-label", `${flowers[value][0]} tile${profitLabel}${legalLabel}${shearsLabel}${thornLabel}`);
+          tile.setAttribute("aria-label", `${flowers[value][0]} tile${profitLabel}${legalLabel}${shearsLabel}${moonwaterLabel}${thornLabel}`);
           tile.innerHTML = `
             ${iconMarkup(value, "", flowers[value][0], "tile-icon-wrap")}
             ${thorn || thornClearedClass ? '<span class="cursed-thorn-overlay" aria-hidden="true"></span>' : ""}
           `;
+          if (activeBooster === "moonwaterFlask") {
+            tile.addEventListener("mouseenter", () => previewMoonwaterPatch(x, y));
+            tile.addEventListener("focus", () => previewMoonwaterPatch(x, y));
+          }
           tile.addEventListener("click", () => tap(x, y));
           boardEl.appendChild(tile);
         }
@@ -3329,6 +3387,10 @@
       $("pruningShearsBtn").disabled = isResolving || roundComplete || pruningShearsCount() < 1;
       $("pruningShearsBtn").classList.toggle("armed", activeBooster === "pruningShears");
       $("pruningShearsBtn").setAttribute("aria-pressed", activeBooster === "pruningShears" ? "true" : "false");
+      $("moonwaterFlaskCount").textContent = moonwaterFlaskCount();
+      $("moonwaterFlaskBtn").disabled = isResolving || roundComplete || moonwaterFlaskCount() < 1;
+      $("moonwaterFlaskBtn").classList.toggle("armed", activeBooster === "moonwaterFlask");
+      $("moonwaterFlaskBtn").setAttribute("aria-pressed", activeBooster === "moonwaterFlask" ? "true" : "false");
       $("demoCompleteBtn").disabled = isResolving || roundComplete;
       $("shapeBloomBtn").disabled = isResolving || roundComplete;
       $("sacrificeBtn").classList.toggle("armed", sacrificeState.active);
@@ -3386,6 +3448,10 @@
       notePlayerInteraction();
       if (activeBooster === "pruningShears") {
         usePruningShears(x, y);
+        return;
+      }
+      if (activeBooster === "moonwaterFlask") {
+        useMoonwaterFlask(x, y);
         return;
       }
       if (sacrificeState.active) {
@@ -4527,7 +4593,7 @@
       }
       notePlayerInteraction();
       cancelSacrifice(false);
-      cancelPruningShears(false);
+      cancelActiveBooster(false);
       if (!spendMoves(1, "Shuffle")) {
         return;
       }
@@ -4553,6 +4619,7 @@
       selected = null;
       sacrificeState = { active: false, choice: null };
       activeBooster = "";
+      moonwaterPreviewCenter = null;
       harvestFlashCells.clear();
       fallAnimations.clear();
       superBloomCells.clear();
@@ -4595,7 +4662,7 @@
         thornPulseCells.clear();
         thornClearedCells.clear();
       }
-      cancelPruningShears(false);
+      cancelActiveBooster(false);
       notePlayerInteraction();
       if (maybeCompleteRound()) {
         ritualMessage += " <strong>Press Next Bouquet to keep playing.</strong>";
@@ -4609,13 +4676,29 @@
       return Math.max(0, Math.floor(Number(boosters.pruningShears) || 0));
     }
 
+    function moonwaterFlaskCount() {
+      return Math.max(0, Math.floor(Number(boosters.moonwaterFlask) || 0));
+    }
+
     function renderBoosterPanel() {
       const panel = $("boosterPanel");
       const status = $("boosterStatus");
-      const armed = activeBooster === "pruningShears";
+      const armed = activeBooster === "pruningShears" || activeBooster === "moonwaterFlask";
       panel.classList.toggle("open", armed);
-      if (armed) {
+      if (activeBooster === "pruningShears") {
         status.textContent = "Apothecary Level 2 Pruning Shears are armed. Choose one tile or Cursed Thorn to cut. Cancel spends nothing.";
+      } else if (activeBooster === "moonwaterFlask") {
+        status.textContent = "Apothecary field kit Moonwater Flask is armed. Choose the center of a 3x3 patch. Cursed Thorns stay rooted. Cancel spends nothing.";
+      }
+    }
+
+    function cancelActiveBooster(refocus = true) {
+      if (activeBooster === "pruningShears") {
+        cancelPruningShears(refocus);
+        return;
+      }
+      if (activeBooster === "moonwaterFlask") {
+        cancelMoonwaterFlask(refocus);
       }
     }
 
@@ -4641,6 +4724,7 @@
       cancelSacrifice(false);
       selected = null;
       activeBooster = "pruningShears";
+      moonwaterPreviewCenter = null;
       ritualMessage = "<strong>Pruning Shears armed:</strong> Apothecary Level 2 grant ready. Choose one tile or Cursed Thorn to cut. Cancel spends nothing.";
       render();
     }
@@ -4650,6 +4734,7 @@
         return;
       }
       activeBooster = "";
+      moonwaterPreviewCenter = null;
       selected = null;
       ritualMessage = "Pruning Shears lowered. No booster spent.";
       render();
@@ -4737,6 +4822,196 @@
       scheduleIdleHint();
     }
 
+    function isMoonwaterCenter(x, y) {
+      return x > 0 && x < BOARD_SIZE - 1 && y > 0 && y < BOARD_SIZE - 1;
+    }
+
+    function inMoonwaterPatch(x, y, centerX, centerY) {
+      return Math.abs(x - centerX) <= 1 && Math.abs(y - centerY) <= 1;
+    }
+
+    function moonwaterPatchCells(centerX, centerY) {
+      const cells = [];
+      for (let dy = -1; dy <= 1; dy += 1) {
+        for (let dx = -1; dx <= 1; dx += 1) {
+          const x = centerX + dx;
+          const y = centerY + dy;
+          if (x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE) {
+            cells.push([x, y]);
+          }
+        }
+      }
+      return cells;
+    }
+
+    function previewMoonwaterPatch(x, y) {
+      if (activeBooster !== "moonwaterFlask") {
+        return;
+      }
+      if (!isMoonwaterCenter(x, y)) {
+        if (moonwaterPreviewCenter) {
+          moonwaterPreviewCenter = null;
+          render();
+        }
+        return;
+      }
+      if (moonwaterPreviewCenter && moonwaterPreviewCenter.x === x && moonwaterPreviewCenter.y === y) {
+        return;
+      }
+      moonwaterPreviewCenter = { x, y };
+      render();
+    }
+
+    function toggleMoonwaterFlask() {
+      if (isResolving) {
+        return;
+      }
+      if (roundComplete) {
+        ritualMessage = "The bouquet is sealed. Press Next Bouquet to continue.";
+        render();
+        return;
+      }
+      if (activeBooster === "moonwaterFlask") {
+        cancelMoonwaterFlask();
+        return;
+      }
+      if (moonwaterFlaskCount() < 1) {
+        ritualMessage = "The Apothecary has no Moonwater Flask ready.";
+        render();
+        return;
+      }
+      clearIdleHint();
+      cancelSacrifice(false);
+      cancelActiveBooster(false);
+      selected = null;
+      activeBooster = "moonwaterFlask";
+      moonwaterPreviewCenter = { x: 3, y: 3 };
+      ritualMessage = "<strong>Moonwater Flask armed:</strong> choose the center of a 3x3 patch to reshuffle only those loose tiles. Cursed Thorns stay rooted.";
+      render();
+    }
+
+    function cancelMoonwaterFlask(refocus = true) {
+      if (activeBooster !== "moonwaterFlask") {
+        return;
+      }
+      activeBooster = "";
+      moonwaterPreviewCenter = null;
+      selected = null;
+      ritualMessage = "Moonwater Flask corked. No booster spent.";
+      render();
+      if (refocus) {
+        $("moonwaterFlaskBtn").focus();
+      }
+    }
+
+    function spendMoonwaterFlask() {
+      if (moonwaterFlaskCount() < 1) {
+        ritualMessage = "The Apothecary has no Moonwater Flask ready.";
+        render();
+        return false;
+      }
+      boosters.moonwaterFlask = moonwaterFlaskCount() - 1;
+      return true;
+    }
+
+    function shuffledValues(values) {
+      const shuffled = values.slice();
+      for (let index = shuffled.length - 1; index > 0; index -= 1) {
+        const swapIndex = Math.floor(Math.random() * (index + 1));
+        [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+      }
+      if (shuffled.length > 1 && shuffled.every((value, index) => value === values[index])) {
+        shuffled.push(shuffled.shift());
+      }
+      return shuffled;
+    }
+
+    function applyMoonwaterValues(cells, values) {
+      cells.forEach(([x, y], index) => {
+        board[y][x] = values[index];
+      });
+    }
+
+    function shuffleMoonwaterPatch(centerX, centerY) {
+      const patchCells = moonwaterPatchCells(centerX, centerY);
+      const mutableCells = patchCells.filter(([x, y]) => !thornAt(x, y));
+      if (mutableCells.length < 2) {
+        return { ok: false, patchCells, mutableCells };
+      }
+
+      const originalBoard = boardSnapshot();
+      const originalValues = mutableCells.map(([x, y]) => board[y][x]);
+      for (let attempt = 0; attempt < 80; attempt += 1) {
+        const nextValues = shuffledValues(originalValues);
+        applyMoonwaterValues(mutableCells, nextValues);
+        if (!matches().length && hasLegalMoves()) {
+          return { ok: true, patchCells, mutableCells };
+        }
+      }
+      restoreBoard(originalBoard);
+      return { ok: false, patchCells, mutableCells };
+    }
+
+    function queueMoonwaterBurst(cells, centerX, centerY) {
+      cells.forEach(([x, y], index) => {
+        boardParticles.push({
+          type: "moonwater-drop",
+          text: index % 2 ? "☾" : "✦",
+          x,
+          y,
+          dx: (x - centerX) * 18 + (Math.random() - 0.5) * 18,
+          dy: (y - centerY) * 18 - 34 - Math.random() * 24,
+          size: 22,
+          fontSize: index % 2 ? 20 : 17,
+          spin: (Math.random() - 0.5) * 110,
+          delay: index * 22
+        });
+      });
+    }
+
+    function useMoonwaterFlask(x, y) {
+      if (isResolving || roundComplete) {
+        return;
+      }
+      if (!isMoonwaterCenter(x, y)) {
+        moonwaterPreviewCenter = null;
+        ritualMessage = "Moonwater needs a full 3x3 garden patch. Choose one of the glowing inner tiles.";
+        render();
+        return;
+      }
+      if (moonwaterFlaskCount() < 1) {
+        activeBooster = "";
+        moonwaterPreviewCenter = null;
+        ritualMessage = "The Apothecary has no Moonwater Flask ready.";
+        render();
+        return;
+      }
+      const result = shuffleMoonwaterPatch(x, y);
+      if (!result.ok) {
+        moonwaterPreviewCenter = { x, y };
+        ritualMessage = "Moonwater found no safe stir there. Choose another glowing 3x3 center.";
+        render();
+        return;
+      }
+      if (!spendMoonwaterFlask()) {
+        activeBooster = "";
+        moonwaterPreviewCenter = null;
+        return;
+      }
+      activeBooster = "";
+      selected = null;
+      moonwaterPreviewCenter = null;
+      clearIdleHint();
+      harvestFlashCells = new Set(result.patchCells.map((cell) => cell.join(",")));
+      queueMoonwaterBurst(result.mutableCells, x, y);
+      const thornCount = result.patchCells.length - result.mutableCells.length;
+      ritualMessage = `<strong>Moonwater Flask:</strong> stirred a 3x3 patch and left ${thornCount ? `${thornCount} Cursed Thorn${thornCount === 1 ? "" : "s"} rooted` : "all blockers untouched"}.`;
+      render();
+      scheduleHarvestFlashClear();
+      scheduleBoardParticleClear();
+      scheduleIdleHint();
+    }
+
     function sacrifice() {
       // Sacrifice transmutation: choose one element, delete one tile, and replace it at a cost.
       if (isResolving) {
@@ -4758,7 +5033,7 @@
         render();
         return;
       }
-      cancelPruningShears(false);
+      cancelActiveBooster(false);
       selected = null;
       sacrificeState = { active: true, choice: null };
       ritualMessage = "Sacrifice armed. Choose an offering element, then replace one glowing tile. Costs 3 moves. Strong offerings may trigger Supreme Bloom.";
@@ -4968,7 +5243,7 @@
         return;
       }
       cancelSacrifice(false);
-      cancelPruningShears(false);
+      cancelActiveBooster(false);
       clearIdleHint();
       const [a, b] = legalMoves()[0] || [{ x: 3, y: 3 }, { x: 4, y: 3 }];
       const originCells = dedupeCells([
@@ -5021,7 +5296,7 @@
         : demoKinds[shapeDemoIndex % demoKinds.length];
       shapeDemoIndex += 1;
       cancelSacrifice(false);
-      cancelPruningShears(false);
+      cancelActiveBooster(false);
       clearIdleHint();
       selected = null;
       board = makeShapeDemoBoard(kind);
@@ -5323,8 +5598,10 @@
       if (!candidate || typeof candidate !== "object") {
         return fallback;
       }
+      const safeCount = (value, fallbackValue) => Math.max(0, Math.floor(Number(value ?? fallbackValue) || 0));
       return {
-        pruningShears: Math.max(0, Math.floor(Number(candidate.pruningShears) || 0))
+        pruningShears: safeCount(candidate.pruningShears, fallback.pruningShears),
+        moonwaterFlask: safeCount(candidate.moonwaterFlask, fallback.moonwaterFlask)
       };
     }
 
@@ -5370,7 +5647,7 @@
 
     function openChest() {
       cancelSacrifice(false);
-      cancelPruningShears(false);
+      cancelActiveBooster(false);
       renderChest();
       $("chestModal").classList.add("open");
       $("chestModal").setAttribute("aria-hidden", "false");
@@ -5388,10 +5665,11 @@
     $("shuffleBtn").addEventListener("click", shuffleBoard);
     $("sacrificeBtn").addEventListener("click", sacrifice);
     $("pruningShearsBtn").addEventListener("click", togglePruningShears);
+    $("moonwaterFlaskBtn").addEventListener("click", toggleMoonwaterFlask);
     $("demoCompleteBtn").addEventListener("click", demoCompleteBouquet);
     $("shapeBloomBtn").addEventListener("click", () => demoMatchShape());
     $("sacrificeCancel").addEventListener("click", () => cancelSacrifice());
-    $("boosterCancel").addEventListener("click", () => cancelPruningShears());
+    $("boosterCancel").addEventListener("click", () => cancelActiveBooster());
     $("renewBtn").addEventListener("click", renewBouquet);
     $("chestTrigger").addEventListener("click", openChest);
     $("closeChest").addEventListener("click", closeChest);
@@ -5403,8 +5681,8 @@
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape" && $("chestModal").classList.contains("open")) {
         closeChest();
-      } else if (event.key === "Escape" && activeBooster === "pruningShears") {
-        cancelPruningShears();
+      } else if (event.key === "Escape" && activeBooster) {
+        cancelActiveBooster();
       } else if (event.key === "Escape" && sacrificeState.active) {
         cancelSacrifice();
       } else if (event.key.toLowerCase() === "m" && !event.metaKey && !event.ctrlKey && !event.altKey) {

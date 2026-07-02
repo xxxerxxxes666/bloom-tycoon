@@ -549,3 +549,43 @@
 - How to trigger and verify L/T/cross matches without console: press `M` or click `Shape Bloom` repeatedly; the cycle still includes `Black Candle Vine`, `Witch's Cross!`, `Night Garden L-Bloom!`, `Twin Stem Bloom!`, and `Eclipse Seed Rune`.
 - How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit the review-hook particle burst, then return the board to play.
 - Security/secret-scan status: lightweight scan ran on changed files with no findings; no secrets, trackers, backend, SDKs, or new permissions were added in code.
+
+## 2026-07-02 Codex Moonwater Flask booster slice
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a second local/static booster so boosters become a real choice.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added visible `Moonwater Flask (x1)` controls next to `Pruning Shears`, granted through the local Apothecary field kit.
+- Added reversible targeting: click `Moonwater Flask`, inner 6x6 centers glow, a 3x3 patch preview appears, and Cancel exits without spending.
+- Moonwater reshuffles only non-thorn tiles inside the selected 3x3 patch, spends exactly one Flask on success, preserves 64 tiles, and retries local shuffles until the board has no free matches and at least one legal move.
+- Cursed Thorn cells remain anchored and do not advance the Cursed Thorn objective when included in a Moonwater patch.
+- Preserved reward hierarchy: exact 5-line = `Eclipse Seed Rune`, 4-line = `Black Candle Vine`, L/T/cross = shape rewards, 6+ straight line or `B`/Sacrifice = Supreme Bloom.
+- Added static audit markers for `Moonwater Flask`, `moonwaterFlaskBtn`, `moonwaterFlaskCount`, `toggleMoonwaterFlask`, `useMoonwaterFlask`, `moonwaterPatchCells`, `shuffleMoonwaterPatch`, `queueMoonwaterBurst`, `moonwater-target`, `moonwater-area`, and `boosters.moonwaterFlask`.
+- Verification run:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - JS parse check over executable HTML scripts.
+  - `python3 scripts/verify_project.py`
+  - Local static preview at `http://127.0.0.1:4173/playable/midnight_bloom_prototype.html`; `agent-browser` was unavailable in this environment, so bundled Playwright was used for browser verification.
+  - Local Playwright loaded 64 board tiles and 0 broken images.
+  - Local Playwright proved `Moonwater Flask` displays `x1`, opens targeting mode, highlights 36 valid centers, previews 9 cells, cancels without spending, reshuffles only the selected 3x3 patch, shows Moonwater particles, spends to `x0`, and preserves 64 tiles.
+  - Local Playwright started Round 2 and proved Moonwater on a patch containing Cursed Thorns leaves thorns anchored at `0,1`, `1,1`, and `2,1`, does not advance `Cursed Thorn 0/3`, spends to `x0`, and preserves 64 tiles.
+  - Local Playwright verified `Pruning Shears` still cuts a normal tile and a Cursed Thorn.
+  - Local Playwright verified Round 1 first-move/Bone Star completion and Round 2 adjacent thorn clearing to `Cursed Thorn 3/3`.
+  - Local Playwright verified Rune-Tended Soil still works: `Shape Bloom` earns `Eclipse Seed Rune`, Chest `Plant Rune` queues the boon, `Complete Bouquet` + `Next Bouquet` starts Round 2 with `Rune-Tended Soil +1 move` and 18 moves.
+  - Local Playwright verified `M` still proves `Black Candle Vine`, `B` still proves Supreme Bloom, Chest opens/closes, Sacrifice opens/cancels, and mobile 390x844 has no horizontal overflow.
+  - Vercel marker check for `https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html?verify=moonwater-flask` returned `200` with `Moonwater Flask`, `moonwaterFlaskBtn`, `moonwaterFlaskCount`, `toggleMoonwaterFlask`, `useMoonwaterFlask`, `moonwaterPatchCells`, `shuffleMoonwaterPatch`, `queueMoonwaterBurst`, `moonwater-target`, `moonwater-area`, `boosters.moonwaterFlask`, `Pruning Shears`, `Rune-Tended Soil`, `Black Candle Vine`, and `Cursed Thorn`.
+  - Vercel direct checks returned `200` for `/`, `/playable/midnight_bloom_prototype.html?verify=moonwater-flask`, and `/assets/tiles/96/purple_nightshade_bloom.png?verify=moonwater-flask`.
+  - Vercel Playwright smoke loaded 64 board tiles, 0 broken images, no console/page errors, and proved Moonwater arm/cancel/normal-use.
+- Browser console/runtime status: no local or Vercel Playwright console errors or page errors observed during Moonwater, Pruning Shears, Round 2 thorn, rune payoff, review hook, Chest/Sacrifice, or mobile checks.
+- Deployed to Vercel production as `dpl_AGHtcPnnvKKGrW89YqFKKR7pE6hR`.
+- Vercel deployment URL: https://bloom-tycoon-qbtmj8pb4-xerxes-florals.vercel.app
+- Explicitly re-pointed `https://bloom-tycoon.vercel.app` to that deployment.
+- GitHub Pages preview status before this commit: previous Pages workflow `28622927115` succeeded for the Pruning Shears docs clarification; this Moonwater pass still needs the post-push Pages workflow to publish and be marker-checked.
+- Known issues: none found locally or on Vercel for the Moonwater Flask slice; GitHub Pages needs post-push confirmation after this commit publishes.
+- How to trigger and verify `Moonwater Flask`: on a fresh load, click `Moonwater Flask (x1)`, confirm the inner centers and 3x3 preview glow, click `Cancel` to keep `x1`, then arm again and click an inner tile such as row 4/column 4; only that 3x3 patch should reshuffle and the count should become `x0`.
+- How to trigger and verify L/T/cross matches without console: press `M` or click `Shape Bloom` repeatedly; the cycle still includes `Black Candle Vine`, `Witch's Cross!`, `Night Garden L-Bloom!`, `Twin Stem Bloom!`, and `Eclipse Seed Rune`.
+- How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit the review-hook particle burst, then return the board to play.
+- Security/secret-scan status: lightweight scan ran on changed files with no findings; no secrets, trackers, backend, SDKs, or new permissions were added in code.
