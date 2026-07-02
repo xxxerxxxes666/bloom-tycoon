@@ -469,3 +469,43 @@
 - How to trigger and verify L/T/cross matches without console: after the first 5-line demo, press `M` repeatedly; the cycle is `Black Candle Vine`, `Witch's Cross!`, `Night Garden L-Bloom!`, and `Twin Stem Bloom!`.
 - How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit the review-hook particle burst, then return the board to play.
 - Security/secret-scan status: lightweight scan ran on changed files with no findings; no secrets, trackers, backend, or new permissions were added.
+
+## 2026-07-02 Codex Rune-Tended Soil payoff slice
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a small local Chest-to-upgrade payoff for earned `Eclipse Seed Rune`.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added a `Plant Rune` action to the Chest slot for `Eclipse Seed Rune`.
+- Planting one rune consumes it, grants `Greenhouse +90 XP`, queues `Rune-Tended Soil`, and updates ritual-log/objective/plaque copy.
+- `Rune-Tended Soil` applies to the next bouquet as a one-round `+1` starting move boon; Round 2 starts with 18 moves instead of 17 when the queued boon is used.
+- Preserved reward hierarchy: exact 5-line = `Eclipse Seed Rune`, 4-line = `Black Candle Vine`, L/T/cross = shape rewards, 6+ straight line or `B`/Sacrifice = Supreme Bloom.
+- Added static audit markers for `Rune-Tended Soil`, `plantEclipseSeedRune`, `data-action="plant-eclipse-seed-rune"`, `pendingRuneTendedSoil`, and `activeRuneTendedSoil`.
+- Verification run:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - JS parse check over executable HTML scripts.
+  - `python3 scripts/verify_project.py`
+  - `git diff --check`
+  - Local static preview at `http://127.0.0.1:4173/playable/midnight_bloom_prototype.html`
+  - Local static checks returned `200` for `/`, `/playable/midnight_bloom_prototype.html`, and `/assets/tiles/96/amber_resin_seed.png`.
+  - Local Playwright loaded 64 board tiles, 91 images, 0 broken images, and `shapeAuditData` keys including `line5`.
+  - Local Playwright `Shape Bloom` earned `Eclipse Seed Rune`, Chest showed a `Plant Rune` action, planting consumed the rune, Greenhouse moved from `1,240 / 2,000 XP` to `1,330 / 2,000 XP`, Chest returned to `8 / 16 Slots`, and the objective showed `RUNE-TENDED SOIL QUEUED`.
+  - Local Playwright `Complete Bouquet` plus `Next Bouquet` started Round 2 with `RUNE-TENDED SOIL +1 MOVE`, 18 moves, and 3 Cursed Thorns.
+  - Local Playwright repeated `M` still proved `Black Candle Vine`, `Witch's Cross!`, `Night Garden L-Bloom!`, `Twin Stem Bloom!`, and `Eclipse Seed Rune`; `B` still showed Supreme with 84 particles.
+  - Local Playwright first-bouquet flow: seeded Thorn Rose swap advanced Thorn Rose to `3/3`, seeded Bone Star swap completed Round 1, and `Next Bouquet` started Round 2.
+  - Local Playwright Round 2: `Cursed Thorn 0/3` appeared with 3 blockers; adjacent target swap cleared them to `Cursed Thorn 3/3` with Cursed Thorn feedback.
+  - Local Playwright Chest Storage opened/closed, Sacrifice opened/cancelled, and mobile 390x844 had no horizontal overflow with 41px tiles.
+  - Vercel marker check for `https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html?verify=rune-tended-soil` returned `200` with `Rune-Tended Soil`, `plantEclipseSeedRune`, `data-action="plant-eclipse-seed-rune"`, `pendingRuneTendedSoil`, `activeRuneTendedSoil`, `Eclipse Seed Rune`, `Black Candle Vine`, and `Cursed Thorn`.
+  - Vercel Playwright proved the hosted rune payoff path, `M` Black Candle Vine hook, `B` Supreme hook, and mobile 390x844 with no horizontal overflow.
+- Browser console/runtime status: no local or Vercel Playwright console warnings, console errors, or page errors observed during rune payoff, review hook, first-bouquet, Cursed Thorn, Chest/Sacrifice, Supreme, or mobile checks.
+- Deployed to Vercel production as `dpl_25wBqXmTN11z7Y6edRCKLc6y94ps`.
+- Vercel deployment URL: https://bloom-tycoon-3ldg66oap-xerxes-florals.vercel.app
+- Explicitly re-pointed `https://bloom-tycoon.vercel.app` to that deployment.
+- GitHub Pages preview status before this commit: latest Pages deployment was current for the previous Eclipse Seed Rune build at `6de305b`. This Rune-Tended Soil pass still needs the post-push Pages workflow to publish and be marker-checked.
+- Known issues: none found locally or on Vercel for the rune payoff slice; GitHub Pages needs post-push confirmation after this commit publishes.
+- How to trigger and verify the rune payoff without console: click `Shape Bloom`, open Chest Storage, click `Plant Rune`, then use `Complete Bouquet` and `Next Bouquet`; Round 2 should show `Rune-Tended Soil +1 Move` and 18 moves.
+- How to trigger and verify L/T/cross matches without console: after the rune payoff flow, press `M` repeatedly; the cycle still includes `Black Candle Vine`, `Witch's Cross!`, `Night Garden L-Bloom!`, `Twin Stem Bloom!`, and `Eclipse Seed Rune`.
+- How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit the review-hook particle burst, then return the board to play.
+- Security/secret-scan status: lightweight scan ran on changed files with no findings; no secrets, trackers, backend, or new permissions were added.

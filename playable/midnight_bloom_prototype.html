@@ -464,6 +464,28 @@
       white-space: nowrap;
     }
 
+    .objective-boon {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 3px 9px;
+      color: #f0d58b;
+      border: 1px solid #7b5634;
+      background:
+        radial-gradient(circle at 50% 0, #5f3f2355 0, #0000 60%),
+        linear-gradient(180deg, #180d09, #060504);
+      box-shadow: inset 0 0 10px #000, 0 0 9px #5f3f2355;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      white-space: nowrap;
+    }
+
+    .objective-boon.pending {
+      color: #cdb28a;
+      border-color: #5e412d;
+    }
+
     .objective-text {
       color: #d0b27a;
       text-transform: uppercase;
@@ -1837,6 +1859,30 @@
       text-align: right;
     }
 
+    .slot-action {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      min-height: 29px;
+      margin-top: 7px;
+      color: #f0d58b;
+      cursor: pointer;
+      border: 1px solid #7b5634;
+      background:
+        radial-gradient(circle at 50% 0, #5f3f2355 0, #0000 60%),
+        linear-gradient(180deg, #180d09, #060504);
+      box-shadow: inset 0 0 10px #000, 0 0 9px #000;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.55px;
+    }
+
+    .slot-action:hover,
+    .slot-action:focus-visible {
+      color: #fff0b8;
+      border-color: #d7b16d;
+    }
+
     @keyframes supreme-fade {
       0% {
         opacity: 0;
@@ -2581,6 +2627,8 @@
     let hasMadeValidMove = false;
     let currentRound = 1;
     let roundComplete = false;
+    let pendingRuneTendedSoil = false;
+    let activeRuneTendedSoil = false;
     let shapeDemoIndex = 0;
     let greenhouse = { level: 4, xp: 1240, next: 2000 };
     let apothecary = { level: 2, xp: 420, next: 1000 };
@@ -3184,12 +3232,13 @@
       $("objective").innerHTML = `
         <span class="objective-text">Round ${plan.round} · ${roundComplete ? "Bouquet Complete" : objectiveVerb}</span>
         ${goalMarkup(plan)}
+        ${runeBoonMarkup()}
         <span class="objective-separator">·</span>
         <span>Moves ${moves}</span>
       `;
       $("objective").classList.toggle("complete", roundComplete);
       $("objective").classList.toggle("low-moves", moves <= 3);
-      $("firstSessionPlaque").textContent = goalCopy(plan);
+      $("firstSessionPlaque").textContent = runeBoonPlaqueCopy(goalCopy(plan));
       renderActiveOrders(plan);
       renderRoundCeremony(plan);
       $("bar").style.width = `${progress.pct}%`;
@@ -3218,6 +3267,26 @@
       applyImageFallbacks($("objective"));
       applyImageFallbacks(document);
       saveProgress();
+    }
+
+    function runeBoonMarkup() {
+      if (activeRuneTendedSoil) {
+        return '<span class="objective-boon">Rune-Tended Soil +1 move</span>';
+      }
+      if (pendingRuneTendedSoil) {
+        return '<span class="objective-boon pending">Rune-Tended Soil queued</span>';
+      }
+      return "";
+    }
+
+    function runeBoonPlaqueCopy(baseCopy) {
+      if (activeRuneTendedSoil) {
+        return `${baseCopy} Rune-Tended Soil is active: a planted Eclipse Seed Rune gave this bouquet +1 starting move.`;
+      }
+      if (pendingRuneTendedSoil) {
+        return `${baseCopy} Rune-Tended Soil is queued for the next bouquet.`;
+      }
+      return baseCopy;
     }
 
     async function tap(x, y) {
@@ -4401,11 +4470,17 @@
       thornPulseCells.clear();
       thornClearedCells.clear();
       currentRound = nextRound;
-      moves = plan.moves;
+      const runeBoonApplied = pendingRuneTendedSoil;
+      pendingRuneTendedSoil = false;
+      activeRuneTendedSoil = runeBoonApplied;
+      moves = plan.moves + (runeBoonApplied ? 1 : 0);
       counts = [0, 0, 0, 0, 0, 0];
       hasMadeValidMove = false;
       roundComplete = false;
-      ritualMessage = `<strong>Round ${plan.round}: ${plan.name}</strong> begins. ${goalCopy(plan)}`;
+      const boonCopy = runeBoonApplied
+        ? " <strong>Rune-Tended Soil</strong> wakes from the planted Eclipse Seed Rune: +1 starting move this bouquet."
+        : "";
+      ritualMessage = `<strong>Round ${plan.round}: ${plan.name}</strong> begins. ${goalCopy(plan)}${boonCopy}`;
       resetCursedThorns(plan);
       build();
       render();
@@ -4812,6 +4887,9 @@
         const flower = flowers[item.flowerId] || flowers[0];
         const rarityKey = item.rarity.toLowerCase().replace(/\s+/g, "-");
         const tags = item.tags.length ? item.tags.join(" / ") : "stored";
+        const runeAction = item.id === "eclipse-seed-rune"
+          ? '<button class="slot-action" type="button" data-action="plant-eclipse-seed-rune">Plant Rune</button>'
+          : "";
         return `
           <div class="slot" data-rarity="${rarityKey}">
             <div class="slot-item-top">
@@ -4824,9 +4902,13 @@
               </div>
             </div>
             <div class="slot-qty">x${item.qty}</div>
+            ${runeAction}
           </div>
         `;
       }).join("");
+      $("slotGrid").querySelectorAll('[data-action="plant-eclipse-seed-rune"]').forEach((button) => {
+        button.addEventListener("click", plantEclipseSeedRune);
+      });
       applyImageFallbacks($("slotGrid"));
     }
 
@@ -4853,6 +4935,31 @@
       }
       chestState.items.push(normalizedItem);
       return true;
+    }
+
+    function plantEclipseSeedRune() {
+      const rune = chestState.items.find((item) => item.id === "eclipse-seed-rune" && item.qty > 0);
+      if (!rune) {
+        ritualMessage = "No Eclipse Seed Rune waits in Chest Storage.";
+        render();
+        renderChest();
+        return;
+      }
+      if (pendingRuneTendedSoil) {
+        ritualMessage = "<strong>Rune-Tended Soil</strong> is already queued for the next bouquet.";
+        render();
+        renderChest();
+        return;
+      }
+      rune.qty -= 1;
+      if (rune.qty <= 0) {
+        chestState.items = chestState.items.filter((item) => item.id !== "eclipse-seed-rune");
+      }
+      addProgress(greenhouse, 90);
+      pendingRuneTendedSoil = true;
+      ritualMessage = "<strong>Eclipse Seed Rune planted.</strong> Greenhouse +90 XP. <strong>Rune-Tended Soil</strong> is queued: the next bouquet starts with +1 move.";
+      render();
+      renderChest();
     }
 
     function awardRareBloomDrop(result) {
@@ -4907,6 +5014,8 @@
         clearedCursedThorns,
         currentRound,
         roundComplete,
+        pendingRuneTendedSoil,
+        activeRuneTendedSoil,
         greenhouse,
         apothecary,
         faction,
@@ -4945,6 +5054,8 @@
         coins = Math.max(0, Number(state.coins) || coins);
         currentRound = Math.max(1, Number(state.currentRound) || 1);
         roundComplete = Boolean(state.roundComplete || state.firstBouquetComplete);
+        pendingRuneTendedSoil = Boolean(state.pendingRuneTendedSoil);
+        activeRuneTendedSoil = Boolean(state.activeRuneTendedSoil);
         greenhouse = validProgressState(state.greenhouse, greenhouse);
         apothecary = validProgressState(state.apothecary, apothecary);
         faction = validProgressState(state.faction, faction);
