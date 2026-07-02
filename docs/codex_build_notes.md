@@ -127,9 +127,14 @@
   - Local Playwright Chromium check loaded 64 board tiles, 89 images, 0 broken images, `shapeAuditData`, `const maxCascades`, and `resolveAnimated({ maxCascades: 1 })`.
   - Pressing `M` three times reported clean 5-tile demos in order: `Witch's Cross!`, `Night Garden L-Bloom!`, and `Twin Stem Bloom!`.
   - The same `M` demo pass had 0 disabled tiles after each demo, no Supreme overlay, and no `cascade` text in the ritual messages.
-- Browser console/runtime status: no local Playwright console warnings, console errors, or page errors observed during the `M` demo verification.
-- Vercel deployment URL/identifier checked: pending production redeploy for this pass.
-- GitHub Pages preview status: pending after push.
+- Browser console/runtime status: no local or Vercel Playwright console warnings, console errors, or page errors observed during the `M` demo verification.
+- Deployed to Vercel production as `dpl_GKw5ff7ZFaFc2N1dyc7J3YEZajWr`.
+- Vercel deployment URL: https://bloom-tycoon-de2tc81tr-xerxes-florals.vercel.app
+- Re-pointed `https://bloom-tycoon.vercel.app` to the new deployment.
+- Vercel `/`, `/playable/midnight_bloom_prototype.html?verify=de8b48d`, and `/assets/tiles/96/amber_resin_seed.png?verify=de8b48d` returned `200 OK`.
+- Downloaded Vercel HTML contained `const maxCascades`, `resolveAnimated({ maxCascades: 1 })`, and `shapeAuditData`.
+- Vercel Playwright check loaded 64 board tiles, 89 images, 0 broken images, and clean `M` demos for Cross, L, and T with no cascade text or Supreme overlay.
+- GitHub Pages preview status: `/bloom-tycoon/`, `/bloom-tycoon/playable/midnight_bloom_prototype.html?verify=de8b48d`, and `/bloom-tycoon/assets/tiles/96/amber_resin_seed.png?verify=de8b48d` returned `200 OK`; Pages was still serving the previous HTML without the new `const maxCascades` marker during this pass and should be rechecked after its publish cache catches up.
 - Known issues: none for deterministic demo cascades; normal player-initiated matches can still cascade by design.
 - How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly to cycle Cross, L, and T demos; each should report 5 tiles harvested with its named shape copy.
 - How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪` and then return the board to play.
