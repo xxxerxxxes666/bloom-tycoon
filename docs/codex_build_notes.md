@@ -263,3 +263,38 @@
 - This should make the first real player move more likely to progress the displayed bouquet instead of feeling random/dead.
 - `Complete Bouquet`, `N`, `M`, and `B` review hooks remain available.
 - Security: no secrets, no trackers, no backend, no new permissions.
+
+## 2026-07-02 Codex first-move verification and Pages guard pass
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes' current priority was real-player first-move verification and only surgical polish if the seeded opening move failed.
+- Files changed:
+  - `.nojekyll`
+  - `scripts/verify_project.py`
+  - `docs/codex_build_notes.md`
+- Gameplay HTML was not changed in this Codex pass; Hermes' `ac0e676` seeded-opening helper already produced target-element moves.
+- Added root `.nojekyll` so GitHub Pages serves the repo as static files without Jekyll processing, and made `python3 scripts/verify_project.py` require it.
+- Verification run:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - JS parse check over executable HTML scripts
+  - `python3 scripts/verify_project.py`
+  - `git diff --check`
+  - Local static preview at `http://127.0.0.1:4173/playable/midnight_bloom_prototype.html`
+  - Local Playwright check loaded 64 board tiles, 90 images, 0 broken images, and three 34px gothic vial meters.
+  - Local Round 1 opening board showed seeded target moves: Sol Rot/Thorn Rose at the top-left swap and Nightshade/Bone Star near the top-right swap.
+  - A real mouse swap of the top-left seeded move advanced Thorn Rose to `3/3`, reduced moves to 11, and returned the board/buttons to enabled state.
+  - `Complete Bouquet` opened the First Bouquet reward ceremony and added the chest reward; `Next Bouquet` advanced through fresh boards/objectives for rounds 2 through 5, then Round 6.
+  - Real pointer checks: `Shuffle (-1 move)` spent one move; `Sacrifice (-3 moves)` opened, an offering could be selected, and Cancel exited cleanly; Chest Storage opened, close button closed it, and Escape closed it with focus restored.
+  - Mobile Playwright at 390x844 had no horizontal overflow, 41px board tiles, and the priority order title/objective/board/controls/bottom Elements+Chest/left tycoon rail.
+  - `M` still cycled the named L/T/cross demo path, and `B` still rendered Supreme Bloom with 84 particles.
+- Browser console/runtime status: no local Playwright console warnings, console errors, or page errors observed during first-move, loop, pointer, mobile, `M`, or `B` checks.
+- Deployed current playable to Vercel production as `dpl_6HtyRUHLE3BxMhCB2dWz6sSGbdGX`.
+- Vercel deployment URL: https://bloom-tycoon-ah4g9im6w-xerxes-florals.vercel.app
+- Explicitly re-pointed `https://bloom-tycoon.vercel.app` to that deployment.
+- Vercel `/playable/midnight_bloom_prototype.html?verify=ac0e676b` and `/assets/tiles/96/amber_resin_seed.png?verify=ac0e676b` returned `200 OK`; downloaded HTML contained `demoCompleteBtn`, `Complete Bouquet`, `let moves = roundTemplates[0].moves`, `Next Bouquet`, `shapeAuditData`, `seedCurrentTargetMoves`, and `writeTargetLegalMovePatch`.
+- GitHub Pages preview status: after Hermes' `e2ccd47` docs update, the Pages build endpoint reported `Page build failed`; after pushing `.nojekyll` in `568c399` and requesting a manual rebuild, the latest Pages build for `568c3995d6c32d9855e4e487e22f5b1172209acd` remained `building` at `2026-07-02T16:38:47Z`.
+- GitHub Pages hosted playable still returned `200 OK` during this pass, but remained the older 128,983-byte HTML without `seedCurrentTargetMoves` or `writeTargetLegalMovePatch`; the key tile asset still returned `200 OK`.
+- Known issues: Vercel is current and first-move verified; GitHub Pages publishing is still an external blocker until the `568c399` Pages build finishes or GitHub clears the stuck build.
+- How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly to cycle Cross, L, and T demos; each should report the named shape reward copy.
+- How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit 84 particles, then return the board to play.
+- Security/secret-scan status: lightweight scan ran on changed files with no findings.
