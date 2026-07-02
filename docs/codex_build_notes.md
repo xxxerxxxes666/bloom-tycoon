@@ -210,9 +210,14 @@
   - Clicking `Next Bouquet` started Round 2 with fresh board, 17 moves, new objectives, hidden ceremony, enabled demo button, and 0 disabled tiles.
   - Pressing `N` on Round 2 still completed the bouquet and showed `Next Bouquet`.
   - Mobile portrait check at 390x844 had no horizontal overflow, 41px board tiles, and the `Complete Bouquet` button fit inside the controls.
-- Browser console/runtime status: no local Playwright console warnings, console errors, or page errors observed during one-click, `N`, or mobile checks.
-- Vercel deployment URL/identifier checked: pending production redeploy for this pass.
-- GitHub Pages preview status: pending after push.
+- Browser console/runtime status: no local or Vercel Playwright console warnings, console errors, or page errors observed during one-click, `N`, or mobile checks.
+- Deployed to Vercel production as `dpl_59L7gVsWQcgmyetrGWbz5R9VHo5s`.
+- Vercel deployment URL: https://bloom-tycoon-lr3wqwezd-xerxes-florals.vercel.app
+- Re-pointed `https://bloom-tycoon.vercel.app` to the new deployment.
+- Vercel `/`, `/playable/midnight_bloom_prototype.html?verify=01ab656`, and `/assets/tiles/96/amber_resin_seed.png?verify=01ab656` returned `200 OK`.
+- Downloaded Vercel HTML contained `demoCompleteBtn`, `Complete Bouquet`, `let moves = roundTemplates[0].moves`, the `N` review hook, and `Next Bouquet`.
+- Vercel Playwright check confirmed the one-click `Complete Bouquet` flow, `Next Bouquet` Round 2 transition, 64 tiles, 90 images, 0 broken images, no console/page errors, and mobile 390x844 with no horizontal overflow.
+- GitHub Pages preview status: `/bloom-tycoon/`, `/bloom-tycoon/playable/midnight_bloom_prototype.html?verify=01ab656`, and `/bloom-tycoon/assets/tiles/96/amber_resin_seed.png?verify=01ab656` returned `200 OK`; Pages was still serving older HTML without the new visible completion-control markers during this pass and should be rechecked after its publish cache catches up.
 - Known issues: `Complete Bouquet` is intentionally a visible prototype review control so Xerxes/Hermes can confirm progress immediately; remove or gate before production.
 - How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly to cycle Cross, L, and T demos; each should report 5 tiles harvested with its named shape copy.
 - How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit 84 particles, then return the board to play.
