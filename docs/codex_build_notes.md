@@ -463,8 +463,8 @@
 - Deployed to Vercel production as `dpl_68DWxMPjXUB8kFMTgGXoTjJs4yXT`.
 - Vercel deployment URL: https://bloom-tycoon-ifht2gorv-xerxes-florals.vercel.app
 - Explicitly re-pointed `https://bloom-tycoon.vercel.app` to that deployment.
-- GitHub Pages preview status before this commit: Pages was current for the previous Black Candle Vine build at `9637c4c`. This Eclipse Seed Rune pass still needs the post-push Pages workflow to publish and be marker-checked.
-- Known issues: none found locally or on Vercel for the 5-line seed/rune slice; GitHub Pages needs post-push confirmation after this commit publishes.
+- GitHub Pages preview status after gameplay push: workflow `28619190654` succeeded; `/bloom-tycoon/`, `/bloom-tycoon/playable/midnight_bloom_prototype.html?verify=eclipse-seed-rune-6bf9ed9`, and `/bloom-tycoon/assets/tiles/96/amber_resin_seed.png?verify=eclipse-seed-rune-6bf9ed9` returned `200`, and the playable contained `Eclipse Seed Rune`, `rareSeedRuneForMatch`, `queueRareSeedRuneBurst`, `rareSeedRuneMessage`, `line5`, `Black Candle Vine`, and `Cursed Thorn`.
+- Known issues: none found locally, on Vercel, or on GitHub Pages for the 5-line seed/rune slice. GitHub Pages deploy emitted a non-blocking Node.js 20 deprecation warning from the Pages action runtime.
 - How to trigger and verify the 5-line reward without console: click `Shape Bloom` once, or press `M` once on a fresh load; the ritual log should mention `Eclipse Seed Rune` and Chest Storage should gain the rune.
 - How to trigger and verify L/T/cross matches without console: after the first 5-line demo, press `M` repeatedly; the cycle is `Black Candle Vine`, `Witch's Cross!`, `Night Garden L-Bloom!`, and `Twin Stem Bloom!`.
 - How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit the review-hook particle burst, then return the board to play.
