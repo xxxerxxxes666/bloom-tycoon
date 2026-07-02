@@ -1,3 +1,103 @@
+
+
+---
+
+# Next strategic gameplay framework — make Bloom Tycoon play like the greats
+
+Xerxes approved the look. Now make the game sticky long-term while preserving gothic botanical allure.
+
+## Core loop to build
+
+`level goal → satisfying matches → combo payoff → bouquet complete → reward → upgrade/progress → next bouquet`
+
+Every round must answer:
+
+1. What am I collecting?
+2. How close am I?
+3. What did that match do?
+4. What did I earn?
+5. Why do I want one more round?
+
+## Framework from top match games
+
+Implement these in small slices:
+
+### 1. Level goals
+
+Use rotating goals, not only raw collection:
+
+- collect specific elements;
+- clear cursed soil/thorns;
+- unlock sealed tiles;
+- deliver timed/client bouquets;
+- gather rare drops before moves run out.
+
+### 2. Board obstacles
+
+Add one simple obstacle first:
+
+- `Cursed Thorn` blocker: sits on a tile; adjacent matches damage/clear it.
+
+Keep it gothic. No candy/crates.
+
+### 3. Special tiles
+
+Reward match shape mastery:
+
+- 4-line match → line-clearing botanical relic;
+- L/T/cross → area bloom relic;
+- 5-line match → rare seed/rune;
+- combos between specials create bigger effects.
+
+### 4. Boosters
+
+Later, but prepare slots now:
+
+- pruning shears = remove one tile;
+- moonwater = reshuffle selected area;
+- black candle = burn row/column;
+- grave soil = upgrade one tile to a special.
+
+### 5. Difficulty pacing
+
+Use a gentle ramp:
+
+- Round 1–3: teach collection and next bouquet;
+- Round 4–7: introduce blockers;
+- Round 8–12: introduce special-tile goals;
+- later: mixed objectives and limited chest pressure.
+
+### 6. Tycoon meaning
+
+Every bouquet should feed the business:
+
+- Greenhouse improves tile drop odds / starting moves;
+- Apothecary unlocks boosters/crafting;
+- Faction unlocks better client orders;
+- Chest stores rare drops and upgrade reagents;
+- Black Market sells risky shortcuts.
+
+## Immediate implementation slice
+
+Do this next, surgically:
+
+1. Add a simple `Cursed Thorn` blocker system in the HTML prototype.
+2. Add one round that requires clearing 3 cursed thorns.
+3. Make adjacent matches damage/clear thorns.
+4. Show clear thorn feedback: cracked vine, red/gold pulse, message.
+5. Add one special-tile reward from L/T/cross shapes if not already player-visible.
+6. Keep `Shape Bloom`, `Complete Bouquet`, `B`, `M`, and `N` test hooks for review.
+
+## Acceptance checks
+
+- A player can complete multiple bouquet rounds.
+- At least one round has a different objective than collecting resources.
+- Cursed Thorn blockers visibly react and clear.
+- L/T/cross matches feel stronger than normal matches.
+- Progress toward Greenhouse/Apothecary/Faction matters after wins.
+- No secrets, no trackers, no backend, no broad permissions.
+
+
 # Hermes Audit Next Tasks
 
 Last audited by Hermes: **2026-07-02 17:31 UTC**
