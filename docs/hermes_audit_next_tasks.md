@@ -1,58 +1,58 @@
 # Hermes Audit Next Tasks
 
-Last audited by Hermes: **2026-07-02 17:05 UTC**
+Last audited by Hermes: **2026-07-02 17:31 UTC**
 Audit targets:
 - Vercel playable: https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html
 - GitHub Pages playable: https://xxxerxxxes666.github.io/bloom-tycoon/playable/midnight_bloom_prototype.html
 - Repo: https://github.com/xxxerxxxes666/bloom-tycoon
-- Latest audited commit: `9dfc8c63a42c051b33d153fe888262b000aee31d` (`docs: record first-move verification pass`)
+- Latest audited commit: `b88d5bbd019c341c3df1567d8ed7785b6ab18fe6` (`docs: record Pages workflow repair`)
 
 ## Hermes audit verdict
 
-Vercel and GitHub Pages are current and marker-matched. The prior GitHub Pages publish blocker is resolved.
+Vercel and GitHub Pages are current and marker-matched. The prior GitHub Pages workflow/publish blocker is resolved on the hosted playable.
 
-The Round 1 first real move is now useful: the seeded top-left Thorn Rose swap advances Velvet Funeral from `0/3` to `3/3`, drops moves from 12 to 11, and gives clear harvest feedback. No urgent live blocker found.
+The repeatable bouquet loop and post-first-move clarity path are working: fresh Round 1 starts with Thorn Rose `0/3`, Bone Star `0/2`, and 12 moves; the seeded Thorn Rose move advances Velvet Funeral to `3/3`; the UI then points to the glowing Bone Star move; the Bone Star move completes the First Bouquet ceremony.
+
+No urgent live blocker found.
 
 ## Verified by Hermes this audit
 
+- Fetched/reset local clone to `origin/main` with the repo-scoped SSH key.
 - `python3 scripts/verify_project.py` passes.
 - Vercel and GitHub Pages root/playable/key tile asset return `200`.
-- Downloaded Vercel and Pages HTML both contain `demoCompleteBtn`, `Complete Bouquet`, `let moves = roundTemplates[0].moves`, `Next Bouquet`, `shapeAuditData`, `seedCurrentTargetMoves`, `writeTargetLegalMovePatch`, and `const maxCascades`.
-- Browser checks on both hosts:
-  - 64 board tiles, 90 images, 0 broken images;
-  - no console or page errors observed;
-  - Round 1 shows Thorn Rose `0/3`, Bone Star `0/2`, and 12 moves;
-  - first real seeded swap advances Thorn Rose to `3/3` and leaves the board enabled;
-  - `Complete Bouquet` opens the First Bouquet reward ceremony;
-  - `Next Bouquet` starts Round 2 with fresh objectives and a 64-tile board;
-  - `M` triggers the Witch's Cross L/T/cross demo path;
-  - `B` shows `SUPREME BLOOM! Review hook complete. The board is ready.` with 84 particles;
-  - Chest Storage opens and Escape closes it;
-  - Sacrifice opens and Cancel exits it;
-  - hidden-iframe mobile portrait audit at ~390px shows no horizontal overflow.
+- Downloaded Vercel and Pages HTML are the same size and both contain `demoCompleteBtn`, `Complete Bouquet`, `let moves = roundTemplates[0].moves`, `Next Bouquet`, `shapeAuditData`, `seedCurrentTargetMoves`, `writeTargetLegalMovePatch`, and `const maxCascades`.
+- Browser checks:
+  - Vercel: 64 board tiles, 90 images, 0 broken images, no console/page errors observed.
+  - Pages: 64 board tiles, 90 images, 0 broken images, no console/page errors observed.
+  - Fresh Round 1 shows Thorn Rose `0/3`, Bone Star `0/2`, and 12 moves.
+  - Seeded Thorn Rose move advances Thorn Rose to `3/3`, drops moves to 11, and shows `Bone Star remains. Swap the glowing tiles to feed Saint's Offering.`
+  - The hinted Bone Star move completes Bone Star to `2/2` and opens the First Bouquet reward ceremony.
+  - `Next Bouquet` starts Round 2 with fresh objectives, 17 moves, and a 64-tile board.
+  - `M` triggers the Witch's Cross L/T/cross demo path.
+  - `B` shows `SUPREME BLOOM! Review hook complete. The board is ready.`
+  - Chest Storage opens and Escape closes it.
+  - Sacrifice opens and Cancel exits it.
+  - Hidden-iframe mobile portrait audit at ~390px shows no horizontal overflow.
 
 ## Current next priority for Codex
 
-Priority 1 is **post-first-move clarity**. Keep it surgical: the first move works, so help the player see the next useful step without using `Complete Bouquet`, `N`, `M`, or `B`.
+No blocker. Do not churn gameplay just to make a commit.
 
-### Do now
+If Xerxes asks for another pass, the next smallest useful polish is **player confidence after bouquet completion**:
 
-1. In a normal browser, reload the live playable and make the seeded top-left Thorn Rose swap.
-2. Confirm Thorn Rose completes and the UI clearly points the player toward the remaining Bone Star objective.
-3. If the next Bone Star move is not obvious after the first swap, make a small polish patch only:
-   - highlight or hint the seeded Bone Star move after Thorn Rose completes;
-   - keep Round 1 short: Thorn Rose `3`, Bone Star `2`, 12 moves;
-   - preserve `Complete Bouquet`, `N`, `M`, and `B` as prototype review hooks;
-   - do not redesign the UI or add economy/backend systems.
-4. Recheck both hosts after deploy for marker parity and first-load behavior.
+1. Keep the existing Round 1/Round 2 flow intact.
+2. Add only a tiny post-ceremony prompt if needed, such as clearer copy that the chest reward was stored and `Next Bouquet` continues the run.
+3. Preserve `Complete Bouquet`, `N`, `M`, and `B` as prototype review hooks.
+4. Recheck both hosts after any deploy for marker parity and first-load behavior.
 
-### Acceptance checks
+### Acceptance checks for any next pass
 
 - Fresh Round 1 still shows an obvious first target-element move.
 - The first real swap advances Thorn Rose to `3/3`.
 - After that swap, the remaining Bone Star objective has an obvious next move or hint.
-- `Complete Bouquet` still opens the ceremony and `Next Bouquet` still starts Round 2.
-- `M` and `B` hooks still work.
+- The Bone Star move completes the First Bouquet ceremony.
+- `Next Bouquet` starts Round 2.
+- `Complete Bouquet`, `N`, `M`, and `B` hooks still work.
 - Chest and Sacrifice still open/cancel/close correctly.
 - Mobile portrait has no horizontal overflow.
 - No console errors, no broken images.
