@@ -367,3 +367,35 @@
 - Added visible `Shape Bloom` button so L/T/cross match demos are discoverable without knowing the hidden `M` key.
 - Kept `Complete Bouquet`, `N`, `M`, and `B` review hooks.
 - Security: no secrets, no trackers, no backend, no new permissions.
+
+## 2026-07-02 Codex Cursed Thorn blocker slice
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested the first strategic gameplay slice: a simple Cursed Thorn blocker objective, adjacent-match clearing, visible feedback, and preserved review hooks.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added Round 2 Cursed Thorn objective: clear 3 blockers in addition to Moonlit Wreath resource goals.
+- Added Cursed Thorn blocker state, save/load support, objective/progress rendering, Active Orders rendering, temporary cracked-vine overlay, red/gold pulse, splinter particles, and ritual-log feedback.
+- Adjacent matches damage thorns; L/T/cross shape matches do heavier thorn damage through the existing shape reward path.
+- Preserved `Shape Bloom`, `Complete Bouquet`, `B`, `M`, and `N` prototype review hooks.
+- Verification run:
+  - `git fetch origin main`
+  - `git pull --rebase --autostash origin main`
+  - JS parse check over executable HTML scripts.
+  - `python3 scripts/verify_project.py`
+  - `git diff --check`
+  - Local static preview at `http://127.0.0.1:4173/playable/midnight_bloom_prototype.html`
+  - Local Playwright flow: fresh Round 1 loaded 64 tiles and 0 Cursed Thorns; seeded Thorn Rose swap advanced Thorn Rose to `3/3` and preserved the Bone Star hint; `Complete Bouquet` plus `Next Bouquet` started Round 2.
+  - Local Playwright Round 2: objective showed `Cursed Thorn 0/3`; board rendered 3 Cursed Thorn blockers; seeded Nightshade adjacent swap cleared all 3 thorns, changed objective to `Cursed Thorn 3/3`, and logged Cursed Thorn feedback.
+  - Local Playwright continued through `Complete Bouquet`, `Next Bouquet` into Round 3, `Shape Bloom`, `B` Supreme Bloom hook, and mobile 390x844 with no horizontal overflow and 40.5px tiles.
+  - Vercel marker check for `https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html?verify=cursed-thorn` returned `200` with `Cursed Thorn`, `thornGoal`, `cursed-thorn-overlay`, `damageAdjacentThorns`, and `Shape Bloom`.
+- Browser console/runtime status: no local Playwright console warnings, console errors, or page errors observed in the Round 1/Round 2 blocker flow, hook checks, or mobile check.
+- Deployed to Vercel production as `dpl_BrAJzYwvVa4kGzG64eBHmVKYXJy4`.
+- Vercel deployment URL: https://bloom-tycoon-j5zubei8e-xerxes-florals.vercel.app
+- Explicitly re-pointed `https://bloom-tycoon.vercel.app` to that deployment.
+- GitHub Pages preview status before this commit: GitHub Status reported Pages operational; latest Pages workflow for `f10c5e9` succeeded and restored Pages parity for the prior build. This Cursed Thorn pass still needs the post-push Pages workflow to publish and be marker-checked.
+- Known issues: none found locally or on Vercel for the Cursed Thorn slice; GitHub Pages needs post-push confirmation after this commit publishes.
+- How to trigger and verify L/T/cross matches without console: open the playable and press `M`, or click `Shape Bloom`, repeatedly to cycle Cross, L, and T demos; each should report the named shape reward copy.
+- How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit the review-hook particle burst, then return the board to play.
+- Security/secret-scan status: lightweight scan ran on changed files with no findings.

@@ -231,6 +231,18 @@
       filter: drop-shadow(0 0 5px #000);
     }
 
+    .thorn-order-glyph {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #d7b16d;
+      border: 1px solid #7d151866;
+      background: radial-gradient(circle, #1d0707 0, #050404 70%);
+      box-shadow: inset 0 0 10px #000, 0 0 8px #7d151866;
+      font-size: 18px;
+      text-shadow: 0 0 8px #9b1d22, 0 0 6px #d7b16d;
+    }
+
     .order-copy {
       line-height: 1.15;
     }
@@ -651,6 +663,13 @@
       height: auto;
     }
 
+    .objective-target .thorn-goal-glyph {
+      width: 28px;
+      height: 28px;
+      font-size: 18px;
+      color: #d7b16d;
+    }
+
     .fallback-glyph {
       display: none;
       align-items: center;
@@ -700,6 +719,60 @@
     .tile.idle-hint {
       outline: 2px solid #d7b16d;
       animation: idle-hint-pulse 1.35s ease-in-out infinite;
+    }
+
+    .tile.cursed-thorn {
+      outline: 2px solid #7d1518;
+      box-shadow:
+        inset 0 0 16px #000,
+        0 0 0 1px #160f0c,
+        0 0 18px #7d1518,
+        0 0 10px #d7b16d44;
+    }
+
+    .tile.cursed-thorn .icon-wrap {
+      filter: brightness(0.58) saturate(0.75);
+    }
+
+    .tile.thorn-hit {
+      animation: thorn-hit 620ms ease-out both;
+    }
+
+    .cursed-thorn-overlay {
+      position: absolute;
+      inset: 8px;
+      z-index: 3;
+      border: 1px solid #b24a4aaa;
+      background:
+        radial-gradient(circle at 50% 45%, #1d0707b8 0, #090303d8 55%, #0000009c 100%),
+        repeating-conic-gradient(from 12deg, #0000 0 13deg, #7d151866 14deg 17deg, #0000 18deg 36deg);
+      box-shadow:
+        inset 0 0 14px #000,
+        0 0 15px #7d1518,
+        0 0 8px #d7b16d66;
+      pointer-events: none;
+    }
+
+    .cursed-thorn-overlay::before,
+    .cursed-thorn-overlay::after {
+      content: "";
+      position: absolute;
+      inset: 48% 8% auto;
+      height: 2px;
+      background: linear-gradient(90deg, #0000, #d7b16d, #9b1d22, #0000);
+      box-shadow: 0 0 8px #d7b16d;
+      transform: rotate(35deg);
+    }
+
+    .cursed-thorn-overlay::after {
+      transform: rotate(-37deg);
+    }
+
+    .tile.thorn-cleared .cursed-thorn-overlay {
+      border-color: #f0c477;
+      background:
+        radial-gradient(circle, #f0c47755 0, #9b1d222e 44%, #0000 72%),
+        repeating-conic-gradient(from 18deg, #0000 0 15deg, #f0c47777 16deg 18deg, #0000 19deg 34deg);
     }
 
     .tile.invalid-swap {
@@ -844,6 +917,20 @@
         0 0 14px #9b1d22,
         0 0 18px #d7b16d;
       animation: shape-sigil 1120ms cubic-bezier(0.12, 0.82, 0.18, 1) forwards;
+    }
+
+    .board-particle.thorn-splinter {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 7;
+      color: #f0c477;
+      font-size: var(--font-size, 18px);
+      text-shadow:
+        0 0 8px #000,
+        0 0 14px #9b1d22,
+        0 0 16px #d7b16d;
+      animation: thorn-splinter 920ms cubic-bezier(0.14, 0.82, 0.2, 1) forwards;
     }
 
     .board-particle.blood-pop,
@@ -1902,6 +1989,48 @@
       }
     }
 
+    @keyframes thorn-hit {
+      0% {
+        filter: brightness(1);
+        box-shadow:
+          inset 0 0 14px #000,
+          0 0 0 #0000;
+      }
+      36% {
+        filter: brightness(1.18) saturate(1.45);
+        box-shadow:
+          inset 0 0 18px #000,
+          inset 0 0 0 2px #d7b16daa,
+          0 0 22px #9b1d22,
+          0 0 14px #d7b16d;
+        transform: scale(1.04);
+      }
+      100% {
+        filter: brightness(1);
+        box-shadow:
+          inset 0 0 14px #000,
+          0 0 12px #7d151866;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes thorn-splinter {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.45) rotate(0deg);
+      }
+      26% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+        transform:
+          translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, -70px)))
+          scale(var(--scale, 1.4))
+          rotate(var(--spin, 0deg));
+      }
+    }
+
     @keyframes idle-hint-pulse {
       0%,
       100% {
@@ -2297,6 +2426,12 @@
           { flowerId: 4, needed: 7, order: "Amber Keepsake" },
           { flowerId: 5, needed: 5, order: "Velvet Thread" }
         ],
+        thornGoal: { needed: 3, order: "Cursed Thorn" },
+        thornPlacements: [
+          { x: 0, y: 1, hp: 1 },
+          { x: 1, y: 1, hp: 1 },
+          { x: 2, y: 1, hp: 1 }
+        ],
         reward: { coins: 150, greenhouse: 150, apothecary: 130, faction: 45, item: "Moonlit Wreath Cache", flowerId: 2 }
       },
       {
@@ -2348,6 +2483,8 @@
     let moves = roundTemplates[0].moves;
     let coins = 2450;
     let counts = [0, 0, 0, 0, 0, 0];
+    let cursedThorns = [];
+    let clearedCursedThorns = 0;
     let sacrificeState = { active: false, choice: null };
     let ritualMessage = "Match botanical elements to feed the First Bouquet.";
     let harvestFlashCells = new Set();
@@ -2362,6 +2499,8 @@
     let superBloomCells = new Set();
     let invalidSwapCells = new Set();
     let idleHintCells = new Set();
+    let thornPulseCells = new Set();
+    let thornClearedCells = new Set();
     let orderPulseTargets = new Set();
     let elementPulseTargets = new Set();
     let isResolving = false;
@@ -2447,6 +2586,13 @@
           ...target,
           needed: target.needed + cycle * 2
         })),
+        thornGoal: template.thornGoal
+          ? {
+              ...template.thornGoal,
+              needed: template.thornGoal.needed + Math.min(2, cycle)
+            }
+          : null,
+        thornPlacements: (template.thornPlacements || []).map((thorn) => ({ ...thorn })),
         reward: {
           ...template.reward,
           coins: template.reward.coins + cycle * 55,
@@ -2469,6 +2615,19 @@
       return Math.min(counts[target.flowerId], target.needed);
     }
 
+    function thornGoalNeeded(plan = activeRoundPlan()) {
+      return plan.thornGoal ? plan.thornGoal.needed : 0;
+    }
+
+    function thornGoalProgress(plan = activeRoundPlan()) {
+      return Math.min(clearedCursedThorns, thornGoalNeeded(plan));
+    }
+
+    function thornGoalComplete(plan = activeRoundPlan()) {
+      const needed = thornGoalNeeded(plan);
+      return !needed || thornGoalProgress(plan) >= needed;
+    }
+
     function targetMarkup(flowerId, current, needed) {
       const flower = flowers[flowerId];
       const displayCount = Math.min(current, needed);
@@ -2482,14 +2641,33 @@
     }
 
     function goalMarkup(plan = activeRoundPlan()) {
-      return plan.targets.map((target, index) => {
+      const goals = plan.targets.map((target) => targetMarkup(target.flowerId, counts[target.flowerId], target.needed));
+      if (plan.thornGoal) {
+        goals.push(thornGoalMarkup(plan));
+      }
+      return goals.map((goal, index) => {
         const joiner = index ? "<span>and</span>" : "";
-        return `${joiner}${targetMarkup(target.flowerId, counts[target.flowerId], target.needed)}`;
+        return `${joiner}${goal}`;
       }).join("");
+    }
+
+    function thornGoalMarkup(plan = activeRoundPlan()) {
+      const needed = thornGoalNeeded(plan);
+      const progress = thornGoalProgress(plan);
+      const pulseClass = thornPulseCells.size || thornClearedCells.size ? "order-pulse" : "";
+      return `
+        <span class="objective-target ${pulseClass}">
+          <span class="static-fallback-glyph thorn-goal-glyph" aria-hidden="true">✕</span>
+          Cursed Thorn ${progress}/${needed}
+        </span>
+      `;
     }
 
     function goalCopy(plan = activeRoundPlan()) {
       const names = plan.targets.map((target) => flowers[target.flowerId][0]);
+      if (plan.thornGoal) {
+        names.push(`clear ${plan.thornGoal.needed} Cursed Thorns`);
+      }
       const list = names.length > 2
         ? `${names.slice(0, -1).join(", ")}, and ${names[names.length - 1]}`
         : names.join(" and ");
@@ -2499,7 +2677,77 @@
     function roundProgress(plan = activeRoundPlan()) {
       const earned = plan.targets.reduce((sum, target) => sum + targetProgress(target), 0);
       const needed = plan.targets.reduce((sum, target) => sum + target.needed, 0);
-      return { earned, needed, pct: needed ? Math.min(100, (earned / needed) * 100) : 0 };
+      const thornEarned = thornGoalProgress(plan);
+      const thornNeeded = thornGoalNeeded(plan);
+      const totalEarned = earned + thornEarned;
+      const totalNeeded = needed + thornNeeded;
+      return {
+        earned: totalEarned,
+        needed: totalNeeded,
+        pct: totalNeeded ? Math.min(100, (totalEarned / totalNeeded) * 100) : 0
+      };
+    }
+
+    function thornKey(x, y) {
+      return `${x},${y}`;
+    }
+
+    function thornAt(x, y) {
+      return cursedThorns.find((thorn) => thorn.x === x && thorn.y === y) || null;
+    }
+
+    function isValidThornCell(x, y) {
+      return Number.isInteger(x) && Number.isInteger(y)
+        && x >= 0 && x < BOARD_SIZE
+        && y >= 0 && y < BOARD_SIZE;
+    }
+
+    function normalizeCursedThorn(thorn) {
+      const x = Number(thorn?.x);
+      const y = Number(thorn?.y);
+      if (!Number.isInteger(x) || !Number.isInteger(y) || !isValidThornCell(x, y)) {
+        return null;
+      }
+      return { x, y, hp: Math.max(1, Number(thorn.hp) || 1) };
+    }
+
+    function resetCursedThorns(plan = activeRoundPlan()) {
+      clearedCursedThorns = 0;
+      thornPulseCells.clear();
+      thornClearedCells.clear();
+      if (!plan.thornGoal) {
+        cursedThorns = [];
+        return;
+      }
+      const placements = plan.thornPlacements.length
+        ? plan.thornPlacements
+        : [{ x: 0, y: 1, hp: 1 }, { x: 1, y: 1, hp: 1 }, { x: 2, y: 1, hp: 1 }];
+      cursedThorns = placements
+        .slice(0, thornGoalNeeded(plan))
+        .map(normalizeCursedThorn)
+        .filter(Boolean);
+    }
+
+    function ensureCursedThornsForPlan(plan = activeRoundPlan()) {
+      if (!plan.thornGoal || roundComplete) {
+        if (!plan.thornGoal) {
+          cursedThorns = [];
+          clearedCursedThorns = 0;
+        } else if (roundComplete) {
+          cursedThorns = [];
+          clearedCursedThorns = Math.max(clearedCursedThorns, thornGoalNeeded(plan));
+        }
+        return;
+      }
+      const needed = thornGoalNeeded(plan);
+      clearedCursedThorns = Math.min(clearedCursedThorns, needed);
+      cursedThorns = cursedThorns
+        .map(normalizeCursedThorn)
+        .filter(Boolean)
+        .filter((thorn, index, list) => list.findIndex((candidate) => candidate.x === thorn.x && candidate.y === thorn.y) === index);
+      if (clearedCursedThorns < needed && !cursedThorns.length) {
+        resetCursedThorns(plan);
+      }
     }
 
     function build() {
@@ -2704,6 +2952,10 @@
       const remainingTargetIndex = plan.targets.findIndex((target) => targetProgress(target) < target.needed);
       const remainingTarget = plan.targets[remainingTargetIndex];
       if (!remainingTarget) {
+        if (plan.thornGoal && !thornGoalComplete(plan) && cursedThorns.length) {
+          idleHintCells = new Set(cursedThorns.map((thorn) => thornKey(thorn.x, thorn.y)));
+          return " <strong>Cursed Thorns remain.</strong> Match beside the glowing vine-crowned tiles to crack them.";
+        }
         return "";
       }
       const move = findTargetLegalMove(remainingTarget.flowerId, remainingTargetIndex);
@@ -2800,10 +3052,15 @@
           const invalidClass = invalidSwapCells.has(`${x},${y}`) ? "invalid-swap" : "";
           const idleHintClass = idleHintCells.has(`${x},${y}`) ? "idle-hint" : "";
           const transmuteClass = transmuteFlashCell === `${x},${y}` ? "transmute-flash" : "";
+          const thorn = thornAt(x, y);
+          const thornKeyValue = thornKey(x, y);
+          const thornClass = thorn ? "cursed-thorn" : "";
+          const thornHitClass = thornPulseCells.has(thornKeyValue) ? "thorn-hit" : "";
+          const thornClearedClass = thornClearedCells.has(thornKeyValue) ? "thorn-cleared" : "";
           const fallKey = `${x},${y}`;
           const fallRows = fallAnimations.get(fallKey) || 0;
           const fallClass = fallRows ? "fall-in" : "";
-          tile.className = `tile ${selectedClass} ${legalClass} ${sacrificeClass} ${profitableClass} ${harvestClass} ${superClass} ${invalidClass} ${idleHintClass} ${transmuteClass} ${fallClass}`;
+          tile.className = `tile ${selectedClass} ${legalClass} ${sacrificeClass} ${profitableClass} ${harvestClass} ${superClass} ${invalidClass} ${idleHintClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass}`;
           tile.disabled = isResolving || roundComplete;
           if (fallRows) {
             tile.style.setProperty("--fall-y", `${-fallRows * 112}%`);
@@ -2811,8 +3068,12 @@
           }
           const profitLabel = profitableClass ? " profitable sacrifice target" : "";
           const legalLabel = legalClass ? " legal match swap target" : "";
-          tile.setAttribute("aria-label", `${flowers[value][0]} tile${profitLabel}${legalLabel}`);
-          tile.innerHTML = iconMarkup(value, "", flowers[value][0], "tile-icon-wrap");
+          const thornLabel = thorn ? " with Cursed Thorn blocker" : thornClearedClass ? " where a Cursed Thorn cracked" : "";
+          tile.setAttribute("aria-label", `${flowers[value][0]} tile${profitLabel}${legalLabel}${thornLabel}`);
+          tile.innerHTML = `
+            ${iconMarkup(value, "", flowers[value][0], "tile-icon-wrap")}
+            ${thorn || thornClearedClass ? '<span class="cursed-thorn-overlay" aria-hidden="true"></span>' : ""}
+          `;
           tile.addEventListener("click", () => tap(x, y));
           boardEl.appendChild(tile);
         }
@@ -2846,8 +3107,9 @@
 
       const plan = activeRoundPlan();
       const progress = roundProgress(plan);
+      const objectiveVerb = plan.thornGoal ? "Goals" : "Collect";
       $("objective").innerHTML = `
-        <span class="objective-text">Round ${plan.round} · ${roundComplete ? "Bouquet Complete" : "Collect"}</span>
+        <span class="objective-text">Round ${plan.round} · ${roundComplete ? "Bouquet Complete" : objectiveVerb}</span>
         ${goalMarkup(plan)}
         <span class="objective-separator">·</span>
         <span>Moves ${moves}</span>
@@ -3159,6 +3421,9 @@
         rareCells: [],
         shapeBonuses: [],
         shapeCells: [],
+        thornsDamaged: 0,
+        thornsCleared: 0,
+        thornCells: [],
         reshuffled: false
       };
     }
@@ -3230,6 +3495,7 @@
       if (isRareWave) {
         queueSuperBloomBoardEffects(effectRareCells, cascadeIndex);
       }
+      damageAdjacentThorns(wave, result, cascadeIndex);
       if (elementPulseTargets.size) {
         scheduleElementPulseClear();
       }
@@ -3243,6 +3509,56 @@
       result.shapeCells.push(...wave.shapeCells);
       effectRareCells.forEach((cell) => {
         result.rareCells.push(cell);
+      });
+    }
+
+    function damageAdjacentThorns(wave, result, cascadeIndex = 0) {
+      if (!cursedThorns.length || !wave.clearCells.length) {
+        return;
+      }
+      const matchedKeys = new Set(wave.clearCells.map((cell) => cell.join(",")));
+      const adjacentThornKeys = new Set();
+      cursedThorns.forEach((thorn) => {
+        const adjacent = wave.clearCells.some(([x, y]) => (
+          Math.abs(thorn.x - x) + Math.abs(thorn.y - y) === 1
+          || matchedKeys.has(thornKey(thorn.x, thorn.y))
+        ));
+        if (adjacent) {
+          adjacentThornKeys.add(thornKey(thorn.x, thorn.y));
+        }
+      });
+      if (!adjacentThornKeys.size) {
+        return;
+      }
+
+      const damage = wave.strongestShape ? 2 : 1;
+      const cleared = [];
+      cursedThorns.forEach((thorn) => {
+        const key = thornKey(thorn.x, thorn.y);
+        if (!adjacentThornKeys.has(key)) {
+          return;
+        }
+        thorn.hp -= damage;
+        result.thornsDamaged += 1;
+        result.thornCells.push([thorn.x, thorn.y]);
+        thornPulseCells.add(key);
+        queueThornBurst(thorn.x, thorn.y, thorn.hp <= 0, cascadeIndex);
+        if (thorn.hp <= 0) {
+          cleared.push(thorn);
+        }
+      });
+
+      if (!cleared.length) {
+        return;
+      }
+      const clearedKeys = new Set(cleared.map((thorn) => thornKey(thorn.x, thorn.y)));
+      cursedThorns = cursedThorns.filter((thorn) => !clearedKeys.has(thornKey(thorn.x, thorn.y)));
+      clearedCursedThorns += cleared.length;
+      result.thornsCleared += cleared.length;
+      cleared.forEach((thorn) => {
+        const key = thornKey(thorn.x, thorn.y);
+        thornClearedCells.add(key);
+        thornPulseCells.add(key);
       });
     }
 
@@ -3260,6 +3576,7 @@
       result.reshuffled = ensurePlayableBoardAfterCascade();
       result.rareCells = dedupeCells(result.rareCells);
       result.shapeCells = dedupeCells(result.shapeCells);
+      result.thornCells = dedupeCells(result.thornCells);
       return result;
     }
 
@@ -3301,6 +3618,8 @@
       fallAnimations.clear();
       boardParticles = [];
       superBloomCells.clear();
+      thornPulseCells.clear();
+      thornClearedCells.clear();
       const result = createResolveResult();
       const flashedCells = new Set();
 
@@ -3327,6 +3646,8 @@
       boardParticles = [];
       harvestFlashCells.clear();
       superBloomCells.clear();
+      thornPulseCells.clear();
+      thornClearedCells.clear();
       const result = createResolveResult();
       const maxCascades = Math.max(1, Number(options.maxCascades) || 20);
 
@@ -3478,6 +3799,28 @@
       });
     }
 
+    function queueThornBurst(x, y, cleared = false, cascadeIndex = 0) {
+      const baseDelay = cascadeIndex * 120;
+      const shards = cleared ? 7 : 4;
+      for (let index = 0; index < shards; index += 1) {
+        const angle = Math.random() * Math.PI * 2;
+        const distance = (cleared ? 44 : 24) + Math.random() * (cleared ? 58 : 30);
+        boardParticles.push({
+          type: "thorn-splinter",
+          text: index % 2 ? "✕" : "✦",
+          x,
+          y,
+          dx: Math.cos(angle) * distance,
+          dy: Math.sin(angle) * distance - 22,
+          size: cleared ? 30 : 22,
+          fontSize: cleared ? 22 : 17,
+          spin: (Math.random() - 0.5) * 210,
+          scale: cleared ? 1.35 : 1.08,
+          delay: baseDelay + index * 18
+        });
+      }
+    }
+
     function queueSuperBloomBoardEffects(cells, cascadeIndex = 0) {
       // Super Bloom FX is reserved for 5+ shapes and blooms from the matched cells themselves.
       const baseDelay = cascadeIndex * 120;
@@ -3540,6 +3883,8 @@
         harvestFlashCells.clear();
         superBloomCells.clear();
         invalidSwapCells.clear();
+        thornPulseCells.clear();
+        thornClearedCells.clear();
         transmuteFlashCell = "";
         render();
       }, 1250);
@@ -3550,11 +3895,12 @@
       const cascadeText = result.cascades > 1 ? ` across ${result.cascades} cascades` : "";
       const reshuffleText = result.reshuffled ? " The board re-seeded itself with a legal move." : "";
       const shapeText = shapeBonusMessage(result);
+      const thornText = thornDamageMessage(result);
       const shapePrefix = shapeText ? `<strong>${shapeText}</strong> ` : "";
       if (orderText) {
-        return `${shapePrefix}<strong>${orderText}</strong> +${result.coinsEarned} coins${cascadeText}.${gainMarkup(result.gained)}${reshuffleText}`;
+        return `${shapePrefix}<strong>${orderText}</strong>${thornText} +${result.coinsEarned} coins${cascadeText}.${gainMarkup(result.gained)}${reshuffleText}`;
       }
-      return `${shapePrefix}<strong>${result.cleared}</strong> tiles harvested${cascadeText}. +${result.coinsEarned} coins.${gainMarkup(result.gained)}${reshuffleText}`;
+      return `${shapePrefix}<strong>${result.cleared}</strong> tiles harvested${cascadeText}.${thornText} +${result.coinsEarned} coins.${gainMarkup(result.gained)}${reshuffleText}`;
     }
 
     function shapeBonusMessage(result) {
@@ -3564,6 +3910,22 @@
       }
       const cells = result.shapeCells.length || result.cleared;
       return `${shape.label} ${cells} cells burned bright; Supreme Bloom stirs.`;
+    }
+
+    function thornDamageMessage(result) {
+      if (!result.thornsDamaged) {
+        return "";
+      }
+      const cleared = result.thornsCleared || 0;
+      const damaged = result.thornsDamaged - cleared;
+      const messages = [];
+      if (cleared) {
+        messages.push(`${cleared} Cursed Thorn${cleared === 1 ? "" : "s"} cracked and burned away`);
+      }
+      if (damaged > 0) {
+        messages.push(`${damaged} Cursed Thorn${damaged === 1 ? "" : "s"} cracked`);
+      }
+      return messages.length ? ` ${messages.join("; ")}.` : "";
     }
 
     function orderGainMessage(gained) {
@@ -3590,7 +3952,7 @@
     }
 
     function renderActiveOrders(plan = activeRoundPlan()) {
-      $("activeOrders").innerHTML = plan.targets.map((target) => {
+      const lines = plan.targets.map((target) => {
         const flower = flowers[target.flowerId];
         const progress = targetProgress(target);
         const complete = progress >= target.needed;
@@ -3601,7 +3963,20 @@
             <span class="order-copy">${target.order}: ${progress}/${target.needed} ${flower[0]}</span>
           </div>
         `;
-      }).join("");
+      });
+      if (plan.thornGoal) {
+        const progress = thornGoalProgress(plan);
+        const needed = thornGoalNeeded(plan);
+        const complete = progress >= needed;
+        const pulse = thornPulseCells.size || thornClearedCells.size;
+        lines.push(`
+          <div class="small order-line ${complete ? "complete" : ""} ${pulse ? "order-pulse" : ""}">
+            <span class="order-icon thorn-order-glyph" aria-hidden="true">✕</span>
+            <span class="order-copy">${plan.thornGoal.order}: ${progress}/${needed} cleared</span>
+          </div>
+        `);
+      }
+      $("activeOrders").innerHTML = lines.join("");
       applyImageFallbacks($("activeOrders"));
     }
 
@@ -3641,7 +4016,8 @@
 
     function maybeCompleteRound() {
       const plan = activeRoundPlan();
-      if (roundComplete || !plan.targets.every((target) => counts[target.flowerId] >= target.needed)) {
+      const targetsComplete = plan.targets.every((target) => counts[target.flowerId] >= target.needed);
+      if (roundComplete || !targetsComplete || !thornGoalComplete(plan)) {
         return false;
       }
       roundComplete = true;
@@ -3737,6 +4113,8 @@
       harvestFlashCells.clear();
       fallAnimations.clear();
       superBloomCells.clear();
+      thornPulseCells.clear();
+      thornClearedCells.clear();
       boardParticles = [];
       ritualMessage = "The greenhouse table shuffles. One move is spent.";
       build();
@@ -3758,12 +4136,15 @@
       superBloomCells.clear();
       boardParticles = [];
       transmuteFlashCell = "";
+      thornPulseCells.clear();
+      thornClearedCells.clear();
       currentRound = nextRound;
       moves = plan.moves;
       counts = [0, 0, 0, 0, 0, 0];
       hasMadeValidMove = false;
       roundComplete = false;
       ritualMessage = `<strong>Round ${plan.round}: ${plan.name}</strong> begins. ${goalCopy(plan)}`;
+      resetCursedThorns(plan);
       build();
       render();
       scheduleIdleHint();
@@ -3780,6 +4161,12 @@
         orderPulseTargets.add(target.flowerId);
         elementPulseTargets.add(target.flowerId);
       });
+      if (plan.thornGoal) {
+        clearedCursedThorns = Math.max(clearedCursedThorns, thornGoalNeeded(plan));
+        cursedThorns = [];
+        thornPulseCells.clear();
+        thornClearedCells.clear();
+      }
       notePlayerInteraction();
       if (maybeCompleteRound()) {
         ritualMessage += " <strong>Press Next Bouquet to keep playing.</strong>";
@@ -4250,6 +4637,8 @@
         moves,
         coins,
         counts,
+        cursedThorns,
+        clearedCursedThorns,
         currentRound,
         roundComplete,
         greenhouse,
@@ -4280,6 +4669,12 @@
         if (Array.isArray(state.counts) && state.counts.length === flowers.length) {
           counts = state.counts.map((count) => Math.max(0, Number(count) || 0));
         }
+        if (Array.isArray(state.cursedThorns)) {
+          cursedThorns = state.cursedThorns
+            .map(normalizeCursedThorn)
+            .filter(Boolean);
+        }
+        clearedCursedThorns = Math.max(0, Number(state.clearedCursedThorns) || 0);
         moves = Math.max(0, Number(state.moves) || moves);
         coins = Math.max(0, Number(state.coins) || coins);
         currentRound = Math.max(1, Number(state.currentRound) || 1);
@@ -4412,6 +4807,7 @@
     if (!board.length || matches().length || !hasLegalMoves()) {
       build();
     }
+    ensureCursedThornsForPlan(activeRoundPlan());
     render();
     renderChest();
     scheduleIdleHint();
