@@ -163,9 +163,14 @@
   - Local pointer checks: Shuffle spent one move; Sacrifice opened and Cancel closed it; Chest Storage opened with 16 slots; close button and Escape both closed the modal and returned focus.
   - Mobile portrait check at 390x844 had no horizontal overflow, 41px board tiles, and order `main`, `bottom`, `left`.
   - Pressing `M` still cycled clean Cross, L, and T 5-tile demos; pressing `B` still showed 84 Supreme particles and returned the board to 0 disabled tiles.
-- Browser console/runtime status: no local Playwright console warnings, console errors, or page errors observed during loop, pointer, mobile, `M`, or `B` checks.
-- Vercel deployment URL/identifier checked: pending production redeploy for this pass.
-- GitHub Pages preview status: pending after push.
+- Browser console/runtime status: no local or Vercel Playwright console warnings, console errors, or page errors observed during loop, pointer, mobile, `M`, or `B` checks.
+- Deployed to Vercel production as `dpl_64fXTjeTd7QHX8n1HRenNr5p27sH`.
+- Vercel deployment URL: https://bloom-tycoon-d539uxypt-xerxes-florals.vercel.app
+- Re-pointed `https://bloom-tycoon.vercel.app` to the new deployment.
+- Vercel `/`, `/playable/midnight_bloom_prototype.html?verify=b443f28`, and `/assets/tiles/96/amber_resin_seed.png?verify=b443f28` returned `200 OK`.
+- Downloaded Vercel HTML contained `const roundTemplates`, `Next Bouquet`, `roundCeremony`, `factionXpFill`, `apothecary-fill`, and `const maxCascades`.
+- Vercel Playwright check completed rounds 1 through 5, clicked `Next Bouquet` through rounds 2 through 5, confirmed fresh boards/objectives/moves, 64 tiles, 89 images, 0 broken images, 34px vial meters, no console/page errors, and mobile 390x844 with no horizontal overflow.
+- GitHub Pages preview status: `/bloom-tycoon/`, `/bloom-tycoon/playable/midnight_bloom_prototype.html?verify=b443f28`, and `/bloom-tycoon/assets/tiles/96/amber_resin_seed.png?verify=b443f28` returned `200 OK`; Pages was still serving an older HTML snapshot without the new round-loop markers during this pass and should be rechecked after its publish cache catches up.
 - Known issues: the accelerated 5-round verification uses page-level audit state to avoid playing dozens of manual matches; the visible player flow still requires completing the displayed bouquet goals before `Next Bouquet` appears.
 - How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly to cycle Cross, L, and T demos; each should report 5 tiles harvested with its named shape copy.
 - How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit 84 particles, then return the board to play.
