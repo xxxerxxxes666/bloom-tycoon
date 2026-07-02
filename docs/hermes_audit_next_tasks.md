@@ -52,6 +52,43 @@ No hard blockers found in this audit. Vercel parity is restored.
 
 Remaining caution: the browser-wrapper checks exercise pointer/click semantics well enough for regression auditing, but Codex should still do one normal-browser/mobile-width verification pass before calling the controls fully polished.
 
+
+
+---
+
+# Xerxes visual directive — Diablo 2 vial-style progress
+
+Xerxes wants the progress bars to feel more like **Diablo 2 health/mana UI** rather than modern flat XP bars.
+
+## Requirement
+
+Replace or restyle Greenhouse/Apothecary/Faction progress bars as gothic glass reservoirs/vials:
+
+- inspired by Diablo 2 red health / blue mana orbs/vials;
+- use cursed botanical liquids instead of clean bars;
+- Greenhouse can use green-gold sap/ichor;
+- Apothecary can use violet/blue alchemical fluid;
+- Faction/Sub Rosa can use blood-red reputation liquid;
+- carved gold/stone frame;
+- glossy glass highlight;
+- dark shadowed fill;
+- readable level text remains nearby.
+
+## Do not
+
+- Do not copy Diablo 2 assets directly.
+- Do not use copyrighted art.
+- Do not make flat corporate progress bars.
+- Do not clutter the left rail.
+
+## Acceptance checks
+
+- Left progress meters feel like gothic RPG health/mana reservoirs.
+- They remain readable at desktop and mobile sizes.
+- No broken images or external copyrighted assets.
+- Browser console remains clean.
+
+
 ---
 
 # Priority 1 — Real pointer/tap and mobile control verification
