@@ -100,64 +100,67 @@ Do this next, surgically:
 
 # Hermes Audit Next Tasks
 
-Last audited by Hermes: **2026-07-02 20:28 UTC**
+Last audited by Hermes: **2026-07-02 21:01 UTC**
 Audit targets:
 - Vercel playable: https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html
 - GitHub Pages playable: https://xxxerxxxes666.github.io/bloom-tycoon/playable/midnight_bloom_prototype.html
 - Repo: https://github.com/xxxerxxxes666/bloom-tycoon
-- Latest audited commit: `6de305b` (`docs: record Eclipse Seed Rune Pages parity`)
-- Latest gameplay commit audited: `6bf9ed9` (`feat: add Eclipse Seed Rune reward`)
+- Latest audited commit: `02d56ce` (`docs: record Rune-Tended Soil Pages parity`)
+- Latest gameplay commit audited: `791e4f7` (`feat: add Rune-Tended Soil payoff`)
 
 ## Hermes audit verdict
 
-New Codex work landed. The 5-line `Eclipse Seed Rune` slice is live and marker-matched on Vercel and GitHub Pages. No deploy-parity blocker remains.
+New Codex work landed and the Rune-Tended Soil payoff is live on both hosts. No deploy-parity blocker remains.
 
-Core gameplay is still working: first real Thorn Rose/Bone Star moves complete Round 1, `Next Bouquet` starts Round 2, Cursed Thorns appear and clear from adjacent matches, `Shape Bloom` proves the new Eclipse Seed Rune reward, `M` cycles Eclipse Seed Rune → Black Candle Vine → Cross/L/T demos, `B` triggers Supreme Bloom, Chest opens/closes, Sacrifice opens/cancels, and mobile portrait has no horizontal overflow.
+Core gameplay is still working: `Shape Bloom` earns `Eclipse Seed Rune`, Chest Storage exposes `Plant Rune`, planting consumes the rune for `Greenhouse +90 XP`, `Complete Bouquet` + `Next Bouquet` starts Round 2 with `RUNE-TENDED SOIL +1 MOVE` and 18 moves, `M` proves Black Candle Vine, `B` proves Supreme Bloom, Chest opens/closes, Sacrifice opens/cancels, and mobile portrait has no horizontal overflow.
 
 ## Verified by Hermes this audit
 
 - Fetched/reset local clone to `origin/main` with the repo-scoped SSH key.
 - `python3 scripts/verify_project.py` passes.
 - `git diff --check` passes.
-- Latest commit audited: `6de305b docs: record Eclipse Seed Rune Pages parity`.
-- Latest gameplay commit audited: `6bf9ed9 feat: add Eclipse Seed Rune reward`.
+- Latest commit audited: `02d56ce docs: record Rune-Tended Soil Pages parity`.
+- Latest gameplay commit audited: `791e4f7 feat: add Rune-Tended Soil payoff`.
 - Vercel root/playable/key tile asset return `200`.
 - GitHub Pages root/playable/key tile asset return `200`.
-- Static marker parity: both hosted playables contain `Eclipse Seed Rune`, `rareSeedRuneForMatch`, `queueRareSeedRuneBurst`, `rareSeedRuneMessage`, `line5`, `Black Candle Vine`, `Cursed Thorn`, `Shape Bloom`, `Complete Bouquet`, `Next Bouquet`, `shapeAuditData`, `seedCurrentTargetMoves`, `writeTargetLegalMovePatch`, `SAP`, `MANA`, and `BLOOD`.
+- Static marker parity: both hosted playables contain `Rune-Tended Soil`, `plantEclipseSeedRune`, `data-action="plant-eclipse-seed-rune"`, `pendingRuneTendedSoil`, `activeRuneTendedSoil`, `Eclipse Seed Rune`, `Black Candle Vine`, `Cursed Thorn`, `Shape Bloom`, `Complete Bouquet`, `Next Bouquet`, `shapeAuditData`, `SAP`, `MANA`, and `BLOOD`.
 - Vercel browser checks:
-  - 64 board tiles, 91 images, 0 broken images, no console/page errors observed.
-  - Real first Thorn Rose swap advanced Thorn Rose to `3/3` and showed the Bone Star hint.
-  - Real Bone Star swap completed Round 1 and showed `Next Bouquet`.
-  - Round 2 showed `Cursed Thorn 0/3` and 3 thorn blockers.
-  - Adjacent target swaps cleared all 3 thorns, updated `Cursed Thorn 3/3`, and logged Cursed Thorn feedback.
-  - `Shape Bloom` showed `Eclipse Seed Rune awakened from a five-line row 4 and sealed in Chest Storage`.
-  - `M` cycled `Eclipse Seed Rune`, `Black Candle Vine`, `Witch's Cross!`, `Night Garden L-Bloom!`, and `Twin Stem Bloom!`.
-  - `B` showed `SUPREME BLOOM!` and returned the board to play.
-  - Chest Storage opened with `aria-expanded=true` / modal `aria-hidden=false` and closed with Escape.
-  - Sacrifice opened and Cancel closed it.
-  - Hidden-iframe mobile portrait at ~390px showed no horizontal overflow, 64 tiles, 0 broken images, and ~39px tiles.
+  - 64 board tiles, 94 images, 0 broken images, no console/page errors observed.
+  - `Shape Bloom` earned `Eclipse Seed Rune` and raised Chest Storage to `9 / 16 Slots`.
+  - Chest Storage opened and showed a `Plant Rune` action.
+  - `Plant Rune` consumed the rune, changed Chest Storage to `8 / 16 Slots`, changed Greenhouse from `1,240 / 2,000 XP` to `1,330 / 2,000 XP`, and queued `Rune-Tended Soil`.
+  - `Complete Bouquet` showed the reward ceremony and `Next Bouquet`.
+  - `Next Bouquet` started Round 2 with `RUNE-TENDED SOIL +1 MOVE`, 18 moves, and the Cursed Thorn objective.
+  - `M` showed `Black Candle Vine swept row 4`; `B` showed `SUPREME BLOOM!` and returned the board to play.
+  - Chest Storage opened/closed with Escape; Sacrifice opened/cancelled.
 - GitHub Pages browser checks:
-  - 64 board tiles, 91 images, 0 broken images, no console/page errors observed.
+  - 64 board tiles, 93 images, 0 broken images, no console/page errors observed.
   - Static markers matched Vercel.
-  - `Shape Bloom` showed `Eclipse Seed Rune awakened from a five-line row 4 and sealed in Chest Storage`.
+  - `Shape Bloom` earned `Eclipse Seed Rune`; Chest Storage showed a `Plant Rune` action.
+  - Hidden-iframe mobile portrait at ~390px showed no horizontal overflow, 64 tiles, 0 broken images, and ~39px tiles.
 
 ## Current next priority for Codex
 
-Proceed to the next small strategic gameplay slice: make the earned `Eclipse Seed Rune` matter in the tycoon loop without adding accounts, backend, analytics, ads, or broad systems.
+Proceed to the next small strategic gameplay slice: add the first local/static booster so Apothecary progress starts to matter without adding accounts, backend, analytics, ads, or broad systems.
 
-1. Add a small, visible Chest-to-upgrade payoff for `Eclipse Seed Rune` after it is earned: either plant/consume one rune for Greenhouse progress or unlock a one-round gothic boon such as `Rune-Tended Soil`.
-2. Keep the implementation local/static and reversible: no backend, no accounts, no trackers, no secrets, no SDKs.
-3. Preserve current reward hierarchy: exact 5-line = `Eclipse Seed Rune`, 4-line = `Black Candle Vine`, L/T/cross = shape rewards, 6+ straight line or `B`/Sacrifice only = Supreme Bloom.
-4. Add clear ritual-log copy explaining what the rune did and why the next bouquet is better.
-5. Keep review hooks: `Shape Bloom`, `Complete Bouquet`, `N`, `M`, and `B`.
-6. Add/update static verifier checks for the new rune payoff markers.
-7. Verify normal first-move flow, Round 2 Cursed Thorn flow, rune payoff, Chest/Sacrifice, review hooks, host parity, and mobile portrait before pushing.
+1. Add one visible booster: `Pruning Shears` removes one selected board tile or blocker.
+2. Make it clearly gothic/botanical and local-only: no backend, no accounts, no trackers, no secrets, no SDKs.
+3. Gate it lightly through existing progress/chest economy: grant one `Pruning Shears` from an Apothecary milestone, Chest reward, or round reward; show its count in the controls or Chest.
+4. Make the action obvious and reversible in UX: click `Pruning Shears`, highlight eligible tiles/blockers, click a tile/blocker to remove it, or Cancel without spending it.
+5. If used on a `Cursed Thorn`, it should clear/damage the thorn and update the Cursed Thorn objective/feedback.
+6. Preserve current reward hierarchy: exact 5-line = `Eclipse Seed Rune`, 4-line = `Black Candle Vine`, L/T/cross = shape rewards, 6+ straight line or `B`/Sacrifice only = Supreme Bloom.
+7. Keep review hooks: `Shape Bloom`, `Complete Bouquet`, `N`, `M`, and `B`.
+8. Add/update static verifier checks for the new booster markers.
+9. Verify normal first-move flow, Round 2 Cursed Thorn flow, Rune-Tended Soil payoff, booster use/cancel, Chest/Sacrifice, review hooks, host parity, and mobile portrait before pushing.
 
-### Acceptance checks for the rune payoff pass
+### Acceptance checks for the Pruning Shears pass
 
-- Vercel and GitHub Pages direct playable HTML contain the new rune payoff markers after deployment.
-- A deterministic path earns `Eclipse Seed Rune`, stores it in Chest, then visibly spends/applies it.
-- The payoff changes a clear local game value such as Greenhouse XP/progress, next-round starting moves, or a one-round boon label.
+- Vercel and GitHub Pages direct playable HTML contain the new booster markers after deployment.
+- A deterministic path grants or displays at least one `Pruning Shears`.
+- Clicking `Pruning Shears` enters a clear targeting mode; Cancel exits without spending it.
+- Using `Pruning Shears` on a normal tile removes/refreshes that tile without breaking the board.
+- Using `Pruning Shears` on a Cursed Thorn updates thorn progress/feedback correctly.
+- Rune-Tended Soil still works: earn `Eclipse Seed Rune`, plant it, then Round 2 starts with +1 move.
 - 5-line `Eclipse Seed Rune`, 4-line `Black Candle Vine`, L/T/cross `Shape Bloom`, `M`, and `B` still work.
 - Round 1 first-move/Bone Star flow still completes.
 - Round 2 Cursed Thorn objective still appears and thorns clear via adjacent matches.
