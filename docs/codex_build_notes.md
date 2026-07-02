@@ -509,3 +509,43 @@
 - How to trigger and verify L/T/cross matches without console: after the rune payoff flow, press `M` repeatedly; the cycle still includes `Black Candle Vine`, `Witch's Cross!`, `Night Garden L-Bloom!`, `Twin Stem Bloom!`, and `Eclipse Seed Rune`.
 - How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit the review-hook particle burst, then return the board to play.
 - Security/secret-scan status: lightweight scan ran on changed files with no findings; no secrets, trackers, backend, or new permissions were added.
+
+## 2026-07-02 Codex Pruning Shears booster slice
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested the first local/static booster so Apothecary progress begins to matter.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added visible `Pruning Shears (x1)` controls, granted as an Apothecary Level 2 local prototype booster.
+- Added a reversible targeting mode: click `Pruning Shears`, all eligible board tiles/blockers glow, `Cancel` exits without spending, and a successful cut spends one Shears.
+- Normal tile use removes the selected tile, refills the column, and re-seeds a legal board if needed.
+- Cursed Thorn use removes the selected thorn, updates `Cursed Thorn` objective progress, and keeps the existing thorn feedback styling/particles.
+- Preserved reward hierarchy: exact 5-line = `Eclipse Seed Rune`, 4-line = `Black Candle Vine`, L/T/cross = shape rewards, 6+ straight line or `B`/Sacrifice = Supreme Bloom.
+- Added static audit markers for `Pruning Shears`, `pruningShearsBtn`, `pruningShearsCount`, `boosterPanel`, `togglePruningShears`, `usePruningShears`, `queuePruningShearBurst`, `shears-target`, `boosters.pruningShears`, and `activeBooster`.
+- Verification run:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - JS parse check over executable HTML scripts.
+  - `python3 scripts/verify_project.py`
+  - `git diff --check`
+  - Local static preview at `http://127.0.0.1:4173/playable/midnight_bloom_prototype.html`
+  - Local Playwright loaded 64 board tiles and 0 broken images.
+  - Local Playwright proved `Pruning Shears` arms targeting, highlights 64 tiles, cancels without spending, cuts a normal tile, spends the count to `x0`, and leaves 64 board tiles.
+  - Local Playwright started Round 2 with `Complete Bouquet` + `Next Bouquet`, cut a Cursed Thorn with Shears, moved objective progress to `Cursed Thorn 1/3`, left 2 visible thorn blockers, and spent the count to `x0`.
+  - Local Playwright verified the Round 2 adjacent target swap still clears thorns normally to `Cursed Thorn 3/3`.
+  - Local Playwright verified Rune-Tended Soil still works: `Shape Bloom` earns `Eclipse Seed Rune`, Chest `Plant Rune` queues the boon, `Complete Bouquet` + `Next Bouquet` starts Round 2 with `Rune-Tended Soil +1 move` and 18 moves.
+  - Local Playwright verified `M` still proves `Black Candle Vine`, `B` still proves Supreme Bloom, Chest opens/closes, Sacrifice opens/cancels, and mobile 390x844 has no horizontal overflow.
+  - Vercel marker check for `https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html?verify=pruning-shears` returned `200` with `Pruning Shears`, `pruningShearsBtn`, `boosterPanel`, `togglePruningShears`, `usePruningShears`, `queuePruningShearBurst`, `shears-target`, `Rune-Tended Soil`, `Black Candle Vine`, and `Cursed Thorn`.
+  - Vercel direct checks returned `200` for `/`, `/playable/midnight_bloom_prototype.html?verify=pruning-shears`, and `/assets/tiles/96/bone_white_thorn_star.png?verify=pruning-shears`.
+  - Vercel Playwright smoke loaded 64 board tiles, 0 broken images, no console/page errors, and proved Shears arm/cancel/normal-use.
+- Browser console/runtime status: no local or Vercel Playwright console errors or page errors observed during booster, Round 2 thorn, rune payoff, review hook, Chest/Sacrifice, or mobile checks.
+- Deployed to Vercel production as `dpl_5DudqXfApsJYccoZGDBtf488N5Mv`.
+- Vercel deployment URL: https://bloom-tycoon-5rg6qh4md-xerxes-florals.vercel.app
+- Explicitly re-pointed `https://bloom-tycoon.vercel.app` to that deployment.
+- GitHub Pages preview status before this commit: prior Pages build was current for `02d56ce` / `c75a6eb` docs; this Pruning Shears pass still needs the post-push Pages workflow to publish and be marker-checked.
+- Known issues: none found locally or on Vercel for the Pruning Shears slice; GitHub Pages needs post-push confirmation after this commit publishes.
+- How to trigger and verify `Pruning Shears`: on a fresh load, click `Pruning Shears (x1)`, confirm board targets glow, click `Cancel` to keep `x1`, then arm again and click a normal tile or a Round 2 Cursed Thorn.
+- How to trigger and verify L/T/cross matches without console: press `M` or click `Shape Bloom` repeatedly; the cycle still includes `Black Candle Vine`, `Witch's Cross!`, `Night Garden L-Bloom!`, `Twin Stem Bloom!`, and `Eclipse Seed Rune`.
+- How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit the review-hook particle burst, then return the board to play.
+- Security/secret-scan status: lightweight scan ran on changed files with no findings; no secrets, trackers, backend, SDKs, or new permissions were added in code.

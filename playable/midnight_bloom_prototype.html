@@ -817,6 +817,23 @@
         linear-gradient(135deg, #0000 0 45%, #5f833866 49%, #0000 55%);
     }
 
+    .tile.shears-target {
+      outline: 2px solid #d7b16d;
+      box-shadow:
+        inset 0 0 16px #000,
+        0 0 0 1px #160f0c,
+        0 0 18px #d7b16d,
+        0 0 28px #5f833866;
+    }
+
+    .tile.shears-target::after {
+      opacity: 1;
+      background:
+        radial-gradient(circle, #f0c47724 0, #0000 58%),
+        linear-gradient(135deg, #0000 0 42%, #f0c47788 48%, #0000 54%),
+        linear-gradient(45deg, #0000 0 44%, #5f833888 50%, #0000 56%);
+    }
+
     .tile.sacrifice-target {
       outline: 2px solid #9b1d22;
       box-shadow:
@@ -1098,6 +1115,14 @@
       border-color: #6b2723;
     }
 
+    .btn.booster {
+      background:
+        linear-gradient(180deg, #1f2f18, #070a05),
+        radial-gradient(circle at 50% 0, #d7b16d55 0, #0000 50%);
+      border-color: #7b6339;
+      min-width: 250px;
+    }
+
     .btn.demo {
       background:
         linear-gradient(180deg, #243516, #080c05),
@@ -1141,6 +1166,47 @@
 
     .sacrifice-panel.open {
       display: block;
+    }
+
+    .booster-panel {
+      display: none;
+      max-width: 650px;
+      margin: 0 auto 14px;
+      padding: 12px 16px;
+      border: 1px solid #6f5a34;
+      background:
+        radial-gradient(circle at 50% 0, #273319 0, #0b0d06 58%),
+        linear-gradient(180deg, #12170c, #050604);
+      box-shadow: inset 0 0 22px #000, 0 0 18px #000;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .booster-panel::before {
+      content: "";
+      position: absolute;
+      inset: 5px;
+      border: 1px solid #d7b16d44;
+      pointer-events: none;
+    }
+
+    .booster-panel.open {
+      display: block;
+    }
+
+    .booster-copy {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: #d8c7aa;
+      font-size: 14px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .booster-status {
+      color: #d0b27a;
     }
 
     .sacrifice-copy {
@@ -2454,6 +2520,10 @@
           <img class="btn-icon" src="../assets/tiles/96/bloodroot_ruby_shard.png" alt="">
           <span>Sacrifice (-3 moves)</span>
         </button>
+        <button class="btn booster" id="pruningShearsBtn" type="button" aria-pressed="false">
+          <img class="btn-icon" src="../assets/tiles/96/bone_white_thorn_star.png" alt="">
+          <span>Pruning Shears (x<span id="pruningShearsCount">1</span>)</span>
+        </button>
         <button class="btn demo" id="demoCompleteBtn" type="button">
           <img class="btn-icon" src="../assets/tiles/96/crimson_rose_rune.png" alt="">
           <span>Complete Bouquet</span>
@@ -2469,6 +2539,12 @@
           <button class="sacrifice-cancel" id="sacrificeCancel" type="button">Cancel</button>
         </div>
         <div class="sacrifice-options" id="sacrificeOptions"></div>
+      </div>
+      <div class="booster-panel" id="boosterPanel" aria-live="polite">
+        <div class="booster-copy">
+          <span class="booster-status" id="boosterStatus">Pruning Shears are armed. Choose one tile or Cursed Thorn to cut.</span>
+          <button class="sacrifice-cancel" id="boosterCancel" type="button">Cancel</button>
+        </div>
       </div>
       <div class="ritual-log" id="ritualLog">Match botanical elements to feed the First Bouquet.</div>
       <div class="round-ceremony" id="roundCeremony" hidden></div>
@@ -2605,6 +2681,8 @@
     let cursedThorns = [];
     let clearedCursedThorns = 0;
     let sacrificeState = { active: false, choice: null };
+    let boosters = { pruningShears: 1 };
+    let activeBooster = "";
     let ritualMessage = "Match botanical elements to feed the First Bouquet.";
     let harvestFlashCells = new Set();
     let transmuteFlashCell = "";
@@ -3104,11 +3182,11 @@
 
     function scheduleIdleHint() {
       clearIdleHint();
-      if (hasMadeValidMove || isResolving || sacrificeState.active) {
+      if (hasMadeValidMove || roundComplete || isResolving || sacrificeState.active || activeBooster) {
         return;
       }
       idleHintTimer = window.setTimeout(() => {
-        if (hasMadeValidMove || isResolving || sacrificeState.active) {
+        if (hasMadeValidMove || roundComplete || isResolving || sacrificeState.active || activeBooster) {
           return;
         }
         const [a, b] = legalMoves()[0] || [];
@@ -3168,6 +3246,7 @@
           const legalClass = selected && !sacrificeState.active && isLegalSwap(selected, { x, y }) ? "legal-target" : "";
           const sacrificeClass = sacrificeState.active && sacrificeState.choice !== null ? "sacrifice-target" : "";
           const profitableClass = sacrificeState.active && wouldSacrificeHarvest(x, y) ? "sacrifice-profitable" : "";
+          const shearsClass = activeBooster === "pruningShears" ? "shears-target" : "";
           const harvestClass = harvestFlashCells.has(`${x},${y}`) ? "harvest-flash" : "";
           const superClass = superBloomCells.has(`${x},${y}`) ? "super-bloom-hot" : "";
           const invalidClass = invalidSwapCells.has(`${x},${y}`) ? "invalid-swap" : "";
@@ -3181,7 +3260,7 @@
           const fallKey = `${x},${y}`;
           const fallRows = fallAnimations.get(fallKey) || 0;
           const fallClass = fallRows ? "fall-in" : "";
-          tile.className = `tile ${selectedClass} ${legalClass} ${sacrificeClass} ${profitableClass} ${harvestClass} ${superClass} ${invalidClass} ${idleHintClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass}`;
+          tile.className = `tile ${selectedClass} ${legalClass} ${sacrificeClass} ${profitableClass} ${shearsClass} ${harvestClass} ${superClass} ${invalidClass} ${idleHintClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass}`;
           tile.disabled = isResolving || roundComplete;
           if (fallRows) {
             tile.style.setProperty("--fall-y", `${-fallRows * 112}%`);
@@ -3189,8 +3268,9 @@
           }
           const profitLabel = profitableClass ? " profitable sacrifice target" : "";
           const legalLabel = legalClass ? " legal match swap target" : "";
+          const shearsLabel = shearsClass ? " Pruning Shears target" : "";
           const thornLabel = thorn ? " with Cursed Thorn blocker" : thornClearedClass ? " where a Cursed Thorn cracked" : "";
-          tile.setAttribute("aria-label", `${flowers[value][0]} tile${profitLabel}${legalLabel}${thornLabel}`);
+          tile.setAttribute("aria-label", `${flowers[value][0]} tile${profitLabel}${legalLabel}${shearsLabel}${thornLabel}`);
           tile.innerHTML = `
             ${iconMarkup(value, "", flowers[value][0], "tile-icon-wrap")}
             ${thorn || thornClearedClass ? '<span class="cursed-thorn-overlay" aria-hidden="true"></span>' : ""}
@@ -3245,6 +3325,10 @@
       $("coins").textContent = coins;
       $("shuffleBtn").disabled = isResolving || roundComplete || moves < 1;
       $("sacrificeBtn").disabled = isResolving || roundComplete || moves < 3;
+      $("pruningShearsCount").textContent = pruningShearsCount();
+      $("pruningShearsBtn").disabled = isResolving || roundComplete || pruningShearsCount() < 1;
+      $("pruningShearsBtn").classList.toggle("armed", activeBooster === "pruningShears");
+      $("pruningShearsBtn").setAttribute("aria-pressed", activeBooster === "pruningShears" ? "true" : "false");
       $("demoCompleteBtn").disabled = isResolving || roundComplete;
       $("shapeBloomBtn").disabled = isResolving || roundComplete;
       $("sacrificeBtn").classList.toggle("armed", sacrificeState.active);
@@ -3262,6 +3346,7 @@
           <span class="element-count ${elementPulseTargets.has(index) ? "element-pulse" : ""}">x${baseElementCounts[index] + counts[index]}</span>
         </div>
       `).join("");
+      renderBoosterPanel();
       renderSacrificeOptions();
       applyImageFallbacks($("elements"));
       applyImageFallbacks($("objective"));
@@ -3299,6 +3384,10 @@
         return;
       }
       notePlayerInteraction();
+      if (activeBooster === "pruningShears") {
+        usePruningShears(x, y);
+        return;
+      }
       if (sacrificeState.active) {
         if (sacrificeState.choice === null) {
           $("sacrificeStatus").textContent = "Choose the replacement element first.";
@@ -4438,6 +4527,7 @@
       }
       notePlayerInteraction();
       cancelSacrifice(false);
+      cancelPruningShears(false);
       if (!spendMoves(1, "Shuffle")) {
         return;
       }
@@ -4462,6 +4552,7 @@
       clearIdleHint();
       selected = null;
       sacrificeState = { active: false, choice: null };
+      activeBooster = "";
       harvestFlashCells.clear();
       fallAnimations.clear();
       superBloomCells.clear();
@@ -4504,6 +4595,7 @@
         thornPulseCells.clear();
         thornClearedCells.clear();
       }
+      cancelPruningShears(false);
       notePlayerInteraction();
       if (maybeCompleteRound()) {
         ritualMessage += " <strong>Press Next Bouquet to keep playing.</strong>";
@@ -4511,6 +4603,138 @@
       render();
       scheduleOrderPulseClear();
       scheduleElementPulseClear();
+    }
+
+    function pruningShearsCount() {
+      return Math.max(0, Math.floor(Number(boosters.pruningShears) || 0));
+    }
+
+    function renderBoosterPanel() {
+      const panel = $("boosterPanel");
+      const status = $("boosterStatus");
+      const armed = activeBooster === "pruningShears";
+      panel.classList.toggle("open", armed);
+      if (armed) {
+        status.textContent = "Apothecary Level 2 Pruning Shears are armed. Choose one tile or Cursed Thorn to cut. Cancel spends nothing.";
+      }
+    }
+
+    function togglePruningShears() {
+      if (isResolving) {
+        return;
+      }
+      if (roundComplete) {
+        ritualMessage = "The bouquet is sealed. Press Next Bouquet to continue.";
+        render();
+        return;
+      }
+      if (activeBooster === "pruningShears") {
+        cancelPruningShears();
+        return;
+      }
+      if (pruningShearsCount() < 1) {
+        ritualMessage = "The Apothecary has no Pruning Shears ready.";
+        render();
+        return;
+      }
+      clearIdleHint();
+      cancelSacrifice(false);
+      selected = null;
+      activeBooster = "pruningShears";
+      ritualMessage = "<strong>Pruning Shears armed:</strong> Apothecary Level 2 grant ready. Choose one tile or Cursed Thorn to cut. Cancel spends nothing.";
+      render();
+    }
+
+    function cancelPruningShears(refocus = true) {
+      if (activeBooster !== "pruningShears") {
+        return;
+      }
+      activeBooster = "";
+      selected = null;
+      ritualMessage = "Pruning Shears lowered. No booster spent.";
+      render();
+      if (refocus) {
+        $("pruningShearsBtn").focus();
+      }
+    }
+
+    function spendPruningShears() {
+      if (pruningShearsCount() < 1) {
+        ritualMessage = "The Apothecary has no Pruning Shears ready.";
+        render();
+        return false;
+      }
+      boosters.pruningShears = pruningShearsCount() - 1;
+      return true;
+    }
+
+    function queuePruningShearBurst(x, y, cutThorn = false) {
+      boardParticles.push({
+        type: "slash-pop",
+        x,
+        y,
+        dx: 0,
+        dy: 0,
+        size: cutThorn ? 17 : 14,
+        spin: -32,
+        scale: cutThorn ? 1.5 : 1.25
+      });
+      boardParticles.push({
+        type: "slash-pop",
+        x,
+        y,
+        dx: 0,
+        dy: 0,
+        size: cutThorn ? 16 : 13,
+        spin: 34,
+        scale: cutThorn ? 1.42 : 1.18,
+        delay: 45
+      });
+      if (cutThorn) {
+        queueThornBurst(x, y, true);
+      }
+    }
+
+    function usePruningShears(x, y) {
+      if (isResolving || roundComplete) {
+        return;
+      }
+      if (!spendPruningShears()) {
+        activeBooster = "";
+        return;
+      }
+      activeBooster = "";
+      selected = null;
+      clearIdleHint();
+
+      const thorn = thornAt(x, y);
+      if (thorn) {
+        const key = thornKey(x, y);
+        cursedThorns = cursedThorns.filter((candidate) => thornKey(candidate.x, candidate.y) !== key);
+        clearedCursedThorns += 1;
+        thornPulseCells.add(key);
+        thornClearedCells.add(key);
+        queuePruningShearBurst(x, y, true);
+        ritualMessage = `<strong>Pruning Shears:</strong> clipped a Cursed Thorn. Cursed Thorn ${thornGoalProgress()}/${thornGoalNeeded()} cleared.`;
+        maybeCompleteRound();
+        render();
+        scheduleBoardParticleClear();
+        scheduleIdleHint();
+        return;
+      }
+
+      const removedName = flowers[board[y][x]][0];
+      board[y][x] = null;
+      harvestFlashCells = new Set([`${x},${y}`]);
+      queuePruningShearBurst(x, y, false);
+      collapseColumns();
+      const reshuffled = ensurePlayableBoardAfterCascade();
+      ritualMessage = `<strong>Pruning Shears:</strong> cut away ${removedName}. The board refilled${reshuffled ? " and re-seeded a legal move" : ""}.`;
+      render();
+      scheduleFallAnimationClear();
+      scheduleHarvestFlashClear();
+      scheduleBoardParticleClear();
+      scheduleIdleHint();
     }
 
     function sacrifice() {
@@ -4534,6 +4758,7 @@
         render();
         return;
       }
+      cancelPruningShears(false);
       selected = null;
       sacrificeState = { active: true, choice: null };
       ritualMessage = "Sacrifice armed. Choose an offering element, then replace one glowing tile. Costs 3 moves. Strong offerings may trigger Supreme Bloom.";
@@ -4743,6 +4968,7 @@
         return;
       }
       cancelSacrifice(false);
+      cancelPruningShears(false);
       clearIdleHint();
       const [a, b] = legalMoves()[0] || [{ x: 3, y: 3 }, { x: 4, y: 3 }];
       const originCells = dedupeCells([
@@ -4795,6 +5021,7 @@
         : demoKinds[shapeDemoIndex % demoKinds.length];
       shapeDemoIndex += 1;
       cancelSacrifice(false);
+      cancelPruningShears(false);
       clearIdleHint();
       selected = null;
       board = makeShapeDemoBoard(kind);
@@ -5019,6 +5246,7 @@
         greenhouse,
         apothecary,
         faction,
+        boosters,
         chestItems: chestState.items
       };
       try {
@@ -5060,6 +5288,7 @@
         apothecary = validProgressState(state.apothecary, apothecary);
         faction = validProgressState(state.faction, faction);
         faction.title = typeof state.faction?.title === "string" ? state.faction.title : (faction.level >= 5 ? "Favored" : "Trusted");
+        boosters = validBoosterState(state.boosters, boosters);
         if (Array.isArray(state.chestItems)) {
           chestState.items = state.chestItems
             .slice(0, chestState.capacity)
@@ -5087,6 +5316,15 @@
         level: Math.max(1, Number(candidate.level) || fallback.level),
         xp: Math.max(0, Number(candidate.xp) || fallback.xp),
         next: Math.max(1, Number(candidate.next) || fallback.next)
+      };
+    }
+
+    function validBoosterState(candidate, fallback) {
+      if (!candidate || typeof candidate !== "object") {
+        return fallback;
+      }
+      return {
+        pruningShears: Math.max(0, Math.floor(Number(candidate.pruningShears) || 0))
       };
     }
 
@@ -5132,6 +5370,7 @@
 
     function openChest() {
       cancelSacrifice(false);
+      cancelPruningShears(false);
       renderChest();
       $("chestModal").classList.add("open");
       $("chestModal").setAttribute("aria-hidden", "false");
@@ -5148,9 +5387,11 @@
 
     $("shuffleBtn").addEventListener("click", shuffleBoard);
     $("sacrificeBtn").addEventListener("click", sacrifice);
+    $("pruningShearsBtn").addEventListener("click", togglePruningShears);
     $("demoCompleteBtn").addEventListener("click", demoCompleteBouquet);
     $("shapeBloomBtn").addEventListener("click", () => demoMatchShape());
     $("sacrificeCancel").addEventListener("click", () => cancelSacrifice());
+    $("boosterCancel").addEventListener("click", () => cancelPruningShears());
     $("renewBtn").addEventListener("click", renewBouquet);
     $("chestTrigger").addEventListener("click", openChest);
     $("closeChest").addEventListener("click", closeChest);
@@ -5162,6 +5403,8 @@
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape" && $("chestModal").classList.contains("open")) {
         closeChest();
+      } else if (event.key === "Escape" && activeBooster === "pruningShears") {
+        cancelPruningShears();
       } else if (event.key === "Escape" && sacrificeState.active) {
         cancelSacrifice();
       } else if (event.key.toLowerCase() === "m" && !event.metaKey && !event.ctrlKey && !event.altKey) {
