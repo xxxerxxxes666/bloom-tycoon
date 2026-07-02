@@ -89,6 +89,74 @@ Replace or restyle Greenhouse/Apothecary/Faction progress bars as gothic glass r
 - Browser console remains clean.
 
 
+
+
+---
+
+# Xerxes gameplay directive — repeatable bouquet rounds TODAY
+
+Xerxes wants serious progress today on making Bloom Tycoon repeatable and fun after the first bouquet. After the player completes the first bouquet/order, the game must not stall.
+
+## Core requirement
+
+Implement a simple repeatable round loop:
+
+1. Player completes current bouquet/order objectives.
+2. Show a gothic win ceremony/reward moment.
+3. Award coins/resources/chest item.
+4. Show a clear `Next Bouquet` / `Continue` button.
+5. Start a new round with:
+   - fresh board arrangement;
+   - slightly harder bouquet objectives;
+   - move count reset or adjusted;
+   - round/level number increased;
+   - objective text updated.
+6. Repeat for at least 5 rounds in the HTML playable.
+
+## Simple difficulty ramp
+
+Keep this simple first:
+
+- Round 1: 2 required elements, low counts.
+- Round 2: higher counts or one additional element.
+- Round 3: introduce a harder count or fewer moves.
+- Round 4+: gradually increase required totals and/or add mixed bouquets.
+
+Do not overbuild a campaign system yet. Make the loop work and feel repeatable.
+
+## Fun/retention requirements
+
+After each bouquet completion:
+
+- show reward ceremony;
+- show what was earned;
+- increase Greenhouse/Apothecary/Faction progress slightly;
+- add at least one item/resource to Chest Storage or show a chest reward placeholder;
+- make player want to press `Next Bouquet`.
+
+## Research-informed match game basics to apply
+
+Codex should use proven match-game loop basics:
+
+- always show the current goal clearly;
+- provide immediate feedback when goals progress;
+- create a visible win/reward moment;
+- quickly offer the next level/round;
+- make the next round slightly harder, not radically different;
+- avoid dead ends after success;
+- keep animations fast enough that the player wants one more round.
+
+## Acceptance checks
+
+- Complete the first bouquet: a win/reward state appears.
+- Click `Next Bouquet`: a fresh board appears and objectives update.
+- Round number increases.
+- At least 5 rounds can be played without page reload.
+- Each round is slightly harder or different.
+- No broken images, no console errors, no stuck state.
+- Security: no secrets, no external trackers, no new backend, no broad permissions.
+
+
 ---
 
 # Priority 1 — Real pointer/tap and mobile control verification
