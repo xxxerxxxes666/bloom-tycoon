@@ -543,8 +543,8 @@
 - Deployed to Vercel production as `dpl_5DudqXfApsJYccoZGDBtf488N5Mv`.
 - Vercel deployment URL: https://bloom-tycoon-5rg6qh4md-xerxes-florals.vercel.app
 - Explicitly re-pointed `https://bloom-tycoon.vercel.app` to that deployment.
-- GitHub Pages preview status before this commit: prior Pages build was current for `02d56ce` / `c75a6eb` docs; this Pruning Shears pass still needs the post-push Pages workflow to publish and be marker-checked.
-- Known issues: none found locally or on Vercel for the Pruning Shears slice; GitHub Pages needs post-push confirmation after this commit publishes.
+- GitHub Pages preview status after gameplay push: workflow `28622699539` succeeded for `726b6b2`; `/bloom-tycoon/`, `/bloom-tycoon/playable/midnight_bloom_prototype.html?verify=pruning-shears-726b6b2`, and `/bloom-tycoon/assets/tiles/96/bone_white_thorn_star.png?verify=pruning-shears-726b6b2` returned `200`, and the playable contained `Pruning Shears`, `pruningShearsBtn`, `pruningShearsCount`, `boosterPanel`, `togglePruningShears`, `usePruningShears`, `queuePruningShearBurst`, `shears-target`, `boosters.pruningShears`, `activeBooster`, `Rune-Tended Soil`, `Black Candle Vine`, and `Cursed Thorn`.
+- Known issues: none found locally, on Vercel, or on GitHub Pages for the Pruning Shears slice. GitHub Pages deploy emitted the same non-blocking Node.js 20 deprecation warning from the Pages action runtime seen in prior passes.
 - How to trigger and verify `Pruning Shears`: on a fresh load, click `Pruning Shears (x1)`, confirm board targets glow, click `Cancel` to keep `x1`, then arm again and click a normal tile or a Round 2 Cursed Thorn.
 - How to trigger and verify L/T/cross matches without console: press `M` or click `Shape Bloom` repeatedly; the cycle still includes `Black Candle Vine`, `Witch's Cross!`, `Night Garden L-Bloom!`, `Twin Stem Bloom!`, and `Eclipse Seed Rune`.
 - How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit the review-hook particle burst, then return the board to play.
