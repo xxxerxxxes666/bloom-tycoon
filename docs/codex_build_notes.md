@@ -251,3 +251,15 @@
 - How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly to cycle Cross, L, and T demos; each should report the named shape and 5 cells burned bright.
 - How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit 84 particles, then return the board to play.
 - Security/secret-scan status: lightweight scan ran on changed files with no findings.
+
+## 2026-07-02 Hermes obvious-first-move patch
+
+- Hermes patched directly to make the game visibly playable immediately, not just testable.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Round 1 remains short, and new boards now seed obvious legal moves for current bouquet target elements.
+- This should make the first real player move more likely to progress the displayed bouquet instead of feeling random/dead.
+- `Complete Bouquet`, `N`, `M`, and `B` review hooks remain available.
+- Security: no secrets, no trackers, no backend, no new permissions.

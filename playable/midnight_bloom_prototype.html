@@ -2497,12 +2497,14 @@
       // but at least one adjacent swap must create a harvest.
       for (let attempts = 0; attempts < MAX_BOARD_BUILD_ATTEMPTS; attempts += 1) {
         buildOpeningBoard();
+        seedCurrentTargetMoves();
         if (!matches().length && hasLegalMoves()) {
           return;
         }
       }
 
       buildOpeningBoard();
+      seedCurrentTargetMoves();
       if (!seedGuaranteedLegalMove()) {
         buildDeterministicLegalBoard();
       }
@@ -2525,6 +2527,34 @@
 
     function restoreBoard(snapshot) {
       board = snapshot.map((row) => row.slice());
+    }
+
+    function seedCurrentTargetMoves() {
+      const plan = activeRoundPlan();
+      const targetIds = plan.targets.map((target) => target.flowerId);
+      if (targetIds[0] !== undefined) {
+        writeTargetLegalMovePatch(0, 0, targetIds[0]);
+      }
+      if (targetIds[1] !== undefined) {
+        writeTargetLegalMovePatch(4, 0, targetIds[1]);
+      }
+    }
+
+    function writeTargetLegalMovePatch(originX, originY, flowerId) {
+      if (originX + 2 >= BOARD_SIZE || originY + 1 >= BOARD_SIZE) {
+        return;
+      }
+      const fillerA = (flowerId + 1) % flowers.length;
+      const fillerB = (flowerId + 2) % flowers.length;
+      const fillerC = (flowerId + 3) % flowers.length;
+      // Adjacent swap at the middle column turns [target, filler, target]
+      // into [target, target, target], guaranteeing an obvious useful move.
+      board[originY][originX] = flowerId;
+      board[originY][originX + 1] = fillerA;
+      board[originY][originX + 2] = flowerId;
+      board[originY + 1][originX] = fillerB;
+      board[originY + 1][originX + 1] = flowerId;
+      board[originY + 1][originX + 2] = fillerC;
     }
 
     function seedGuaranteedLegalMove() {

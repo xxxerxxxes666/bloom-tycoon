@@ -161,6 +161,8 @@ def verify_source_hooks():
         "Complete Bouquet",
         "let moves = roundTemplates[0].moves",
         "event.key.toLowerCase() === \"n\"",
+        "function seedCurrentTargetMoves",
+        "writeTargetLegalMovePatch",
         "Next Bouquet",
         "roundCeremony",
         "factionXpFill",
