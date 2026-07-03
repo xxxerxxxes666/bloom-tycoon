@@ -1057,7 +1057,7 @@
 - The Round 4 copy points payoff back to existing Chest Storage, Flowerpedia, Chapter Progress, and existing reward values; no new progression framework was added.
 - No new account system, backend, analytics, monetization, SDK, tracker, asset, secret, or permission was added.
 - Added static verifier markers for `roundFourPreview`, `Round 4 Contract`, `Saint's Night Ledger payoff`, all `data-round-four-state` values, and the Round 4 render/helper functions.
-- Verification run so far:
+- Verification run:
   - `git fetch origin main`
   - `git pull --ff-only origin main`
   - Read `docs/hermes_audit_next_tasks.md`.
@@ -1068,9 +1068,15 @@
   - Local Playwright main flow verified fresh Round 1 path, Round 4 `tease`, Round 1 win -> reward -> Round 2, Round 2 Cursed Thorn objective, Round 2 fail -> retry, Round 2 win -> Round 3, Round 3 current copy, Round 3 completion/payoff, Bloodroot Compact in Chest Storage, Round 4 current Bone Star/Nightshade/Sol Rot objective, Round 4 completion/payoff, Saint's Night Ledger in Chest Storage, reward choices, 64 tiles, no broken images, and no console/page errors.
   - Local Playwright preservation checks verified each booster (`Pruning Shears`, `Moonwater Flask`, `Black Candle`, `Grave Soil`) arms, cancels, uses from a fresh page, and preserves 64 tiles.
   - Local Playwright preservation checks verified Shape Bloom review hook, Supreme Bloom via `B`, Chest modal, Sacrifice arm/cancel, mobile 390x860 Round 4 preview, no horizontal overflow, no broken images, and no console/page errors.
-- Browser console/runtime status: no local Playwright console errors or page errors observed during the Round 1-4 main flow, booster checks, Shape Bloom, Supreme Bloom, Chest, Sacrifice, or mobile checks.
-- Vercel deployment URL/identifier checked: pending post-push deployment check.
-- GitHub Pages preview status: pending post-push workflow check.
+  - `PATH=/Users/Xerxes/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH /Users/Xerxes/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm dlx vercel deploy --prod --yes`
+  - `PATH=/Users/Xerxes/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH /Users/Xerxes/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm dlx vercel alias set bloom-tycoon-f12cdg1il-xerxes-florals.vercel.app bloom-tycoon.vercel.app`
+  - Vercel direct checks returned `200` for `/playable/midnight_bloom_prototype.html?verify=bfe2d7b-live` and `/assets/tiles/96/withered_sun_medallion.png?verify=bfe2d7b-live`, and the playable contained all Round 4 markers.
+  - GitHub Pages workflow `28688261865` succeeded for `bfe2d7b`.
+  - GitHub Pages direct checks returned `200` for `/bloom-tycoon/playable/midnight_bloom_prototype.html?verify=bfe2d7b-live` and `/bloom-tycoon/assets/tiles/96/withered_sun_medallion.png?verify=bfe2d7b-live`, and the playable contained all Round 4 markers.
+  - Vercel and GitHub Pages Playwright smoke both verified fresh Round 4 tease, Round 3 completion/payoff, Bloodroot Compact in Chest Storage, Round 4 current Bone Star/Nightshade/Sol Rot objective, mobile 390px layout, no broken images, and no console/page errors.
+- Browser console/runtime status: no local Playwright console errors or page errors observed during the Round 1-4 main flow, booster checks, Shape Bloom, Supreme Bloom, Chest, Sacrifice, or mobile checks. No Vercel or GitHub Pages Playwright console errors/page errors observed during live Round 4 smoke checks.
+- Vercel deployment URL/identifier checked: `dpl_Ewza9wN4XrJznpMt2g1wtj46DJVg`, `https://bloom-tycoon-f12cdg1il-xerxes-florals.vercel.app`, production alias `https://bloom-tycoon.vercel.app`.
+- GitHub Pages preview status: workflow `28688261865` succeeded for `bfe2d7b`, and `https://xxxerxxxes666.github.io/bloom-tycoon/playable/midnight_bloom_prototype.html?verify=bfe2d7b-live` returned `200` with all new markers.
 - Known issues: none found locally for this Round 4 preview/payoff slice. The shell still does not have standalone `agent-browser`, so browser verification used bundled Playwright.
 - How to trigger and verify L/T/cross matches without console: after Round 1, watch for the `L/T/cross = Shape Bloom` hint in Round 2; in the review path, click `Shape Bloom` repeatedly until `Witch's Cross`, `Night Garden L-Bloom`, or `Twin Stem Bloom` appears in the ritual log. The hidden `shapeAuditData` verifier still contains all three definitions.
 - How to trigger and verify Supreme Bloom without console: focus the page and press `B`; the overlay should show `SUPREME BLOOM! +12`, emit the review-hook particle burst, then return the board to play.
