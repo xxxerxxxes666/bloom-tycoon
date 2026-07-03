@@ -960,6 +960,7 @@
 - How to trigger and verify L/T/cross matches without console: after Round 1, watch for the `L/T/cross = Shape Bloom` hint in Round 2; in the review path, click `Shape Bloom` repeatedly until `Witch's Cross!`, `Night Garden L-Bloom!`, or `Twin Stem Bloom!` appears.
 - How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit the review-hook particle burst, then return the board to play.
 - Security/secret-scan status: lightweight credential-shaped scan ran on changed files with no findings; no secrets, trackers, backend, SDKs, or new permissions were added in code.
+
 ## 2026-07-03 Codex beginner bouquet path preview
 
 - Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow beginner bouquet path / next-goal preview pass.
@@ -985,9 +986,17 @@
   - Local Playwright Round 2 verified the current node names Cursed Thorn, 3 Cursed Thorns, teaching-highlight cells, adjacent-match thorn clearing, Round 2 fail anchored to the withered current node, and retry restoring 17 moves plus 3 Cursed Thorns.
   - Local Playwright mobile at 390x860 verified three path nodes, visible path copy, no horizontal overflow, and no console/page errors.
   - Local preservation smoke verified all four boosters arm/cancel/use and preserve 64 tiles; `Shape Bloom` resolves an existing shape reward; L/T/cross audit definitions remain present; `B` triggers Supreme Bloom; Chest opens/closes; Sacrifice arms/cancels; Flowerpedia and Chapter 1 reward persist after reload and do not double-claim.
+  - Vercel production deploy completed as `dpl_94KMSnChg5qrQ23BuN2V1ohVirSN` at `https://bloom-tycoon-pt5qggile-xerxes-florals.vercel.app`.
+  - Explicitly pointed `https://bloom-tycoon.vercel.app` to that deployment.
+  - Vercel direct checks returned `200` for `/playable/midnight_bloom_prototype.html?verify=79766f0` and `/assets/tiles/96/amber_resin_seed.png?verify=79766f0`, and the playable contained the Bouquet Path and all node-state markers.
+  - GitHub Pages workflow `28686387025` succeeded for `79766f0`.
+  - GitHub Pages direct checks returned `200` for `/bloom-tycoon/playable/midnight_bloom_prototype.html?verify=79766f0` and `/bloom-tycoon/assets/tiles/96/amber_resin_seed.png?verify=79766f0`, and the playable contained the Bouquet Path and all node-state markers.
+  - Vercel and GitHub Pages Playwright smoke both verified fresh Bouquet Path, Round 1 fail -> `withered` -> retry, Round 1 win -> reward choices -> Round 2 `complete,current,locked`, 3 Round 2 Cursed Thorns, mobile 390px layout, no broken images, and no console/page errors.
+  - Vercel logs check for `bloom-tycoon-pt5qggile-xerxes-florals.vercel.app` found no runtime logs for this static deployment.
 - Browser console/runtime status: no local Playwright console errors or page errors observed during path, retry, Round 2 thorn, mobile, booster, Shape Bloom, Supreme Bloom, Chest/Sacrifice, Flowerpedia, or Chapter persistence checks.
-- Vercel deployment URL/identifier checked: pending until this commit is pushed and redeployed.
-- GitHub Pages preview status: pending until this commit is pushed and the Pages workflow completes.
+- Browser console/runtime status on Vercel and GitHub Pages: no Playwright console errors or page errors observed during fresh path, fail/retry, win-to-Round-2, or mobile checks.
+- Vercel deployment URL/identifier checked: `dpl_94KMSnChg5qrQ23BuN2V1ohVirSN`, `https://bloom-tycoon-pt5qggile-xerxes-florals.vercel.app`, production alias `https://bloom-tycoon.vercel.app`.
+- GitHub Pages preview status: workflow `28686387025` succeeded for `79766f0`, and `https://xxxerxxxes666.github.io/bloom-tycoon/playable/midnight_bloom_prototype.html?verify=79766f0` returned `200` with all new markers.
 - Known issues: none found locally for this bouquet path slice. The shell still does not have standalone `agent-browser`, so browser verification used bundled Playwright.
 - How to trigger and verify L/T/cross matches without console: after Round 1, watch for the `L/T/cross = Shape Bloom` hint in Round 2; in the review path, click `Shape Bloom` repeatedly until `Witch's Cross!`, `Night Garden L-Bloom!`, or `Twin Stem Bloom!` appears. The hidden `shapeAuditData` verifier still contains all three definitions.
 - How to trigger and verify Supreme Bloom without console: press `B`; after the short charge phase, the overlay should show `SUPREME BLOOM! +12`, emit the review-hook particle burst, then return the board to play.
