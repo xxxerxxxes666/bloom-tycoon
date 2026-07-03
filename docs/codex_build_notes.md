@@ -669,10 +669,17 @@
   - Local Playwright verified the seeded UI path preserves the existing reward hierarchy when a prepared tile extends into a 4-line by resolving as `Black Candle Vine`.
   - Local Playwright verified `Pruning Shears`, `Moonwater Flask`, and `Black Candle` still arm/cancel/use, spend exactly one count on success, preserve 64 tiles, and do not spend moves.
   - Local Playwright verified Round 1 first-move flow, Round 2 Cursed Thorn goal/rejection flow, Rune-Tended Soil payoff, Chest open/close, Sacrifice open/cancel, `Shape Bloom`, `N`, `M`, `B`, and mobile 390x844 with no horizontal overflow.
+  - Vercel production deploy completed as `dpl_CY2vJrpN4r7kTexRyASfs6ffmkGR` at `https://bloom-tycoon-55y5edmsr-xerxes-florals.vercel.app`.
+  - Explicitly pointed `https://bloom-tycoon.vercel.app` to the new deployment.
+  - Vercel direct checks returned `200` for `/`, `/playable/midnight_bloom_prototype.html?verify=grave-soil-ddd097c`, and `/assets/tiles/96/amber_resin_seed.png?verify=grave-soil-ddd097c`, and the playable contained all Grave Soil and preserved gameplay markers.
+  - Vercel Playwright smoke loaded 64 board tiles, 0 broken images, no console/page errors, and proved Grave Soil arm/cancel/use.
+  - GitHub Pages workflow `28637279782` succeeded for `ddd097c`.
+  - GitHub Pages direct checks returned `200` for `/bloom-tycoon/`, `/bloom-tycoon/playable/midnight_bloom_prototype.html?verify=grave-soil-ddd097c`, and `/bloom-tycoon/assets/tiles/96/amber_resin_seed.png?verify=grave-soil-ddd097c`, and the playable contained all Grave Soil and preserved gameplay markers.
+  - GitHub Pages Playwright mobile smoke loaded 64 board tiles, 0 broken images, no console/page errors, no horizontal overflow at 390x844, and proved Grave Soil arm/cancel.
 - Browser console/runtime status: no local Playwright console errors or page errors observed during Grave Soil, existing boosters, rune payoff, review hooks, Round 1/Round 2 flow, Chest/Sacrifice, or mobile checks.
-- Vercel deployment URL/identifier checked: pending until after this gameplay commit is pushed and deployed.
-- GitHub Pages preview status: pending until after this gameplay commit is pushed and the Pages workflow completes.
-- Known issues: none found locally for the Grave Soil slice. The shell still does not have `agent-browser`, so local browser verification used bundled Playwright.
+- Vercel deployment URL/identifier checked: `dpl_CY2vJrpN4r7kTexRyASfs6ffmkGR`, `https://bloom-tycoon-55y5edmsr-xerxes-florals.vercel.app`, production alias `https://bloom-tycoon.vercel.app`.
+- GitHub Pages preview status: workflow `28637279782` succeeded for `ddd097c`, and `https://xxxerxxxes666.github.io/bloom-tycoon/playable/midnight_bloom_prototype.html?verify=grave-soil-ddd097c` returned `200` with all new markers.
+- Known issues: none found locally, on Vercel, or on GitHub Pages for the Grave Soil slice. The shell still does not have `agent-browser`, so browser verification used bundled Playwright.
 - How to trigger and verify `Grave Soil`: on a fresh load, click `Grave Soil (x1)`, confirm normal tiles glow, click `Cancel` to keep the count, then arm again and click a normal tile. The count should become `x0`, moves should stay unchanged, and the tile should gain a small gold/green soil sigil.
 - How to trigger and verify Grave Soil Cursed Thorn rejection: use `Complete Bouquet`, click `Next Bouquet`, arm `Grave Soil`, and click a Cursed Thorn in row 2. The count should not change and the log should say Cursed Thorns are rooted blockers.
 - How to trigger and verify Grave Soil payoff: prepare a normal tile that will be part of an exact 3-line, then make that match. The log should mention `Grave Soil Relic` sweeping the row/column. If the prepared match extends to an exact 4-line, `Black Candle Vine` should win instead.
