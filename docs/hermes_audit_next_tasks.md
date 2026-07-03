@@ -1,66 +1,62 @@
 # Hermes Audit Next Tasks
 
-Last audited by Hermes: **2026-07-03 04:22 UTC**
+Last audited by Hermes: **2026-07-03 04:57 UTC**
 Audit targets:
 - Vercel playable: https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html
 - GitHub Pages playable: https://xxxerxxxes666.github.io/bloom-tycoon/playable/midnight_bloom_prototype.html
 - Repo: https://github.com/xxxerxxxes666/bloom-tycoon
-- Latest audited commit: `f33ae83` (`docs: record Grave Soil booster pass`)
-- Latest gameplay commit audited: `ddd097c` (`feat: add Grave Soil booster`)
+- Latest audited commit: `452a069` (`docs: record reward choice Pages parity`)
+- Latest gameplay commit audited: `25db114` (`feat: add post-bouquet reward choices`)
 
 ## Hermes audit verdict
 
-New Codex work landed and the `Grave Soil` booster is live on both hosts. No deploy-parity blocker remains.
+New Codex work landed and the post-bouquet `Choose Your Reward` slice is live on both hosts. No deploy-parity blocker remains.
 
-Core gameplay is still working: fresh Round 1 loads, Grave Soil arms/cancels/uses, Cursed Thorn rejection is explicit, bouquet completion grants another Grave Soil, Round 2 starts with Cursed Thorn blockers, `Shape Bloom`/`M` and `B` review paths remain available, Chest/Escape works, and mobile portrait has no horizontal overflow.
+Core gameplay is still working: fresh Round 1 loads, `Complete Bouquet` opens three reward choices, `Greenhouse Cuttings` grants `Grave Soil x1`, `Next Bouquet` starts Round 2 with Cursed Thorns, hosted images load, and the `M` shape-demo hook remains available.
 
 ## Verified by Hermes this audit
 
 - Fetched/reset local clone to `origin/main` with the repo-scoped SSH key.
 - `python3 scripts/verify_project.py` passes.
 - `git diff --check` passes.
-- Latest commit audited: `f33ae83 docs: record Grave Soil booster pass`.
-- Latest gameplay commit audited: `ddd097c feat: add Grave Soil booster`.
+- Latest commit audited: `452a069 docs: record reward choice Pages parity`.
+- Latest gameplay commit audited: `25db114 feat: add post-bouquet reward choices`.
 - Vercel root/playable/key tile return `200`.
 - GitHub Pages root/playable/key tile return `200`.
-- Static marker parity: both hosted playables contain `Grave Soil`, `graveSoilBtn`, `graveSoilCount`, `graveSoilCells`, `toggleGraveSoil`, `useGraveSoil`, `queueGraveSoilBurst`, `graveSoilRelicForMatch`, `isGraveSoilEligible`, `grave-soil-target`, `grave-soil-ready`, `boosters.graveSoil`, and preserved core markers for Black Candle, Moonwater Flask, Pruning Shears, Cursed Thorn, Shape Bloom, Complete Bouquet, Eclipse Seed Rune, and Rune-Tended Soil.
+- Static marker parity: both hosted playables contain `Choose Your Reward`, `rewardChoicePanel`, `rewardChoiceState`, `Greenhouse Cuttings`, `Apothecary Kit`, `Black Market Favor`, `choosePostBouquetReward`, `applyDefaultRewardChoice`, all three `data-reward-choice` values, and preserved core markers for Grave Soil, Black Candle, Moonwater Flask, Pruning Shears, Cursed Thorn, Shape Bloom, Eclipse Seed Rune, and Rune-Tended Soil.
 - Vercel browser checks:
-  - 64 board tiles, 95 images, 0 broken images, no console/page errors observed.
-  - `Grave Soil` armed targeting mode with 64 eligible targets; Cancel exited without spending.
-  - Grave Soil use spent `x1` to `x0`, marked one tile relic-ready, preserved 64 tiles, and did not spend moves.
-  - `Complete Bouquet` granted `Grave Soil x1`; `Next Bouquet` started Round 2 with `Cursed Thorn 0/3` and visible blockers.
-  - Grave Soil rejected a Cursed Thorn without spending and kept `Cursed Thorn 0/3`.
-  - `Shape Bloom` path and real `B` key Supreme Bloom path remained available.
-  - Chest opened and Escape closed it.
+  - 64 board tiles, 96 images after reward-choice load, 0 broken images, no console/page errors observed.
+  - `Complete Bouquet` showed exactly three reward choices.
+  - `Greenhouse Cuttings` increased `Grave Soil` from `x1` to `x2` and disabled the choices after selection.
+  - `Next Bouquet` started Round 2 with `Cursed Thorn 0/3`, 3 visible blockers, 64 enabled tiles, and the ceremony hidden.
 - GitHub Pages browser checks:
   - 64 board tiles, 95 images, 0 broken images, no console/page errors observed.
-  - `Grave Soil` armed/cancelled/used correctly and preserved 64 tiles.
-  - Hidden-iframe mobile portrait at ~390px showed no horizontal overflow, 64 tiles, 0 broken images, and visible `Grave Soil` control.
+  - `Complete Bouquet` showed exactly three reward choices.
+  - Hosted markers matched Vercel, including reward-choice and preserved booster/relic markers.
+  - Real `M` key still triggered the shape/relic demo path.
 
 ## Current next priority for Codex
 
-Proceed to the next small strategic gameplay slice: add a **post-bouquet reward choice** so wins create a reason to play one more round. Keep it local/static and narrow; no accounts, backend, analytics, ads, SDKs, secrets, or broad systems.
+Proceed to the next small loop-depth slice: add a visible **Bouquet Streak** system so repeat completions feel more rewarding. Keep it local/static and narrow; no accounts, backend, analytics, ads, SDKs, secrets, or broad systems.
 
-1. After completing a bouquet, show a small `Choose Your Reward` panel before `Next Bouquet`.
-2. Offer exactly three local choices using existing systems only:
-   - `Greenhouse Cuttings`: +Greenhouse XP and `Grave Soil x1`;
-   - `Apothecary Kit`: +Apothecary XP and either `Pruning Shears x1` or `Moonwater Flask x1`;
-   - `Black Market Favor`: +Sub Rosa Favor and `Black Candle x1`.
-3. Make the choice obvious, one-click, and non-blocking: if the player ignores it, a safe default may be selected when `Next Bouquet` is pressed.
-4. Update Chest/booster counts and ritual log immediately after the choice.
-5. Preserve the repeatable bouquet loop: choosing a reward must not break `Next Bouquet`, Round 2 Cursed Thorns, Rune-Tended Soil, or board size.
+1. Add a visible `Bouquet Streak` counter to the objective/plaque or left rail after the first bouquet completion.
+2. Increment the streak by 1 each time a bouquet is completed through normal play or review controls, including after reward-choice selection/default.
+3. Add a small capped coin bonus to bouquet completion rewards, for example `+5% coins per streak` capped at 25%, and show the exact bonus in ceremony/reward copy.
+4. Preserve reward choices: `Choose Your Reward` must still appear before `Next Bouquet`, choices must still update XP/boosters, and ignoring the panel must still safely default to `Greenhouse Cuttings`.
+5. Preserve the repeatable bouquet loop: streak bonuses must not break `Next Bouquet`, Round 2 Cursed Thorns, Rune-Tended Soil, board size, or any booster.
 6. Preserve all boosters: `Pruning Shears`, `Moonwater Flask`, `Black Candle`, and `Grave Soil` must still arm/cancel/use correctly.
 7. Preserve reward hierarchy: exact 5-line = `Eclipse Seed Rune`, 4-line = `Black Candle Vine`, L/T/cross = shape rewards, Grave Soil exact 3-line = `Grave Soil Relic`, 6+ straight line or `B`/Sacrifice only = Supreme Bloom.
 8. Keep review hooks: `Shape Bloom`, `Complete Bouquet`, `N`, `M`, and `B`.
-9. Add/update static verifier checks for reward-choice markers.
-10. Verify fresh Round 1, post-bouquet reward choice, `Next Bouquet`, Round 2 Cursed Thorn flow, all four boosters, Chest/Sacrifice, review hooks, host parity, and mobile portrait before pushing.
+9. Add/update static verifier checks for streak markers.
+10. Verify fresh Round 1, two consecutive bouquet completions, reward choice/default, `Next Bouquet`, Round 2 Cursed Thorn flow, all four boosters, Chest/Sacrifice, review hooks, host parity, and mobile portrait before pushing.
 
-### Acceptance checks for the reward-choice pass
+### Acceptance checks for the Bouquet Streak pass
 
-- Vercel and GitHub Pages direct playable HTML contain the new reward-choice markers after deployment.
-- Completing a bouquet shows three clear reward choices.
-- Choosing each reward path updates the correct XP/booster state and ritual log.
-- `Next Bouquet` still starts the next round after a choice; ignoring the choice still proceeds with a safe default.
+- Vercel and GitHub Pages direct playable HTML contain the new streak markers after deployment.
+- Completing the first bouquet shows `Bouquet Streak 1` and a clear coin bonus line.
+- Completing a second bouquet increases the streak and applies the capped bonus without duplicating rewards.
+- `Choose Your Reward` still shows exactly three choices and updates the correct XP/booster state.
+- Ignoring the reward choice and pressing `Next Bouquet` still applies the safe default.
 - All four boosters still arm/cancel/use and preserve 64 tiles.
 - Round 2 Cursed Thorn objective still appears and thorns clear via adjacent matches.
 - Rune-Tended Soil still works: earn `Eclipse Seed Rune`, plant it, then Round 2 starts with +1 move.
