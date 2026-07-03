@@ -839,6 +839,45 @@
 - How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit the review-hook particle burst, then return the board to play.
 - Security/secret-scan status: lightweight credential-shaped scan ran on changed files with no findings; no secrets, trackers, backend, SDKs, or new permissions were added in code.
 
+## 2026-07-03 Codex failed bouquet retry slice
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow fast retry / failed bouquet recovery pass.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added a failed-bouquet ceremony, `The Bouquet Withered`, when moves reach 0 before the current objectives are complete.
+- Added exact remaining-objective copy for unfinished order targets and Cursed Thorn clears.
+- Changed the current-round no-moves action to a visible `Retry Bouquet` button.
+- Reused the existing round reset path so retry resets the current round board/objectives/moves/Cursed Thorns while preserving coins, XP, boosters, Chest Storage, Flowerpedia, Chapter 1 reward claim, and saved meta progress.
+- Fixed save loading for `moves: 0` so failed bouquets persist as failed after reload instead of restoring the default move count.
+- Preserved the win loop, reward choices/default, Bouquet Streak, Flowerpedia persistence, Chapter 1 one-time reward, Round 2 thorn teaching, boosters, Shape Bloom/Supreme Bloom, Chest/Sacrifice, review hooks, and mobile layout.
+- Added static verifier markers for `The Bouquet Withered`, `Retry Bouquet`, `failedBouquetGoals`, `retryBouquetPrompt`, and the failed/retry helper functions.
+- Verification run:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - Read `docs/hermes_audit_next_tasks.md`.
+  - `python3 scripts/verify_project.py`
+  - JS parse check over executable HTML scripts with bundled Node.
+  - `git diff --check`
+  - Local static preview at `http://127.0.0.1:4185/playable/midnight_bloom_prototype.html`; standalone `agent-browser` was unavailable, so bundled Playwright was used.
+  - Local Playwright fresh Round 1 spent all 12 moves with `Shuffle`, verified `The Bouquet Withered`, `Retry Bouquet`, exact remaining `Velvet Funeral` and `Saint's Offering` goals, 64 disabled board tiles, saved `moves: 0`, and preserved coins/boosters.
+  - Local Playwright reloaded the failed Round 1 save and verified the failed ceremony and `moves: 0` persisted.
+  - Local Playwright clicked `Retry Bouquet`, verified Round 1 moves/objectives reset, the board became playable, and coins, XP, chest count, and boosters were preserved.
+  - Local Playwright completed Round 1 after retry through tile swaps, verified `Bouquet Streak 1`, `Flowerpedia` unlock, and exactly three reward choices.
+  - Local Playwright entered Round 2, verified 17 moves, 3 Cursed Thorns, and 7 teaching-highlight cells.
+  - Local Playwright spent all Round 2 moves with `Shuffle`, verified `The Bouquet Withered`, exact Cursed Thorn remaining copy, saved `moves: 0`, and preserved Flowerpedia/boosters.
+  - Local Playwright clicked `Retry Bouquet` in Round 2, verified moves/counts/thorns reset, 3 Cursed Thorns and 7 teaching cells returned, and Flowerpedia/boosters stayed intact.
+  - Local Playwright clicked the seeded Round 2 thorn-teaching swap after retry, verified 3 Cursed Thorns cleared, `Cursed Thorn Field Note` unlocked, Chapter 1 reward claimed once, Black Candle increased to 2, and reload did not double-claim.
+  - Local Playwright verified Chest opens with Chapter 1 progress, Sacrifice opens/cancels, and all four boosters still arm/cancel/use and preserve 64 tiles.
+  - Local Playwright verified `N`, `M`, `Shape Bloom`, and `B` review hooks still work.
+  - Local Playwright mobile at 390x900 verified the failed state still has 64 tiles, 0 broken images, no horizontal overflow, and visible `Retry Bouquet`.
+- Browser console/runtime status: no local Playwright console errors or page errors observed during failed/retry paths, reload persistence, Round 2 thorn retry, Chapter reward persistence, boosters, Chest/Sacrifice, review hooks, or mobile checks.
+- Known issues: none found locally for this failed bouquet retry slice. The shell still does not have standalone `agent-browser`, so browser verification used bundled Playwright.
+- How to trigger and verify L/T/cross matches without console: after Round 1, watch for the `L/T/cross = Shape Bloom` hint in Round 2; in the review path, click `Shape Bloom` repeatedly until `Witch's Cross!`, `Night Garden L-Bloom!`, or `Twin Stem Bloom!` appears.
+- How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit the review-hook particle burst, then return the board to play.
+- Security/secret-scan status: lightweight credential-shaped scan ran on changed files with no findings; no secrets, trackers, backend, SDKs, or new permissions were added in code.
+
 ## 2026-07-03 Codex Chapter 1 collection reward payoff
 
 - Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow Chapter 1 / collection reward payoff after 2/2 Flowerpedia or Bouquet Streak 2.

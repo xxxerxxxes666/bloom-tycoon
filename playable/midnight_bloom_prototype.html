@@ -447,6 +447,11 @@
       box-shadow: inset 0 0 20px #000, 0 0 14px #2f4d19;
     }
 
+    .objective.failed {
+      border-color: #6b2723;
+      box-shadow: inset 0 0 20px #000, 0 0 14px #5a0f0f;
+    }
+
     .objective.low-moves:not(.complete) {
       border-color: #6b2723;
       box-shadow: inset 0 0 20px #000, 0 0 14px #5a0f0f;
@@ -1574,6 +1579,21 @@
       pointer-events: none;
     }
 
+    .round-ceremony.failed {
+      border-color: #6d2f2a;
+      background:
+        radial-gradient(circle at 50% 0, #5b1210cc 0, #170807 48%, #050404 100%),
+        linear-gradient(180deg, #180c0b, #050404);
+      box-shadow:
+        inset 0 0 24px #000,
+        0 0 0 1px #000,
+        0 0 22px #5f181866;
+    }
+
+    .round-ceremony.failed::before {
+      border-color: #b24a4a55;
+    }
+
     .ceremony-title {
       display: block;
       color: #d7b16d;
@@ -1581,6 +1601,10 @@
       text-transform: uppercase;
       letter-spacing: 1.4px;
       text-shadow: 0 0 12px #4f1111, 0 2px 0 #000;
+    }
+
+    .round-ceremony.failed .ceremony-title {
+      color: #e0a078;
     }
 
     .ceremony-copy {
@@ -1624,6 +1648,29 @@
       font-size: 12px;
       text-transform: uppercase;
       letter-spacing: 0.6px;
+    }
+
+    .failed-goals {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .failed-goal {
+      border-color: #5c2f2a;
+      color: #dec4a0;
+      background: linear-gradient(180deg, #140907, #060403);
+    }
+
+    .failed-action {
+      display: block;
+      margin-top: 10px;
+      color: #c6ad7c;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
     }
 
     .reward-choice-panel {
@@ -3570,6 +3617,15 @@
       return !needed || thornGoalProgress(plan) >= needed;
     }
 
+    function roundObjectivesComplete(plan = activeRoundPlan()) {
+      return plan.targets.every((target) => targetProgress(target) >= target.needed)
+        && thornGoalComplete(plan);
+    }
+
+    function isBouquetFailed(plan = activeRoundPlan()) {
+      return !roundComplete && moves <= 0 && !roundObjectivesComplete(plan);
+    }
+
     function targetMarkup(flowerId, current, needed) {
       const flower = flowers[flowerId];
       const displayCount = Math.min(current, needed);
@@ -3614,6 +3670,54 @@
         ? `${names.slice(0, -1).join(", ")}, and ${names[names.length - 1]}`
         : names.join(" and ");
       return `Match ${list} to complete Round ${plan.round}: ${plan.name}.`;
+    }
+
+    function remainingObjectiveRows(plan = activeRoundPlan()) {
+      const rows = [];
+      plan.targets.forEach((target) => {
+        const progress = targetProgress(target);
+        if (progress >= target.needed) {
+          return;
+        }
+        rows.push({
+          label: target.order,
+          copy: `${target.order}: ${target.needed - progress} ${flowers[target.flowerId][0]} still needed (${progress}/${target.needed})`
+        });
+      });
+      if (plan.thornGoal) {
+        const progress = thornGoalProgress(plan);
+        const needed = thornGoalNeeded(plan);
+        if (progress < needed) {
+          rows.push({
+            label: plan.thornGoal.order,
+            copy: `${plan.thornGoal.order}: ${needed - progress} clear${needed - progress === 1 ? "" : "s"} still needed (${progress}/${needed})`
+          });
+        }
+      }
+      return rows;
+    }
+
+    function failedBouquetCopy(plan = activeRoundPlan()) {
+      const remaining = remainingObjectiveRows(plan).map((row) => row.copy).join("; ");
+      return `Remaining goals: ${remaining || "none"}. Retry resets only Round ${plan.round}'s board, moves, objectives, and Cursed Thorns; coins, XP, Flowerpedia, Chapter rewards, Chest Storage, and boosters stay saved.`;
+    }
+
+    function failedBouquetRitualMessage(plan = activeRoundPlan()) {
+      return `<strong>The Bouquet Withered.</strong> ${failedBouquetCopy(plan)} Press Retry Bouquet to try this round again.`;
+    }
+
+    function markBouquetFailed(plan = activeRoundPlan()) {
+      if (!isBouquetFailed(plan)) {
+        return false;
+      }
+      selected = null;
+      sacrificeState = { active: false, choice: null };
+      activeBooster = "";
+      moonwaterPreviewCenter = null;
+      blackCandlePreview = null;
+      clearIdleHint();
+      ritualMessage = failedBouquetRitualMessage(plan);
+      return true;
     }
 
     function roundProgress(plan = activeRoundPlan()) {
@@ -4044,11 +4148,11 @@
 
     function scheduleIdleHint() {
       clearIdleHint();
-      if (hasMadeValidMove || roundComplete || isResolving || sacrificeState.active || activeBooster) {
+      if (hasMadeValidMove || roundComplete || isBouquetFailed() || isResolving || sacrificeState.active || activeBooster) {
         return;
       }
       idleHintTimer = window.setTimeout(() => {
-        if (hasMadeValidMove || roundComplete || isResolving || sacrificeState.active || activeBooster) {
+        if (hasMadeValidMove || roundComplete || isBouquetFailed() || isResolving || sacrificeState.active || activeBooster) {
           return;
         }
         const [a, b] = legalMoves()[0] || [];
@@ -4131,7 +4235,7 @@
           const fallRows = fallAnimations.get(fallKey) || 0;
           const fallClass = fallRows ? "fall-in" : "";
           tile.className = `tile ${selectedClass} ${legalClass} ${sacrificeClass} ${profitableClass} ${shearsClass} ${moonwaterTargetClass} ${moonwaterAreaClass} ${moonwaterCenterClass} ${blackCandleLineClass} ${graveSoilTargetClass} ${graveSoilReadyClass} ${harvestClass} ${superClass} ${invalidClass} ${idleHintClass} ${thornTeachClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass}`;
-          tile.disabled = isResolving || roundComplete;
+          tile.disabled = isResolving || roundComplete || isBouquetFailed();
           if (fallRows) {
             tile.style.setProperty("--fall-y", `${-fallRows * 112}%`);
             tile.style.setProperty("--fall-delay", `${Math.min(130, y * 12)}ms`);
@@ -4192,9 +4296,10 @@
 
       const plan = activeRoundPlan();
       const progress = roundProgress(plan);
+      const failed = isBouquetFailed(plan);
       const objectiveVerb = plan.thornGoal ? "Goals" : "Collect";
       $("objective").innerHTML = `
-        <span class="objective-text">Round ${plan.round} · ${roundComplete ? "Bouquet Complete" : objectiveVerb}</span>
+        <span class="objective-text">Round ${plan.round} · ${roundComplete ? "Bouquet Complete" : failed ? "Bouquet Withered" : objectiveVerb}</span>
         ${goalMarkup(plan)}
         ${thornObjectiveHintMarkup(plan)}
         ${shapeDiscoveryHintMarkup()}
@@ -4205,6 +4310,7 @@
         <span>Moves ${moves}</span>
       `;
       $("objective").classList.toggle("complete", roundComplete);
+      $("objective").classList.toggle("failed", failed);
       $("objective").classList.toggle("low-moves", moves <= 3);
       $("firstSessionPlaque").textContent = roundPlaqueCopy(plan);
       renderActiveOrders(plan);
@@ -4214,19 +4320,19 @@
       $("shuffleBtn").disabled = isResolving || roundComplete || moves < 1;
       $("sacrificeBtn").disabled = isResolving || roundComplete || moves < 3;
       $("pruningShearsCount").textContent = pruningShearsCount();
-      $("pruningShearsBtn").disabled = isResolving || roundComplete || pruningShearsCount() < 1;
+      $("pruningShearsBtn").disabled = isResolving || roundComplete || failed || pruningShearsCount() < 1;
       $("pruningShearsBtn").classList.toggle("armed", activeBooster === "pruningShears");
       $("pruningShearsBtn").setAttribute("aria-pressed", activeBooster === "pruningShears" ? "true" : "false");
       $("moonwaterFlaskCount").textContent = moonwaterFlaskCount();
-      $("moonwaterFlaskBtn").disabled = isResolving || roundComplete || moonwaterFlaskCount() < 1;
+      $("moonwaterFlaskBtn").disabled = isResolving || roundComplete || failed || moonwaterFlaskCount() < 1;
       $("moonwaterFlaskBtn").classList.toggle("armed", activeBooster === "moonwaterFlask");
       $("moonwaterFlaskBtn").setAttribute("aria-pressed", activeBooster === "moonwaterFlask" ? "true" : "false");
       $("blackCandleCount").textContent = blackCandleCount();
-      $("blackCandleBtn").disabled = isResolving || roundComplete || blackCandleCount() < 1;
+      $("blackCandleBtn").disabled = isResolving || roundComplete || failed || blackCandleCount() < 1;
       $("blackCandleBtn").classList.toggle("armed", activeBooster === "blackCandle");
       $("blackCandleBtn").setAttribute("aria-pressed", activeBooster === "blackCandle" ? "true" : "false");
       $("graveSoilCount").textContent = graveSoilCount();
-      $("graveSoilBtn").disabled = isResolving || roundComplete || graveSoilCount() < 1;
+      $("graveSoilBtn").disabled = isResolving || roundComplete || failed || graveSoilCount() < 1;
       $("graveSoilBtn").classList.toggle("armed", activeBooster === "graveSoil");
       $("graveSoilBtn").setAttribute("aria-pressed", activeBooster === "graveSoil" ? "true" : "false");
       $("demoCompleteBtn").disabled = isResolving || roundComplete;
@@ -4234,8 +4340,8 @@
       $("sacrificeBtn").classList.toggle("armed", sacrificeState.active);
       $("sacrificeBtn").setAttribute("aria-pressed", sacrificeState.active ? "true" : "false");
       $("ritualLog").innerHTML = ritualMessage;
-      $("renewBtn").textContent = roundComplete ? "Next Bouquet" : "Renew Bouquet";
-      $("renewBtn").classList.toggle("visible", moves <= 0 || roundComplete);
+      $("renewBtn").textContent = roundComplete ? "Next Bouquet" : failed ? "Retry Bouquet" : "Renew Bouquet";
+      $("renewBtn").classList.toggle("visible", failed || roundComplete);
       updateChestSummary();
       renderTycoonPanels();
       $("elements").innerHTML = flowers.map((flower, index) => `
@@ -4622,6 +4728,11 @@
         render();
         return;
       }
+      if (isBouquetFailed()) {
+        markBouquetFailed();
+        render();
+        return;
+      }
       notePlayerInteraction();
       if (activeBooster === "pruningShears") {
         usePruningShears(x, y);
@@ -4650,7 +4761,7 @@
 
       if (moves <= 0) {
         selected = null;
-        ritualMessage = "No moves remain. The bouquet withers unless the run is renewed.";
+        ritualMessage = failedBouquetRitualMessage();
         render();
         return;
       }
@@ -4697,7 +4808,9 @@
         if (maybeCompleteRound(harvestMessage)) {
           return;
         }
-        ritualMessage = harvestMessage + nextTargetMoveHint();
+        ritualMessage = isBouquetFailed()
+          ? `${harvestMessage} ${failedBouquetRitualMessage()}`
+          : harvestMessage + nextTargetMoveHint();
       } finally {
         isResolving = false;
         render();
@@ -5700,9 +5813,26 @@
 
     function renderRoundCeremony(plan = activeRoundPlan()) {
       const ceremony = $("roundCeremony");
-      if (!roundComplete) {
+      const failed = isBouquetFailed(plan);
+      ceremony.classList.toggle("failed", failed);
+      if (!roundComplete && !failed) {
         ceremony.hidden = true;
         ceremony.innerHTML = "";
+        return;
+      }
+      if (failed) {
+        const remainingGoals = remainingObjectiveRows(plan).map((row) => `
+          <span class="reward-token failed-goal">${row.copy}</span>
+        `).join("");
+        ceremony.hidden = false;
+        ceremony.innerHTML = `
+          <span class="ceremony-title">The Bouquet Withered</span>
+          <span class="ceremony-copy">${failedBouquetCopy(plan)}</span>
+          <span class="failed-goals" id="failedBouquetGoals">
+            ${remainingGoals}
+          </span>
+          <span class="failed-action" id="retryBouquetPrompt">Retry Bouquet preserves coins, XP, Flowerpedia, Chapter rewards, Chest Storage, and boosters.</span>
+        `;
         return;
       }
       const reward = plan.reward;
@@ -5988,6 +6118,9 @@
       boardParticles = [];
       ritualMessage = "The greenhouse table shuffles. One move is spent.";
       build();
+      if (isBouquetFailed()) {
+        ritualMessage = failedBouquetRitualMessage();
+      }
       render();
       scheduleIdleHint();
     }
@@ -5996,6 +6129,7 @@
       if (isResolving) {
         return;
       }
+      const retryingFailedBouquet = isBouquetFailed();
       const nextRound = roundComplete ? currentRound + 1 : currentRound;
       const plan = buildRoundPlan(nextRound);
       const defaultChoiceMessage = roundComplete ? applyDefaultRewardChoice() : "";
@@ -6016,8 +6150,12 @@
       clearThornTeachingCue(false);
       graveSoilCells.clear();
       currentRound = nextRound;
-      const runeBoonApplied = pendingRuneTendedSoil;
-      pendingRuneTendedSoil = false;
+      const runeBoonApplied = retryingFailedBouquet
+        ? activeRuneTendedSoil
+        : pendingRuneTendedSoil;
+      if (!retryingFailedBouquet) {
+        pendingRuneTendedSoil = false;
+      }
       activeRuneTendedSoil = runeBoonApplied;
       moves = plan.moves + (runeBoonApplied ? 1 : 0);
       counts = [0, 0, 0, 0, 0, 0];
@@ -6026,7 +6164,10 @@
       const boonCopy = runeBoonApplied
         ? " <strong>Rune-Tended Soil</strong> wakes from the planted Eclipse Seed Rune: +1 starting move this bouquet."
         : "";
-      ritualMessage = `<strong>Round ${plan.round}: ${plan.name}</strong> begins. ${goalCopy(plan)}${thornObjectiveHintCopy(plan)}${thornTeachingCopy(plan)}${patternDiscoveryCopy()}${boonCopy}${defaultChoiceMessage}`;
+      const introCopy = retryingFailedBouquet
+        ? `<strong>Retry Bouquet:</strong> Round ${plan.round}: ${plan.name} is restored. `
+        : `<strong>Round ${plan.round}: ${plan.name}</strong> begins. `;
+      ritualMessage = `${introCopy}${goalCopy(plan)}${thornObjectiveHintCopy(plan)}${thornTeachingCopy(plan)}${patternDiscoveryCopy()}${boonCopy}${defaultChoiceMessage}`;
       resetCursedThorns(plan);
       build();
       startThornTeachingCue(plan);
@@ -6982,6 +7123,11 @@
           pulseOrderCounts(result.gained);
           maybeCompleteRound(ritualMessage);
         }
+        if (!roundComplete && isBouquetFailed()) {
+          ritualMessage = result.matched
+            ? `${ritualMessage} ${failedBouquetRitualMessage()}`
+            : failedBouquetRitualMessage();
+        }
       } finally {
         isResolving = false;
         render();
@@ -7370,7 +7516,7 @@
             .filter(Boolean);
         }
         clearedCursedThorns = Math.max(0, Number(state.clearedCursedThorns) || 0);
-        moves = Math.max(0, Number(state.moves) || moves);
+        moves = Math.max(0, Number.isFinite(Number(state.moves)) ? Number(state.moves) : moves);
         coins = Math.max(0, Number(state.coins) || coins);
         currentRound = Math.max(1, Number(state.currentRound) || 1);
         roundComplete = Boolean(state.roundComplete || state.firstBouquetComplete);
@@ -7407,6 +7553,9 @@
         }
         if (shouldSaveMigratedProgress) {
           saveProgress();
+        }
+        if (!migratedChapterReward) {
+          markBouquetFailed();
         }
       } catch (error) {
         ritualMessage = "Saved ledger was unreadable. Starting from the current altar state.";
