@@ -1934,6 +1934,74 @@
       margin-top: 2px;
     }
 
+    .chapter-progress {
+      width: min(620px, 100%);
+      margin: 10px auto 0;
+      padding: 10px 12px;
+      border: 1px solid #2f261d;
+      background:
+        radial-gradient(circle at 82% 14%, #692d8644 0, #0000 38%),
+        linear-gradient(90deg, #060504, #0f0d0b, #060504);
+      box-shadow: inset 0 0 14px #000;
+      color: #9f8b6e;
+      text-align: left;
+    }
+
+    .chapter-progress.ready,
+    .chapter-progress.claimed {
+      border-color: #7b5634;
+      color: #d8c7aa;
+    }
+
+    .chapter-progress.chapter-flash {
+      animation: chapter-flash 1.2s ease-out both;
+    }
+
+    .chapter-topline,
+    .chapter-modal-topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    .chapter-kicker {
+      color: var(--gold);
+      font-size: 11px;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+    }
+
+    .chapter-state {
+      flex: 0 0 auto;
+      color: #b24a4a;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.75px;
+    }
+
+    .chapter-name {
+      display: block;
+      color: #d0b27a;
+      font-size: 15px;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+    }
+
+    .chapter-copy,
+    .chapter-next {
+      display: block;
+      color: #a89070;
+      font-size: 12px;
+      line-height: 1.28;
+    }
+
+    .chapter-next {
+      color: #c6ad7c;
+      margin-top: 2px;
+    }
+
     .chest-access {
       appearance: none;
       width: 100%;
@@ -2454,6 +2522,16 @@
       color: #675849;
     }
 
+    .chapter-modal {
+      margin-top: 10px;
+      padding: 10px;
+      border: 1px solid #3d3026;
+      background:
+        radial-gradient(circle at 84% 12%, #5f1c1a33 0, #0000 44%),
+        linear-gradient(180deg, #0d0b0a, #050505);
+      box-shadow: inset 0 0 13px #000;
+    }
+
     @keyframes supreme-fade {
       0% {
         opacity: 0;
@@ -2787,6 +2865,22 @@
       }
     }
 
+    @keyframes chapter-flash {
+      0% {
+        box-shadow: inset 0 0 14px #000, 0 0 0 #0000;
+      }
+      40% {
+        box-shadow:
+          inset 0 0 14px #000,
+          0 0 18px #692d8688,
+          0 0 26px #d7b16d55;
+        border-color: #d7b16d;
+      }
+      100% {
+        box-shadow: inset 0 0 14px #000;
+      }
+    }
+
     @keyframes supreme-charge {
       0% {
         filter: brightness(1);
@@ -2963,6 +3057,16 @@
         margin: 0 auto;
       }
 
+      .chapter-progress,
+      .chapter-modal {
+        text-align: center;
+      }
+
+      .chapter-topline,
+      .chapter-modal-topline {
+        flex-direction: column;
+      }
+
       .sacrifice-options {
         grid-template-columns: repeat(3, minmax(0, 1fr));
       }
@@ -3120,6 +3224,7 @@
         <div class="elements" id="elements"></div>
         <div class="coins">✪ <span id="coins">2450</span> <span class="small">+18% bonus</span></div>
         <div class="flowerpedia-ledger locked" id="flowerpediaLedger" aria-live="polite"></div>
+        <div class="chapter-progress locked" id="chapterProgress" aria-live="polite"></div>
       </div>
 
       <button class="chest-access" id="chestTrigger" type="button" aria-haspopup="dialog" aria-controls="chestModal" aria-expanded="false">
@@ -3252,6 +3357,16 @@
         nextGoal: "Next: hunt an L, T, or cross match to wake a Shape Bloom relic."
       }
     ];
+    const CHAPTER_ONE_REWARD_ID = "midnight-conservatory";
+    const chapterOneReward = {
+      id: CHAPTER_ONE_REWARD_ID,
+      name: "Chapter 1: Midnight Conservatory",
+      lockedNextRoom: "Locked next room: Glasshouse Atrium",
+      reward: "Black Candle x1",
+      requirement: "Complete Flowerpedia 2/2 or reach Bouquet Streak 2",
+      copy: "The collection seal warms. The next room is visible, but the door stays locked for the next chapter.",
+      nextGoal: "Next: keep the streak alive and wake another Shape Bloom relic."
+    };
     const postBouquetRewardChoices = [
       {
         id: "greenhouse",
@@ -3301,6 +3416,9 @@
     let flowerpediaUnlocked = [];
     let flowerpediaFlashEntry = "";
     let flowerpediaFlashTimer = null;
+    let chapterRewardsClaimed = [];
+    let chapterRewardFlash = "";
+    let chapterRewardFlashTimer = null;
     let activeBooster = "";
     let moonwaterPreviewCenter = null;
     let blackCandleAxis = "row";
@@ -4129,6 +4247,7 @@
         </div>
       `).join("");
       renderFlowerpediaLedger();
+      renderChapterOneProgress();
       renderBoosterPanel();
       renderSacrificeOptions();
       applyImageFallbacks($("elements"));
@@ -4352,6 +4471,7 @@
             `;
           }).join("")}
         </div>
+        ${chapterOneModalMarkup()}
       `;
       applyImageFallbacks(modal);
     }
@@ -4361,6 +4481,118 @@
         return "";
       }
       return ` ${result.flowerpediaUnlocks.join(" ")}`;
+    }
+
+    function isChapterRewardClaimed(rewardId = CHAPTER_ONE_REWARD_ID) {
+      return chapterRewardsClaimed.includes(rewardId);
+    }
+
+    function validChapterRewardsClaimed(candidate) {
+      if (!Array.isArray(candidate)) {
+        return [];
+      }
+      const claimed = [];
+      candidate.forEach((entry) => {
+        const rewardId = typeof entry === "object" && entry ? entry.id : entry;
+        if (String(rewardId || "") === CHAPTER_ONE_REWARD_ID && !claimed.includes(CHAPTER_ONE_REWARD_ID)) {
+          claimed.push(CHAPTER_ONE_REWARD_ID);
+        }
+      });
+      return claimed;
+    }
+
+    function chapterOneProgress() {
+      const entryCount = flowerpediaUnlockedCount();
+      const entryNeeded = flowerpediaEntries.length;
+      const entryComplete = entryCount >= entryNeeded;
+      const streakComplete = bouquetStreak >= 2;
+      const ready = entryComplete || streakComplete;
+      const claimed = isChapterRewardClaimed(CHAPTER_ONE_REWARD_ID);
+      return {
+        entryCount,
+        entryNeeded,
+        entryComplete,
+        streakComplete,
+        ready,
+        claimed,
+        reason: entryComplete ? "Flowerpedia 2/2 complete" : streakComplete ? "Bouquet Streak 2 reached" : "Collection in progress"
+      };
+    }
+
+    function maybeClaimChapterOneReward() {
+      const progress = chapterOneProgress();
+      if (!progress.ready || progress.claimed) {
+        return "";
+      }
+      chapterRewardsClaimed = validChapterRewardsClaimed([...chapterRewardsClaimed, CHAPTER_ONE_REWARD_ID]);
+      boosters.blackCandle = blackCandleCount() + 1;
+      chapterRewardFlash = CHAPTER_ONE_REWARD_ID;
+      if (chapterRewardFlashTimer && window.clearTimeout) {
+        window.clearTimeout(chapterRewardFlashTimer);
+        chapterRewardFlashTimer = null;
+      }
+      return `<strong>Chapter 1 reward claimed:</strong> ${progress.reason}. ${chapterOneReward.name} grants ${chapterOneReward.reward}; ${chapterOneReward.lockedNextRoom}. ${chapterOneReward.nextGoal}`;
+    }
+
+    function scheduleChapterRewardFlashClear() {
+      if (!chapterRewardFlash || chapterRewardFlashTimer || !window.setTimeout) {
+        return;
+      }
+      chapterRewardFlashTimer = window.setTimeout(() => {
+        chapterRewardFlash = "";
+        chapterRewardFlashTimer = null;
+        renderChapterOneProgress();
+        renderFlowerpediaEntries();
+      }, 1250);
+    }
+
+    function chapterOneStatusMarkup(progress = chapterOneProgress()) {
+      const state = progress.claimed
+        ? "Reward claimed"
+        : progress.ready
+          ? "Reward ready"
+          : `${progress.entryCount}/${progress.entryNeeded} pages`;
+      const copy = progress.ready
+        ? `${progress.reason}. Reward: ${progress.claimed ? `${chapterOneReward.reward} claimed` : chapterOneReward.reward}.`
+        : `Progress: Flowerpedia ${progress.entryCount}/${progress.entryNeeded} or Bouquet Streak ${bouquetStreak}/2.`;
+      return `
+        <div class="chapter-topline">
+          <span class="chapter-kicker">Chapter Progress</span>
+          <span class="chapter-state">${state}</span>
+        </div>
+        <span class="chapter-name">${chapterOneReward.name}</span>
+        <span class="chapter-copy">${copy} ${chapterOneReward.copy}</span>
+        <span class="chapter-next">${chapterOneReward.lockedNextRoom}. ${chapterOneReward.nextGoal}</span>
+      `;
+    }
+
+    function renderChapterOneProgress() {
+      const progressEl = $("chapterProgress");
+      if (!progressEl) {
+        return;
+      }
+      const progress = chapterOneProgress();
+      const flashClass = chapterRewardFlash === CHAPTER_ONE_REWARD_ID ? " chapter-flash" : "";
+      const stateClass = progress.claimed ? "claimed" : progress.ready ? "ready" : "locked";
+      progressEl.className = `chapter-progress ${stateClass}${flashClass}`;
+      progressEl.innerHTML = chapterOneStatusMarkup(progress);
+      scheduleChapterRewardFlashClear();
+    }
+
+    function chapterOneModalMarkup() {
+      const progress = chapterOneProgress();
+      return `
+        <div class="chapter-modal" id="chapterOneProgress" aria-label="Chapter 1 progress">
+          ${chapterOneStatusMarkup(progress).replace("chapter-topline", "chapter-modal-topline")}
+        </div>
+      `;
+    }
+
+    function chapterRewardMessage(result) {
+      if (!result.chapterRewards || !result.chapterRewards.length) {
+        return "";
+      }
+      return ` ${result.chapterRewards.join(" ")}`;
     }
 
     function roundPlaqueCopy(plan = activeRoundPlan()) {
@@ -4680,6 +4912,7 @@
         thornsCleared: 0,
         thornCells: [],
         flowerpediaUnlocks: [],
+        chapterRewards: [],
         reshuffled: false
       };
     }
@@ -4930,6 +5163,10 @@
       const flowerpediaMessage = unlockFlowerpediaEntry(FLOWERPEDIA_THORN_NOTE_ID);
       if (flowerpediaMessage) {
         result.flowerpediaUnlocks.push(flowerpediaMessage);
+      }
+      const chapterRewardMessageText = maybeClaimChapterOneReward();
+      if (chapterRewardMessageText) {
+        result.chapterRewards.push(chapterRewardMessageText);
       }
       cleared.forEach((thorn) => {
         const key = thornKey(thorn.x, thorn.y);
@@ -5352,12 +5589,13 @@
       const seedRuneText = rareSeedRuneMessage(result);
       const thornText = thornDamageMessage(result);
       const flowerpediaText = flowerpediaUnlockMessage(result);
+      const chapterText = chapterRewardMessage(result);
       const bonusText = [shapeText, lineRelicText, seedRuneText].filter(Boolean).join(" ");
       const shapePrefix = bonusText ? `<strong>${bonusText}</strong> ` : "";
       if (orderText) {
-        return `${shapePrefix}<strong>${orderText}</strong>${thornText}${flowerpediaText} +${result.coinsEarned} coins${cascadeText}.${gainMarkup(result.gained)}${reshuffleText}`;
+        return `${shapePrefix}<strong>${orderText}</strong>${thornText}${flowerpediaText}${chapterText} +${result.coinsEarned} coins${cascadeText}.${gainMarkup(result.gained)}${reshuffleText}`;
       }
-      return `${shapePrefix}<strong>${result.cleared}</strong> tiles harvested${cascadeText}.${thornText}${flowerpediaText} +${result.coinsEarned} coins.${gainMarkup(result.gained)}${reshuffleText}`;
+      return `${shapePrefix}<strong>${result.cleared}</strong> tiles harvested${cascadeText}.${thornText}${flowerpediaText}${chapterText} +${result.coinsEarned} coins.${gainMarkup(result.gained)}${reshuffleText}`;
     }
 
     function shapeBonusMessage(result) {
@@ -5483,14 +5721,22 @@
       const flowerpediaToken = flowerpediaEntry
         ? `<span class="reward-token collection-token" id="flowerpediaCeremonyToken">Flowerpedia ${flowerpediaUnlockedCount()}/${flowerpediaEntries.length}: ${flowerpediaEntry.name}</span>`
         : "";
+      const chapterProgress = chapterOneProgress();
+      const chapterCopy = chapterProgress.ready
+        ? ` ${chapterOneReward.name}: ${chapterProgress.claimed ? `${chapterOneReward.reward} claimed` : "reward ready"}. ${chapterOneReward.lockedNextRoom}.`
+        : "";
+      const chapterToken = chapterProgress.ready
+        ? `<span class="reward-token collection-token" id="chapterOneCeremonyToken">Chapter 1: ${chapterProgress.claimed ? "Reward claimed" : "Reward ready"}</span>`
+        : "";
       ceremony.hidden = false;
       ceremony.innerHTML = `
         <span class="ceremony-title">${plan.name} fulfilled</span>
-        <span class="ceremony-copy">The client pays. The greenhouse deepens. A sealed reward enters Chest Storage.${streakCopy}${nextTargetCopy}${flowerpediaCopy}</span>
+        <span class="ceremony-copy">The client pays. The greenhouse deepens. A sealed reward enters Chest Storage.${streakCopy}${nextTargetCopy}${flowerpediaCopy}${chapterCopy}</span>
         <span class="ceremony-rewards">
           <span class="reward-token">✪ +${streakPayout.total}</span>
           ${streakRewardToken}
           ${flowerpediaToken}
+          ${chapterToken}
           <span class="reward-token">Greenhouse +${reward.greenhouse} XP</span>
           <span class="reward-token">Apothecary +${reward.apothecary} XP</span>
           <span class="reward-token">Sub Rosa +${reward.faction} Favor</span>
@@ -5573,7 +5819,9 @@
       rewardChoiceState = { pending: true, selected: "" };
       const flowerpediaMessage = plan.round === 1 ? unlockFlowerpediaEntry(FLOWERPEDIA_FIRST_BOUQUET_ID) : "";
       const flowerpediaCopy = flowerpediaMessage ? ` ${flowerpediaMessage}` : "";
-      const completionMessage = `<strong>${plan.name} fulfilled.</strong> <strong>Bouquet Streak ${bouquetStreak}:</strong> +${streakPayout.total} coins (${plan.reward.coins} base + ${streakPayout.bonus} streak bonus at ${streakPayout.percent}%), +${plan.reward.greenhouse} Greenhouse XP, +${plan.reward.apothecary} Apothecary XP, +${plan.reward.faction} Sub Rosa Favor, and ${plan.reward.item} placed in Chest Storage.${nextBouquetStreakTargetCopy()}${flowerpediaCopy} Choose a reward before Next Bouquet, or Greenhouse Cuttings will be taken by default.`;
+      const chapterRewardMessageText = maybeClaimChapterOneReward();
+      const chapterRewardCopy = chapterRewardMessageText ? ` ${chapterRewardMessageText}` : "";
+      const completionMessage = `<strong>${plan.name} fulfilled.</strong> <strong>Bouquet Streak ${bouquetStreak}:</strong> +${streakPayout.total} coins (${plan.reward.coins} base + ${streakPayout.bonus} streak bonus at ${streakPayout.percent}%), +${plan.reward.greenhouse} Greenhouse XP, +${plan.reward.apothecary} Apothecary XP, +${plan.reward.faction} Sub Rosa Favor, and ${plan.reward.item} placed in Chest Storage.${nextBouquetStreakTargetCopy()}${flowerpediaCopy}${chapterRewardCopy} Choose a reward before Next Bouquet, or Greenhouse Cuttings will be taken by default.`;
       ritualMessage = carryMessage ? `${carryMessage} ${completionMessage}` : completionMessage;
       return true;
     }
@@ -7088,6 +7336,7 @@
         rewardChoiceState,
         bouquetStreak,
         flowerpediaUnlocked,
+        chapterRewardsClaimed,
         graveSoilCells: [...graveSoilCells],
         chestItems: chestState.items
       };
@@ -7108,6 +7357,7 @@
           return;
         }
         const state = JSON.parse(raw);
+        let shouldSaveMigratedProgress = false;
         if (isValidBoard(state.board)) {
           board = state.board;
         }
@@ -7134,11 +7384,17 @@
         rewardChoiceState = validRewardChoiceState(state.rewardChoiceState);
         bouquetStreak = validBouquetStreak(state.bouquetStreak);
         flowerpediaUnlocked = validFlowerpediaUnlocks(state.flowerpediaUnlocked);
+        chapterRewardsClaimed = validChapterRewardsClaimed(state.chapterRewardsClaimed);
         flowerpediaUnlocked = validFlowerpediaUnlocks([
           ...flowerpediaUnlocked,
           ...(bouquetStreak > 0 || currentRound > 1 || roundComplete ? [FLOWERPEDIA_FIRST_BOUQUET_ID] : []),
           ...(clearedCursedThorns > 0 ? [FLOWERPEDIA_THORN_NOTE_ID] : [])
         ]);
+        const migratedChapterReward = maybeClaimChapterOneReward();
+        if (migratedChapterReward) {
+          ritualMessage = migratedChapterReward;
+          shouldSaveMigratedProgress = true;
+        }
         if (!roundComplete) {
           rewardChoiceState = { pending: false, selected: "" };
         }
@@ -7148,6 +7404,9 @@
             .slice(0, chestState.capacity)
             .map((item, index) => normalizeChestItem(item, index))
             .filter(Boolean);
+        }
+        if (shouldSaveMigratedProgress) {
+          saveProgress();
         }
       } catch (error) {
         ritualMessage = "Saved ledger was unreadable. Starting from the current altar state.";

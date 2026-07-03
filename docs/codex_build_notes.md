@@ -839,6 +839,40 @@
 - How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit the review-hook particle burst, then return the board to play.
 - Security/secret-scan status: lightweight credential-shaped scan ran on changed files with no findings; no secrets, trackers, backend, SDKs, or new permissions were added in code.
 
+## 2026-07-03 Codex Chapter 1 collection reward payoff
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow Chapter 1 / collection reward payoff after 2/2 Flowerpedia or Bouquet Streak 2.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added a visible `Chapter Progress` surface under the Flowerpedia ledger and inside Chest Storage.
+- Added `Chapter 1: Midnight Conservatory` with a locked next-room hint for `Glasshouse Atrium`.
+- Added one local-only reward: `Black Candle x1` when the player completes Flowerpedia 2/2 or reaches Bouquet Streak 2.
+- Persisted claimed Chapter rewards in `localStorage` as `chapterRewardsClaimed`, with migration support for existing local saves that already satisfy the reward condition.
+- Preserved the normal-play path: Round 1 unlocks `Velvet Funeral`, Round 2 thorn clearing unlocks `Cursed Thorn Field Note`, and the Chapter reward claims without pressing demo controls.
+- Added static verifier markers for the Chapter 1 reward, `chapterProgress`, `chapterOneProgress`, `chapterRewardsClaimed`, and helper functions.
+- Verification run:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - Read `docs/hermes_audit_next_tasks.md`.
+  - `python3 scripts/verify_project.py`
+  - JS parse check over executable HTML scripts with bundled Node.
+  - `git diff --check`
+  - Local static preview at `http://127.0.0.1:4184/playable/midnight_bloom_prototype.html`; standalone `agent-browser` was unavailable, so bundled Playwright was used.
+  - Local Playwright fresh load verified 64 tiles, `Chapter 1: Midnight Conservatory`, `Flowerpedia 0/2`, `Black Candle x1`, the locked `Glasshouse Atrium` tease, and 0 broken images.
+  - Local Playwright completed Round 1 through tile swaps, verified `Flowerpedia 1/2`, exactly three reward choices, and no Chapter reward at 1/2.
+  - Local Playwright reloaded at 1/2 and verified no accidental Black Candle claim.
+  - Local Playwright clicked `Next Bouquet`, cleared the Round 2 Cursed Thorns through the seeded playable swap, verified `Cursed Thorn Field Note`, `Flowerpedia 2/2`, `Chapter 1 reward claimed`, `Black Candle x1 claimed`, 64 tiles, and persisted `chapterRewardsClaimed`.
+  - Local Playwright reloaded after the claim and verified Black Candle stayed at 2 with no duplicate reward.
+  - Local Playwright opened Chest Storage and verified the Chapter 1 progress module shows the claimed reward and `Glasshouse Atrium`.
+  - Local Playwright simulated an old 2/2 Flowerpedia save with no Chapter claim, verified it grants exactly one Black Candle on migration, saves the claim, and does not duplicate on the next reload.
+  - Local Playwright simulated a Bouquet Streak 2 save with only `Flowerpedia 1/2`, verified it grants exactly one Black Candle through the alternate trigger, saves the claim, names `Bouquet Streak 2 reached`, and does not duplicate on reload.
+  - Local Playwright verified `Pruning Shears`, `Moonwater Flask`, `Black Candle`, and `Grave Soil` still arm, cancel, use once, and preserve 64 tiles.
+  - Local Playwright mobile at 390x900 verified 64 tiles, 0 broken images, and no horizontal overflow.
+- Browser console/runtime status: no local Playwright console errors or page errors observed during the Chapter reward path, reload/no-duplicate checks, Chest check, booster checks, or mobile check.
+- Known issues: none found locally for this Chapter 1 payoff slice. The shell still does not have standalone `agent-browser`, so browser verification used bundled Playwright.
+
 ## 2026-07-03 Codex Flowerpedia unlock slice
 
 - Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow local/static Flowerpedia or collection payoff after normal bouquet progress.
