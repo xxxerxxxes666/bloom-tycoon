@@ -873,10 +873,17 @@
   - Local Playwright mobile at 390x900 verified 64 tiles, locked Flowerpedia ledger, 0 broken images, and no horizontal overflow.
   - Local Playwright regression sweep verified `Pruning Shears`, `Moonwater Flask`, `Black Candle`, and `Grave Soil` each arm, cancel, use once, and preserve 64 tiles on fresh boards.
   - Local Playwright verified Sacrifice opens/cancels, `M` and `Shape Bloom` still resolve Shape Bloom review paths, `B` still triggers Supreme Bloom, `N` still completes a bouquet, exactly three reward choices appear, and selecting `Apothecary Kit` claims correctly while preserving 64 tiles.
+  - Vercel production deploy completed as `dpl_2zEFMbehq65gxGfPhjbfc6SnwwwY` at `https://bloom-tycoon-lyrfct45v-xerxes-florals.vercel.app`.
+  - Explicitly pointed `https://bloom-tycoon.vercel.app` to that deployment.
+  - Vercel direct checks returned `200` for `/playable/midnight_bloom_prototype.html?verify=2ab5415` and `/assets/tiles/96/amber_resin_seed.png?verify=2ab5415`, and the playable contained the Flowerpedia markers.
+  - GitHub Pages workflow `28673684966` initially failed transiently in `actions/deploy-pages`, then succeeded on rerun for `2ab5415`.
+  - GitHub Pages direct checks returned `200` for `/bloom-tycoon/playable/midnight_bloom_prototype.html?verify=2ab5415` and `/bloom-tycoon/assets/tiles/96/amber_resin_seed.png?verify=2ab5415`, and the playable contained the Flowerpedia markers.
+  - Vercel and GitHub Pages Playwright smoke both loaded 64 tiles, 0 broken images, no horizontal overflow, completed Round 1 through tile swaps, verified `Velvet Funeral` persisted after reload, cleared Round 2 Cursed Thorns, verified `Cursed Thorn Field Note` persisted, opened Chest Flowerpedia entries, and passed mobile 390x900 checks with no console/page errors.
 - Browser console/runtime status: no local Playwright console errors or page errors observed during Flowerpedia unlocks, reload persistence, Chest, Round 2 thorn flow, boosters, Sacrifice, reward choice, Shape Bloom, Supreme Bloom, or mobile checks.
-- Vercel deployment URL/identifier checked: pending push/deploy for this Flowerpedia slice.
-- GitHub Pages preview status: pending push/workflow for this Flowerpedia slice.
-- Known issues: none found locally for the Flowerpedia slice. The shell still does not have standalone `agent-browser`, so browser verification used bundled Playwright.
+- Browser console/runtime status on Vercel and GitHub Pages: no Playwright console errors or page errors observed during Flowerpedia unlocks, reload persistence, Chest, Round 2 thorn flow, or mobile checks.
+- Vercel deployment URL/identifier checked: `dpl_2zEFMbehq65gxGfPhjbfc6SnwwwY`, `https://bloom-tycoon-lyrfct45v-xerxes-florals.vercel.app`, production alias `https://bloom-tycoon.vercel.app`.
+- GitHub Pages preview status: workflow `28673684966` succeeded on rerun for `2ab5415`, and `https://xxxerxxxes666.github.io/bloom-tycoon/playable/midnight_bloom_prototype.html?verify=2ab5415` returned `200` with all new markers.
+- Known issues: none found locally, on Vercel, or on GitHub Pages for the Flowerpedia slice. GitHub Pages had one transient deploy failure before the rerun succeeded. The shell still does not have standalone `agent-browser`, so browser verification used bundled Playwright.
 - How to trigger and verify L/T/cross matches without console: after Round 1, watch for the `L/T/cross = Shape Bloom` hint in Round 2; in the review path, click `Shape Bloom` repeatedly until `Witch's Cross!`, `Night Garden L-Bloom!`, or `Twin Stem Bloom!` appears.
 - How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit the review-hook particle burst, then return the board to play.
 - Security/secret-scan status: lightweight credential-shaped scan ran on changed files with no findings; no secrets, trackers, backend, SDKs, or new permissions were added in code.
