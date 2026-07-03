@@ -636,7 +636,8 @@
       color: #c6ad7c;
     }
 
-    .round-three-focus {
+    .round-three-focus,
+    .round-four-preview {
       max-width: 760px;
       margin: 8px auto 0;
       padding: 9px 12px;
@@ -644,6 +645,11 @@
       background: linear-gradient(180deg, #120908, #050404);
       box-shadow: inset 0 0 12px #000;
       color: #a89070;
+    }
+
+    .round-four-preview {
+      border-color: #3f3226;
+      background: linear-gradient(180deg, #100c09, #050404);
     }
 
     .round-three-focus[data-round-three-state="current"] {
@@ -662,7 +668,24 @@
       color: #e0a078;
     }
 
-    .round-three-kicker {
+    .round-four-preview[data-round-four-state="current"] {
+      border-color: #b3814e;
+      color: #e2c887;
+      box-shadow: inset 0 0 12px #000, 0 0 12px #7b563455;
+    }
+
+    .round-four-preview[data-round-four-state="complete"] {
+      border-color: #5d6f32;
+      color: #d8efad;
+    }
+
+    .round-four-preview[data-round-four-state="withered"] {
+      border-color: #8a332a;
+      color: #e0a078;
+    }
+
+    .round-three-kicker,
+    .round-four-kicker {
       display: block;
       color: #d7b16d;
       font-size: 11px;
@@ -671,14 +694,17 @@
     }
 
     .round-three-line,
-    .round-three-payoff {
+    .round-three-payoff,
+    .round-four-line,
+    .round-four-payoff {
       display: block;
       margin-top: 3px;
       font-size: 12px;
       line-height: 1.3;
     }
 
-    .round-three-payoff {
+    .round-three-payoff,
+    .round-four-payoff {
       color: #c6ad7c;
     }
 
@@ -3381,6 +3407,7 @@
       </div>
       <div class="bouquet-path" id="bouquetPath" aria-label="Bouquet Path"></div>
       <div class="round-three-focus" id="roundThreeFocus" aria-label="Round 3 Bloodroot Compact"></div>
+      <div class="round-four-preview" id="roundFourPreview" aria-label="Round 4 Saint's Night Ledger"></div>
       <script type="application/json" id="shapeAuditData"></script>
       <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
       <div class="board" id="board"></div>
@@ -3536,7 +3563,7 @@
         targets: [
           { flowerId: 1, needed: 10, order: "Saint's Ledger" },
           { flowerId: 2, needed: 9, order: "Nightshade Ink" },
-          { flowerId: 4, needed: 7, order: "Amber Seal" }
+          { flowerId: 0, needed: 7, order: "Sol Rot Seal" }
         ],
         reward: { coins: 215, greenhouse: 190, apothecary: 160, faction: 75, item: "Saint's Night Ledger", flowerId: 1 }
       },
@@ -3640,6 +3667,13 @@
       'data-round-three-state="current"',
       'data-round-three-state="withered"',
       'data-round-three-state="complete"'
+    ];
+    const roundFourAuditMarkers = [
+      'data-round-four-state="tease"',
+      'data-round-four-state="next"',
+      'data-round-four-state="current"',
+      'data-round-four-state="withered"',
+      'data-round-four-state="complete"'
     ];
     const STREAK_COIN_BONUS_STEP = 5;
     const STREAK_COIN_BONUS_CAP = 25;
@@ -4058,6 +4092,66 @@
         <span class="round-three-kicker">Round 3 Focus · ${state.label}</span>
         <span class="round-three-line">${roundThreeFocusCopy(state, plan)}</span>
         <span class="round-three-payoff">${roundThreePayoffCopy(plan)}</span>
+      `;
+    }
+
+    function roundFourPlan() {
+      return buildRoundPlan(4);
+    }
+
+    function roundFourPreviewState(plan = roundFourPlan()) {
+      if (currentRound > plan.round || (currentRound === plan.round && roundComplete)) {
+        return { id: "complete", label: "Ledger Filed" };
+      }
+      if (currentRound === plan.round && isBouquetFailed(plan)) {
+        return { id: "withered", label: "Current · Withered" };
+      }
+      if (currentRound === plan.round) {
+        return { id: "current", label: "Current Ledger" };
+      }
+      if (currentRound === plan.round - 1) {
+        return { id: "next", label: roundComplete ? "Next Contract Ready" : "After Bloodroot" };
+      }
+      return { id: "tease", label: "Ledger Preview" };
+    }
+
+    function roundFourGoalCopy(plan = roundFourPlan()) {
+      return bouquetPathGoalCopy(plan);
+    }
+
+    function roundFourPreviewCopy(state, plan = roundFourPlan()) {
+      const goal = roundFourGoalCopy(plan);
+      if (state.id === "complete") {
+        return `${plan.name} filed: ${plan.reward.item} sits in Chest Storage while Flowerpedia and Chapter Progress point toward the next contract.`;
+      }
+      if (state.id === "withered") {
+        return `Retry keeps ${plan.name} open: restore ${plan.moves} moves and finish ${goal}.`;
+      }
+      if (state.id === "current") {
+        return `Current Round 4: gather ${goal} to turn Bloodroot Compact into the Saint's Night Ledger.`;
+      }
+      if (state.id === "next") {
+        return `${roundComplete ? "Next contract unlocked" : "After Bloodroot Compact"}: ${plan.name} asks for ${goal}.`;
+      }
+      return `${plan.name} waits after Round 3 with Bone Star, Nightshade, and Sol Rot objectives.`;
+    }
+
+    function roundFourPayoffCopy(plan = roundFourPlan()) {
+      return `Saint's Night Ledger payoff: ${plan.reward.item} enters Chest Storage, +${plan.reward.apothecary} Apothecary XP, and keeps the Chest/Flowerpedia/Chapter trail readable.`;
+    }
+
+    function renderRoundFourPreview() {
+      const preview = $("roundFourPreview");
+      if (!preview) {
+        return;
+      }
+      const plan = roundFourPlan();
+      const state = roundFourPreviewState(plan);
+      preview.dataset.roundFourState = state.id;
+      preview.innerHTML = `
+        <span class="round-four-kicker">Round 4 Contract · ${state.label}</span>
+        <span class="round-four-line">${roundFourPreviewCopy(state, plan)}</span>
+        <span class="round-four-payoff">${roundFourPayoffCopy(plan)}</span>
       `;
     }
 
@@ -4642,6 +4736,7 @@
       $("firstSessionPlaque").textContent = roundPlaqueCopy(plan);
       renderBouquetPath();
       renderRoundThreeFocus();
+      renderRoundFourPreview();
       renderActiveOrders(plan);
       renderRoundCeremony(plan);
       $("bar").style.width = `${progress.pct}%`;

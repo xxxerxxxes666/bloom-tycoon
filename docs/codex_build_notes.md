@@ -1043,3 +1043,35 @@
 - How to trigger and verify L/T/cross matches without console: after Round 1, watch for the `L/T/cross = Shape Bloom` hint in Round 2; in the review path, click `Shape Bloom` repeatedly until `Witch's Cross!`, `Night Garden L-Bloom!`, or `Twin Stem Bloom!` appears. The hidden `shapeAuditData` verifier still contains all three definitions.
 - How to trigger and verify Supreme Bloom without console: press `B`; after the short charge phase, the overlay should show `SUPREME BLOOM! +12`, emit the review-hook particle burst, then return the board to play.
 - Security/secret-scan status: lightweight credential-shaped scan ran on changed files with no findings; no secrets, trackers, backend, SDKs, or new permissions were added in code.
+
+## 2026-07-03 Codex Round 4 Saint's Night Ledger preview/payoff
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow Round 4 Saint's Night Ledger preview/payoff pass.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added a compact `Round 4 Contract` strip below `Round 3 Focus` using the existing round-template/render patterns.
+- The strip has `tease`, `next`, `current`, `withered`, and `complete` states, with copy for the Saint's Night Ledger objective and payoff.
+- Updated Round 4's third target from Amber Seal to existing Sol Rot (`Sol Rot Seal`) so the visible objective matches Hermes' Bone Star/Nightshade/Sol Rot audit request.
+- The Round 4 copy points payoff back to existing Chest Storage, Flowerpedia, Chapter Progress, and existing reward values; no new progression framework was added.
+- No new account system, backend, analytics, monetization, SDK, tracker, asset, secret, or permission was added.
+- Added static verifier markers for `roundFourPreview`, `Round 4 Contract`, `Saint's Night Ledger payoff`, all `data-round-four-state` values, and the Round 4 render/helper functions.
+- Verification run so far:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - Read `docs/hermes_audit_next_tasks.md`.
+  - `python3 scripts/verify_project.py`
+  - `git diff --check`
+  - Local static preview at `http://127.0.0.1:4197/playable/midnight_bloom_prototype.html`; standalone `agent-browser` was unavailable, so bundled Playwright was used.
+  - Local direct checks returned `200` for `/playable/midnight_bloom_prototype.html?verify=round4-local` and `/assets/tiles/96/withered_sun_medallion.png?verify=round4-local`; the playable contained the new Round 4 markers.
+  - Local Playwright main flow verified fresh Round 1 path, Round 4 `tease`, Round 1 win -> reward -> Round 2, Round 2 Cursed Thorn objective, Round 2 fail -> retry, Round 2 win -> Round 3, Round 3 current copy, Round 3 completion/payoff, Bloodroot Compact in Chest Storage, Round 4 current Bone Star/Nightshade/Sol Rot objective, Round 4 completion/payoff, Saint's Night Ledger in Chest Storage, reward choices, 64 tiles, no broken images, and no console/page errors.
+  - Local Playwright preservation checks verified each booster (`Pruning Shears`, `Moonwater Flask`, `Black Candle`, `Grave Soil`) arms, cancels, uses from a fresh page, and preserves 64 tiles.
+  - Local Playwright preservation checks verified Shape Bloom review hook, Supreme Bloom via `B`, Chest modal, Sacrifice arm/cancel, mobile 390x860 Round 4 preview, no horizontal overflow, no broken images, and no console/page errors.
+- Browser console/runtime status: no local Playwright console errors or page errors observed during the Round 1-4 main flow, booster checks, Shape Bloom, Supreme Bloom, Chest, Sacrifice, or mobile checks.
+- Vercel deployment URL/identifier checked: pending post-push deployment check.
+- GitHub Pages preview status: pending post-push workflow check.
+- Known issues: none found locally for this Round 4 preview/payoff slice. The shell still does not have standalone `agent-browser`, so browser verification used bundled Playwright.
+- How to trigger and verify L/T/cross matches without console: after Round 1, watch for the `L/T/cross = Shape Bloom` hint in Round 2; in the review path, click `Shape Bloom` repeatedly until `Witch's Cross`, `Night Garden L-Bloom`, or `Twin Stem Bloom` appears in the ritual log. The hidden `shapeAuditData` verifier still contains all three definitions.
+- How to trigger and verify Supreme Bloom without console: focus the page and press `B`; the overlay should show `SUPREME BLOOM! +12`, emit the review-hook particle burst, then return the board to play.
+- Security/secret-scan status: lightweight credential-shaped scan ran on changed files with no findings; no secrets, trackers, backend, SDKs, or new permissions were added in code.
