@@ -865,6 +865,28 @@
         repeating-conic-gradient(from 18deg, #0000 0 12deg, #d7b16d55 13deg 15deg, #0000 16deg 32deg);
     }
 
+    .tile.black-candle-line {
+      outline: 2px solid #ff8a48;
+      box-shadow:
+        inset 0 0 18px #000,
+        0 0 0 1px #160f0c,
+        0 0 20px #9b1d22,
+        0 0 30px #d7b16d66;
+    }
+
+    .tile.black-candle-line::before {
+      border-color: #d7b16daa;
+      box-shadow: inset 0 0 14px #641111, 0 0 20px #9b1d22;
+    }
+
+    .tile.black-candle-line::after {
+      opacity: 1;
+      background:
+        radial-gradient(circle, #ff8a4830 0, #0000 58%),
+        linear-gradient(90deg, #0000 0 42%, #ff8a48aa 48%, #0000 55%),
+        linear-gradient(0deg, #0000 0 44%, #9b1d2288 50%, #0000 56%);
+    }
+
     .tile.sacrifice-target {
       outline: 2px solid #9b1d22;
       box-shadow:
@@ -1041,6 +1063,20 @@
         0 0 14px #5bb6d0,
         0 0 20px #d7b16d;
       animation: resource-pop 980ms cubic-bezier(0.14, 0.82, 0.2, 1) forwards;
+    }
+
+    .board-particle.black-candle-flame {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 7;
+      color: #ffd08a;
+      font-size: var(--font-size, 20px);
+      text-shadow:
+        0 0 8px #000,
+        0 0 14px #9b1d22,
+        0 0 22px #d7b16d;
+      animation: resource-pop 1050ms cubic-bezier(0.14, 0.82, 0.2, 1) forwards;
     }
 
     .board-particle.blood-pop,
@@ -1252,6 +1288,38 @@
 
     .booster-status {
       color: #d0b27a;
+    }
+
+    .booster-modes {
+      display: none;
+      gap: 7px;
+      align-items: center;
+      justify-content: center;
+      margin-top: 10px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .booster-modes.open {
+      display: flex;
+    }
+
+    .booster-mode {
+      min-width: 92px;
+      min-height: 34px;
+      padding: 6px 12px;
+      color: #b9a17d;
+      cursor: pointer;
+      border: 1px solid #3d3026;
+      background: #080606;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .booster-mode.selected {
+      color: #f0d6a6;
+      border-color: #c96a5a;
+      box-shadow: inset 0 0 14px #000, 0 0 12px #7d1717;
     }
 
     .sacrifice-copy {
@@ -2538,7 +2606,7 @@
           <h3>Black Market</h3>
           <span class="panel-gate" aria-hidden="true">›</span>
         </div>
-        <div class="small">Rare bulbs & contraband</div>
+        <div class="small">Rare bulbs & contraband · Black Candle x1 stocked</div>
       </div>
     </aside>
 
@@ -2573,6 +2641,10 @@
           <img class="btn-icon" src="../assets/tiles/96/purple_nightshade_bloom.png" alt="">
           <span>Moonwater Flask (x<span id="moonwaterFlaskCount">1</span>)</span>
         </button>
+        <button class="btn booster" id="blackCandleBtn" type="button" aria-pressed="false">
+          <img class="btn-icon" src="../assets/tiles/96/bloodroot_ruby_shard.png" alt="">
+          <span>Black Candle (x<span id="blackCandleCount">1</span>)</span>
+        </button>
         <button class="btn demo" id="demoCompleteBtn" type="button">
           <img class="btn-icon" src="../assets/tiles/96/crimson_rose_rune.png" alt="">
           <span>Complete Bouquet</span>
@@ -2593,6 +2665,10 @@
         <div class="booster-copy">
           <span class="booster-status" id="boosterStatus">Pruning Shears are armed. Choose one tile or Cursed Thorn to cut.</span>
           <button class="sacrifice-cancel" id="boosterCancel" type="button">Cancel</button>
+        </div>
+        <div class="booster-modes" id="blackCandleModes" aria-label="Black Candle targeting mode">
+          <button class="booster-mode" id="blackCandleRowMode" type="button" data-axis="row" aria-pressed="true">Row</button>
+          <button class="booster-mode" id="blackCandleColumnMode" type="button" data-axis="column" aria-pressed="false">Column</button>
         </div>
       </div>
       <div class="ritual-log" id="ritualLog">Match botanical elements to feed the First Bouquet.</div>
@@ -2730,9 +2806,11 @@
     let cursedThorns = [];
     let clearedCursedThorns = 0;
     let sacrificeState = { active: false, choice: null };
-    let boosters = { pruningShears: 1, moonwaterFlask: 1 };
+    let boosters = { pruningShears: 1, moonwaterFlask: 1, blackCandle: 1 };
     let activeBooster = "";
     let moonwaterPreviewCenter = null;
+    let blackCandleAxis = "row";
+    let blackCandlePreview = { axis: "row", index: 3 };
     let ritualMessage = "Match botanical elements to feed the First Bouquet.";
     let harvestFlashCells = new Set();
     let transmuteFlashCell = "";
@@ -3300,6 +3378,7 @@
           const moonwaterTargetClass = activeBooster === "moonwaterFlask" && isMoonwaterCenter(x, y) ? "moonwater-target" : "";
           const moonwaterAreaClass = activeBooster === "moonwaterFlask" && moonwaterPreviewCenter && inMoonwaterPatch(x, y, moonwaterPreviewCenter.x, moonwaterPreviewCenter.y) ? "moonwater-area" : "";
           const moonwaterCenterClass = activeBooster === "moonwaterFlask" && moonwaterPreviewCenter && moonwaterPreviewCenter.x === x && moonwaterPreviewCenter.y === y ? "moonwater-center" : "";
+          const blackCandleLineClass = activeBooster === "blackCandle" && isBlackCandlePreviewCell(x, y) ? "black-candle-line" : "";
           const harvestClass = harvestFlashCells.has(`${x},${y}`) ? "harvest-flash" : "";
           const superClass = superBloomCells.has(`${x},${y}`) ? "super-bloom-hot" : "";
           const invalidClass = invalidSwapCells.has(`${x},${y}`) ? "invalid-swap" : "";
@@ -3313,7 +3392,7 @@
           const fallKey = `${x},${y}`;
           const fallRows = fallAnimations.get(fallKey) || 0;
           const fallClass = fallRows ? "fall-in" : "";
-          tile.className = `tile ${selectedClass} ${legalClass} ${sacrificeClass} ${profitableClass} ${shearsClass} ${moonwaterTargetClass} ${moonwaterAreaClass} ${moonwaterCenterClass} ${harvestClass} ${superClass} ${invalidClass} ${idleHintClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass}`;
+          tile.className = `tile ${selectedClass} ${legalClass} ${sacrificeClass} ${profitableClass} ${shearsClass} ${moonwaterTargetClass} ${moonwaterAreaClass} ${moonwaterCenterClass} ${blackCandleLineClass} ${harvestClass} ${superClass} ${invalidClass} ${idleHintClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass}`;
           tile.disabled = isResolving || roundComplete;
           if (fallRows) {
             tile.style.setProperty("--fall-y", `${-fallRows * 112}%`);
@@ -3323,8 +3402,9 @@
           const legalLabel = legalClass ? " legal match swap target" : "";
           const shearsLabel = shearsClass ? " Pruning Shears target" : "";
           const moonwaterLabel = moonwaterTargetClass ? " Moonwater Flask 3x3 center" : moonwaterAreaClass ? " inside Moonwater Flask 3x3 patch" : "";
+          const blackCandleLabel = blackCandleLineClass ? ` Black Candle ${blackCandleAxis} burn target` : "";
           const thornLabel = thorn ? " with Cursed Thorn blocker" : thornClearedClass ? " where a Cursed Thorn cracked" : "";
-          tile.setAttribute("aria-label", `${flowers[value][0]} tile${profitLabel}${legalLabel}${shearsLabel}${moonwaterLabel}${thornLabel}`);
+          tile.setAttribute("aria-label", `${flowers[value][0]} tile${profitLabel}${legalLabel}${shearsLabel}${moonwaterLabel}${blackCandleLabel}${thornLabel}`);
           tile.innerHTML = `
             ${iconMarkup(value, "", flowers[value][0], "tile-icon-wrap")}
             ${thorn || thornClearedClass ? '<span class="cursed-thorn-overlay" aria-hidden="true"></span>' : ""}
@@ -3332,6 +3412,10 @@
           if (activeBooster === "moonwaterFlask") {
             tile.addEventListener("mouseenter", () => previewMoonwaterPatch(x, y));
             tile.addEventListener("focus", () => previewMoonwaterPatch(x, y));
+          }
+          if (activeBooster === "blackCandle") {
+            tile.addEventListener("mouseenter", () => previewBlackCandleLine(x, y));
+            tile.addEventListener("focus", () => previewBlackCandleLine(x, y));
           }
           tile.addEventListener("click", () => tap(x, y));
           boardEl.appendChild(tile);
@@ -3391,6 +3475,10 @@
       $("moonwaterFlaskBtn").disabled = isResolving || roundComplete || moonwaterFlaskCount() < 1;
       $("moonwaterFlaskBtn").classList.toggle("armed", activeBooster === "moonwaterFlask");
       $("moonwaterFlaskBtn").setAttribute("aria-pressed", activeBooster === "moonwaterFlask" ? "true" : "false");
+      $("blackCandleCount").textContent = blackCandleCount();
+      $("blackCandleBtn").disabled = isResolving || roundComplete || blackCandleCount() < 1;
+      $("blackCandleBtn").classList.toggle("armed", activeBooster === "blackCandle");
+      $("blackCandleBtn").setAttribute("aria-pressed", activeBooster === "blackCandle" ? "true" : "false");
       $("demoCompleteBtn").disabled = isResolving || roundComplete;
       $("shapeBloomBtn").disabled = isResolving || roundComplete;
       $("sacrificeBtn").classList.toggle("armed", sacrificeState.active);
@@ -3452,6 +3540,10 @@
       }
       if (activeBooster === "moonwaterFlask") {
         useMoonwaterFlask(x, y);
+        return;
+      }
+      if (activeBooster === "blackCandle") {
+        useBlackCandle(x, y);
         return;
       }
       if (sacrificeState.active) {
@@ -4620,6 +4712,7 @@
       sacrificeState = { active: false, choice: null };
       activeBooster = "";
       moonwaterPreviewCenter = null;
+      blackCandlePreview = null;
       harvestFlashCells.clear();
       fallAnimations.clear();
       superBloomCells.clear();
@@ -4680,15 +4773,30 @@
       return Math.max(0, Math.floor(Number(boosters.moonwaterFlask) || 0));
     }
 
+    function blackCandleCount() {
+      return Math.max(0, Math.floor(Number(boosters.blackCandle) || 0));
+    }
+
     function renderBoosterPanel() {
       const panel = $("boosterPanel");
       const status = $("boosterStatus");
-      const armed = activeBooster === "pruningShears" || activeBooster === "moonwaterFlask";
+      const modes = $("blackCandleModes");
+      const rowMode = $("blackCandleRowMode");
+      const columnMode = $("blackCandleColumnMode");
+      const armed = activeBooster === "pruningShears" || activeBooster === "moonwaterFlask" || activeBooster === "blackCandle";
       panel.classList.toggle("open", armed);
+      modes.classList.toggle("open", activeBooster === "blackCandle");
+      rowMode.classList.toggle("selected", blackCandleAxis === "row");
+      rowMode.setAttribute("aria-pressed", blackCandleAxis === "row" ? "true" : "false");
+      columnMode.classList.toggle("selected", blackCandleAxis === "column");
+      columnMode.setAttribute("aria-pressed", blackCandleAxis === "column" ? "true" : "false");
       if (activeBooster === "pruningShears") {
         status.textContent = "Apothecary Level 2 Pruning Shears are armed. Choose one tile or Cursed Thorn to cut. Cancel spends nothing.";
       } else if (activeBooster === "moonwaterFlask") {
         status.textContent = "Apothecary field kit Moonwater Flask is armed. Choose the center of a 3x3 patch. Cursed Thorns stay rooted. Cancel spends nothing.";
+      } else if (activeBooster === "blackCandle") {
+        const lane = blackCandleAxis === "column" ? "column" : "row";
+        status.textContent = `Black Market Black Candle is armed. Choose Row or Column, preview a ${lane}, then click to burn it. Cursed Thorns stay rooted. Cancel spends nothing.`;
       }
     }
 
@@ -4699,6 +4807,10 @@
       }
       if (activeBooster === "moonwaterFlask") {
         cancelMoonwaterFlask(refocus);
+        return;
+      }
+      if (activeBooster === "blackCandle") {
+        cancelBlackCandle(refocus);
       }
     }
 
@@ -4725,6 +4837,7 @@
       selected = null;
       activeBooster = "pruningShears";
       moonwaterPreviewCenter = null;
+      blackCandlePreview = null;
       ritualMessage = "<strong>Pruning Shears armed:</strong> Apothecary Level 2 grant ready. Choose one tile or Cursed Thorn to cut. Cancel spends nothing.";
       render();
     }
@@ -4735,6 +4848,7 @@
       }
       activeBooster = "";
       moonwaterPreviewCenter = null;
+      blackCandlePreview = null;
       selected = null;
       ritualMessage = "Pruning Shears lowered. No booster spent.";
       render();
@@ -4886,6 +5000,7 @@
       selected = null;
       activeBooster = "moonwaterFlask";
       moonwaterPreviewCenter = { x: 3, y: 3 };
+      blackCandlePreview = null;
       ritualMessage = "<strong>Moonwater Flask armed:</strong> choose the center of a 3x3 patch to reshuffle only those loose tiles. Cursed Thorns stay rooted.";
       render();
     }
@@ -4896,6 +5011,7 @@
       }
       activeBooster = "";
       moonwaterPreviewCenter = null;
+      blackCandlePreview = null;
       selected = null;
       ritualMessage = "Moonwater Flask corked. No booster spent.";
       render();
@@ -5007,6 +5123,248 @@
       const thornCount = result.patchCells.length - result.mutableCells.length;
       ritualMessage = `<strong>Moonwater Flask:</strong> stirred a 3x3 patch and left ${thornCount ? `${thornCount} Cursed Thorn${thornCount === 1 ? "" : "s"} rooted` : "all blockers untouched"}.`;
       render();
+      scheduleHarvestFlashClear();
+      scheduleBoardParticleClear();
+      scheduleIdleHint();
+    }
+
+    function blackCandleLineCells(axis, index) {
+      const safeAxis = axis === "column" ? "column" : "row";
+      const safeIndex = Math.max(0, Math.min(BOARD_SIZE - 1, Number(index) || 0));
+      return Array.from({ length: BOARD_SIZE }, (_, cellIndex) => (
+        safeAxis === "column" ? [safeIndex, cellIndex] : [cellIndex, safeIndex]
+      ));
+    }
+
+    function isBlackCandlePreviewCell(x, y) {
+      if (activeBooster !== "blackCandle" || !blackCandlePreview) {
+        return false;
+      }
+      return blackCandlePreview.axis === "column"
+        ? x === blackCandlePreview.index
+        : y === blackCandlePreview.index;
+    }
+
+    function previewBlackCandleLine(x, y) {
+      if (activeBooster !== "blackCandle") {
+        return;
+      }
+      const axis = blackCandleAxis === "column" ? "column" : "row";
+      const index = axis === "column" ? x : y;
+      if (blackCandlePreview && blackCandlePreview.axis === axis && blackCandlePreview.index === index) {
+        return;
+      }
+      blackCandlePreview = { axis, index };
+      render();
+    }
+
+    function setBlackCandleAxis(axis) {
+      if (axis !== "row" && axis !== "column") {
+        return;
+      }
+      blackCandleAxis = axis;
+      blackCandlePreview = { axis, index: Math.floor(BOARD_SIZE / 2) - 1 };
+      if (activeBooster === "blackCandle") {
+        const lane = axis === "column" ? "column" : "row";
+        ritualMessage = `<strong>Black Candle armed:</strong> ${lane} targeting selected. Hover or focus a tile to preview the line, then click to burn.`;
+        render();
+      }
+    }
+
+    function toggleBlackCandle() {
+      if (isResolving) {
+        return;
+      }
+      if (roundComplete) {
+        ritualMessage = "The bouquet is sealed. Press Next Bouquet to continue.";
+        render();
+        return;
+      }
+      if (activeBooster === "blackCandle") {
+        cancelBlackCandle();
+        return;
+      }
+      if (blackCandleCount() < 1) {
+        ritualMessage = "The Black Market has no Black Candle ready.";
+        render();
+        return;
+      }
+      clearIdleHint();
+      cancelSacrifice(false);
+      cancelActiveBooster(false);
+      selected = null;
+      activeBooster = "blackCandle";
+      moonwaterPreviewCenter = null;
+      blackCandleAxis = blackCandleAxis === "column" ? "column" : "row";
+      blackCandlePreview = { axis: blackCandleAxis, index: Math.floor(BOARD_SIZE / 2) - 1 };
+      ritualMessage = "<strong>Black Candle armed:</strong> Black Market contraband ready. Choose Row or Column, preview a line, then click to burn it. Cursed Thorns stay rooted.";
+      render();
+    }
+
+    function cancelBlackCandle(refocus = true) {
+      if (activeBooster !== "blackCandle") {
+        return;
+      }
+      activeBooster = "";
+      blackCandlePreview = null;
+      selected = null;
+      ritualMessage = "Black Candle snuffed. No booster spent.";
+      render();
+      if (refocus) {
+        $("blackCandleBtn").focus();
+      }
+    }
+
+    function spendBlackCandle() {
+      if (blackCandleCount() < 1) {
+        ritualMessage = "The Black Market has no Black Candle ready.";
+        render();
+        return false;
+      }
+      boosters.blackCandle = blackCandleCount() - 1;
+      return true;
+    }
+
+    function queueBlackCandleBurst(cells, axis, index) {
+      const center = axis === "column"
+        ? [index, (BOARD_SIZE - 1) / 2]
+        : [(BOARD_SIZE - 1) / 2, index];
+      boardParticles.push({
+        type: "line-relic",
+        x: center[0],
+        y: center[1],
+        dx: 0,
+        dy: 0,
+        size: axis === "column" ? 10 : 18,
+        spin: axis === "column" ? 90 : 0,
+        scale: 5.9
+      });
+      cells.forEach(([cellX, cellY], cellIndex) => {
+        boardParticles.push({
+          type: "black-candle-flame",
+          text: cellIndex % 2 ? "✦" : "☽",
+          x: cellX,
+          y: cellY,
+          dx: (Math.random() - 0.5) * 54,
+          dy: -48 - Math.random() * 44,
+          size: 26,
+          fontSize: 20,
+          spin: (Math.random() - 0.5) * 100,
+          delay: cellIndex * 18
+        });
+      });
+    }
+
+    function collapseColumnsPreservingAnchors(anchorKeys = new Set()) {
+      for (let x = 0; x < BOARD_SIZE; x += 1) {
+        let segmentEnd = BOARD_SIZE - 1;
+        while (segmentEnd >= 0) {
+          if (anchorKeys.has(thornKey(x, segmentEnd))) {
+            segmentEnd -= 1;
+            continue;
+          }
+          let segmentStart = segmentEnd;
+          while (segmentStart >= 0 && !anchorKeys.has(thornKey(x, segmentStart))) {
+            segmentStart -= 1;
+          }
+          const remaining = [];
+          for (let y = segmentEnd; y > segmentStart; y -= 1) {
+            if (board[y][x] !== null) {
+              remaining.push({ value: board[y][x], fromY: y });
+            }
+          }
+          for (let y = segmentEnd; y > segmentStart; y -= 1) {
+            if (remaining.length) {
+              const tile = remaining.shift();
+              board[y][x] = tile.value;
+              recordFall(x, y, y - tile.fromY);
+            } else {
+              board[y][x] = rand();
+              recordFall(x, y, y - segmentStart);
+            }
+          }
+          segmentEnd = segmentStart - 1;
+        }
+      }
+    }
+
+    function refillBlackCandleLine(originalBoard, burnedCells, anchorKeys) {
+      for (let attempt = 0; attempt < 80; attempt += 1) {
+        restoreBoard(originalBoard);
+        fallAnimations.clear();
+        burnedCells.forEach(([cellX, cellY]) => {
+          board[cellY][cellX] = null;
+        });
+        collapseColumnsPreservingAnchors(anchorKeys);
+        if (!matches().length && hasLegalMoves()) {
+          return { reshuffled: false };
+        }
+      }
+
+      restoreBoard(originalBoard);
+      fallAnimations.clear();
+      burnedCells.forEach(([cellX, cellY]) => {
+        board[cellY][cellX] = null;
+      });
+      collapseColumnsPreservingAnchors(anchorKeys);
+      return { reshuffled: ensurePlayableBoardAfterCascade() };
+    }
+
+    function useBlackCandle(x, y) {
+      if (isResolving || roundComplete) {
+        return;
+      }
+      const axis = blackCandleAxis === "column" ? "column" : "row";
+      const index = axis === "column" ? x : y;
+      const lineCells = blackCandleLineCells(axis, index);
+      const burnedCells = lineCells.filter(([cellX, cellY]) => !thornAt(cellX, cellY));
+      const thornCells = lineCells.filter(([cellX, cellY]) => thornAt(cellX, cellY));
+      if (!burnedCells.length) {
+        blackCandlePreview = { axis, index };
+        ritualMessage = "Black Candle found only rooted thorns there. Choose another row or column.";
+        render();
+        return;
+      }
+      if (!spendBlackCandle()) {
+        activeBooster = "";
+        blackCandlePreview = null;
+        return;
+      }
+
+      activeBooster = "";
+      selected = null;
+      moonwaterPreviewCenter = null;
+      blackCandlePreview = null;
+      clearIdleHint();
+      const originalBoard = boardSnapshot();
+      const gained = Array(flowers.length).fill(0);
+      burnedCells.forEach(([cellX, cellY]) => {
+        const flowerId = board[cellY][cellX];
+        counts[flowerId] += 1;
+        gained[flowerId] += 1;
+        elementPulseTargets.add(flowerId);
+        queueResourceBurst(cellX, cellY, flowerId);
+      });
+      const coinsEarned = burnedCells.length * 3;
+      coins += coinsEarned;
+      harvestFlashCells = new Set(lineCells.map((cell) => cell.join(",")));
+      queueCoinBurst(burnedCells, coinsEarned);
+      queueBlackCandleBurst(lineCells, axis, index);
+      const anchorKeys = new Set(cursedThorns.map((thorn) => thornKey(thorn.x, thorn.y)));
+      const { reshuffled } = refillBlackCandleLine(originalBoard, burnedCells, anchorKeys);
+      pulseOrderCounts(gained);
+      if (elementPulseTargets.size) {
+        scheduleElementPulseClear();
+      }
+      const lane = axis === "column" ? `column ${index + 1}` : `row ${index + 1}`;
+      const orderText = orderGainMessage(gained);
+      const thornText = thornCells.length
+        ? ` ${thornCells.length} Cursed Thorn${thornCells.length === 1 ? "" : "s"} stayed rooted.`
+        : " No Cursed Thorns were touched.";
+      ritualMessage = `<strong>Black Candle:</strong> burned ${lane} for ${burnedCells.length} tile${burnedCells.length === 1 ? "" : "s"}.${thornText} ${orderText ? `<strong>${orderText}</strong> ` : ""}+${coinsEarned} coins.${gainMarkup(gained)}${reshuffled ? " The board re-seeded itself with a legal move." : ""}`;
+      maybeCompleteRound();
+      render();
+      scheduleFallAnimationClear();
       scheduleHarvestFlashClear();
       scheduleBoardParticleClear();
       scheduleIdleHint();
@@ -5601,7 +5959,8 @@
       const safeCount = (value, fallbackValue) => Math.max(0, Math.floor(Number(value ?? fallbackValue) || 0));
       return {
         pruningShears: safeCount(candidate.pruningShears, fallback.pruningShears),
-        moonwaterFlask: safeCount(candidate.moonwaterFlask, fallback.moonwaterFlask)
+        moonwaterFlask: safeCount(candidate.moonwaterFlask, fallback.moonwaterFlask),
+        blackCandle: safeCount(candidate.blackCandle, fallback.blackCandle)
       };
     }
 
@@ -5666,6 +6025,9 @@
     $("sacrificeBtn").addEventListener("click", sacrifice);
     $("pruningShearsBtn").addEventListener("click", togglePruningShears);
     $("moonwaterFlaskBtn").addEventListener("click", toggleMoonwaterFlask);
+    $("blackCandleBtn").addEventListener("click", toggleBlackCandle);
+    $("blackCandleRowMode").addEventListener("click", () => setBlackCandleAxis("row"));
+    $("blackCandleColumnMode").addEventListener("click", () => setBlackCandleAxis("column"));
     $("demoCompleteBtn").addEventListener("click", demoCompleteBouquet);
     $("shapeBloomBtn").addEventListener("click", () => demoMatchShape());
     $("sacrificeCancel").addEventListener("click", () => cancelSacrifice());
