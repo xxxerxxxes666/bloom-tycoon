@@ -838,3 +838,45 @@
 - How to trigger and verify L/T/cross matches without console: after Round 1, watch for the `L/T/cross = Shape Bloom` hint in Round 2; in the review path, click `Shape Bloom` repeatedly until `Witch's Cross!`, `Night Garden L-Bloom!`, or `Twin Stem Bloom!` appears.
 - How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit the review-hook particle burst, then return the board to play.
 - Security/secret-scan status: lightweight credential-shaped scan ran on changed files with no findings; no secrets, trackers, backend, SDKs, or new permissions were added in code.
+
+## 2026-07-03 Codex Flowerpedia unlock slice
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow local/static Flowerpedia or collection payoff after normal bouquet progress.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added a persistent bottom Elements ledger named `Flowerpedia` and a matching `Flowerpedia` section inside Chest Storage.
+- Added two local-only unlocks:
+  - `Velvet Funeral`, unlocked when Round 1 is completed.
+  - `Cursed Thorn Field Note`, unlocked when the player first clears Cursed Thorns.
+- The unlock IDs persist in the existing `localStorage` save object as `flowerpediaUnlocked`; old local saves migrate forward if they already have a bouquet streak, a later round, a completed bouquet, or cleared thorns.
+- Added player-facing reward copy to the ritual log and bouquet ceremony. The copy explains why the entry matters and points to the next bouquet, Cursed Thorn, or Shape Bloom goal.
+- Preserved Bouquet Streak, reward choices, all four boosters, Rune-Tended Soil, Round 2 Cursed Thorn teaching, Shape Bloom/Supreme Bloom, review hooks, Chest/Sacrifice, and mobile layout.
+- Added static verifier markers for `Flowerpedia`, `flowerpediaEntries`, `flowerpediaLedger`, `flowerpediaModal`, `flowerpediaUnlocked`, `flowerpediaUnlocks`, both entry names, and the new render/validation helpers.
+- Verification run:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - Read `docs/hermes_audit_next_tasks.md`.
+  - `python3 scripts/verify_project.py`
+  - `python3 scripts/verify_html_match_shapes.py`
+  - JS parse check over executable HTML scripts with bundled Node.
+  - `git diff --check`
+  - Local static preview at `http://127.0.0.1:4183/playable/midnight_bloom_prototype.html`; `agent-browser` was unavailable, so bundled Playwright was used.
+  - Local Playwright fresh load verified 64 tiles, nonblank content, locked `Flowerpedia 0 / 2`, no desktop horizontal overflow, and no broken images in later reload checks.
+  - Local Playwright completed Round 1 through normal tile swaps after seeding legal target moves, verified `Flowerpedia unlocked: Velvet Funeral`, `Flowerpedia 1 / 2`, the ceremony token, exactly three reward choices, 64 tiles, and `localStorage.flowerpediaUnlocked`.
+  - Local Playwright reloaded and verified `Velvet Funeral` persisted with three reward choices and 64 tiles.
+  - Local Playwright clicked `Next Bouquet`, verified default reward behavior, Round 2 `Match beside Cursed Thorns`, `L/T/cross = Shape Bloom`, 64 tiles, and visible thorn teaching markers.
+  - Local Playwright clicked the seeded Round 2 thorn-teaching swap, verified `Flowerpedia unlocked: Cursed Thorn Field Note`, `Flowerpedia 2 / 2`, 64 tiles, and persisted `localStorage.flowerpediaUnlocked`.
+  - Local Playwright reloaded again and verified both entries persisted.
+  - Local Playwright opened Chest Storage and verified the Flowerpedia modal section shows both unlocked entries alongside 16 chest slots.
+  - Local Playwright mobile at 390x900 verified 64 tiles, locked Flowerpedia ledger, 0 broken images, and no horizontal overflow.
+  - Local Playwright regression sweep verified `Pruning Shears`, `Moonwater Flask`, `Black Candle`, and `Grave Soil` each arm, cancel, use once, and preserve 64 tiles on fresh boards.
+  - Local Playwright verified Sacrifice opens/cancels, `M` and `Shape Bloom` still resolve Shape Bloom review paths, `B` still triggers Supreme Bloom, `N` still completes a bouquet, exactly three reward choices appear, and selecting `Apothecary Kit` claims correctly while preserving 64 tiles.
+- Browser console/runtime status: no local Playwright console errors or page errors observed during Flowerpedia unlocks, reload persistence, Chest, Round 2 thorn flow, boosters, Sacrifice, reward choice, Shape Bloom, Supreme Bloom, or mobile checks.
+- Vercel deployment URL/identifier checked: pending push/deploy for this Flowerpedia slice.
+- GitHub Pages preview status: pending push/workflow for this Flowerpedia slice.
+- Known issues: none found locally for the Flowerpedia slice. The shell still does not have standalone `agent-browser`, so browser verification used bundled Playwright.
+- How to trigger and verify L/T/cross matches without console: after Round 1, watch for the `L/T/cross = Shape Bloom` hint in Round 2; in the review path, click `Shape Bloom` repeatedly until `Witch's Cross!`, `Night Garden L-Bloom!`, or `Twin Stem Bloom!` appears.
+- How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit the review-hook particle burst, then return the board to play.
+- Security/secret-scan status: lightweight credential-shaped scan ran on changed files with no findings; no secrets, trackers, backend, SDKs, or new permissions were added in code.
