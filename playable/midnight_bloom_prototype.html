@@ -491,6 +491,21 @@
       border-color: #b3814e;
     }
 
+    .objective-boon.streak.target {
+      color: #d8efad;
+      border-color: #8fac57;
+    }
+
+    .objective-boon.thorn {
+      color: #ffb6a6;
+      border-color: #8a332a;
+    }
+
+    .objective-boon.pattern {
+      color: #d8c7ff;
+      border-color: #6f5a8f;
+    }
+
     .objective-text {
       color: #d0b27a;
       text-transform: uppercase;
@@ -746,6 +761,43 @@
     .tile.idle-hint {
       outline: 2px solid #d7b16d;
       animation: idle-hint-pulse 1.35s ease-in-out infinite;
+    }
+
+    .tile.thorn-teach {
+      outline: 2px solid #ffb35a;
+      box-shadow:
+        inset 0 0 16px #000,
+        0 0 0 1px #160f0c,
+        0 0 20px #d7b16d,
+        0 0 28px #7d1518;
+      animation: idle-hint-pulse 1.05s ease-in-out infinite;
+    }
+
+    .tile.thorn-teach::after {
+      opacity: 1;
+      background:
+        radial-gradient(circle, #f0c4772d 0, #9b1d221d 44%, #0000 68%),
+        linear-gradient(0deg, #0000 0 42%, #f0c47788 48%, #0000 55%);
+    }
+
+    .thorn-teach-marker {
+      position: absolute;
+      right: 5px;
+      top: 5px;
+      z-index: 5;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      color: #160805;
+      border: 1px solid #f0c477;
+      border-radius: 50%;
+      background: #d7b16d;
+      box-shadow: 0 0 10px #000, 0 0 10px #9b1d22;
+      font-size: 12px;
+      font-weight: 900;
+      pointer-events: none;
     }
 
     .tile.cursed-thorn {
@@ -1559,6 +1611,21 @@
       font-size: 12px;
     }
 
+    .ceremony-next-target {
+      display: block;
+      margin: 10px auto 0;
+      width: fit-content;
+      max-width: 100%;
+      padding: 6px 10px;
+      color: #d8efad;
+      border: 1px solid #7f9b4f;
+      background: linear-gradient(180deg, #18200e, #070805);
+      box-shadow: inset 0 0 12px #000, 0 0 12px #405f233d;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
     .reward-choice-panel {
       margin-top: 14px;
       padding-top: 12px;
@@ -1631,6 +1698,24 @@
       color: #b9a17d;
       font-size: 12px;
       line-height: 1.35;
+    }
+
+    .reward-choice-value {
+      color: #d7c19b;
+      font-size: 12px;
+      line-height: 1.3;
+    }
+
+    .reward-choice-claim {
+      align-self: flex-start;
+      padding: 3px 7px;
+      color: #0b0706;
+      background: #d7b16d;
+      box-shadow: 0 0 8px #000;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.7px;
+      text-transform: uppercase;
     }
 
     .gain-list {
@@ -2947,11 +3032,37 @@
       ]
     };
     const postBouquetRewardChoices = [
-      { id: "greenhouse", label: "Greenhouse Cuttings", xp: 120, gain: "Greenhouse +120 XP · Grave Soil x1" },
-      { id: "apothecary", label: "Apothecary Kit", xp: 100, gain: "Apothecary +100 XP · Pruning Shears or Moonwater Flask x1" },
-      { id: "blackMarket", label: "Black Market Favor", xp: 80, gain: "Sub Rosa +80 Favor · Black Candle x1" }
+      {
+        id: "greenhouse",
+        label: "Greenhouse Cuttings",
+        shortLabel: "Cuttings",
+        xp: 120,
+        gain: "Greenhouse +120 XP · Grave Soil x1",
+        value: "Next bouquet setup: prepare a relic-ready tile for a later 3-match."
+      },
+      {
+        id: "apothecary",
+        label: "Apothecary Kit",
+        shortLabel: "Kit",
+        xp: 100,
+        gain: "Apothecary +100 XP · Pruning Shears or Moonwater Flask x1",
+        value: "Board control: get the lower-stock precision booster."
+      },
+      {
+        id: "blackMarket",
+        label: "Black Market Favor",
+        shortLabel: "Favor",
+        xp: 80,
+        gain: "Sub Rosa +80 Favor · Black Candle x1",
+        value: "Burst power: bank a line clear for thorny or crowded boards."
+      }
     ];
     const postBouquetRewardIds = postBouquetRewardChoices.map((choice) => choice.id);
+    const rewardChoiceAuditMarkers = [
+      'data-reward-choice="greenhouse"',
+      'data-reward-choice="apothecary"',
+      'data-reward-choice="blackMarket"'
+    ];
     const STREAK_COIN_BONUS_STEP = 5;
     const STREAK_COIN_BONUS_CAP = 25;
 
@@ -2986,6 +3097,8 @@
     let idleHintCells = new Set();
     let thornPulseCells = new Set();
     let thornClearedCells = new Set();
+    let thornTeachingCells = new Set();
+    let thornTeachingTimer = null;
     let orderPulseTargets = new Set();
     let elementPulseTargets = new Set();
     let isResolving = false;
@@ -3202,6 +3315,7 @@
       clearedCursedThorns = 0;
       thornPulseCells.clear();
       thornClearedCells.clear();
+      clearThornTeachingCue(false);
       if (!plan.thornGoal) {
         cursedThorns = [];
         return;
@@ -3240,19 +3354,33 @@
     function build() {
       // Board generation follows the match-3 contract: no free starting matches,
       // but at least one adjacent swap must create a harvest.
+      const plan = activeRoundPlan();
+      const needsThornTeachingMove = shouldSeedThornTeachingMove(plan);
       graveSoilCells.clear();
       for (let attempts = 0; attempts < MAX_BOARD_BUILD_ATTEMPTS; attempts += 1) {
         buildOpeningBoard();
         seedCurrentTargetMoves();
-        if (!matches().length && hasLegalMoves()) {
+        if (needsThornTeachingMove) {
+          seedRoundTwoThornTeachingMove(plan);
+        }
+        if (!matches().length && hasLegalMoves() && (!needsThornTeachingMove || hasRoundTwoThornTeachingMove())) {
           return;
         }
       }
 
       buildOpeningBoard();
       seedCurrentTargetMoves();
+      if (needsThornTeachingMove) {
+        seedRoundTwoThornTeachingMove(plan);
+      }
+      if (!matches().length && hasLegalMoves() && (!needsThornTeachingMove || hasRoundTwoThornTeachingMove())) {
+        return;
+      }
       if (!seedGuaranteedLegalMove()) {
         buildDeterministicLegalBoard();
+      }
+      if (needsThornTeachingMove) {
+        seedRoundTwoThornTeachingMove(plan);
       }
     }
 
@@ -3284,6 +3412,71 @@
       if (targetIds[1] !== undefined) {
         writeTargetLegalMovePatch(4, 0, targetIds[1]);
       }
+    }
+
+    function shouldSeedThornTeachingMove(plan = activeRoundPlan()) {
+      return Boolean(plan.thornGoal)
+        && plan.round === 2
+        && !hasMadeValidMove
+        && !roundComplete
+        && thornGoalProgress(plan) === 0
+        && cursedThorns.length > 0;
+    }
+
+    function roundTwoThornTeachingSwap() {
+      return [{ x: 1, y: 2 }, { x: 1, y: 3 }];
+    }
+
+    function roundTwoThornTeachingMatchCells() {
+      return [[0, 2], [1, 2], [2, 2], [1, 3]];
+    }
+
+    function seedRoundTwoThornTeachingMove(plan = activeRoundPlan()) {
+      if (!shouldSeedThornTeachingMove(plan)) {
+        return;
+      }
+      const flowerId = plan.targets[0]?.flowerId ?? 2;
+      const fillerA = (flowerId + 1) % flowers.length;
+      const fillerB = (flowerId + 2) % flowers.length;
+      const fillerC = (flowerId + 3) % flowers.length;
+      const fillerD = (flowerId + 4) % flowers.length;
+
+      board[1][0] = fillerA;
+      board[1][1] = fillerB;
+      board[1][2] = fillerC;
+      board[1][3] = fillerD;
+      board[2][0] = flowerId;
+      board[2][1] = fillerA;
+      board[2][2] = flowerId;
+      board[2][3] = fillerB;
+      board[3][0] = fillerC;
+      board[3][1] = flowerId;
+      board[3][2] = fillerD;
+      board[3][3] = fillerC;
+      board[4][0] = fillerB;
+      board[4][1] = fillerC;
+      board[4][2] = fillerA;
+    }
+
+    function hasRoundTwoThornTeachingMove() {
+      const [a, b] = roundTwoThornTeachingSwap();
+      if (!isLegalSwap(a, b)) {
+        return false;
+      }
+      swapBoardCells(a, b);
+      const createsAdjacentThornMatch = matches().some((match) => cellsTouchCursedThorn(match.cells));
+      swapBoardCells(a, b);
+      return createsAdjacentThornMatch;
+    }
+
+    function cellsTouchCursedThorn(cells) {
+      if (!cursedThorns.length || !Array.isArray(cells)) {
+        return false;
+      }
+      return cells.some(([x, y]) => cursedThorns.some((thorn) => (
+        Math.abs(thorn.x - x) + Math.abs(thorn.y - y) === 1
+        || (thorn.x === x && thorn.y === y)
+      )));
     }
 
     function writeTargetLegalMovePatch(originX, originY, flowerId) {
@@ -3469,6 +3662,44 @@
       }
     }
 
+    function clearThornTeachingCue(renderAfter = false) {
+      if (thornTeachingTimer && window.clearTimeout) {
+        window.clearTimeout(thornTeachingTimer);
+      }
+      thornTeachingTimer = null;
+      if (thornTeachingCells.size) {
+        thornTeachingCells.clear();
+        if (renderAfter) {
+          render();
+        }
+      }
+    }
+
+    function startThornTeachingCue(plan = activeRoundPlan()) {
+      clearThornTeachingCue(false);
+      if (!shouldSeedThornTeachingMove(plan) || !hasRoundTwoThornTeachingMove()) {
+        return;
+      }
+      const thornCells = cursedThorns.map((thorn) => [thorn.x, thorn.y]);
+      const teachingCells = dedupeCells([
+        ...thornCells,
+        ...roundTwoThornTeachingMatchCells()
+      ]);
+      thornTeachingCells = new Set(teachingCells.map((cell) => cell.join(",")));
+      if (window.setTimeout) {
+        thornTeachingTimer = window.setTimeout(() => {
+          clearThornTeachingCue(true);
+        }, 9000);
+      }
+    }
+
+    function thornTeachingCopy(plan = activeRoundPlan()) {
+      if (!plan.thornGoal || plan.round !== 2 || roundComplete || thornGoalProgress(plan) > 0) {
+        return "";
+      }
+      return " Cursed Thorn lesson: swap the glowing tiles under the thorn lane; any adjacent match cracks those blockers.";
+    }
+
     function scheduleIdleHint() {
       clearIdleHint();
       if (hasMadeValidMove || roundComplete || isResolving || sacrificeState.active || activeBooster) {
@@ -3489,6 +3720,7 @@
 
     function notePlayerInteraction() {
       clearIdleHint();
+      clearThornTeachingCue(false);
       if (!hasMadeValidMove) {
         scheduleIdleHint();
       }
@@ -3546,6 +3778,7 @@
           const superClass = superBloomCells.has(`${x},${y}`) ? "super-bloom-hot" : "";
           const invalidClass = invalidSwapCells.has(`${x},${y}`) ? "invalid-swap" : "";
           const idleHintClass = idleHintCells.has(`${x},${y}`) ? "idle-hint" : "";
+          const thornTeachClass = thornTeachingCells.has(`${x},${y}`) ? "thorn-teach" : "";
           const transmuteClass = transmuteFlashCell === `${x},${y}` ? "transmute-flash" : "";
           const thorn = thornAt(x, y);
           const thornKeyValue = thornKey(x, y);
@@ -3555,7 +3788,7 @@
           const fallKey = `${x},${y}`;
           const fallRows = fallAnimations.get(fallKey) || 0;
           const fallClass = fallRows ? "fall-in" : "";
-          tile.className = `tile ${selectedClass} ${legalClass} ${sacrificeClass} ${profitableClass} ${shearsClass} ${moonwaterTargetClass} ${moonwaterAreaClass} ${moonwaterCenterClass} ${blackCandleLineClass} ${graveSoilTargetClass} ${graveSoilReadyClass} ${harvestClass} ${superClass} ${invalidClass} ${idleHintClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass}`;
+          tile.className = `tile ${selectedClass} ${legalClass} ${sacrificeClass} ${profitableClass} ${shearsClass} ${moonwaterTargetClass} ${moonwaterAreaClass} ${moonwaterCenterClass} ${blackCandleLineClass} ${graveSoilTargetClass} ${graveSoilReadyClass} ${harvestClass} ${superClass} ${invalidClass} ${idleHintClass} ${thornTeachClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass}`;
           tile.disabled = isResolving || roundComplete;
           if (fallRows) {
             tile.style.setProperty("--fall-y", `${-fallRows * 112}%`);
@@ -3567,11 +3800,13 @@
           const moonwaterLabel = moonwaterTargetClass ? " Moonwater Flask 3x3 center" : moonwaterAreaClass ? " inside Moonwater Flask 3x3 patch" : "";
           const blackCandleLabel = blackCandleLineClass ? ` Black Candle ${blackCandleAxis} burn target` : "";
           const graveSoilLabel = graveSoilReadyClass ? " Grave Soil relic-ready tile" : graveSoilTargetClass ? " Grave Soil upgrade target" : "";
+          const thornTeachLabel = thornTeachClass ? " Cursed Thorn teaching cue" : "";
           const thornLabel = thorn ? " with Cursed Thorn blocker" : thornClearedClass ? " where a Cursed Thorn cracked" : "";
-          tile.setAttribute("aria-label", `${flowers[value][0]} tile${profitLabel}${legalLabel}${shearsLabel}${moonwaterLabel}${blackCandleLabel}${graveSoilLabel}${thornLabel}`);
+          tile.setAttribute("aria-label", `${flowers[value][0]} tile${profitLabel}${legalLabel}${shearsLabel}${moonwaterLabel}${blackCandleLabel}${graveSoilLabel}${thornTeachLabel}${thornLabel}`);
           tile.innerHTML = `
             ${iconMarkup(value, "", flowers[value][0], "tile-icon-wrap")}
             ${graveSoilReadyClass ? '<span class="grave-soil-sigil" aria-hidden="true"></span>' : ""}
+            ${thornTeachClass ? '<span class="thorn-teach-marker" aria-hidden="true">!</span>' : ""}
             ${thorn || thornClearedClass ? '<span class="cursed-thorn-overlay" aria-hidden="true"></span>' : ""}
           `;
           if (activeBooster === "moonwaterFlask") {
@@ -3619,14 +3854,17 @@
       $("objective").innerHTML = `
         <span class="objective-text">Round ${plan.round} · ${roundComplete ? "Bouquet Complete" : objectiveVerb}</span>
         ${goalMarkup(plan)}
+        ${thornObjectiveHintMarkup(plan)}
+        ${shapeDiscoveryHintMarkup()}
         ${runeBoonMarkup()}
         ${bouquetStreakMarkup()}
+        ${nextStreakTargetMarkup()}
         <span class="objective-separator">·</span>
         <span>Moves ${moves}</span>
       `;
       $("objective").classList.toggle("complete", roundComplete);
       $("objective").classList.toggle("low-moves", moves <= 3);
-      $("firstSessionPlaque").textContent = runeBoonPlaqueCopy(goalCopy(plan));
+      $("firstSessionPlaque").textContent = roundPlaqueCopy(plan);
       renderActiveOrders(plan);
       renderRoundCeremony(plan);
       $("bar").style.width = `${progress.pct}%`;
@@ -3690,6 +3928,55 @@
       }
       const bonusPercent = bouquetStreakBonusPercent(bouquetStreak);
       return `<span class="objective-boon streak" id="bouquetStreakBadge">Bouquet Streak ${bouquetStreak} · +${bonusPercent}% coins</span>`;
+    }
+
+    function nextStreakTargetMarkup() {
+      if (!roundComplete) {
+        return "";
+      }
+      const nextStreak = bouquetStreak + 1;
+      const bonusPercent = bouquetStreakBonusPercent(nextStreak);
+      return `<span class="objective-boon streak target" id="nextStreakTargetBadge">Next Streak Target ${nextStreak} · +${bonusPercent}% coins</span>`;
+    }
+
+    function thornObjectiveHintMarkup(plan = activeRoundPlan()) {
+      if (!plan.thornGoal || roundComplete || thornGoalComplete(plan)) {
+        return "";
+      }
+      return '<span class="objective-boon thorn" id="thornObjectiveHint">Match beside Cursed Thorns</span>';
+    }
+
+    function shapeDiscoveryHintMarkup() {
+      const plan = activeRoundPlan();
+      if (roundComplete || (bouquetStreak < 1 && plan.round < 2)) {
+        return "";
+      }
+      return '<span class="objective-boon pattern" id="shapeDiscoveryHint">L/T/cross = Shape Bloom</span>';
+    }
+
+    function patternDiscoveryCopy() {
+      return " Shape Bloom: make L, T, or cross matches in normal play for Night Garden, Twin Stem, or Witch's Cross rewards.";
+    }
+
+    function thornObjectiveHintCopy(plan = activeRoundPlan()) {
+      if (!plan.thornGoal || thornGoalComplete(plan)) {
+        return "";
+      }
+      return " Cursed Thorn Goal: make matches beside the vine-crowned blockers to crack and clear them.";
+    }
+
+    function nextBouquetStreakTargetCopy() {
+      const nextStreak = bouquetStreak + 1;
+      const bonusPercent = bouquetStreakBonusPercent(nextStreak);
+      return ` Next Streak Target ${nextStreak}: complete the next bouquet for +${bonusPercent}% coins.`;
+    }
+
+    function roundPlaqueCopy(plan = activeRoundPlan()) {
+      const baseCopy = runeBoonPlaqueCopy(goalCopy(plan));
+      const thornCopy = `${thornObjectiveHintCopy(plan)}${thornTeachingCopy(plan)}`;
+      const patternCopy = bouquetStreak > 0 || plan.round >= 2 ? patternDiscoveryCopy() : "";
+      const nextTargetCopy = roundComplete ? nextBouquetStreakTargetCopy() : "";
+      return `${baseCopy}${thornCopy}${patternCopy}${nextTargetCopy}`;
     }
 
     function runeBoonPlaqueCopy(baseCopy) {
@@ -4314,6 +4601,7 @@
       superBloomCells.clear();
       thornPulseCells.clear();
       thornClearedCells.clear();
+      clearThornTeachingCue(false);
       const result = createResolveResult();
       const flashedCells = new Set();
 
@@ -4342,6 +4630,7 @@
       superBloomCells.clear();
       thornPulseCells.clear();
       thornClearedCells.clear();
+      clearThornTeachingCue(false);
       const result = createResolveResult();
       const maxCascades = Math.max(1, Number(options.maxCascades) || 20);
 
@@ -4788,10 +5077,11 @@
       const streakCopy = bouquetStreak
         ? ` Bouquet Streak ${bouquetStreak} adds +${streakPayout.bonus} bonus coins (${streakPayout.percent}%).`
         : "";
+      const nextTargetCopy = nextBouquetStreakTargetCopy();
       ceremony.hidden = false;
       ceremony.innerHTML = `
         <span class="ceremony-title">${plan.name} fulfilled</span>
-        <span class="ceremony-copy">The client pays. The greenhouse deepens. A sealed reward enters Chest Storage.${streakCopy}</span>
+        <span class="ceremony-copy">The client pays. The greenhouse deepens. A sealed reward enters Chest Storage.${streakCopy}${nextTargetCopy}</span>
         <span class="ceremony-rewards">
           <span class="reward-token">✪ +${streakPayout.total}</span>
           ${streakRewardToken}
@@ -4800,6 +5090,7 @@
           <span class="reward-token">Sub Rosa +${reward.faction} Favor</span>
           <span class="reward-token">${reward.item}</span>
         </span>
+        <span class="ceremony-next-target" id="nextStreakTarget">${nextTargetCopy.trim()}</span>
         ${renderPostBouquetRewardChoice()}
       `;
     }
@@ -4811,28 +5102,27 @@
       const selectedChoice = rewardChoiceById(rewardChoiceState.selected);
       const copy = selectedChoice
         ? `${selectedChoice.label} claimed. Chest Storage and booster counts are up to date.`
-        : "Pick one now, or Next Bouquet will take Greenhouse Cuttings.";
+        : "Pick one now for an immediate bonus. Next Bouquet will safely take Greenhouse Cuttings if you skip.";
       const greenhouseChoice = rewardChoiceById("greenhouse");
       const apothecaryChoice = rewardChoiceById("apothecary");
       const blackMarketChoice = rewardChoiceById("blackMarket");
       const disabled = rewardChoiceState.selected ? "disabled" : "";
+      const optionMarkup = (choice, buttonId) => `
+        <button class="reward-choice-option ${rewardChoiceState.selected === choice.id ? "selected" : ""}" id="${buttonId}" type="button" data-reward-choice="${choice.id}" aria-pressed="${rewardChoiceState.selected === choice.id ? "true" : "false"}" ${disabled}>
+          <span class="reward-choice-name">${choice.label}</span>
+          <span class="reward-choice-gain">${choice.gain}</span>
+          <span class="reward-choice-value">${choice.value}</span>
+          <span class="reward-choice-claim">${rewardChoiceState.selected === choice.id ? "Claimed" : `Claim ${choice.shortLabel}`}</span>
+        </button>
+      `;
       return `
         <div class="reward-choice-panel" id="rewardChoicePanel" aria-label="Choose Your Reward">
           <span class="reward-choice-title">Choose Your Reward</span>
           <span class="reward-choice-copy">${copy}</span>
           <div class="reward-choice-options">
-            <button class="reward-choice-option ${rewardChoiceState.selected === "greenhouse" ? "selected" : ""}" id="rewardChoiceGreenhouse" type="button" data-reward-choice="greenhouse" aria-pressed="${rewardChoiceState.selected === "greenhouse" ? "true" : "false"}" ${disabled}>
-              <span class="reward-choice-name">${greenhouseChoice.label}</span>
-              <span class="reward-choice-gain">${greenhouseChoice.gain}</span>
-            </button>
-            <button class="reward-choice-option ${rewardChoiceState.selected === "apothecary" ? "selected" : ""}" id="rewardChoiceApothecary" type="button" data-reward-choice="apothecary" aria-pressed="${rewardChoiceState.selected === "apothecary" ? "true" : "false"}" ${disabled}>
-              <span class="reward-choice-name">${apothecaryChoice.label}</span>
-              <span class="reward-choice-gain">${apothecaryChoice.gain}</span>
-            </button>
-            <button class="reward-choice-option ${rewardChoiceState.selected === "blackMarket" ? "selected" : ""}" id="rewardChoiceBlackMarket" type="button" data-reward-choice="blackMarket" aria-pressed="${rewardChoiceState.selected === "blackMarket" ? "true" : "false"}" ${disabled}>
-              <span class="reward-choice-name">${blackMarketChoice.label}</span>
-              <span class="reward-choice-gain">${blackMarketChoice.gain}</span>
-            </button>
+            ${optionMarkup(greenhouseChoice, "rewardChoiceGreenhouse")}
+            ${optionMarkup(apothecaryChoice, "rewardChoiceApothecary")}
+            ${optionMarkup(blackMarketChoice, "rewardChoiceBlackMarket")}
           </div>
         </div>
       `;
@@ -4875,7 +5165,7 @@
         tags: ["order", "reward"]
       });
       rewardChoiceState = { pending: true, selected: "" };
-      const completionMessage = `<strong>${plan.name} fulfilled.</strong> <strong>Bouquet Streak ${bouquetStreak}:</strong> +${streakPayout.total} coins (${plan.reward.coins} base + ${streakPayout.bonus} streak bonus at ${streakPayout.percent}%), +${plan.reward.greenhouse} Greenhouse XP, +${plan.reward.apothecary} Apothecary XP, +${plan.reward.faction} Sub Rosa Favor, and ${plan.reward.item} placed in Chest Storage. Choose a reward before Next Bouquet, or Greenhouse Cuttings will be taken by default.`;
+      const completionMessage = `<strong>${plan.name} fulfilled.</strong> <strong>Bouquet Streak ${bouquetStreak}:</strong> +${streakPayout.total} coins (${plan.reward.coins} base + ${streakPayout.bonus} streak bonus at ${streakPayout.percent}%), +${plan.reward.greenhouse} Greenhouse XP, +${plan.reward.apothecary} Apothecary XP, +${plan.reward.faction} Sub Rosa Favor, and ${plan.reward.item} placed in Chest Storage.${nextBouquetStreakTargetCopy()} Choose a reward before Next Bouquet, or Greenhouse Cuttings will be taken by default.`;
       ritualMessage = carryMessage ? `${carryMessage} ${completionMessage}` : completionMessage;
       return true;
     }
@@ -5038,6 +5328,7 @@
       superBloomCells.clear();
       thornPulseCells.clear();
       thornClearedCells.clear();
+      clearThornTeachingCue(false);
       boardParticles = [];
       ritualMessage = "The greenhouse table shuffles. One move is spent.";
       build();
@@ -5066,6 +5357,7 @@
       transmuteFlashCell = "";
       thornPulseCells.clear();
       thornClearedCells.clear();
+      clearThornTeachingCue(false);
       graveSoilCells.clear();
       currentRound = nextRound;
       const runeBoonApplied = pendingRuneTendedSoil;
@@ -5078,9 +5370,10 @@
       const boonCopy = runeBoonApplied
         ? " <strong>Rune-Tended Soil</strong> wakes from the planted Eclipse Seed Rune: +1 starting move this bouquet."
         : "";
-      ritualMessage = `<strong>Round ${plan.round}: ${plan.name}</strong> begins. ${goalCopy(plan)}${boonCopy}${defaultChoiceMessage}`;
+      ritualMessage = `<strong>Round ${plan.round}: ${plan.name}</strong> begins. ${goalCopy(plan)}${thornObjectiveHintCopy(plan)}${thornTeachingCopy(plan)}${patternDiscoveryCopy()}${boonCopy}${defaultChoiceMessage}`;
       resetCursedThorns(plan);
       build();
+      startThornTeachingCue(plan);
       render();
       scheduleIdleHint();
     }

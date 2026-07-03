@@ -792,3 +792,40 @@
 - How to trigger and verify L/T/cross matches without console: press `M` or click `Shape Bloom` repeatedly; the cycle still includes `Black Candle Vine`, `Witch's Cross!`, `Night Garden L-Bloom!`, `Twin Stem Bloom!`, and `Eclipse Seed Rune`.
 - How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit the review-hook particle burst, then return the board to play.
 - Security/secret-scan status: lightweight scan ran on changed files with no findings; no secrets, trackers, backend, SDKs, or new permissions were added.
+
+## 2026-07-03 Codex normal-play teaching slice
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow normal-play teaching pass for Round 2 Cursed Thorn and Shape Bloom discovery.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added visible Round 2 teaching cues: `Match beside Cursed Thorns` objective chip, plaque/log copy explaining adjacent matches, short-lived `thorn-teach` highlights, and `thorn-teach-marker` badges over the thorn lane plus the starter swap.
+- Added a deterministic early Round 2 adjacent-match opportunity under the first thorn row. The board still starts with no free matches; the player must swap the glowing tiles to clear the thorns.
+- Added normal-play Shape Bloom discovery after the first bouquet and in Round 2 with `L/T/cross = Shape Bloom` UI and plaque/log copy.
+- Made post-bouquet choices more obviously valuable with one-line value copy and claim labels, while preserving exactly three choices and the default `Greenhouse Cuttings` path on `Next Bouquet`.
+- Added a visible `Next Streak Target` before `Next Bouquet` so the next bouquet has a clear bonus goal.
+- Updated static verifier markers for the new teaching cue, seeded thorn move, Shape Bloom hint, reward-choice value labels, and next-streak target.
+- Verification run:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - Read `docs/hermes_audit_next_tasks.md`.
+  - JS parse check over executable HTML scripts with bundled Node.
+  - `python3 scripts/verify_project.py`
+  - `git diff --check`
+  - Local static preview at `http://127.0.0.1:4173/playable/midnight_bloom_prototype.html`; `agent-browser` was unavailable, so bundled Playwright was used.
+  - Local static checks returned `200` for `/`, `/playable/midnight_bloom_prototype.html`, and `/assets/tiles/96/amber_resin_seed.png`.
+  - Local Playwright fresh load: 64 tiles, 95 images, 0 broken images, no console/page errors, and no mobile overflow at 390x844.
+  - Local Playwright completed Round 1, verified `Bouquet Streak 1`, `Next Streak Target 2`, exactly three reward choices, three value lines, claim labels, and Shape Bloom plaque copy.
+  - Local Playwright clicked `Next Bouquet` without choosing a reward and verified default `Greenhouse Cuttings`, Round 2 `Cursed Thorn 0/3`, `Match beside Cursed Thorns`, `L/T/cross = Shape Bloom`, 7 highlighted teaching cells, 7 teaching markers, 3 Cursed Thorn blockers, and a seeded adjacent thorn-clearing move.
+  - Local Playwright clicked the seeded Round 2 swap; it cleared all three Cursed Thorns, updated to `Cursed Thorn 3/3`, preserved 64 tiles, and returned the board to 0 disabled tiles.
+  - Local Playwright completed Round 2 with the review control and verified `Bouquet Streak 2`, `Next Streak Target 3`, and exactly three reward choices.
+  - Local Playwright verified `Pruning Shears`, `Moonwater Flask`, `Black Candle`, and `Grave Soil` still arm/cancel/use and preserve 64 tiles.
+  - Local Playwright verified Sacrifice opens/cancels, Chest opens/closes with Escape, Shape Bloom cycles into L/T/cross rewards, and Supreme Bloom can still be triggered without console.
+- Browser console/runtime status: no local Playwright console warnings, console errors, or page errors observed during the main teaching flow, reward-choice/streak checks, mobile check, booster use checks, Shape Bloom cycle, or Supreme review hook.
+- Vercel deployment URL/identifier checked: pending until the gameplay commit is pushed and deployed.
+- GitHub Pages preview status: pending until the gameplay commit is pushed and the Pages workflow publishes.
+- Known issues: none found locally for the normal-play teaching slice. The shell still does not have standalone `agent-browser`, so browser verification used bundled Playwright.
+- How to trigger and verify L/T/cross matches without console: after Round 1, watch for the `L/T/cross = Shape Bloom` hint in Round 2; in the review path, click `Shape Bloom` repeatedly until `Witch's Cross!`, `Night Garden L-Bloom!`, or `Twin Stem Bloom!` appears.
+- How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit the review-hook particle burst, then return the board to play.
+- Security/secret-scan status: lightweight credential-shaped scan ran on changed files with no findings; no secrets, trackers, backend, SDKs, or new permissions were added in code.
