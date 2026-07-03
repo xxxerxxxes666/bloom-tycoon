@@ -1001,3 +1001,37 @@
 - How to trigger and verify L/T/cross matches without console: after Round 1, watch for the `L/T/cross = Shape Bloom` hint in Round 2; in the review path, click `Shape Bloom` repeatedly until `Witch's Cross!`, `Night Garden L-Bloom!`, or `Twin Stem Bloom!` appears. The hidden `shapeAuditData` verifier still contains all three definitions.
 - How to trigger and verify Supreme Bloom without console: press `B`; after the short charge phase, the overlay should show `SUPREME BLOOM! +12`, emit the review-hook particle burst, then return the board to play.
 - Security/secret-scan status: lightweight credential-shaped scan ran on changed files with no findings; no secrets, trackers, backend, SDKs, or new permissions were added in code.
+
+## 2026-07-03 Codex Round 3 Bloodroot Compact clarity/payoff
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow Round 3 Bloodroot Compact clarity/payoff pass.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added a compact `Round 3 Focus` strip below `Bouquet Path` using the existing Round 3 `Bloodroot Compact` template.
+- The strip has local/static states for `tease`, `next`, `current`, `withered`, and `complete`.
+- The copy names Bloodroot/Sol Rot objectives when Round 3 becomes current and points the payoff back to existing Chest Storage, Flowerpedia, Chapter Progress, and Round 3 reward values.
+- No new account system, backend, analytics, monetization, SDK, tracker, asset, or permission was added.
+- Added static verifier markers for `roundThreeFocus`, `Round 3 Focus`, `Bloodroot Compact payoff`, all `data-round-three-state` values, and the Round 3 render/helper functions.
+- Verification run:
+  - `git fetch origin main`
+  - Read `docs/hermes_audit_next_tasks.md`.
+  - `python3 scripts/verify_project.py`
+  - `git diff --check`
+  - Local static preview at `http://127.0.0.1:4186/playable/midnight_bloom_prototype.html`; standalone `agent-browser` was unavailable, so bundled Playwright was used.
+  - Local Playwright fresh Round 1 verified `Round 3 Focus` in `tease`, Bloodroot Compact/Bloodroot/Sol Rot copy, Chest Storage/Flowerpedia/Chapter Progress payoff copy, 64 tiles, no broken images, and no console/page errors.
+  - Local Playwright Round 1 review completion verified exactly three reward choices.
+  - Local Playwright `Next Bouquet` into Round 2 verified Round 3 state `next` and path states `complete,current,locked`.
+  - Local Playwright Round 2 fail verified path states `complete,withered,locked`; retry restored Round 2 and kept Round 3 Focus in `next`.
+  - Local Playwright Round 2 review completion plus `Next Bouquet` verified Round 3 state `current`, path states `complete,complete,current`, and objective text for Bloodroot and Sol Rot.
+  - Local Playwright Round 3 review completion verified Round 3 state `complete`, `Bloodroot Compact` was added to Chest Storage, ceremony copy stayed visible, and three reward choices still appeared.
+  - Local Playwright mobile at 390x860 verified the Round 3 strip remains visible, has no horizontal overflow, no broken images, and no console/page errors.
+  - Local preservation smoke verified Round 1 fail/retry, all four boosters arm/cancel/use and preserve 64 tiles, Shape Bloom, Supreme Bloom via `B`, Chest, and Sacrifice still work without console/page errors.
+- Browser console/runtime status: no local Playwright console errors or page errors observed during Round 3 tease/current/complete checks, Round 1 fail/retry, Round 2 fail/retry, mobile, boosters, Shape Bloom, Supreme Bloom, Chest, or Sacrifice.
+- Vercel deployment URL/identifier checked: pending until this commit is pushed and redeployed.
+- GitHub Pages preview status: pending until this commit is pushed and the Pages workflow completes.
+- Known issues: none found locally for this Round 3 clarity/payoff slice. The shell still does not have standalone `agent-browser`, so browser verification used bundled Playwright.
+- How to trigger and verify L/T/cross matches without console: after Round 1, watch for the `L/T/cross = Shape Bloom` hint in Round 2; in the review path, click `Shape Bloom` repeatedly until `Witch's Cross!`, `Night Garden L-Bloom!`, or `Twin Stem Bloom!` appears. The hidden `shapeAuditData` verifier still contains all three definitions.
+- How to trigger and verify Supreme Bloom without console: press `B`; after the short charge phase, the overlay should show `SUPREME BLOOM! +12`, emit the review-hook particle burst, then return the board to play.
+- Security/secret-scan status: lightweight credential-shaped scan ran on changed files with no findings; no secrets, trackers, backend, SDKs, or new permissions were added in code.

@@ -636,6 +636,52 @@
       color: #c6ad7c;
     }
 
+    .round-three-focus {
+      max-width: 760px;
+      margin: 8px auto 0;
+      padding: 9px 12px;
+      border: 1px solid #39251f;
+      background: linear-gradient(180deg, #120908, #050404);
+      box-shadow: inset 0 0 12px #000;
+      color: #a89070;
+    }
+
+    .round-three-focus[data-round-three-state="current"] {
+      border-color: #9c3745;
+      color: #e5b3b6;
+      box-shadow: inset 0 0 12px #000, 0 0 12px #701f2f55;
+    }
+
+    .round-three-focus[data-round-three-state="complete"] {
+      border-color: #5d6f32;
+      color: #d8efad;
+    }
+
+    .round-three-focus[data-round-three-state="withered"] {
+      border-color: #8a332a;
+      color: #e0a078;
+    }
+
+    .round-three-kicker {
+      display: block;
+      color: #d7b16d;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.9px;
+    }
+
+    .round-three-line,
+    .round-three-payoff {
+      display: block;
+      margin-top: 3px;
+      font-size: 12px;
+      line-height: 1.3;
+    }
+
+    .round-three-payoff {
+      color: #c6ad7c;
+    }
+
     .progress {
       height: 22px;
       border: 1px solid #6b4a2f;
@@ -3202,6 +3248,10 @@
         min-height: 0;
       }
 
+      .round-three-focus {
+        padding: 10px;
+      }
+
       .hero {
         height: 150px;
       }
@@ -3330,6 +3380,7 @@
         Match Thorn Rose and Bone Star to complete Round 1: First Bouquet.
       </div>
       <div class="bouquet-path" id="bouquetPath" aria-label="Bouquet Path"></div>
+      <div class="round-three-focus" id="roundThreeFocus" aria-label="Round 3 Bloodroot Compact"></div>
       <script type="application/json" id="shapeAuditData"></script>
       <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
       <div class="board" id="board"></div>
@@ -3582,6 +3633,13 @@
       'data-bouquet-state="current"',
       'data-bouquet-state="locked"',
       'data-bouquet-state="withered"'
+    ];
+    const roundThreeAuditMarkers = [
+      'data-round-three-state="tease"',
+      'data-round-three-state="next"',
+      'data-round-three-state="current"',
+      'data-round-three-state="withered"',
+      'data-round-three-state="complete"'
     ];
     const STREAK_COIN_BONUS_STEP = 5;
     const STREAK_COIN_BONUS_CAP = 25;
@@ -3944,6 +4002,62 @@
         <div class="bouquet-path-nodes">
           ${numbers.map((roundNumber) => bouquetPathNodeMarkup(roundNumber)).join("")}
         </div>
+      `;
+    }
+
+    function roundThreePlan() {
+      return buildRoundPlan(3);
+    }
+
+    function roundThreeFocusState(plan = roundThreePlan()) {
+      if (currentRound > plan.round || (currentRound === plan.round && roundComplete)) {
+        return { id: "complete", label: "Sealed Compact" };
+      }
+      if (currentRound === plan.round && isBouquetFailed(plan)) {
+        return { id: "withered", label: "Current · Withered" };
+      }
+      if (currentRound === plan.round) {
+        return { id: "current", label: "Current Compact" };
+      }
+      if (currentRound === plan.round - 1) {
+        return { id: "next", label: "Next Compact" };
+      }
+      return { id: "tease", label: "Coming Compact" };
+    }
+
+    function roundThreeFocusCopy(state, plan = roundThreePlan()) {
+      const goal = bouquetPathGoalCopy(plan);
+      if (state.id === "complete") {
+        return `${plan.name} sealed: ${plan.reward.item} sits in Chest Storage while Flowerpedia and Chapter Progress carry the trail forward.`;
+      }
+      if (state.id === "withered") {
+        return `Retry keeps ${plan.name} open: restore ${plan.moves} moves and finish ${goal}.`;
+      }
+      if (state.id === "current") {
+        return `Current Round 3: gather ${goal} to seal the first Bloodroot payoff.`;
+      }
+      if (state.id === "next") {
+        return `Next after Moonlit Wreath: ${plan.name} asks for ${goal}.`;
+      }
+      return `${plan.name} waits after the Cursed Thorn lesson with ${goal}.`;
+    }
+
+    function roundThreePayoffCopy(plan = roundThreePlan()) {
+      return `Bloodroot Compact payoff: ${plan.reward.item} enters Chest Storage, +${plan.reward.greenhouse} Greenhouse XP, and a clearer trail back to Flowerpedia and Chapter Progress.`;
+    }
+
+    function renderRoundThreeFocus() {
+      const focus = $("roundThreeFocus");
+      if (!focus) {
+        return;
+      }
+      const plan = roundThreePlan();
+      const state = roundThreeFocusState(plan);
+      focus.dataset.roundThreeState = state.id;
+      focus.innerHTML = `
+        <span class="round-three-kicker">Round 3 Focus · ${state.label}</span>
+        <span class="round-three-line">${roundThreeFocusCopy(state, plan)}</span>
+        <span class="round-three-payoff">${roundThreePayoffCopy(plan)}</span>
       `;
     }
 
@@ -4527,6 +4641,7 @@
       $("objective").classList.toggle("low-moves", moves <= 3);
       $("firstSessionPlaque").textContent = roundPlaqueCopy(plan);
       renderBouquetPath();
+      renderRoundThreeFocus();
       renderActiveOrders(plan);
       renderRoundCeremony(plan);
       $("bar").style.width = `${progress.pct}%`;
