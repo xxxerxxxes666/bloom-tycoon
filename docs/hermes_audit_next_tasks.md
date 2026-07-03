@@ -100,66 +100,65 @@ Do this next, surgically:
 
 # Hermes Audit Next Tasks
 
-Last audited by Hermes: **2026-07-02 22:12 UTC**
+Last audited by Hermes: **2026-07-03 03:13 UTC**
 Audit targets:
 - Vercel playable: https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html
 - GitHub Pages playable: https://xxxerxxxes666.github.io/bloom-tycoon/playable/midnight_bloom_prototype.html
 - Repo: https://github.com/xxxerxxxes666/bloom-tycoon
-- Latest audited commit: `4b8ced5` (`docs: record Moonwater Flask Pages parity`)
-- Latest gameplay commit audited: `79d10c0` (`feat: add Moonwater Flask booster`)
+- Latest audited commit: `386bc09` (`docs: record Black Candle booster pass`)
+- Latest gameplay commit audited: `c1a38d1` (`feat: add Black Candle booster`)
 
 ## Hermes audit verdict
 
-New Codex work landed and the Moonwater Flask booster is live on both hosts. No deploy-parity blocker remains.
+New Codex work landed and the `Black Candle` booster is live on both hosts. No deploy-parity blocker remains.
 
-Core gameplay is still working: fresh Round 1 loads, `Moonwater Flask` arms/cancels with 36 valid 3x3 centers, use spends exactly one Flask and preserves 64 tiles, `Pruning Shears` remains visible, `Complete Bouquet` + `Next Bouquet` starts Round 2 with Cursed Thorns, Chest and Sacrifice open/cancel/close, `Shape Bloom` and `B` remain available, and mobile portrait has no horizontal overflow.
+Core gameplay is still working: fresh Round 1 loads, `Black Candle` arms/cancels/uses, line burns spend exactly one count and preserve 64 tiles, `Complete Bouquet` + `Next Bouquet` starts Round 2 with Cursed Thorns, `Shape Bloom`/`M` and `B` review paths remain present, and mobile portrait has no horizontal overflow.
 
 ## Verified by Hermes this audit
 
 - Fetched/reset local clone to `origin/main` with the repo-scoped SSH key.
 - `python3 scripts/verify_project.py` passes.
 - `git diff --check` passes.
-- Latest commit audited: `4b8ced5 docs: record Moonwater Flask Pages parity`.
-- Latest gameplay commit audited: `79d10c0 feat: add Moonwater Flask booster`.
+- Latest commit audited: `386bc09 docs: record Black Candle booster pass`.
+- Latest gameplay commit audited: `c1a38d1 feat: add Black Candle booster`.
 - Vercel playable/key tile asset return `200`.
 - GitHub Pages playable/key tile asset return `200`.
-- Static marker parity: both hosted playables contain `Moonwater Flask`, `moonwaterFlaskBtn`, `moonwaterFlaskCount`, `toggleMoonwaterFlask`, `useMoonwaterFlask`, `moonwaterPatchCells`, `shuffleMoonwaterPatch`, `queueMoonwaterBurst`, `moonwater-target`, `moonwater-area`, `boosters.moonwaterFlask`, `Pruning Shears`, `Rune-Tended Soil`, `Black Candle Vine`, `Cursed Thorn`, `Shape Bloom`, and `Complete Bouquet`.
+- Static marker parity: both hosted playables contain `Black Candle`, `blackCandleBtn`, `blackCandleCount`, `blackCandleModes`, `blackCandleAxis`, `toggleBlackCandle`, `useBlackCandle`, `blackCandleLineCells`, `refillBlackCandleLine`, `queueBlackCandleBurst`, `black-candle-line`, `boosters.blackCandle`, `Moonwater Flask`, `Pruning Shears`, `Rune-Tended Soil`, `Eclipse Seed Rune`, `Black Candle Vine`, `Cursed Thorn`, `Shape Bloom`, and `Complete Bouquet`.
 - Vercel browser checks:
-  - 64 board tiles, 93 images, 0 broken images, no console/page errors observed.
-  - `Moonwater Flask` armed targeting mode with 36 valid centers; Cancel exited without spending.
-  - Moonwater reshuffled a 3x3 patch, spent the count to `x0`, changed 9 cells, and preserved 64 board tiles.
-  - `Shape Bloom` triggered `Eclipse Seed Rune`; `B` triggered Supreme Bloom and returned the board to play.
-  - `Complete Bouquet` showed the reward ceremony and `Next Bouquet`; Round 2 started with `Cursed Thorn 0/3`, 17 moves, and a 64-tile board.
-  - Chest Storage opened/closed with Escape; Sacrifice opened/cancelled.
+  - 64 board tiles, 94 images, 0 broken images, no console/page errors observed.
+  - `Black Candle` armed targeting mode; Cancel exited without spending.
+  - Black Candle line burn spent `x1` to `x0`, preserved 64 tiles, and did not spend moves.
+  - `Complete Bouquet` showed the reward ceremony and `Next Bouquet`; Round 2 started with `Cursed Thorn 0/3` and 3 visible thorns.
+  - `M`/`Shape Bloom` and `B` review paths remained available.
 - GitHub Pages browser checks:
-  - 64 board tiles, 93 images, 0 broken images, no console/page errors observed.
-  - Static markers matched Vercel.
-  - `Moonwater Flask` armed targeting mode with 36 valid centers and Cancel exited without spending.
-  - Hidden-iframe mobile portrait at ~390px showed no horizontal overflow, 64 tiles, 0 broken images, and ~39px tiles.
+  - 64 board tiles, 94 images, 0 broken images, no console/page errors observed.
+  - `Black Candle` armed targeting mode; Cancel exited without spending.
+  - Black Candle line burn spent `x1` to `x0` and preserved 64 tiles.
+  - Hidden-iframe mobile portrait at ~390px showed no horizontal overflow, 64 tiles, 0 broken images, and visible `Black Candle` control.
 
 ## Current next priority for Codex
 
-Proceed to the next small strategic gameplay slice: add a row/column burn booster so the booster lane has a stronger tactical option after `Pruning Shears` and `Moonwater Flask`. Keep it local/static and narrow; no accounts, backend, analytics, ads, SDKs, secrets, or broad systems.
+Proceed to the next small strategic gameplay slice: add the final local booster from the current framework, `Grave Soil`, so the booster lane becomes a real tactical choice. Keep it local/static and narrow; no accounts, backend, analytics, ads, SDKs, secrets, or broad systems.
 
-1. Add one visible booster: `Black Candle` or `Black Candle Wick` burns a selected row or column without spending moves.
-2. Gate it lightly through existing local progress/rewards: grant one from a Black Market/Faction milestone, Chest reward, or bouquet reward; show its count beside the other boosters.
-3. Make the UX obvious and reversible: click the booster, choose row/column targeting, preview the affected line, then click to burn or Cancel without spending it.
+1. Add one visible booster: `Grave Soil (x1)` upgrades one selected normal tile into a special/relic-ready tile without spending moves.
+2. Gate it lightly through existing local progress/rewards: grant one from Greenhouse/Black Market/Chest/bouquet progress; show its count beside the other boosters.
+3. Make the UX obvious and reversible: click the booster, eligible normal tiles glow, a short preview/copy explains the upgrade, then click to use or Cancel without spending it.
 4. Preserve board integrity: always return to 64 tiles, keep/restore at least one legal move, and do not delete Chest/rune/booster state.
-5. If the selected row/column contains `Cursed Thorn`, either damage/clear thorns with explicit copy or leave them anchored; do not silently mutate blocker progress.
-6. Preserve current reward hierarchy: exact 5-line = `Eclipse Seed Rune`, 4-line match = `Black Candle Vine` relic, L/T/cross = shape rewards, 6+ straight line or `B`/Sacrifice only = Supreme Bloom.
-7. Keep review hooks: `Shape Bloom`, `Complete Bouquet`, `N`, `M`, and `B`.
-8. Add/update static verifier checks for the new booster markers.
-9. Verify normal first-move flow, Round 2 Cursed Thorn flow, Rune-Tended Soil payoff, `Pruning Shears`, `Moonwater Flask`, the new Black Candle booster use/cancel, Chest/Sacrifice, review hooks, host parity, and mobile portrait before pushing.
+5. Do not silently mutate `Cursed Thorn`; Grave Soil should either reject thorn tiles with clear copy or leave thorns anchored.
+6. Preserve current reward hierarchy: exact 5-line = `Eclipse Seed Rune`, 4-line match = `Black Candle Vine`, L/T/cross = shape rewards, 6+ straight line or `B`/Sacrifice only = Supreme Bloom.
+7. Preserve existing boosters: `Pruning Shears`, `Moonwater Flask`, and `Black Candle` must still arm/cancel/use correctly.
+8. Keep review hooks: `Shape Bloom`, `Complete Bouquet`, `N`, `M`, and `B`.
+9. Add/update static verifier checks for the new booster markers.
+10. Verify normal first-move flow, Round 2 Cursed Thorn flow, Rune-Tended Soil payoff, all four boosters, Chest/Sacrifice, review hooks, host parity, and mobile portrait before pushing.
 
-### Acceptance checks for the Black Candle booster pass
+### Acceptance checks for the Grave Soil booster pass
 
-- Vercel and GitHub Pages direct playable HTML contain the new Black Candle booster markers after deployment.
-- A deterministic path grants or displays at least one Black Candle booster.
+- Vercel and GitHub Pages direct playable HTML contain the new Grave Soil booster markers after deployment.
+- A deterministic path grants or displays at least one Grave Soil booster.
 - Clicking the booster enters a clear targeting mode; Cancel exits without spending it.
-- Using the booster burns only the intended row/column, spends exactly one count, preserves 64 tiles, and leaves a playable board.
-- Cursed Thorn behavior in the affected line is explicit and consistent with the displayed copy/objective progress.
-- `Pruning Shears` still works on a normal tile and on a Cursed Thorn.
-- `Moonwater Flask` still reshuffles only a 3x3 patch, preserves Cursed Thorn cells, and does not spend moves.
+- Using the booster upgrades only the intended normal tile, spends exactly one count, preserves 64 tiles, and leaves a playable board.
+- Grave Soil behavior on Cursed Thorn tiles is explicit and does not silently advance blocker progress.
+- `Pruning Shears`, `Moonwater Flask`, and `Black Candle` still work after the new booster lands.
 - Rune-Tended Soil still works: earn `Eclipse Seed Rune`, plant it, then Round 2 starts with +1 move.
 - 5-line `Eclipse Seed Rune`, 4-line `Black Candle Vine`, L/T/cross `Shape Bloom`, `M`, and `B` still work.
 - Round 1 first-move/Bone Star flow still completes.
