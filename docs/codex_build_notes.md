@@ -640,6 +640,49 @@
 - How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit the review-hook particle burst, then return the board to play.
 - Security/secret-scan status: lightweight scan ran on changed files with no findings; no secrets, trackers, backend, SDKs, or new permissions were added.
 
+## 2026-07-03 Codex Bouquet Streak slice
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a visible local/static `Bouquet Streak` system for repeat bouquet completions.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added persisted `bouquetStreak` state and a visible `Bouquet Streak` objective badge after the first bouquet completion.
+- Added a capped bouquet coin bonus: `+5% coins per streak`, capped at `25%`.
+- Completion now increments the streak once, pays base coins plus the streak bonus, and shows the exact base/bonus/percent in ritual-log and ceremony copy.
+- First bouquet example: `Bouquet Streak 1`, `+5% coins`, `+126 coins` from `120 base + 6 streak bonus`.
+- Second bouquet example: `Bouquet Streak 2`, `+10% coins`, `+165 coins` from `150 base + 15 streak bonus`.
+- Preserved `Choose Your Reward`: three choices still appear, selected rewards still update XP/boosters, and ignored choices still safely default to `Greenhouse Cuttings` on `Next Bouquet`.
+- Preserved the repeatable bouquet loop, Round 2 Cursed Thorn setup, Rune-Tended Soil, board size, all four boosters, Chest/Sacrifice, and review hooks `Shape Bloom`, `Complete Bouquet`, `N`, `M`, and `B`.
+- Preserved reward hierarchy: exact 5-line = `Eclipse Seed Rune`, 4-line = `Black Candle Vine`, L/T/cross = shape rewards, Grave Soil exact 3-line = `Grave Soil Relic`, and 6+ straight line or `B`/Sacrifice only = Supreme Bloom.
+- Added static audit markers for `Bouquet Streak`, `bouquetStreak`, `bouquetStreakBadge`, `STREAK_COIN_BONUS_STEP`, `STREAK_COIN_BONUS_CAP`, `bouquetStreakBonusPercent`, `bouquetStreakPayout`, and `validBouquetStreak`.
+- Verification run:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - `python3 scripts/verify_project.py`
+  - JS parse check over executable HTML scripts with bundled Node.
+  - `git diff --check`
+  - Local static preview at `http://127.0.0.1:4173/playable/midnight_bloom_prototype.html`.
+  - Local static checks returned `200` for `/`, `/playable/midnight_bloom_prototype.html`, `assets/tiles/96/amber_resin_seed.png`, and `assets/tiles/48/amber_resin_seed.png`.
+  - Local Playwright fresh load: 64 board tiles, 95 images, 0 broken images, no error overlay, no horizontal overflow.
+  - Local Playwright completed the first bouquet and verified `Bouquet Streak 1`, `+5% coins`, `+126 coins`, `120 base + 6 streak bonus at 5%`, and exactly three reward choices.
+  - Local Playwright selected `Greenhouse Cuttings`, saw `Grave Soil` increase from `x1` to `x2`, clicked `Next Bouquet`, and verified Round 2 retained `Bouquet Streak 1` with `Cursed Thorn 0/3` and 3 visible blockers.
+  - Local Playwright completed a second bouquet with review controls and verified `Bouquet Streak 2`, `+10% coins`, `+165 coins`, and `150 base + 15 streak bonus at 10%`.
+  - Local Playwright ignored the second reward choice, clicked `Next Bouquet`, and verified default `Greenhouse Cuttings`, Round 3 start, `Bouquet Streak 2`, 64 board tiles, and no broken images.
+  - Local Playwright separately verified the real Round 2 Cursed Thorn flow via a seeded adjacent match; thorns cleared to `Cursed Thorn 3/3` with 0 visible blockers.
+  - Local Playwright verified `Pruning Shears`, `Moonwater Flask`, `Black Candle`, and `Grave Soil` each arm, cancel without spending, use once, spend to `x0`, and preserve 64 tiles.
+  - Local Playwright verified Rune-Tended Soil still works: `Shape Bloom` earns `Eclipse Seed Rune`, Chest `Plant Rune` queues it, `Complete Bouquet` + `Next Bouquet` starts Round 2 with `Rune-Tended Soil +1 move`, `Bouquet Streak 1`, and 18 moves.
+  - Local Playwright verified `M`/`Shape Bloom` still cycles `Eclipse Seed Rune`, `Black Candle Vine`, `Witch's Cross!`, `Night Garden L-Bloom!`, and `Twin Stem Bloom!`.
+  - Local Playwright verified `B` still emits `SUPREME BLOOM!` with 84 particles.
+  - Local Playwright verified Chest opens/closes with Escape, Sacrifice opens/cancels, and mobile 390x844 shows `Bouquet Streak 1`, three reward choices, 64 tiles, 0 broken images, and no horizontal overflow.
+- Browser console/runtime status: no local Playwright console errors or page errors observed during streak completions, reward selection/default, Round 2 thorn flow, booster checks, Rune-Tended Soil, review hooks, Chest/Sacrifice, or mobile checks.
+- Vercel deployment URL/identifier checked: pending until this pass is committed and deployed.
+- GitHub Pages preview status: pending until this pass is pushed and the Pages workflow completes.
+- Known issues: none found locally for the Bouquet Streak slice. The shell still does not have standalone `agent-browser`, so browser verification used bundled Playwright.
+- How to trigger and verify L/T/cross matches without console: press `M` or click `Shape Bloom` repeatedly; the cycle still includes `Black Candle Vine`, `Witch's Cross!`, `Night Garden L-Bloom!`, `Twin Stem Bloom!`, and `Eclipse Seed Rune`.
+- How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit the review-hook particle burst, then return the board to play.
+- Security/secret-scan status: lightweight scan ran on changed files with no findings; no secrets, trackers, backend, SDKs, or new permissions were added.
+
 ## 2026-07-03 Codex Grave Soil booster slice
 
 - Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested the final local/static booster, `Grave Soil`.

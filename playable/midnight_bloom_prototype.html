@@ -486,6 +486,11 @@
       border-color: #5e412d;
     }
 
+    .objective-boon.streak {
+      color: #f3dca0;
+      border-color: #b3814e;
+    }
+
     .objective-text {
       color: #d0b27a;
       text-transform: uppercase;
@@ -2947,6 +2952,8 @@
       { id: "blackMarket", label: "Black Market Favor", xp: 80, gain: "Sub Rosa +80 Favor · Black Candle x1" }
     ];
     const postBouquetRewardIds = postBouquetRewardChoices.map((choice) => choice.id);
+    const STREAK_COIN_BONUS_STEP = 5;
+    const STREAK_COIN_BONUS_CAP = 25;
 
     let board = [];
     let selected = null;
@@ -2958,6 +2965,7 @@
     let sacrificeState = { active: false, choice: null };
     let boosters = { pruningShears: 1, moonwaterFlask: 1, blackCandle: 1, graveSoil: 1 };
     let rewardChoiceState = { pending: false, selected: "" };
+    let bouquetStreak = 0;
     let activeBooster = "";
     let moonwaterPreviewCenter = null;
     let blackCandleAxis = "row";
@@ -3612,6 +3620,7 @@
         <span class="objective-text">Round ${plan.round} · ${roundComplete ? "Bouquet Complete" : objectiveVerb}</span>
         ${goalMarkup(plan)}
         ${runeBoonMarkup()}
+        ${bouquetStreakMarkup()}
         <span class="objective-separator">·</span>
         <span>Moves ${moves}</span>
       `;
@@ -3673,6 +3682,14 @@
         return '<span class="objective-boon pending">Rune-Tended Soil queued</span>';
       }
       return "";
+    }
+
+    function bouquetStreakMarkup() {
+      if (!bouquetStreak) {
+        return "";
+      }
+      const bonusPercent = bouquetStreakBonusPercent(bouquetStreak);
+      return `<span class="objective-boon streak" id="bouquetStreakBadge">Bouquet Streak ${bouquetStreak} · +${bonusPercent}% coins</span>`;
     }
 
     function runeBoonPlaqueCopy(baseCopy) {
@@ -4764,12 +4781,20 @@
         return;
       }
       const reward = plan.reward;
+      const streakPayout = bouquetStreakPayout(reward.coins, bouquetStreak);
+      const streakRewardToken = bouquetStreak
+        ? `<span class="reward-token">Bouquet Streak ${bouquetStreak} · +${streakPayout.percent}% coins (+${streakPayout.bonus})</span>`
+        : "";
+      const streakCopy = bouquetStreak
+        ? ` Bouquet Streak ${bouquetStreak} adds +${streakPayout.bonus} bonus coins (${streakPayout.percent}%).`
+        : "";
       ceremony.hidden = false;
       ceremony.innerHTML = `
         <span class="ceremony-title">${plan.name} fulfilled</span>
-        <span class="ceremony-copy">The client pays. The greenhouse deepens. A sealed reward enters Chest Storage.</span>
+        <span class="ceremony-copy">The client pays. The greenhouse deepens. A sealed reward enters Chest Storage.${streakCopy}</span>
         <span class="ceremony-rewards">
-          <span class="reward-token">✪ +${reward.coins}</span>
+          <span class="reward-token">✪ +${streakPayout.total}</span>
+          ${streakRewardToken}
           <span class="reward-token">Greenhouse +${reward.greenhouse} XP</span>
           <span class="reward-token">Apothecary +${reward.apothecary} XP</span>
           <span class="reward-token">Sub Rosa +${reward.faction} Favor</span>
@@ -4836,7 +4861,9 @@
         return false;
       }
       roundComplete = true;
-      coins += plan.reward.coins;
+      bouquetStreak += 1;
+      const streakPayout = bouquetStreakPayout(plan.reward.coins, bouquetStreak);
+      coins += streakPayout.total;
       grantTycoonXp(plan.reward.greenhouse, plan.reward.apothecary, plan.reward.faction);
       addChestItem({
         id: `round-${plan.round}-${plan.reward.item.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
@@ -4848,9 +4875,26 @@
         tags: ["order", "reward"]
       });
       rewardChoiceState = { pending: true, selected: "" };
-      const completionMessage = `<strong>${plan.name} fulfilled.</strong> +${plan.reward.coins} coins, +${plan.reward.greenhouse} Greenhouse XP, +${plan.reward.apothecary} Apothecary XP, +${plan.reward.faction} Sub Rosa Favor, and ${plan.reward.item} placed in Chest Storage. Choose a reward before Next Bouquet, or Greenhouse Cuttings will be taken by default.`;
+      const completionMessage = `<strong>${plan.name} fulfilled.</strong> <strong>Bouquet Streak ${bouquetStreak}:</strong> +${streakPayout.total} coins (${plan.reward.coins} base + ${streakPayout.bonus} streak bonus at ${streakPayout.percent}%), +${plan.reward.greenhouse} Greenhouse XP, +${plan.reward.apothecary} Apothecary XP, +${plan.reward.faction} Sub Rosa Favor, and ${plan.reward.item} placed in Chest Storage. Choose a reward before Next Bouquet, or Greenhouse Cuttings will be taken by default.`;
       ritualMessage = carryMessage ? `${carryMessage} ${completionMessage}` : completionMessage;
       return true;
+    }
+
+    function bouquetStreakBonusPercent(streak = bouquetStreak) {
+      const safeStreak = Math.max(0, Math.floor(Number(streak) || 0));
+      return Math.min(STREAK_COIN_BONUS_CAP, safeStreak * STREAK_COIN_BONUS_STEP);
+    }
+
+    function bouquetStreakPayout(baseCoins, streak = bouquetStreak) {
+      const base = Math.max(0, Math.floor(Number(baseCoins) || 0));
+      const percent = bouquetStreakBonusPercent(streak);
+      const bonus = Math.round(base * (percent / 100));
+      return {
+        base,
+        percent,
+        bonus,
+        total: base + bonus
+      };
     }
 
     function choosePostBouquetReward(choiceId, options = {}) {
@@ -6340,6 +6384,7 @@
         faction,
         boosters,
         rewardChoiceState,
+        bouquetStreak,
         graveSoilCells: [...graveSoilCells],
         chestItems: chestState.items
       };
@@ -6384,6 +6429,7 @@
         faction.title = typeof state.faction?.title === "string" ? state.faction.title : (faction.level >= 5 ? "Favored" : "Trusted");
         boosters = validBoosterState(state.boosters, boosters);
         rewardChoiceState = validRewardChoiceState(state.rewardChoiceState);
+        bouquetStreak = validBouquetStreak(state.bouquetStreak);
         if (!roundComplete) {
           rewardChoiceState = { pending: false, selected: "" };
         }
@@ -6440,6 +6486,10 @@
         pending: Boolean(candidate.pending) && !selected,
         selected
       };
+    }
+
+    function validBouquetStreak(candidate) {
+      return Math.max(0, Math.floor(Number(candidate) || 0));
     }
 
     function validGraveSoilCells(candidate) {
