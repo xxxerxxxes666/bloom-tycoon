@@ -1554,6 +1554,80 @@
       font-size: 12px;
     }
 
+    .reward-choice-panel {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid #5e3d28;
+    }
+
+    .reward-choice-title {
+      display: block;
+      color: #e2c887;
+      font-size: 13px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .reward-choice-copy {
+      display: block;
+      margin-top: 3px;
+      color: #a99273;
+      font-size: 12px;
+    }
+
+    .reward-choice-options {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .reward-choice-option {
+      display: flex;
+      min-height: 82px;
+      padding: 10px 9px;
+      color: #d8c7aa;
+      text-align: left;
+      border: 1px solid #3d3026;
+      background: linear-gradient(180deg, #140e0b, #080606);
+      box-shadow: inset 0 0 12px #000;
+      cursor: pointer;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 7px;
+    }
+
+    .reward-choice-option:focus-visible,
+    .reward-choice-option:hover {
+      color: #f0d6a6;
+      border-color: #b3814e;
+      outline: none;
+    }
+
+    .reward-choice-option.selected {
+      color: #f3dca0;
+      border-color: #d0a35b;
+      background: linear-gradient(180deg, #21150f, #0b0706);
+    }
+
+    .reward-choice-option:disabled {
+      cursor: default;
+      opacity: 0.76;
+    }
+
+    .reward-choice-name {
+      color: #d7b16d;
+      font-size: 12px;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+    }
+
+    .reward-choice-gain {
+      color: #b9a17d;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
     .gain-list {
       display: inline-flex;
       align-items: center;
@@ -2610,6 +2684,10 @@
         grid-template-columns: repeat(3, minmax(0, 1fr));
       }
 
+      .reward-choice-options {
+        grid-template-columns: 1fr;
+      }
+
       .slot-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
@@ -2863,6 +2941,12 @@
         { id: "black-market-scrip", name: "Black Market Scrip", qty: 4, rarity: "Contraband", source: "Market", flowerId: 4, tags: ["currency", "contraband"] }
       ]
     };
+    const postBouquetRewardChoices = [
+      { id: "greenhouse", label: "Greenhouse Cuttings", xp: 120, gain: "Greenhouse +120 XP · Grave Soil x1" },
+      { id: "apothecary", label: "Apothecary Kit", xp: 100, gain: "Apothecary +100 XP · Pruning Shears or Moonwater Flask x1" },
+      { id: "blackMarket", label: "Black Market Favor", xp: 80, gain: "Sub Rosa +80 Favor · Black Candle x1" }
+    ];
+    const postBouquetRewardIds = postBouquetRewardChoices.map((choice) => choice.id);
 
     let board = [];
     let selected = null;
@@ -2873,6 +2957,7 @@
     let clearedCursedThorns = 0;
     let sacrificeState = { active: false, choice: null };
     let boosters = { pruningShears: 1, moonwaterFlask: 1, blackCandle: 1, graveSoil: 1 };
+    let rewardChoiceState = { pending: false, selected: "" };
     let activeBooster = "";
     let moonwaterPreviewCenter = null;
     let blackCandleAxis = "row";
@@ -4689,9 +4774,47 @@
           <span class="reward-token">Apothecary +${reward.apothecary} XP</span>
           <span class="reward-token">Sub Rosa +${reward.faction} Favor</span>
           <span class="reward-token">${reward.item}</span>
-          <span class="reward-token">Grave Soil x1</span>
         </span>
+        ${renderPostBouquetRewardChoice()}
       `;
+    }
+
+    function renderPostBouquetRewardChoice() {
+      if (!rewardChoiceState.pending && !rewardChoiceState.selected) {
+        return "";
+      }
+      const selectedChoice = rewardChoiceById(rewardChoiceState.selected);
+      const copy = selectedChoice
+        ? `${selectedChoice.label} claimed. Chest Storage and booster counts are up to date.`
+        : "Pick one now, or Next Bouquet will take Greenhouse Cuttings.";
+      const greenhouseChoice = rewardChoiceById("greenhouse");
+      const apothecaryChoice = rewardChoiceById("apothecary");
+      const blackMarketChoice = rewardChoiceById("blackMarket");
+      const disabled = rewardChoiceState.selected ? "disabled" : "";
+      return `
+        <div class="reward-choice-panel" id="rewardChoicePanel" aria-label="Choose Your Reward">
+          <span class="reward-choice-title">Choose Your Reward</span>
+          <span class="reward-choice-copy">${copy}</span>
+          <div class="reward-choice-options">
+            <button class="reward-choice-option ${rewardChoiceState.selected === "greenhouse" ? "selected" : ""}" id="rewardChoiceGreenhouse" type="button" data-reward-choice="greenhouse" aria-pressed="${rewardChoiceState.selected === "greenhouse" ? "true" : "false"}" ${disabled}>
+              <span class="reward-choice-name">${greenhouseChoice.label}</span>
+              <span class="reward-choice-gain">${greenhouseChoice.gain}</span>
+            </button>
+            <button class="reward-choice-option ${rewardChoiceState.selected === "apothecary" ? "selected" : ""}" id="rewardChoiceApothecary" type="button" data-reward-choice="apothecary" aria-pressed="${rewardChoiceState.selected === "apothecary" ? "true" : "false"}" ${disabled}>
+              <span class="reward-choice-name">${apothecaryChoice.label}</span>
+              <span class="reward-choice-gain">${apothecaryChoice.gain}</span>
+            </button>
+            <button class="reward-choice-option ${rewardChoiceState.selected === "blackMarket" ? "selected" : ""}" id="rewardChoiceBlackMarket" type="button" data-reward-choice="blackMarket" aria-pressed="${rewardChoiceState.selected === "blackMarket" ? "true" : "false"}" ${disabled}>
+              <span class="reward-choice-name">${blackMarketChoice.label}</span>
+              <span class="reward-choice-gain">${blackMarketChoice.gain}</span>
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    function rewardChoiceById(choiceId) {
+      return postBouquetRewardChoices.find((choice) => choice.id === choiceId) || null;
     }
 
     function renderTycoonPanels() {
@@ -4724,15 +4847,71 @@
         flowerId: plan.reward.flowerId,
         tags: ["order", "reward"]
       });
-      const graveSoilReward = grantGraveSoilFromBouquet();
-      const completionMessage = `<strong>${plan.name} fulfilled.</strong> +${plan.reward.coins} coins, +${plan.reward.greenhouse} Greenhouse XP, +${plan.reward.apothecary} Apothecary XP, +${plan.reward.faction} Sub Rosa Favor, and ${plan.reward.item} placed in Chest Storage.${graveSoilReward}`;
+      rewardChoiceState = { pending: true, selected: "" };
+      const completionMessage = `<strong>${plan.name} fulfilled.</strong> +${plan.reward.coins} coins, +${plan.reward.greenhouse} Greenhouse XP, +${plan.reward.apothecary} Apothecary XP, +${plan.reward.faction} Sub Rosa Favor, and ${plan.reward.item} placed in Chest Storage. Choose a reward before Next Bouquet, or Greenhouse Cuttings will be taken by default.`;
       ritualMessage = carryMessage ? `${carryMessage} ${completionMessage}` : completionMessage;
       return true;
     }
 
+    function choosePostBouquetReward(choiceId, options = {}) {
+      if (!roundComplete || !rewardChoiceState.pending || rewardChoiceState.selected) {
+        return "";
+      }
+      const choice = rewardChoiceById(choiceId) || rewardChoiceById("greenhouse");
+      const grantMessage = grantPostBouquetReward(choice);
+      rewardChoiceState = { pending: false, selected: choice.id };
+      const prefix = options.auto ? "<strong>Default reward selected:</strong>" : "<strong>Reward chosen:</strong>";
+      const message = `${prefix} ${choice.label}. ${grantMessage}`;
+      ritualMessage = message;
+      renderChest();
+      if (options.renderAfter !== false) {
+        render();
+      }
+      return message;
+    }
+
+    function applyDefaultRewardChoice() {
+      if (!rewardChoiceState.pending || rewardChoiceState.selected) {
+        return "";
+      }
+      const message = choosePostBouquetReward("greenhouse", { auto: true, renderAfter: false });
+      return message ? ` ${message}` : "";
+    }
+
+    function grantPostBouquetReward(choice) {
+      if (!choice) {
+        return "";
+      }
+      if (choice.id === "greenhouse") {
+        addProgress(greenhouse, choice.xp);
+        return `Greenhouse +${choice.xp} XP and ${grantGraveSoilFromBouquet()}`;
+      }
+      if (choice.id === "apothecary") {
+        addProgress(apothecary, choice.xp);
+        const boosterName = grantApothecaryKitBooster();
+        return `Apothecary +${choice.xp} XP and ${boosterName} x1 stocked.`;
+      }
+      if (choice.id === "blackMarket") {
+        addProgress(faction, choice.xp);
+        faction.title = faction.level >= 5 ? "Favored" : "Trusted";
+        boosters.blackCandle = blackCandleCount() + 1;
+        return `Sub Rosa +${choice.xp} Favor and Black Candle x1 stocked.`;
+      }
+      return "";
+    }
+
     function grantGraveSoilFromBouquet() {
       boosters.graveSoil = graveSoilCount() + 1;
-      return " <strong>Greenhouse reward:</strong> Grave Soil x1 sprouted for a later relic-ready tile.";
+      return "Grave Soil x1 sprouted for a later relic-ready tile.";
+    }
+
+    function grantApothecaryKitBooster() {
+      if (pruningShearsCount() <= moonwaterFlaskCount()) {
+        boosters.pruningShears = pruningShearsCount() + 1;
+        return "Pruning Shears";
+      }
+      boosters.moonwaterFlask = moonwaterFlaskCount() + 1;
+      return "Moonwater Flask";
     }
 
     function grantTycoonXp(greenhouseAmount, apothecaryAmount, factionAmount = 0) {
@@ -4828,9 +5007,11 @@
       }
       const nextRound = roundComplete ? currentRound + 1 : currentRound;
       const plan = buildRoundPlan(nextRound);
+      const defaultChoiceMessage = roundComplete ? applyDefaultRewardChoice() : "";
       clearIdleHint();
       selected = null;
       sacrificeState = { active: false, choice: null };
+      rewardChoiceState = { pending: false, selected: "" };
       activeBooster = "";
       moonwaterPreviewCenter = null;
       blackCandlePreview = null;
@@ -4853,7 +5034,7 @@
       const boonCopy = runeBoonApplied
         ? " <strong>Rune-Tended Soil</strong> wakes from the planted Eclipse Seed Rune: +1 starting move this bouquet."
         : "";
-      ritualMessage = `<strong>Round ${plan.round}: ${plan.name}</strong> begins. ${goalCopy(plan)}${boonCopy}`;
+      ritualMessage = `<strong>Round ${plan.round}: ${plan.name}</strong> begins. ${goalCopy(plan)}${boonCopy}${defaultChoiceMessage}`;
       resetCursedThorns(plan);
       build();
       render();
@@ -4880,7 +5061,7 @@
       cancelActiveBooster(false);
       notePlayerInteraction();
       if (maybeCompleteRound()) {
-        ritualMessage += " <strong>Press Next Bouquet to keep playing.</strong>";
+        ritualMessage += " <strong>Choose a reward, or press Next Bouquet for Greenhouse Cuttings.</strong>";
       }
       render();
       scheduleOrderPulseClear();
@@ -6158,6 +6339,7 @@
         apothecary,
         faction,
         boosters,
+        rewardChoiceState,
         graveSoilCells: [...graveSoilCells],
         chestItems: chestState.items
       };
@@ -6201,6 +6383,10 @@
         faction = validProgressState(state.faction, faction);
         faction.title = typeof state.faction?.title === "string" ? state.faction.title : (faction.level >= 5 ? "Favored" : "Trusted");
         boosters = validBoosterState(state.boosters, boosters);
+        rewardChoiceState = validRewardChoiceState(state.rewardChoiceState);
+        if (!roundComplete) {
+          rewardChoiceState = { pending: false, selected: "" };
+        }
         graveSoilCells = validGraveSoilCells(state.graveSoilCells);
         if (Array.isArray(state.chestItems)) {
           chestState.items = state.chestItems
@@ -6242,6 +6428,17 @@
         moonwaterFlask: safeCount(candidate.moonwaterFlask, fallback.moonwaterFlask),
         blackCandle: safeCount(candidate.blackCandle, fallback.blackCandle),
         graveSoil: safeCount(candidate.graveSoil, fallback.graveSoil)
+      };
+    }
+
+    function validRewardChoiceState(candidate) {
+      if (!candidate || typeof candidate !== "object") {
+        return { pending: false, selected: "" };
+      }
+      const selected = postBouquetRewardIds.includes(candidate.selected) ? candidate.selected : "";
+      return {
+        pending: Boolean(candidate.pending) && !selected,
+        selected
       };
     }
 
@@ -6330,6 +6527,12 @@
     $("shapeBloomBtn").addEventListener("click", () => demoMatchShape());
     $("sacrificeCancel").addEventListener("click", () => cancelSacrifice());
     $("boosterCancel").addEventListener("click", () => cancelActiveBooster());
+    $("roundCeremony").addEventListener("click", (event) => {
+      const choiceButton = event.target.closest("[data-reward-choice]");
+      if (choiceButton) {
+        choosePostBouquetReward(choiceButton.dataset.rewardChoice);
+      }
+    });
     $("renewBtn").addEventListener("click", renewBouquet);
     $("chestTrigger").addEventListener("click", openChest);
     $("closeChest").addEventListener("click", closeChest);

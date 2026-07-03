@@ -686,3 +686,46 @@
 - How to trigger and verify L/T/cross matches without console: press `M` or click `Shape Bloom` repeatedly; the cycle still includes `Black Candle Vine`, `Witch's Cross!`, `Night Garden L-Bloom!`, `Twin Stem Bloom!`, and `Eclipse Seed Rune`.
 - How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit the review-hook particle burst, then return the board to play.
 - Security/secret-scan status: lightweight scan ran on changed files with no findings; no secrets, trackers, backend, SDKs, or new permissions were added.
+
+## 2026-07-03 Codex post-bouquet reward choice slice
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow local/static `Choose Your Reward` panel after bouquet completion.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added a post-bouquet `Choose Your Reward` ceremony panel with exactly three one-click choices: `Greenhouse Cuttings`, `Apothecary Kit`, and `Black Market Favor`.
+- Reward effects:
+  - `Greenhouse Cuttings`: `Greenhouse +120 XP` and `Grave Soil x1`.
+  - `Apothecary Kit`: `Apothecary +100 XP` and the lower-stock kit booster, currently `Pruning Shears x1` on a tie.
+  - `Black Market Favor`: `Sub Rosa +80 Favor` and `Black Candle x1`.
+- If the player ignores the panel, `Next Bouquet` safely auto-selects `Greenhouse Cuttings` before starting the next round.
+- Base bouquet rewards still grant coins, order XP/Favor, and the order Chest item immediately; the extra `Grave Soil x1` now comes from the reward choice/default instead of unconditional completion.
+- Preserved the repeatable bouquet loop, Round 2 Cursed Thorn setup, Rune-Tended Soil, board size, all four boosters, Chest/Sacrifice, and review hooks `Shape Bloom`, `N`, `M`, and `B`.
+- Preserved reward hierarchy: exact 5-line = `Eclipse Seed Rune`, 4-line = `Black Candle Vine`, L/T/cross = shape rewards, Grave Soil exact 3-line = `Grave Soil Relic`, and 6+ straight line or `B`/Sacrifice only = Supreme Bloom.
+- Added static audit markers for `Choose Your Reward`, `rewardChoicePanel`, `rewardChoiceState`, `Greenhouse Cuttings`, `Apothecary Kit`, `Black Market Favor`, `choosePostBouquetReward`, `applyDefaultRewardChoice`, `validRewardChoiceState`, and all three `data-reward-choice` values.
+- Verification run:
+  - `git fetch origin main`
+  - `python3 scripts/verify_project.py`
+  - JS parse check over executable HTML scripts with bundled Node.
+  - `git diff --check`
+  - Local static preview at `http://127.0.0.1:4173/playable/midnight_bloom_prototype.html`.
+  - Local static checks returned `200` for `/`, `/playable/midnight_bloom_prototype.html`, `assets/tiles/96/amber_resin_seed.png`, and `assets/tiles/48/amber_resin_seed.png`.
+  - Local Playwright fresh load: 64 board tiles, 95 images, 0 broken images, no error overlay, no horizontal overflow.
+  - Local Playwright completed a bouquet and verified the panel shows exactly three choices.
+  - Local Playwright chose `Greenhouse Cuttings` and saw `Grave Soil` increase from `x1` to `x2` with ritual-log feedback.
+  - Local Playwright chose `Apothecary Kit` and saw `Pruning Shears` increase from `x1` to `x2` with Apothecary XP feedback.
+  - Local Playwright chose `Black Market Favor` and saw `Black Candle` increase from `x1` to `x2` with Sub Rosa Favor feedback.
+  - Local Playwright ignored the choice, pressed `Next Bouquet`, and verified default `Greenhouse Cuttings`, `Grave Soil x2`, Round 2 `Cursed Thorn 0/3`, 3 visible blockers, and 64 board tiles.
+  - Local Playwright seeded and clicked the visible Round 2 target swap; adjacent Cursed Thorns cleared to `Cursed Thorn 3/3` with 0 visible thorn blockers.
+  - Local Playwright verified `Pruning Shears`, `Moonwater Flask`, `Black Candle`, and `Grave Soil` each arm, cancel without spending, use once, spend to `x0`, and preserve 64 tiles.
+  - Local Playwright verified `M`/`Shape Bloom` still cycles `Eclipse Seed Rune`, `Black Candle Vine`, `Witch's Cross!`, `Night Garden L-Bloom!`, and `Twin Stem Bloom!`.
+  - Local Playwright verified `B` still emits `SUPREME BLOOM!` with 84 particles.
+  - Local Playwright verified Chest opens/closes with Escape, Sacrifice opens/cancels, and mobile 390x844 shows the reward panel with 64 tiles, 0 broken images, and no horizontal overflow.
+- Browser console/runtime status: no local Playwright console errors or page errors observed during reward choices, default next-bouquet path, Round 2 thorn flow, booster checks, review hooks, Chest/Sacrifice, or mobile checks.
+- Vercel deployment URL/identifier checked: pending until this pass is committed and deployed.
+- GitHub Pages preview status: pending until this pass is pushed and the Pages workflow completes.
+- Known issues: none found locally for the reward-choice slice. The shell still does not have standalone `agent-browser`, so browser verification used bundled Playwright after installing the matching app-bundled Chromium revision.
+- How to trigger and verify L/T/cross matches without console: press `M` or click `Shape Bloom` repeatedly; the cycle still includes `Black Candle Vine`, `Witch's Cross!`, `Night Garden L-Bloom!`, `Twin Stem Bloom!`, and `Eclipse Seed Rune`.
+- How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit the review-hook particle burst, then return the board to play.
+- Security/secret-scan status: lightweight scan ran on changed files with no findings; no secrets, trackers, backend, SDKs, or new permissions were added.
