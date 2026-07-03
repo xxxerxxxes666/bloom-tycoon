@@ -14,7 +14,7 @@ Copy proven casual-game structure, then reskin the emotion into **dark elegant f
 - [x] Line + area advanced combo: **Shears Burst** clears three rows and three columns
 - [ ] Additional advanced combo interactions: line + line, color + line/area
 - [x] Win/loss modal foundation with near-win remaining-objective copy
-- [ ] Fast retry
+- [x] Fast retry
 
 Why: Candy Crush and Royal Match live or die by special-piece tactility.
 
