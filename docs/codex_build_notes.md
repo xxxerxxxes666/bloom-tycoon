@@ -722,10 +722,16 @@
   - Local Playwright verified `M`/`Shape Bloom` still cycles `Eclipse Seed Rune`, `Black Candle Vine`, `Witch's Cross!`, `Night Garden L-Bloom!`, and `Twin Stem Bloom!`.
   - Local Playwright verified `B` still emits `SUPREME BLOOM!` with 84 particles.
   - Local Playwright verified Chest opens/closes with Escape, Sacrifice opens/cancels, and mobile 390x844 shows the reward panel with 64 tiles, 0 broken images, and no horizontal overflow.
+  - Vercel production deploy completed as `dpl_3YEjdUqocPHDmXfJ427DgY3RE58C` at `https://bloom-tycoon-ajbo8g4h6-xerxes-florals.vercel.app`.
+  - Explicitly pointed `https://bloom-tycoon.vercel.app` to that deployment.
+  - Vercel direct checks returned `200` for `/playable/midnight_bloom_prototype.html?verify=reward-choice-25db114` and `/assets/tiles/96/amber_resin_seed.png?verify=reward-choice-25db114`, and the playable contained the reward-choice markers.
+  - Vercel Playwright smoke loaded 64 board tiles, 96 images, 0 broken images, no horizontal overflow, and proved `Greenhouse Cuttings` raises `Grave Soil` from `x1` to `x2`.
+  - Vercel mobile Playwright smoke at 390x844 loaded 64 board tiles, 3 reward choices, 0 broken images, and no horizontal overflow.
 - Browser console/runtime status: no local Playwright console errors or page errors observed during reward choices, default next-bouquet path, Round 2 thorn flow, booster checks, review hooks, Chest/Sacrifice, or mobile checks.
-- Vercel deployment URL/identifier checked: pending until this pass is committed and deployed.
-- GitHub Pages preview status: pending until this pass is pushed and the Pages workflow completes.
-- Known issues: none found locally for the reward-choice slice. The shell still does not have standalone `agent-browser`, so browser verification used bundled Playwright after installing the matching app-bundled Chromium revision.
+- Browser console/runtime status on Vercel: no Playwright console errors or page errors observed during desktop or mobile reward-choice smoke.
+- Vercel deployment URL/identifier checked: `dpl_3YEjdUqocPHDmXfJ427DgY3RE58C`, `https://bloom-tycoon-ajbo8g4h6-xerxes-florals.vercel.app`, production alias `https://bloom-tycoon.vercel.app`.
+- GitHub Pages preview status: initial workflow `28639047335` for gameplay commit `25db114` uploaded the artifact but failed in `actions/deploy-pages` with `Deployment failed, try again later`; this docs update is intended to trigger a fresh Pages deploy.
+- Known issues: none found locally or on Vercel for the reward-choice slice. GitHub Pages was still serving the previous playable immediately after the first failed deploy. The shell still does not have standalone `agent-browser`, so browser verification used bundled Playwright after installing the matching app-bundled Chromium revision.
 - How to trigger and verify L/T/cross matches without console: press `M` or click `Shape Bloom` repeatedly; the cycle still includes `Black Candle Vine`, `Witch's Cross!`, `Night Garden L-Bloom!`, `Twin Stem Bloom!`, and `Eclipse Seed Rune`.
 - How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit the review-hook particle burst, then return the board to play.
 - Security/secret-scan status: lightweight scan ran on changed files with no findings; no secrets, trackers, backend, SDKs, or new permissions were added.
