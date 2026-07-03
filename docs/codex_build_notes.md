@@ -1028,9 +1028,17 @@
   - Local Playwright Round 3 review completion verified Round 3 state `complete`, `Bloodroot Compact` was added to Chest Storage, ceremony copy stayed visible, and three reward choices still appeared.
   - Local Playwright mobile at 390x860 verified the Round 3 strip remains visible, has no horizontal overflow, no broken images, and no console/page errors.
   - Local preservation smoke verified Round 1 fail/retry, all four boosters arm/cancel/use and preserve 64 tiles, Shape Bloom, Supreme Bloom via `B`, Chest, and Sacrifice still work without console/page errors.
+  - Vercel production deploy completed as `dpl_EYvv8PvavugQsp99Nj6owsmkJiWM` at `https://bloom-tycoon-ns09728c3-xerxes-florals.vercel.app`.
+  - Explicitly pointed `https://bloom-tycoon.vercel.app` to that deployment.
+  - Vercel direct checks returned `200` for `/playable/midnight_bloom_prototype.html?verify=ad48e70` and `/assets/tiles/96/bloodroot_ruby_shard.png?verify=ad48e70`, and the playable contained all Round 3 Focus markers.
+  - GitHub Pages workflow `28686741934` succeeded for `ad48e70`.
+  - GitHub Pages direct checks returned `200` for `/bloom-tycoon/playable/midnight_bloom_prototype.html?verify=ad48e70` and `/bloom-tycoon/assets/tiles/96/bloodroot_ruby_shard.png?verify=ad48e70`, and the playable contained all Round 3 Focus markers.
+  - Vercel and GitHub Pages Playwright smoke both verified fresh Round 3 tease, Round 2 next focus, Round 3 current focus, Round 3 completion, Bloodroot Compact in Chest Storage, reward choices, mobile 390px layout, no broken images, and no console/page errors.
+  - Vercel logs check for `bloom-tycoon-ns09728c3-xerxes-florals.vercel.app` found no runtime logs for this static deployment.
 - Browser console/runtime status: no local Playwright console errors or page errors observed during Round 3 tease/current/complete checks, Round 1 fail/retry, Round 2 fail/retry, mobile, boosters, Shape Bloom, Supreme Bloom, Chest, or Sacrifice.
-- Vercel deployment URL/identifier checked: pending until this commit is pushed and redeployed.
-- GitHub Pages preview status: pending until this commit is pushed and the Pages workflow completes.
+- Browser console/runtime status on Vercel and GitHub Pages: no Playwright console errors or page errors observed during fresh Round 3 tease, Round 2 next focus, Round 3 current/completed payoff, or mobile checks.
+- Vercel deployment URL/identifier checked: `dpl_EYvv8PvavugQsp99Nj6owsmkJiWM`, `https://bloom-tycoon-ns09728c3-xerxes-florals.vercel.app`, production alias `https://bloom-tycoon.vercel.app`.
+- GitHub Pages preview status: workflow `28686741934` succeeded for `ad48e70`, and `https://xxxerxxxes666.github.io/bloom-tycoon/playable/midnight_bloom_prototype.html?verify=ad48e70` returned `200` with all new markers.
 - Known issues: none found locally for this Round 3 clarity/payoff slice. The shell still does not have standalone `agent-browser`, so browser verification used bundled Playwright.
 - How to trigger and verify L/T/cross matches without console: after Round 1, watch for the `L/T/cross = Shape Bloom` hint in Round 2; in the review path, click `Shape Bloom` repeatedly until `Witch's Cross!`, `Night Garden L-Bloom!`, or `Twin Stem Bloom!` appears. The hidden `shapeAuditData` verifier still contains all three definitions.
 - How to trigger and verify Supreme Bloom without console: press `B`; after the short charge phase, the overlay should show `SUPREME BLOOM! +12`, emit the review-hook particle burst, then return the board to play.
