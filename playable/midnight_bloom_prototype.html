@@ -527,6 +527,115 @@
       padding: 2px;
     }
 
+    .bouquet-path {
+      max-width: 760px;
+      margin: 12px auto 0;
+      padding: 10px 12px;
+      border: 1px solid #30251d;
+      background:
+        radial-gradient(circle at 18% 0, #48221b55 0, #0000 38%),
+        linear-gradient(180deg, #0e0a08, #050404);
+      box-shadow: inset 0 0 18px #000, 0 0 0 1px #000;
+    }
+
+    .bouquet-path-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .bouquet-path-title {
+      color: var(--gold);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1.1px;
+    }
+
+    .bouquet-path-next {
+      color: #a89070;
+      font-size: 12px;
+      text-align: right;
+    }
+
+    .bouquet-path-nodes {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .bouquet-node {
+      min-height: 112px;
+      padding: 9px 10px;
+      border: 1px solid #30251d;
+      background: linear-gradient(180deg, #100b09, #060504);
+      box-shadow: inset 0 0 12px #000;
+      color: #9f8b6e;
+    }
+
+    .bouquet-node.complete {
+      border-color: #5d6f32;
+      color: #d8efad;
+    }
+
+    .bouquet-node.current {
+      border-color: #b3814e;
+      color: #e2c887;
+      box-shadow: inset 0 0 12px #000, 0 0 12px #7b563455;
+    }
+
+    .bouquet-node.withered {
+      border-color: #8a332a;
+      color: #e0a078;
+      box-shadow: inset 0 0 12px #000, 0 0 12px #5a0f0f66;
+    }
+
+    .bouquet-node.locked {
+      border-color: #3d3026;
+      color: #8f7960;
+      opacity: 0.88;
+    }
+
+    .bouquet-node-state {
+      display: block;
+      color: #d7b16d;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .bouquet-node.complete .bouquet-node-state {
+      color: #d8efad;
+    }
+
+    .bouquet-node.withered .bouquet-node-state {
+      color: #e0a078;
+    }
+
+    .bouquet-node-name {
+      display: block;
+      margin-top: 4px;
+      color: #d8c7aa;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .bouquet-node-meta,
+    .bouquet-node-goal,
+    .bouquet-node-reward {
+      display: block;
+      margin-top: 3px;
+      color: #a89070;
+      font-size: 12px;
+      line-height: 1.25;
+    }
+
+    .bouquet-node-reward {
+      color: #c6ad7c;
+    }
+
     .progress {
       height: 22px;
       border: 1px solid #6b4a2f;
@@ -3072,6 +3181,27 @@
         font-size: 16px;
       }
 
+      .bouquet-path {
+        padding: 10px;
+      }
+
+      .bouquet-path-heading {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .bouquet-path-next {
+        text-align: left;
+      }
+
+      .bouquet-path-nodes {
+        grid-template-columns: 1fr;
+      }
+
+      .bouquet-node {
+        min-height: 0;
+      }
+
       .hero {
         height: 150px;
       }
@@ -3199,6 +3329,7 @@
       <div class="first-session-plaque" id="firstSessionPlaque">
         Match Thorn Rose and Bone Star to complete Round 1: First Bouquet.
       </div>
+      <div class="bouquet-path" id="bouquetPath" aria-label="Bouquet Path"></div>
       <script type="application/json" id="shapeAuditData"></script>
       <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
       <div class="board" id="board"></div>
@@ -3445,6 +3576,12 @@
       'data-reward-choice="greenhouse"',
       'data-reward-choice="apothecary"',
       'data-reward-choice="blackMarket"'
+    ];
+    const bouquetPathAuditMarkers = [
+      'data-bouquet-state="complete"',
+      'data-bouquet-state="current"',
+      'data-bouquet-state="locked"',
+      'data-bouquet-state="withered"'
     ];
     const STREAK_COIN_BONUS_STEP = 5;
     const STREAK_COIN_BONUS_CAP = 25;
@@ -3732,6 +3869,82 @@
         needed: totalNeeded,
         pct: totalNeeded ? Math.min(100, (totalEarned / totalNeeded) * 100) : 0
       };
+    }
+
+    function bouquetPathRoundNumbers() {
+      if (currentRound <= 3) {
+        return [1, 2, 3];
+      }
+      return [currentRound - 1, currentRound, currentRound + 1];
+    }
+
+    function bouquetPathGoalCopy(plan) {
+      const targetNames = plan.targets.map((target) => flowers[target.flowerId][0]);
+      if (plan.thornGoal) {
+        targetNames.push(plan.thornGoal.order);
+      }
+      return targetNames.join(" + ");
+    }
+
+    function bouquetPathState(roundNumber, plan = buildRoundPlan(roundNumber)) {
+      if (roundNumber < currentRound || (roundNumber === currentRound && roundComplete)) {
+        return { id: "complete", className: "complete", label: "✓ Complete" };
+      }
+      if (roundNumber === currentRound && isBouquetFailed(plan)) {
+        return { id: "withered", className: "current withered", label: "Current · Withered" };
+      }
+      if (roundNumber === currentRound) {
+        return { id: "current", className: "current", label: "Current Bouquet" };
+      }
+      return {
+        id: "locked",
+        className: "locked",
+        label: roundNumber === currentRound + 1 ? "Locked Next" : "Locked Tease"
+      };
+    }
+
+    function bouquetPathNextCopy() {
+      const nextPlan = buildRoundPlan(currentRound + 1);
+      if (roundComplete) {
+        return `Next: ${nextPlan.name} unlocks with ${nextPlan.reward.item}.`;
+      }
+      if (isBouquetFailed()) {
+        return `Retry keeps you on ${activeRoundPlan().name}.`;
+      }
+      return `Next locked: ${nextPlan.name} · ${nextPlan.reward.item}.`;
+    }
+
+    function bouquetPathNodeMarkup(roundNumber) {
+      const plan = buildRoundPlan(roundNumber);
+      const state = bouquetPathState(roundNumber, plan);
+      const objectiveType = plan.thornGoal ? "Collection + Cursed Thorn" : "Collection Order";
+      const rewardPrefix = state.className.includes("locked") ? "Tease" : "Reward";
+      return `
+        <div class="bouquet-node ${state.className}" data-bouquet-round="${roundNumber}" data-bouquet-state="${state.id}">
+          <span class="bouquet-node-state">${state.label}</span>
+          <span class="bouquet-node-name">Round ${plan.round}: ${plan.name}</span>
+          <span class="bouquet-node-meta">${objectiveType}</span>
+          <span class="bouquet-node-goal">Goal: ${bouquetPathGoalCopy(plan)}</span>
+          <span class="bouquet-node-reward">${rewardPrefix}: ${plan.reward.item}</span>
+        </div>
+      `;
+    }
+
+    function renderBouquetPath() {
+      const path = $("bouquetPath");
+      if (!path) {
+        return;
+      }
+      const numbers = bouquetPathRoundNumbers();
+      path.innerHTML = `
+        <div class="bouquet-path-heading">
+          <span class="bouquet-path-title">Bouquet Path</span>
+          <span class="bouquet-path-next">${bouquetPathNextCopy()}</span>
+        </div>
+        <div class="bouquet-path-nodes">
+          ${numbers.map((roundNumber) => bouquetPathNodeMarkup(roundNumber)).join("")}
+        </div>
+      `;
     }
 
     function thornKey(x, y) {
@@ -4313,6 +4526,7 @@
       $("objective").classList.toggle("failed", failed);
       $("objective").classList.toggle("low-moves", moves <= 3);
       $("firstSessionPlaque").textContent = roundPlaqueCopy(plan);
+      renderBouquetPath();
       renderActiveOrders(plan);
       renderRoundCeremony(plan);
       $("bar").style.width = `${progress.pct}%`;
