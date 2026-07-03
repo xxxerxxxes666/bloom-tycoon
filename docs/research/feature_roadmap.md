@@ -24,8 +24,8 @@ Why: Candy Crush and Royal Match live or die by special-piece tactility.
 - [x] Next-upgrade progress meter/helper
 - [x] Upgrade reveal ceremony foundation
 - [ ] 10-level beginner sequence
-- [ ] First chapter completion
-- [ ] Locked next room tease
+- [x] First chapter completion
+- [x] Locked next room tease
 
 Why: Gardenscapes/Homescapes prove that meta progression turns puzzle wins into emotional investment.
 
@@ -46,7 +46,7 @@ Why: The market has enough match-3. The identity has to carry the first impressi
 - [x] Reward chest ceremony foundation: **Velvet Bloom Chest** win copy
 - [ ] Streak track
 - [x] Floral collection album skeleton: **Flowerpedia** lore/readability cards
-- [ ] Persisted Flowerpedia unlocks and collection rewards
+- [x] Persisted Flowerpedia unlocks and collection rewards
 - [ ] First limited-time event shell
 
 Why: Top grossing casual games create reasons to return outside the current level.
