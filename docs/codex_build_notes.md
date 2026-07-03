@@ -589,3 +589,53 @@
 - How to trigger and verify L/T/cross matches without console: press `M` or click `Shape Bloom` repeatedly; the cycle still includes `Black Candle Vine`, `Witch's Cross!`, `Night Garden L-Bloom!`, `Twin Stem Bloom!`, and `Eclipse Seed Rune`.
 - How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit the review-hook particle burst, then return the board to play.
 - Security/secret-scan status: lightweight scan ran on changed files with no findings; no secrets, trackers, backend, SDKs, or new permissions were added in code.
+
+## 2026-07-03 Codex Black Candle booster slice
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a row/column burn booster as the next surgical gameplay slice.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Gameplay commit: `c1a38d1 feat: add Black Candle booster`.
+- Added visible `Black Candle (x1)` beside `Pruning Shears` and `Moonwater Flask`; the left Black Market rail now shows `Black Candle x1 stocked` as the deterministic local grant.
+- Added reversible Black Candle targeting: click the booster, choose `Row` or `Column`, preview the line, use `Cancel` without spending, or click a tile to burn the selected line without spending moves.
+- Black Candle collects/coins the non-thorn tiles in the selected line, spends exactly one count, preserves 64 board tiles, retries local refills until the board has no free matches and at least one legal move, and falls back to reseeding only if needed.
+- Cursed Thorns stay rooted during Black Candle burns, thorn objective progress does not silently change, and the ritual log explicitly says rooted thorns stayed rooted.
+- Preserved reward hierarchy: exact 5-line = `Eclipse Seed Rune`, 4-line = `Black Candle Vine`, L/T/cross = shape rewards, 6+ straight line or `B`/Sacrifice = Supreme Bloom.
+- Added static audit markers for `Black Candle`, `blackCandleBtn`, `blackCandleCount`, `blackCandleModes`, `blackCandleAxis`, `toggleBlackCandle`, `useBlackCandle`, `blackCandleLineCells`, `refillBlackCandleLine`, `queueBlackCandleBurst`, `black-candle-line`, and `boosters.blackCandle`.
+- Verification run:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - JS parse check over executable HTML scripts with bundled Node.
+  - `python3 scripts/verify_project.py`
+  - `git diff --check`
+  - Lightweight secret scan on changed files.
+  - Local static preview at `http://127.0.0.1:4173/playable/midnight_bloom_prototype.html`; `agent-browser` was unavailable, so bundled Playwright was used.
+  - Local static checks returned `200` for the playable and `assets/tiles/96/bloodroot_ruby_shard.png`.
+  - Local Playwright loaded 64 board tiles, 94 images, 0 broken images, and no error overlay.
+  - Local Playwright proved Black Candle arm/cancel, row/column mode switching, column preview, column burn, `x1` to `x0`, no moves spent, 64 tiles preserved, and a legal no-free-match board after burn.
+  - Local Playwright started Round 2 and burned a thorn row: 3 Cursed Thorns stayed rooted, `Cursed Thorn 0/3` stayed unchanged, explicit rooted-thorn copy appeared, 64 tiles remained, and the board stayed playable.
+  - Local Playwright verified `Pruning Shears` still cancels, cuts a normal tile, and cuts a Cursed Thorn to `Cursed Thorn 1/3`.
+  - Local Playwright verified `Moonwater Flask` still cancels, previews 36 valid centers and a 3x3 area, reshuffles without spending moves, preserves 64 tiles, and leaves a playable board.
+  - Local Playwright verified Rune-Tended Soil still works: `Shape Bloom` earns `Eclipse Seed Rune`, Chest `Plant Rune` queues it, `Complete Bouquet` + `Next Bouquet` starts Round 2 with `Rune-Tended Soil +1 move` and 18 moves.
+  - Local Playwright verified `Shape Bloom` still cycles `Eclipse Seed Rune`, `Black Candle Vine`, `Witch's Cross!`, `Night Garden L-Bloom!`, and `Twin Stem Bloom!`; `B` still shows Supreme Bloom.
+  - Local Playwright verified seeded Round 1 completion and Round 2 adjacent Cursed Thorn clearing.
+  - Local Playwright verified Chest opens/closes with Escape, Sacrifice opens/cancels, and mobile 390x844 has no horizontal overflow with 64 tiles and Black Candle visible.
+  - Vercel static marker check for `https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html?verify=black-candle-c1a38d1` returned `200` with all Black Candle and preserved gameplay markers.
+  - Vercel direct checks returned `200` for `/`, `/playable/midnight_bloom_prototype.html?verify=black-candle-c1a38d1`, and `/assets/tiles/96/bloodroot_ruby_shard.png?verify=black-candle-c1a38d1`.
+  - Vercel Playwright smoke loaded 64 board tiles, 0 broken images, no console/page errors, and proved Black Candle arm/cancel/use.
+  - GitHub Pages workflow `28635710950` succeeded for `c1a38d1`.
+  - GitHub Pages direct checks returned `200` for `/bloom-tycoon/`, `/bloom-tycoon/playable/midnight_bloom_prototype.html?verify=black-candle-c1a38d1`, and `/bloom-tycoon/assets/tiles/96/bloodroot_ruby_shard.png?verify=black-candle-c1a38d1`, with all Black Candle and preserved gameplay markers.
+  - GitHub Pages Playwright smoke loaded 64 board tiles, 0 broken images, no console/page errors, and proved Black Candle arm/cancel/use.
+- Browser console/runtime status: no local, Vercel, or GitHub Pages Playwright console errors or page errors observed during Black Candle, existing boosters, rune payoff, review hooks, Round 1/Round 2 flow, Chest/Sacrifice, or mobile checks.
+- Deployed to Vercel production as `dpl_BU8L2VNUXdn4fChy2mAX3HTBDMGP`.
+- Vercel deployment URL: https://bloom-tycoon-61w9a9cdl-xerxes-florals.vercel.app
+- Explicitly re-pointed `https://bloom-tycoon.vercel.app` to that deployment.
+- GitHub Pages preview status after gameplay push: workflow `28635710950` succeeded for `c1a38d1`.
+- Known issues: none found locally, on Vercel, or on GitHub Pages for the Black Candle slice. The shell did not have `gh` or `agent-browser`; GitHub Actions status was checked via the public GitHub API and browser verification used bundled Playwright.
+- How to trigger and verify `Black Candle`: on a fresh load, click `Black Candle (x1)`, confirm the panel opens with `Row` and `Column`; click `Cancel` to keep `x1`, then arm again, choose `Column`, hover a tile to preview the column, and click to burn it. The count should become `x0`, moves should stay unchanged, and only the selected line should flash.
+- How to trigger and verify Black Candle with Cursed Thorns: use `Complete Bouquet`, click `Next Bouquet`, arm `Black Candle`, keep `Row` selected, and click row 2; the log should say the Cursed Thorns stayed rooted and the objective should remain `Cursed Thorn 0/3`.
+- How to trigger and verify L/T/cross matches without console: press `M` or click `Shape Bloom` repeatedly; the cycle still includes `Black Candle Vine`, `Witch's Cross!`, `Night Garden L-Bloom!`, `Twin Stem Bloom!`, and `Eclipse Seed Rune`.
+- How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit the review-hook particle burst, then return the board to play.
+- Security/secret-scan status: lightweight scan ran on changed files with no findings; no secrets, trackers, backend, SDKs, or new permissions were added.
