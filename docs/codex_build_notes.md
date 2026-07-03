@@ -639,3 +639,43 @@
 - How to trigger and verify L/T/cross matches without console: press `M` or click `Shape Bloom` repeatedly; the cycle still includes `Black Candle Vine`, `Witch's Cross!`, `Night Garden L-Bloom!`, `Twin Stem Bloom!`, and `Eclipse Seed Rune`.
 - How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit the review-hook particle burst, then return the board to play.
 - Security/secret-scan status: lightweight scan ran on changed files with no findings; no secrets, trackers, backend, SDKs, or new permissions were added.
+
+## 2026-07-03 Codex Grave Soil booster slice
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested the final local/static booster, `Grave Soil`.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added visible `Grave Soil (x1)` beside the other boosters and updated the Black Market rail to show it stocked.
+- Added reversible targeting: click `Grave Soil`, eligible normal loose tiles glow, Cancel exits without spending, and Cursed Thorn tiles reject the soil with explicit copy.
+- Successful Grave Soil use spends exactly one count, spends no moves, marks one selected normal tile as `grave-soil-ready`, persists that marker, and lets the marker follow tile collapse/refill instead of drifting to the wrong coordinate.
+- Grave Soil payoff: an exact normal 3-line containing a prepared tile awakens `Grave Soil Relic` and sweeps that row/column. Exact 4-line still wins as `Black Candle Vine`, exact 5-line still wins as `Eclipse Seed Rune`, L/T/cross shape rewards still win shape rewards, and 6+ or `B`/Sacrifice remains the Supreme Bloom path.
+- Added Greenhouse/bouquet progress replenishment: completing a bouquet grants `Grave Soil x1`, while the starter `x1` remains visible from Black Market stock.
+- Completion feedback now preserves the triggering match/booster summary when a powerful effect finishes the bouquet, so line relic copy is not hidden by the ceremony message.
+- Added static audit markers for `Grave Soil`, `graveSoilBtn`, `graveSoilCount`, `graveSoilCells`, `toggleGraveSoil`, `useGraveSoil`, `queueGraveSoilBurst`, `graveSoilRelicForMatch`, `isGraveSoilEligible`, `grave-soil-target`, `grave-soil-ready`, and `boosters.graveSoil`.
+- Verification run:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - JS parse check over executable HTML scripts with bundled Node.
+  - `python3 scripts/verify_project.py`
+  - `git diff --check`
+  - Local static preview at `http://127.0.0.1:4173/playable/midnight_bloom_prototype.html`; `agent-browser` was unavailable, so bundled Playwright was used.
+  - Local Playwright loaded 64 board tiles, 0 broken images, and no error overlay.
+  - Local Playwright proved Grave Soil displays `x1`, opens targeting mode, highlights eligible normal tiles, cancels without spending, uses on one normal tile, spends to `x0`, preserves 64 tiles, and does not spend moves.
+  - Local Playwright proved `Complete Bouquet` grants Grave Soil through Greenhouse progress and Round 2 starts with Cursed Thorn blockers.
+  - Local Playwright proved Grave Soil rejects a Round 2 Cursed Thorn without spending, without changing `Cursed Thorn 0/3`, and with explicit rooted-blocker copy.
+  - Local Playwright verified deterministic Grave Soil payoff with a prepared exact 3-line: `Grave Soil Relic` swept a row, consumed the prepared marker, and preserved 64 tiles.
+  - Local Playwright verified the seeded UI path preserves the existing reward hierarchy when a prepared tile extends into a 4-line by resolving as `Black Candle Vine`.
+  - Local Playwright verified `Pruning Shears`, `Moonwater Flask`, and `Black Candle` still arm/cancel/use, spend exactly one count on success, preserve 64 tiles, and do not spend moves.
+  - Local Playwright verified Round 1 first-move flow, Round 2 Cursed Thorn goal/rejection flow, Rune-Tended Soil payoff, Chest open/close, Sacrifice open/cancel, `Shape Bloom`, `N`, `M`, `B`, and mobile 390x844 with no horizontal overflow.
+- Browser console/runtime status: no local Playwright console errors or page errors observed during Grave Soil, existing boosters, rune payoff, review hooks, Round 1/Round 2 flow, Chest/Sacrifice, or mobile checks.
+- Vercel deployment URL/identifier checked: pending until after this gameplay commit is pushed and deployed.
+- GitHub Pages preview status: pending until after this gameplay commit is pushed and the Pages workflow completes.
+- Known issues: none found locally for the Grave Soil slice. The shell still does not have `agent-browser`, so local browser verification used bundled Playwright.
+- How to trigger and verify `Grave Soil`: on a fresh load, click `Grave Soil (x1)`, confirm normal tiles glow, click `Cancel` to keep the count, then arm again and click a normal tile. The count should become `x0`, moves should stay unchanged, and the tile should gain a small gold/green soil sigil.
+- How to trigger and verify Grave Soil Cursed Thorn rejection: use `Complete Bouquet`, click `Next Bouquet`, arm `Grave Soil`, and click a Cursed Thorn in row 2. The count should not change and the log should say Cursed Thorns are rooted blockers.
+- How to trigger and verify Grave Soil payoff: prepare a normal tile that will be part of an exact 3-line, then make that match. The log should mention `Grave Soil Relic` sweeping the row/column. If the prepared match extends to an exact 4-line, `Black Candle Vine` should win instead.
+- How to trigger and verify L/T/cross matches without console: press `M` or click `Shape Bloom` repeatedly; the cycle still includes `Black Candle Vine`, `Witch's Cross!`, `Night Garden L-Bloom!`, `Twin Stem Bloom!`, and `Eclipse Seed Rune`.
+- How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit the review-hook particle burst, then return the board to play.
+- Security/secret-scan status: lightweight scan ran on changed files with no findings; no secrets, trackers, backend, SDKs, or new permissions were added.

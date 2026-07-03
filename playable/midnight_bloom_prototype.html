@@ -887,6 +887,54 @@
         linear-gradient(0deg, #0000 0 44%, #9b1d2288 50%, #0000 56%);
     }
 
+    .tile.grave-soil-target {
+      outline: 2px solid #9f8350;
+      box-shadow:
+        inset 0 0 16px #000,
+        0 0 0 1px #160f0c,
+        0 0 18px #8d6b3f,
+        0 0 26px #5f833866;
+    }
+
+    .tile.grave-soil-target::after {
+      opacity: 1;
+      background:
+        radial-gradient(circle, #d7b16d28 0, #0000 58%),
+        repeating-conic-gradient(from 12deg, #0000 0 13deg, #9f835066 14deg 16deg, #0000 17deg 32deg);
+    }
+
+    .tile.grave-soil-ready {
+      outline: 2px solid #c8a96d;
+      box-shadow:
+        inset 0 0 16px #000,
+        0 0 0 1px #160f0c,
+        0 0 20px #d7b16d,
+        0 0 28px #314b25;
+    }
+
+    .tile.grave-soil-ready::before {
+      border-color: #d7b16daa;
+      box-shadow: inset 0 0 16px #243519, 0 0 18px #8d6b3f;
+    }
+
+    .grave-soil-sigil {
+      position: absolute;
+      right: 6px;
+      bottom: 5px;
+      z-index: 4;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 1px solid #d7b16dcc;
+      background:
+        radial-gradient(circle at 50% 42%, #f0c477 0, #8d6b3f 42%, #182312 74%);
+      box-shadow:
+        0 0 10px #d7b16d,
+        0 0 16px #5f8338,
+        inset 0 0 6px #000;
+      pointer-events: none;
+    }
+
     .tile.sacrifice-target {
       outline: 2px solid #9b1d22;
       box-shadow:
@@ -1077,6 +1125,20 @@
         0 0 14px #9b1d22,
         0 0 22px #d7b16d;
       animation: resource-pop 1050ms cubic-bezier(0.14, 0.82, 0.2, 1) forwards;
+    }
+
+    .board-particle.grave-soil-spark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 7;
+      color: #f0d58b;
+      font-size: var(--font-size, 18px);
+      text-shadow:
+        0 0 8px #000,
+        0 0 14px #5f8338,
+        0 0 20px #d7b16d;
+      animation: resource-pop 980ms cubic-bezier(0.14, 0.82, 0.2, 1) forwards;
     }
 
     .board-particle.blood-pop,
@@ -2606,7 +2668,7 @@
           <h3>Black Market</h3>
           <span class="panel-gate" aria-hidden="true">›</span>
         </div>
-        <div class="small">Rare bulbs & contraband · Black Candle x1 stocked</div>
+        <div class="small">Rare bulbs & contraband · Black Candle x1 · Grave Soil x1 stocked</div>
       </div>
     </aside>
 
@@ -2644,6 +2706,10 @@
         <button class="btn booster" id="blackCandleBtn" type="button" aria-pressed="false">
           <img class="btn-icon" src="../assets/tiles/96/bloodroot_ruby_shard.png" alt="">
           <span>Black Candle (x<span id="blackCandleCount">1</span>)</span>
+        </button>
+        <button class="btn booster" id="graveSoilBtn" type="button" aria-pressed="false">
+          <img class="btn-icon" src="../assets/tiles/96/amber_resin_seed.png" alt="">
+          <span>Grave Soil (x<span id="graveSoilCount">1</span>)</span>
         </button>
         <button class="btn demo" id="demoCompleteBtn" type="button">
           <img class="btn-icon" src="../assets/tiles/96/crimson_rose_rune.png" alt="">
@@ -2806,11 +2872,12 @@
     let cursedThorns = [];
     let clearedCursedThorns = 0;
     let sacrificeState = { active: false, choice: null };
-    let boosters = { pruningShears: 1, moonwaterFlask: 1, blackCandle: 1 };
+    let boosters = { pruningShears: 1, moonwaterFlask: 1, blackCandle: 1, graveSoil: 1 };
     let activeBooster = "";
     let moonwaterPreviewCenter = null;
     let blackCandleAxis = "row";
     let blackCandlePreview = { axis: "row", index: 3 };
+    let graveSoilCells = new Set();
     let ritualMessage = "Match botanical elements to feed the First Bouquet.";
     let harvestFlashCells = new Set();
     let transmuteFlashCell = "";
@@ -3080,6 +3147,7 @@
     function build() {
       // Board generation follows the match-3 contract: no free starting matches,
       // but at least one adjacent swap must create a harvest.
+      graveSoilCells.clear();
       for (let attempts = 0; attempts < MAX_BOARD_BUILD_ATTEMPTS; attempts += 1) {
         buildOpeningBoard();
         seedCurrentTargetMoves();
@@ -3379,6 +3447,8 @@
           const moonwaterAreaClass = activeBooster === "moonwaterFlask" && moonwaterPreviewCenter && inMoonwaterPatch(x, y, moonwaterPreviewCenter.x, moonwaterPreviewCenter.y) ? "moonwater-area" : "";
           const moonwaterCenterClass = activeBooster === "moonwaterFlask" && moonwaterPreviewCenter && moonwaterPreviewCenter.x === x && moonwaterPreviewCenter.y === y ? "moonwater-center" : "";
           const blackCandleLineClass = activeBooster === "blackCandle" && isBlackCandlePreviewCell(x, y) ? "black-candle-line" : "";
+          const graveSoilTargetClass = activeBooster === "graveSoil" && isGraveSoilEligible(x, y) ? "grave-soil-target" : "";
+          const graveSoilReadyClass = isGraveSoilReadyCell(x, y) ? "grave-soil-ready" : "";
           const harvestClass = harvestFlashCells.has(`${x},${y}`) ? "harvest-flash" : "";
           const superClass = superBloomCells.has(`${x},${y}`) ? "super-bloom-hot" : "";
           const invalidClass = invalidSwapCells.has(`${x},${y}`) ? "invalid-swap" : "";
@@ -3392,7 +3462,7 @@
           const fallKey = `${x},${y}`;
           const fallRows = fallAnimations.get(fallKey) || 0;
           const fallClass = fallRows ? "fall-in" : "";
-          tile.className = `tile ${selectedClass} ${legalClass} ${sacrificeClass} ${profitableClass} ${shearsClass} ${moonwaterTargetClass} ${moonwaterAreaClass} ${moonwaterCenterClass} ${blackCandleLineClass} ${harvestClass} ${superClass} ${invalidClass} ${idleHintClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass}`;
+          tile.className = `tile ${selectedClass} ${legalClass} ${sacrificeClass} ${profitableClass} ${shearsClass} ${moonwaterTargetClass} ${moonwaterAreaClass} ${moonwaterCenterClass} ${blackCandleLineClass} ${graveSoilTargetClass} ${graveSoilReadyClass} ${harvestClass} ${superClass} ${invalidClass} ${idleHintClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass}`;
           tile.disabled = isResolving || roundComplete;
           if (fallRows) {
             tile.style.setProperty("--fall-y", `${-fallRows * 112}%`);
@@ -3403,10 +3473,12 @@
           const shearsLabel = shearsClass ? " Pruning Shears target" : "";
           const moonwaterLabel = moonwaterTargetClass ? " Moonwater Flask 3x3 center" : moonwaterAreaClass ? " inside Moonwater Flask 3x3 patch" : "";
           const blackCandleLabel = blackCandleLineClass ? ` Black Candle ${blackCandleAxis} burn target` : "";
+          const graveSoilLabel = graveSoilReadyClass ? " Grave Soil relic-ready tile" : graveSoilTargetClass ? " Grave Soil upgrade target" : "";
           const thornLabel = thorn ? " with Cursed Thorn blocker" : thornClearedClass ? " where a Cursed Thorn cracked" : "";
-          tile.setAttribute("aria-label", `${flowers[value][0]} tile${profitLabel}${legalLabel}${shearsLabel}${moonwaterLabel}${blackCandleLabel}${thornLabel}`);
+          tile.setAttribute("aria-label", `${flowers[value][0]} tile${profitLabel}${legalLabel}${shearsLabel}${moonwaterLabel}${blackCandleLabel}${graveSoilLabel}${thornLabel}`);
           tile.innerHTML = `
             ${iconMarkup(value, "", flowers[value][0], "tile-icon-wrap")}
+            ${graveSoilReadyClass ? '<span class="grave-soil-sigil" aria-hidden="true"></span>' : ""}
             ${thorn || thornClearedClass ? '<span class="cursed-thorn-overlay" aria-hidden="true"></span>' : ""}
           `;
           if (activeBooster === "moonwaterFlask") {
@@ -3479,6 +3551,10 @@
       $("blackCandleBtn").disabled = isResolving || roundComplete || blackCandleCount() < 1;
       $("blackCandleBtn").classList.toggle("armed", activeBooster === "blackCandle");
       $("blackCandleBtn").setAttribute("aria-pressed", activeBooster === "blackCandle" ? "true" : "false");
+      $("graveSoilCount").textContent = graveSoilCount();
+      $("graveSoilBtn").disabled = isResolving || roundComplete || graveSoilCount() < 1;
+      $("graveSoilBtn").classList.toggle("armed", activeBooster === "graveSoil");
+      $("graveSoilBtn").setAttribute("aria-pressed", activeBooster === "graveSoil" ? "true" : "false");
       $("demoCompleteBtn").disabled = isResolving || roundComplete;
       $("shapeBloomBtn").disabled = isResolving || roundComplete;
       $("sacrificeBtn").classList.toggle("armed", sacrificeState.active);
@@ -3546,6 +3622,10 @@
         useBlackCandle(x, y);
         return;
       }
+      if (activeBooster === "graveSoil") {
+        useGraveSoil(x, y);
+        return;
+      }
       if (sacrificeState.active) {
         if (sacrificeState.choice === null) {
           $("sacrificeStatus").textContent = "Choose the replacement element first.";
@@ -3599,11 +3679,12 @@
         const firstMoveCopy = isFirstValidMove
           ? "<strong>Good.</strong> Resources feed orders, upgrades, and contraband. "
           : "";
-        ritualMessage = firstMoveCopy + harvestSummary(result) + awardRareBloomDrop(result);
+        const harvestMessage = firstMoveCopy + harvestSummary(result) + awardRareBloomDrop(result);
         pulseOrderCounts(result.gained);
-        if (!maybeCompleteRound()) {
-          ritualMessage += nextTargetMoveHint();
+        if (maybeCompleteRound(harvestMessage)) {
+          return;
         }
+        ritualMessage = harvestMessage + nextTargetMoveHint();
       } finally {
         isResolving = false;
         render();
@@ -3890,6 +3971,10 @@
     }
 
     function lineRelicForMatch(match, shape) {
+      const graveRelic = graveSoilRelicForMatch(match, shape);
+      if (graveRelic) {
+        return graveRelic;
+      }
       if (!shape || shape.kind !== "line" || match.len !== 4 || !Array.isArray(match.runs) || match.runs.length !== 1) {
         return null;
       }
@@ -3908,6 +3993,29 @@
         fixed,
         cells,
         matchCells: run.cells
+      };
+    }
+
+    function graveSoilRelicForMatch(match, shape) {
+      if (!shape || shape.kind !== "line" || match.len !== 3 || !Array.isArray(match.runs) || match.runs.length !== 1) {
+        return null;
+      }
+      const run = match.runs[0];
+      if (!run || run.len !== 3 || !run.cells.some(([x, y]) => isGraveSoilReadyCell(x, y))) {
+        return null;
+      }
+      const direction = run.direction === "vertical" ? "vertical" : "horizontal";
+      const fixed = direction === "vertical" ? run.cells[0][0] : run.cells[0][1];
+      const cells = Array.from({ length: BOARD_SIZE }, (_, index) => (
+        direction === "vertical" ? [fixed, index] : [index, fixed]
+      ));
+      return {
+        name: "Grave Soil Relic",
+        direction,
+        fixed,
+        cells,
+        matchCells: run.cells,
+        source: "grave-soil"
       };
     }
 
@@ -4172,11 +4280,12 @@
     }
 
     function collapseColumns() {
+      const nextGraveSoilCells = new Set();
       for (let x = 0; x < BOARD_SIZE; x += 1) {
         const remaining = [];
         for (let y = BOARD_SIZE - 1; y >= 0; y -= 1) {
           if (board[y][x] !== null) {
-            remaining.push({ value: board[y][x], fromY: y });
+            remaining.push({ value: board[y][x], fromY: y, graveSoil: isGraveSoilReadyCell(x, y) });
           }
         }
         for (let y = BOARD_SIZE - 1; y >= 0; y -= 1) {
@@ -4184,12 +4293,16 @@
             const tile = remaining.shift();
             board[y][x] = tile.value;
             recordFall(x, y, y - tile.fromY);
+            if (tile.graveSoil) {
+              nextGraveSoilCells.add(graveSoilKey(x, y));
+            }
           } else {
             board[y][x] = rand();
             recordFall(x, y, y + 1);
           }
         }
       }
+      graveSoilCells = nextGraveSoilCells;
     }
 
     function recordFall(x, y, rows) {
@@ -4576,6 +4689,7 @@
           <span class="reward-token">Apothecary +${reward.apothecary} XP</span>
           <span class="reward-token">Sub Rosa +${reward.faction} Favor</span>
           <span class="reward-token">${reward.item}</span>
+          <span class="reward-token">Grave Soil x1</span>
         </span>
       `;
     }
@@ -4592,7 +4706,7 @@
       $("factionXpFill").style.width = `${Math.min(100, (faction.xp / faction.next) * 100)}%`;
     }
 
-    function maybeCompleteRound() {
+    function maybeCompleteRound(carryMessage = "") {
       const plan = activeRoundPlan();
       const targetsComplete = plan.targets.every((target) => counts[target.flowerId] >= target.needed);
       if (roundComplete || !targetsComplete || !thornGoalComplete(plan)) {
@@ -4610,8 +4724,15 @@
         flowerId: plan.reward.flowerId,
         tags: ["order", "reward"]
       });
-      ritualMessage = `<strong>${plan.name} fulfilled.</strong> +${plan.reward.coins} coins, +${plan.reward.greenhouse} Greenhouse XP, +${plan.reward.apothecary} Apothecary XP, +${plan.reward.faction} Sub Rosa Favor, and ${plan.reward.item} placed in Chest Storage.`;
+      const graveSoilReward = grantGraveSoilFromBouquet();
+      const completionMessage = `<strong>${plan.name} fulfilled.</strong> +${plan.reward.coins} coins, +${plan.reward.greenhouse} Greenhouse XP, +${plan.reward.apothecary} Apothecary XP, +${plan.reward.faction} Sub Rosa Favor, and ${plan.reward.item} placed in Chest Storage.${graveSoilReward}`;
+      ritualMessage = carryMessage ? `${carryMessage} ${completionMessage}` : completionMessage;
       return true;
+    }
+
+    function grantGraveSoilFromBouquet() {
+      boosters.graveSoil = graveSoilCount() + 1;
+      return " <strong>Greenhouse reward:</strong> Grave Soil x1 sprouted for a later relic-ready tile.";
     }
 
     function grantTycoonXp(greenhouseAmount, apothecaryAmount, factionAmount = 0) {
@@ -4720,6 +4841,7 @@
       transmuteFlashCell = "";
       thornPulseCells.clear();
       thornClearedCells.clear();
+      graveSoilCells.clear();
       currentRound = nextRound;
       const runeBoonApplied = pendingRuneTendedSoil;
       pendingRuneTendedSoil = false;
@@ -4777,13 +4899,17 @@
       return Math.max(0, Math.floor(Number(boosters.blackCandle) || 0));
     }
 
+    function graveSoilCount() {
+      return Math.max(0, Math.floor(Number(boosters.graveSoil) || 0));
+    }
+
     function renderBoosterPanel() {
       const panel = $("boosterPanel");
       const status = $("boosterStatus");
       const modes = $("blackCandleModes");
       const rowMode = $("blackCandleRowMode");
       const columnMode = $("blackCandleColumnMode");
-      const armed = activeBooster === "pruningShears" || activeBooster === "moonwaterFlask" || activeBooster === "blackCandle";
+      const armed = activeBooster === "pruningShears" || activeBooster === "moonwaterFlask" || activeBooster === "blackCandle" || activeBooster === "graveSoil";
       panel.classList.toggle("open", armed);
       modes.classList.toggle("open", activeBooster === "blackCandle");
       rowMode.classList.toggle("selected", blackCandleAxis === "row");
@@ -4797,6 +4923,8 @@
       } else if (activeBooster === "blackCandle") {
         const lane = blackCandleAxis === "column" ? "column" : "row";
         status.textContent = `Black Market Black Candle is armed. Choose Row or Column, preview a ${lane}, then click to burn it. Cursed Thorns stay rooted. Cancel spends nothing.`;
+      } else if (activeBooster === "graveSoil") {
+        status.textContent = "Greenhouse Grave Soil is armed. Choose one glowing normal tile to make it relic-ready. Cursed Thorns reject the soil. Cancel spends nothing.";
       }
     }
 
@@ -4811,6 +4939,10 @@
       }
       if (activeBooster === "blackCandle") {
         cancelBlackCandle(refocus);
+        return;
+      }
+      if (activeBooster === "graveSoil") {
+        cancelGraveSoil(refocus);
       }
     }
 
@@ -4915,7 +5047,7 @@
         thornClearedCells.add(key);
         queuePruningShearBurst(x, y, true);
         ritualMessage = `<strong>Pruning Shears:</strong> clipped a Cursed Thorn. Cursed Thorn ${thornGoalProgress()}/${thornGoalNeeded()} cleared.`;
-        maybeCompleteRound();
+        maybeCompleteRound(ritualMessage);
         render();
         scheduleBoardParticleClear();
         scheduleIdleHint();
@@ -5256,10 +5388,14 @@
     }
 
     function collapseColumnsPreservingAnchors(anchorKeys = new Set()) {
+      const nextGraveSoilCells = new Set();
       for (let x = 0; x < BOARD_SIZE; x += 1) {
         let segmentEnd = BOARD_SIZE - 1;
         while (segmentEnd >= 0) {
           if (anchorKeys.has(thornKey(x, segmentEnd))) {
+            if (isGraveSoilReadyCell(x, segmentEnd)) {
+              nextGraveSoilCells.add(graveSoilKey(x, segmentEnd));
+            }
             segmentEnd -= 1;
             continue;
           }
@@ -5270,7 +5406,7 @@
           const remaining = [];
           for (let y = segmentEnd; y > segmentStart; y -= 1) {
             if (board[y][x] !== null) {
-              remaining.push({ value: board[y][x], fromY: y });
+              remaining.push({ value: board[y][x], fromY: y, graveSoil: isGraveSoilReadyCell(x, y) });
             }
           }
           for (let y = segmentEnd; y > segmentStart; y -= 1) {
@@ -5278,6 +5414,9 @@
               const tile = remaining.shift();
               board[y][x] = tile.value;
               recordFall(x, y, y - tile.fromY);
+              if (tile.graveSoil) {
+                nextGraveSoilCells.add(graveSoilKey(x, y));
+              }
             } else {
               board[y][x] = rand();
               recordFall(x, y, y - segmentStart);
@@ -5286,11 +5425,13 @@
           segmentEnd = segmentStart - 1;
         }
       }
+      graveSoilCells = nextGraveSoilCells;
     }
 
-    function refillBlackCandleLine(originalBoard, burnedCells, anchorKeys) {
+    function refillBlackCandleLine(originalBoard, burnedCells, anchorKeys, originalGraveSoilCells = graveSoilSnapshot()) {
       for (let attempt = 0; attempt < 80; attempt += 1) {
         restoreBoard(originalBoard);
+        restoreGraveSoilCells(originalGraveSoilCells);
         fallAnimations.clear();
         burnedCells.forEach(([cellX, cellY]) => {
           board[cellY][cellX] = null;
@@ -5302,6 +5443,7 @@
       }
 
       restoreBoard(originalBoard);
+      restoreGraveSoilCells(originalGraveSoilCells);
       fallAnimations.clear();
       burnedCells.forEach(([cellX, cellY]) => {
         board[cellY][cellX] = null;
@@ -5337,6 +5479,7 @@
       blackCandlePreview = null;
       clearIdleHint();
       const originalBoard = boardSnapshot();
+      const originalGraveSoilCells = graveSoilSnapshot();
       const gained = Array(flowers.length).fill(0);
       burnedCells.forEach(([cellX, cellY]) => {
         const flowerId = board[cellY][cellX];
@@ -5351,7 +5494,7 @@
       queueCoinBurst(burnedCells, coinsEarned);
       queueBlackCandleBurst(lineCells, axis, index);
       const anchorKeys = new Set(cursedThorns.map((thorn) => thornKey(thorn.x, thorn.y)));
-      const { reshuffled } = refillBlackCandleLine(originalBoard, burnedCells, anchorKeys);
+      const { reshuffled } = refillBlackCandleLine(originalBoard, burnedCells, anchorKeys, originalGraveSoilCells);
       pulseOrderCounts(gained);
       if (elementPulseTargets.size) {
         scheduleElementPulseClear();
@@ -5362,9 +5505,143 @@
         ? ` ${thornCells.length} Cursed Thorn${thornCells.length === 1 ? "" : "s"} stayed rooted.`
         : " No Cursed Thorns were touched.";
       ritualMessage = `<strong>Black Candle:</strong> burned ${lane} for ${burnedCells.length} tile${burnedCells.length === 1 ? "" : "s"}.${thornText} ${orderText ? `<strong>${orderText}</strong> ` : ""}+${coinsEarned} coins.${gainMarkup(gained)}${reshuffled ? " The board re-seeded itself with a legal move." : ""}`;
-      maybeCompleteRound();
+      maybeCompleteRound(ritualMessage);
       render();
       scheduleFallAnimationClear();
+      scheduleHarvestFlashClear();
+      scheduleBoardParticleClear();
+      scheduleIdleHint();
+    }
+
+    function graveSoilKey(x, y) {
+      return `${x},${y}`;
+    }
+
+    function graveSoilSnapshot() {
+      return new Set(graveSoilCells);
+    }
+
+    function restoreGraveSoilCells(snapshot) {
+      graveSoilCells = new Set(snapshot || []);
+    }
+
+    function isGraveSoilReadyCell(x, y) {
+      return graveSoilCells.has(graveSoilKey(x, y));
+    }
+
+    function isGraveSoilEligible(x, y) {
+      return isValidThornCell(x, y)
+        && Number.isInteger(board?.[y]?.[x])
+        && !thornAt(x, y)
+        && !isGraveSoilReadyCell(x, y);
+    }
+
+    function toggleGraveSoil() {
+      if (isResolving) {
+        return;
+      }
+      if (roundComplete) {
+        ritualMessage = "The bouquet is sealed. Press Next Bouquet to continue.";
+        render();
+        return;
+      }
+      if (activeBooster === "graveSoil") {
+        cancelGraveSoil();
+        return;
+      }
+      if (graveSoilCount() < 1) {
+        ritualMessage = "The Greenhouse has no Grave Soil ready.";
+        render();
+        return;
+      }
+      clearIdleHint();
+      cancelSacrifice(false);
+      cancelActiveBooster(false);
+      selected = null;
+      activeBooster = "graveSoil";
+      moonwaterPreviewCenter = null;
+      blackCandlePreview = null;
+      ritualMessage = "<strong>Grave Soil armed:</strong> Greenhouse blend ready. Choose one glowing normal tile to make it relic-ready. Cursed Thorns reject the soil.";
+      render();
+    }
+
+    function cancelGraveSoil(refocus = true) {
+      if (activeBooster !== "graveSoil") {
+        return;
+      }
+      activeBooster = "";
+      selected = null;
+      moonwaterPreviewCenter = null;
+      blackCandlePreview = null;
+      ritualMessage = "Grave Soil returned to the sack. No booster spent.";
+      render();
+      if (refocus) {
+        $("graveSoilBtn").focus();
+      }
+    }
+
+    function spendGraveSoil() {
+      if (graveSoilCount() < 1) {
+        ritualMessage = "The Greenhouse has no Grave Soil ready.";
+        render();
+        return false;
+      }
+      boosters.graveSoil = graveSoilCount() - 1;
+      return true;
+    }
+
+    function queueGraveSoilBurst(x, y) {
+      const motes = ["✦", "☿", "✧", "✦", "☽"];
+      motes.forEach((text, index) => {
+        boardParticles.push({
+          type: "grave-soil-spark",
+          text,
+          x,
+          y,
+          dx: (Math.random() - 0.5) * 58,
+          dy: -34 - Math.random() * 46,
+          size: 24,
+          fontSize: index === 1 ? 20 : 18,
+          spin: (Math.random() - 0.5) * 130,
+          delay: index * 26
+        });
+      });
+    }
+
+    function useGraveSoil(x, y) {
+      if (isResolving || roundComplete) {
+        return;
+      }
+      if (thornAt(x, y)) {
+        ritualMessage = "<strong>Grave Soil refused:</strong> Cursed Thorns are rooted blockers. Clear them with adjacent matches or Pruning Shears.";
+        render();
+        return;
+      }
+      if (isGraveSoilReadyCell(x, y)) {
+        ritualMessage = "That tile is already relic-ready. Choose another glowing normal tile or Cancel.";
+        render();
+        return;
+      }
+      if (!isGraveSoilEligible(x, y)) {
+        ritualMessage = "Grave Soil needs a normal loose tile. Choose one of the glowing targets.";
+        render();
+        return;
+      }
+      if (!spendGraveSoil()) {
+        activeBooster = "";
+        return;
+      }
+      activeBooster = "";
+      selected = null;
+      moonwaterPreviewCenter = null;
+      blackCandlePreview = null;
+      clearIdleHint();
+      graveSoilCells.add(graveSoilKey(x, y));
+      harvestFlashCells = new Set([graveSoilKey(x, y)]);
+      queueGraveSoilBurst(x, y);
+      const flowerName = flowers[board[y][x]][0];
+      ritualMessage = `<strong>Grave Soil:</strong> ${flowerName} is relic-ready without spending a move. Match it in a normal 3-line to awaken a Grave Soil Relic line sweep.`;
+      render();
       scheduleHarvestFlashClear();
       scheduleBoardParticleClear();
       scheduleIdleHint();
@@ -5529,7 +5806,7 @@
           : `<strong>Sacrifice complete:</strong> ${replacementName} replaced the tile. No harvest yet.`;
         if (result.matched) {
           pulseOrderCounts(result.gained);
-          maybeCompleteRound();
+          maybeCompleteRound(ritualMessage);
         }
       } finally {
         isResolving = false;
@@ -5658,6 +5935,7 @@
       clearIdleHint();
       selected = null;
       board = makeShapeDemoBoard(kind);
+      graveSoilCells.clear();
       harvestFlashCells.clear();
       fallAnimations.clear();
       superBloomCells.clear();
@@ -5880,6 +6158,7 @@
         apothecary,
         faction,
         boosters,
+        graveSoilCells: [...graveSoilCells],
         chestItems: chestState.items
       };
       try {
@@ -5922,6 +6201,7 @@
         faction = validProgressState(state.faction, faction);
         faction.title = typeof state.faction?.title === "string" ? state.faction.title : (faction.level >= 5 ? "Favored" : "Trusted");
         boosters = validBoosterState(state.boosters, boosters);
+        graveSoilCells = validGraveSoilCells(state.graveSoilCells);
         if (Array.isArray(state.chestItems)) {
           chestState.items = state.chestItems
             .slice(0, chestState.capacity)
@@ -5960,8 +6240,25 @@
       return {
         pruningShears: safeCount(candidate.pruningShears, fallback.pruningShears),
         moonwaterFlask: safeCount(candidate.moonwaterFlask, fallback.moonwaterFlask),
-        blackCandle: safeCount(candidate.blackCandle, fallback.blackCandle)
+        blackCandle: safeCount(candidate.blackCandle, fallback.blackCandle),
+        graveSoil: safeCount(candidate.graveSoil, fallback.graveSoil)
       };
+    }
+
+    function validGraveSoilCells(candidate) {
+      const validCells = new Set();
+      if (!Array.isArray(candidate) || !isValidBoard(board)) {
+        return validCells;
+      }
+      candidate.forEach((entry) => {
+        const parts = Array.isArray(entry) ? entry : String(entry).split(",");
+        const x = Number(parts[0]);
+        const y = Number(parts[1]);
+        if (Number.isInteger(x) && Number.isInteger(y) && isValidThornCell(x, y) && Number.isInteger(board[y][x]) && !thornAt(x, y)) {
+          validCells.add(graveSoilKey(x, y));
+        }
+      });
+      return validCells;
     }
 
     function analyzeBoardSnapshot(candidateBoard) {
@@ -6026,6 +6323,7 @@
     $("pruningShearsBtn").addEventListener("click", togglePruningShears);
     $("moonwaterFlaskBtn").addEventListener("click", toggleMoonwaterFlask);
     $("blackCandleBtn").addEventListener("click", toggleBlackCandle);
+    $("graveSoilBtn").addEventListener("click", toggleGraveSoil);
     $("blackCandleRowMode").addEventListener("click", () => setBlackCandleAxis("row"));
     $("blackCandleColumnMode").addEventListener("click", () => setBlackCandleAxis("column"));
     $("demoCompleteBtn").addEventListener("click", demoCompleteBouquet);
