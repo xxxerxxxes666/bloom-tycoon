@@ -1381,12 +1381,20 @@
   - Local Playwright forced and retried Round 2 plus Rounds 12, 13, 14, 15, 16, and 17; each retry restored the round board/moves/objectives and kept 64 tiles.
   - Local Playwright verified Round 17 current copy contains `Moonlit Wreath 4`, Nightshade, Amber Seed, Thorn Rose, Cursed Thorn, higher stakes, and the Moonlit Wreath Cache reward path; Round 17 then showed `withered` and `complete` preview states.
   - Local Playwright armed/cancelled/used all four boosters, opened/cancelled Sacrifice, opened/closed Chest Storage, clicked `Shape Bloom` through Cross/L/T rewards, pressed `B` for Supreme Bloom, and checked mobile 390x844 with 0 horizontal overflow.
-  - Vercel production deploy/live checks: pending.
-  - GitHub Pages workflow/live checks: pending.
-- Browser console/runtime status: local Playwright observed 0 console warnings/errors and 0 page errors; live browser checks pending after deploy.
-- Vercel deployment URL/identifier checked: pending production deploy for this pass.
-- GitHub Pages preview status: pending workflow/live check for this pass.
-- Known issues: none found during implementation so far. The shell still does not have standalone `agent-browser`, so browser verification will use bundled Playwright if needed.
+  - Deployed to Vercel production as `dpl_6zHGCCxR343KnpQLyPJ7odC4M7ao`.
+  - Vercel deployment URL: https://bloom-tycoon-74gtorfyc-xerxes-florals.vercel.app
+  - Re-pointed `https://bloom-tycoon.vercel.app` to the new deployment.
+  - Vercel root, `/playable/midnight_bloom_prototype.html?verify=cdd6e92-live`, and `/assets/tiles/96/crimson_rose_rune.png?verify=cdd6e92-live` returned `200 OK`.
+  - Downloaded Vercel HTML contained the Round 17 markers and all `data-round-seventeen-state` hooks.
+  - Vercel Playwright smoke loaded 64 tiles and 0 broken images, clicked `Complete Bouquet`/`Next Bouquet` through Round 17 current, verified the Round 17 Moonlit Wreath 4 copy, and checked mobile 390x844 with 0 horizontal overflow.
+  - GitHub Pages workflow `28699690462` for `cdd6e92` completed successfully.
+  - GitHub Pages root, `/bloom-tycoon/playable/midnight_bloom_prototype.html?verify=cdd6e92-pages`, and `/bloom-tycoon/assets/tiles/96/crimson_rose_rune.png?verify=cdd6e92-pages` returned `200 OK`.
+  - Downloaded GitHub Pages HTML contained the Round 17 markers and all `data-round-seventeen-state` hooks.
+  - GitHub Pages Playwright smoke loaded 64 tiles and 0 broken images, clicked through Round 17 current, verified the Round 17 Moonlit Wreath 4 copy, and checked mobile 390x844 with 0 horizontal overflow.
+- Browser console/runtime status: local, Vercel, and GitHub Pages Playwright checks observed 0 console warnings/errors and 0 page errors.
+- Vercel deployment URL/identifier checked: `dpl_6zHGCCxR343KnpQLyPJ7odC4M7ao`, https://bloom-tycoon-74gtorfyc-xerxes-florals.vercel.app, canonical alias https://bloom-tycoon.vercel.app.
+- GitHub Pages preview status: workflow `28699690462` completed successfully for `cdd6e92`; Pages is serving the new Round 17 HTML.
+- Known issues: none found in this pass.
 - How to trigger and verify L/T/cross matches without console: after Round 1, watch for the `L/T/cross = Shape Bloom` hint in Round 2; in the review path, click `Shape Bloom` or press `M` until `Witch's Cross`, `Night Garden L-Bloom`, or `Twin Stem Bloom` appears. The hidden `shapeAuditData` verifier still contains L, T, and cross definitions.
 - How to trigger and verify Supreme Bloom without console: focus the page and press `B`; the ritual log should show `SUPREME BLOOM! Review hook complete. The board is ready.` after the charge phase.
 - Security/secret-scan status: lightweight credential-shaped scan ran on changed files with no findings.
