@@ -1355,6 +1355,37 @@
 - How to trigger and verify Supreme Bloom without console: focus the page and press `B`; the ritual log should show `SUPREME BLOOM! Review hook complete. The board is ready.` after the charge phase.
 - Security/secret-scan status: lightweight credential-shaped scan ran on changed files with no findings. No secrets, trackers, backend, SDKs, or new permissions were added in code.
 
+## 2026-07-04 Codex Round 13 encore Bloodroot Compact clarity/payoff
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow Round 13 `Bloodroot Compact 3` clarity/payoff pass.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added a compact `Round 13 Bloodroot Compact Encore` strip below `Round 12 Moonlit Wreath Encore` using the existing continuing-round generator via `buildRoundPlan(13)`.
+- The strip has `tease`, `next`, `current`, `withered`, and `complete` states, with copy for `Bloodroot Compact 3` as the third-pass Bloodroot + Sol Rot compact.
+- The Round 13 copy explains higher stakes, retry restoration, and the existing Bloodroot Compact reward path; no new progression framework was added.
+- No new account system, backend, analytics, monetization, SDK, tracker, asset, secret, or permission was added.
+- Added static verifier markers for `roundThirteenPreview`, `Round 13 Bloodroot Compact Encore`, `Bloodroot Compact 3`, `Round 13 encore Bloodroot Compact payoff`, all `data-round-thirteen-state` values, and the Round 13 render/helper functions.
+- Verification run:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - Read `docs/hermes_audit_next_tasks.md`.
+  - `python3 scripts/verify_project.py`
+  - `git diff --check`
+  - Local static preview at `http://127.0.0.1:4233/playable/midnight_bloom_prototype.html`; standalone `agent-browser` was unavailable, so bundled Playwright was used.
+  - Local direct checks returned `200` for `/playable/midnight_bloom_prototype.html?verify=round13-local` and `/assets/tiles/96/bloodroot_ruby_shard.png?verify=round13-local`; the playable contained the new Round 13 markers.
+  - Local Playwright main flow verified fresh Round 1 path, Round 13 `tease`, Round 1 win -> reward -> Round 2, Round 2 fail -> retry, Round 2 restored Cursed Thorn objective, Round 3 completion/payoff, Round 4 completion/payoff, Round 5 completion/payoff, Round 6 completion/payoff, Round 7 completion/payoff, Round 8 completion/payoff, Round 9 completion/payoff, Round 10 completion/payoff, Round 11 completion/payoff, Round 12 current and fail -> retry restoration, Round 12 completion/payoff, Round 13 current `Bloodroot Compact 3` Bloodroot/Sol Rot higher-stakes copy, Round 13 fail -> retry restoration, Round 13 completion/payoff, Bloodroot Compact in Chest Storage, 64 tiles, no broken images, and no console/page errors.
+  - Local Playwright preservation checks verified each booster (`Pruning Shears`, `Moonwater Flask`, `Black Candle`, `Grave Soil`) arms, cancels, uses from fresh pages, and preserves 64 tiles.
+  - Local Playwright preservation checks verified Shape Bloom review, `M` L/T/cross review hook, Supreme Bloom via `B`, `N` Complete Bouquet hook, Chest modal, Sacrifice arm/cancel, no broken images, and no console/page errors.
+- Browser console/runtime status: no local Playwright console errors or page errors observed during the Round 1-13 main flow, Round 12 and Round 13 retry checks, booster checks, Shape Bloom/M/B/N review hooks, Chest, Sacrifice, or mobile checks.
+- Vercel deployment URL/identifier checked: pending production deploy.
+- GitHub Pages preview status: pending push and Pages publish.
+- Known issues: none found locally for this Round 13 encore Bloodroot Compact slice. The shell still does not have standalone `agent-browser`, so browser verification used bundled Playwright.
+- How to trigger and verify L/T/cross matches without console: after Round 1, watch for the `L/T/cross = Shape Bloom` hint in Round 2; in the review path, click `Shape Bloom` or press `M` until `Witch's Cross`, `Night Garden L-Bloom`, or `Twin Stem Bloom` appears. The hidden `shapeAuditData` verifier still contains L, T, and cross definitions.
+- How to trigger and verify Supreme Bloom without console: focus the page and press `B`; the ritual log should show `SUPREME BLOOM! Review hook complete. The board is ready.` after the charge phase.
+- Security/secret-scan status: lightweight credential-shaped scan ran on changed files with no findings. No secrets, trackers, backend, SDKs, or new permissions were added in code.
+
 ## 2026-07-04 Codex Round 12 encore Moonlit Wreath clarity/payoff
 
 - Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow Round 12 `Moonlit Wreath 3` clarity/payoff pass.
