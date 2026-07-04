@@ -653,7 +653,8 @@
     .round-seventeen-preview,
     .round-eighteen-preview,
     .round-nineteen-preview,
-    .round-twenty-preview {
+    .round-twenty-preview,
+    .round-twenty-one-preview {
       max-width: 760px;
       margin: 8px auto 0;
       padding: 9px 12px;
@@ -746,6 +747,11 @@
     .round-twenty-preview {
       border-color: #43222d;
       background: linear-gradient(180deg, #13090d, #050404);
+    }
+
+    .round-twenty-one-preview {
+      border-color: #463020;
+      background: linear-gradient(180deg, #130d08, #050404);
     }
 
     .round-three-focus[data-round-three-state="current"] {
@@ -1036,6 +1042,22 @@
       color: #e0a078;
     }
 
+    .round-twenty-one-preview[data-round-twenty-one-state="current"] {
+      border-color: #9c3745;
+      color: #e5b3b6;
+      box-shadow: inset 0 0 12px #000, 0 0 12px #7b263d55;
+    }
+
+    .round-twenty-one-preview[data-round-twenty-one-state="complete"] {
+      border-color: #5d6f32;
+      color: #d8efad;
+    }
+
+    .round-twenty-one-preview[data-round-twenty-one-state="withered"] {
+      border-color: #8a332a;
+      color: #e0a078;
+    }
+
     .round-three-kicker,
     .round-four-kicker,
     .round-five-kicker,
@@ -1053,7 +1075,8 @@
     .round-seventeen-kicker,
     .round-eighteen-kicker,
     .round-nineteen-kicker,
-    .round-twenty-kicker {
+    .round-twenty-kicker,
+    .round-twenty-one-kicker {
       display: block;
       color: #d7b16d;
       font-size: 11px;
@@ -1096,7 +1119,9 @@
     .round-nineteen-line,
     .round-nineteen-payoff,
     .round-twenty-line,
-    .round-twenty-payoff {
+    .round-twenty-payoff,
+    .round-twenty-one-line,
+    .round-twenty-one-payoff {
       display: block;
       margin-top: 3px;
       font-size: 12px;
@@ -1120,7 +1145,8 @@
     .round-seventeen-payoff,
     .round-eighteen-payoff,
     .round-nineteen-payoff,
-    .round-twenty-payoff {
+    .round-twenty-payoff,
+    .round-twenty-one-payoff {
       color: #c6ad7c;
     }
 
@@ -3707,7 +3733,8 @@
       .round-seventeen-preview,
       .round-eighteen-preview,
       .round-nineteen-preview,
-      .round-twenty-preview {
+      .round-twenty-preview,
+      .round-twenty-one-preview {
         padding: 10px;
       }
 
@@ -3857,6 +3884,7 @@
       <div class="round-eighteen-preview" id="roundEighteenPreview" aria-label="Round 18 Encore Bloodroot Compact"></div>
       <div class="round-nineteen-preview" id="roundNineteenPreview" aria-label="Round 19 Encore Saint's Night Ledger"></div>
       <div class="round-twenty-preview" id="roundTwentyPreview" aria-label="Round 20 Encore Sub Rosa Grand Bouquet"></div>
+      <div class="round-twenty-one-preview" id="roundTwentyOnePreview" aria-label="Round 21 Encore First Bouquet"></div>
       <script type="application/json" id="shapeAuditData"></script>
       <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
       <div class="board" id="board"></div>
@@ -4235,6 +4263,13 @@
       'data-round-twenty-state="current"',
       'data-round-twenty-state="withered"',
       'data-round-twenty-state="complete"'
+    ];
+    const roundTwentyOneAuditMarkers = [
+      'data-round-twenty-one-state="tease"',
+      'data-round-twenty-one-state="next"',
+      'data-round-twenty-one-state="current"',
+      'data-round-twenty-one-state="withered"',
+      'data-round-twenty-one-state="complete"'
     ];
     const STREAK_COIN_BONUS_STEP = 5;
     const STREAK_COIN_BONUS_CAP = 25;
@@ -5769,6 +5804,71 @@
       `;
     }
 
+    function roundTwentyOnePlan() {
+      return buildRoundPlan(21);
+    }
+
+    function roundTwentyOneEncoreName(plan = roundTwentyOnePlan()) {
+      return plan.name || "First Bouquet 5";
+    }
+
+    function roundTwentyOnePreviewState(plan = roundTwentyOnePlan()) {
+      if (currentRound > plan.round || (currentRound === plan.round && roundComplete)) {
+        return { id: "complete", label: "Fifth First Bouquet Bound" };
+      }
+      if (currentRound === plan.round && isBouquetFailed(plan)) {
+        return { id: "withered", label: "Current · Withered" };
+      }
+      if (currentRound === plan.round) {
+        return { id: "current", label: "Current First Bouquet" };
+      }
+      if (currentRound === plan.round - 1) {
+        return { id: "next", label: roundComplete ? "Fifth First Bouquet Ready" : "After Sub Rosa Grand Bouquet 4" };
+      }
+      return { id: "tease", label: "Fifth First Bouquet Preview" };
+    }
+
+    function roundTwentyOneGoalCopy(plan = roundTwentyOnePlan()) {
+      return bouquetPathGoalCopy(plan);
+    }
+
+    function roundTwentyOnePreviewCopy(state, plan = roundTwentyOnePlan()) {
+      const goal = roundTwentyOneGoalCopy(plan);
+      const encoreName = roundTwentyOneEncoreName(plan);
+      if (state.id === "complete") {
+        return `${encoreName} complete: the fifth First Bouquet is bound, ${plan.reward.item} enters Chest Storage, and Thorn Rose and Bone Star rewards keep moving.`;
+      }
+      if (state.id === "withered") {
+        return `Retry keeps ${encoreName} open: restore ${plan.moves} moves and finish ${goal}.`;
+      }
+      if (state.id === "current") {
+        return `Current Round 21: ${encoreName} revisits Thorn Rose and Bone Star with higher stakes. Gather ${goal} through the existing First Bouquet Coffer reward path.`;
+      }
+      if (state.id === "next") {
+        return `${roundComplete ? "First Bouquet fifth loop unlocked" : "After Sub Rosa Grand Bouquet 4"}: ${encoreName} asks for ${goal} while reward choice/default, Chest Storage, Flowerpedia, and Bouquet Streak stay familiar.`;
+      }
+      return `${encoreName} waits after Round 20 as the fifth-pass First Bouquet: Thorn Rose plus Bone Star, higher stakes, familiar coffer rewards.`;
+    }
+
+    function roundTwentyOnePayoffCopy(plan = roundTwentyOnePlan()) {
+      return `Round 21 encore First Bouquet payoff: ${plan.reward.item} uses the existing First Bouquet Coffer reward structure, +${plan.reward.greenhouse} Greenhouse XP, and keeps retry, reward choice, Flowerpedia, Bouquet Streak, and Chest Storage intact.`;
+    }
+
+    function renderRoundTwentyOnePreview() {
+      const preview = $("roundTwentyOnePreview");
+      if (!preview) {
+        return;
+      }
+      const plan = roundTwentyOnePlan();
+      const state = roundTwentyOnePreviewState(plan);
+      preview.dataset.roundTwentyOneState = state.id;
+      preview.innerHTML = `
+        <span class="round-twenty-one-kicker">Round 21 First Bouquet Encore · ${state.label}</span>
+        <span class="round-twenty-one-line">${roundTwentyOnePreviewCopy(state, plan)}</span>
+        <span class="round-twenty-one-payoff">${roundTwentyOnePayoffCopy(plan)}</span>
+      `;
+    }
+
     function thornKey(x, y) {
       return `${x},${y}`;
     }
@@ -6367,6 +6467,7 @@
       renderRoundEighteenPreview();
       renderRoundNineteenPreview();
       renderRoundTwentyPreview();
+      renderRoundTwentyOnePreview();
       renderActiveOrders(plan);
       renderRoundCeremony(plan);
       $("bar").style.width = `${progress.pct}%`;
