@@ -1158,3 +1158,36 @@
 - How to trigger and verify L/T/cross matches without console: after Round 1, watch for the `L/T/cross = Shape Bloom` hint in Round 2; in the review path, click `Shape Bloom` or press `M` to trigger the prototype match-shape review. The hidden `shapeAuditData` verifier still contains L, T, and cross definitions.
 - How to trigger and verify Supreme Bloom without console: focus the page and press `B`; the ritual log should show `SUPREME BLOOM! Review hook complete. The board is ready.` after the charge phase.
 - Security/secret-scan status: lightweight credential-shaped scan ran on changed files with no likely secrets; it only flagged existing local display variable names `flowerpediaToken` and `chapterToken`, with no credential values. No secrets, trackers, backend, SDKs, or new permissions were added in code.
+
+## 2026-07-04 Codex Round 7 encore Cursed Thorn clarity/payoff
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow Round 7 encore Cursed Thorn clarity/payoff pass.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added a compact `Round 7 Thorn Encore` strip below `Round 6 Encore Loop` using the existing continuing-round generator via `buildRoundPlan(7)`.
+- The strip has `tease`, `next`, `current`, `withered`, and `complete` states, with copy for `Moonlit Wreath 2` as the second-pass Cursed Thorn round.
+- The Round 7 copy explains the same adjacent-match Cursed Thorn clearing rule, higher stakes, and the existing Moonlit Wreath reward structure; no new progression framework was added.
+- No new account system, backend, analytics, monetization, SDK, tracker, asset, secret, or permission was added.
+- Added static verifier markers for `roundSevenPreview`, `Round 7 Thorn Encore`, `Moonlit Wreath 2`, `Round 7 encore Cursed Thorn payoff`, all `data-round-seven-state` values, and the Round 7 render/helper functions.
+- Verification run:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - Read `docs/hermes_audit_next_tasks.md`.
+  - `python3 scripts/verify_project.py`
+  - `git diff --check`
+  - Local static preview at `http://127.0.0.1:4207/playable/midnight_bloom_prototype.html`; standalone `agent-browser` was unavailable, so bundled Playwright was used.
+  - Local direct checks returned `200` for `/playable/midnight_bloom_prototype.html?verify=round7-local` and `/assets/tiles/96/bone_white_thorn_star.png?verify=round7-local`; the playable contained the new Round 7 markers.
+  - Local Playwright main flow verified fresh Round 1 path, Round 7 `tease`, Round 1 win -> reward -> Round 2, Round 2 Cursed Thorn objective, Round 2 fail -> retry, Round 2 win -> Round 3, Round 3 completion/payoff, Bloodroot Compact in Chest Storage, Round 4 completion/payoff, Saint's Night Ledger in Chest Storage, Round 5 completion/payoff, Sub Rosa Grand Cache in Chest Storage, Round 6 completion/payoff, Round 7 current `Moonlit Wreath 2` higher-stakes Cursed Thorn copy, Round 7 completion/payoff, Moonlit Wreath Cache in Chest Storage, 64 tiles, no broken images, and no console/page errors.
+  - Local Playwright preservation checks verified each booster (`Pruning Shears`, `Moonwater Flask`, `Black Candle`, `Grave Soil`) arms, cancels, uses from a fresh page, and preserves 64 tiles.
+  - Local Playwright preservation checks verified Shape Bloom review hook plus hidden L/T/cross `shapeAuditData`, `M`, Supreme Bloom via `B`, `N`, Chest modal, Sacrifice arm/cancel, mobile 390x860 Round 7 preview, no horizontal overflow, no broken images, and no console/page errors.
+  - Live Vercel deployment: pending.
+  - GitHub Pages preview status: pending.
+- Browser console/runtime status: no local Playwright console errors or page errors observed during the Round 1-7 main flow, booster checks, Shape Bloom/M/B/N review hooks, Chest, Sacrifice, or mobile checks.
+- Vercel deployment URL/identifier checked: pending.
+- GitHub Pages preview status: pending.
+- Known issues: none found locally for this Round 7 encore Cursed Thorn slice. The shell still does not have standalone `agent-browser`, so browser verification used bundled Playwright.
+- How to trigger and verify L/T/cross matches without console: after Round 1, watch for the `L/T/cross = Shape Bloom` hint in Round 2; in the review path, click `Shape Bloom` or press `M` to trigger the prototype match-shape review. The hidden `shapeAuditData` verifier still contains L, T, and cross definitions.
+- How to trigger and verify Supreme Bloom without console: focus the page and press `B`; the ritual log should show `SUPREME BLOOM! Review hook complete. The board is ready.` after the charge phase.
+- Security/secret-scan status: lightweight credential-shaped scan ran on changed files with no likely secrets; it only flagged existing local display variable names `flowerpediaToken` and `chapterToken`, with no credential values. No secrets, trackers, backend, SDKs, or new permissions were added in code.

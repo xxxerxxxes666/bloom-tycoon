@@ -639,7 +639,8 @@
     .round-three-focus,
     .round-four-preview,
     .round-five-preview,
-    .round-six-preview {
+    .round-six-preview,
+    .round-seven-preview {
       max-width: 760px;
       margin: 8px auto 0;
       padding: 9px 12px;
@@ -662,6 +663,11 @@
     .round-six-preview {
       border-color: #3a3047;
       background: linear-gradient(180deg, #0d0a14, #050404);
+    }
+
+    .round-seven-preview {
+      border-color: #463322;
+      background: linear-gradient(180deg, #120d08, #050404);
     }
 
     .round-three-focus[data-round-three-state="current"] {
@@ -728,10 +734,27 @@
       color: #e0a078;
     }
 
+    .round-seven-preview[data-round-seven-state="current"] {
+      border-color: #a66c37;
+      color: #e5c18a;
+      box-shadow: inset 0 0 12px #000, 0 0 12px #6f3f1e55;
+    }
+
+    .round-seven-preview[data-round-seven-state="complete"] {
+      border-color: #5d6f32;
+      color: #d8efad;
+    }
+
+    .round-seven-preview[data-round-seven-state="withered"] {
+      border-color: #8a332a;
+      color: #e0a078;
+    }
+
     .round-three-kicker,
     .round-four-kicker,
     .round-five-kicker,
-    .round-six-kicker {
+    .round-six-kicker,
+    .round-seven-kicker {
       display: block;
       color: #d7b16d;
       font-size: 11px;
@@ -746,7 +769,9 @@
     .round-five-line,
     .round-five-payoff,
     .round-six-line,
-    .round-six-payoff {
+    .round-six-payoff,
+    .round-seven-line,
+    .round-seven-payoff {
       display: block;
       margin-top: 3px;
       font-size: 12px;
@@ -755,7 +780,9 @@
 
     .round-three-payoff,
     .round-four-payoff,
-    .round-five-payoff {
+    .round-five-payoff,
+    .round-six-payoff,
+    .round-seven-payoff {
       color: #c6ad7c;
     }
 
@@ -3461,6 +3488,7 @@
       <div class="round-four-preview" id="roundFourPreview" aria-label="Round 4 Saint's Night Ledger"></div>
       <div class="round-five-preview" id="roundFivePreview" aria-label="Round 5 Sub Rosa Grand Bouquet"></div>
       <div class="round-six-preview" id="roundSixPreview" aria-label="Round 6 Encore Bouquet"></div>
+      <div class="round-seven-preview" id="roundSevenPreview" aria-label="Round 7 Encore Cursed Thorn"></div>
       <script type="application/json" id="shapeAuditData"></script>
       <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
       <div class="board" id="board"></div>
@@ -3741,6 +3769,13 @@
       'data-round-six-state="current"',
       'data-round-six-state="withered"',
       'data-round-six-state="complete"'
+    ];
+    const roundSevenAuditMarkers = [
+      'data-round-seven-state="tease"',
+      'data-round-seven-state="next"',
+      'data-round-seven-state="current"',
+      'data-round-seven-state="withered"',
+      'data-round-seven-state="complete"'
     ];
     const STREAK_COIN_BONUS_STEP = 5;
     const STREAK_COIN_BONUS_CAP = 25;
@@ -4347,6 +4382,77 @@
       `;
     }
 
+    function roundSevenPlan() {
+      return buildRoundPlan(7);
+    }
+
+    function roundSevenEncoreName(plan = roundSevenPlan()) {
+      return plan.name || "Moonlit Wreath 2";
+    }
+
+    function roundSevenPreviewState(plan = roundSevenPlan()) {
+      if (currentRound > plan.round || (currentRound === plan.round && roundComplete)) {
+        return { id: "complete", label: "Encore Thorn Lesson Cleared" };
+      }
+      if (currentRound === plan.round && isBouquetFailed(plan)) {
+        return { id: "withered", label: "Current · Withered" };
+      }
+      if (currentRound === plan.round) {
+        return { id: "current", label: "Current Thorn Encore" };
+      }
+      if (currentRound === plan.round - 1) {
+        return { id: "next", label: roundComplete ? "Thorn Encore Ready" : "After First Bouquet 2" };
+      }
+      return { id: "tease", label: "Thorn Encore Preview" };
+    }
+
+    function roundSevenGoalCopy(plan = roundSevenPlan()) {
+      return bouquetPathGoalCopy(plan);
+    }
+
+    function roundSevenThornCopy(plan = roundSevenPlan()) {
+      const needed = plan.thornGoal ? plan.thornGoal.needed : 0;
+      return `${needed} Cursed Thorn${needed === 1 ? "" : "s"} cleared by adjacent matches or Pruning Shears`;
+    }
+
+    function roundSevenPreviewCopy(state, plan = roundSevenPlan()) {
+      const goal = roundSevenGoalCopy(plan);
+      const encoreName = roundSevenEncoreName(plan);
+      const thornCopy = roundSevenThornCopy(plan);
+      if (state.id === "complete") {
+        return `${encoreName} complete: the second thorn lesson is sealed, and ${plan.reward.item} keeps the higher-stakes ladder moving.`;
+      }
+      if (state.id === "withered") {
+        return `Retry keeps ${encoreName} open: restore ${plan.moves} moves, finish ${goal}, and crack ${thornCopy}.`;
+      }
+      if (state.id === "current") {
+        return `Current Round 7: ${encoreName} repeats the Cursed Thorn lesson with higher stakes. Gather ${goal}; crack ${thornCopy}.`;
+      }
+      if (state.id === "next") {
+        return `${roundComplete ? "Encore thorn round unlocked" : "After First Bouquet 2"}: ${encoreName} asks for ${goal} while repeating the same adjacent-match Cursed Thorn rule.`;
+      }
+      return `${encoreName} waits after Round 6 as the second-pass Cursed Thorn round: same blocker rules, higher stakes, familiar rewards.`;
+    }
+
+    function roundSevenPayoffCopy(plan = roundSevenPlan()) {
+      return `Round 7 encore Cursed Thorn payoff: ${plan.reward.item} uses the existing Moonlit Wreath reward structure, +${plan.reward.apothecary} Apothecary XP, and keeps retry, Bouquet Streak, and Chest Storage intact.`;
+    }
+
+    function renderRoundSevenPreview() {
+      const preview = $("roundSevenPreview");
+      if (!preview) {
+        return;
+      }
+      const plan = roundSevenPlan();
+      const state = roundSevenPreviewState(plan);
+      preview.dataset.roundSevenState = state.id;
+      preview.innerHTML = `
+        <span class="round-seven-kicker">Round 7 Thorn Encore · ${state.label}</span>
+        <span class="round-seven-line">${roundSevenPreviewCopy(state, plan)}</span>
+        <span class="round-seven-payoff">${roundSevenPayoffCopy(plan)}</span>
+      `;
+    }
+
     function thornKey(x, y) {
       return `${x},${y}`;
     }
@@ -4931,6 +5037,7 @@
       renderRoundFourPreview();
       renderRoundFivePreview();
       renderRoundSixPreview();
+      renderRoundSevenPreview();
       renderActiveOrders(plan);
       renderRoundCeremony(plan);
       $("bar").style.width = `${progress.pct}%`;
