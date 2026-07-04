@@ -1355,6 +1355,39 @@
 - How to trigger and verify Supreme Bloom without console: focus the page and press `B`; the ritual log should show `SUPREME BLOOM! Review hook complete. The board is ready.` after the charge phase.
 - Security/secret-scan status: lightweight credential-shaped scan ran on changed files with no findings. No secrets, trackers, backend, SDKs, or new permissions were added in code.
 
+## 2026-07-04 Codex Round 16 encore First Bouquet clarity/payoff
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow Round 16 `First Bouquet 4` clarity/payoff pass.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added a compact `Round 16 First Bouquet Encore` strip below `Round 15 Sub Rosa Grand Bouquet Encore` using the existing continuing-round generator via `buildRoundPlan(16)`.
+- The strip has `tease`, `next`, `current`, `withered`, and `complete` states, with copy for `First Bouquet 4` as the fourth-pass Thorn Rose/Bone Star bouquet.
+- The Round 16 copy explains higher stakes, retry restoration, and the existing First Bouquet Coffer reward path; no new progression framework was added.
+- No new account system, backend, analytics, monetization, SDK, tracker, asset, secret, or permission was added.
+- Added static verifier markers for `roundSixteenPreview`, `Round 16 First Bouquet Encore`, `First Bouquet 4`, `Round 16 encore First Bouquet payoff`, all `data-round-sixteen-state` values, and the Round 16 render/helper functions.
+- Verification run:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - Read `docs/hermes_audit_next_tasks.md`.
+  - `python3 scripts/verify_project.py`
+  - `git diff --check`
+  - Local static preview at `http://127.0.0.1:4236/playable/midnight_bloom_prototype.html`; standalone `agent-browser` was unavailable, so bundled Playwright was used.
+  - Local direct checks returned `200` for `/playable/midnight_bloom_prototype.html?verify=round16-local` and `/assets/tiles/96/crimson_rose_rune.png?verify=round16-local`; the playable contained the new Round 16 markers.
+  - Local Playwright main flow verified fresh Round 16 tease, Round 1 fail -> retry, Round 1 win -> explicit Greenhouse reward -> Round 2, Round 2 fail -> retry with Cursed Thorn objective/tiles restored, Round 2 completion -> default Greenhouse reward path, Round 3 through Round 15 completion/payoff surfaces, Round 12 fail -> retry restoration, Round 13 fail -> retry restoration, Round 14 fail -> retry restoration, Round 15 fail -> retry restoration, Round 16 current `First Bouquet 4` Thorn Rose/Bone Star higher-stakes copy, Round 16 wither -> retry restoration, Round 16 completion/payoff, 64 tiles, no broken images, and no console/page errors.
+  - Local Playwright preservation checks verified each booster (`Pruning Shears`, `Moonwater Flask`, `Black Candle`, `Grave Soil`) arms, cancels, uses from a fresh page, and preserves 64 tiles.
+  - Local Playwright preservation checks verified Shape Bloom review, `M` L/T/cross review hook, Supreme Bloom via focused `B`, `N` Complete Bouquet hook, Chest modal, Sacrifice arm/cancel, mobile 390x860 Round 16 preview, no horizontal overflow, no broken images, and no console/page errors.
+  - Vercel production deploy/live checks: pending.
+  - GitHub Pages workflow/live checks: pending.
+- Browser console/runtime status: no local Playwright console errors or page errors observed during the Round 1-16 main flow, Round 1/2/12/13/14/15/16 retry checks, booster checks, Shape Bloom/M/B/N review hooks, Chest, Sacrifice, or mobile checks.
+- Vercel deployment URL/identifier checked: pending production deploy for this pass.
+- GitHub Pages preview status: pending workflow/live check for this pass.
+- Known issues: none found during implementation so far. The shell still does not have standalone `agent-browser`, so browser verification will use bundled Playwright if needed.
+- How to trigger and verify L/T/cross matches without console: after Round 1, watch for the `L/T/cross = Shape Bloom` hint in Round 2; in the review path, click `Shape Bloom` or press `M` until `Witch's Cross`, `Night Garden L-Bloom`, or `Twin Stem Bloom` appears. The hidden `shapeAuditData` verifier still contains L, T, and cross definitions.
+- How to trigger and verify Supreme Bloom without console: focus the page and press `B`; the ritual log should show `SUPREME BLOOM! Review hook complete. The board is ready.` after the charge phase.
+- Security/secret-scan status: lightweight credential-shaped scan ran on changed files with no findings. No secrets, trackers, backend, SDKs, or new permissions were added in code.
+
 ## 2026-07-04 Codex Round 15 encore Sub Rosa Grand Bouquet clarity/payoff
 
 - Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow Round 15 `Sub Rosa Grand Bouquet 3` clarity/payoff pass.
