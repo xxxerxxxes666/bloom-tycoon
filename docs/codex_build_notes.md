@@ -1381,9 +1381,16 @@
   - Local Playwright completed Round 13 through Round 21 via the visible `Complete Bouquet`/`Next Bouquet` hooks, with reward choice/default flow preserved.
   - Local Playwright verified Round 21 current/complete surfaces, Round 22 `next`, Round 22 current copy with `Moonlit Wreath 5`, Nightshade, Amber Seed, Thorn Rose, Cursed Thorn, higher stakes, and the Moonlit Wreath Cache reward path, then forced Round 22 `withered` and `complete` states.
   - Local Playwright independently armed/cancelled/used all four boosters on fresh pages, opened/cancelled Sacrifice, opened/closed Chest Storage, clicked `Shape Bloom`, pressed `M` for the match-shape review hook, pressed `B` for Supreme Bloom, pressed `N` for the complete-bouquet review hook, and checked mobile 390x844 with 0 horizontal overflow.
-- Browser console/runtime status: local Playwright checks observed 0 console errors and 0 page errors across the Round 1-22 main flow, booster checks, Shape Bloom/M/B/N review hooks, Chest, Sacrifice, and mobile checks.
-- Vercel deployment URL/identifier checked: pending deployment for this Round 22 pass.
-- GitHub Pages preview status: pending after push/deploy.
+  - Deployed to Vercel production as `dpl_615A6o7tAx1NPE27auFN36Bf6NnM`.
+  - Vercel deployment URL: https://bloom-tycoon-a064b747t-xerxes-florals.vercel.app
+  - Re-pointed `https://bloom-tycoon.vercel.app` to the new deployment.
+  - Vercel root, `/playable/midnight_bloom_prototype.html?verify=70ed6f7-live`, `/assets/tiles/96/purple_nightshade_bloom.png?verify=70ed6f7-live`, and `/assets/tiles/96/amber_resin_seed.png?verify=70ed6f7-live` returned `200 OK`.
+  - Downloaded Vercel HTML contained the Round 22 markers and all `data-round-twenty-two-state` hooks.
+  - Vercel Playwright smoke loaded 64 tiles and 0 broken images, clicked `Complete Bouquet`/`Next Bouquet` through Round 22 current, verified the Round 22 Moonlit Wreath 5 copy, forced Round 22 retry/complete states, and checked mobile 390x844 with 0 horizontal overflow.
+  - GitHub Pages workflow `28703757462` for `70ed6f7` uploaded the static artifact but failed in `actions/deploy-pages` with `Deployment failed, try again later.` A docs status commit is being used to trigger a fresh Pages run with the same playable.
+- Browser console/runtime status: local and Vercel Playwright checks observed 0 console errors and 0 page errors across the Round 1-22 main flow, booster checks, Shape Bloom/M/B/N review hooks, Chest, Sacrifice, Round 22 retry/complete checks, and mobile checks.
+- Vercel deployment URL/identifier checked: `dpl_615A6o7tAx1NPE27auFN36Bf6NnM`, https://bloom-tycoon-a064b747t-xerxes-florals.vercel.app, canonical alias https://bloom-tycoon.vercel.app.
+- GitHub Pages preview status: retry pending after transient deploy failure for workflow `28703757462`.
 - Known issues: none found locally in this pass.
 - How to trigger and verify L/T/cross matches without console: after Round 1, watch for the `L/T/cross = Shape Bloom` hint in Round 2; in the review path, click `Shape Bloom` or press `M` until `Witch's Cross`, `Night Garden L-Bloom`, or `Twin Stem Bloom` appears. The hidden `shapeAuditData` verifier still contains L, T, and cross definitions.
 - How to trigger and verify Supreme Bloom without console: focus the page and press `B`; the ritual log should show `SUPREME BLOOM! Review hook complete. The board is ready.` after the charge phase.
