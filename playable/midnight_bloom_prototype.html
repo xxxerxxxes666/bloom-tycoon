@@ -643,7 +643,8 @@
     .round-seven-preview,
     .round-eight-preview,
     .round-nine-preview,
-    .round-ten-preview {
+    .round-ten-preview,
+    .round-eleven-preview {
       max-width: 760px;
       margin: 8px auto 0;
       padding: 9px 12px;
@@ -686,6 +687,11 @@
     .round-ten-preview {
       border-color: #43222d;
       background: linear-gradient(180deg, #13090d, #050404);
+    }
+
+    .round-eleven-preview {
+      border-color: #3a3047;
+      background: linear-gradient(180deg, #0d0a14, #050404);
     }
 
     .round-three-focus[data-round-three-state="current"] {
@@ -816,6 +822,22 @@
       color: #e0a078;
     }
 
+    .round-eleven-preview[data-round-eleven-state="current"] {
+      border-color: #7f5fb0;
+      color: #d8c6ef;
+      box-shadow: inset 0 0 12px #000, 0 0 12px #52337d55;
+    }
+
+    .round-eleven-preview[data-round-eleven-state="complete"] {
+      border-color: #5d6f32;
+      color: #d8efad;
+    }
+
+    .round-eleven-preview[data-round-eleven-state="withered"] {
+      border-color: #8a332a;
+      color: #e0a078;
+    }
+
     .round-three-kicker,
     .round-four-kicker,
     .round-five-kicker,
@@ -823,7 +845,8 @@
     .round-seven-kicker,
     .round-eight-kicker,
     .round-nine-kicker,
-    .round-ten-kicker {
+    .round-ten-kicker,
+    .round-eleven-kicker {
       display: block;
       color: #d7b16d;
       font-size: 11px;
@@ -846,7 +869,9 @@
     .round-nine-line,
     .round-nine-payoff,
     .round-ten-line,
-    .round-ten-payoff {
+    .round-ten-payoff,
+    .round-eleven-line,
+    .round-eleven-payoff {
       display: block;
       margin-top: 3px;
       font-size: 12px;
@@ -860,7 +885,8 @@
     .round-seven-payoff,
     .round-eight-payoff,
     .round-nine-payoff,
-    .round-ten-payoff {
+    .round-ten-payoff,
+    .round-eleven-payoff {
       color: #c6ad7c;
     }
 
@@ -3437,7 +3463,8 @@
       .round-seven-preview,
       .round-eight-preview,
       .round-nine-preview,
-      .round-ten-preview {
+      .round-ten-preview,
+      .round-eleven-preview {
         padding: 10px;
       }
 
@@ -3577,6 +3604,7 @@
       <div class="round-eight-preview" id="roundEightPreview" aria-label="Round 8 Encore Bloodroot Compact"></div>
       <div class="round-nine-preview" id="roundNinePreview" aria-label="Round 9 Encore Saint's Night Ledger"></div>
       <div class="round-ten-preview" id="roundTenPreview" aria-label="Round 10 Encore Sub Rosa Grand Bouquet"></div>
+      <div class="round-eleven-preview" id="roundElevenPreview" aria-label="Round 11 Encore First Bouquet"></div>
       <script type="application/json" id="shapeAuditData"></script>
       <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
       <div class="board" id="board"></div>
@@ -3885,6 +3913,13 @@
       'data-round-ten-state="current"',
       'data-round-ten-state="withered"',
       'data-round-ten-state="complete"'
+    ];
+    const roundElevenAuditMarkers = [
+      'data-round-eleven-state="tease"',
+      'data-round-eleven-state="next"',
+      'data-round-eleven-state="current"',
+      'data-round-eleven-state="withered"',
+      'data-round-eleven-state="complete"'
     ];
     const STREAK_COIN_BONUS_STEP = 5;
     const STREAK_COIN_BONUS_CAP = 25;
@@ -4757,6 +4792,71 @@
       `;
     }
 
+    function roundElevenPlan() {
+      return buildRoundPlan(11);
+    }
+
+    function roundElevenEncoreName(plan = roundElevenPlan()) {
+      return plan.name || "First Bouquet 3";
+    }
+
+    function roundElevenPreviewState(plan = roundElevenPlan()) {
+      if (currentRound > plan.round || (currentRound === plan.round && roundComplete)) {
+        return { id: "complete", label: "Third First Bouquet Sealed" };
+      }
+      if (currentRound === plan.round && isBouquetFailed(plan)) {
+        return { id: "withered", label: "Current · Withered" };
+      }
+      if (currentRound === plan.round) {
+        return { id: "current", label: "Current Third Loop" };
+      }
+      if (currentRound === plan.round - 1) {
+        return { id: "next", label: roundComplete ? "Third First Bouquet Ready" : "After Grand Encore" };
+      }
+      return { id: "tease", label: "Third First Bouquet Preview" };
+    }
+
+    function roundElevenGoalCopy(plan = roundElevenPlan()) {
+      return bouquetPathGoalCopy(plan);
+    }
+
+    function roundElevenPreviewCopy(state, plan = roundElevenPlan()) {
+      const goal = roundElevenGoalCopy(plan);
+      const encoreName = roundElevenEncoreName(plan);
+      if (state.id === "complete") {
+        return `${encoreName} complete: the third pass through Thorn Rose and Bone Star is sealed, and ${plan.reward.item} keeps the First Bouquet reward path moving.`;
+      }
+      if (state.id === "withered") {
+        return `Retry keeps ${encoreName} open: restore ${plan.moves} moves and finish ${goal}.`;
+      }
+      if (state.id === "current") {
+        return `Current Round 11: ${encoreName} revisits Thorn Rose and Bone Star with higher stakes. Gather ${goal} through the existing First Bouquet Coffer reward path.`;
+      }
+      if (state.id === "next") {
+        return `${roundComplete ? "First Bouquet third loop unlocked" : "After Sub Rosa Grand Bouquet 2"}: ${encoreName} asks for ${goal} with the same First Bouquet Coffer payoff structure.`;
+      }
+      return `${encoreName} waits after Round 10 as the third-pass First Bouquet: Thorn Rose plus Bone Star, higher stakes, familiar rewards.`;
+    }
+
+    function roundElevenPayoffCopy(plan = roundElevenPlan()) {
+      return `Round 11 encore First Bouquet payoff: ${plan.reward.item} uses the existing First Bouquet Coffer reward structure, +${plan.reward.greenhouse} Greenhouse XP, and keeps Flowerpedia, Bouquet Streak, and Chest Storage intact.`;
+    }
+
+    function renderRoundElevenPreview() {
+      const preview = $("roundElevenPreview");
+      if (!preview) {
+        return;
+      }
+      const plan = roundElevenPlan();
+      const state = roundElevenPreviewState(plan);
+      preview.dataset.roundElevenState = state.id;
+      preview.innerHTML = `
+        <span class="round-eleven-kicker">Round 11 First Bouquet Encore · ${state.label}</span>
+        <span class="round-eleven-line">${roundElevenPreviewCopy(state, plan)}</span>
+        <span class="round-eleven-payoff">${roundElevenPayoffCopy(plan)}</span>
+      `;
+    }
+
     function thornKey(x, y) {
       return `${x},${y}`;
     }
@@ -5345,6 +5445,7 @@
       renderRoundEightPreview();
       renderRoundNinePreview();
       renderRoundTenPreview();
+      renderRoundElevenPreview();
       renderActiveOrders(plan);
       renderRoundCeremony(plan);
       $("bar").style.width = `${progress.pct}%`;

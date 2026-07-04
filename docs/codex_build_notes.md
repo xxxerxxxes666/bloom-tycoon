@@ -1315,3 +1315,34 @@
 - How to trigger and verify L/T/cross matches without console: after Round 1, watch for the `L/T/cross = Shape Bloom` hint in Round 2; in the review path, click `Shape Bloom` or press `M` to trigger the prototype match-shape review. The hidden `shapeAuditData` verifier still contains L, T, and cross definitions.
 - How to trigger and verify Supreme Bloom without console: focus the page and press `B`; the ritual log should show `SUPREME BLOOM! Review hook complete. The board is ready.` after the charge phase.
 - Security/secret-scan status: lightweight credential-shaped scan ran on changed files with no likely secrets; it only flagged existing local display variable names `flowerpediaToken` and `chapterToken`, with no credential values. No secrets, trackers, backend, SDKs, or new permissions were added in code.
+
+## 2026-07-04 Codex Round 11 encore First Bouquet clarity/payoff
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow Round 11 `First Bouquet 3` clarity/payoff pass.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added a compact `Round 11 First Bouquet Encore` strip below `Round 10 Grand Encore` using the existing continuing-round generator via `buildRoundPlan(11)`.
+- The strip has `tease`, `next`, `current`, `withered`, and `complete` states, with copy for `First Bouquet 3` as the third-pass Thorn Rose/Bone Star bouquet.
+- The Round 11 copy explains higher stakes and the existing First Bouquet Coffer reward path, and points payoff back to existing Flowerpedia, Bouquet Streak, Chest Storage, and reward values; no new progression framework was added.
+- No new account system, backend, analytics, monetization, SDK, tracker, asset, secret, or permission was added.
+- Added static verifier markers for `roundElevenPreview`, `Round 11 First Bouquet Encore`, `First Bouquet 3`, `Round 11 encore First Bouquet payoff`, all `data-round-eleven-state` values, and the Round 11 render/helper functions.
+- Verification run:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - Read `docs/hermes_audit_next_tasks.md`.
+  - `python3 scripts/verify_project.py`
+  - `git diff --check`
+  - Local static preview at `http://127.0.0.1:4231/playable/midnight_bloom_prototype.html`; standalone `agent-browser` was unavailable, so bundled Playwright was used.
+  - Local direct checks returned `200` for `/playable/midnight_bloom_prototype.html?verify=round11-local` and `/assets/tiles/96/crimson_rose_rune.png?verify=round11-local`; the playable contained the new Round 11 markers.
+  - Local Playwright main flow verified fresh Round 1 path, Round 11 `tease`, Round 1 win -> reward -> Round 2, Round 2 fail -> retry, Round 2 restored Cursed Thorn objective, Round 3 completion/payoff, Round 4 completion/payoff, Round 5 completion/payoff, Round 6 completion/payoff, Round 7 completion/payoff, Round 8 completion/payoff, Round 9 completion/payoff, Round 10 completion/payoff, Round 11 current `First Bouquet 3` Thorn Rose/Bone Star higher-stakes copy, Round 11 completion/payoff, First Bouquet Coffer in Chest Storage, 64 tiles, no broken images, and no console/page errors.
+  - Local Playwright preservation checks verified each booster (`Pruning Shears`, `Moonwater Flask`, `Black Candle`, `Grave Soil`) arms, cancels, uses from a fresh page, and preserves 64 tiles.
+  - Local Playwright preservation checks verified Shape Bloom review, `M` L/T/cross review hook, Supreme Bloom via `B`, Chest modal, Sacrifice arm/cancel, mobile 390x860 Round 11 preview, no horizontal overflow, no broken images, and no console/page errors.
+- Browser console/runtime status: no local Playwright console errors or page errors observed during the Round 1-11 main flow, booster checks, Shape Bloom/M/B review hooks, Chest, Sacrifice, or mobile checks.
+- Vercel deployment URL/identifier checked: pending production deploy.
+- GitHub Pages preview status: pending push and Pages publish.
+- Known issues: none found locally for this Round 11 encore First Bouquet slice. The shell still does not have standalone `agent-browser`, so browser verification used bundled Playwright.
+- How to trigger and verify L/T/cross matches without console: after Round 1, watch for the `L/T/cross = Shape Bloom` hint in Round 2; in the review path, click `Shape Bloom` or press `M` until `Witch's Cross`, `Night Garden L-Bloom`, or `Twin Stem Bloom` appears. The hidden `shapeAuditData` verifier still contains L, T, and cross definitions.
+- How to trigger and verify Supreme Bloom without console: focus the page and press `B`; the ritual log should show `SUPREME BLOOM! Review hook complete. The board is ready.` after the charge phase.
+- Security/secret-scan status: lightweight credential-shaped scan ran on changed files with no findings. No secrets, trackers, backend, SDKs, or new permissions were added in code.
