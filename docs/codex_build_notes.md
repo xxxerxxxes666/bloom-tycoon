@@ -10,7 +10,7 @@
 - Added a Round 23 Bloodroot Compact Encore preview/payoff surface below Round 22 using the existing continuing-round generator through `buildRoundPlan(23)`.
 - Added tease, next, current, withered, and complete states for `roundTwentyThreePreview`, including current copy that names `Bloodroot Compact 5`, Bloodroot, Sol Rot, higher stakes, and the existing Bloodroot Compact reward path.
 - Added static verifier markers for the Round 23 encore Bloodroot Compact surface and its `data-round-twenty-three-state` values.
-- Verification run so far:
+- Verification run:
   - `git fetch origin main`
   - `git pull --ff-only origin main`
   - `python3 scripts/verify_project.py`
@@ -22,9 +22,16 @@
   - Local Playwright progressed Round 22 complete into Round 23 `next`, verified Round 23 current copy names Bloodroot/Sol Rot/higher stakes/Bloodroot Compact reward path, then verified Round 23 withered/retry/complete states.
   - All four boosters armed/canceled/used from fresh pages and preserved 64 tiles.
   - Chest Storage open/close, Sacrifice arm/cancel, Shape Bloom, `M`, `B`, `N`, and mobile portrait at 390x844 passed locally.
-- Browser console/runtime status: no local Playwright console errors or page errors observed during Round 23, booster, control, and mobile checks.
-- Vercel deployment URL/identifier checked: pending this pass.
-- GitHub Pages preview status: pending this pass.
+  - Vercel `/`, `/playable/midnight_bloom_prototype.html?verify=525697e-live`, `assets/tiles/96/bloodroot_ruby_shard.png`, and `assets/tiles/96/withered_sun_medallion.png` returned `200 OK`.
+  - Downloaded Vercel HTML contained `Round 23 Bloodroot Compact Encore`, `Bloodroot Compact 5`, `Round 23 encore Bloodroot Compact payoff`, `data-round-twenty-three-state="current"`, and `function renderRoundTwentyThreePreview`.
+  - Vercel Playwright check loaded 64 tiles and 105 images with 0 broken images, advanced Round 1 through Round 22 with visible `Complete Bouquet`/`Next Bouquet`, verified Round 23 `current` and `complete` states, verified no Cursed Thorn blockers on Round 23, cycled `M` through L/T/cross shape results, verified `B` Supreme Bloom, and passed mobile portrait at 390x844 with no horizontal overflow.
+  - GitHub Pages workflow `28704511565` deployed commit `525697e4574fa7ced9fb22482acc074915cbdfed` successfully.
+  - GitHub Pages `/bloom-tycoon/`, `/bloom-tycoon/playable/midnight_bloom_prototype.html?verify=525697e-pages`, `assets/tiles/96/bloodroot_ruby_shard.png`, and `assets/tiles/96/withered_sun_medallion.png` returned `200 OK`.
+  - Downloaded GitHub Pages HTML contained the same Round 23 markers as Vercel.
+  - GitHub Pages Playwright check loaded 64 tiles and 105 images with 0 broken images, advanced Round 1 through Round 22, verified Round 23 `current` and `complete` states, verified no Cursed Thorn blockers on Round 23, and passed mobile portrait at 390x844 with no horizontal overflow.
+- Browser console/runtime status: no local, Vercel, or GitHub Pages Playwright console errors or page errors observed during Round 23, booster/control/hook, and mobile checks.
+- Vercel deployment URL/identifier checked: `dpl_8iweP5Xkth6cGfgc8cLpg2a9FHE5`, https://bloom-tycoon-bwq66eeir-xerxes-florals.vercel.app; canonical alias https://bloom-tycoon.vercel.app points to that deployment.
+- GitHub Pages preview status: current and marker-matched Vercel after successful workflow `28704511565`.
 - Known issues: none found locally.
 - How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly to cycle Cross, L, and T demos; each should report the named shape and 5 cells burned bright.
 - How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit particles, then return the board to play.
