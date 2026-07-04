@@ -1,5 +1,35 @@
 # Codex Build Notes
 
+## 2026-07-04 Codex Round 23 Bloodroot Compact pass
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow Round 23 `Bloodroot Compact 5` clarity/payoff slice.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added a Round 23 Bloodroot Compact Encore preview/payoff surface below Round 22 using the existing continuing-round generator through `buildRoundPlan(23)`.
+- Added tease, next, current, withered, and complete states for `roundTwentyThreePreview`, including current copy that names `Bloodroot Compact 5`, Bloodroot, Sol Rot, higher stakes, and the existing Bloodroot Compact reward path.
+- Added static verifier markers for the Round 23 encore Bloodroot Compact surface and its `data-round-twenty-three-state` values.
+- Verification run so far:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - `python3 scripts/verify_project.py`
+  - `git diff --check`
+  - Local static preview at `http://127.0.0.1:4243/playable/midnight_bloom_prototype.html?verify=round23-local`
+  - Local static checks returned `200 OK` for the playable, `assets/tiles/96/bloodroot_ruby_shard.png`, and `assets/tiles/96/withered_sun_medallion.png`.
+  - Local marker checks found `Round 23 Bloodroot Compact Encore`, `Bloodroot Compact 5`, `Round 23 encore Bloodroot Compact payoff`, and the five Round 23 state markers in the HTML/verifier.
+  - Local Playwright flow loaded 64 tiles with 0 broken images, saw the fresh Round 23 tease, completed Round 1 with Flowerpedia persistence after reload, verified Round 2 Cursed Thorn retry, and verified Round 12, Round 17, and Round 22 retry restored Cursed Thorn behavior.
+  - Local Playwright progressed Round 22 complete into Round 23 `next`, verified Round 23 current copy names Bloodroot/Sol Rot/higher stakes/Bloodroot Compact reward path, then verified Round 23 withered/retry/complete states.
+  - All four boosters armed/canceled/used from fresh pages and preserved 64 tiles.
+  - Chest Storage open/close, Sacrifice arm/cancel, Shape Bloom, `M`, `B`, `N`, and mobile portrait at 390x844 passed locally.
+- Browser console/runtime status: no local Playwright console errors or page errors observed during Round 23, booster, control, and mobile checks.
+- Vercel deployment URL/identifier checked: pending this pass.
+- GitHub Pages preview status: pending this pass.
+- Known issues: none found locally.
+- How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly to cycle Cross, L, and T demos; each should report the named shape and 5 cells burned bright.
+- How to trigger and verify Supreme Bloom without console: press `B`; the overlay should show `SUPREME BLOOM! +12 ✪`, emit particles, then return the board to play.
+- Security/secret-scan status: lightweight scan ran on changed files with no findings.
+
 ## 2026-07-01 repo setup for Hermes audit
 
 - Restored the full Bloom Tycoon project into the current repo root from the local handoff source.

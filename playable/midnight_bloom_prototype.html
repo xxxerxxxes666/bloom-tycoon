@@ -655,7 +655,8 @@
     .round-nineteen-preview,
     .round-twenty-preview,
     .round-twenty-one-preview,
-    .round-twenty-two-preview {
+    .round-twenty-two-preview,
+    .round-twenty-three-preview {
       max-width: 760px;
       margin: 8px auto 0;
       padding: 9px 12px;
@@ -758,6 +759,11 @@
     .round-twenty-two-preview {
       border-color: #29244a;
       background: linear-gradient(180deg, #0d0b15, #050404);
+    }
+
+    .round-twenty-three-preview {
+      border-color: #4a2735;
+      background: linear-gradient(180deg, #13080d, #050404);
     }
 
     .round-three-focus[data-round-three-state="current"] {
@@ -1080,6 +1086,22 @@
       color: #e0a078;
     }
 
+    .round-twenty-three-preview[data-round-twenty-three-state="current"] {
+      border-color: #a44262;
+      color: #e7b5c4;
+      box-shadow: inset 0 0 12px #000, 0 0 12px #70223e55;
+    }
+
+    .round-twenty-three-preview[data-round-twenty-three-state="complete"] {
+      border-color: #5d6f32;
+      color: #d8efad;
+    }
+
+    .round-twenty-three-preview[data-round-twenty-three-state="withered"] {
+      border-color: #8a332a;
+      color: #e0a078;
+    }
+
     .round-three-kicker,
     .round-four-kicker,
     .round-five-kicker,
@@ -1099,7 +1121,8 @@
     .round-nineteen-kicker,
     .round-twenty-kicker,
     .round-twenty-one-kicker,
-    .round-twenty-two-kicker {
+    .round-twenty-two-kicker,
+    .round-twenty-three-kicker {
       display: block;
       color: #d7b16d;
       font-size: 11px;
@@ -1146,7 +1169,9 @@
     .round-twenty-one-line,
     .round-twenty-one-payoff,
     .round-twenty-two-line,
-    .round-twenty-two-payoff {
+    .round-twenty-two-payoff,
+    .round-twenty-three-line,
+    .round-twenty-three-payoff {
       display: block;
       margin-top: 3px;
       font-size: 12px;
@@ -1172,7 +1197,8 @@
     .round-nineteen-payoff,
     .round-twenty-payoff,
     .round-twenty-one-payoff,
-    .round-twenty-two-payoff {
+    .round-twenty-two-payoff,
+    .round-twenty-three-payoff {
       color: #c6ad7c;
     }
 
@@ -3761,7 +3787,8 @@
       .round-nineteen-preview,
       .round-twenty-preview,
       .round-twenty-one-preview,
-      .round-twenty-two-preview {
+      .round-twenty-two-preview,
+      .round-twenty-three-preview {
         padding: 10px;
       }
 
@@ -3913,6 +3940,7 @@
       <div class="round-twenty-preview" id="roundTwentyPreview" aria-label="Round 20 Encore Sub Rosa Grand Bouquet"></div>
       <div class="round-twenty-one-preview" id="roundTwentyOnePreview" aria-label="Round 21 Encore First Bouquet"></div>
       <div class="round-twenty-two-preview" id="roundTwentyTwoPreview" aria-label="Round 22 Encore Moonlit Wreath"></div>
+      <div class="round-twenty-three-preview" id="roundTwentyThreePreview" aria-label="Round 23 Encore Bloodroot Compact"></div>
       <script type="application/json" id="shapeAuditData"></script>
       <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
       <div class="board" id="board"></div>
@@ -4305,6 +4333,13 @@
       'data-round-twenty-two-state="current"',
       'data-round-twenty-two-state="withered"',
       'data-round-twenty-two-state="complete"'
+    ];
+    const roundTwentyThreeAuditMarkers = [
+      'data-round-twenty-three-state="tease"',
+      'data-round-twenty-three-state="next"',
+      'data-round-twenty-three-state="current"',
+      'data-round-twenty-three-state="withered"',
+      'data-round-twenty-three-state="complete"'
     ];
     const STREAK_COIN_BONUS_STEP = 5;
     const STREAK_COIN_BONUS_CAP = 25;
@@ -5975,6 +6010,71 @@
       `;
     }
 
+    function roundTwentyThreePlan() {
+      return buildRoundPlan(23);
+    }
+
+    function roundTwentyThreeEncoreName(plan = roundTwentyThreePlan()) {
+      return plan.name || "Bloodroot Compact 5";
+    }
+
+    function roundTwentyThreePreviewState(plan = roundTwentyThreePlan()) {
+      if (currentRound > plan.round || (currentRound === plan.round && roundComplete)) {
+        return { id: "complete", label: "Fifth Blood Compact Sealed" };
+      }
+      if (currentRound === plan.round && isBouquetFailed(plan)) {
+        return { id: "withered", label: "Current · Withered" };
+      }
+      if (currentRound === plan.round) {
+        return { id: "current", label: "Current Blood Compact" };
+      }
+      if (currentRound === plan.round - 1) {
+        return { id: "next", label: roundComplete ? "Fifth Blood Compact Ready" : "After Moonlit Wreath 5" };
+      }
+      return { id: "tease", label: "Fifth Blood Compact Preview" };
+    }
+
+    function roundTwentyThreeGoalCopy(plan = roundTwentyThreePlan()) {
+      return bouquetPathGoalCopy(plan);
+    }
+
+    function roundTwentyThreePreviewCopy(state, plan = roundTwentyThreePlan()) {
+      const goal = roundTwentyThreeGoalCopy(plan);
+      const encoreName = roundTwentyThreeEncoreName(plan);
+      if (state.id === "complete") {
+        return `${encoreName} complete: the fifth Bloodroot Compact is sealed, ${plan.reward.item} enters Chest Storage, and Bloodroot plus Sol Rot rewards keep growing.`;
+      }
+      if (state.id === "withered") {
+        return `Retry keeps ${encoreName} open: restore ${plan.moves} moves and finish ${goal}.`;
+      }
+      if (state.id === "current") {
+        return `Current Round 23: ${encoreName} revisits Bloodroot and Sol Rot with higher stakes. Gather ${goal} through the existing Bloodroot Compact reward path.`;
+      }
+      if (state.id === "next") {
+        return `${roundComplete ? "Bloodroot Compact fifth loop unlocked" : "After Moonlit Wreath 5"}: ${encoreName} asks for ${goal} while reward choice/default, Chest Storage, Flowerpedia, and Bouquet Streak stay familiar.`;
+      }
+      return `${encoreName} waits after Round 22 as the fifth-pass Bloodroot Compact: Bloodroot plus Sol Rot, higher stakes, familiar compact rewards.`;
+    }
+
+    function roundTwentyThreePayoffCopy(plan = roundTwentyThreePlan()) {
+      return `Round 23 encore Bloodroot Compact payoff: ${plan.reward.item} uses the existing Bloodroot Compact reward structure, +${plan.reward.greenhouse} Greenhouse XP, and keeps retry, reward choice, Flowerpedia, Bouquet Streak, and Chest Storage intact.`;
+    }
+
+    function renderRoundTwentyThreePreview() {
+      const preview = $("roundTwentyThreePreview");
+      if (!preview) {
+        return;
+      }
+      const plan = roundTwentyThreePlan();
+      const state = roundTwentyThreePreviewState(plan);
+      preview.dataset.roundTwentyThreeState = state.id;
+      preview.innerHTML = `
+        <span class="round-twenty-three-kicker">Round 23 Bloodroot Compact Encore · ${state.label}</span>
+        <span class="round-twenty-three-line">${roundTwentyThreePreviewCopy(state, plan)}</span>
+        <span class="round-twenty-three-payoff">${roundTwentyThreePayoffCopy(plan)}</span>
+      `;
+    }
+
     function thornKey(x, y) {
       return `${x},${y}`;
     }
@@ -6575,6 +6675,7 @@
       renderRoundTwentyPreview();
       renderRoundTwentyOnePreview();
       renderRoundTwentyTwoPreview();
+      renderRoundTwentyThreePreview();
       renderActiveOrders(plan);
       renderRoundCeremony(plan);
       $("bar").style.width = `${progress.pct}%`;
