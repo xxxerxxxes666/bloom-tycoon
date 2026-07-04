@@ -651,7 +651,8 @@
     .round-fifteen-preview,
     .round-sixteen-preview,
     .round-seventeen-preview,
-    .round-eighteen-preview {
+    .round-eighteen-preview,
+    .round-nineteen-preview {
       max-width: 760px;
       margin: 8px auto 0;
       padding: 9px 12px;
@@ -734,6 +735,11 @@
     .round-eighteen-preview {
       border-color: #4a2735;
       background: linear-gradient(180deg, #13080d, #050404);
+    }
+
+    .round-nineteen-preview {
+      border-color: #4b3928;
+      background: linear-gradient(180deg, #120d08, #050404);
     }
 
     .round-three-focus[data-round-three-state="current"] {
@@ -992,6 +998,22 @@
       color: #e0a078;
     }
 
+    .round-nineteen-preview[data-round-nineteen-state="current"] {
+      border-color: #b3814e;
+      color: #e2c887;
+      box-shadow: inset 0 0 12px #000, 0 0 12px #7b563455;
+    }
+
+    .round-nineteen-preview[data-round-nineteen-state="complete"] {
+      border-color: #5d6f32;
+      color: #d8efad;
+    }
+
+    .round-nineteen-preview[data-round-nineteen-state="withered"] {
+      border-color: #8a332a;
+      color: #e0a078;
+    }
+
     .round-three-kicker,
     .round-four-kicker,
     .round-five-kicker,
@@ -1007,7 +1029,8 @@
     .round-fifteen-kicker,
     .round-sixteen-kicker,
     .round-seventeen-kicker,
-    .round-eighteen-kicker {
+    .round-eighteen-kicker,
+    .round-nineteen-kicker {
       display: block;
       color: #d7b16d;
       font-size: 11px;
@@ -1046,7 +1069,9 @@
     .round-seventeen-line,
     .round-seventeen-payoff,
     .round-eighteen-line,
-    .round-eighteen-payoff {
+    .round-eighteen-payoff,
+    .round-nineteen-line,
+    .round-nineteen-payoff {
       display: block;
       margin-top: 3px;
       font-size: 12px;
@@ -1068,7 +1093,8 @@
     .round-fifteen-payoff,
     .round-sixteen-payoff,
     .round-seventeen-payoff,
-    .round-eighteen-payoff {
+    .round-eighteen-payoff,
+    .round-nineteen-payoff {
       color: #c6ad7c;
     }
 
@@ -3653,7 +3679,8 @@
       .round-fifteen-preview,
       .round-sixteen-preview,
       .round-seventeen-preview,
-      .round-eighteen-preview {
+      .round-eighteen-preview,
+      .round-nineteen-preview {
         padding: 10px;
       }
 
@@ -3801,6 +3828,7 @@
       <div class="round-sixteen-preview" id="roundSixteenPreview" aria-label="Round 16 Encore First Bouquet"></div>
       <div class="round-seventeen-preview" id="roundSeventeenPreview" aria-label="Round 17 Encore Moonlit Wreath"></div>
       <div class="round-eighteen-preview" id="roundEighteenPreview" aria-label="Round 18 Encore Bloodroot Compact"></div>
+      <div class="round-nineteen-preview" id="roundNineteenPreview" aria-label="Round 19 Encore Saint's Night Ledger"></div>
       <script type="application/json" id="shapeAuditData"></script>
       <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
       <div class="board" id="board"></div>
@@ -4165,6 +4193,13 @@
       'data-round-eighteen-state="current"',
       'data-round-eighteen-state="withered"',
       'data-round-eighteen-state="complete"'
+    ];
+    const roundNineteenAuditMarkers = [
+      'data-round-nineteen-state="tease"',
+      'data-round-nineteen-state="next"',
+      'data-round-nineteen-state="current"',
+      'data-round-nineteen-state="withered"',
+      'data-round-nineteen-state="complete"'
     ];
     const STREAK_COIN_BONUS_STEP = 5;
     const STREAK_COIN_BONUS_CAP = 25;
@@ -5569,6 +5604,71 @@
       `;
     }
 
+    function roundNineteenPlan() {
+      return buildRoundPlan(19);
+    }
+
+    function roundNineteenEncoreName(plan = roundNineteenPlan()) {
+      return plan.name || "Saint's Night Ledger 4";
+    }
+
+    function roundNineteenPreviewState(plan = roundNineteenPlan()) {
+      if (currentRound > plan.round || (currentRound === plan.round && roundComplete)) {
+        return { id: "complete", label: "Fourth Ledger Filed" };
+      }
+      if (currentRound === plan.round && isBouquetFailed(plan)) {
+        return { id: "withered", label: "Current · Withered" };
+      }
+      if (currentRound === plan.round) {
+        return { id: "current", label: "Current Night Ledger" };
+      }
+      if (currentRound === plan.round - 1) {
+        return { id: "next", label: roundComplete ? "Fourth Night Ledger Ready" : "After Bloodroot Compact 4" };
+      }
+      return { id: "tease", label: "Fourth Night Ledger Preview" };
+    }
+
+    function roundNineteenGoalCopy(plan = roundNineteenPlan()) {
+      return bouquetPathGoalCopy(plan);
+    }
+
+    function roundNineteenPreviewCopy(state, plan = roundNineteenPlan()) {
+      const goal = roundNineteenGoalCopy(plan);
+      const encoreName = roundNineteenEncoreName(plan);
+      if (state.id === "complete") {
+        return `${encoreName} complete: the fourth Saint's Night Ledger is filed, ${plan.reward.item} enters Chest Storage, and Bone Star, Nightshade, and Sol Rot rewards keep moving.`;
+      }
+      if (state.id === "withered") {
+        return `Retry keeps ${encoreName} open: restore ${plan.moves} moves and finish ${goal}.`;
+      }
+      if (state.id === "current") {
+        return `Current Round 19: ${encoreName} revisits Bone Star, Nightshade, and Sol Rot with higher stakes. Gather ${goal} through the existing Saint's Night Ledger reward path.`;
+      }
+      if (state.id === "next") {
+        return `${roundComplete ? "Saint's Night Ledger fourth loop unlocked" : "After Bloodroot Compact 4"}: ${encoreName} asks for ${goal} while reward choice/default, Chest Storage, Flowerpedia, and Bouquet Streak stay familiar.`;
+      }
+      return `${encoreName} waits after Round 18 as the fourth-pass Saint's Night Ledger: Bone Star plus Nightshade plus Sol Rot, higher stakes, familiar ledger rewards.`;
+    }
+
+    function roundNineteenPayoffCopy(plan = roundNineteenPlan()) {
+      return `Round 19 encore Saint's Night Ledger payoff: ${plan.reward.item} uses the existing Saint's Night Ledger reward structure, +${plan.reward.apothecary} Apothecary XP, and keeps retry, reward choice, Flowerpedia, Bouquet Streak, and Chest Storage intact.`;
+    }
+
+    function renderRoundNineteenPreview() {
+      const preview = $("roundNineteenPreview");
+      if (!preview) {
+        return;
+      }
+      const plan = roundNineteenPlan();
+      const state = roundNineteenPreviewState(plan);
+      preview.dataset.roundNineteenState = state.id;
+      preview.innerHTML = `
+        <span class="round-nineteen-kicker">Round 19 Saint's Night Ledger Encore · ${state.label}</span>
+        <span class="round-nineteen-line">${roundNineteenPreviewCopy(state, plan)}</span>
+        <span class="round-nineteen-payoff">${roundNineteenPayoffCopy(plan)}</span>
+      `;
+    }
+
     function thornKey(x, y) {
       return `${x},${y}`;
     }
@@ -6165,6 +6265,7 @@
       renderRoundSixteenPreview();
       renderRoundSeventeenPreview();
       renderRoundEighteenPreview();
+      renderRoundNineteenPreview();
       renderActiveOrders(plan);
       renderRoundCeremony(plan);
       $("bar").style.width = `${progress.pct}%`;

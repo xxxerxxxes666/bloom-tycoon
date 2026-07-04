@@ -1355,6 +1355,42 @@
 - How to trigger and verify Supreme Bloom without console: focus the page and press `B`; the ritual log should show `SUPREME BLOOM! Review hook complete. The board is ready.` after the charge phase.
 - Security/secret-scan status: lightweight credential-shaped scan ran on changed files with no findings. No secrets, trackers, backend, SDKs, or new permissions were added in code.
 
+## 2026-07-04 Codex Round 19 encore Saint's Night Ledger clarity/payoff
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow Round 19 `Saint's Night Ledger 4` clarity/payoff pass.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added a compact `Round 19 Saint's Night Ledger Encore` strip below `Round 18 Bloodroot Compact Encore` using the existing continuing-round generator via `buildRoundPlan(19)`.
+- The strip has `tease`, `next`, `current`, `withered`, and `complete` states, with copy for `Saint's Night Ledger 4` as the fourth-pass Bone Star + Nightshade + Sol Rot ledger.
+- The Round 19 copy explains higher stakes, retry restoration, and the existing Saint's Night Ledger reward path; no new progression framework was added.
+- No new account system, backend, analytics, monetization, SDK, tracker, asset, secret, or permission was added.
+- Added static verifier markers for `roundNineteenPreview`, `Round 19 Saint's Night Ledger Encore`, `Saint's Night Ledger 4`, `Round 19 encore Saint's Night Ledger payoff`, all `data-round-nineteen-state` values, and the Round 19 render/helper functions.
+- Verification run:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - Read `docs/hermes_audit_next_tasks.md`.
+  - `python3 scripts/verify_project.py`
+  - `git diff --check`
+  - Local static preview at `http://127.0.0.1:4239/playable/midnight_bloom_prototype.html?verify=round19-local` returned `200 OK`.
+  - Local tile asset check at `http://127.0.0.1:4239/assets/tiles/96/bone_white_thorn_star.png?verify=round19-local` returned `200 OK`.
+  - Downloaded local HTML contained `roundNineteenPreview`, `Round 19 Saint's Night Ledger Encore`, `Saint's Night Ledger 4`, `Round 19 encore Saint's Night Ledger payoff`, and all `data-round-nineteen-state` markers.
+  - Local Playwright Chromium loaded fresh Round 1 with 64 tiles, 0 broken images, and visible Round 19 tease copy.
+  - Local Playwright completed Round 1 through Round 19 via the visible `Complete Bouquet`/`Next Bouquet` hooks, with reward choice/default flow preserved.
+  - Local Playwright forced and retried Round 2 plus Rounds 12, 13, 14, 15, 16, 17, 18, and 19; each retry restored the round board/moves/objectives and kept 64 tiles.
+  - Local Playwright verified Round 19 current copy contains `Saint's Night Ledger 4`, Bone Star, Nightshade, Sol Rot, higher stakes, and the Saint's Night Ledger reward path; Round 19 then showed `withered` and `complete` preview states.
+  - Local Playwright armed/cancelled/used all four boosters, opened/cancelled Sacrifice, opened/closed Chest Storage, clicked `Shape Bloom` through Cross/L/T rewards, pressed `B` for Supreme Bloom, and checked mobile 390x844 with 0 horizontal overflow.
+  - Vercel production deploy/live checks: pending.
+  - GitHub Pages workflow/live checks: pending.
+- Browser console/runtime status: local Playwright observed 0 console warnings/errors and 0 page errors; live browser checks pending after deploy.
+- Vercel deployment URL/identifier checked: pending production deploy for this pass.
+- GitHub Pages preview status: pending workflow/live check for this pass.
+- Known issues: none found during implementation so far.
+- How to trigger and verify L/T/cross matches without console: after Round 1, watch for the `L/T/cross = Shape Bloom` hint in Round 2; in the review path, click `Shape Bloom` or press `M` until `Witch's Cross`, `Night Garden L-Bloom`, or `Twin Stem Bloom` appears. The hidden `shapeAuditData` verifier still contains L, T, and cross definitions.
+- How to trigger and verify Supreme Bloom without console: focus the page and press `B`; the ritual log should show `SUPREME BLOOM! Review hook complete. The board is ready.` after the charge phase.
+- Security/secret-scan status: lightweight credential-shaped scan ran on changed files with no findings.
+
 ## 2026-07-04 Codex Round 18 encore Bloodroot Compact clarity/payoff
 
 - Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow Round 18 `Bloodroot Compact 4` clarity/payoff pass.
