@@ -638,7 +638,8 @@
 
     .round-three-focus,
     .round-four-preview,
-    .round-five-preview {
+    .round-five-preview,
+    .round-six-preview {
       max-width: 760px;
       margin: 8px auto 0;
       padding: 9px 12px;
@@ -656,6 +657,11 @@
     .round-five-preview {
       border-color: #43222d;
       background: linear-gradient(180deg, #13090d, #050404);
+    }
+
+    .round-six-preview {
+      border-color: #3a3047;
+      background: linear-gradient(180deg, #0d0a14, #050404);
     }
 
     .round-three-focus[data-round-three-state="current"] {
@@ -706,9 +712,26 @@
       color: #e0a078;
     }
 
+    .round-six-preview[data-round-six-state="current"] {
+      border-color: #7f5fb0;
+      color: #d8c6ef;
+      box-shadow: inset 0 0 12px #000, 0 0 12px #52337d55;
+    }
+
+    .round-six-preview[data-round-six-state="complete"] {
+      border-color: #5d6f32;
+      color: #d8efad;
+    }
+
+    .round-six-preview[data-round-six-state="withered"] {
+      border-color: #8a332a;
+      color: #e0a078;
+    }
+
     .round-three-kicker,
     .round-four-kicker,
-    .round-five-kicker {
+    .round-five-kicker,
+    .round-six-kicker {
       display: block;
       color: #d7b16d;
       font-size: 11px;
@@ -721,7 +744,9 @@
     .round-four-line,
     .round-four-payoff,
     .round-five-line,
-    .round-five-payoff {
+    .round-five-payoff,
+    .round-six-line,
+    .round-six-payoff {
       display: block;
       margin-top: 3px;
       font-size: 12px;
@@ -3435,6 +3460,7 @@
       <div class="round-three-focus" id="roundThreeFocus" aria-label="Round 3 Bloodroot Compact"></div>
       <div class="round-four-preview" id="roundFourPreview" aria-label="Round 4 Saint's Night Ledger"></div>
       <div class="round-five-preview" id="roundFivePreview" aria-label="Round 5 Sub Rosa Grand Bouquet"></div>
+      <div class="round-six-preview" id="roundSixPreview" aria-label="Round 6 Encore Bouquet"></div>
       <script type="application/json" id="shapeAuditData"></script>
       <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
       <div class="board" id="board"></div>
@@ -3708,6 +3734,13 @@
       'data-round-five-state="current"',
       'data-round-five-state="withered"',
       'data-round-five-state="complete"'
+    ];
+    const roundSixAuditMarkers = [
+      'data-round-six-state="tease"',
+      'data-round-six-state="next"',
+      'data-round-six-state="current"',
+      'data-round-six-state="withered"',
+      'data-round-six-state="complete"'
     ];
     const STREAK_COIN_BONUS_STEP = 5;
     const STREAK_COIN_BONUS_CAP = 25;
@@ -4246,6 +4279,71 @@
         <span class="round-five-kicker">Round 5 Grand Bouquet · ${state.label}</span>
         <span class="round-five-line">${roundFivePreviewCopy(state, plan)}</span>
         <span class="round-five-payoff">${roundFivePayoffCopy(plan)}</span>
+      `;
+    }
+
+    function roundSixPlan() {
+      return buildRoundPlan(6);
+    }
+
+    function roundSixEncoreName(plan = roundSixPlan()) {
+      return plan.name || "First Bouquet 2";
+    }
+
+    function roundSixPreviewState(plan = roundSixPlan()) {
+      if (currentRound > plan.round || (currentRound === plan.round && roundComplete)) {
+        return { id: "complete", label: "Encore Loop Open" };
+      }
+      if (currentRound === plan.round && isBouquetFailed(plan)) {
+        return { id: "withered", label: "Current · Withered" };
+      }
+      if (currentRound === plan.round) {
+        return { id: "current", label: "Current Encore" };
+      }
+      if (currentRound === plan.round - 1) {
+        return { id: "next", label: roundComplete ? "Encore Ready" : "After Grand Bouquet" };
+      }
+      return { id: "tease", label: "Encore Preview" };
+    }
+
+    function roundSixGoalCopy(plan = roundSixPlan()) {
+      return bouquetPathGoalCopy(plan);
+    }
+
+    function roundSixPreviewCopy(state, plan = roundSixPlan()) {
+      const goal = roundSixGoalCopy(plan);
+      const encoreName = roundSixEncoreName(plan);
+      if (state.id === "complete") {
+        return `${encoreName} complete: the shop has proved the bouquet ladder can repeat with higher stakes, and ${plan.reward.item} keeps Chest Storage moving.`;
+      }
+      if (state.id === "withered") {
+        return `Retry keeps ${encoreName} open: restore ${plan.moves} moves and finish ${goal}.`;
+      }
+      if (state.id === "current") {
+        return `Current Round 6: ${encoreName} restarts the First Bouquet ladder with higher stakes; gather ${goal} through the familiar reward flow.`;
+      }
+      if (state.id === "next") {
+        return `${roundComplete ? "Encore unlocked" : "After Sub Rosa Grand Cache"}: ${encoreName} begins a second pass through the bouquet ladder with ${goal}.`;
+      }
+      return `${encoreName} waits after Round 5 as an encore pass through the bouquet ladder with higher stakes and stronger First Bouquet rewards.`;
+    }
+
+    function roundSixPayoffCopy(plan = roundSixPlan()) {
+      return `Round 6 encore payoff: ${plan.reward.item} uses the existing First Bouquet reward structure, +${plan.reward.greenhouse} Greenhouse XP, and keeps Bouquet Streak, reward choice, and Chest Storage intact.`;
+    }
+
+    function renderRoundSixPreview() {
+      const preview = $("roundSixPreview");
+      if (!preview) {
+        return;
+      }
+      const plan = roundSixPlan();
+      const state = roundSixPreviewState(plan);
+      preview.dataset.roundSixState = state.id;
+      preview.innerHTML = `
+        <span class="round-six-kicker">Round 6 Encore Loop · ${state.label}</span>
+        <span class="round-six-line">${roundSixPreviewCopy(state, plan)}</span>
+        <span class="round-six-payoff">${roundSixPayoffCopy(plan)}</span>
       `;
     }
 
@@ -4832,6 +4930,7 @@
       renderRoundThreeFocus();
       renderRoundFourPreview();
       renderRoundFivePreview();
+      renderRoundSixPreview();
       renderActiveOrders(plan);
       renderRoundCeremony(plan);
       $("bar").style.width = `${progress.pct}%`;
