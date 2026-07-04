@@ -1355,6 +1355,40 @@
 - How to trigger and verify Supreme Bloom without console: focus the page and press `B`; the ritual log should show `SUPREME BLOOM! Review hook complete. The board is ready.` after the charge phase.
 - Security/secret-scan status: lightweight credential-shaped scan ran on changed files with no findings. No secrets, trackers, backend, SDKs, or new permissions were added in code.
 
+## 2026-07-04 Codex Round 22 encore Moonlit Wreath clarity/payoff
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow Round 22 `Moonlit Wreath 5` clarity/payoff pass.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added a compact `Round 22 Moonlit Wreath Encore` strip below `Round 21 First Bouquet Encore` using the existing continuing-round generator via `buildRoundPlan(22)`.
+- The strip has `tease`, `next`, `current`, `withered`, and `complete` states, with copy for `Moonlit Wreath 5` as the fifth-pass Nightshade + Amber Seed + Thorn Rose + Cursed Thorn wreath.
+- The Round 22 copy explains higher stakes, retry restoration, adjacent-match/Pruning Shears Cursed Thorn clearing, and the existing Moonlit Wreath Cache reward path; no new progression framework was added.
+- No new account system, backend, analytics, monetization, SDK, tracker, asset, secret, or permission was added.
+- Added static verifier markers for `roundTwentyTwoPreview`, `Round 22 Moonlit Wreath Encore`, `Moonlit Wreath 5`, `Round 22 encore Moonlit Wreath payoff`, all `data-round-twenty-two-state` values, and the Round 22 render/helper functions.
+- Verification run so far:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - Read `docs/hermes_audit_next_tasks.md`.
+  - `python3 scripts/verify_project.py`
+  - `git diff --check`
+  - Local static preview at `http://127.0.0.1:4242/playable/midnight_bloom_prototype.html?verify=round22-local` returned `200 OK`.
+  - Local tile asset checks at `http://127.0.0.1:4242/assets/tiles/96/purple_nightshade_bloom.png?verify=round22-local` and `http://127.0.0.1:4242/assets/tiles/96/amber_resin_seed.png?verify=round22-local` returned `200 OK`.
+  - Downloaded local HTML contained `roundTwentyTwoPreview`, `Round 22 Moonlit Wreath Encore`, `Moonlit Wreath 5`, `Round 22 encore Moonlit Wreath payoff`, and all `data-round-twenty-two-state` markers.
+  - Local Playwright Chromium loaded fresh Round 1 with 64 tiles, 0 broken images, and visible Round 22 tease copy.
+  - Local Playwright completed Round 1, confirmed Flowerpedia unlock/persistence after reload, advanced to Round 2, failed and retried Round 2 with Cursed Thorn copy restored, then completed through Round 12 and verified Round 12 retry restored the Cursed Thorn objective.
+  - Local Playwright completed Round 13 through Round 21 via the visible `Complete Bouquet`/`Next Bouquet` hooks, with reward choice/default flow preserved.
+  - Local Playwright verified Round 21 current/complete surfaces, Round 22 `next`, Round 22 current copy with `Moonlit Wreath 5`, Nightshade, Amber Seed, Thorn Rose, Cursed Thorn, higher stakes, and the Moonlit Wreath Cache reward path, then forced Round 22 `withered` and `complete` states.
+  - Local Playwright independently armed/cancelled/used all four boosters on fresh pages, opened/cancelled Sacrifice, opened/closed Chest Storage, clicked `Shape Bloom`, pressed `M` for the match-shape review hook, pressed `B` for Supreme Bloom, pressed `N` for the complete-bouquet review hook, and checked mobile 390x844 with 0 horizontal overflow.
+- Browser console/runtime status: local Playwright checks observed 0 console errors and 0 page errors across the Round 1-22 main flow, booster checks, Shape Bloom/M/B/N review hooks, Chest, Sacrifice, and mobile checks.
+- Vercel deployment URL/identifier checked: pending deployment for this Round 22 pass.
+- GitHub Pages preview status: pending after push/deploy.
+- Known issues: none found locally in this pass.
+- How to trigger and verify L/T/cross matches without console: after Round 1, watch for the `L/T/cross = Shape Bloom` hint in Round 2; in the review path, click `Shape Bloom` or press `M` until `Witch's Cross`, `Night Garden L-Bloom`, or `Twin Stem Bloom` appears. The hidden `shapeAuditData` verifier still contains L, T, and cross definitions.
+- How to trigger and verify Supreme Bloom without console: focus the page and press `B`; the ritual log should show `SUPREME BLOOM! Review hook complete. The board is ready.` after the charge phase.
+- Security/secret-scan status: lightweight credential-shaped scan ran on changed files with no findings.
+
 ## 2026-07-04 Codex Round 21 encore First Bouquet clarity/payoff
 
 - Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow Round 21 `First Bouquet 5` clarity/payoff pass.
