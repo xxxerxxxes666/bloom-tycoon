@@ -641,7 +641,8 @@
     .round-five-preview,
     .round-six-preview,
     .round-seven-preview,
-    .round-eight-preview {
+    .round-eight-preview,
+    .round-nine-preview {
       max-width: 760px;
       margin: 8px auto 0;
       padding: 9px 12px;
@@ -674,6 +675,11 @@
     .round-eight-preview {
       border-color: #4a2231;
       background: linear-gradient(180deg, #13080e, #050404);
+    }
+
+    .round-nine-preview {
+      border-color: #4b3928;
+      background: linear-gradient(180deg, #120d08, #050404);
     }
 
     .round-three-focus[data-round-three-state="current"] {
@@ -772,12 +778,29 @@
       color: #e0a078;
     }
 
+    .round-nine-preview[data-round-nine-state="current"] {
+      border-color: #b3814e;
+      color: #e2c887;
+      box-shadow: inset 0 0 12px #000, 0 0 12px #7b563455;
+    }
+
+    .round-nine-preview[data-round-nine-state="complete"] {
+      border-color: #5d6f32;
+      color: #d8efad;
+    }
+
+    .round-nine-preview[data-round-nine-state="withered"] {
+      border-color: #8a332a;
+      color: #e0a078;
+    }
+
     .round-three-kicker,
     .round-four-kicker,
     .round-five-kicker,
     .round-six-kicker,
     .round-seven-kicker,
-    .round-eight-kicker {
+    .round-eight-kicker,
+    .round-nine-kicker {
       display: block;
       color: #d7b16d;
       font-size: 11px;
@@ -796,7 +819,9 @@
     .round-seven-line,
     .round-seven-payoff,
     .round-eight-line,
-    .round-eight-payoff {
+    .round-eight-payoff,
+    .round-nine-line,
+    .round-nine-payoff {
       display: block;
       margin-top: 3px;
       font-size: 12px;
@@ -808,7 +833,8 @@
     .round-five-payoff,
     .round-six-payoff,
     .round-seven-payoff,
-    .round-eight-payoff {
+    .round-eight-payoff,
+    .round-nine-payoff {
       color: #c6ad7c;
     }
 
@@ -3383,7 +3409,8 @@
       .round-five-preview,
       .round-six-preview,
       .round-seven-preview,
-      .round-eight-preview {
+      .round-eight-preview,
+      .round-nine-preview {
         padding: 10px;
       }
 
@@ -3521,6 +3548,7 @@
       <div class="round-six-preview" id="roundSixPreview" aria-label="Round 6 Encore Bouquet"></div>
       <div class="round-seven-preview" id="roundSevenPreview" aria-label="Round 7 Encore Cursed Thorn"></div>
       <div class="round-eight-preview" id="roundEightPreview" aria-label="Round 8 Encore Bloodroot Compact"></div>
+      <div class="round-nine-preview" id="roundNinePreview" aria-label="Round 9 Encore Saint's Night Ledger"></div>
       <script type="application/json" id="shapeAuditData"></script>
       <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
       <div class="board" id="board"></div>
@@ -3815,6 +3843,13 @@
       'data-round-eight-state="current"',
       'data-round-eight-state="withered"',
       'data-round-eight-state="complete"'
+    ];
+    const roundNineAuditMarkers = [
+      'data-round-nine-state="tease"',
+      'data-round-nine-state="next"',
+      'data-round-nine-state="current"',
+      'data-round-nine-state="withered"',
+      'data-round-nine-state="complete"'
     ];
     const STREAK_COIN_BONUS_STEP = 5;
     const STREAK_COIN_BONUS_CAP = 25;
@@ -4557,6 +4592,71 @@
       `;
     }
 
+    function roundNinePlan() {
+      return buildRoundPlan(9);
+    }
+
+    function roundNineEncoreName(plan = roundNinePlan()) {
+      return plan.name || "Saint's Night Ledger 2";
+    }
+
+    function roundNinePreviewState(plan = roundNinePlan()) {
+      if (currentRound > plan.round || (currentRound === plan.round && roundComplete)) {
+        return { id: "complete", label: "Encore Ledger Sealed" };
+      }
+      if (currentRound === plan.round && isBouquetFailed(plan)) {
+        return { id: "withered", label: "Current · Withered" };
+      }
+      if (currentRound === plan.round) {
+        return { id: "current", label: "Current Ledger Encore" };
+      }
+      if (currentRound === plan.round - 1) {
+        return { id: "next", label: roundComplete ? "Ledger Encore Ready" : "After Bloodroot Compact 2" };
+      }
+      return { id: "tease", label: "Ledger Encore Preview" };
+    }
+
+    function roundNineGoalCopy(plan = roundNinePlan()) {
+      return bouquetPathGoalCopy(plan);
+    }
+
+    function roundNinePreviewCopy(state, plan = roundNinePlan()) {
+      const goal = roundNineGoalCopy(plan);
+      const encoreName = roundNineEncoreName(plan);
+      if (state.id === "complete") {
+        return `${encoreName} complete: the encore ledger is sealed, and ${plan.reward.item} keeps Bone Star, Nightshade, and Sol Rot rewards moving.`;
+      }
+      if (state.id === "withered") {
+        return `Retry keeps ${encoreName} open: restore ${plan.moves} moves and finish ${goal}.`;
+      }
+      if (state.id === "current") {
+        return `Current Round 9: ${encoreName} revisits Bone Star, Nightshade, and Sol Rot with higher stakes. Gather ${goal} through the existing ledger reward path.`;
+      }
+      if (state.id === "next") {
+        return `${roundComplete ? "Encore Saint's Night Ledger unlocked" : "After Bloodroot Compact 2"}: ${encoreName} asks for ${goal} with the same ledger payoff structure.`;
+      }
+      return `${encoreName} waits after Round 8 as the second-pass Saint's Night Ledger: Bone Star plus Nightshade plus Sol Rot, higher stakes, familiar rewards.`;
+    }
+
+    function roundNinePayoffCopy(plan = roundNinePlan()) {
+      return `Round 9 encore Saint's Night Ledger payoff: ${plan.reward.item} uses the existing Saint's Night Ledger reward structure, +${plan.reward.apothecary} Apothecary XP, and keeps Flowerpedia, Bouquet Streak, and Chest Storage intact.`;
+    }
+
+    function renderRoundNinePreview() {
+      const preview = $("roundNinePreview");
+      if (!preview) {
+        return;
+      }
+      const plan = roundNinePlan();
+      const state = roundNinePreviewState(plan);
+      preview.dataset.roundNineState = state.id;
+      preview.innerHTML = `
+        <span class="round-nine-kicker">Round 9 Ledger Encore · ${state.label}</span>
+        <span class="round-nine-line">${roundNinePreviewCopy(state, plan)}</span>
+        <span class="round-nine-payoff">${roundNinePayoffCopy(plan)}</span>
+      `;
+    }
+
     function thornKey(x, y) {
       return `${x},${y}`;
     }
@@ -5143,6 +5243,7 @@
       renderRoundSixPreview();
       renderRoundSevenPreview();
       renderRoundEightPreview();
+      renderRoundNinePreview();
       renderActiveOrders(plan);
       renderRoundCeremony(plan);
       $("bar").style.width = `${progress.pct}%`;
