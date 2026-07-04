@@ -1390,9 +1390,13 @@
   - Vercel Playwright smoke loaded 64 tiles and 0 broken images, clicked `Complete Bouquet`/`Next Bouquet` through Round 22 current, verified the Round 22 Moonlit Wreath 5 copy, forced Round 22 retry/complete states, and checked mobile 390x844 with 0 horizontal overflow.
   - GitHub Pages workflow `28703757462` for `70ed6f7` and `28703837598` for `827c728` uploaded the static artifact but failed in `actions/deploy-pages` with `Deployment failed, try again later.`
   - Updated `.github/workflows/pages.yml` from `actions/deploy-pages@v4` to `actions/deploy-pages@v5`, the Node 24 compatible deploy action, after the runner forced Node 24 and the deploy step failed twice after valid artifact uploads.
-- Browser console/runtime status: local and Vercel Playwright checks observed 0 console errors and 0 page errors across the Round 1-22 main flow, booster checks, Shape Bloom/M/B/N review hooks, Chest, Sacrifice, Round 22 retry/complete checks, and mobile checks.
+  - GitHub Pages workflow `28703891833` completed successfully for `49a0c9c`.
+  - GitHub Pages root, `/bloom-tycoon/playable/midnight_bloom_prototype.html?verify=49a0c9c-pages`, `/bloom-tycoon/assets/tiles/96/purple_nightshade_bloom.png?verify=49a0c9c-pages`, and `/bloom-tycoon/assets/tiles/96/amber_resin_seed.png?verify=49a0c9c-pages` returned `200 OK`.
+  - Downloaded GitHub Pages HTML contained the Round 22 markers and all `data-round-twenty-two-state` hooks.
+  - GitHub Pages Playwright smoke loaded 64 tiles and 0 broken images, clicked `Complete Bouquet`/`Next Bouquet` through Round 22 current, verified the Round 22 Moonlit Wreath 5 copy, forced Round 22 retry/complete states, and checked mobile 390x844 with 0 horizontal overflow.
+- Browser console/runtime status: local, Vercel, and GitHub Pages Playwright checks observed 0 console errors and 0 page errors across the Round 1-22 main flow, booster checks, Shape Bloom/M/B/N review hooks, Chest, Sacrifice, Round 22 retry/complete checks, and mobile checks.
 - Vercel deployment URL/identifier checked: `dpl_615A6o7tAx1NPE27auFN36Bf6NnM`, https://bloom-tycoon-a064b747t-xerxes-florals.vercel.app, canonical alias https://bloom-tycoon.vercel.app.
-- GitHub Pages preview status: retry pending after the deploy action update.
+- GitHub Pages preview status: workflow `28703891833` succeeded for `49a0c9c`; Pages is serving the new Round 22 HTML.
 - Known issues: none found locally in this pass.
 - How to trigger and verify L/T/cross matches without console: after Round 1, watch for the `L/T/cross = Shape Bloom` hint in Round 2; in the review path, click `Shape Bloom` or press `M` until `Witch's Cross`, `Night Garden L-Bloom`, or `Twin Stem Bloom` appears. The hidden `shapeAuditData` verifier still contains L, T, and cross definitions.
 - How to trigger and verify Supreme Bloom without console: focus the page and press `B`; the ritual log should show `SUPREME BLOOM! Review hook complete. The board is ready.` after the charge phase.
