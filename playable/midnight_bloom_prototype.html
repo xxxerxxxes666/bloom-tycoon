@@ -637,7 +637,8 @@
     }
 
     .round-three-focus,
-    .round-four-preview {
+    .round-four-preview,
+    .round-five-preview {
       max-width: 760px;
       margin: 8px auto 0;
       padding: 9px 12px;
@@ -650,6 +651,11 @@
     .round-four-preview {
       border-color: #3f3226;
       background: linear-gradient(180deg, #100c09, #050404);
+    }
+
+    .round-five-preview {
+      border-color: #43222d;
+      background: linear-gradient(180deg, #13090d, #050404);
     }
 
     .round-three-focus[data-round-three-state="current"] {
@@ -684,8 +690,25 @@
       color: #e0a078;
     }
 
+    .round-five-preview[data-round-five-state="current"] {
+      border-color: #8c3f61;
+      color: #e7b3ca;
+      box-shadow: inset 0 0 12px #000, 0 0 12px #6f254b55;
+    }
+
+    .round-five-preview[data-round-five-state="complete"] {
+      border-color: #5d6f32;
+      color: #d8efad;
+    }
+
+    .round-five-preview[data-round-five-state="withered"] {
+      border-color: #8a332a;
+      color: #e0a078;
+    }
+
     .round-three-kicker,
-    .round-four-kicker {
+    .round-four-kicker,
+    .round-five-kicker {
       display: block;
       color: #d7b16d;
       font-size: 11px;
@@ -696,7 +719,9 @@
     .round-three-line,
     .round-three-payoff,
     .round-four-line,
-    .round-four-payoff {
+    .round-four-payoff,
+    .round-five-line,
+    .round-five-payoff {
       display: block;
       margin-top: 3px;
       font-size: 12px;
@@ -704,7 +729,8 @@
     }
 
     .round-three-payoff,
-    .round-four-payoff {
+    .round-four-payoff,
+    .round-five-payoff {
       color: #c6ad7c;
     }
 
@@ -3408,6 +3434,7 @@
       <div class="bouquet-path" id="bouquetPath" aria-label="Bouquet Path"></div>
       <div class="round-three-focus" id="roundThreeFocus" aria-label="Round 3 Bloodroot Compact"></div>
       <div class="round-four-preview" id="roundFourPreview" aria-label="Round 4 Saint's Night Ledger"></div>
+      <div class="round-five-preview" id="roundFivePreview" aria-label="Round 5 Sub Rosa Grand Bouquet"></div>
       <script type="application/json" id="shapeAuditData"></script>
       <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
       <div class="board" id="board"></div>
@@ -3674,6 +3701,13 @@
       'data-round-four-state="current"',
       'data-round-four-state="withered"',
       'data-round-four-state="complete"'
+    ];
+    const roundFiveAuditMarkers = [
+      'data-round-five-state="tease"',
+      'data-round-five-state="next"',
+      'data-round-five-state="current"',
+      'data-round-five-state="withered"',
+      'data-round-five-state="complete"'
     ];
     const STREAK_COIN_BONUS_STEP = 5;
     const STREAK_COIN_BONUS_CAP = 25;
@@ -4152,6 +4186,66 @@
         <span class="round-four-kicker">Round 4 Contract · ${state.label}</span>
         <span class="round-four-line">${roundFourPreviewCopy(state, plan)}</span>
         <span class="round-four-payoff">${roundFourPayoffCopy(plan)}</span>
+      `;
+    }
+
+    function roundFivePlan() {
+      return buildRoundPlan(5);
+    }
+
+    function roundFivePreviewState(plan = roundFivePlan()) {
+      if (currentRound > plan.round || (currentRound === plan.round && roundComplete)) {
+        return { id: "complete", label: "Grand Bouquet Sealed" };
+      }
+      if (currentRound === plan.round && isBouquetFailed(plan)) {
+        return { id: "withered", label: "Current · Withered" };
+      }
+      if (currentRound === plan.round) {
+        return { id: "current", label: "Current Grand Bouquet" };
+      }
+      if (currentRound === plan.round - 1) {
+        return { id: "next", label: roundComplete ? "Next Grand Bouquet Ready" : "After Ledger" };
+      }
+      return { id: "tease", label: "Grand Bouquet Preview" };
+    }
+
+    function roundFiveGoalCopy(plan = roundFivePlan()) {
+      return bouquetPathGoalCopy(plan);
+    }
+
+    function roundFivePreviewCopy(state, plan = roundFivePlan()) {
+      const goal = roundFiveGoalCopy(plan);
+      if (state.id === "complete") {
+        return `${plan.name} sealed: ${plan.reward.item} sits in Chest Storage while the Chapter trail points past the beginner loop.`;
+      }
+      if (state.id === "withered") {
+        return `Retry keeps ${plan.name} open: restore ${plan.moves} moves and finish ${goal}.`;
+      }
+      if (state.id === "current") {
+        return `Current Round 5: gather ${goal} to turn Saint's Night Ledger into the Sub Rosa grand cache.`;
+      }
+      if (state.id === "next") {
+        return `${roundComplete ? "Next grand bouquet unlocked" : "After Saint's Night Ledger"}: ${plan.name} asks for ${goal}.`;
+      }
+      return `${plan.name} waits after Round 4 with Thorn Rose, Bloodroot, and Sol Rot objectives.`;
+    }
+
+    function roundFivePayoffCopy(plan = roundFivePlan()) {
+      return `Sub Rosa Grand Bouquet payoff: ${plan.reward.item} enters Chest Storage, +${plan.reward.faction} Sub Rosa Favor, and keeps reward choice, Flowerpedia, and Chapter Progress in view.`;
+    }
+
+    function renderRoundFivePreview() {
+      const preview = $("roundFivePreview");
+      if (!preview) {
+        return;
+      }
+      const plan = roundFivePlan();
+      const state = roundFivePreviewState(plan);
+      preview.dataset.roundFiveState = state.id;
+      preview.innerHTML = `
+        <span class="round-five-kicker">Round 5 Grand Bouquet · ${state.label}</span>
+        <span class="round-five-line">${roundFivePreviewCopy(state, plan)}</span>
+        <span class="round-five-payoff">${roundFivePayoffCopy(plan)}</span>
       `;
     }
 
@@ -4737,6 +4831,7 @@
       renderBouquetPath();
       renderRoundThreeFocus();
       renderRoundFourPreview();
+      renderRoundFivePreview();
       renderActiveOrders(plan);
       renderRoundCeremony(plan);
       $("bar").style.width = `${progress.pct}%`;
