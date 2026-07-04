@@ -1367,7 +1367,7 @@
 - The Round 21 copy explains higher stakes, retry restoration, and the existing First Bouquet Coffer reward path; no new progression framework was added.
 - No new account system, backend, analytics, monetization, SDK, tracker, asset, secret, or permission was added.
 - Added static verifier markers for `roundTwentyOnePreview`, `Round 21 First Bouquet Encore`, `First Bouquet 5`, `Round 21 encore First Bouquet payoff`, all `data-round-twenty-one-state` values, and the Round 21 render/helper functions.
-- Verification run so far:
+- Verification run:
   - `git fetch origin main`
   - `git pull --ff-only origin main`
   - Read `docs/hermes_audit_next_tasks.md`.
@@ -1382,9 +1382,19 @@
   - Local Playwright forced and retried Rounds 12, 13, 14, 15, 16, 17, 18, 19, 20, and 21; each retry restored the round board/moves/objectives and kept 64 tiles.
   - Local Playwright verified Round 21 current copy contains `First Bouquet 5`, Thorn Rose, Bone Star, higher stakes, and the First Bouquet Coffer reward path; Round 21 then showed `withered` and `complete` preview states.
   - Local Playwright independently armed/cancelled/used all four boosters on fresh pages, opened/cancelled Sacrifice, opened/closed Chest Storage, clicked `Shape Bloom`, pressed `M` through Cross/L/T rewards, pressed `B` for Supreme Bloom, pressed `N` for the complete-bouquet review hook, and checked mobile 390x844 with 0 horizontal overflow.
-- Browser console/runtime status: local Playwright checks observed 0 console warnings/errors and 0 page errors.
-- Vercel deployment URL/identifier checked: pending post-push deployment for this Round 21 pass.
-- GitHub Pages preview status: pending post-push workflow for this Round 21 pass.
+  - Deployed to Vercel production as `dpl_amiingMka4E7h7ZnmBuUn2z96VuE`.
+  - Vercel deployment URL: https://bloom-tycoon-1o24od6xk-xerxes-florals.vercel.app
+  - Re-pointed `https://bloom-tycoon.vercel.app` to the new deployment.
+  - Vercel root, `/playable/midnight_bloom_prototype.html?verify=a631271-live`, and `/assets/tiles/96/bone_white_thorn_star.png?verify=a631271-live` returned `200 OK`.
+  - Downloaded Vercel HTML contained the Round 21 markers and all `data-round-twenty-one-state` hooks.
+  - Vercel Playwright smoke loaded 64 tiles and 0 broken images, clicked `Complete Bouquet`/`Next Bouquet` through Round 21 current, verified the Round 21 First Bouquet 5 copy, forced Round 21 retry/complete states, and checked mobile 390x844 with 0 horizontal overflow.
+  - GitHub Pages workflow `28702890340` for `a631271` completed successfully.
+  - GitHub Pages root, `/bloom-tycoon/playable/midnight_bloom_prototype.html?verify=a631271-pages`, and `/bloom-tycoon/assets/tiles/96/bone_white_thorn_star.png?verify=a631271-pages` returned `200 OK`.
+  - Downloaded GitHub Pages HTML contained the Round 21 markers and all `data-round-twenty-one-state` hooks.
+  - GitHub Pages Playwright smoke loaded 64 tiles and 0 broken images, clicked through Round 21 current, verified the Round 21 First Bouquet 5 copy, completed Round 21, and checked mobile 390x844 with 0 horizontal overflow.
+- Browser console/runtime status: local, Vercel, and GitHub Pages Playwright checks observed 0 console warnings/errors and 0 page errors.
+- Vercel deployment URL/identifier checked: `dpl_amiingMka4E7h7ZnmBuUn2z96VuE`, https://bloom-tycoon-1o24od6xk-xerxes-florals.vercel.app, canonical alias https://bloom-tycoon.vercel.app.
+- GitHub Pages preview status: workflow `28702890340` completed successfully for `a631271`; Pages is serving the new Round 21 HTML.
 - Known issues: none found locally in this pass.
 - How to trigger and verify L/T/cross matches without console: after Round 1, watch for the `L/T/cross = Shape Bloom` hint in Round 2; in the review path, click `Shape Bloom` or press `M` until `Witch's Cross`, `Night Garden L-Bloom`, or `Twin Stem Bloom` appears. The hidden `shapeAuditData` verifier still contains L, T, and cross definitions.
 - How to trigger and verify Supreme Bloom without console: focus the page and press `B`; the ritual log should show `SUPREME BLOOM! Review hook complete. The board is ready.` after the charge phase.
