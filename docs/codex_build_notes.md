@@ -116,6 +116,7 @@
   - `playable/midnight_bloom_prototype.html`
   - `scripts/verify_html_match_shapes.py`
   - `docs/codex_build_notes.md`
+  - `.github/workflows/pages.yml`
 - Added an optional `maxCascades` limit to `resolveAnimated()` and used `{ maxCascades: 1 }` only in the prototype `M` review hook.
 - Preserved normal gameplay and Sacrifice cascade behavior by leaving regular `resolveAnimated()` calls at the default 20-cascade cap.
 - Extended the HTML match-shape regression source checks to require the new cascade-limit hook.
@@ -1387,10 +1388,11 @@
   - Vercel root, `/playable/midnight_bloom_prototype.html?verify=70ed6f7-live`, `/assets/tiles/96/purple_nightshade_bloom.png?verify=70ed6f7-live`, and `/assets/tiles/96/amber_resin_seed.png?verify=70ed6f7-live` returned `200 OK`.
   - Downloaded Vercel HTML contained the Round 22 markers and all `data-round-twenty-two-state` hooks.
   - Vercel Playwright smoke loaded 64 tiles and 0 broken images, clicked `Complete Bouquet`/`Next Bouquet` through Round 22 current, verified the Round 22 Moonlit Wreath 5 copy, forced Round 22 retry/complete states, and checked mobile 390x844 with 0 horizontal overflow.
-  - GitHub Pages workflow `28703757462` for `70ed6f7` uploaded the static artifact but failed in `actions/deploy-pages` with `Deployment failed, try again later.` A docs status commit is being used to trigger a fresh Pages run with the same playable.
+  - GitHub Pages workflow `28703757462` for `70ed6f7` and `28703837598` for `827c728` uploaded the static artifact but failed in `actions/deploy-pages` with `Deployment failed, try again later.`
+  - Updated `.github/workflows/pages.yml` from `actions/deploy-pages@v4` to `actions/deploy-pages@v5`, the Node 24 compatible deploy action, after the runner forced Node 24 and the deploy step failed twice after valid artifact uploads.
 - Browser console/runtime status: local and Vercel Playwright checks observed 0 console errors and 0 page errors across the Round 1-22 main flow, booster checks, Shape Bloom/M/B/N review hooks, Chest, Sacrifice, Round 22 retry/complete checks, and mobile checks.
 - Vercel deployment URL/identifier checked: `dpl_615A6o7tAx1NPE27auFN36Bf6NnM`, https://bloom-tycoon-a064b747t-xerxes-florals.vercel.app, canonical alias https://bloom-tycoon.vercel.app.
-- GitHub Pages preview status: retry pending after transient deploy failure for workflow `28703757462`.
+- GitHub Pages preview status: retry pending after the deploy action update.
 - Known issues: none found locally in this pass.
 - How to trigger and verify L/T/cross matches without console: after Round 1, watch for the `L/T/cross = Shape Bloom` hint in Round 2; in the review path, click `Shape Bloom` or press `M` until `Witch's Cross`, `Night Garden L-Bloom`, or `Twin Stem Bloom` appears. The hidden `shapeAuditData` verifier still contains L, T, and cross definitions.
 - How to trigger and verify Supreme Bloom without console: focus the page and press `B`; the ritual log should show `SUPREME BLOOM! Review hook complete. The board is ready.` after the charge phase.
