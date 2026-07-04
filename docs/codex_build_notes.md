@@ -1355,6 +1355,42 @@
 - How to trigger and verify Supreme Bloom without console: focus the page and press `B`; the ritual log should show `SUPREME BLOOM! Review hook complete. The board is ready.` after the charge phase.
 - Security/secret-scan status: lightweight credential-shaped scan ran on changed files with no findings. No secrets, trackers, backend, SDKs, or new permissions were added in code.
 
+## 2026-07-04 Codex Round 17 encore Moonlit Wreath clarity/payoff
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow Round 17 `Moonlit Wreath 4` clarity/payoff pass.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added a compact `Round 17 Moonlit Wreath Encore` strip below `Round 16 First Bouquet Encore` using the existing continuing-round generator via `buildRoundPlan(17)`.
+- The strip has `tease`, `next`, `current`, `withered`, and `complete` states, with copy for `Moonlit Wreath 4` as the fourth-pass Nightshade + Amber Seed + Thorn Rose + Cursed Thorn wreath.
+- The Round 17 copy explains higher stakes, retry restoration, adjacent-match/Pruning Shears Cursed Thorn clearing, and the existing Moonlit Wreath Cache reward path; no new progression framework was added.
+- No new account system, backend, analytics, monetization, SDK, tracker, asset, secret, or permission was added.
+- Added static verifier markers for `roundSeventeenPreview`, `Round 17 Moonlit Wreath Encore`, `Moonlit Wreath 4`, `Round 17 encore Moonlit Wreath payoff`, all `data-round-seventeen-state` values, and the Round 17 render/helper functions.
+- Verification run:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - Read `docs/hermes_audit_next_tasks.md`.
+  - `python3 scripts/verify_project.py`
+  - `git diff --check`
+  - Local static preview at `http://127.0.0.1:4237/playable/midnight_bloom_prototype.html?verify=round17-resume` returned `200 OK`.
+  - Local tile asset check at `http://127.0.0.1:4237/assets/tiles/96/crimson_rose_rune.png?verify=round17-resume` returned `200 OK`.
+  - Downloaded local HTML contained `roundSeventeenPreview`, `Round 17 Moonlit Wreath Encore`, `Moonlit Wreath 4`, `Round 17 encore Moonlit Wreath payoff`, and all `data-round-seventeen-state` markers.
+  - Local Playwright Chromium loaded fresh Round 1 with 64 tiles, 0 broken images, and visible Round 17 tease copy.
+  - Local Playwright completed Round 1 through Round 17 via the visible `Complete Bouquet`/`Next Bouquet` hooks, with reward choice/default flow preserved.
+  - Local Playwright forced and retried Round 2 plus Rounds 12, 13, 14, 15, 16, and 17; each retry restored the round board/moves/objectives and kept 64 tiles.
+  - Local Playwright verified Round 17 current copy contains `Moonlit Wreath 4`, Nightshade, Amber Seed, Thorn Rose, Cursed Thorn, higher stakes, and the Moonlit Wreath Cache reward path; Round 17 then showed `withered` and `complete` preview states.
+  - Local Playwright armed/cancelled/used all four boosters, opened/cancelled Sacrifice, opened/closed Chest Storage, clicked `Shape Bloom` through Cross/L/T rewards, pressed `B` for Supreme Bloom, and checked mobile 390x844 with 0 horizontal overflow.
+  - Vercel production deploy/live checks: pending.
+  - GitHub Pages workflow/live checks: pending.
+- Browser console/runtime status: local Playwright observed 0 console warnings/errors and 0 page errors; live browser checks pending after deploy.
+- Vercel deployment URL/identifier checked: pending production deploy for this pass.
+- GitHub Pages preview status: pending workflow/live check for this pass.
+- Known issues: none found during implementation so far. The shell still does not have standalone `agent-browser`, so browser verification will use bundled Playwright if needed.
+- How to trigger and verify L/T/cross matches without console: after Round 1, watch for the `L/T/cross = Shape Bloom` hint in Round 2; in the review path, click `Shape Bloom` or press `M` until `Witch's Cross`, `Night Garden L-Bloom`, or `Twin Stem Bloom` appears. The hidden `shapeAuditData` verifier still contains L, T, and cross definitions.
+- How to trigger and verify Supreme Bloom without console: focus the page and press `B`; the ritual log should show `SUPREME BLOOM! Review hook complete. The board is ready.` after the charge phase.
+- Security/secret-scan status: lightweight credential-shaped scan ran on changed files with no findings.
+
 ## 2026-07-04 Codex Round 16 encore First Bouquet clarity/payoff
 
 - Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow Round 16 `First Bouquet 4` clarity/payoff pass.
