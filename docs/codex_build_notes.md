@@ -1378,12 +1378,19 @@
   - Local Playwright main flow verified fresh Round 16 tease, Round 1 fail -> retry, Round 1 win -> explicit Greenhouse reward -> Round 2, Round 2 fail -> retry with Cursed Thorn objective/tiles restored, Round 2 completion -> default Greenhouse reward path, Round 3 through Round 15 completion/payoff surfaces, Round 12 fail -> retry restoration, Round 13 fail -> retry restoration, Round 14 fail -> retry restoration, Round 15 fail -> retry restoration, Round 16 current `First Bouquet 4` Thorn Rose/Bone Star higher-stakes copy, Round 16 wither -> retry restoration, Round 16 completion/payoff, 64 tiles, no broken images, and no console/page errors.
   - Local Playwright preservation checks verified each booster (`Pruning Shears`, `Moonwater Flask`, `Black Candle`, `Grave Soil`) arms, cancels, uses from a fresh page, and preserves 64 tiles.
   - Local Playwright preservation checks verified Shape Bloom review, `M` L/T/cross review hook, Supreme Bloom via focused `B`, `N` Complete Bouquet hook, Chest modal, Sacrifice arm/cancel, mobile 390x860 Round 16 preview, no horizontal overflow, no broken images, and no console/page errors.
-  - Vercel production deploy/live checks: pending.
-  - GitHub Pages workflow/live checks: pending.
+  - Vercel production deploy completed as `dpl_5PrBCethgJJPrgMuBzBLU5wk1pBM` at `https://bloom-tycoon-25ku3mpa2-xerxes-florals.vercel.app`.
+  - Explicitly pointed `https://bloom-tycoon.vercel.app` to that deployment.
+  - Vercel direct checks returned `200` for `/playable/midnight_bloom_prototype.html?verify=f5a4d27-live` and `/assets/tiles/96/crimson_rose_rune.png?verify=f5a4d27-live`, and the playable contained all Round 16 markers.
+  - GitHub Pages workflow `28698481638` failed in `actions/deploy-pages` after uploading a valid artifact with GitHub's transient `Deployment failed, try again later.` message; no repo artifact error was found.
+  - Pushed no-content retry commit `65f34ff` (`ci: retry pages deployment`) to rerun Pages without changing gameplay files.
+  - GitHub Pages retry workflow `28698568006` succeeded for `65f34ff`.
+  - GitHub Pages direct checks returned `200` for `/bloom-tycoon/playable/midnight_bloom_prototype.html?verify=65f34ff-live` and `/bloom-tycoon/assets/tiles/96/crimson_rose_rune.png?verify=65f34ff-live`, and the playable contained all Round 16 markers.
+  - Vercel and GitHub Pages Playwright smoke verified fresh Round 16 tease, Round 1 -> Round 16 review progression, Round 16 current `First Bouquet 4` Thorn Rose/Bone Star copy, Round 16 wither -> retry restoration, Round 16 completion/payoff, mobile 390px layout, no broken images, and no console/page errors.
 - Browser console/runtime status: no local Playwright console errors or page errors observed during the Round 1-16 main flow, Round 1/2/12/13/14/15/16 retry checks, booster checks, Shape Bloom/M/B/N review hooks, Chest, Sacrifice, or mobile checks.
-- Vercel deployment URL/identifier checked: pending production deploy for this pass.
-- GitHub Pages preview status: pending workflow/live check for this pass.
-- Known issues: none found during implementation so far. The shell still does not have standalone `agent-browser`, so browser verification will use bundled Playwright if needed.
+- Browser console/runtime status on Vercel and GitHub Pages: no Playwright console errors or page errors observed during fresh Round 16 tease, Round 1 -> Round 16 review progression, Round 16 current/withered/retry/completed payoff, or mobile checks.
+- Vercel deployment URL/identifier checked: `dpl_5PrBCethgJJPrgMuBzBLU5wk1pBM`, `https://bloom-tycoon-25ku3mpa2-xerxes-florals.vercel.app`, production alias `https://bloom-tycoon.vercel.app`.
+- GitHub Pages preview status: workflow `28698568006` succeeded for `65f34ff`, and `https://xxxerxxxes666.github.io/bloom-tycoon/playable/midnight_bloom_prototype.html?verify=65f34ff-live` returned `200` with all new Round 16 markers.
+- Known issues: none found locally or live for this Round 16 encore First Bouquet slice. The shell still does not have standalone `agent-browser`, so browser verification used bundled Playwright.
 - How to trigger and verify L/T/cross matches without console: after Round 1, watch for the `L/T/cross = Shape Bloom` hint in Round 2; in the review path, click `Shape Bloom` or press `M` until `Witch's Cross`, `Night Garden L-Bloom`, or `Twin Stem Bloom` appears. The hidden `shapeAuditData` verifier still contains L, T, and cross definitions.
 - How to trigger and verify Supreme Bloom without console: focus the page and press `B`; the ritual log should show `SUPREME BLOOM! Review hook complete. The board is ready.` after the charge phase.
 - Security/secret-scan status: lightweight credential-shaped scan ran on changed files with no findings. No secrets, trackers, backend, SDKs, or new permissions were added in code.
