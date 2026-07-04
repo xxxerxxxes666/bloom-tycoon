@@ -1355,6 +1355,41 @@
 - How to trigger and verify Supreme Bloom without console: focus the page and press `B`; the ritual log should show `SUPREME BLOOM! Review hook complete. The board is ready.` after the charge phase.
 - Security/secret-scan status: lightweight credential-shaped scan ran on changed files with no findings. No secrets, trackers, backend, SDKs, or new permissions were added in code.
 
+## 2026-07-04 Codex Round 20 encore Sub Rosa Grand Bouquet clarity/payoff
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow Round 20 `Sub Rosa Grand Bouquet 4` clarity/payoff pass.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added a compact `Round 20 Sub Rosa Grand Bouquet Encore` strip below `Round 19 Saint's Night Ledger Encore` using the existing continuing-round generator via `buildRoundPlan(20)`.
+- The strip has `tease`, `next`, `current`, `withered`, and `complete` states, with copy for `Sub Rosa Grand Bouquet 4` as the fourth-pass Thorn Rose + Bloodroot + Sol Rot grand bouquet.
+- The Round 20 copy explains higher stakes, retry restoration, and the existing Sub Rosa Grand Cache reward path; no new progression framework was added.
+- No new account system, backend, analytics, monetization, SDK, tracker, asset, secret, or permission was added.
+- Added static verifier markers for `roundTwentyPreview`, `Round 20 Sub Rosa Grand Bouquet Encore`, `Sub Rosa Grand Bouquet 4`, `Round 20 encore Sub Rosa Grand Bouquet payoff`, all `data-round-twenty-state` values, and the Round 20 render/helper functions.
+- Verification run so far:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - Read `docs/hermes_audit_next_tasks.md`.
+  - `python3 scripts/verify_project.py`
+  - `git diff --check`
+  - Local static preview at `http://127.0.0.1:4240/playable/midnight_bloom_prototype.html?verify=round20-local` returned `200 OK`.
+  - Local tile asset check at `http://127.0.0.1:4240/assets/tiles/96/crimson_rose_rune.png?verify=round20-local` returned `200 OK`.
+  - Downloaded local HTML contained `roundTwentyPreview`, `Round 20 Sub Rosa Grand Bouquet Encore`, `Sub Rosa Grand Bouquet 4`, `Round 20 encore Sub Rosa Grand Bouquet payoff`, and all `data-round-twenty-state` markers.
+  - Local Playwright Chromium loaded fresh Round 1 with 64 tiles, 0 broken images, and visible Round 20 tease copy.
+  - Local Playwright failed and retried Round 1, completed Round 1, advanced to Round 2, failed and retried Round 2 with Cursed Thorn copy restored, completed Round 2, reloaded, and confirmed completed Round 2 plus Chapter 1 progress persisted.
+  - Local Playwright completed Round 3 through Round 19 via the visible `Complete Bouquet`/`Next Bouquet` hooks, with reward choice/default flow preserved.
+  - Local Playwright forced and retried Rounds 12, 13, 14, 15, 16, 17, 18, 19, and 20; each retry restored the round board/moves/objectives and kept 64 tiles.
+  - Local Playwright verified Round 20 current copy contains `Sub Rosa Grand Bouquet 4`, Thorn Rose, Bloodroot, Sol Rot, higher stakes, and the Sub Rosa Grand Cache reward path; Round 20 then showed `withered` and `complete` preview states.
+  - Local Playwright armed/cancelled/used all four boosters, opened/cancelled Sacrifice, opened/closed Chest Storage, clicked `Shape Bloom`, pressed `M` through Cross/L/T rewards, pressed `B` for Supreme Bloom, pressed `N` for the complete-bouquet review hook, and checked mobile 390x844 with 0 horizontal overflow.
+- Browser console/runtime status: local Playwright checks observed 0 console warnings/errors and 0 page errors.
+- Vercel deployment URL/identifier checked: pending post-push deployment for this Round 20 pass.
+- GitHub Pages preview status: pending post-push workflow for this Round 20 pass.
+- Known issues: none found locally in this pass.
+- How to trigger and verify L/T/cross matches without console: after Round 1, watch for the `L/T/cross = Shape Bloom` hint in Round 2; in the review path, click `Shape Bloom` or press `M` until `Witch's Cross`, `Night Garden L-Bloom`, or `Twin Stem Bloom` appears. The hidden `shapeAuditData` verifier still contains L, T, and cross definitions.
+- How to trigger and verify Supreme Bloom without console: focus the page and press `B`; the ritual log should show `SUPREME BLOOM! Review hook complete. The board is ready.` after the charge phase.
+- Security/secret-scan status: lightweight credential-shaped scan ran on changed files with no findings.
+
 ## 2026-07-04 Codex Round 19 encore Saint's Night Ledger clarity/payoff
 
 - Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow Round 19 `Saint's Night Ledger 4` clarity/payoff pass.

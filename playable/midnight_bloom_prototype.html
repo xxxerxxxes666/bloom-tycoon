@@ -652,7 +652,8 @@
     .round-sixteen-preview,
     .round-seventeen-preview,
     .round-eighteen-preview,
-    .round-nineteen-preview {
+    .round-nineteen-preview,
+    .round-twenty-preview {
       max-width: 760px;
       margin: 8px auto 0;
       padding: 9px 12px;
@@ -740,6 +741,11 @@
     .round-nineteen-preview {
       border-color: #4b3928;
       background: linear-gradient(180deg, #120d08, #050404);
+    }
+
+    .round-twenty-preview {
+      border-color: #43222d;
+      background: linear-gradient(180deg, #13090d, #050404);
     }
 
     .round-three-focus[data-round-three-state="current"] {
@@ -1014,6 +1020,22 @@
       color: #e0a078;
     }
 
+    .round-twenty-preview[data-round-twenty-state="current"] {
+      border-color: #8c3f61;
+      color: #e7b3ca;
+      box-shadow: inset 0 0 12px #000, 0 0 12px #6f254b55;
+    }
+
+    .round-twenty-preview[data-round-twenty-state="complete"] {
+      border-color: #5d6f32;
+      color: #d8efad;
+    }
+
+    .round-twenty-preview[data-round-twenty-state="withered"] {
+      border-color: #8a332a;
+      color: #e0a078;
+    }
+
     .round-three-kicker,
     .round-four-kicker,
     .round-five-kicker,
@@ -1030,7 +1052,8 @@
     .round-sixteen-kicker,
     .round-seventeen-kicker,
     .round-eighteen-kicker,
-    .round-nineteen-kicker {
+    .round-nineteen-kicker,
+    .round-twenty-kicker {
       display: block;
       color: #d7b16d;
       font-size: 11px;
@@ -1071,7 +1094,9 @@
     .round-eighteen-line,
     .round-eighteen-payoff,
     .round-nineteen-line,
-    .round-nineteen-payoff {
+    .round-nineteen-payoff,
+    .round-twenty-line,
+    .round-twenty-payoff {
       display: block;
       margin-top: 3px;
       font-size: 12px;
@@ -1094,7 +1119,8 @@
     .round-sixteen-payoff,
     .round-seventeen-payoff,
     .round-eighteen-payoff,
-    .round-nineteen-payoff {
+    .round-nineteen-payoff,
+    .round-twenty-payoff {
       color: #c6ad7c;
     }
 
@@ -3680,7 +3706,8 @@
       .round-sixteen-preview,
       .round-seventeen-preview,
       .round-eighteen-preview,
-      .round-nineteen-preview {
+      .round-nineteen-preview,
+      .round-twenty-preview {
         padding: 10px;
       }
 
@@ -3829,6 +3856,7 @@
       <div class="round-seventeen-preview" id="roundSeventeenPreview" aria-label="Round 17 Encore Moonlit Wreath"></div>
       <div class="round-eighteen-preview" id="roundEighteenPreview" aria-label="Round 18 Encore Bloodroot Compact"></div>
       <div class="round-nineteen-preview" id="roundNineteenPreview" aria-label="Round 19 Encore Saint's Night Ledger"></div>
+      <div class="round-twenty-preview" id="roundTwentyPreview" aria-label="Round 20 Encore Sub Rosa Grand Bouquet"></div>
       <script type="application/json" id="shapeAuditData"></script>
       <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
       <div class="board" id="board"></div>
@@ -4200,6 +4228,13 @@
       'data-round-nineteen-state="current"',
       'data-round-nineteen-state="withered"',
       'data-round-nineteen-state="complete"'
+    ];
+    const roundTwentyAuditMarkers = [
+      'data-round-twenty-state="tease"',
+      'data-round-twenty-state="next"',
+      'data-round-twenty-state="current"',
+      'data-round-twenty-state="withered"',
+      'data-round-twenty-state="complete"'
     ];
     const STREAK_COIN_BONUS_STEP = 5;
     const STREAK_COIN_BONUS_CAP = 25;
@@ -5669,6 +5704,71 @@
       `;
     }
 
+    function roundTwentyPlan() {
+      return buildRoundPlan(20);
+    }
+
+    function roundTwentyEncoreName(plan = roundTwentyPlan()) {
+      return plan.name || "Sub Rosa Grand Bouquet 4";
+    }
+
+    function roundTwentyPreviewState(plan = roundTwentyPlan()) {
+      if (currentRound > plan.round || (currentRound === plan.round && roundComplete)) {
+        return { id: "complete", label: "Fourth Grand Bouquet Sealed" };
+      }
+      if (currentRound === plan.round && isBouquetFailed(plan)) {
+        return { id: "withered", label: "Current · Withered" };
+      }
+      if (currentRound === plan.round) {
+        return { id: "current", label: "Current Grand Bouquet" };
+      }
+      if (currentRound === plan.round - 1) {
+        return { id: "next", label: roundComplete ? "Fourth Grand Bouquet Ready" : "After Saint's Night Ledger 4" };
+      }
+      return { id: "tease", label: "Fourth Grand Bouquet Preview" };
+    }
+
+    function roundTwentyGoalCopy(plan = roundTwentyPlan()) {
+      return bouquetPathGoalCopy(plan);
+    }
+
+    function roundTwentyPreviewCopy(state, plan = roundTwentyPlan()) {
+      const goal = roundTwentyGoalCopy(plan);
+      const encoreName = roundTwentyEncoreName(plan);
+      if (state.id === "complete") {
+        return `${encoreName} complete: the fourth Sub Rosa Grand Bouquet is sealed, ${plan.reward.item} enters Chest Storage, and Thorn Rose, Bloodroot, and Sol Rot rewards keep moving.`;
+      }
+      if (state.id === "withered") {
+        return `Retry keeps ${encoreName} open: restore ${plan.moves} moves and finish ${goal}.`;
+      }
+      if (state.id === "current") {
+        return `Current Round 20: ${encoreName} revisits Thorn Rose, Bloodroot, and Sol Rot with higher stakes. Gather ${goal} through the existing Sub Rosa Grand Cache reward path.`;
+      }
+      if (state.id === "next") {
+        return `${roundComplete ? "Sub Rosa Grand Bouquet fourth loop unlocked" : "After Saint's Night Ledger 4"}: ${encoreName} asks for ${goal} while reward choice/default, Chest Storage, Flowerpedia, and Bouquet Streak stay familiar.`;
+      }
+      return `${encoreName} waits after Round 19 as the fourth-pass Sub Rosa Grand Bouquet: Thorn Rose plus Bloodroot plus Sol Rot, higher stakes, familiar grand-cache rewards.`;
+    }
+
+    function roundTwentyPayoffCopy(plan = roundTwentyPlan()) {
+      return `Round 20 encore Sub Rosa Grand Bouquet payoff: ${plan.reward.item} uses the existing Sub Rosa Grand Cache reward structure, +${plan.reward.faction} Sub Rosa Favor, and keeps retry, reward choice, Flowerpedia, Bouquet Streak, and Chest Storage intact.`;
+    }
+
+    function renderRoundTwentyPreview() {
+      const preview = $("roundTwentyPreview");
+      if (!preview) {
+        return;
+      }
+      const plan = roundTwentyPlan();
+      const state = roundTwentyPreviewState(plan);
+      preview.dataset.roundTwentyState = state.id;
+      preview.innerHTML = `
+        <span class="round-twenty-kicker">Round 20 Sub Rosa Grand Bouquet Encore · ${state.label}</span>
+        <span class="round-twenty-line">${roundTwentyPreviewCopy(state, plan)}</span>
+        <span class="round-twenty-payoff">${roundTwentyPayoffCopy(plan)}</span>
+      `;
+    }
+
     function thornKey(x, y) {
       return `${x},${y}`;
     }
@@ -6266,6 +6366,7 @@
       renderRoundSeventeenPreview();
       renderRoundEighteenPreview();
       renderRoundNineteenPreview();
+      renderRoundTwentyPreview();
       renderActiveOrders(plan);
       renderRoundCeremony(plan);
       $("bar").style.width = `${progress.pct}%`;
