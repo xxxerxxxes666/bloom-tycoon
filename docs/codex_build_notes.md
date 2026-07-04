@@ -1221,9 +1221,15 @@
   - Local Playwright main flow verified fresh Round 1 path, Round 8 `tease`, Round 1 win -> reward -> Round 2, Round 2 fail -> retry, Round 2 restored Cursed Thorn objective, Round 3 completion/payoff, Round 4 completion/payoff, Round 5 completion/payoff, Round 6 completion/payoff, Round 7 completion/payoff, Round 8 current `Bloodroot Compact 2` Bloodroot/Sol Rot higher-stakes copy, Round 8 completion/payoff, Bloodroot Compact in Chest Storage, 64 tiles, no broken images, and no console/page errors.
   - Local Playwright preservation checks verified each booster (`Pruning Shears`, `Moonwater Flask`, `Black Candle`, `Grave Soil`) arms, cancels, uses from a fresh page, and preserves 64 tiles.
   - Local Playwright preservation checks verified Shape Bloom review, `M` L/T/cross review hook, Supreme Bloom via `B`, Chest modal, Sacrifice arm/cancel, mobile 390x860 Round 8 preview, no horizontal overflow, no broken images, and no console/page errors.
+  - Vercel production deploy completed as `dpl_BqusVAJucvVpcXPJQp6GFqr79wB1` at `https://bloom-tycoon-3sfuayaxw-xerxes-florals.vercel.app`.
+  - Explicitly pointed `https://bloom-tycoon.vercel.app` to that deployment.
+  - Vercel direct checks returned `200` for `/playable/midnight_bloom_prototype.html?verify=6020d77-live` and `/assets/tiles/96/bloodroot_ruby_shard.png?verify=6020d77-live`, and the playable contained all Round 8 markers.
+  - Vercel Playwright smoke verified fresh Round 8 tease, Round 1 -> Round 8 review progression, Round 8 current `Bloodroot Compact 2` Bloodroot/Sol Rot copy, Round 8 completion/payoff, mobile 390px layout, no broken images, and no console/page errors.
+  - GitHub Pages workflow `28691646667` failed at the final `Deploy` step for code commit `6020d77` after checkout/configure/upload succeeded; the deploy action reported `Deployment failed, try again later.` This docs commit will trigger a Pages retry.
 - Browser console/runtime status: no local Playwright console errors or page errors observed during the Round 1-8 main flow, booster checks, Shape Bloom/M/B review hooks, Chest, Sacrifice, or mobile checks.
-- Vercel deployment URL/identifier checked: pending production deploy.
-- GitHub Pages preview status: pending push and Pages publish.
+- Browser console/runtime status on Vercel: no Playwright console errors or page errors observed during fresh Round 8 tease, Round 1 -> Round 8 review progression, Round 8 current/completed payoff, or mobile checks.
+- Vercel deployment URL/identifier checked: `dpl_BqusVAJucvVpcXPJQp6GFqr79wB1`, `https://bloom-tycoon-3sfuayaxw-xerxes-florals.vercel.app`, production alias `https://bloom-tycoon.vercel.app`.
+- GitHub Pages preview status: first workflow for `6020d77` failed at the platform deploy step; retry pending.
 - Known issues: none found locally for this Round 8 encore Bloodroot Compact slice. The shell still does not have standalone `agent-browser`, so browser verification used bundled Playwright.
 - How to trigger and verify L/T/cross matches without console: after Round 1, watch for the `L/T/cross = Shape Bloom` hint in Round 2; in the review path, click `Shape Bloom` or press `M` to trigger the prototype match-shape review. The hidden `shapeAuditData` verifier still contains L, T, and cross definitions.
 - How to trigger and verify Supreme Bloom without console: focus the page and press `B`; the ritual log should show `SUPREME BLOOM! Review hook complete. The board is ready.` after the charge phase.
