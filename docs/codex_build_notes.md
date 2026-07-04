@@ -1157,7 +1157,7 @@
 - Known issues: none found locally for this Round 6 encore-loop slice. The shell still does not have standalone `agent-browser`, so browser verification used bundled Playwright.
 - How to trigger and verify L/T/cross matches without console: after Round 1, watch for the `L/T/cross = Shape Bloom` hint in Round 2; in the review path, click `Shape Bloom` or press `M` to trigger the prototype match-shape review. The hidden `shapeAuditData` verifier still contains L, T, and cross definitions.
 - How to trigger and verify Supreme Bloom without console: focus the page and press `B`; the ritual log should show `SUPREME BLOOM! Review hook complete. The board is ready.` after the charge phase.
-- Security/secret-scan status: lightweight credential-shaped scan ran on changed files with no likely secrets; it only flagged existing local display variable names `flowerpediaToken` and `chapterToken`, with no credential values. No secrets, trackers, backend, SDKs, or new permissions were added in code.
+- Security/secret-scan status: lightweight credential-shaped scan ran on changed files with no likely secrets; the gameplay scan only flagged existing local display variable names `flowerpediaToken` and `chapterToken`, with no credential values, and the final docs diff scan was clean. No secrets, trackers, backend, SDKs, or new permissions were added in code.
 
 ## 2026-07-04 Codex Round 7 encore Cursed Thorn clarity/payoff
 
@@ -1300,9 +1300,17 @@
   - Local Playwright main flow verified fresh Round 1 path, Round 10 `tease`, Round 1 win -> reward -> Round 2, Round 2 fail -> retry, Round 2 restored Cursed Thorn objective, Round 3 completion/payoff, Round 4 completion/payoff, Round 5 completion/payoff, Round 6 completion/payoff, Round 7 completion/payoff, Round 8 completion/payoff, Round 9 completion/payoff, Round 10 current `Sub Rosa Grand Bouquet 2` Thorn Rose/Bloodroot/Sol Rot higher-stakes copy, Round 10 completion/payoff, Sub Rosa Grand Cache in Chest Storage, 64 tiles, no broken images, and no console/page errors.
   - Local Playwright preservation checks verified each booster (`Pruning Shears`, `Moonwater Flask`, `Black Candle`, `Grave Soil`) arms, cancels, uses from a fresh page, and preserves 64 tiles.
   - Local Playwright preservation checks verified Shape Bloom review, `M` L/T/cross review hook, Supreme Bloom via `B`, Chest modal, Sacrifice arm/cancel, mobile 390x860 Round 10 preview, no horizontal overflow, no broken images, and no console/page errors.
+  - Vercel production deploy completed as `dpl_DUaLTTJPF4UvWGu2PTUQSoiE2cwg` at `https://bloom-tycoon-bv87xe5w1-xerxes-florals.vercel.app`.
+  - Explicitly pointed `https://bloom-tycoon.vercel.app` to that deployment.
+  - Vercel direct checks returned `200` for `/playable/midnight_bloom_prototype.html?verify=5534268-live` and `/assets/tiles/96/crimson_rose_rune.png?verify=5534268-live`, and the playable contained all Round 10 markers.
+  - Vercel Playwright smoke verified fresh Round 10 tease, Round 1 -> Round 10 review progression, Round 10 current `Sub Rosa Grand Bouquet 2` Thorn Rose/Bloodroot/Sol Rot copy, Round 10 completion/payoff, Sub Rosa Grand Cache in Chest Storage, mobile 390px layout, no broken images, and no console/page errors.
+  - GitHub Pages workflow `28692911000` succeeded for code commit `5534268`.
+  - GitHub Pages direct checks returned `200` for `/bloom-tycoon/playable/midnight_bloom_prototype.html?verify=5534268-live` and `/bloom-tycoon/assets/tiles/96/crimson_rose_rune.png?verify=5534268-live`, and the playable contained all Round 10 markers.
+  - GitHub Pages Playwright smoke verified fresh Round 10 tease, Round 1 -> Round 10 review progression, Round 10 current `Sub Rosa Grand Bouquet 2` Thorn Rose/Bloodroot/Sol Rot copy, Round 10 completion/payoff, Sub Rosa Grand Cache in Chest Storage, mobile 390px layout, no broken images, and no console/page errors.
 - Browser console/runtime status: no local Playwright console errors or page errors observed during the Round 1-10 main flow, booster checks, Shape Bloom/M/B review hooks, Chest, Sacrifice, or mobile checks.
-- Vercel deployment URL/identifier checked: pending production deploy.
-- GitHub Pages preview status: pending push and Pages publish.
+- Browser console/runtime status on Vercel and GitHub Pages: no Playwright console errors or page errors observed during fresh Round 10 tease, Round 1 -> Round 10 review progression, Round 10 current/completed payoff, or mobile checks.
+- Vercel deployment URL/identifier checked: `dpl_DUaLTTJPF4UvWGu2PTUQSoiE2cwg`, `https://bloom-tycoon-bv87xe5w1-xerxes-florals.vercel.app`, production alias `https://bloom-tycoon.vercel.app`.
+- GitHub Pages preview status: workflow `28692911000` succeeded for `5534268`, and `https://xxxerxxxes666.github.io/bloom-tycoon/playable/midnight_bloom_prototype.html?verify=5534268-live` returned `200` with all new Round 10 markers.
 - Known issues: none found locally for this Round 10 encore Sub Rosa Grand Bouquet slice. The shell still does not have standalone `agent-browser`, so browser verification used bundled Playwright.
 - How to trigger and verify L/T/cross matches without console: after Round 1, watch for the `L/T/cross = Shape Bloom` hint in Round 2; in the review path, click `Shape Bloom` or press `M` to trigger the prototype match-shape review. The hidden `shapeAuditData` verifier still contains L, T, and cross definitions.
 - How to trigger and verify Supreme Bloom without console: focus the page and press `B`; the ritual log should show `SUPREME BLOOM! Review hook complete. The board is ready.` after the charge phase.
