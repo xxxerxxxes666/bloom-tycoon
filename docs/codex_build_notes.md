@@ -24,12 +24,18 @@
   - Local Playwright verified Round 29 current copy names `Saint's Night Ledger 6`, Bone Star, Nightshade, Sol Rot, higher stakes, and the existing Saint's Night Ledger reward path.
   - Local Playwright verified all four boosters arm/cancel, Chest opens/closes, Sacrifice opens/cancels, `M` triggers Shape Bloom without console, `B` triggers Supreme Bloom without console, and Round 29 complete copy names the sixth Saint's Night Ledger and Chest Storage.
   - Local mobile Playwright at 390x844 loaded 64 tiles, 0 broken images, visible Round 29 preview, and no horizontal overflow.
-  - Vercel production deploy: pending.
-  - GitHub Pages preview status: pending.
-- Browser console/runtime status: local Playwright observed 0 console warnings/errors and 0 page errors during Round 29, retry, hook, and mobile checks.
-- Vercel deployment URL/identifier checked: pending deployment.
-- GitHub Pages preview status: pending push.
-- Known issues: none found locally.
+  - Vercel production deploy completed as `dpl_CLrYP1fxSq3qQzJQxdNSVVDBhcYg` at `https://bloom-tycoon-b0ylwdwel-xerxes-florals.vercel.app`.
+  - Explicitly pointed `https://bloom-tycoon.vercel.app` to that deployment.
+  - Vercel direct checks returned `200 OK` for `/`, `/playable/midnight_bloom_prototype.html?verify=377a4a1-direct`, and `assets/tiles/96/bone_white_thorn_star.png`.
+  - Downloaded Vercel HTML contained `roundTwentyNinePreview`, `Round 29 Saint's Night Ledger Encore`, `Saint's Night Ledger 6`, `Round 29 encore Saint's Night Ledger payoff`, `data-round-twenty-nine-state="current"`, and `function renderRoundTwentyNinePreview`.
+  - Vercel Playwright smoke loaded 64 tiles with 0 broken images, verified Round 2 wither -> retry, all four booster controls, Chest and Sacrifice open/cancel, `M` Shape Bloom, `B` Supreme Bloom, Round 29 current and complete copy, and mobile portrait at 390x844 with no horizontal overflow.
+  - GitHub Pages direct checks returned `200 OK` for `/bloom-tycoon/`, `/bloom-tycoon/playable/midnight_bloom_prototype.html?verify=377a4a1-direct`, and `assets/tiles/96/bone_white_thorn_star.png`.
+  - Downloaded GitHub Pages HTML contained the same Round 29 markers as Vercel.
+  - GitHub Pages Playwright smoke loaded 64 tiles with 0 broken images, verified Round 2 wither -> retry, all four booster controls, Chest and Sacrifice open/cancel, `M` Shape Bloom, `B` Supreme Bloom, Round 29 current and complete copy, and mobile portrait at 390x844 with no horizontal overflow.
+- Browser console/runtime status: local, Vercel, and GitHub Pages Playwright observed 0 console warnings/errors and 0 page errors during Round 29, retry, hook, and mobile checks.
+- Vercel deployment URL/identifier checked: `dpl_CLrYP1fxSq3qQzJQxdNSVVDBhcYg`, https://bloom-tycoon-b0ylwdwel-xerxes-florals.vercel.app; canonical alias https://bloom-tycoon.vercel.app points to that deployment.
+- GitHub Pages preview status: Pages serves the Round 29 marker-matched HTML for pushed feature commit `377a4a1`.
+- Known issues: none found locally or on live previews.
 - How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly; after the line5 and line4 demos, it cycles `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom` shape rewards.
 - How to trigger and verify Supreme Bloom without console: focus the playable and press `B`; the ritual log should report `SUPREME BLOOM!` after the charge phase and return the board to play.
 - Security/secret-scan status: lightweight added-lines credential scan ran with no findings.
