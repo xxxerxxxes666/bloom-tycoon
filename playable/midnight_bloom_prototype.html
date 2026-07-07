@@ -658,7 +658,8 @@
     .round-twenty-two-preview,
     .round-twenty-three-preview,
     .round-twenty-four-preview,
-    .round-twenty-five-preview {
+    .round-twenty-five-preview,
+    .round-twenty-six-preview {
       max-width: 760px;
       margin: 8px auto 0;
       padding: 9px 12px;
@@ -776,6 +777,11 @@
     .round-twenty-five-preview {
       border-color: #43222d;
       background: linear-gradient(180deg, #13090d, #050404);
+    }
+
+    .round-twenty-six-preview {
+      border-color: #463020;
+      background: linear-gradient(180deg, #130d08, #050404);
     }
 
     .round-three-focus[data-round-three-state="current"] {
@@ -1146,6 +1152,22 @@
       color: #e0a078;
     }
 
+    .round-twenty-six-preview[data-round-twenty-six-state="current"] {
+      border-color: #b3814e;
+      color: #e2c887;
+      box-shadow: inset 0 0 12px #000, 0 0 12px #7b563455;
+    }
+
+    .round-twenty-six-preview[data-round-twenty-six-state="complete"] {
+      border-color: #5d6f32;
+      color: #d8efad;
+    }
+
+    .round-twenty-six-preview[data-round-twenty-six-state="withered"] {
+      border-color: #8a332a;
+      color: #e0a078;
+    }
+
     .round-three-kicker,
     .round-four-kicker,
     .round-five-kicker,
@@ -1168,7 +1190,8 @@
     .round-twenty-two-kicker,
     .round-twenty-three-kicker,
     .round-twenty-four-kicker,
-    .round-twenty-five-kicker {
+    .round-twenty-five-kicker,
+    .round-twenty-six-kicker {
       display: block;
       color: #d7b16d;
       font-size: 11px;
@@ -1221,7 +1244,9 @@
     .round-twenty-four-line,
     .round-twenty-four-payoff,
     .round-twenty-five-line,
-    .round-twenty-five-payoff {
+    .round-twenty-five-payoff,
+    .round-twenty-six-line,
+    .round-twenty-six-payoff {
       display: block;
       margin-top: 3px;
       font-size: 12px;
@@ -1250,7 +1275,8 @@
     .round-twenty-two-payoff,
     .round-twenty-three-payoff,
     .round-twenty-four-payoff,
-    .round-twenty-five-payoff {
+    .round-twenty-five-payoff,
+    .round-twenty-six-payoff {
       color: #c6ad7c;
     }
 
@@ -3842,7 +3868,8 @@
       .round-twenty-two-preview,
       .round-twenty-three-preview,
       .round-twenty-four-preview,
-      .round-twenty-five-preview {
+      .round-twenty-five-preview,
+      .round-twenty-six-preview {
         padding: 10px;
       }
 
@@ -3997,6 +4024,7 @@
       <div class="round-twenty-three-preview" id="roundTwentyThreePreview" aria-label="Round 23 Encore Bloodroot Compact"></div>
       <div class="round-twenty-four-preview" id="roundTwentyFourPreview" aria-label="Round 24 Encore Saint's Night Ledger"></div>
       <div class="round-twenty-five-preview" id="roundTwentyFivePreview" aria-label="Round 25 Encore Sub Rosa Grand Bouquet"></div>
+      <div class="round-twenty-six-preview" id="roundTwentySixPreview" aria-label="Round 26 Encore First Bouquet"></div>
       <script type="application/json" id="shapeAuditData"></script>
       <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
       <div class="board" id="board"></div>
@@ -4410,6 +4438,13 @@
       'data-round-twenty-five-state="current"',
       'data-round-twenty-five-state="withered"',
       'data-round-twenty-five-state="complete"'
+    ];
+    const roundTwentySixAuditMarkers = [
+      'data-round-twenty-six-state="tease"',
+      'data-round-twenty-six-state="next"',
+      'data-round-twenty-six-state="current"',
+      'data-round-twenty-six-state="withered"',
+      'data-round-twenty-six-state="complete"'
     ];
     const STREAK_COIN_BONUS_STEP = 5;
     const STREAK_COIN_BONUS_CAP = 25;
@@ -6275,6 +6310,71 @@
       `;
     }
 
+    function roundTwentySixPlan() {
+      return buildRoundPlan(26);
+    }
+
+    function roundTwentySixEncoreName(plan = roundTwentySixPlan()) {
+      return plan.name || "First Bouquet 6";
+    }
+
+    function roundTwentySixPreviewState(plan = roundTwentySixPlan()) {
+      if (currentRound > plan.round || (currentRound === plan.round && roundComplete)) {
+        return { id: "complete", label: "Sixth First Bouquet Bound" };
+      }
+      if (currentRound === plan.round && isBouquetFailed(plan)) {
+        return { id: "withered", label: "Current · Withered" };
+      }
+      if (currentRound === plan.round) {
+        return { id: "current", label: "Current First Bouquet" };
+      }
+      if (currentRound === plan.round - 1) {
+        return { id: "next", label: roundComplete ? "Sixth First Bouquet Ready" : "After Sub Rosa Grand Bouquet 5" };
+      }
+      return { id: "tease", label: "Sixth First Bouquet Preview" };
+    }
+
+    function roundTwentySixGoalCopy(plan = roundTwentySixPlan()) {
+      return bouquetPathGoalCopy(plan);
+    }
+
+    function roundTwentySixPreviewCopy(state, plan = roundTwentySixPlan()) {
+      const goal = roundTwentySixGoalCopy(plan);
+      const encoreName = roundTwentySixEncoreName(plan);
+      if (state.id === "complete") {
+        return `${encoreName} complete: the sixth First Bouquet is bound, ${plan.reward.item} enters Chest Storage, and Thorn Rose and Bone Star rewards keep moving.`;
+      }
+      if (state.id === "withered") {
+        return `Retry keeps ${encoreName} open: restore ${plan.moves} moves and finish ${goal}.`;
+      }
+      if (state.id === "current") {
+        return `Current Round 26: ${encoreName} revisits Thorn Rose and Bone Star with higher stakes. Gather ${goal} through the existing First Bouquet Coffer reward path.`;
+      }
+      if (state.id === "next") {
+        return `${roundComplete ? "First Bouquet sixth loop unlocked" : "After Sub Rosa Grand Bouquet 5"}: ${encoreName} asks for ${goal} while reward choice/default, Chest Storage, Flowerpedia, and Bouquet Streak stay familiar.`;
+      }
+      return `${encoreName} waits after Round 25 as the sixth-pass First Bouquet: Thorn Rose plus Bone Star, higher stakes, familiar coffer rewards.`;
+    }
+
+    function roundTwentySixPayoffCopy(plan = roundTwentySixPlan()) {
+      return `Round 26 encore First Bouquet payoff: ${plan.reward.item} uses the existing First Bouquet Coffer reward structure, +${plan.reward.greenhouse} Greenhouse XP, and keeps retry, reward choice, Flowerpedia, Bouquet Streak, and Chest Storage intact.`;
+    }
+
+    function renderRoundTwentySixPreview() {
+      const preview = $("roundTwentySixPreview");
+      if (!preview) {
+        return;
+      }
+      const plan = roundTwentySixPlan();
+      const state = roundTwentySixPreviewState(plan);
+      preview.dataset.roundTwentySixState = state.id;
+      preview.innerHTML = `
+        <span class="round-twenty-six-kicker">Round 26 First Bouquet Encore · ${state.label}</span>
+        <span class="round-twenty-six-line">${roundTwentySixPreviewCopy(state, plan)}</span>
+        <span class="round-twenty-six-payoff">${roundTwentySixPayoffCopy(plan)}</span>
+      `;
+    }
+
     function thornKey(x, y) {
       return `${x},${y}`;
     }
@@ -6878,6 +6978,7 @@
       renderRoundTwentyThreePreview();
       renderRoundTwentyFourPreview();
       renderRoundTwentyFivePreview();
+      renderRoundTwentySixPreview();
       renderActiveOrders(plan);
       renderRoundCeremony(plan);
       $("bar").style.width = `${progress.pct}%`;
