@@ -1,5 +1,37 @@
 # Codex Build Notes
 
+## 2026-07-06 Codex Round 24 Saint's Night Ledger pass
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow Round 24 `Saint's Night Ledger 5` clarity/payoff slice.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added a Round 24 Saint's Night Ledger Encore preview/payoff surface below Round 23 using the existing continuing-round generator through `buildRoundPlan(24)`.
+- Added tease, next, current, withered, and complete states for `roundTwentyFourPreview`, including current copy that names `Saint's Night Ledger 5`, Bone Star, Nightshade, Sol Rot, higher stakes, and the existing Saint's Night Ledger reward path.
+- Added static verifier markers for the Round 24 encore Saint's Night Ledger surface and its five `data-round-twenty-four-state` values.
+- Preserved the existing continuing-round reward/default-choice flow; no new progression framework, account system, backend, analytics, monetization, SDK, tracker, asset, secret, or permission was added.
+- Verification run so far:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - `python3 scripts/verify_project.py`
+  - Local static preview at `http://127.0.0.1:4244/playable/midnight_bloom_prototype.html?verify=round24-local`
+  - Local static checks returned `200 OK` for the playable and `assets/tiles/96/bone_white_thorn_star.png`.
+  - Local marker checks found `roundTwentyFourPreview`, `Round 24 Saint's Night Ledger Encore`, `Saint's Night Ledger 5`, `Round 24 encore Saint's Night Ledger payoff`, and all five Round 24 state markers in the served HTML.
+  - Local Playwright loaded fresh Round 1 with 64 tiles, 0 broken images, visible Round 24 tease copy, all four booster labels, and `Shape Bloom`.
+  - Local Playwright verified Round 1 win -> Round 2, Round 2 wither -> `Retry Bouquet` restored Cursed Thorn objective copy and 64 tiles, then progressed Round 3 through Round 23 with 64 tiles preserved and Round 14/Round 19 payoff surfaces complete.
+  - Local Playwright verified Round 23 completion put Round 24 in `next`, then Round 24 current copy names `Saint's Night Ledger 5`, Bone Star, Nightshade, Sol Rot, higher stakes, and the existing Saint's Night Ledger reward path.
+  - Local Playwright verified Round 24 has no Cursed Thorn blockers, Round 24 wither -> retry restores the current ledger, and Round 24 completion shows `complete` copy that the fifth Saint's Night Ledger is filed.
+  - Local Playwright verified all four boosters arm/cancel/use and preserve 64 tiles, Sacrifice opens/cancels, Chest Storage opens/closes, Shape Bloom works, `M` cycles line5/line4/cross/L/T rewards, `B` triggers Supreme Bloom, and `N` completes a bouquet.
+  - Local mobile Playwright at 390x844 loaded 64 tiles, 0 broken images, visible Round 24 preview, and no horizontal overflow.
+- Browser console/runtime status: local Playwright observed 0 console warnings/errors and 0 page errors during the Round 1-24, booster/control/hook, and mobile checks.
+- Vercel deployment URL/identifier checked: pending this pass.
+- GitHub Pages preview status: pending this pass.
+- Known issues: none found locally.
+- How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly; after the line5 and line4 demos, it cycles `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom` shape rewards.
+- How to trigger and verify Supreme Bloom without console: focus the playable and press `B`; the ritual log should report `SUPREME BLOOM!` after the charge phase and return the board to play.
+- Security/secret-scan status: pending final changed-file scan before commit.
+
 ## 2026-07-04 Codex Round 23 Bloodroot Compact pass
 
 - Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow Round 23 `Bloodroot Compact 5` clarity/payoff slice.

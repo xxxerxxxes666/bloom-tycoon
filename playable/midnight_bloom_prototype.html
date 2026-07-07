@@ -656,7 +656,8 @@
     .round-twenty-preview,
     .round-twenty-one-preview,
     .round-twenty-two-preview,
-    .round-twenty-three-preview {
+    .round-twenty-three-preview,
+    .round-twenty-four-preview {
       max-width: 760px;
       margin: 8px auto 0;
       padding: 9px 12px;
@@ -764,6 +765,11 @@
     .round-twenty-three-preview {
       border-color: #4a2735;
       background: linear-gradient(180deg, #13080d, #050404);
+    }
+
+    .round-twenty-four-preview {
+      border-color: #4b3928;
+      background: linear-gradient(180deg, #120d08, #050404);
     }
 
     .round-three-focus[data-round-three-state="current"] {
@@ -1102,6 +1108,22 @@
       color: #e0a078;
     }
 
+    .round-twenty-four-preview[data-round-twenty-four-state="current"] {
+      border-color: #b3814e;
+      color: #e2c887;
+      box-shadow: inset 0 0 12px #000, 0 0 12px #7b563455;
+    }
+
+    .round-twenty-four-preview[data-round-twenty-four-state="complete"] {
+      border-color: #5d6f32;
+      color: #d8efad;
+    }
+
+    .round-twenty-four-preview[data-round-twenty-four-state="withered"] {
+      border-color: #8a332a;
+      color: #e0a078;
+    }
+
     .round-three-kicker,
     .round-four-kicker,
     .round-five-kicker,
@@ -1122,7 +1144,8 @@
     .round-twenty-kicker,
     .round-twenty-one-kicker,
     .round-twenty-two-kicker,
-    .round-twenty-three-kicker {
+    .round-twenty-three-kicker,
+    .round-twenty-four-kicker {
       display: block;
       color: #d7b16d;
       font-size: 11px;
@@ -1171,7 +1194,9 @@
     .round-twenty-two-line,
     .round-twenty-two-payoff,
     .round-twenty-three-line,
-    .round-twenty-three-payoff {
+    .round-twenty-three-payoff,
+    .round-twenty-four-line,
+    .round-twenty-four-payoff {
       display: block;
       margin-top: 3px;
       font-size: 12px;
@@ -1198,7 +1223,8 @@
     .round-twenty-payoff,
     .round-twenty-one-payoff,
     .round-twenty-two-payoff,
-    .round-twenty-three-payoff {
+    .round-twenty-three-payoff,
+    .round-twenty-four-payoff {
       color: #c6ad7c;
     }
 
@@ -3788,7 +3814,8 @@
       .round-twenty-preview,
       .round-twenty-one-preview,
       .round-twenty-two-preview,
-      .round-twenty-three-preview {
+      .round-twenty-three-preview,
+      .round-twenty-four-preview {
         padding: 10px;
       }
 
@@ -3941,6 +3968,7 @@
       <div class="round-twenty-one-preview" id="roundTwentyOnePreview" aria-label="Round 21 Encore First Bouquet"></div>
       <div class="round-twenty-two-preview" id="roundTwentyTwoPreview" aria-label="Round 22 Encore Moonlit Wreath"></div>
       <div class="round-twenty-three-preview" id="roundTwentyThreePreview" aria-label="Round 23 Encore Bloodroot Compact"></div>
+      <div class="round-twenty-four-preview" id="roundTwentyFourPreview" aria-label="Round 24 Encore Saint's Night Ledger"></div>
       <script type="application/json" id="shapeAuditData"></script>
       <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
       <div class="board" id="board"></div>
@@ -4340,6 +4368,13 @@
       'data-round-twenty-three-state="current"',
       'data-round-twenty-three-state="withered"',
       'data-round-twenty-three-state="complete"'
+    ];
+    const roundTwentyFourAuditMarkers = [
+      'data-round-twenty-four-state="tease"',
+      'data-round-twenty-four-state="next"',
+      'data-round-twenty-four-state="current"',
+      'data-round-twenty-four-state="withered"',
+      'data-round-twenty-four-state="complete"'
     ];
     const STREAK_COIN_BONUS_STEP = 5;
     const STREAK_COIN_BONUS_CAP = 25;
@@ -6075,6 +6110,71 @@
       `;
     }
 
+    function roundTwentyFourPlan() {
+      return buildRoundPlan(24);
+    }
+
+    function roundTwentyFourEncoreName(plan = roundTwentyFourPlan()) {
+      return plan.name || "Saint's Night Ledger 5";
+    }
+
+    function roundTwentyFourPreviewState(plan = roundTwentyFourPlan()) {
+      if (currentRound > plan.round || (currentRound === plan.round && roundComplete)) {
+        return { id: "complete", label: "Fifth Night Ledger Filed" };
+      }
+      if (currentRound === plan.round && isBouquetFailed(plan)) {
+        return { id: "withered", label: "Current · Withered" };
+      }
+      if (currentRound === plan.round) {
+        return { id: "current", label: "Current Night Ledger" };
+      }
+      if (currentRound === plan.round - 1) {
+        return { id: "next", label: roundComplete ? "Fifth Night Ledger Ready" : "After Bloodroot Compact 5" };
+      }
+      return { id: "tease", label: "Fifth Night Ledger Preview" };
+    }
+
+    function roundTwentyFourGoalCopy(plan = roundTwentyFourPlan()) {
+      return bouquetPathGoalCopy(plan);
+    }
+
+    function roundTwentyFourPreviewCopy(state, plan = roundTwentyFourPlan()) {
+      const goal = roundTwentyFourGoalCopy(plan);
+      const encoreName = roundTwentyFourEncoreName(plan);
+      if (state.id === "complete") {
+        return `${encoreName} complete: the fifth Saint's Night Ledger is filed, ${plan.reward.item} enters Chest Storage, and Bone Star, Nightshade, and Sol Rot rewards keep moving.`;
+      }
+      if (state.id === "withered") {
+        return `Retry keeps ${encoreName} open: restore ${plan.moves} moves and finish ${goal}.`;
+      }
+      if (state.id === "current") {
+        return `Current Round 24: ${encoreName} revisits Bone Star, Nightshade, and Sol Rot with higher stakes. Gather ${goal} through the existing Saint's Night Ledger reward path.`;
+      }
+      if (state.id === "next") {
+        return `${roundComplete ? "Saint's Night Ledger fifth loop unlocked" : "After Bloodroot Compact 5"}: ${encoreName} asks for ${goal} while reward choice/default, Chest Storage, Flowerpedia, and Bouquet Streak stay familiar.`;
+      }
+      return `${encoreName} waits after Round 23 as the fifth-pass Saint's Night Ledger: Bone Star plus Nightshade plus Sol Rot, higher stakes, familiar ledger rewards.`;
+    }
+
+    function roundTwentyFourPayoffCopy(plan = roundTwentyFourPlan()) {
+      return `Round 24 encore Saint's Night Ledger payoff: ${plan.reward.item} uses the existing Saint's Night Ledger reward structure, +${plan.reward.apothecary} Apothecary XP, and keeps retry, reward choice, Flowerpedia, Bouquet Streak, and Chest Storage intact.`;
+    }
+
+    function renderRoundTwentyFourPreview() {
+      const preview = $("roundTwentyFourPreview");
+      if (!preview) {
+        return;
+      }
+      const plan = roundTwentyFourPlan();
+      const state = roundTwentyFourPreviewState(plan);
+      preview.dataset.roundTwentyFourState = state.id;
+      preview.innerHTML = `
+        <span class="round-twenty-four-kicker">Round 24 Saint's Night Ledger Encore · ${state.label}</span>
+        <span class="round-twenty-four-line">${roundTwentyFourPreviewCopy(state, plan)}</span>
+        <span class="round-twenty-four-payoff">${roundTwentyFourPayoffCopy(plan)}</span>
+      `;
+    }
+
     function thornKey(x, y) {
       return `${x},${y}`;
     }
@@ -6676,6 +6776,7 @@
       renderRoundTwentyOnePreview();
       renderRoundTwentyTwoPreview();
       renderRoundTwentyThreePreview();
+      renderRoundTwentyFourPreview();
       renderActiveOrders(plan);
       renderRoundCeremony(plan);
       $("bar").style.width = `${progress.pct}%`;
