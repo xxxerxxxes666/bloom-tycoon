@@ -1,5 +1,35 @@
 # Codex Build Notes
 
+## 2026-07-07 Codex Round 27 Moonlit Wreath pass
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow Round 27 `Moonlit Wreath 6` clarity/payoff slice.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added a Round 27 Moonlit Wreath Encore preview/payoff surface below Round 26 using the existing continuing-round generator through `buildRoundPlan(27)`.
+- Added tease, next, current, withered, and complete states for `roundTwentySevenPreview`, including current copy that names `Moonlit Wreath 6`, Nightshade, Amber Seed, Thorn Rose, Cursed Thorn, higher stakes, and the existing Moonlit Wreath Cache reward path.
+- Added static verifier markers for the Round 27 encore Moonlit Wreath surface and its five `data-round-twenty-seven-state` values.
+- Preserved the existing continuing-round reward/default-choice flow; no new progression framework, account system, backend, analytics, monetization, SDK, tracker, asset, secret, or permission was added.
+- Verification run:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - `python3 scripts/verify_project.py`
+  - Local static preview at `http://127.0.0.1:4247/playable/midnight_bloom_prototype.html?verify=round27-local`
+  - Local static checks returned `200 OK` for the playable and `assets/tiles/96/purple_nightshade_bloom.png`.
+  - Local marker checks found `roundTwentySevenPreview`, `Round 27 Moonlit Wreath Encore`, `Moonlit Wreath 6`, `Round 27 encore Moonlit Wreath payoff`, `data-round-twenty-seven-state="current"`, and `function renderRoundTwentySevenPreview` in the served HTML.
+  - Local Playwright loaded fresh Round 1 with 64 tiles, 0 broken images, visible Round 27 tease copy, all four booster labels, and `Shape Bloom`.
+  - Local Playwright verified Round 1 win -> Round 2, Round 2 wither -> `Retry Bouquet` restored Cursed Thorn objective copy and 64 tiles, then verified `Shape Bloom` and `B` Supreme Bloom without console.
+  - Local Playwright progressed Round 1 through Round 26 with 64 tiles preserved, verified Round 27 current copy names `Moonlit Wreath 6`, Nightshade, Amber Seed, Thorn Rose, Cursed Thorn, higher stakes, and the existing Moonlit Wreath Cache reward path, verified Round 27 wither -> retry restores the Cursed Thorn objective, then verified Round 27 complete copy names the sixth Moonlit Wreath.
+  - Local mobile Playwright at 390x844 loaded 64 tiles, 0 broken images, visible Round 27 preview, and no horizontal overflow.
+- Browser console/runtime status: local Playwright observed 0 console warnings/errors and 0 page errors during Round 27, retry, hook, and mobile checks.
+- Vercel deployment URL/identifier checked: pending until this pass is committed and deployed.
+- GitHub Pages preview status: pending until this pass is pushed and Pages finishes deploying.
+- Known issues: none found locally.
+- How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly; after the line5 and line4 demos, it cycles `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom` shape rewards.
+- How to trigger and verify Supreme Bloom without console: focus the playable and press `B`; the ritual log should report `SUPREME BLOOM!` after the charge phase and return the board to play.
+- Security/secret-scan status: lightweight added-lines credential scan ran with no findings.
+
 ## 2026-07-07 Codex Round 26 First Bouquet pass
 
 - Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow Round 26 `First Bouquet 6` clarity/payoff slice.

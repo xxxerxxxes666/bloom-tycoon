@@ -659,7 +659,8 @@
     .round-twenty-three-preview,
     .round-twenty-four-preview,
     .round-twenty-five-preview,
-    .round-twenty-six-preview {
+    .round-twenty-six-preview,
+    .round-twenty-seven-preview {
       max-width: 760px;
       margin: 8px auto 0;
       padding: 9px 12px;
@@ -782,6 +783,11 @@
     .round-twenty-six-preview {
       border-color: #463020;
       background: linear-gradient(180deg, #130d08, #050404);
+    }
+
+    .round-twenty-seven-preview {
+      border-color: #29244a;
+      background: linear-gradient(180deg, #0d0b15, #050404);
     }
 
     .round-three-focus[data-round-three-state="current"] {
@@ -1168,6 +1174,22 @@
       color: #e0a078;
     }
 
+    .round-twenty-seven-preview[data-round-twenty-seven-state="current"] {
+      border-color: #7d49b2;
+      color: #d7c2f0;
+      box-shadow: inset 0 0 12px #000, 0 0 12px #55328e55;
+    }
+
+    .round-twenty-seven-preview[data-round-twenty-seven-state="complete"] {
+      border-color: #5d6f32;
+      color: #d8efad;
+    }
+
+    .round-twenty-seven-preview[data-round-twenty-seven-state="withered"] {
+      border-color: #8a332a;
+      color: #e0a078;
+    }
+
     .round-three-kicker,
     .round-four-kicker,
     .round-five-kicker,
@@ -1191,7 +1213,8 @@
     .round-twenty-three-kicker,
     .round-twenty-four-kicker,
     .round-twenty-five-kicker,
-    .round-twenty-six-kicker {
+    .round-twenty-six-kicker,
+    .round-twenty-seven-kicker {
       display: block;
       color: #d7b16d;
       font-size: 11px;
@@ -1246,7 +1269,9 @@
     .round-twenty-five-line,
     .round-twenty-five-payoff,
     .round-twenty-six-line,
-    .round-twenty-six-payoff {
+    .round-twenty-six-payoff,
+    .round-twenty-seven-line,
+    .round-twenty-seven-payoff {
       display: block;
       margin-top: 3px;
       font-size: 12px;
@@ -1276,7 +1301,8 @@
     .round-twenty-three-payoff,
     .round-twenty-four-payoff,
     .round-twenty-five-payoff,
-    .round-twenty-six-payoff {
+    .round-twenty-six-payoff,
+    .round-twenty-seven-payoff {
       color: #c6ad7c;
     }
 
@@ -3869,7 +3895,8 @@
       .round-twenty-three-preview,
       .round-twenty-four-preview,
       .round-twenty-five-preview,
-      .round-twenty-six-preview {
+      .round-twenty-six-preview,
+      .round-twenty-seven-preview {
         padding: 10px;
       }
 
@@ -4025,6 +4052,7 @@
       <div class="round-twenty-four-preview" id="roundTwentyFourPreview" aria-label="Round 24 Encore Saint's Night Ledger"></div>
       <div class="round-twenty-five-preview" id="roundTwentyFivePreview" aria-label="Round 25 Encore Sub Rosa Grand Bouquet"></div>
       <div class="round-twenty-six-preview" id="roundTwentySixPreview" aria-label="Round 26 Encore First Bouquet"></div>
+      <div class="round-twenty-seven-preview" id="roundTwentySevenPreview" aria-label="Round 27 Encore Moonlit Wreath"></div>
       <script type="application/json" id="shapeAuditData"></script>
       <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
       <div class="board" id="board"></div>
@@ -4445,6 +4473,13 @@
       'data-round-twenty-six-state="current"',
       'data-round-twenty-six-state="withered"',
       'data-round-twenty-six-state="complete"'
+    ];
+    const roundTwentySevenAuditMarkers = [
+      'data-round-twenty-seven-state="tease"',
+      'data-round-twenty-seven-state="next"',
+      'data-round-twenty-seven-state="current"',
+      'data-round-twenty-seven-state="withered"',
+      'data-round-twenty-seven-state="complete"'
     ];
     const STREAK_COIN_BONUS_STEP = 5;
     const STREAK_COIN_BONUS_CAP = 25;
@@ -6375,6 +6410,77 @@
       `;
     }
 
+    function roundTwentySevenPlan() {
+      return buildRoundPlan(27);
+    }
+
+    function roundTwentySevenEncoreName(plan = roundTwentySevenPlan()) {
+      return plan.name || "Moonlit Wreath 6";
+    }
+
+    function roundTwentySevenPreviewState(plan = roundTwentySevenPlan()) {
+      if (currentRound > plan.round || (currentRound === plan.round && roundComplete)) {
+        return { id: "complete", label: "Sixth Thorn Wreath Cleared" };
+      }
+      if (currentRound === plan.round && isBouquetFailed(plan)) {
+        return { id: "withered", label: "Current · Withered" };
+      }
+      if (currentRound === plan.round) {
+        return { id: "current", label: "Current Thorn Wreath" };
+      }
+      if (currentRound === plan.round - 1) {
+        return { id: "next", label: roundComplete ? "Sixth Thorn Wreath Ready" : "After First Bouquet 6" };
+      }
+      return { id: "tease", label: "Sixth Thorn Wreath Preview" };
+    }
+
+    function roundTwentySevenGoalCopy(plan = roundTwentySevenPlan()) {
+      return bouquetPathGoalCopy(plan);
+    }
+
+    function roundTwentySevenThornCopy(plan = roundTwentySevenPlan()) {
+      const needed = plan.thornGoal ? plan.thornGoal.needed : 0;
+      return `${needed} Cursed Thorn${needed === 1 ? "" : "s"} cleared by adjacent matches or Pruning Shears`;
+    }
+
+    function roundTwentySevenPreviewCopy(state, plan = roundTwentySevenPlan()) {
+      const goal = roundTwentySevenGoalCopy(plan);
+      const encoreName = roundTwentySevenEncoreName(plan);
+      const thornCopy = roundTwentySevenThornCopy(plan);
+      if (state.id === "complete") {
+        return `${encoreName} complete: the sixth Moonlit Wreath is sealed, Cursed Thorns are cleared, ${plan.reward.item} enters Chest Storage, and Nightshade, Amber Seed, and Thorn Rose rewards keep moving.`;
+      }
+      if (state.id === "withered") {
+        return `Retry keeps ${encoreName} open: restore ${plan.moves} moves, finish ${goal}, and crack ${thornCopy}.`;
+      }
+      if (state.id === "current") {
+        return `Current Round 27: ${encoreName} revisits Nightshade, Amber Seed, Thorn Rose, and Cursed Thorn with higher stakes. Gather ${goal}; crack ${thornCopy} through the existing Moonlit Wreath Cache reward path.`;
+      }
+      if (state.id === "next") {
+        return `${roundComplete ? "Moonlit Wreath sixth loop unlocked" : "After First Bouquet 6"}: ${encoreName} asks for ${goal} while repeating the same adjacent-match Cursed Thorn rule, retry path, and Chest Storage payoff.`;
+      }
+      return `${encoreName} waits after Round 26 as the sixth-pass Moonlit Wreath: Nightshade plus Amber Seed plus Thorn Rose, Cursed Thorn clearing, higher stakes, familiar wreath rewards.`;
+    }
+
+    function roundTwentySevenPayoffCopy(plan = roundTwentySevenPlan()) {
+      return `Round 27 encore Moonlit Wreath payoff: ${plan.reward.item} uses the existing Moonlit Wreath Cache reward structure, +${plan.reward.apothecary} Apothecary XP, and keeps Cursed Thorn retry, reward choice, Flowerpedia, Bouquet Streak, and Chest Storage intact.`;
+    }
+
+    function renderRoundTwentySevenPreview() {
+      const preview = $("roundTwentySevenPreview");
+      if (!preview) {
+        return;
+      }
+      const plan = roundTwentySevenPlan();
+      const state = roundTwentySevenPreviewState(plan);
+      preview.dataset.roundTwentySevenState = state.id;
+      preview.innerHTML = `
+        <span class="round-twenty-seven-kicker">Round 27 Moonlit Wreath Encore · ${state.label}</span>
+        <span class="round-twenty-seven-line">${roundTwentySevenPreviewCopy(state, plan)}</span>
+        <span class="round-twenty-seven-payoff">${roundTwentySevenPayoffCopy(plan)}</span>
+      `;
+    }
+
     function thornKey(x, y) {
       return `${x},${y}`;
     }
@@ -6979,6 +7085,7 @@
       renderRoundTwentyFourPreview();
       renderRoundTwentyFivePreview();
       renderRoundTwentySixPreview();
+      renderRoundTwentySevenPreview();
       renderActiveOrders(plan);
       renderRoundCeremony(plan);
       $("bar").style.width = `${progress.pct}%`;
