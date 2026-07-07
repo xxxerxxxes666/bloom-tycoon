@@ -75,13 +75,16 @@ Hermes audit loop is running on a recurring schedule. Codex should read this fil
 
 ## Immediate next task
 
-Round 30 `Sub Rosa Grand Bouquet 6` is now live and marker-current on Vercel. Make the next pass a narrow Round 31 `First Bouquet 7` clarity/payoff slice using existing continuing-round and reward systems only:
+Round 31 `First Bouquet 7` is shipped and Vercel is marker-current, but the visual stripback pass did **not** satisfy Xerxes' directive: the live page still shows the full future-round diary before the board, pushing the 64-tile board far below the fold.
 
-1. Add an explicit Round 31 First Bouquet preview/payoff surface below Round 30 using `buildRoundPlan(31)`.
-2. Include stable source/verifier markers for `roundThirtyOnePreview`, `Round 31 First Bouquet Encore`, `First Bouquet 7`, `Round 31 encore First Bouquet payoff`, `data-round-thirty-one-state="current"`, and `function renderRoundThirtyOnePreview`.
-3. Runtime copy should name Thorn Rose, Bone Star, higher stakes, and the existing First Bouquet Coffer reward path.
-4. Verify fresh Round 1 shows the Round 31 preview, Round 1 -> Round 31 preserves 64 tiles, Round 31 current/complete states name `First Bouquet 7`, Round 2 Cursed Thorn fail -> `Retry Bouquet` restores objective/tiles, all four boosters arm/cancel, Chest/Sacrifice, Shape Bloom, real-key Supreme Bloom, and mobile no-overflow.
-5. Keep it narrow: no gameplay churn beyond this surface, no accounts, backend, analytics, monetization, ads, SDKs, trackers, new assets, secrets, or permissions.
+Make the next pass a narrow **visual stripback fix only**:
+
+1. Collapse or hide the long Round 3–31 preview diary by default behind one compact `Path` / `Ledger` drawer or modal.
+2. Keep visible during first play: title/objective/moves, compact Bouquet Path with current + next only, 64-tile board, 2–4 primary controls near the board, left vials/orders, compact Chest/Elements.
+3. Make the board the hero: on desktop and mobile, the board should appear immediately after the objective/compact path, not after dozens of preview cards.
+4. Preserve all mechanics, saves, rounds, reward choices, Cursed Thorn, boosters, Chest/Sacrifice, Shape Bloom, Supreme Bloom, and Round 31 markers.
+5. Verify fresh Vercel load has 64 tiles, 0 broken images, no console errors, no visible long future-round diary, board above the fold/near top, Round 1 -> Round 31 still works, Round 2 Cursed Thorn retry still works, all four boosters arm/cancel, Chest/Sacrifice, Shape Bloom, real-key Supreme Bloom, and mobile no-overflow.
+6. Keep it narrow: no new Round 32 work until the board-first visual fix is shipped; no accounts, backend, analytics, monetization, ads, SDKs, trackers, new assets, secrets, or permissions.
 
 ## Report back in docs/codex_build_notes.md
 
@@ -96,39 +99,41 @@ Audit targets:
 - Vercel playable: https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html
 - GitHub Pages playable: https://xxxerxxxes666.github.io/bloom-tycoon/playable/midnight_bloom_prototype.html
 - Repo: https://github.com/xxxerxxxes666/bloom-tycoon
-- Latest audited commit: `e313c69` (`feat: add round thirty grand bouquet preview`)
-- Latest gameplay commit audited: `e313c69` (`feat: add round thirty grand bouquet preview`)
+- Latest audited commit: `b7f89c5` (`style: strip back visual diary clutter`)
+- Latest gameplay commit audited: `43ea22f` (`feat: add round thirty one first bouquet preview`)
 
 ## Hermes audit verdict
 
-Round 30 `Sub Rosa Grand Bouquet 6` is live and marker-current on Vercel. Local verifier and live browser checks passed, so Codex can advance to the next narrow gameplay slice: Round 31 `First Bouquet 7` clarity/payoff.
+Round 31 mechanics are live and mostly functional on Vercel, but the board-first visual directive remains blocked: 29 future-round preview sections are visible on fresh load and push the board thousands of pixels below the objective. Codex should fix the visual stripback before adding Round 32.
 
 ## Verified by Hermes this audit
 
-- Fetched/reset local clone to `origin/main` with the repo-scoped SSH key; top commit is `e313c69`.
+- Fetched `origin/main`; top commit is `b7f89c5` and latest gameplay commit is `43ea22f`.
 - `python3 scripts/verify_project.py` passes.
-- Vercel HTTP checks returned `200` for root, direct playable, and `assets/tiles/96/crimson_rose_rune.png`.
-- Vercel direct playable HTML contains `roundThirtyPreview`, `Round 30 Sub Rosa Grand Bouquet Encore`, `Sub Rosa Grand Bouquet 6`, `Round 30 encore Sub Rosa Grand Bouquet payoff`, `data-round-thirty-state="current"`, and `function renderRoundThirtyPreview`.
-- Fresh Vercel browser load has 64 tiles, 95 images, 0 broken images, visible Round 30 preview copy, all four booster labels, and `Shape Bloom`.
-- Runtime win loop progressed to Round 30 with 64 tiles preserved; Round 30 complete state names `Sub Rosa Grand Bouquet 6`, Thorn Rose, Bloodroot, Sol Rot, and the Sub Rosa Grand Cache reward path.
-- Round 2 Cursed Thorn fail -> `Retry Bouquet` restored Round 2 objective/tiles.
-- All four boosters arm/cancel, Chest opens/closes, Sacrifice opens/cancels, Shape Bloom remains available, and a real focused `b` keypress resolves Supreme Bloom with `SUPREME BLOOM!`.
-- Mobile iframe at ~390px showed 64 tiles, 103 images, 0 broken images, visible Round 30 preview, and no horizontal overflow signal.
+- Vercel HTTP checks returned `200` for root, direct playable, and `assets/tiles/96/bone_white_thorn_star.png`.
+- Vercel direct playable HTML contains `roundThirtyOnePreview`, `Round 31 First Bouquet Encore`, and `First Bouquet 7`; Round 32 markers are absent, as expected.
+- Fresh Vercel browser load has 64 tiles, 95 images, 0 broken images, all four booster labels, Chest, Sacrifice, and `Shape Bloom`.
+- Visual audit: 29 visible future-round preview sections remain on first load; first board tile is around `3593px` from the top on desktop and around `6337px` in the 390px mobile iframe. This fails the “board must be the hero” directive.
+- Runtime win loop reached Round 31 with 64 tiles preserved; Round 31 complete state still names `First Bouquet 7` / First Bouquet Coffer payoff.
+- Round 2 Cursed Thorn fail/retry path returned to active Round 2 with 64 tiles and Cursed Thorn copy present; broad hidden text still contains `Retry Bouquet`, so use targeted state checks.
+- All four boosters arm/cancel, Chest opens/closes, Sacrifice opens/cancels, Shape Bloom remains available, and a real focused `b` keypress leaves Supreme Bloom available with no console errors.
+- Mobile iframe at ~390px showed 64 tiles, 100 images, 0 broken images, and no horizontal overflow, but the board is still far below the long preview diary.
 - Browser console/page status: no console errors observed during Vercel checks.
 
 ## Current next priority for Codex
 
-Add Round 31 `First Bouquet 7` clarity/payoff using existing continuing-round and reward systems only. Do not add accounts, backend, analytics, monetization, trackers, new assets, secrets, or broad permissions.
+Fix the board-first visual stripback. Collapse/hide the long future-round diary by default and keep only current/next path information visible before the board. Do not advance Round 32 until this visual blocker is gone.
 
 ### Acceptance checks for the next pass
 
-- Source/verifier markers exist for `roundThirtyOnePreview`, `Round 31 First Bouquet Encore`, `First Bouquet 7`, `Round 31 encore First Bouquet payoff`, `data-round-thirty-one-state="current"`, and `function renderRoundThirtyOnePreview`.
-- Fresh players can see the explicit Round 31 First Bouquet preview/payoff surface.
+- Fresh first load shows no long Round 3–31 diary before the board.
+- Board appears near the top immediately after objective/compact Bouquet Path; it is not thousands of pixels below the fold.
+- Compact `Path` / `Ledger` affordance can still expose future-round information if needed.
+- Round 31 markers and functionality remain intact: `roundThirtyOnePreview`, `Round 31 First Bouquet Encore`, `First Bouquet 7`, `data-round-thirty-one-state="current"`, and `function renderRoundThirtyOnePreview`.
 - Round 1 -> Round 31 flow preserves 64 tiles and reward/default flow.
-- Round 31 current/complete copy names Thorn Rose, Bone Star, `First Bouquet 7`, and the existing First Bouquet Coffer reward path.
-- Round 2 Cursed Thorn fail -> `Retry Bouquet` restores objective/moves/tiles.
+- Round 2 Cursed Thorn fail -> `Retry Bouquet` restores objective/moves/tiles using targeted current-state checks.
 - All four boosters still arm/cancel/use and preserve 64 tiles.
-- Shape Bloom, Supreme Bloom, Chest, Sacrifice, reward choice/default, and mobile portrait still work.
+- Shape Bloom, Supreme Bloom via real focused `b`, Chest, Sacrifice, reward choice/default, and mobile portrait still work.
 - No console errors, no broken images.
 - No secrets, no trackers, no backend, no broad permissions.
 
