@@ -663,7 +663,8 @@
     .round-twenty-seven-preview,
     .round-twenty-eight-preview,
     .round-twenty-nine-preview,
-    .round-thirty-preview {
+    .round-thirty-preview,
+    .round-thirty-one-preview {
       max-width: 760px;
       margin: 8px auto 0;
       padding: 9px 12px;
@@ -806,6 +807,11 @@
     .round-thirty-preview {
       border-color: #43222d;
       background: linear-gradient(180deg, #13090d, #050404);
+    }
+
+    .round-thirty-one-preview {
+      border-color: #463020;
+      background: linear-gradient(180deg, #130d08, #050404);
     }
 
     .round-three-focus[data-round-three-state="current"] {
@@ -1256,6 +1262,22 @@
       color: #e0a078;
     }
 
+    .round-thirty-one-preview[data-round-thirty-one-state="current"] {
+      border-color: #b3814e;
+      color: #e2c887;
+      box-shadow: inset 0 0 12px #000, 0 0 12px #7b563455;
+    }
+
+    .round-thirty-one-preview[data-round-thirty-one-state="complete"] {
+      border-color: #5d6f32;
+      color: #d8efad;
+    }
+
+    .round-thirty-one-preview[data-round-thirty-one-state="withered"] {
+      border-color: #8a332a;
+      color: #e0a078;
+    }
+
     .round-three-kicker,
     .round-four-kicker,
     .round-five-kicker,
@@ -1283,7 +1305,8 @@
     .round-twenty-seven-kicker,
     .round-twenty-eight-kicker,
     .round-twenty-nine-kicker,
-    .round-thirty-kicker {
+    .round-thirty-kicker,
+    .round-thirty-one-kicker {
       display: block;
       color: #d7b16d;
       font-size: 11px;
@@ -1346,7 +1369,9 @@
     .round-twenty-nine-line,
     .round-twenty-nine-payoff,
     .round-thirty-line,
-    .round-thirty-payoff {
+    .round-thirty-payoff,
+    .round-thirty-one-line,
+    .round-thirty-one-payoff {
       display: block;
       margin-top: 3px;
       font-size: 12px;
@@ -1380,7 +1405,8 @@
     .round-twenty-seven-payoff,
     .round-twenty-eight-payoff,
     .round-twenty-nine-payoff,
-    .round-thirty-payoff {
+    .round-thirty-payoff,
+    .round-thirty-one-payoff {
       color: #c6ad7c;
     }
 
@@ -3977,7 +4003,8 @@
       .round-twenty-seven-preview,
       .round-twenty-eight-preview,
       .round-twenty-nine-preview,
-      .round-thirty-preview {
+      .round-thirty-preview,
+      .round-thirty-one-preview {
         padding: 10px;
       }
 
@@ -4137,6 +4164,7 @@
       <div class="round-twenty-eight-preview" id="roundTwentyEightPreview" aria-label="Round 28 Encore Bloodroot Compact"></div>
       <div class="round-twenty-nine-preview" id="roundTwentyNinePreview" aria-label="Round 29 Encore Saint's Night Ledger"></div>
       <div class="round-thirty-preview" id="roundThirtyPreview" aria-label="Round 30 Encore Sub Rosa Grand Bouquet"></div>
+      <div class="round-thirty-one-preview" id="roundThirtyOnePreview" aria-label="Round 31 Encore First Bouquet"></div>
       <script type="application/json" id="shapeAuditData"></script>
       <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
       <div class="board" id="board"></div>
@@ -4585,6 +4613,13 @@
       'data-round-thirty-state="current"',
       'data-round-thirty-state="withered"',
       'data-round-thirty-state="complete"'
+    ];
+    const roundThirtyOneAuditMarkers = [
+      'data-round-thirty-one-state="tease"',
+      'data-round-thirty-one-state="next"',
+      'data-round-thirty-one-state="current"',
+      'data-round-thirty-one-state="withered"',
+      'data-round-thirty-one-state="complete"'
     ];
     const STREAK_COIN_BONUS_STEP = 5;
     const STREAK_COIN_BONUS_CAP = 25;
@@ -6781,6 +6816,71 @@
       `;
     }
 
+    function roundThirtyOnePlan() {
+      return buildRoundPlan(31);
+    }
+
+    function roundThirtyOneEncoreName(plan = roundThirtyOnePlan()) {
+      return plan.name || "First Bouquet 7";
+    }
+
+    function roundThirtyOnePreviewState(plan = roundThirtyOnePlan()) {
+      if (currentRound > plan.round || (currentRound === plan.round && roundComplete)) {
+        return { id: "complete", label: "Seventh First Bouquet Bound" };
+      }
+      if (currentRound === plan.round && isBouquetFailed(plan)) {
+        return { id: "withered", label: "Current · Withered" };
+      }
+      if (currentRound === plan.round) {
+        return { id: "current", label: "Current First Bouquet" };
+      }
+      if (currentRound === plan.round - 1) {
+        return { id: "next", label: roundComplete ? "Seventh First Bouquet Ready" : "After Sub Rosa Grand Bouquet 6" };
+      }
+      return { id: "tease", label: "Seventh First Bouquet Preview" };
+    }
+
+    function roundThirtyOneGoalCopy(plan = roundThirtyOnePlan()) {
+      return bouquetPathGoalCopy(plan);
+    }
+
+    function roundThirtyOnePreviewCopy(state, plan = roundThirtyOnePlan()) {
+      const goal = roundThirtyOneGoalCopy(plan);
+      const encoreName = roundThirtyOneEncoreName(plan);
+      if (state.id === "complete") {
+        return `${encoreName} complete: the seventh First Bouquet is bound, ${plan.reward.item} enters Chest Storage, and Thorn Rose and Bone Star rewards keep moving.`;
+      }
+      if (state.id === "withered") {
+        return `Retry keeps ${encoreName} open: restore ${plan.moves} moves and finish ${goal}.`;
+      }
+      if (state.id === "current") {
+        return `Current Round 31: ${encoreName} revisits Thorn Rose and Bone Star with higher stakes. Gather ${goal} through the existing First Bouquet Coffer reward path.`;
+      }
+      if (state.id === "next") {
+        return `${roundComplete ? "First Bouquet seventh loop unlocked" : "After Sub Rosa Grand Bouquet 6"}: ${encoreName} asks for ${goal} while reward choice/default, Chest Storage, Flowerpedia, and Bouquet Streak stay familiar.`;
+      }
+      return `${encoreName} waits after Round 30 as the seventh-pass First Bouquet: Thorn Rose plus Bone Star, higher stakes, familiar coffer rewards.`;
+    }
+
+    function roundThirtyOnePayoffCopy(plan = roundThirtyOnePlan()) {
+      return `Round 31 encore First Bouquet payoff: ${plan.reward.item} uses the existing First Bouquet Coffer reward structure, +${plan.reward.greenhouse} Greenhouse XP, and keeps retry, reward choice, Flowerpedia, Bouquet Streak, and Chest Storage intact.`;
+    }
+
+    function renderRoundThirtyOnePreview() {
+      const preview = $("roundThirtyOnePreview");
+      if (!preview) {
+        return;
+      }
+      const plan = roundThirtyOnePlan();
+      const state = roundThirtyOnePreviewState(plan);
+      preview.dataset.roundThirtyOneState = state.id;
+      preview.innerHTML = `
+        <span class="round-thirty-one-kicker">Round 31 First Bouquet Encore · ${state.label}</span>
+        <span class="round-thirty-one-line">${roundThirtyOnePreviewCopy(state, plan)}</span>
+        <span class="round-thirty-one-payoff">${roundThirtyOnePayoffCopy(plan)}</span>
+      `;
+    }
+
     function thornKey(x, y) {
       return `${x},${y}`;
     }
@@ -7389,6 +7489,7 @@
       renderRoundTwentyEightPreview();
       renderRoundTwentyNinePreview();
       renderRoundThirtyPreview();
+      renderRoundThirtyOnePreview();
       renderActiveOrders(plan);
       renderRoundCeremony(plan);
       $("bar").style.width = `${progress.pct}%`;

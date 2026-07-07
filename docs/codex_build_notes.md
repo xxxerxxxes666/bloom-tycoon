@@ -1,5 +1,38 @@
 # Codex Build Notes
 
+## 2026-07-07 Codex Round 31 First Bouquet pass
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow Round 31 `First Bouquet 7` clarity/payoff slice after the Round 30 audit advanced.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added a Round 31 First Bouquet Encore preview/payoff surface below Round 30 using the existing continuing-round generator through `buildRoundPlan(31)`.
+- Added tease, next, current, withered, and complete states for `roundThirtyOnePreview`, including current copy that names `First Bouquet 7`, Thorn Rose, Bone Star, higher stakes, and the existing First Bouquet Coffer reward path.
+- Added static verifier markers for the Round 31 encore First Bouquet surface and its five `data-round-thirty-one-state` values.
+- Preserved the existing continuing-round reward/default-choice flow; no new progression framework, account system, backend, analytics, monetization, SDK, tracker, asset, secret, or permission was added.
+- Verification run:
+  - `git fetch origin main`
+  - `python3 scripts/verify_project.py`
+  - `git diff --check`
+  - Local static preview at `http://127.0.0.1:4251/playable/midnight_bloom_prototype.html?verify=round31-local`
+  - Local static checks returned `200 OK` for the playable and `assets/tiles/96/bone_white_thorn_star.png`.
+  - Local marker checks found `roundThirtyOnePreview`, `Round 31 First Bouquet Encore`, `First Bouquet 7`, `Round 31 encore First Bouquet payoff`, `data-round-thirty-one-state="current"`, and `function renderRoundThirtyOnePreview` in the served HTML.
+  - Local Playwright loaded fresh Round 1 with 64 tiles, 0 broken images, and visible Round 31 tease copy.
+  - Local Playwright verified Round 1 win -> Round 2, Round 2 wither -> `Retry Bouquet` restored Cursed Thorn objective copy and 64 tiles, then progressed to Round 31 with 64 tiles preserved.
+  - Local Playwright verified Round 31 current copy names `First Bouquet 7`, Thorn Rose, Bone Star, higher stakes, and the existing First Bouquet Coffer reward path.
+  - Local Playwright verified all four boosters arm/cancel, Chest opens/closes, Sacrifice opens/cancels, `M` triggers Shape Bloom without console, a focused `B` keypress triggers Supreme Bloom without console, and Round 31 complete copy names the seventh First Bouquet and Chest Storage.
+  - Local mobile Playwright at 390x844 loaded 64 tiles, 0 broken images, visible Round 31 preview, and no horizontal overflow.
+  - Vercel production deploy: pending.
+  - GitHub Pages preview status: pending.
+- Browser console/runtime status: local Playwright observed 0 console warnings/errors and 0 page errors during Round 31, retry, hook, and mobile checks.
+- Vercel deployment URL/identifier checked: pending deployment.
+- GitHub Pages preview status: pending push.
+- Known issues: none found locally.
+- How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly; after the line5 and line4 demos, it cycles `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom` shape rewards.
+- How to trigger and verify Supreme Bloom without console: focus the playable and press `B`; the ritual log should report `SUPREME BLOOM!` after the charge phase and return the board to play.
+- Security/secret-scan status: lightweight added-lines credential scan ran with no findings.
+
 ## 2026-07-07 Codex Round 30 Sub Rosa Grand Bouquet pass
 
 - Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow Round 30 `Sub Rosa Grand Bouquet 6` clarity/payoff slice after the Round 29 audit advanced.
