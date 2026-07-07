@@ -1,5 +1,39 @@
 # Codex Build Notes
 
+## 2026-07-07 Codex Round 29 Saint's Night Ledger pass
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow Round 29 `Saint's Night Ledger 6` clarity/payoff slice.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added a Round 29 Saint's Night Ledger Encore preview/payoff surface below Round 28 using the existing continuing-round generator through `buildRoundPlan(29)`.
+- Added tease, next, current, withered, and complete states for `roundTwentyNinePreview`, including current copy that names `Saint's Night Ledger 6`, Bone Star, Nightshade, Sol Rot, higher stakes, and the existing Saint's Night Ledger reward path.
+- Added static verifier markers for the Round 29 encore Saint's Night Ledger surface and its five `data-round-twenty-nine-state` values.
+- Preserved the existing continuing-round reward/default-choice flow; no new progression framework, account system, backend, analytics, monetization, SDK, tracker, asset, secret, or permission was added.
+- Verification run:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - `python3 scripts/verify_project.py`
+  - `git diff --check`
+  - Local static preview at `http://127.0.0.1:4249/playable/midnight_bloom_prototype.html?verify=round29-local`
+  - Local static checks returned `200 OK` for the playable and `assets/tiles/96/bone_white_thorn_star.png`.
+  - Local marker checks found `roundTwentyNinePreview`, `Round 29 Saint's Night Ledger Encore`, `Saint's Night Ledger 6`, `Round 29 encore Saint's Night Ledger payoff`, `data-round-twenty-nine-state="current"`, and `function renderRoundTwentyNinePreview` in the served HTML.
+  - Local Playwright loaded fresh Round 1 with 64 tiles, 0 broken images, visible Round 29 tease copy, all four booster labels, and `Shape Bloom`.
+  - Local Playwright verified Round 1 win -> Round 2, Round 2 wither -> `Retry Bouquet` restored Cursed Thorn objective copy and 64 tiles, then progressed to Round 29 with 64 tiles preserved.
+  - Local Playwright verified Round 29 current copy names `Saint's Night Ledger 6`, Bone Star, Nightshade, Sol Rot, higher stakes, and the existing Saint's Night Ledger reward path.
+  - Local Playwright verified all four boosters arm/cancel, Chest opens/closes, Sacrifice opens/cancels, `M` triggers Shape Bloom without console, `B` triggers Supreme Bloom without console, and Round 29 complete copy names the sixth Saint's Night Ledger and Chest Storage.
+  - Local mobile Playwright at 390x844 loaded 64 tiles, 0 broken images, visible Round 29 preview, and no horizontal overflow.
+  - Vercel production deploy: pending.
+  - GitHub Pages preview status: pending.
+- Browser console/runtime status: local Playwright observed 0 console warnings/errors and 0 page errors during Round 29, retry, hook, and mobile checks.
+- Vercel deployment URL/identifier checked: pending deployment.
+- GitHub Pages preview status: pending push.
+- Known issues: none found locally.
+- How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly; after the line5 and line4 demos, it cycles `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom` shape rewards.
+- How to trigger and verify Supreme Bloom without console: focus the playable and press `B`; the ritual log should report `SUPREME BLOOM!` after the charge phase and return the board to play.
+- Security/secret-scan status: lightweight added-lines credential scan ran with no findings.
+
 ## 2026-07-07 Codex Round 28 Bloodroot Compact pass
 
 - Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow Round 28 `Bloodroot Compact 6` clarity/payoff slice.
