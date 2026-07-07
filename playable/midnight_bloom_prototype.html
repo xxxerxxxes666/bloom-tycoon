@@ -636,6 +636,41 @@
       color: #c6ad7c;
     }
 
+    /* Visual stripback: keep the built progression, but do not dump the whole
+       design document onto the playfield. The play screen should feel like a
+       Diablo-style board, not a diary page. */
+    .bouquet-path {
+      max-width: 760px;
+      padding: 7px 10px;
+    }
+
+    .bouquet-path-heading {
+      margin-bottom: 6px;
+    }
+
+    .bouquet-path-next {
+      max-width: 42ch;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .bouquet-path-nodes {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .bouquet-node {
+      min-height: auto;
+      padding: 7px 9px;
+    }
+
+    .bouquet-node:nth-child(n + 3),
+    .bouquet-node-meta,
+    .bouquet-node-goal,
+    .bouquet-node-reward {
+      display: none;
+    }
+
     .round-three-focus,
     .round-four-preview,
     .round-five-preview,
@@ -672,6 +707,11 @@
       background: linear-gradient(180deg, #120908, #050404);
       box-shadow: inset 0 0 12px #000;
       color: #a89070;
+    }
+
+    .round-three-focus,
+    [class*="round-"][class*="-preview"] {
+      display: none;
     }
 
     .round-four-preview {
@@ -2763,8 +2803,8 @@
     }
 
     .element .small {
-      display: block;
-      min-height: 42px;
+      display: none;
+      min-height: 0;
       line-height: 1.15;
     }
 
@@ -2853,7 +2893,7 @@
 
     .flowerpedia-lore,
     .flowerpedia-next {
-      display: block;
+      display: none;
       color: #a89070;
       font-size: 12px;
       line-height: 1.28;
@@ -2921,7 +2961,7 @@
 
     .chapter-copy,
     .chapter-next {
-      display: block;
+      display: none;
       color: #a89070;
       font-size: 12px;
       line-height: 1.28;

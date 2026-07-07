@@ -1,3 +1,41 @@
+
+
+---
+
+# Visual stripback directive — Diablo/simple game feel
+
+Xerxes likes the new mechanics, but the page became visually polluted. Keep the mechanics, but strip the visible screen back toward the original dark Diablo-like reference: simple, readable, ominous, game-first.
+
+## What must stay visible during play
+
+- Title/objective/moves.
+- Match board.
+- 2–4 primary buttons max near the board.
+- Left-side vials/progress.
+- Active Orders.
+- Chest/Elements in compact form.
+- Current/next bouquet only.
+
+## What must be hidden/collapsed
+
+- Long round preview diary entries.
+- Full future-round roadmap.
+- Paragraph explanations.
+- Repeated reward copy.
+- Anything that pushes the board below the fold.
+
+## Rule
+
+The player should see a game screen, not documentation. The board must be the hero.
+
+## Immediate follow-up for Codex
+
+- Keep the visual stripback CSS.
+- Replace long preview sections with a small collapsed “Path” / “Ledger” drawer if the info is still needed.
+- Make normal play reveal information through short tooltips, reward ceremony, or chest/ledger modal.
+- Do not remove mechanics, saves, rounds, boosters, or rewards.
+- Security remains required: no secrets, no trackers, prompt-injection safe.
+
 # Usage-control protocol — required for Codex and Hermes
 
 Xerxes wants lower usage burn and fewer empty check-ins.
