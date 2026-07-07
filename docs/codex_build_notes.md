@@ -24,12 +24,18 @@
   - Local Playwright verified Round 28 current copy names `Bloodroot Compact 6`, Bloodroot, Sol Rot, higher stakes, and the existing Bloodroot Compact reward path, with no Cursed Thorn objective on Round 28.
   - Local Playwright verified all four boosters arm/cancel, Chest opens/closes, Sacrifice opens/cancels, `M` triggers Shape Bloom without console, `B` triggers Supreme Bloom without console, and Round 28 complete copy names the sixth Bloodroot Compact and Chest Storage.
   - Local mobile Playwright at 390x844 loaded 64 tiles, 0 broken images, visible Round 28 preview, and no horizontal overflow.
-  - Vercel production deploy: pending until after the feature commit.
-  - GitHub Pages preview status: pending until after push.
-- Browser console/runtime status: local Playwright observed 0 console warnings/errors and 0 page errors during Round 28, retry, hook, and mobile checks.
-- Vercel deployment URL/identifier checked: pending until after deployment.
-- GitHub Pages preview status: pending until after push.
-- Known issues: none found locally.
+  - Vercel production deploy completed as `dpl_6RsBXJQncAQeT5cNX549Xa3ruApp` at `https://bloom-tycoon-9ofe9edbt-xerxes-florals.vercel.app`; the initial deploy status poll hit `read ETIMEDOUT`, then `vercel inspect` confirmed the deployment was `Ready`.
+  - Explicitly pointed `https://bloom-tycoon.vercel.app` to that deployment.
+  - Vercel direct checks returned `200 OK` for `/`, `/playable/midnight_bloom_prototype.html?verify=4e4e999-live`, and `assets/tiles/96/bloodroot_ruby_shard.png`.
+  - Downloaded Vercel HTML contained `roundTwentyEightPreview`, `Round 28 Bloodroot Compact Encore`, `Bloodroot Compact 6`, `Round 28 encore Bloodroot Compact payoff`, `data-round-twenty-eight-state="current"`, and `function renderRoundTwentyEightPreview`.
+  - Vercel Playwright smoke loaded 64 tiles with 0 broken images, advanced to Round 28, verified Round 28 current and complete copy, verified `B` Supreme Bloom, and passed mobile portrait at 390x844 with no horizontal overflow.
+  - GitHub Pages direct checks returned `200 OK` for `/bloom-tycoon/`, `/bloom-tycoon/playable/midnight_bloom_prototype.html?verify=4e4e999-pages`, and `assets/tiles/96/bloodroot_ruby_shard.png`.
+  - Downloaded GitHub Pages HTML contained the same Round 28 markers as Vercel.
+  - GitHub Pages Playwright smoke loaded 64 tiles with 0 broken images, advanced to Round 28, verified Round 28 current and complete copy, verified `B` Supreme Bloom, and passed mobile portrait at 390x844 with no horizontal overflow.
+- Browser console/runtime status: local, Vercel, and GitHub Pages Playwright observed 0 console warnings/errors and 0 page errors during Round 28, retry, hook, and mobile checks.
+- Vercel deployment URL/identifier checked: `dpl_6RsBXJQncAQeT5cNX549Xa3ruApp`, https://bloom-tycoon-9ofe9edbt-xerxes-florals.vercel.app; canonical alias https://bloom-tycoon.vercel.app points to that deployment.
+- GitHub Pages preview status: Pages serves the Round 28 marker-matched HTML for pushed commit `4e4e999`.
+- Known issues: none found locally or on live previews.
 - How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly; after the line5 and line4 demos, it cycles `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom` shape rewards.
 - How to trigger and verify Supreme Bloom without console: focus the playable and press `B`; the ritual log should report `SUPREME BLOOM!` after the charge phase and return the board to play.
 - Security/secret-scan status: lightweight added-lines credential scan ran with no findings.
