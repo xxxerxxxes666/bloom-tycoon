@@ -11,7 +11,7 @@
 - Added tease, next, current, withered, and complete states for `roundTwentyFivePreview`, including current copy that names `Sub Rosa Grand Bouquet 5`, Thorn Rose, Bloodroot, Sol Rot, higher stakes, and the existing Sub Rosa Grand Cache reward path.
 - Added static verifier markers for the Round 25 encore Sub Rosa Grand Bouquet surface and its five `data-round-twenty-five-state` values.
 - Preserved the existing continuing-round reward/default-choice flow; no new progression framework, account system, backend, analytics, monetization, SDK, tracker, asset, secret, or permission was added.
-- Verification run so far:
+- Verification run:
   - `git fetch origin main`
   - `git pull --ff-only origin main`
   - `python3 scripts/verify_project.py`
@@ -24,13 +24,22 @@
   - Local Playwright verified Round 25 has no Cursed Thorn blockers, Round 25 wither -> retry restores the current grand bouquet, and Round 25 completion shows `complete` copy that the fifth Sub Rosa Grand Bouquet is sealed.
   - Local Playwright verified all four boosters arm/cancel/use and preserve 64 tiles, Sacrifice opens/cancels, Chest Storage opens/closes, Shape Bloom works, `M` cycles line5/line4/cross/L/T rewards, `B` triggers Supreme Bloom, and `N` completes a bouquet.
   - Local mobile Playwright at 390x844 loaded 64 tiles, 0 broken images, visible Round 25 preview, and no horizontal overflow.
-- Browser console/runtime status: local Playwright observed 0 console warnings/errors and 0 page errors during the Round 1-25, booster/control/hook, and mobile checks.
-- Vercel deployment URL/identifier checked: pending this pass.
-- GitHub Pages preview status: pending this pass.
+  - Vercel production deploy completed as `dpl_CQDowhinuTwjQFMpfHzDh96C8UZw` at `https://bloom-tycoon-mejzz7wvl-xerxes-florals.vercel.app`.
+  - Explicitly pointed `https://bloom-tycoon.vercel.app` to that deployment.
+  - Vercel direct checks returned `200 OK` for `/`, `/playable/midnight_bloom_prototype.html?verify=b54b8af-live`, and `assets/tiles/96/crimson_rose_rune.png`.
+  - Downloaded Vercel HTML contained `roundTwentyFivePreview`, `Round 25 Sub Rosa Grand Bouquet Encore`, `Sub Rosa Grand Bouquet 5`, `Round 25 encore Sub Rosa Grand Bouquet payoff`, `data-round-twenty-five-state="current"`, and `function renderRoundTwentyFivePreview`.
+  - Vercel Playwright smoke loaded 64 tiles and 107 images with 0 broken images, advanced Round 1 through Round 25, verified Round 25 `current` and `complete` copy, verified no Cursed Thorn blockers on Round 25, cycled `M` through L/T/cross shape results, verified `B` Supreme Bloom, and passed mobile portrait at 390x844 with no horizontal overflow.
+  - GitHub Pages workflow `28842604738` deployed commit `b54b8af` successfully.
+  - GitHub Pages direct checks returned `200 OK` for `/bloom-tycoon/`, `/bloom-tycoon/playable/midnight_bloom_prototype.html?verify=b54b8af-pages`, and `assets/tiles/96/crimson_rose_rune.png`.
+  - Downloaded GitHub Pages HTML contained the same Round 25 markers as Vercel.
+  - GitHub Pages Playwright smoke loaded 64 tiles and 107 images with 0 broken images, advanced Round 1 through Round 25, verified Round 25 `current` and `complete` copy, cycled `M` through L/T/cross shape results, verified `B` Supreme Bloom, and passed mobile portrait at 390x844 with no horizontal overflow.
+- Browser console/runtime status: local, Vercel, and GitHub Pages Playwright observed 0 console warnings/errors and 0 page errors during Round 25, booster/control/hook, and mobile checks.
+- Vercel deployment URL/identifier checked: `dpl_CQDowhinuTwjQFMpfHzDh96C8UZw`, https://bloom-tycoon-mejzz7wvl-xerxes-florals.vercel.app; canonical alias https://bloom-tycoon.vercel.app points to that deployment.
+- GitHub Pages preview status: workflow `28842604738` completed successfully for `b54b8af`, and Pages serves the Round 25 marker-matched HTML.
 - Known issues: none found locally.
 - How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly; after the line5 and line4 demos, it cycles `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom` shape rewards.
 - How to trigger and verify Supreme Bloom without console: focus the playable and press `B`; the ritual log should report `SUPREME BLOOM!` after the charge phase and return the board to play.
-- Security/secret-scan status: pending final changed-file scan before commit.
+- Security/secret-scan status: lightweight changed-file scans ran before the gameplay commit and after the docs status update with no findings.
 
 ## 2026-07-06 Codex Round 24 Saint's Night Ledger pass
 
