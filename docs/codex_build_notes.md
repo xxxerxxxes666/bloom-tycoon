@@ -1,5 +1,39 @@
 # Codex Build Notes
 
+## 2026-07-07 Codex board-first visual stripback fix
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow visual stripback fix only after the Round 31 audit found the future-round diary still visible before the board.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Wrapped the long Round 3-31 preview diary in a compact closed `Path / Ledger` drawer so future rewards are still available but not visible before play.
+- Kept first-load play focused on objective/moves, compact current+next Bouquet Path, the 64-tile board, primary controls, left rail/orders, Chest Storage, and Elements.
+- Changed the compact Bouquet Path helper to show current and next rounds only.
+- Added static verifier markers for the `pathLedgerDrawer`, `Path / Ledger`, and `Future rewards hidden` affordance.
+- Preserved existing saves, rounds, reward choices, Cursed Thorn, all four boosters, Chest/Sacrifice, Shape Bloom, Supreme Bloom, and Round 31 markers; no Round 32 work was added.
+- Verification run so far:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - `python3 scripts/verify_project.py`
+  - `git diff --check`
+  - Local static preview at `http://127.0.0.1:4252/playable/midnight_bloom_prototype.html?verify=stripback-local-5`
+  - Local static checks returned `200 OK` for the playable and `assets/tiles/96/bone_white_thorn_star.png`.
+  - Local marker checks found `pathLedgerDrawer`, `Path / Ledger`, `Future rewards hidden`, `roundThirtyOnePreview`, `Round 31 First Bouquet Encore`, `First Bouquet 7`, and `function renderRoundThirtyOnePreview`.
+  - Local Playwright fresh desktop loaded 64 tiles, 0 broken images, 0 visible future preview sections out of 29, a closed drawer, 2 visible Bouquet Path nodes, board top at 475px, and first tile top at 487px.
+  - Local Playwright opened the `Path / Ledger` drawer, exposed all 29 future sections including Round 31 / `First Bouquet 7`, then closed it back to 0 visible preview sections.
+  - Local Playwright verified all four boosters arm/cancel, Chest opens/closes, Sacrifice opens/cancels, `M` triggers Shape Bloom after its resolving phase, and a real focused `B` keypress triggers Supreme Bloom.
+  - Local Playwright verified Round 2 Cursed Thorn wither -> `Retry Bouquet` restores 64 tiles and Cursed Thorn objective copy.
+  - Local Playwright progressed to Round 31 with 64 tiles preserved, 0 visible future preview sections, 2 visible Bouquet Path nodes, Round 31 / `First Bouquet 7` copy intact, and Round 31 complete copy intact.
+  - Local mobile Playwright at 390x844 loaded 64 tiles, 0 broken images, 0 visible future preview sections, board top at 623px, first tile top at 632px, and no horizontal overflow.
+- Browser console/runtime status: local Playwright observed 0 console warnings/errors and 0 page errors during fresh layout, drawer, controls, retry, Round 31, key hook, and mobile checks.
+- Vercel deployment URL/identifier checked: pending for this visual stripback commit.
+- GitHub Pages preview status: pending for this visual stripback commit.
+- Known issues: none found locally.
+- How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly; after the line5 and line4 demos, it cycles `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom` shape rewards.
+- How to trigger and verify Supreme Bloom without console: focus the playable and press `B`; after the charge phase the ritual log should report `SUPREME BLOOM!` and return the board to play.
+- Security/secret-scan status: lightweight changed-line credential scan ran with no findings.
+
 ## 2026-07-07 Codex Round 31 First Bouquet pass
 
 - Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow Round 31 `First Bouquet 7` clarity/payoff slice after the Round 30 audit advanced.
