@@ -660,7 +660,8 @@
     .round-twenty-four-preview,
     .round-twenty-five-preview,
     .round-twenty-six-preview,
-    .round-twenty-seven-preview {
+    .round-twenty-seven-preview,
+    .round-twenty-eight-preview {
       max-width: 760px;
       margin: 8px auto 0;
       padding: 9px 12px;
@@ -788,6 +789,11 @@
     .round-twenty-seven-preview {
       border-color: #29244a;
       background: linear-gradient(180deg, #0d0b15, #050404);
+    }
+
+    .round-twenty-eight-preview {
+      border-color: #4a2735;
+      background: linear-gradient(180deg, #13080d, #050404);
     }
 
     .round-three-focus[data-round-three-state="current"] {
@@ -1190,6 +1196,22 @@
       color: #e0a078;
     }
 
+    .round-twenty-eight-preview[data-round-twenty-eight-state="current"] {
+      border-color: #a44262;
+      color: #e7b5c4;
+      box-shadow: inset 0 0 12px #000, 0 0 12px #70223e55;
+    }
+
+    .round-twenty-eight-preview[data-round-twenty-eight-state="complete"] {
+      border-color: #5d6f32;
+      color: #d8efad;
+    }
+
+    .round-twenty-eight-preview[data-round-twenty-eight-state="withered"] {
+      border-color: #8a332a;
+      color: #e0a078;
+    }
+
     .round-three-kicker,
     .round-four-kicker,
     .round-five-kicker,
@@ -1214,7 +1236,8 @@
     .round-twenty-four-kicker,
     .round-twenty-five-kicker,
     .round-twenty-six-kicker,
-    .round-twenty-seven-kicker {
+    .round-twenty-seven-kicker,
+    .round-twenty-eight-kicker {
       display: block;
       color: #d7b16d;
       font-size: 11px;
@@ -1271,7 +1294,9 @@
     .round-twenty-six-line,
     .round-twenty-six-payoff,
     .round-twenty-seven-line,
-    .round-twenty-seven-payoff {
+    .round-twenty-seven-payoff,
+    .round-twenty-eight-line,
+    .round-twenty-eight-payoff {
       display: block;
       margin-top: 3px;
       font-size: 12px;
@@ -1302,7 +1327,8 @@
     .round-twenty-four-payoff,
     .round-twenty-five-payoff,
     .round-twenty-six-payoff,
-    .round-twenty-seven-payoff {
+    .round-twenty-seven-payoff,
+    .round-twenty-eight-payoff {
       color: #c6ad7c;
     }
 
@@ -3896,7 +3922,8 @@
       .round-twenty-four-preview,
       .round-twenty-five-preview,
       .round-twenty-six-preview,
-      .round-twenty-seven-preview {
+      .round-twenty-seven-preview,
+      .round-twenty-eight-preview {
         padding: 10px;
       }
 
@@ -4053,6 +4080,7 @@
       <div class="round-twenty-five-preview" id="roundTwentyFivePreview" aria-label="Round 25 Encore Sub Rosa Grand Bouquet"></div>
       <div class="round-twenty-six-preview" id="roundTwentySixPreview" aria-label="Round 26 Encore First Bouquet"></div>
       <div class="round-twenty-seven-preview" id="roundTwentySevenPreview" aria-label="Round 27 Encore Moonlit Wreath"></div>
+      <div class="round-twenty-eight-preview" id="roundTwentyEightPreview" aria-label="Round 28 Encore Bloodroot Compact"></div>
       <script type="application/json" id="shapeAuditData"></script>
       <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
       <div class="board" id="board"></div>
@@ -4480,6 +4508,13 @@
       'data-round-twenty-seven-state="current"',
       'data-round-twenty-seven-state="withered"',
       'data-round-twenty-seven-state="complete"'
+    ];
+    const roundTwentyEightAuditMarkers = [
+      'data-round-twenty-eight-state="tease"',
+      'data-round-twenty-eight-state="next"',
+      'data-round-twenty-eight-state="current"',
+      'data-round-twenty-eight-state="withered"',
+      'data-round-twenty-eight-state="complete"'
     ];
     const STREAK_COIN_BONUS_STEP = 5;
     const STREAK_COIN_BONUS_CAP = 25;
@@ -6481,6 +6516,71 @@
       `;
     }
 
+    function roundTwentyEightPlan() {
+      return buildRoundPlan(28);
+    }
+
+    function roundTwentyEightEncoreName(plan = roundTwentyEightPlan()) {
+      return plan.name || "Bloodroot Compact 6";
+    }
+
+    function roundTwentyEightPreviewState(plan = roundTwentyEightPlan()) {
+      if (currentRound > plan.round || (currentRound === plan.round && roundComplete)) {
+        return { id: "complete", label: "Sixth Blood Compact Sealed" };
+      }
+      if (currentRound === plan.round && isBouquetFailed(plan)) {
+        return { id: "withered", label: "Current · Withered" };
+      }
+      if (currentRound === plan.round) {
+        return { id: "current", label: "Current Blood Compact" };
+      }
+      if (currentRound === plan.round - 1) {
+        return { id: "next", label: roundComplete ? "Sixth Blood Compact Ready" : "After Moonlit Wreath 6" };
+      }
+      return { id: "tease", label: "Sixth Blood Compact Preview" };
+    }
+
+    function roundTwentyEightGoalCopy(plan = roundTwentyEightPlan()) {
+      return bouquetPathGoalCopy(plan);
+    }
+
+    function roundTwentyEightPreviewCopy(state, plan = roundTwentyEightPlan()) {
+      const goal = roundTwentyEightGoalCopy(plan);
+      const encoreName = roundTwentyEightEncoreName(plan);
+      if (state.id === "complete") {
+        return `${encoreName} complete: the sixth Bloodroot Compact is sealed, ${plan.reward.item} enters Chest Storage, and Bloodroot plus Sol Rot rewards keep growing.`;
+      }
+      if (state.id === "withered") {
+        return `Retry keeps ${encoreName} open: restore ${plan.moves} moves and finish ${goal}.`;
+      }
+      if (state.id === "current") {
+        return `Current Round 28: ${encoreName} revisits Bloodroot and Sol Rot with higher stakes. Gather ${goal} through the existing Bloodroot Compact reward path.`;
+      }
+      if (state.id === "next") {
+        return `${roundComplete ? "Bloodroot Compact sixth loop unlocked" : "After Moonlit Wreath 6"}: ${encoreName} asks for ${goal} while reward choice/default, Chest Storage, Flowerpedia, and Bouquet Streak stay familiar.`;
+      }
+      return `${encoreName} waits after Round 27 as the sixth-pass Bloodroot Compact: Bloodroot plus Sol Rot, higher stakes, familiar compact rewards.`;
+    }
+
+    function roundTwentyEightPayoffCopy(plan = roundTwentyEightPlan()) {
+      return `Round 28 encore Bloodroot Compact payoff: ${plan.reward.item} uses the existing Bloodroot Compact reward structure, +${plan.reward.greenhouse} Greenhouse XP, and keeps retry, reward choice, Flowerpedia, Bouquet Streak, and Chest Storage intact.`;
+    }
+
+    function renderRoundTwentyEightPreview() {
+      const preview = $("roundTwentyEightPreview");
+      if (!preview) {
+        return;
+      }
+      const plan = roundTwentyEightPlan();
+      const state = roundTwentyEightPreviewState(plan);
+      preview.dataset.roundTwentyEightState = state.id;
+      preview.innerHTML = `
+        <span class="round-twenty-eight-kicker">Round 28 Bloodroot Compact Encore · ${state.label}</span>
+        <span class="round-twenty-eight-line">${roundTwentyEightPreviewCopy(state, plan)}</span>
+        <span class="round-twenty-eight-payoff">${roundTwentyEightPayoffCopy(plan)}</span>
+      `;
+    }
+
     function thornKey(x, y) {
       return `${x},${y}`;
     }
@@ -7086,6 +7186,7 @@
       renderRoundTwentyFivePreview();
       renderRoundTwentySixPreview();
       renderRoundTwentySevenPreview();
+      renderRoundTwentyEightPreview();
       renderActiveOrders(plan);
       renderRoundCeremony(plan);
       $("bar").style.width = `${progress.pct}%`;

@@ -1,5 +1,39 @@
 # Codex Build Notes
 
+## 2026-07-07 Codex Round 28 Bloodroot Compact pass
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow Round 28 `Bloodroot Compact 6` clarity/payoff slice.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added a Round 28 Bloodroot Compact Encore preview/payoff surface below Round 27 using the existing continuing-round generator through `buildRoundPlan(28)`.
+- Added tease, next, current, withered, and complete states for `roundTwentyEightPreview`, including current copy that names `Bloodroot Compact 6`, Bloodroot, Sol Rot, higher stakes, and the existing Bloodroot Compact reward path.
+- Added static verifier markers for the Round 28 encore Bloodroot Compact surface and its five `data-round-twenty-eight-state` values.
+- Preserved the existing continuing-round reward/default-choice flow; no new progression framework, account system, backend, analytics, monetization, SDK, tracker, asset, secret, or permission was added.
+- Verification run:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - `python3 scripts/verify_project.py`
+  - `git diff --check`
+  - Local static preview at `http://127.0.0.1:4248/playable/midnight_bloom_prototype.html?verify=round28-local`
+  - Local static checks returned `200 OK` for the playable and `assets/tiles/96/bloodroot_ruby_shard.png`.
+  - Local marker checks found `roundTwentyEightPreview`, `Round 28 Bloodroot Compact Encore`, `Bloodroot Compact 6`, `Round 28 encore Bloodroot Compact payoff`, `data-round-twenty-eight-state="current"`, and `function renderRoundTwentyEightPreview` in the served HTML.
+  - Local Playwright loaded fresh Round 1 with 64 tiles, 0 broken images, visible Round 28 tease copy, all four booster labels, and `Shape Bloom`.
+  - Local Playwright verified Round 1 win -> Round 2, Round 2 wither -> `Retry Bouquet` restored Cursed Thorn objective copy and 64 tiles, then progressed to Round 27, verified Round 27 current Cursed Thorn copy, and verified Round 27 wither -> retry restored Cursed Thorn objective copy.
+  - Local Playwright verified Round 28 current copy names `Bloodroot Compact 6`, Bloodroot, Sol Rot, higher stakes, and the existing Bloodroot Compact reward path, with no Cursed Thorn objective on Round 28.
+  - Local Playwright verified all four boosters arm/cancel, Chest opens/closes, Sacrifice opens/cancels, `M` triggers Shape Bloom without console, `B` triggers Supreme Bloom without console, and Round 28 complete copy names the sixth Bloodroot Compact and Chest Storage.
+  - Local mobile Playwright at 390x844 loaded 64 tiles, 0 broken images, visible Round 28 preview, and no horizontal overflow.
+  - Vercel production deploy: pending until after the feature commit.
+  - GitHub Pages preview status: pending until after push.
+- Browser console/runtime status: local Playwright observed 0 console warnings/errors and 0 page errors during Round 28, retry, hook, and mobile checks.
+- Vercel deployment URL/identifier checked: pending until after deployment.
+- GitHub Pages preview status: pending until after push.
+- Known issues: none found locally.
+- How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly; after the line5 and line4 demos, it cycles `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom` shape rewards.
+- How to trigger and verify Supreme Bloom without console: focus the playable and press `B`; the ritual log should report `SUPREME BLOOM!` after the charge phase and return the board to play.
+- Security/secret-scan status: lightweight added-lines credential scan ran with no findings.
+
 ## 2026-07-07 Codex Round 27 Moonlit Wreath pass
 
 - Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow Round 27 `Moonlit Wreath 6` clarity/payoff slice.
