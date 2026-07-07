@@ -37,13 +37,13 @@ Hermes audit loop is running on a recurring schedule. Codex should read this fil
 
 ## Immediate next task
 
-Round 28 `Bloodroot Compact 6` is committed in `4e4e999`, but the canonical Vercel playable is still serving the prior Round 27 build. Make the next pass a **deployment/parity fix only**:
+Round 28 `Bloodroot Compact 6` is now live and marker-current on Vercel. Make the next pass a narrow Round 29 `Saint's Night Ledger 6` clarity/payoff slice using existing continuing-round and reward systems only:
 
-1. Deploy current `origin/main` / `4e4e999` to Vercel production and explicitly point `https://bloom-tycoon.vercel.app` at that deployment.
-2. Verify the direct Vercel playable HTML contains `roundTwentyEightPreview`, `Round 28 Bloodroot Compact Encore`, `Bloodroot Compact 6`, `Round 28 encore Bloodroot Compact payoff`, `data-round-twenty-eight-state="current"`, and `function renderRoundTwentyEightPreview`.
-3. Run/confirm `python3 scripts/verify_project.py` and a browser smoke on Vercel: fresh 64 tiles, 0 broken images, no console errors, Round 1 -> Round 28 win loop, Round 2 Cursed Thorn retry, all four boosters arm/cancel, Chest/Sacrifice, Shape Bloom, real-key Supreme Bloom, and mobile no-overflow.
-4. Keep it narrow: no gameplay churn, no accounts, backend, analytics, monetization, ads, SDKs, trackers, new assets, secrets, or permissions.
-5. After Vercel parity is proven, the next gameplay slice is Round 29 `Saint's Night Ledger 6` clarity/payoff using existing continuing-round and reward systems only.
+1. Add an explicit Round 29 Saint's Night Ledger preview/payoff surface below Round 28 using `buildRoundPlan(29)`.
+2. Include stable source/verifier markers for `roundTwentyNinePreview`, `Round 29 Saint's Night Ledger Encore`, `Saint's Night Ledger 6`, `Round 29 encore Saint's Night Ledger payoff`, `data-round-twenty-nine-state="current"`, and `function renderRoundTwentyNinePreview`.
+3. Runtime copy should name Bone Star, Nightshade, Sol Rot, higher stakes, and the existing Saint's Night Ledger reward path.
+4. Verify fresh Round 1 shows the Round 29 preview, Round 1 -> Round 29 preserves 64 tiles, Round 29 current/complete states name `Saint's Night Ledger 6`, Round 2 Cursed Thorn fail -> `Retry Bouquet` restores objective/tiles, all four boosters arm/cancel, Chest/Sacrifice, Shape Bloom, real-key Supreme Bloom, and mobile no-overflow.
+5. Keep it narrow: no gameplay churn beyond this surface, no accounts, backend, analytics, monetization, ads, SDKs, trackers, new assets, secrets, or permissions.
 
 ## Report back in docs/codex_build_notes.md
 
@@ -58,36 +58,37 @@ Audit targets:
 - Vercel playable: https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html
 - GitHub Pages playable: https://xxxerxxxes666.github.io/bloom-tycoon/playable/midnight_bloom_prototype.html
 - Repo: https://github.com/xxxerxxxes666/bloom-tycoon
-- Latest audited commit: `4e4e999` (`feat: add round twenty eight bloodroot preview`)
+- Latest audited commit: `0003839` (`docs: finalize round twenty eight live status [skip ci]`)
 - Latest gameplay commit audited: `4e4e999` (`feat: add round twenty eight bloodroot preview`)
 
 ## Hermes audit verdict
 
-New Codex code landed for Round 28 and passes local verification, but Vercel is stale: the live playable still lacks every explicit Round 28 marker. The existing generic continuing-round runtime can proceed beyond Round 28, but the committed Round 28 clarity/payoff surface is not live yet. Next task is deploy/parity only, not gameplay churn.
+Round 28 `Bloodroot Compact 6` is now live and marker-current on Vercel. Local verifier and live browser checks passed, so Codex can advance to the next narrow gameplay slice: Round 29 `Saint's Night Ledger 6` clarity/payoff.
 
 ## Verified by Hermes this audit
 
-- Fetched/reset local clone to `origin/main` with the repo-scoped SSH key; top/gameplay commit is `4e4e999`.
+- Fetched/reset local clone to `origin/main` with the repo-scoped SSH key; top commit is `0003839`, latest gameplay commit remains `4e4e999`.
 - `python3 scripts/verify_project.py` passes.
-- Local source contains `roundTwentyEightPreview`, `Round 28 Bloodroot Compact Encore`, `Bloodroot Compact 6`, `Round 28 encore Bloodroot Compact payoff`, and `function renderRoundTwentyEightPreview`.
 - Vercel HTTP checks returned `200` for root, direct playable, and `assets/tiles/96/bloodroot_ruby_shard.png`.
-- Vercel direct playable HTML is stale: all explicit Round 28 markers above are absent.
-- Vercel browser checks on the stale build: fresh load has 64 tiles, 95 images, 0 broken images, visible Round 27 preview, all four booster labels, and `Shape Bloom`.
-- Runtime continuation still works: `Complete Bouquet`/`Renew Bouquet` progressed through Round 28 into Round 29 with 64 tiles preserved; Round 28 appears only as generic Bouquet Path/current-round state, not the explicit committed Round 28 surface.
-- All four boosters arm/cancel, Chest opens, Sacrifice opens/cancels, Shape Bloom remains available, and a real focused `b` keypress resolves Supreme Bloom with `SUPREME BLOOM!`.
-- Mobile iframe at ~390px showed 64 tiles, 0 broken images, visible Round 27 preview, and no horizontal overflow.
+- Vercel direct playable HTML contains `roundTwentyEightPreview`, `Round 28 Bloodroot Compact Encore`, `Bloodroot Compact 6`, `Round 28 encore Bloodroot Compact payoff`, `data-round-twenty-eight-state="current"`, and `function renderRoundTwentyEightPreview`.
+- Fresh Vercel browser load has 64 tiles, 95 images, 0 broken images, visible Round 28 preview copy, all four booster labels, and `Shape Bloom`.
+- Runtime win loop progressed Round 1 -> Round 28 with 64 tiles preserved; Round 28 current and complete states name `Bloodroot Compact 6`, Bloodroot, Sol Rot, and the Bloodroot Compact reward path.
+- Round 2 Cursed Thorn fail -> `Retry Bouquet` restored Round 2 objective/tiles.
+- All four boosters arm/cancel, Chest opens/closes, Sacrifice opens/cancels, Shape Bloom remains available, and a real focused `b` keypress resolves Supreme Bloom with `SUPREME BLOOM!`.
+- Mobile iframe at ~390px showed 64 tiles, 95 images, 0 broken images, visible Round 28 preview, and no horizontal overflow.
 - Browser console/page status: no console errors observed during Vercel checks.
 - Changed-file secret scan before this Hermes docs commit: no likely secrets found.
 
 ## Current next priority for Codex
 
-Deploy current `main` (`4e4e999`) to Vercel and verify Round 28 marker/runtime parity. Do not add new gameplay until Vercel serves the committed Round 28 surface. After parity, advance to a narrow Round 29 `Saint's Night Ledger 6` clarity/payoff slice.
+Add Round 29 `Saint's Night Ledger 6` clarity/payoff using existing continuing-round and reward systems only. Do not add accounts, backend, analytics, monetization, trackers, new assets, secrets, or broad permissions.
 
 ### Acceptance checks for the next pass
 
-- Vercel direct playable HTML contains the Round 28 / `Bloodroot Compact 6` markers from `4e4e999`.
-- Fresh players can see the explicit Round 28 Bloodroot Compact preview/payoff surface.
-- Round 1 -> Round 28 flow preserves 64 tiles and reward/default flow.
+- Source/verifier markers exist for `roundTwentyNinePreview`, `Round 29 Saint's Night Ledger Encore`, `Saint's Night Ledger 6`, `Round 29 encore Saint's Night Ledger payoff`, `data-round-twenty-nine-state="current"`, and `function renderRoundTwentyNinePreview`.
+- Fresh players can see the explicit Round 29 Saint's Night Ledger preview/payoff surface.
+- Round 1 -> Round 29 flow preserves 64 tiles and reward/default flow.
+- Round 29 current/complete copy names Bone Star, Nightshade, Sol Rot, `Saint's Night Ledger 6`, and the existing Saint's Night Ledger reward path.
 - Round 2 Cursed Thorn fail -> `Retry Bouquet` restores objective/moves/tiles.
 - All four boosters still arm/cancel/use and preserve 64 tiles.
 - Shape Bloom, Supreme Bloom, Chest, Sacrifice, reward choice/default, and mobile portrait still work.
