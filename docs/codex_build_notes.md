@@ -22,9 +22,17 @@
   - Local Playwright verified Round 1 win -> Round 2, Round 2 wither -> `Retry Bouquet` restored Cursed Thorn objective copy and 64 tiles, then verified `Shape Bloom` and `B` Supreme Bloom without console.
   - Local Playwright progressed Round 1 through Round 25 with 64 tiles preserved, verified Round 26 current copy names `First Bouquet 6`, Thorn Rose, Bone Star, higher stakes, and the existing First Bouquet Coffer reward path, then verified Round 26 complete copy names the sixth First Bouquet.
   - Local mobile Playwright at 390x844 loaded 64 tiles, 0 broken images, visible Round 26 preview, and no horizontal overflow.
-- Browser console/runtime status: local Playwright observed 0 console warnings/errors and 0 page errors during Round 26, retry, hook, and mobile checks.
-- Vercel deployment URL/identifier checked: pending until this pass is committed and deployed.
-- GitHub Pages preview status: pending until this pass is pushed and Pages finishes deploying.
+  - Vercel production deploy completed as `dpl_FqV8x8ZyTaZW5ZMz28CemUSLQU3X` at `https://bloom-tycoon-h9o00buua-xerxes-florals.vercel.app`.
+  - Explicitly pointed `https://bloom-tycoon.vercel.app` to that deployment.
+  - Vercel direct checks returned `200 OK` for `/`, `/playable/midnight_bloom_prototype.html?verify=c3a5c43-live`, and `assets/tiles/96/bone_white_thorn_star.png`.
+  - Downloaded Vercel HTML contained `roundTwentySixPreview`, `Round 26 First Bouquet Encore`, `First Bouquet 6`, `Round 26 encore First Bouquet payoff`, `data-round-twenty-six-state="current"`, and `function renderRoundTwentySixPreview`.
+  - Vercel Playwright smoke loaded 64 tiles with 0 broken images, advanced Round 1 through Round 26, verified Round 26 current and complete copy, verified `B` Supreme Bloom, and passed mobile portrait at 390x844 with no horizontal overflow.
+  - GitHub Pages direct checks returned `200 OK` for `/bloom-tycoon/`, `/bloom-tycoon/playable/midnight_bloom_prototype.html?verify=c3a5c43-pages`, and `assets/tiles/96/bone_white_thorn_star.png`.
+  - Downloaded GitHub Pages HTML contained the same Round 26 markers as Vercel.
+  - GitHub Pages Playwright smoke loaded 64 tiles with 0 broken images, advanced Round 1 through Round 26, verified Round 26 current and complete copy, and passed mobile portrait at 390x844 with no horizontal overflow.
+- Browser console/runtime status: local, Vercel, and GitHub Pages Playwright observed 0 console warnings/errors and 0 page errors during Round 26, retry, hook, and mobile checks.
+- Vercel deployment URL/identifier checked: `dpl_FqV8x8ZyTaZW5ZMz28CemUSLQU3X`, https://bloom-tycoon-h9o00buua-xerxes-florals.vercel.app; canonical alias https://bloom-tycoon.vercel.app points to that deployment.
+- GitHub Pages preview status: Pages serves the Round 26 marker-matched HTML for pushed commit `c3a5c43`.
 - Known issues: none found locally.
 - How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly; after the line5 and line4 demos, it cycles `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom` shape rewards.
 - How to trigger and verify Supreme Bloom without console: focus the playable and press `B`; the ritual log should report `SUPREME BLOOM!` after the charge phase and return the board to play.
