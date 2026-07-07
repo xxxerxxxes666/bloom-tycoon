@@ -1,5 +1,37 @@
 # Codex Build Notes
 
+## 2026-07-07 Codex Round 25 Sub Rosa Grand Bouquet pass
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow Round 25 `Sub Rosa Grand Bouquet 5` clarity/payoff slice.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added a Round 25 Sub Rosa Grand Bouquet Encore preview/payoff surface below Round 24 using the existing continuing-round generator through `buildRoundPlan(25)`.
+- Added tease, next, current, withered, and complete states for `roundTwentyFivePreview`, including current copy that names `Sub Rosa Grand Bouquet 5`, Thorn Rose, Bloodroot, Sol Rot, higher stakes, and the existing Sub Rosa Grand Cache reward path.
+- Added static verifier markers for the Round 25 encore Sub Rosa Grand Bouquet surface and its five `data-round-twenty-five-state` values.
+- Preserved the existing continuing-round reward/default-choice flow; no new progression framework, account system, backend, analytics, monetization, SDK, tracker, asset, secret, or permission was added.
+- Verification run so far:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - `python3 scripts/verify_project.py`
+  - Local static preview at `http://127.0.0.1:4245/playable/midnight_bloom_prototype.html?verify=round25-local`
+  - Local static checks returned `200 OK` for the playable and `assets/tiles/96/crimson_rose_rune.png`.
+  - Local marker checks found `roundTwentyFivePreview`, `Round 25 Sub Rosa Grand Bouquet Encore`, `Sub Rosa Grand Bouquet 5`, `Round 25 encore Sub Rosa Grand Bouquet payoff`, and all five Round 25 state markers in the served HTML.
+  - Local Playwright loaded fresh Round 1 with 64 tiles, 0 broken images, visible Round 25 tease copy, all four booster labels, and `Shape Bloom`.
+  - Local Playwright verified Round 1 win -> Round 2, Round 2 wither -> `Retry Bouquet` restored Cursed Thorn objective copy and 64 tiles, then progressed Round 3 through Round 24 with 64 tiles preserved and prior payoff surfaces complete.
+  - Local Playwright verified Round 24 completion put Round 25 in `next`, then Round 25 current copy names `Sub Rosa Grand Bouquet 5`, Thorn Rose, Bloodroot, Sol Rot, higher stakes, and the existing Sub Rosa Grand Cache reward path.
+  - Local Playwright verified Round 25 has no Cursed Thorn blockers, Round 25 wither -> retry restores the current grand bouquet, and Round 25 completion shows `complete` copy that the fifth Sub Rosa Grand Bouquet is sealed.
+  - Local Playwright verified all four boosters arm/cancel/use and preserve 64 tiles, Sacrifice opens/cancels, Chest Storage opens/closes, Shape Bloom works, `M` cycles line5/line4/cross/L/T rewards, `B` triggers Supreme Bloom, and `N` completes a bouquet.
+  - Local mobile Playwright at 390x844 loaded 64 tiles, 0 broken images, visible Round 25 preview, and no horizontal overflow.
+- Browser console/runtime status: local Playwright observed 0 console warnings/errors and 0 page errors during the Round 1-25, booster/control/hook, and mobile checks.
+- Vercel deployment URL/identifier checked: pending this pass.
+- GitHub Pages preview status: pending this pass.
+- Known issues: none found locally.
+- How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly; after the line5 and line4 demos, it cycles `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom` shape rewards.
+- How to trigger and verify Supreme Bloom without console: focus the playable and press `B`; the ritual log should report `SUPREME BLOOM!` after the charge phase and return the board to play.
+- Security/secret-scan status: pending final changed-file scan before commit.
+
 ## 2026-07-06 Codex Round 24 Saint's Night Ledger pass
 
 - Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow Round 24 `Saint's Night Ledger 5` clarity/payoff slice.
