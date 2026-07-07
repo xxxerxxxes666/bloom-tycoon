@@ -12,7 +12,7 @@
 - Changed the compact Bouquet Path helper to show current and next rounds only.
 - Added static verifier markers for the `pathLedgerDrawer`, `Path / Ledger`, and `Future rewards hidden` affordance.
 - Preserved existing saves, rounds, reward choices, Cursed Thorn, all four boosters, Chest/Sacrifice, Shape Bloom, Supreme Bloom, and Round 31 markers; no Round 32 work was added.
-- Verification run so far:
+- Verification run:
   - `git fetch origin main`
   - `git pull --ff-only origin main`
   - `python3 scripts/verify_project.py`
@@ -26,10 +26,17 @@
   - Local Playwright verified Round 2 Cursed Thorn wither -> `Retry Bouquet` restores 64 tiles and Cursed Thorn objective copy.
   - Local Playwright progressed to Round 31 with 64 tiles preserved, 0 visible future preview sections, 2 visible Bouquet Path nodes, Round 31 / `First Bouquet 7` copy intact, and Round 31 complete copy intact.
   - Local mobile Playwright at 390x844 loaded 64 tiles, 0 broken images, 0 visible future preview sections, board top at 623px, first tile top at 632px, and no horizontal overflow.
-- Browser console/runtime status: local Playwright observed 0 console warnings/errors and 0 page errors during fresh layout, drawer, controls, retry, Round 31, key hook, and mobile checks.
-- Vercel deployment URL/identifier checked: pending for this visual stripback commit.
-- GitHub Pages preview status: pending for this visual stripback commit.
-- Known issues: none found locally.
+  - Vercel production deploy completed as `dpl_GYiu8cBUsmN444NidNHe5PcCs8Rv` at `https://bloom-tycoon-dc11laikq-xerxes-florals.vercel.app`.
+  - Explicitly pointed `https://bloom-tycoon.vercel.app` to that deployment.
+  - Vercel direct checks returned `200 OK` for `/`, `/playable/midnight_bloom_prototype.html?verify=19092c7-direct`, and `assets/tiles/96/bone_white_thorn_star.png`; downloaded HTML contained `pathLedgerDrawer`, `Path / Ledger`, `Future rewards hidden`, `roundThirtyOnePreview`, `Round 31 First Bouquet Encore`, `First Bouquet 7`, and `function renderRoundThirtyOnePreview`.
+  - GitHub Pages direct checks returned `200 OK` for `/bloom-tycoon/`, `/bloom-tycoon/playable/midnight_bloom_prototype.html?verify=19092c7-direct`, and `assets/tiles/96/bone_white_thorn_star.png`; downloaded HTML contained the same visual stripback and Round 31 markers as Vercel.
+  - Vercel Playwright fresh desktop loaded 64 tiles, 0 broken images, 0 visible future preview sections out of 29, 2 visible Bouquet Path nodes, board top at 475px, and first tile top at 487px.
+  - Vercel Playwright opened/closed the `Path / Ledger` drawer, verified all four boosters, Chest, Sacrifice, `M` Shape Bloom, focused `B` Supreme Bloom, Round 2 retry, Round 31 current and complete copy, and mobile portrait at 390x844 with 64 tiles, 0 visible future preview sections, board top at 623px, first tile top at 632px, and no horizontal overflow.
+  - GitHub Pages Playwright matched the same fresh desktop, drawer/control, Round 2 retry, Round 31, Shape/Supreme hook, and mobile portrait checks as Vercel.
+- Browser console/runtime status: local, Vercel, and GitHub Pages Playwright observed 0 console warnings/errors and 0 page errors during fresh layout, drawer, controls, retry, Round 31, key hook, and mobile checks.
+- Vercel deployment URL/identifier checked: `dpl_GYiu8cBUsmN444NidNHe5PcCs8Rv`, https://bloom-tycoon-dc11laikq-xerxes-florals.vercel.app; canonical alias https://bloom-tycoon.vercel.app points to that deployment.
+- GitHub Pages preview status: Pages serves the marker-matched visual stripback HTML for pushed commit `19092c7`.
+- Known issues: none found locally or on live previews.
 - How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly; after the line5 and line4 demos, it cycles `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom` shape rewards.
 - How to trigger and verify Supreme Bloom without console: focus the playable and press `B`; after the charge phase the ritual log should report `SUPREME BLOOM!` and return the board to play.
 - Security/secret-scan status: lightweight changed-line credential scan ran with no findings.
