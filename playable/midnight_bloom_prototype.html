@@ -770,7 +770,8 @@
     .round-forty-one-preview,
     .round-forty-two-preview,
     .round-forty-three-preview,
-    .round-forty-four-preview {
+    .round-forty-four-preview,
+    .round-forty-five-preview {
       max-width: 760px;
       margin: 8px auto 0;
       padding: 9px 12px;
@@ -4309,6 +4310,7 @@
           <div class="round-forty-two-preview" id="roundFortyTwoPreview" aria-label="Round 42 Moonlit Wreath"></div>
           <div class="round-forty-three-preview" id="roundFortyThreePreview" aria-label="Round 43 Bloodroot Compact"></div>
           <div class="round-forty-four-preview" id="roundFortyFourPreview" aria-label="Round 44 Saint's Night Ledger"></div>
+          <div class="round-forty-five-preview" id="roundFortyFivePreview" aria-label="Round 45 Sub Rosa Grand Bouquet"></div>
         </div>
       </details>
       <script type="application/json" id="shapeAuditData"></script>
@@ -4857,6 +4859,13 @@
       'data-round-forty-four-state="current"',
       'data-round-forty-four-state="withered"',
       'data-round-forty-four-state="complete"'
+    ];
+    const roundFortyFiveAuditMarkers = [
+      'data-round-forty-five-state="tease"',
+      'data-round-forty-five-state="next"',
+      'data-round-forty-five-state="current"',
+      'data-round-forty-five-state="withered"',
+      'data-round-forty-five-state="complete"'
     ];
     const STREAK_COIN_BONUS_STEP = 5;
     const STREAK_COIN_BONUS_CAP = 25;
@@ -7960,6 +7969,71 @@
       `;
     }
 
+    function roundFortyFivePlan() {
+      return buildRoundPlan(45);
+    }
+
+    function roundFortyFiveEncoreName(plan = roundFortyFivePlan()) {
+      return plan.name || "Sub Rosa Grand Bouquet 9";
+    }
+
+    function roundFortyFivePreviewState(plan = roundFortyFivePlan()) {
+      if (currentRound > plan.round || (currentRound === plan.round && roundComplete)) {
+        return { id: "complete", label: "Ninth Sub Rosa Grand Bouquet Sealed" };
+      }
+      if (currentRound === plan.round && isBouquetFailed(plan)) {
+        return { id: "withered", label: "Current · Withered" };
+      }
+      if (currentRound === plan.round) {
+        return { id: "current", label: "Current Sub Rosa Grand Bouquet" };
+      }
+      if (currentRound === plan.round - 1) {
+        return { id: "next", label: roundComplete ? "Ninth Sub Rosa Grand Bouquet Ready" : "After Saint's Night Ledger 9" };
+      }
+      return { id: "tease", label: "Ninth Sub Rosa Grand Bouquet Preview" };
+    }
+
+    function roundFortyFiveGoalCopy(plan = roundFortyFivePlan()) {
+      return bouquetPathGoalCopy(plan);
+    }
+
+    function roundFortyFivePreviewCopy(state, plan = roundFortyFivePlan()) {
+      const goal = roundFortyFiveGoalCopy(plan);
+      const encoreName = roundFortyFiveEncoreName(plan);
+      if (state.id === "complete") {
+        return `${encoreName} complete: the ninth Sub Rosa Grand Bouquet is sealed, ${plan.reward.item} enters Chest Storage, and Thorn Rose, Bloodroot, and Sol Rot rewards keep compounding.`;
+      }
+      if (state.id === "withered") {
+        return `Retry keeps ${encoreName} open: restore ${plan.moves} moves and finish ${goal}.`;
+      }
+      if (state.id === "current") {
+        return `Current Round 45: ${encoreName} revisits Thorn Rose, Bloodroot, and Sol Rot with higher stakes. Gather ${goal} through the existing Sub Rosa Grand Cache reward path.`;
+      }
+      if (state.id === "next") {
+        return `${roundComplete ? "Sub Rosa Grand Bouquet ninth loop unlocked" : "After Saint's Night Ledger 9"}: ${encoreName} asks for ${goal} while reward choice/default, Chest Storage, Flowerpedia, and Bouquet Streak stay familiar.`;
+      }
+      return `${encoreName} waits after Round 44 as the ninth-pass Sub Rosa Grand Bouquet: Thorn Rose plus Bloodroot plus Sol Rot, higher stakes, familiar grand-cache rewards.`;
+    }
+
+    function roundFortyFivePayoffCopy(plan = roundFortyFivePlan()) {
+      return `Round 45 encore Sub Rosa Grand Bouquet payoff: ${plan.reward.item} uses the existing Sub Rosa Grand Cache reward structure, +${plan.reward.faction} Sub Rosa Favor, and keeps retry, reward choice, Flowerpedia, Bouquet Streak, and Chest Storage intact.`;
+    }
+
+    function renderRoundFortyFivePreview() {
+      const preview = $("roundFortyFivePreview");
+      if (!preview) {
+        return;
+      }
+      const plan = roundFortyFivePlan();
+      const state = roundFortyFivePreviewState(plan);
+      preview.dataset.roundFortyFiveState = state.id;
+      preview.innerHTML = `
+        <span class="round-forty-five-kicker">Round 45 Sub Rosa Grand Bouquet Encore · ${state.label}</span>
+        <span class="round-forty-five-line">${roundFortyFivePreviewCopy(state, plan)}</span>
+        <span class="round-forty-five-payoff">${roundFortyFivePayoffCopy(plan)}</span>
+      `;
+    }
+
     function thornKey(x, y) {
       return `${x},${y}`;
     }
@@ -8582,6 +8656,7 @@
       renderRoundFortyTwoPreview();
       renderRoundFortyThreePreview();
       renderRoundFortyFourPreview();
+      renderRoundFortyFivePreview();
       renderActiveOrders(plan);
       renderRoundCeremony(plan);
       $("bar").style.width = `${progress.pct}%`;
