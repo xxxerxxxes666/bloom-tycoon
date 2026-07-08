@@ -759,7 +759,8 @@
     .round-thirty-preview,
     .round-thirty-one-preview,
     .round-thirty-two-preview,
-    .round-thirty-three-preview {
+    .round-thirty-three-preview,
+    .round-thirty-four-preview {
       max-width: 760px;
       margin: 8px auto 0;
       padding: 9px 12px;
@@ -4287,6 +4288,7 @@
           <div class="round-thirty-one-preview" id="roundThirtyOnePreview" aria-label="Round 31 First Bouquet"></div>
           <div class="round-thirty-two-preview" id="roundThirtyTwoPreview" aria-label="Round 32 Moonlit Wreath"></div>
           <div class="round-thirty-three-preview" id="roundThirtyThreePreview" aria-label="Round 33 Bloodroot Compact"></div>
+          <div class="round-thirty-four-preview" id="roundThirtyFourPreview" aria-label="Round 34 Saint's Night Ledger"></div>
         </div>
       </details>
       <script type="application/json" id="shapeAuditData"></script>
@@ -4758,6 +4760,13 @@
       'data-round-thirty-three-state="current"',
       'data-round-thirty-three-state="withered"',
       'data-round-thirty-three-state="complete"'
+    ];
+    const roundThirtyFourAuditMarkers = [
+      'data-round-thirty-four-state="tease"',
+      'data-round-thirty-four-state="next"',
+      'data-round-thirty-four-state="current"',
+      'data-round-thirty-four-state="withered"',
+      'data-round-thirty-four-state="complete"'
     ];
     const STREAK_COIN_BONUS_STEP = 5;
     const STREAK_COIN_BONUS_CAP = 25;
@@ -7146,6 +7155,71 @@
       `;
     }
 
+    function roundThirtyFourPlan() {
+      return buildRoundPlan(34);
+    }
+
+    function roundThirtyFourEncoreName(plan = roundThirtyFourPlan()) {
+      return plan.name || "Saint's Night Ledger 7";
+    }
+
+    function roundThirtyFourPreviewState(plan = roundThirtyFourPlan()) {
+      if (currentRound > plan.round || (currentRound === plan.round && roundComplete)) {
+        return { id: "complete", label: "Seventh Saint's Night Ledger Sealed" };
+      }
+      if (currentRound === plan.round && isBouquetFailed(plan)) {
+        return { id: "withered", label: "Current · Withered" };
+      }
+      if (currentRound === plan.round) {
+        return { id: "current", label: "Current Saint's Night Ledger" };
+      }
+      if (currentRound === plan.round - 1) {
+        return { id: "next", label: roundComplete ? "Seventh Saint's Night Ledger Ready" : "After Bloodroot Compact 7" };
+      }
+      return { id: "tease", label: "Seventh Saint's Night Ledger Preview" };
+    }
+
+    function roundThirtyFourGoalCopy(plan = roundThirtyFourPlan()) {
+      return bouquetPathGoalCopy(plan);
+    }
+
+    function roundThirtyFourPreviewCopy(state, plan = roundThirtyFourPlan()) {
+      const goal = roundThirtyFourGoalCopy(plan);
+      const encoreName = roundThirtyFourEncoreName(plan);
+      if (state.id === "complete") {
+        return `${encoreName} complete: the seventh Saint's Night Ledger is sealed, ${plan.reward.item} enters Chest Storage, and Bone Star, Nightshade, and Sol Rot rewards keep stacking.`;
+      }
+      if (state.id === "withered") {
+        return `Retry keeps ${encoreName} open: restore ${plan.moves} moves and finish ${goal}.`;
+      }
+      if (state.id === "current") {
+        return `Current Round 34: ${encoreName} revisits Bone Star, Nightshade, and Sol Rot with higher stakes. Gather ${goal} through the existing Saint's Night Ledger reward path.`;
+      }
+      if (state.id === "next") {
+        return `${roundComplete ? "Saint's Night Ledger seventh loop unlocked" : "After Bloodroot Compact 7"}: ${encoreName} asks for ${goal} while reward choice/default, Chest Storage, Flowerpedia, and Bouquet Streak stay familiar.`;
+      }
+      return `${encoreName} waits after Round 33 as the seventh-pass Saint's Night Ledger: Bone Star plus Nightshade plus Sol Rot, higher stakes, familiar ledger rewards.`;
+    }
+
+    function roundThirtyFourPayoffCopy(plan = roundThirtyFourPlan()) {
+      return `Round 34 encore Saint's Night Ledger payoff: ${plan.reward.item} uses the existing Saint's Night Ledger reward structure, +${plan.reward.faction} Sub Rosa Favor, and keeps retry, reward choice, Flowerpedia, Bouquet Streak, and Chest Storage intact.`;
+    }
+
+    function renderRoundThirtyFourPreview() {
+      const preview = $("roundThirtyFourPreview");
+      if (!preview) {
+        return;
+      }
+      const plan = roundThirtyFourPlan();
+      const state = roundThirtyFourPreviewState(plan);
+      preview.dataset.roundThirtyFourState = state.id;
+      preview.innerHTML = `
+        <span class="round-thirty-four-kicker">Round 34 Saint's Night Ledger Encore · ${state.label}</span>
+        <span class="round-thirty-four-line">${roundThirtyFourPreviewCopy(state, plan)}</span>
+        <span class="round-thirty-four-payoff">${roundThirtyFourPayoffCopy(plan)}</span>
+      `;
+    }
+
     function thornKey(x, y) {
       return `${x},${y}`;
     }
@@ -7757,6 +7831,7 @@
       renderRoundThirtyOnePreview();
       renderRoundThirtyTwoPreview();
       renderRoundThirtyThreePreview();
+      renderRoundThirtyFourPreview();
       renderActiveOrders(plan);
       renderRoundCeremony(plan);
       $("bar").style.width = `${progress.pct}%`;

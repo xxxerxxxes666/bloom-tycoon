@@ -1,5 +1,40 @@
 # Codex Build Notes
 
+## 2026-07-07 Codex Round 34 Saint's Night Ledger pass
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes confirmed Round 33 and requested a narrow Round 34 `Saint's Night Ledger 7` clarity/payoff slice.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added a Round 34 Saint's Night Ledger Encore preview/payoff surface inside the collapsed `Path / Ledger` drawer using the existing `buildRoundPlan(34)` continuing-round generator.
+- Added tease, next, current, withered, and complete states for `roundThirtyFourPreview`, including current copy that names `Saint's Night Ledger 7`, Bone Star, Nightshade, Sol Rot, higher stakes, and the existing Saint's Night Ledger reward path.
+- Added static verifier markers for the Round 34 encore Saint's Night Ledger surface and its five `data-round-thirty-four-state` values.
+- Preserved the board-first layout: first load still keeps future detail hidden behind `Path / Ledger`, compact Bouquet Path remains current + next only, and the board stays near the top.
+- Preserved existing saves, rounds, reward choices, Round 33 markers, Cursed Thorn retry, all four boosters, Chest/Sacrifice, Shape Bloom, and Supreme Bloom; no broad progression framework, account system, backend, analytics, monetization, SDK, tracker, asset, secret, or permission was added.
+- Verification run so far:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - `python3 scripts/verify_project.py`
+  - `git diff --check`
+  - Local static preview at `http://127.0.0.1:4255/playable/midnight_bloom_prototype.html?verify=round34-local-*`
+  - Local static checks returned `200 OK` for the playable and `assets/tiles/96/bone_white_thorn_star.png`.
+  - Local marker checks found `roundThirtyFourPreview`, `Round 34 Saint's Night Ledger Encore`, `Saint's Night Ledger 7`, `Round 34 encore Saint's Night Ledger payoff`, `data-round-thirty-four-state="current"`, `function renderRoundThirtyFourPreview`, `roundThirtyThreePreview`, and `pathLedgerDrawer`.
+  - Local Playwright fresh desktop loaded 64 tiles, 0 broken images, 0 visible future preview sections out of 31, 2 visible Bouquet Path nodes, board top at 475px, and first tile top at 487px.
+  - Local Playwright opened the `Path / Ledger` drawer, verified the Round 34 tease copy, and kept the drawer closed by default in normal play.
+  - Local Playwright verified all four boosters arm/cancel, Chest opens/closes, Sacrifice opens/cancels, `M` Shape Bloom through L/T/cross rewards, and a real focused `B` Supreme Bloom keypress.
+  - Local Playwright verified Round 2 Cursed Thorn wither -> `Retry Bouquet` restores 64 tiles and Cursed Thorn objective copy.
+  - Local Playwright progressed Round 1 -> Round 34 with 64 tiles preserved, 0 visible future preview sections, 2 visible Bouquet Path nodes, Round 34 `Saint's Night Ledger 7` current copy intact, and Round 33 marker copy still present in the drawer.
+  - Local Playwright verified Round 34 complete copy.
+  - Local mobile Playwright at 390x844 loaded 64 tiles, 0 broken images, 0 visible future preview sections, board top at 493px, first tile top at 502px, and no horizontal overflow.
+- Browser console/runtime status: local Playwright observed 0 console warnings/errors, 0 page errors, and 0 failed browser requests during fresh layout, drawer, controls, key hooks, Round 2 retry, Round 34 current/complete, and mobile checks.
+- Vercel deployment URL/identifier checked: pending for this Round 34 commit.
+- GitHub Pages preview status: pending for this Round 34 commit.
+- Known issues: none found locally.
+- How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly; after the line5 and line4 demos, it cycles `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom` shape rewards.
+- How to trigger and verify Supreme Bloom without console: focus the playable and press `B`; after the charge phase the ritual log should report `SUPREME BLOOM!` and return the board to play.
+- Security/secret-scan status: lightweight changed-line credential scan ran with no findings.
+
 ## 2026-07-07 Codex Round 33 Bloodroot Compact pass
 
 - Read `docs/hermes_audit_next_tasks.md` before coding; Hermes confirmed Round 32 and requested a narrow Round 33 `Bloodroot Compact 7` clarity/payoff slice.
