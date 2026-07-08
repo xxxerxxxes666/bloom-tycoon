@@ -760,7 +760,8 @@
     .round-thirty-one-preview,
     .round-thirty-two-preview,
     .round-thirty-three-preview,
-    .round-thirty-four-preview {
+    .round-thirty-four-preview,
+    .round-thirty-five-preview {
       max-width: 760px;
       margin: 8px auto 0;
       padding: 9px 12px;
@@ -4289,6 +4290,7 @@
           <div class="round-thirty-two-preview" id="roundThirtyTwoPreview" aria-label="Round 32 Moonlit Wreath"></div>
           <div class="round-thirty-three-preview" id="roundThirtyThreePreview" aria-label="Round 33 Bloodroot Compact"></div>
           <div class="round-thirty-four-preview" id="roundThirtyFourPreview" aria-label="Round 34 Saint's Night Ledger"></div>
+          <div class="round-thirty-five-preview" id="roundThirtyFivePreview" aria-label="Round 35 Sub Rosa Grand Bouquet"></div>
         </div>
       </details>
       <script type="application/json" id="shapeAuditData"></script>
@@ -4767,6 +4769,13 @@
       'data-round-thirty-four-state="current"',
       'data-round-thirty-four-state="withered"',
       'data-round-thirty-four-state="complete"'
+    ];
+    const roundThirtyFiveAuditMarkers = [
+      'data-round-thirty-five-state="tease"',
+      'data-round-thirty-five-state="next"',
+      'data-round-thirty-five-state="current"',
+      'data-round-thirty-five-state="withered"',
+      'data-round-thirty-five-state="complete"'
     ];
     const STREAK_COIN_BONUS_STEP = 5;
     const STREAK_COIN_BONUS_CAP = 25;
@@ -7220,6 +7229,71 @@
       `;
     }
 
+    function roundThirtyFivePlan() {
+      return buildRoundPlan(35);
+    }
+
+    function roundThirtyFiveEncoreName(plan = roundThirtyFivePlan()) {
+      return plan.name || "Sub Rosa Grand Bouquet 7";
+    }
+
+    function roundThirtyFivePreviewState(plan = roundThirtyFivePlan()) {
+      if (currentRound > plan.round || (currentRound === plan.round && roundComplete)) {
+        return { id: "complete", label: "Seventh Sub Rosa Grand Bouquet Sealed" };
+      }
+      if (currentRound === plan.round && isBouquetFailed(plan)) {
+        return { id: "withered", label: "Current · Withered" };
+      }
+      if (currentRound === plan.round) {
+        return { id: "current", label: "Current Sub Rosa Grand Bouquet" };
+      }
+      if (currentRound === plan.round - 1) {
+        return { id: "next", label: roundComplete ? "Seventh Sub Rosa Grand Bouquet Ready" : "After Saint's Night Ledger 7" };
+      }
+      return { id: "tease", label: "Seventh Sub Rosa Grand Bouquet Preview" };
+    }
+
+    function roundThirtyFiveGoalCopy(plan = roundThirtyFivePlan()) {
+      return bouquetPathGoalCopy(plan);
+    }
+
+    function roundThirtyFivePreviewCopy(state, plan = roundThirtyFivePlan()) {
+      const goal = roundThirtyFiveGoalCopy(plan);
+      const encoreName = roundThirtyFiveEncoreName(plan);
+      if (state.id === "complete") {
+        return `${encoreName} complete: the seventh Sub Rosa Grand Bouquet is sealed, ${plan.reward.item} enters Chest Storage, and Thorn Rose, Bloodroot, and Sol Rot rewards keep compounding.`;
+      }
+      if (state.id === "withered") {
+        return `Retry keeps ${encoreName} open: restore ${plan.moves} moves and finish ${goal}.`;
+      }
+      if (state.id === "current") {
+        return `Current Round 35: ${encoreName} revisits Thorn Rose, Bloodroot, and Sol Rot with higher stakes. Gather ${goal} through the existing Sub Rosa Grand Cache reward path.`;
+      }
+      if (state.id === "next") {
+        return `${roundComplete ? "Sub Rosa Grand Bouquet seventh loop unlocked" : "After Saint's Night Ledger 7"}: ${encoreName} asks for ${goal} while reward choice/default, Chest Storage, Flowerpedia, and Bouquet Streak stay familiar.`;
+      }
+      return `${encoreName} waits after Round 34 as the seventh-pass Sub Rosa Grand Bouquet: Thorn Rose plus Bloodroot plus Sol Rot, higher stakes, familiar grand cache rewards.`;
+    }
+
+    function roundThirtyFivePayoffCopy(plan = roundThirtyFivePlan()) {
+      return `Round 35 encore Sub Rosa Grand Bouquet payoff: ${plan.reward.item} uses the existing Sub Rosa Grand Cache reward structure, +${plan.reward.greenhouse} Greenhouse XP, and keeps retry, reward choice, Flowerpedia, Bouquet Streak, and Chest Storage intact.`;
+    }
+
+    function renderRoundThirtyFivePreview() {
+      const preview = $("roundThirtyFivePreview");
+      if (!preview) {
+        return;
+      }
+      const plan = roundThirtyFivePlan();
+      const state = roundThirtyFivePreviewState(plan);
+      preview.dataset.roundThirtyFiveState = state.id;
+      preview.innerHTML = `
+        <span class="round-thirty-five-kicker">Round 35 Sub Rosa Grand Bouquet Encore · ${state.label}</span>
+        <span class="round-thirty-five-line">${roundThirtyFivePreviewCopy(state, plan)}</span>
+        <span class="round-thirty-five-payoff">${roundThirtyFivePayoffCopy(plan)}</span>
+      `;
+    }
+
     function thornKey(x, y) {
       return `${x},${y}`;
     }
@@ -7832,6 +7906,7 @@
       renderRoundThirtyTwoPreview();
       renderRoundThirtyThreePreview();
       renderRoundThirtyFourPreview();
+      renderRoundThirtyFivePreview();
       renderActiveOrders(plan);
       renderRoundCeremony(plan);
       $("bar").style.width = `${progress.pct}%`;
