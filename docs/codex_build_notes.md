@@ -12,7 +12,7 @@
 - Added static verifier markers for the Round 32 encore Moonlit Wreath surface and its five `data-round-thirty-two-state` values.
 - Preserved the board-first layout: first load still keeps future detail hidden behind `Path / Ledger`, compact Bouquet Path remains current + next only, and the board stays near the top.
 - Preserved existing saves, rounds, reward choices, Round 31 markers, Cursed Thorn retry, all four boosters, Chest/Sacrifice, Shape Bloom, and Supreme Bloom; no broad progression framework, account system, backend, analytics, monetization, SDK, tracker, asset, secret, or permission was added.
-- Verification run so far:
+- Verification run:
   - `git fetch origin main`
   - `git pull --ff-only origin main`
   - `python3 scripts/verify_project.py`
@@ -26,10 +26,17 @@
   - Local Playwright progressed Round 1 -> Round 32 with 64 tiles preserved, 0 visible future preview sections, 2 visible Bouquet Path nodes, Round 32 `Moonlit Wreath 7` current copy intact, and Cursed Thorn copy present.
   - Local Playwright verified Round 32 wither -> `Retry Bouquet` restores 64 tiles and Round 32 Cursed Thorn objective copy, then verified Round 32 complete copy.
   - Local mobile Playwright at 390x844 loaded 64 tiles, 0 broken images, 0 visible future preview sections, board top at 493px, first tile top at 502px, and no horizontal overflow.
-- Browser console/runtime status: local Playwright observed 0 console warnings/errors and 0 page errors during fresh layout, drawer, controls, key hooks, Round 32 retry/complete, and mobile checks.
-- Vercel deployment URL/identifier checked: pending for this Round 32 commit.
-- GitHub Pages preview status: pending for this Round 32 commit.
-- Known issues: none found locally.
+  - Vercel production deploy completed as `dpl_FRdqzKpyeSUhsJbnCAa35x59FWaN` at `https://bloom-tycoon-ble8i0yen-xerxes-florals.vercel.app`.
+  - Explicitly pointed `https://bloom-tycoon.vercel.app` to that deployment.
+  - Vercel direct checks returned `200 OK` for `/`, `/playable/midnight_bloom_prototype.html?verify=b564a1c-direct`, and `assets/tiles/96/purple_nightshade_bloom.png`; downloaded HTML contained `pathLedgerDrawer`, `roundThirtyTwoPreview`, `Round 32 Moonlit Wreath Encore`, `Moonlit Wreath 7`, `Round 32 encore Moonlit Wreath payoff`, `data-round-thirty-two-state="current"`, and `function renderRoundThirtyTwoPreview`.
+  - GitHub Pages direct checks returned `200 OK` for `/bloom-tycoon/`, `/bloom-tycoon/playable/midnight_bloom_prototype.html?verify=b564a1c-direct`, and `assets/tiles/96/purple_nightshade_bloom.png`; downloaded HTML contained the same Round 32 markers as Vercel.
+  - Vercel Playwright fresh desktop loaded 64 tiles, 0 broken images, 0 visible future preview sections out of 30, 2 visible Bouquet Path nodes, board top at 475px, and first tile top at 487px.
+  - Vercel Playwright verified all four boosters, Chest, Sacrifice, `M` Shape Bloom, focused `B` Supreme Bloom, Round 32 current/retry/complete, and mobile portrait at 390x844 with 64 tiles, 0 visible future preview sections, board top at 493px, first tile top at 502px, and no horizontal overflow.
+  - GitHub Pages Playwright matched the same fresh desktop, controls/hooks, Round 32 current/retry/complete, and mobile portrait checks as Vercel.
+- Browser console/runtime status: local, Vercel, and GitHub Pages Playwright observed 0 console warnings/errors and 0 page errors during fresh layout, drawer, controls, key hooks, Round 32 retry/complete, and mobile checks.
+- Vercel deployment URL/identifier checked: `dpl_FRdqzKpyeSUhsJbnCAa35x59FWaN`, https://bloom-tycoon-ble8i0yen-xerxes-florals.vercel.app; canonical alias https://bloom-tycoon.vercel.app points to that deployment.
+- GitHub Pages preview status: Pages serves the Round 32 marker-matched HTML for pushed commit `b564a1c`.
+- Known issues: none found locally or on live previews.
 - How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly; after the line5 and line4 demos, it cycles `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom` shape rewards.
 - How to trigger and verify Supreme Bloom without console: focus the playable and press `B`; after the charge phase the ritual log should report `SUPREME BLOOM!` and return the board to play.
 - Security/secret-scan status: lightweight changed-line credential scan ran with no findings.
