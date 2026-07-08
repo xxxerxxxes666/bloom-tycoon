@@ -12,7 +12,7 @@
 - Added static verifier markers for the Round 33 encore Bloodroot Compact surface and its five `data-round-thirty-three-state` values.
 - Preserved the board-first layout: first load still keeps future detail hidden behind `Path / Ledger`, compact Bouquet Path remains current + next only, and the board stays near the top.
 - Preserved existing saves, rounds, reward choices, Round 32 markers, Cursed Thorn retry, all four boosters, Chest/Sacrifice, Shape Bloom, and Supreme Bloom; no broad progression framework, account system, backend, analytics, monetization, SDK, tracker, asset, secret, or permission was added.
-- Verification run so far:
+- Verification run:
   - `git fetch origin main`
   - `git pull --ff-only origin main`
   - `python3 scripts/verify_project.py`
@@ -27,10 +27,17 @@
   - Local Playwright progressed Round 1 -> Round 33 with 64 tiles preserved, 0 visible future preview sections, 2 visible Bouquet Path nodes, Round 33 `Bloodroot Compact 7` current copy intact, and Round 32 marker copy still present in the drawer.
   - Local Playwright verified Round 33 complete copy.
   - Local mobile Playwright at 390x844 loaded 64 tiles, 0 broken images, 0 visible future preview sections, board top at 493px, first tile top at 502px, and no horizontal overflow.
-- Browser console/runtime status: local Playwright observed 0 console warnings/errors and 0 page errors during fresh layout, drawer, controls, key hooks, Round 2 retry, Round 33 current/complete, and mobile checks.
-- Vercel deployment URL/identifier checked: pending for this Round 33 commit.
-- GitHub Pages preview status: pending for this Round 33 commit.
-- Known issues: none found locally.
+  - Vercel production deploy completed as `dpl_6WonyqTaRohs9yeAHdA6SsuG3t3r` at `https://bloom-tycoon-nu0h94iy8-xerxes-florals.vercel.app`.
+  - Explicitly pointed `https://bloom-tycoon.vercel.app` to that deployment.
+  - Vercel direct checks returned `200 OK` for `/`, `/playable/midnight_bloom_prototype.html?verify=c36b3cb-direct-*`, and `assets/tiles/96/bloodroot_ruby_shard.png`; downloaded HTML contained `pathLedgerDrawer`, `roundThirtyThreePreview`, `Round 33 Bloodroot Compact Encore`, `Bloodroot Compact 7`, `Round 33 encore Bloodroot Compact payoff`, `data-round-thirty-three-state="current"`, `function renderRoundThirtyThreePreview`, and `roundThirtyTwoPreview`.
+  - GitHub Pages direct checks returned `200 OK` for `/bloom-tycoon/`, `/bloom-tycoon/playable/midnight_bloom_prototype.html?verify=c36b3cb-direct-*`, and `assets/tiles/96/bloodroot_ruby_shard.png`; downloaded HTML contained the same Round 33 and Round 32 markers as Vercel.
+  - Vercel Playwright fresh desktop loaded 64 tiles, 0 broken images, 0 visible future preview sections out of 30, 2 visible Bouquet Path nodes, board top at 475px, and first tile top at 487px.
+  - Vercel Playwright verified the closed-by-default `Path / Ledger`, all four boosters arm/cancel, Chest open/close, Sacrifice open/cancel, `M` Shape Bloom through L/T/cross rewards, real focused `B` Supreme Bloom, Round 2 Cursed Thorn wither -> `Retry Bouquet`, Round 1 -> Round 33 current/complete, and mobile portrait at 390x844 with no overflow.
+  - GitHub Pages Playwright matched the same fresh desktop, controls/hooks, Round 2 retry, Round 1 -> Round 33 current/complete, and mobile portrait checks as Vercel.
+- Browser console/runtime status: local, Vercel, and GitHub Pages Playwright observed 0 console warnings/errors, 0 page errors, and 0 failed browser requests during fresh layout, drawer, controls, key hooks, Round 2 retry, Round 33 current/complete, and mobile checks.
+- Vercel deployment URL/identifier checked: `dpl_6WonyqTaRohs9yeAHdA6SsuG3t3r`, aliased to `https://bloom-tycoon.vercel.app`.
+- GitHub Pages preview status: live and marker-current for commit `c36b3cb`.
+- Known issues: none found locally or live.
 - How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly; after the line5 and line4 demos, it cycles `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom` shape rewards.
 - How to trigger and verify Supreme Bloom without console: focus the playable and press `B`; after the charge phase the ritual log should report `SUPREME BLOOM!` and return the board to play.
 - Security/secret-scan status: lightweight changed-line credential scan ran with no findings.
