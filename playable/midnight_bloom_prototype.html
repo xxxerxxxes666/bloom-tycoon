@@ -761,7 +761,8 @@
     .round-thirty-two-preview,
     .round-thirty-three-preview,
     .round-thirty-four-preview,
-    .round-thirty-five-preview {
+    .round-thirty-five-preview,
+    .round-thirty-six-preview {
       max-width: 760px;
       margin: 8px auto 0;
       padding: 9px 12px;
@@ -4291,6 +4292,7 @@
           <div class="round-thirty-three-preview" id="roundThirtyThreePreview" aria-label="Round 33 Bloodroot Compact"></div>
           <div class="round-thirty-four-preview" id="roundThirtyFourPreview" aria-label="Round 34 Saint's Night Ledger"></div>
           <div class="round-thirty-five-preview" id="roundThirtyFivePreview" aria-label="Round 35 Sub Rosa Grand Bouquet"></div>
+          <div class="round-thirty-six-preview" id="roundThirtySixPreview" aria-label="Round 36 First Bouquet"></div>
         </div>
       </details>
       <script type="application/json" id="shapeAuditData"></script>
@@ -4776,6 +4778,13 @@
       'data-round-thirty-five-state="current"',
       'data-round-thirty-five-state="withered"',
       'data-round-thirty-five-state="complete"'
+    ];
+    const roundThirtySixAuditMarkers = [
+      'data-round-thirty-six-state="tease"',
+      'data-round-thirty-six-state="next"',
+      'data-round-thirty-six-state="current"',
+      'data-round-thirty-six-state="withered"',
+      'data-round-thirty-six-state="complete"'
     ];
     const STREAK_COIN_BONUS_STEP = 5;
     const STREAK_COIN_BONUS_CAP = 25;
@@ -7294,6 +7303,71 @@
       `;
     }
 
+    function roundThirtySixPlan() {
+      return buildRoundPlan(36);
+    }
+
+    function roundThirtySixEncoreName(plan = roundThirtySixPlan()) {
+      return plan.name || "First Bouquet 8";
+    }
+
+    function roundThirtySixPreviewState(plan = roundThirtySixPlan()) {
+      if (currentRound > plan.round || (currentRound === plan.round && roundComplete)) {
+        return { id: "complete", label: "Eighth First Bouquet Bound" };
+      }
+      if (currentRound === plan.round && isBouquetFailed(plan)) {
+        return { id: "withered", label: "Current · Withered" };
+      }
+      if (currentRound === plan.round) {
+        return { id: "current", label: "Current First Bouquet" };
+      }
+      if (currentRound === plan.round - 1) {
+        return { id: "next", label: roundComplete ? "Eighth First Bouquet Ready" : "After Sub Rosa Grand Bouquet 7" };
+      }
+      return { id: "tease", label: "Eighth First Bouquet Preview" };
+    }
+
+    function roundThirtySixGoalCopy(plan = roundThirtySixPlan()) {
+      return bouquetPathGoalCopy(plan);
+    }
+
+    function roundThirtySixPreviewCopy(state, plan = roundThirtySixPlan()) {
+      const goal = roundThirtySixGoalCopy(plan);
+      const encoreName = roundThirtySixEncoreName(plan);
+      if (state.id === "complete") {
+        return `${encoreName} complete: the eighth First Bouquet is bound, ${plan.reward.item} enters Chest Storage, and Thorn Rose plus Bone Star rewards keep moving.`;
+      }
+      if (state.id === "withered") {
+        return `Retry keeps ${encoreName} open: restore ${plan.moves} moves and finish ${goal}.`;
+      }
+      if (state.id === "current") {
+        return `Current Round 36: ${encoreName} revisits Thorn Rose and Bone Star with higher stakes. Gather ${goal} through the existing First Bouquet Coffer reward path.`;
+      }
+      if (state.id === "next") {
+        return `${roundComplete ? "First Bouquet eighth loop unlocked" : "After Sub Rosa Grand Bouquet 7"}: ${encoreName} asks for ${goal} while reward choice/default, Chest Storage, Flowerpedia, and Bouquet Streak stay familiar.`;
+      }
+      return `${encoreName} waits after Round 35 as the eighth-pass First Bouquet: Thorn Rose plus Bone Star, higher stakes, familiar coffer rewards.`;
+    }
+
+    function roundThirtySixPayoffCopy(plan = roundThirtySixPlan()) {
+      return `Round 36 encore First Bouquet payoff: ${plan.reward.item} uses the existing First Bouquet Coffer reward structure, +${plan.reward.greenhouse} Greenhouse XP, and keeps retry, reward choice, Flowerpedia, Bouquet Streak, and Chest Storage intact.`;
+    }
+
+    function renderRoundThirtySixPreview() {
+      const preview = $("roundThirtySixPreview");
+      if (!preview) {
+        return;
+      }
+      const plan = roundThirtySixPlan();
+      const state = roundThirtySixPreviewState(plan);
+      preview.dataset.roundThirtySixState = state.id;
+      preview.innerHTML = `
+        <span class="round-thirty-six-kicker">Round 36 First Bouquet Encore · ${state.label}</span>
+        <span class="round-thirty-six-line">${roundThirtySixPreviewCopy(state, plan)}</span>
+        <span class="round-thirty-six-payoff">${roundThirtySixPayoffCopy(plan)}</span>
+      `;
+    }
+
     function thornKey(x, y) {
       return `${x},${y}`;
     }
@@ -7907,6 +7981,7 @@
       renderRoundThirtyThreePreview();
       renderRoundThirtyFourPreview();
       renderRoundThirtyFivePreview();
+      renderRoundThirtySixPreview();
       renderActiveOrders(plan);
       renderRoundCeremony(plan);
       $("bar").style.width = `${progress.pct}%`;
