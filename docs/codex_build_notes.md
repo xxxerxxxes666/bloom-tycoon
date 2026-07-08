@@ -1,5 +1,40 @@
 # Codex Build Notes
 
+## 2026-07-07 Codex Round 33 Bloodroot Compact pass
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes confirmed Round 32 and requested a narrow Round 33 `Bloodroot Compact 7` clarity/payoff slice.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added a Round 33 Bloodroot Compact Encore preview/payoff surface inside the collapsed `Path / Ledger` drawer using the existing `buildRoundPlan(33)` continuing-round generator.
+- Added tease, next, current, withered, and complete states for `roundThirtyThreePreview`, including current copy that names `Bloodroot Compact 7`, Bloodroot, Sol Rot, higher stakes, and the existing Bloodroot Compact reward path.
+- Added static verifier markers for the Round 33 encore Bloodroot Compact surface and its five `data-round-thirty-three-state` values.
+- Preserved the board-first layout: first load still keeps future detail hidden behind `Path / Ledger`, compact Bouquet Path remains current + next only, and the board stays near the top.
+- Preserved existing saves, rounds, reward choices, Round 32 markers, Cursed Thorn retry, all four boosters, Chest/Sacrifice, Shape Bloom, and Supreme Bloom; no broad progression framework, account system, backend, analytics, monetization, SDK, tracker, asset, secret, or permission was added.
+- Verification run so far:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - `python3 scripts/verify_project.py`
+  - `git diff --check`
+  - Local static preview at `http://127.0.0.1:4254/playable/midnight_bloom_prototype.html?verify=round33-local`
+  - Local static checks returned `200 OK` for the playable and `assets/tiles/96/bloodroot_ruby_shard.png`.
+  - Local marker checks found `roundThirtyThreePreview`, `Round 33 Bloodroot Compact Encore`, `Bloodroot Compact 7`, `Round 33 encore Bloodroot Compact payoff`, `data-round-thirty-three-state="current"`, `function renderRoundThirtyThreePreview`, `roundThirtyTwoPreview`, and `pathLedgerDrawer`.
+  - Local Playwright fresh desktop loaded 64 tiles, 0 broken images, 0 visible future preview sections out of 31, 2 visible Bouquet Path nodes, board top at 475px, and first tile top at 487px.
+  - Local Playwright opened the `Path / Ledger` drawer, verified the Round 33 tease copy, and kept the drawer closed by default in normal play.
+  - Local Playwright verified all four boosters arm/cancel, Chest opens/closes, Sacrifice opens/cancels, `M` Shape Bloom, and a real focused `B` Supreme Bloom keypress.
+  - Local Playwright verified Round 2 Cursed Thorn wither -> `Retry Bouquet` restores 64 tiles and Cursed Thorn objective copy.
+  - Local Playwright progressed Round 1 -> Round 33 with 64 tiles preserved, 0 visible future preview sections, 2 visible Bouquet Path nodes, Round 33 `Bloodroot Compact 7` current copy intact, and Round 32 marker copy still present in the drawer.
+  - Local Playwright verified Round 33 complete copy.
+  - Local mobile Playwright at 390x844 loaded 64 tiles, 0 broken images, 0 visible future preview sections, board top at 493px, first tile top at 502px, and no horizontal overflow.
+- Browser console/runtime status: local Playwright observed 0 console warnings/errors and 0 page errors during fresh layout, drawer, controls, key hooks, Round 2 retry, Round 33 current/complete, and mobile checks.
+- Vercel deployment URL/identifier checked: pending for this Round 33 commit.
+- GitHub Pages preview status: pending for this Round 33 commit.
+- Known issues: none found locally.
+- How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly; after the line5 and line4 demos, it cycles `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom` shape rewards.
+- How to trigger and verify Supreme Bloom without console: focus the playable and press `B`; after the charge phase the ritual log should report `SUPREME BLOOM!` and return the board to play.
+- Security/secret-scan status: lightweight changed-line credential scan ran with no findings.
+
 ## 2026-07-07 Codex Round 32 Moonlit Wreath pass
 
 - Read `docs/hermes_audit_next_tasks.md` before coding; Hermes confirmed the board-first visual stripback and requested a narrow Round 32 `Moonlit Wreath 7` clarity/payoff slice.
