@@ -766,7 +766,8 @@
     .round-thirty-seven-preview,
     .round-thirty-eight-preview,
     .round-thirty-nine-preview,
-    .round-forty-preview {
+    .round-forty-preview,
+    .round-forty-one-preview {
       max-width: 760px;
       margin: 8px auto 0;
       padding: 9px 12px;
@@ -4301,6 +4302,7 @@
           <div class="round-thirty-eight-preview" id="roundThirtyEightPreview" aria-label="Round 38 Bloodroot Compact"></div>
           <div class="round-thirty-nine-preview" id="roundThirtyNinePreview" aria-label="Round 39 Saint's Night Ledger"></div>
           <div class="round-forty-preview" id="roundFortyPreview" aria-label="Round 40 Sub Rosa Grand Bouquet"></div>
+          <div class="round-forty-one-preview" id="roundFortyOnePreview" aria-label="Round 41 First Bouquet"></div>
         </div>
       </details>
       <script type="application/json" id="shapeAuditData"></script>
@@ -4821,6 +4823,13 @@
       'data-round-forty-state="current"',
       'data-round-forty-state="withered"',
       'data-round-forty-state="complete"'
+    ];
+    const roundFortyOneAuditMarkers = [
+      'data-round-forty-one-state="tease"',
+      'data-round-forty-one-state="next"',
+      'data-round-forty-one-state="current"',
+      'data-round-forty-one-state="withered"',
+      'data-round-forty-one-state="complete"'
     ];
     const STREAK_COIN_BONUS_STEP = 5;
     const STREAK_COIN_BONUS_CAP = 25;
@@ -7664,6 +7673,71 @@
       `;
     }
 
+    function roundFortyOnePlan() {
+      return buildRoundPlan(41);
+    }
+
+    function roundFortyOneEncoreName(plan = roundFortyOnePlan()) {
+      return plan.name || "First Bouquet 9";
+    }
+
+    function roundFortyOnePreviewState(plan = roundFortyOnePlan()) {
+      if (currentRound > plan.round || (currentRound === plan.round && roundComplete)) {
+        return { id: "complete", label: "Ninth First Bouquet Bound" };
+      }
+      if (currentRound === plan.round && isBouquetFailed(plan)) {
+        return { id: "withered", label: "Current · Withered" };
+      }
+      if (currentRound === plan.round) {
+        return { id: "current", label: "Current First Bouquet" };
+      }
+      if (currentRound === plan.round - 1) {
+        return { id: "next", label: roundComplete ? "Ninth First Bouquet Ready" : "After Sub Rosa Grand Bouquet 8" };
+      }
+      return { id: "tease", label: "Ninth First Bouquet Preview" };
+    }
+
+    function roundFortyOneGoalCopy(plan = roundFortyOnePlan()) {
+      return bouquetPathGoalCopy(plan);
+    }
+
+    function roundFortyOnePreviewCopy(state, plan = roundFortyOnePlan()) {
+      const goal = roundFortyOneGoalCopy(plan);
+      const encoreName = roundFortyOneEncoreName(plan);
+      if (state.id === "complete") {
+        return `${encoreName} complete: the ninth First Bouquet is bound, ${plan.reward.item} enters Chest Storage, and Thorn Rose plus Bone Star rewards keep moving.`;
+      }
+      if (state.id === "withered") {
+        return `Retry keeps ${encoreName} open: restore ${plan.moves} moves and finish ${goal}.`;
+      }
+      if (state.id === "current") {
+        return `Current Round 41: ${encoreName} revisits Thorn Rose and Bone Star with higher stakes. Gather ${goal} through the existing First Bouquet Coffer reward path.`;
+      }
+      if (state.id === "next") {
+        return `${roundComplete ? "First Bouquet ninth loop unlocked" : "After Sub Rosa Grand Bouquet 8"}: ${encoreName} asks for ${goal} while reward choice/default, Chest Storage, Flowerpedia, and Bouquet Streak stay familiar.`;
+      }
+      return `${encoreName} waits after Round 40 as the ninth-pass First Bouquet: Thorn Rose plus Bone Star, higher stakes, familiar coffer rewards.`;
+    }
+
+    function roundFortyOnePayoffCopy(plan = roundFortyOnePlan()) {
+      return `Round 41 encore First Bouquet payoff: ${plan.reward.item} uses the existing First Bouquet Coffer reward structure, +${plan.reward.greenhouse} Greenhouse XP, and keeps retry, reward choice, Flowerpedia, Bouquet Streak, and Chest Storage intact.`;
+    }
+
+    function renderRoundFortyOnePreview() {
+      const preview = $("roundFortyOnePreview");
+      if (!preview) {
+        return;
+      }
+      const plan = roundFortyOnePlan();
+      const state = roundFortyOnePreviewState(plan);
+      preview.dataset.roundFortyOneState = state.id;
+      preview.innerHTML = `
+        <span class="round-forty-one-kicker">Round 41 First Bouquet Encore · ${state.label}</span>
+        <span class="round-forty-one-line">${roundFortyOnePreviewCopy(state, plan)}</span>
+        <span class="round-forty-one-payoff">${roundFortyOnePayoffCopy(plan)}</span>
+      `;
+    }
+
     function thornKey(x, y) {
       return `${x},${y}`;
     }
@@ -8282,6 +8356,7 @@
       renderRoundThirtyEightPreview();
       renderRoundThirtyNinePreview();
       renderRoundFortyPreview();
+      renderRoundFortyOnePreview();
       renderActiveOrders(plan);
       renderRoundCeremony(plan);
       $("bar").style.width = `${progress.pct}%`;
