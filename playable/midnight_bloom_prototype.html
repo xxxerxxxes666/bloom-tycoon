@@ -773,7 +773,8 @@
     .round-forty-four-preview,
     .round-forty-five-preview,
     .round-forty-six-preview,
-    .round-forty-seven-preview {
+    .round-forty-seven-preview,
+    .round-forty-eight-preview {
       max-width: 760px;
       margin: 8px auto 0;
       padding: 9px 12px;
@@ -4315,6 +4316,7 @@
           <div class="round-forty-five-preview" id="roundFortyFivePreview" aria-label="Round 45 Sub Rosa Grand Bouquet"></div>
           <div class="round-forty-six-preview" id="roundFortySixPreview" aria-label="Round 46 First Bouquet"></div>
           <div class="round-forty-seven-preview" id="roundFortySevenPreview" aria-label="Round 47 Moonlit Wreath"></div>
+          <div class="round-forty-eight-preview" id="roundFortyEightPreview" aria-label="Round 48 Bloodroot Compact"></div>
         </div>
       </details>
       <script type="application/json" id="shapeAuditData"></script>
@@ -4884,6 +4886,13 @@
       'data-round-forty-seven-state="current"',
       'data-round-forty-seven-state="withered"',
       'data-round-forty-seven-state="complete"'
+    ];
+    const roundFortyEightAuditMarkers = [
+      'data-round-forty-eight-state="tease"',
+      'data-round-forty-eight-state="next"',
+      'data-round-forty-eight-state="current"',
+      'data-round-forty-eight-state="withered"',
+      'data-round-forty-eight-state="complete"'
     ];
     const STREAK_COIN_BONUS_STEP = 5;
     const STREAK_COIN_BONUS_CAP = 25;
@@ -8182,6 +8191,71 @@
       `;
     }
 
+    function roundFortyEightPlan() {
+      return buildRoundPlan(48);
+    }
+
+    function roundFortyEightEncoreName(plan = roundFortyEightPlan()) {
+      return plan.name || "Bloodroot Compact 10";
+    }
+
+    function roundFortyEightPreviewState(plan = roundFortyEightPlan()) {
+      if (currentRound > plan.round || (currentRound === plan.round && roundComplete)) {
+        return { id: "complete", label: "Tenth Bloodroot Compact Sealed" };
+      }
+      if (currentRound === plan.round && isBouquetFailed(plan)) {
+        return { id: "withered", label: "Current · Withered" };
+      }
+      if (currentRound === plan.round) {
+        return { id: "current", label: "Current Bloodroot Compact" };
+      }
+      if (currentRound === plan.round - 1) {
+        return { id: "next", label: roundComplete ? "Tenth Bloodroot Compact Ready" : "After Moonlit Wreath 10" };
+      }
+      return { id: "tease", label: "Tenth Bloodroot Compact Preview" };
+    }
+
+    function roundFortyEightGoalCopy(plan = roundFortyEightPlan()) {
+      return bouquetPathGoalCopy(plan);
+    }
+
+    function roundFortyEightPreviewCopy(state, plan = roundFortyEightPlan()) {
+      const goal = roundFortyEightGoalCopy(plan);
+      const encoreName = roundFortyEightEncoreName(plan);
+      if (state.id === "complete") {
+        return `${encoreName} complete: the tenth Bloodroot Compact is sealed, ${plan.reward.item} enters Chest Storage, and Bloodroot plus Sol Rot rewards keep growing.`;
+      }
+      if (state.id === "withered") {
+        return `Retry keeps ${encoreName} open: restore ${plan.moves} moves and finish ${goal}.`;
+      }
+      if (state.id === "current") {
+        return `Current Round 48: ${encoreName} revisits Bloodroot and Sol Rot with higher stakes. Gather ${goal} through the existing Bloodroot Compact reward path.`;
+      }
+      if (state.id === "next") {
+        return `${roundComplete ? "Bloodroot Compact tenth loop unlocked" : "After Moonlit Wreath 10"}: ${encoreName} asks for ${goal} while reward choice/default, Chest Storage, Flowerpedia, and Bouquet Streak stay familiar.`;
+      }
+      return `${encoreName} waits after Round 47 as the tenth-pass Bloodroot Compact: Bloodroot plus Sol Rot, higher stakes, familiar compact rewards.`;
+    }
+
+    function roundFortyEightPayoffCopy(plan = roundFortyEightPlan()) {
+      return `Round 48 encore Bloodroot Compact payoff: ${plan.reward.item} uses the existing Bloodroot Compact reward structure, +${plan.reward.greenhouse} Greenhouse XP, and keeps retry, reward choice, Flowerpedia, Bouquet Streak, and Chest Storage intact.`;
+    }
+
+    function renderRoundFortyEightPreview() {
+      const preview = $("roundFortyEightPreview");
+      if (!preview) {
+        return;
+      }
+      const plan = roundFortyEightPlan();
+      const state = roundFortyEightPreviewState(plan);
+      preview.dataset.roundFortyEightState = state.id;
+      preview.innerHTML = `
+        <span class="round-forty-eight-kicker">Round 48 Bloodroot Compact Encore · ${state.label}</span>
+        <span class="round-forty-eight-line">${roundFortyEightPreviewCopy(state, plan)}</span>
+        <span class="round-forty-eight-payoff">${roundFortyEightPayoffCopy(plan)}</span>
+      `;
+    }
+
     function thornKey(x, y) {
       return `${x},${y}`;
     }
@@ -8807,6 +8881,7 @@
       renderRoundFortyFivePreview();
       renderRoundFortySixPreview();
       renderRoundFortySevenPreview();
+      renderRoundFortyEightPreview();
       renderActiveOrders(plan);
       renderRoundCeremony(plan);
       $("bar").style.width = `${progress.pct}%`;
