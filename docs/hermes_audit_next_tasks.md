@@ -65,22 +65,22 @@ Audit targets:
 - Vercel playable: https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html
 - GitHub Pages playable: https://xxxerxxxes666.github.io/bloom-tycoon/playable/midnight_bloom_prototype.html
 - Repo: https://github.com/xxxerxxxes666/bloom-tycoon
-- Latest audited commit: `a09d6d4` (`docs: finalize round thirty nine live status [skip ci]`)
-- Latest code/gameplay commit audited: `f58a036` (`feat: add round thirty nine ledger preview`)
+- Latest audited commit: `f392d58` (`docs: finalize round forty live status [skip ci]`)
+- Latest code/gameplay commit audited: `cbc1549` (`feat: add round forty grand bouquet preview`)
 
 ## Hermes audit verdict
 
-Round 39 `Saint's Night Ledger 8` is live and marker-current on Vercel. Board-first layout, Round 39 current/complete flow, Cursed Thorn retry, boosters, Shape Bloom, Supreme Bloom, Chest/Sacrifice, and mobile passed. Codex can proceed to the next narrow progression slice: Round 40 `Sub Rosa Grand Bouquet 8`.
+Round 40 `Sub Rosa Grand Bouquet 8` is live and marker-current on Vercel. Board-first layout, Round 40 current/complete flow, Cursed Thorn retry, boosters, Shape Bloom, Supreme Bloom, Chest/Sacrifice, and mobile passed. Codex can proceed to the next narrow progression slice: Round 41 `First Bouquet 9`.
 
 ## Verified by Hermes this audit
 
-- Fetched and reset to `origin/main`; top commit is `a09d6d4`, underlying gameplay commit is `f58a036`.
-- `python3 scripts/verify_project.py` passes.
-- Vercel HTTP checks returned `200` for root, direct playable, `assets/tiles/96/bone_white_thorn_star.png`, `assets/tiles/96/purple_nightshade_bloom.png`, `assets/tiles/96/withered_sun_medallion.png`, and `assets/tiles/96/bloodroot_ruby_shard.png`.
-- Local/source and Vercel direct playable HTML contain `pathLedgerDrawer`, `roundThirtyNinePreview`, `Round 39 Saint's Night Ledger Encore`, `Saint's Night Ledger 8`, `data-round-thirty-nine-state="current"`, `function renderRoundThirtyNinePreview`, and preserved `roundThirtyEightPreview`; explicit Round 40 source/verifier markers are not present yet.
+- Fetched and reset to `origin/main`; top commit is `f392d58`, underlying gameplay commit is `cbc1549`.
+- `python3 scripts/verify_project.py` and `git diff --check` pass.
+- Vercel HTTP checks returned `200` for direct playable and key Round 40 assets: `crimson_rose_rune.png`, `bloodroot_ruby_shard.png`, `withered_sun_medallion.png`, and `bone_white_thorn_star.png`.
+- Local/source and Vercel direct playable HTML contain `pathLedgerDrawer`, `roundFortyPreview`, `Round 40 Sub Rosa Grand Bouquet Encore`, `Sub Rosa Grand Bouquet 8`, `data-round-forty-state="current"`, `function renderRoundFortyPreview`, and preserved `roundThirtyNinePreview`; explicit Round 41 source/verifier markers are not present yet.
 - Fresh Vercel browser load: 64 tiles, 95 images, 0 broken images, 0 visible future preview sections, first tile around `480px`, and the drawer closed by default.
-- Round 1 → Round 39 review loop preserved 64 tiles and collapsed diary; Round 39 names `Saint's Night Ledger 8`, Bone Star, Nightshade, Sol Rot, and the Saint's Night Ledger reward path.
-- Round 39 completion preserved the Saint's Night Ledger payoff/reward-choice flow and 64 tiles.
+- Round 1 → Round 40 review loop preserved 64 tiles and collapsed diary; Round 40 names `Sub Rosa Grand Bouquet 8`, Thorn Rose, Bloodroot, Sol Rot, and the Sub Rosa Grand Cache reward path.
+- Round 40 completion preserved the Sub Rosa Grand Cache payoff/reward-choice flow and 64 tiles.
 - Round 2 fail/retry check restored active Round 2, Cursed Thorn objective copy, 17 moves, and 64 tiles.
 - All four boosters arm/cancel without breaking the board; Chest opens/closes; Sacrifice opens/cancels; Shape Bloom remains available.
 - Real focused `b` keypress triggers Supreme Bloom, with 64 tiles and no broken images.
@@ -90,22 +90,22 @@ Round 39 `Saint's Night Ledger 8` is live and marker-current on Vercel. Board-fi
 
 ## Current next priority for Codex
 
-Make the next pass a narrow **Round 40 `Sub Rosa Grand Bouquet 8` clarity/payoff slice** using the existing continuing-round, reward-choice, and Chest systems only:
+Make the next pass a narrow **Round 41 `First Bouquet 9` clarity/payoff slice** using the existing continuing-round, reward-choice, and Chest systems only:
 
-1. Add explicit Round 40 preview/current/complete clarity for `Sub Rosa Grand Bouquet 8` below the existing Round 39 surface.
-2. Round 40 current copy should name Thorn Rose, Bloodroot, Sol Rot, higher stakes, and the existing Sub Rosa Grand Cache reward path.
+1. Add explicit Round 41 preview/current/complete clarity for `First Bouquet 9` below the existing Round 40 surface.
+2. Round 41 current copy should name Thorn Rose, Bone Star, higher stakes, and the existing First Bouquet Coffer reward path.
 3. Preserve the board-first layout: future-round detail remains collapsed by default, compact Bouquet Path shows current + next only, and the board remains the hero.
-4. Preserve all existing mechanics, saves, rounds, reward choices, Cursed Thorn retry, all four boosters, Chest/Sacrifice, Shape Bloom, Supreme Bloom, and Round 39 markers.
-5. Verify fresh Vercel load has 64 tiles, 0 broken images, no console errors, 0 visible future diary sections, board near top, Round 1 → Round 40 works, Round 40 current/complete works, Round 2 Cursed Thorn retry still works, all four boosters arm/cancel, Chest/Sacrifice, Shape Bloom, real-key Supreme Bloom, and mobile no-overflow.
+4. Preserve all existing mechanics, saves, rounds, reward choices, Cursed Thorn retry, all four boosters, Chest/Sacrifice, Shape Bloom, Supreme Bloom, and Round 40 markers.
+5. Verify fresh Vercel load has 64 tiles, 0 broken images, no console errors, 0 visible future diary sections, board near top, Round 1 → Round 41 works, Round 41 current/complete works, Round 2 Cursed Thorn retry still works, all four boosters arm/cancel, Chest/Sacrifice, Shape Bloom, real-key Supreme Bloom, and mobile no-overflow.
 6. Keep it narrow: no broad map/progression framework, accounts, backend, analytics, monetization, ads, SDKs, trackers, new assets, secrets, or permissions.
 
 ### Acceptance checks for the next pass
 
-- Round 40 markers exist in source/verifier and live HTML: explicit preview/current/complete surface, `Sub Rosa Grand Bouquet 8`, payoff copy, and render helper/state markers.
+- Round 41 markers exist in source/verifier and live HTML: explicit preview/current/complete surface, `First Bouquet 9`, payoff copy, and render helper/state markers.
 - Fresh first load still shows 0 visible long diary sections before the board.
 - Board remains near the top after objective/compact Bouquet Path; `Path / Ledger` can expose future details but is closed by default.
-- Round 1 → Round 40 flow preserves 64 tiles and reward/default flow.
-- Round 39 markers and functionality remain intact.
+- Round 1 → Round 41 flow preserves 64 tiles and reward/default flow.
+- Round 40 markers and functionality remain intact.
 - Round 2 Cursed Thorn fail → `Retry Bouquet` restores objective/moves/tiles using targeted current-state checks.
 - All four boosters still arm/cancel/use and preserve 64 tiles.
 - Shape Bloom, Supreme Bloom via real focused `b`, Chest, Sacrifice, reward choice/default, and mobile portrait still work.
