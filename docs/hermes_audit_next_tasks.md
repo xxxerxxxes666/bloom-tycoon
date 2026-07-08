@@ -65,24 +65,24 @@ Audit targets:
 - Vercel playable: https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html
 - GitHub Pages playable: https://xxxerxxxes666.github.io/bloom-tycoon/playable/midnight_bloom_prototype.html
 - Repo: https://github.com/xxxerxxxes666/bloom-tycoon
-- Latest audited commit: `fdfa017` (`docs: finalize round forty seven live status [skip ci]`)
-- Latest code/gameplay commit audited: `865e576` (`feat: add round forty seven moonlit wreath preview`)
+- Latest audited commit: `2d86de5` (`docs: finalize round forty eight live status [skip ci]`)
+- Latest code/gameplay commit audited: `d488663` (`feat: add round forty eight bloodroot compact preview`)
 
 ## Hermes audit verdict
 
-Round 47 `Moonlit Wreath 10` is live and marker-current on Vercel. Board-first layout, Round 47 current/complete flow, Cursed Thorn retry, boosters, Shape Bloom, Supreme Bloom, Chest/Sacrifice, and mobile passed. Codex can proceed to the next narrow progression slice: Round 48 `Bloodroot Compact 10`.
+Round 48 `Bloodroot Compact 10` is live and marker-current on Vercel. Board-first layout, Round 48 current/complete flow, Cursed Thorn retry, boosters, Shape Bloom, Supreme Bloom, Chest/Sacrifice, and mobile passed. Codex can proceed to the next narrow progression slice: Round 49 `Saint's Night Ledger 10`.
 
 ## Verified by Hermes this audit
 
-- Fetched and reset to `origin/main`; top commit is `fdfa017`, latest gameplay commit is `865e576`.
+- Fetched and reset to `origin/main`; top commit is `2d86de5`, latest gameplay commit is `d488663`.
 - `python3 scripts/verify_project.py` and `git diff --check` pass.
-- Vercel HTTP checks returned `200` for direct playable and key Round 47 assets: `purple_nightshade_bloom.png`, `amber_resin_seed.png`, `crimson_rose_rune.png`, and `bone_white_thorn_star.png`.
-- Local/source and Vercel direct playable HTML contain `pathLedgerDrawer`, `roundFortySevenPreview`, `Round 47 Moonlit Wreath Encore`, `Moonlit Wreath 10`, `data-round-forty-seven-state="current"`, `function renderRoundFortySevenPreview`, and preserved `roundFortySixPreview`; explicit Round 48 source/verifier markers are not present yet.
+- Vercel HTTP checks returned `200` for direct playable and key Round 48 assets: `bloodroot_ruby_shard.png`, `withered_sun_medallion.png`, `purple_nightshade_bloom.png`, and `amber_resin_seed.png`.
+- Local/source and Vercel direct playable HTML contain `pathLedgerDrawer`, `roundFortyEightPreview`, `Round 48 Bloodroot Compact Encore`, `Bloodroot Compact 10`, `data-round-forty-eight-state="current"`, `function renderRoundFortyEightPreview`, and preserved `roundFortySevenPreview`; explicit Round 49 source/verifier markers are not present yet.
 - Fresh Vercel browser load: 64 tiles, 95 images, 0 broken images, 0 visible future preview sections, first tile around `480px`, and the drawer closed by default.
-- Round 1 → Round 47 review loop preserved 64 tiles and collapsed diary; Round 47 names `Moonlit Wreath 10`, Nightshade, Amber Seed, Thorn Rose, and Cursed Thorn.
-- Round 47 completion preserved the Moonlit Wreath Cache payoff/reward-choice flow and 64 tiles.
+- Round 1 → Round 48 review loop preserved 64 tiles and collapsed diary; Round 48 names `Bloodroot Compact 10`, Bloodroot, and Sol Rot.
+- Round 48 completion preserved the Bloodroot Compact payoff/reward-choice flow and 64 tiles.
 - Round 2 fail/retry check restored active Round 2, Cursed Thorn objective copy, 17 moves, and 64 tiles.
-- All four boosters arm/cancel without breaking the board; Chest opens; Sacrifice opens/cancels; Shape Bloom remains available.
+- All four boosters arm/cancel without breaking the board; Chest opens/closes; Sacrifice opens/cancels; Shape Bloom remains available.
 - Real focused `b` keypress triggers Supreme Bloom, with 64 tiles and no broken images.
 - Same-origin mobile iframe: 64 tiles, 0 broken images, 0 visible future preview sections, and no horizontal overflow.
 - Browser console/page status: no console messages or JS errors observed.
@@ -90,22 +90,22 @@ Round 47 `Moonlit Wreath 10` is live and marker-current on Vercel. Board-first l
 
 ## Current next priority for Codex
 
-Make the next pass a narrow **Round 48 `Bloodroot Compact 10` clarity/payoff slice** using the existing continuing-round, reward-choice, and Chest systems only:
+Make the next pass a narrow **Round 49 `Saint's Night Ledger 10` clarity/payoff slice** using the existing continuing-round, reward-choice, and Chest systems only:
 
-1. Add explicit Round 48 preview/current/complete clarity for `Bloodroot Compact 10` below the existing Round 47 surface.
-2. Round 48 current copy should name Bloodroot, Sol Rot, higher stakes, and the existing Bloodroot Compact reward path.
+1. Add explicit Round 49 preview/current/complete clarity for `Saint's Night Ledger 10` below the existing Round 48 surface.
+2. Round 49 current copy should name Bone Star, Nightshade, Sol Rot, higher stakes, and the existing Saint's Night Ledger reward path.
 3. Preserve the board-first layout: future-round detail remains collapsed by default, compact Bouquet Path shows current + next only, and the board remains the hero.
-4. Preserve all existing mechanics, saves, rounds, reward choices, Cursed Thorn retry, all four boosters, Chest/Sacrifice, Shape Bloom, Supreme Bloom, and Round 47 markers.
-5. Verify fresh Vercel load has 64 tiles, 0 broken images, no console errors, 0 visible future diary sections, board near top, Round 1 → Round 48 works, Round 48 current/complete works, Round 2 Cursed Thorn retry still works, all four boosters arm/cancel, Chest/Sacrifice, Shape Bloom, real-key Supreme Bloom, and mobile no-overflow.
+4. Preserve all existing mechanics, saves, rounds, reward choices, Cursed Thorn retry, all four boosters, Chest/Sacrifice, Shape Bloom, Supreme Bloom, and Round 48 markers.
+5. Verify fresh Vercel load has 64 tiles, 0 broken images, no console errors, 0 visible future diary sections, board near top, Round 1 → Round 49 works, Round 49 current/complete works, Round 2 Cursed Thorn retry still works, all four boosters arm/cancel, Chest/Sacrifice, Shape Bloom, real-key Supreme Bloom, and mobile no-overflow.
 6. Keep it narrow: no broad map/progression framework, accounts, backend, analytics, monetization, ads, SDKs, trackers, new assets, secrets, or permissions.
 
 ### Acceptance checks for the next pass
 
-- Round 48 markers exist in source/verifier and live HTML: explicit preview/current/complete surface, `Bloodroot Compact 10`, payoff copy, and render helper/state markers.
+- Round 49 markers exist in source/verifier and live HTML: explicit preview/current/complete surface, `Saint's Night Ledger 10`, payoff copy, and render helper/state markers.
 - Fresh first load still shows 0 visible long diary sections before the board.
 - Board remains near the top after objective/compact Bouquet Path; `Path / Ledger` can expose future details but is closed by default.
-- Round 1 → Round 48 flow preserves 64 tiles and reward/default flow.
-- Round 47 markers and functionality remain intact.
+- Round 1 → Round 49 flow preserves 64 tiles and reward/default flow.
+- Round 48 markers and functionality remain intact.
 - Round 2 Cursed Thorn fail → `Retry Bouquet` restores objective/moves/tiles using targeted current-state checks.
 - All four boosters still arm/cancel/use and preserve 64 tiles.
 - Shape Bloom, Supreme Bloom via real focused `b`, Chest, Sacrifice, reward choice/default, and mobile portrait still work.
