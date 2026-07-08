@@ -1,5 +1,41 @@
 # Codex Build Notes
 
+## 2026-07-08 Codex Round 39 Saint's Night Ledger pass
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes confirmed Round 38 and requested a narrow Round 39 `Saint's Night Ledger 8` clarity/payoff slice.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added a Round 39 Saint's Night Ledger Encore preview/payoff surface inside the collapsed `Path / Ledger` drawer using the existing `buildRoundPlan(39)` continuing-round generator.
+- Added tease, next, current, withered, and complete states for `roundThirtyNinePreview`, including current copy that names `Saint's Night Ledger 8`, Bone Star, Nightshade, Sol Rot, higher stakes, and the existing Saint's Night Ledger reward path.
+- Added static verifier markers for the Round 39 encore Saint's Night Ledger surface and its five `data-round-thirty-nine-state` values.
+- Preserved the board-first layout: first load still keeps future detail hidden behind `Path / Ledger`, compact Bouquet Path remains current + next only, and the board stays near the top.
+- Preserved existing saves, rounds, reward choices, Round 38 markers, Cursed Thorn retry, all four boosters, Chest/Sacrifice, Shape Bloom, and Supreme Bloom; no broad progression framework, account system, backend, analytics, monetization, SDK, tracker, asset, secret, or permission was added.
+- Verification run:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - `python3 scripts/verify_project.py`
+  - `git diff --check`
+  - Local static preview at `http://127.0.0.1:4260/playable/midnight_bloom_prototype.html?verify=round39-local-*`
+  - Local static checks returned `200 OK` for the playable, `assets/tiles/96/bone_white_thorn_star.png`, `assets/tiles/96/purple_nightshade_bloom.png`, `assets/tiles/96/withered_sun_medallion.png`, and `assets/tiles/96/bloodroot_ruby_shard.png`.
+  - Local marker checks found `pathLedgerDrawer`, `roundThirtyNinePreview`, `Round 39 Saint's Night Ledger Encore`, `Saint's Night Ledger 8`, `Round 39 encore Saint's Night Ledger payoff`, `data-round-thirty-nine-state="current"`, `function renderRoundThirtyNinePreview`, and preserved Round 38 markers.
+  - Local Playwright fresh desktop loaded 64 tiles, 95 images, 0 broken images, 0 visible future preview sections out of 37 collapsed ledger entries, 2 visible Bouquet Path nodes, board top at 475px, and first tile top at 487px.
+  - Local Playwright progressed Round 1 -> Round 39 with 64 tiles preserved and verified the Round 39 current copy and complete copy.
+  - Local Playwright verified Round 2 Cursed Thorn wither -> `Retry Bouquet`, all four boosters arm/cancel, Chest open/close, Sacrifice open/cancel, `Shape Bloom`, real focused `B` Supreme Bloom, and mobile portrait at 390x844 with no overflow.
+  - Vercel production deploy completed as `dpl_HhWsgzqCLF2DFznS2Kz1biNqwK26` at `https://bloom-tycoon-iujg3iwsl-xerxes-florals.vercel.app`.
+  - Explicitly pointed `https://bloom-tycoon.vercel.app` to that deployment.
+  - Vercel direct checks returned `200 OK` for `/`, `/playable/midnight_bloom_prototype.html?verify=round39-direct`, `assets/tiles/96/bone_white_thorn_star.png`, `assets/tiles/96/purple_nightshade_bloom.png`, `assets/tiles/96/withered_sun_medallion.png`, and `assets/tiles/96/bloodroot_ruby_shard.png`; downloaded HTML contained the Round 39 markers plus preserved Round 38 markers.
+  - Vercel Playwright fresh desktop loaded 64 tiles, 95 images, 0 broken images, 0 visible future preview sections out of 37 collapsed ledger entries, 2 visible Bouquet Path nodes, board top at 475px, and first tile top at 487px.
+  - Vercel Playwright verified Round 1 -> Round 39 current/complete, Round 2 Cursed Thorn wither -> `Retry Bouquet`, all four boosters arm/cancel, Chest open/close, Sacrifice open/cancel, `Shape Bloom`, real focused `B` Supreme Bloom, and mobile portrait at 390x844 with no overflow.
+- Browser console/runtime status: local and Vercel Playwright observed 0 console warnings/errors, 0 page errors, and 0 failed browser requests during fresh layout, controls, key hooks, Round 2 retry, Round 39 current/complete, and mobile checks.
+- Vercel deployment URL/identifier checked: `dpl_HhWsgzqCLF2DFznS2Kz1biNqwK26`, aliased to `https://bloom-tycoon.vercel.app`.
+- GitHub Pages preview status: pending source commit/push for Round 39.
+- Known issues: none found locally or on Vercel.
+- How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly, or click `Shape Bloom` repeatedly; after the line5 and line4 demos, it cycles `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom` shape rewards.
+- How to trigger and verify Supreme Bloom without console: focus the playable and press `B`; after the charge phase the ritual log should report `SUPREME BLOOM!` and return the board to play.
+- Security/secret-scan status: lightweight changed-line credential scan ran with no findings.
+
 ## 2026-07-08 Codex Round 38 Bloodroot Compact pass
 
 - Read `docs/hermes_audit_next_tasks.md` before coding; Hermes confirmed Round 37 and requested a narrow Round 38 `Bloodroot Compact 8` clarity/payoff slice.
