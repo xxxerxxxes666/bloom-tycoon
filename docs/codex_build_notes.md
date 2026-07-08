@@ -1,5 +1,39 @@
 # Codex Build Notes
 
+## 2026-07-07 Codex Round 32 Moonlit Wreath pass
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes confirmed the board-first visual stripback and requested a narrow Round 32 `Moonlit Wreath 7` clarity/payoff slice.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added a Round 32 Moonlit Wreath Encore preview/payoff surface inside the collapsed `Path / Ledger` drawer using the existing `buildRoundPlan(32)` continuing-round generator.
+- Added tease, next, current, withered, and complete states for `roundThirtyTwoPreview`, including current copy that names `Moonlit Wreath 7`, Nightshade, Amber Seed, Thorn Rose, Cursed Thorn, higher stakes, and the existing Moonlit Wreath Cache reward path.
+- Added static verifier markers for the Round 32 encore Moonlit Wreath surface and its five `data-round-thirty-two-state` values.
+- Preserved the board-first layout: first load still keeps future detail hidden behind `Path / Ledger`, compact Bouquet Path remains current + next only, and the board stays near the top.
+- Preserved existing saves, rounds, reward choices, Round 31 markers, Cursed Thorn retry, all four boosters, Chest/Sacrifice, Shape Bloom, and Supreme Bloom; no broad progression framework, account system, backend, analytics, monetization, SDK, tracker, asset, secret, or permission was added.
+- Verification run so far:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - `python3 scripts/verify_project.py`
+  - `git diff --check`
+  - Local static preview at `http://127.0.0.1:4253/playable/midnight_bloom_prototype.html?verify=round32-local`
+  - Local static checks returned `200 OK` for the playable and `assets/tiles/96/purple_nightshade_bloom.png`.
+  - Local marker checks found `roundThirtyTwoPreview`, `Round 32 Moonlit Wreath Encore`, `Moonlit Wreath 7`, `Round 32 encore Moonlit Wreath payoff`, `data-round-thirty-two-state="current"`, `function renderRoundThirtyTwoPreview`, and `pathLedgerDrawer`.
+  - Local Playwright fresh desktop loaded 64 tiles, 0 broken images, 0 visible future preview sections out of 30, 2 visible Bouquet Path nodes, board top at 475px, and first tile top at 487px.
+  - Local Playwright opened the `Path / Ledger` drawer, verified the Round 32 tease copy, and kept the drawer closed by default in normal play.
+  - Local Playwright verified all four boosters arm/cancel, Chest opens/closes, Sacrifice opens/cancels, `M` Shape Bloom, and a real focused `B` Supreme Bloom keypress.
+  - Local Playwright progressed Round 1 -> Round 32 with 64 tiles preserved, 0 visible future preview sections, 2 visible Bouquet Path nodes, Round 32 `Moonlit Wreath 7` current copy intact, and Cursed Thorn copy present.
+  - Local Playwright verified Round 32 wither -> `Retry Bouquet` restores 64 tiles and Round 32 Cursed Thorn objective copy, then verified Round 32 complete copy.
+  - Local mobile Playwright at 390x844 loaded 64 tiles, 0 broken images, 0 visible future preview sections, board top at 493px, first tile top at 502px, and no horizontal overflow.
+- Browser console/runtime status: local Playwright observed 0 console warnings/errors and 0 page errors during fresh layout, drawer, controls, key hooks, Round 32 retry/complete, and mobile checks.
+- Vercel deployment URL/identifier checked: pending for this Round 32 commit.
+- GitHub Pages preview status: pending for this Round 32 commit.
+- Known issues: none found locally.
+- How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly; after the line5 and line4 demos, it cycles `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom` shape rewards.
+- How to trigger and verify Supreme Bloom without console: focus the playable and press `B`; after the charge phase the ritual log should report `SUPREME BLOOM!` and return the board to play.
+- Security/secret-scan status: lightweight changed-line credential scan ran with no findings.
+
 ## 2026-07-07 Codex board-first visual stripback fix
 
 - Read `docs/hermes_audit_next_tasks.md` before coding; Hermes requested a narrow visual stripback fix only after the Round 31 audit found the future-round diary still visible before the board.
