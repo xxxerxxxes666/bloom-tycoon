@@ -777,7 +777,8 @@
     .round-forty-eight-preview,
     .round-forty-nine-preview,
     .round-fifty-preview,
-    .round-fifty-one-preview {
+    .round-fifty-one-preview,
+    .round-fifty-two-preview {
       max-width: 760px;
       margin: 8px auto 0;
       padding: 9px 12px;
@@ -4323,6 +4324,7 @@
           <div class="round-forty-nine-preview" id="roundFortyNinePreview" aria-label="Round 49 Saint's Night Ledger"></div>
           <div class="round-fifty-preview" id="roundFiftyPreview" aria-label="Round 50 Sub Rosa Grand Bouquet"></div>
           <div class="round-fifty-one-preview" id="roundFiftyOnePreview" aria-label="Round 51 First Bouquet"></div>
+          <div class="round-fifty-two-preview" id="roundFiftyTwoPreview" aria-label="Round 52 Moonlit Wreath"></div>
         </div>
       </details>
       <script type="application/json" id="shapeAuditData"></script>
@@ -4920,6 +4922,13 @@
       'data-round-fifty-one-state="current"',
       'data-round-fifty-one-state="withered"',
       'data-round-fifty-one-state="complete"'
+    ];
+    const roundFiftyTwoAuditMarkers = [
+      'data-round-fifty-two-state="tease"',
+      'data-round-fifty-two-state="next"',
+      'data-round-fifty-two-state="current"',
+      'data-round-fifty-two-state="withered"',
+      'data-round-fifty-two-state="complete"'
     ];
     const STREAK_COIN_BONUS_STEP = 5;
     const STREAK_COIN_BONUS_CAP = 25;
@@ -8478,6 +8487,71 @@
       `;
     }
 
+    function roundFiftyTwoPlan() {
+      return buildRoundPlan(52);
+    }
+
+    function roundFiftyTwoEncoreName(plan = roundFiftyTwoPlan()) {
+      return plan.name || "Moonlit Wreath 11";
+    }
+
+    function roundFiftyTwoPreviewState(plan = roundFiftyTwoPlan()) {
+      if (currentRound > plan.round || (currentRound === plan.round && roundComplete)) {
+        return { id: "complete", label: "Eleventh Moonlit Wreath Woven" };
+      }
+      if (currentRound === plan.round && isBouquetFailed(plan)) {
+        return { id: "withered", label: "Current · Withered" };
+      }
+      if (currentRound === plan.round) {
+        return { id: "current", label: "Current Moonlit Wreath" };
+      }
+      if (currentRound === plan.round - 1) {
+        return { id: "next", label: roundComplete ? "Eleventh Moonlit Wreath Ready" : "After First Bouquet 11" };
+      }
+      return { id: "tease", label: "Eleventh Moonlit Wreath Preview" };
+    }
+
+    function roundFiftyTwoGoalCopy(plan = roundFiftyTwoPlan()) {
+      return bouquetPathGoalCopy(plan);
+    }
+
+    function roundFiftyTwoPreviewCopy(state, plan = roundFiftyTwoPlan()) {
+      const goal = roundFiftyTwoGoalCopy(plan);
+      const encoreName = roundFiftyTwoEncoreName(plan);
+      if (state.id === "complete") {
+        return `${encoreName} complete: the eleventh Moonlit Wreath is woven, ${plan.reward.item} enters Chest Storage, and the Cursed Thorn payoff path stays intact.`;
+      }
+      if (state.id === "withered") {
+        return `Retry keeps ${encoreName} open: restore ${plan.moves} moves, clear Cursed Thorn, and finish ${goal}.`;
+      }
+      if (state.id === "current") {
+        return `Current Round 52: ${encoreName} revisits Nightshade, Amber Seed, Thorn Rose, and Cursed Thorn with higher stakes. Gather ${goal} through the existing Moonlit Wreath Cache reward path.`;
+      }
+      if (state.id === "next") {
+        return `${roundComplete ? "Moonlit Wreath eleventh loop unlocked" : "After First Bouquet 11"}: ${encoreName} asks for ${goal} while Cursed Thorn retry, reward choice/default, Chest Storage, Flowerpedia, and Bouquet Streak stay familiar.`;
+      }
+      return `${encoreName} waits after Round 51 as the eleventh-pass Moonlit Wreath: Nightshade plus Amber Seed plus Thorn Rose, Cursed Thorn pressure, higher stakes, familiar cache rewards.`;
+    }
+
+    function roundFiftyTwoPayoffCopy(plan = roundFiftyTwoPlan()) {
+      return `Round 52 encore Moonlit Wreath payoff: ${plan.reward.item} uses the existing Moonlit Wreath Cache reward structure, +${plan.reward.apothecary} Apothecary XP, and keeps Cursed Thorn retry, reward choice, Flowerpedia, Bouquet Streak, and Chest Storage intact.`;
+    }
+
+    function renderRoundFiftyTwoPreview() {
+      const preview = $("roundFiftyTwoPreview");
+      if (!preview) {
+        return;
+      }
+      const plan = roundFiftyTwoPlan();
+      const state = roundFiftyTwoPreviewState(plan);
+      preview.dataset.roundFiftyTwoState = state.id;
+      preview.innerHTML = `
+        <span class="round-fifty-two-kicker">Round 52 Moonlit Wreath Encore · ${state.label}</span>
+        <span class="round-fifty-two-line">${roundFiftyTwoPreviewCopy(state, plan)}</span>
+        <span class="round-fifty-two-payoff">${roundFiftyTwoPayoffCopy(plan)}</span>
+      `;
+    }
+
     function thornKey(x, y) {
       return `${x},${y}`;
     }
@@ -9107,6 +9181,7 @@
       renderRoundFortyNinePreview();
       renderRoundFiftyPreview();
       renderRoundFiftyOnePreview();
+      renderRoundFiftyTwoPreview();
       renderActiveOrders(plan);
       renderRoundCeremony(plan);
       $("bar").style.width = `${progress.pct}%`;
