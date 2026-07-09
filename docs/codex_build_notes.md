@@ -1,5 +1,38 @@
 # Codex Build Notes
 
+## 2026-07-09 Codex Round 55 Sub Rosa Grand Bouquet pass
+
+- Read `docs/hermes_audit_next_tasks.md` before coding; Hermes confirmed Round 54 and requested a narrow Round 55 `Sub Rosa Grand Bouquet 11` clarity/payoff slice.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_html_match_shapes.py`
+  - `docs/codex_build_notes.md`
+- Added a Round 55 Sub Rosa Grand Bouquet Encore preview/payoff surface inside the collapsed `Path / Ledger` drawer using the existing `buildRoundPlan(55)` continuing-round generator.
+- Added tease, next, current, withered, and complete states for `roundFiftyFivePreview`, including current copy that names `Sub Rosa Grand Bouquet 11`, Thorn Rose, Bloodroot, Sol Rot, higher stakes, and the existing Sub Rosa Grand Cache reward path.
+- Added static verifier markers for the Round 55 encore Sub Rosa Grand Bouquet surface and its five `data-round-fifty-five-state` values.
+- Preserved the board-first layout: first load still keeps future detail hidden behind `Path / Ledger`, compact Bouquet Path remains current + next only, and the board stays near the top.
+- Preserved existing saves, rounds, reward choices, Round 54 markers, Cursed Thorn retry, all four boosters, Chest/Sacrifice, Shape Bloom, and Supreme Bloom; no broad progression framework, account system, backend, analytics, monetization, SDK, tracker, asset, secret, or permission was added.
+- Verification run:
+  - `git fetch origin main`
+  - `git pull --ff-only origin main`
+  - `python3 scripts/verify_project.py`
+  - `git diff --check`
+  - Local static preview at `http://127.0.0.1:4275/playable/midnight_bloom_prototype.html?verify=round55-local-*`
+  - Local static checks returned `200 OK` for the playable, `assets/tiles/96/crimson_rose_rune.png`, `assets/tiles/96/bone_white_thorn_star.png`, `assets/tiles/96/bloodroot_ruby_shard.png`, `assets/tiles/96/withered_sun_medallion.png`, `assets/tiles/96/purple_nightshade_bloom.png`, and `assets/tiles/96/amber_resin_seed.png`.
+  - Local marker checks found `pathLedgerDrawer`, `roundFiftyFivePreview`, `Round 55 Sub Rosa Grand Bouquet Encore`, `Sub Rosa Grand Bouquet 11`, `Round 55 encore Sub Rosa Grand Bouquet payoff`, `data-round-fifty-five-state="current"`, `function renderRoundFiftyFivePreview`, and preserved Round 54 markers.
+  - Local Playwright fresh desktop loaded 64 tiles, 95 images, 0 broken images, 0 visible future preview sections out of 52 collapsed ledger entries, compact Bouquet Path current + next only, board top at 475px, first tile top at 487px, and no horizontal overflow.
+  - Local Playwright progressed Round 1 -> Round 55 with 64 tiles preserved and verified the opened Round 55 current copy, preserved Round 54 marker copy, and Round 55 complete copy plus reward choice panel.
+  - Local Playwright verified Round 2 Cursed Thorn wither -> `Retry Bouquet`, all four boosters arm/cancel, Chest open/close, Sacrifice open/cancel while active, `Shape Bloom`, real focused `B` Supreme Bloom, and mobile portrait at 390x844 with no overflow.
+  - Vercel production deploy pending for this source pass.
+  - GitHub Pages marker-current check pending for this source pass.
+- Browser console/runtime status: local Playwright observed 0 console warnings/errors, 0 page errors, and 0 failed browser requests during fresh layout, controls, key hooks, Round 2 retry, Round 55 current/complete, and mobile checks.
+- Vercel deployment URL/identifier checked: pending deploy.
+- GitHub Pages preview status: pending source push and Pages refresh.
+- Known issues: none found locally.
+- How to trigger and verify L/T/cross matches without console: open the playable and press `M` repeatedly, or click `Shape Bloom` repeatedly; after the line5 and line4 demos, it cycles `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom` shape rewards.
+- How to trigger and verify Supreme Bloom without console: focus the playable and press `B`; after the charge phase the ritual log should report `SUPREME BLOOM!` and return the board to play.
+- Security/secret-scan status: lightweight changed-line credential scan passed before source commit; final docs-only live-status scan pending.
+
 ## 2026-07-09 Codex Round 54 Saint's Night Ledger pass
 
 - Read `docs/hermes_audit_next_tasks.md` before coding; Hermes confirmed Round 53 and requested a narrow Round 54 `Saint's Night Ledger 11` clarity/payoff slice.
