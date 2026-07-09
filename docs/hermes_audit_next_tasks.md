@@ -65,46 +65,46 @@ Audit targets:
 - Vercel playable: https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html
 - GitHub Pages playable: https://xxxerxxxes666.github.io/bloom-tycoon/playable/midnight_bloom_prototype.html
 - Repo: https://github.com/xxxerxxxes666/bloom-tycoon
-- Latest audited commit: `87da64e` (`feat: add round fifty one first bouquet preview`)
-- Latest code/gameplay commit audited: `87da64e` (`feat: add round fifty one first bouquet preview`)
+- Latest audited commit: `5088089` (`docs: finalize round fifty two live status [skip ci]`)
+- Latest code/gameplay commit audited: `76b87be` (`feat: add round fifty two moonlit wreath preview`)
 
 ## Hermes audit verdict
 
-Round 51 `First Bouquet 11` is live and marker-current on Vercel and GitHub Pages. Board-first layout, Round 51 current/complete flow, boosters, Shape Bloom, Supreme Bloom, Chest/Sacrifice, and mobile passed. Codex can proceed to the next narrow progression slice: Round 52 `Moonlit Wreath 11`.
+Round 52 `Moonlit Wreath 11` is live and marker-current on Vercel and GitHub Pages. Board-first layout, Round 52 current/complete flow, Cursed Thorn retry, all four boosters, Shape Bloom, real-key Supreme Bloom, Chest/Sacrifice, and mobile passed. Codex can proceed to the next narrow progression slice: Round 53 `Bloodroot Compact 11`.
 
 ## Verified by Hermes this audit
 
-- Fetched and reset to `origin/main`; top gameplay commit is `87da64e`.
+- Fetched and reset to `origin/main`; top commit is `5088089`, underlying gameplay commit is `76b87be`.
 - `python3 scripts/verify_project.py` and `git diff --check` pass.
-- Vercel and GitHub Pages HTTP checks returned `200` for direct playable and key Round 51 assets: `crimson_rose_rune.png`, `bone_white_thorn_star.png`, `bloodroot_ruby_shard.png`, `withered_sun_medallion.png`, `purple_nightshade_bloom.png`, and `amber_resin_seed.png`.
-- Source, Vercel, and GitHub Pages direct playable HTML contain `pathLedgerDrawer`, `roundFiftyOnePreview`, `Round 51 First Bouquet Encore`, `First Bouquet 11`, `data-round-fifty-one-state`, `function renderRoundFiftyOnePreview`, and preserved `roundFiftyPreview`.
-- Fresh Vercel browser load: 64 tiles, 95 images, 0 broken images, 0 visible future preview sections, first tile around `480px`, and the drawer closed by default.
-- Round 1 → Round 51 review loop preserved 64 tiles and collapsed diary; Round 51 names `First Bouquet 11`, Thorn Rose, and Bone Star.
-- Round 51 completion preserved the First Bouquet Coffer payoff/reward-choice flow and 64 tiles.
-- All four boosters arm/cancel and return to 64-tile active play; Chest opens; Sacrifice opens/cancels; Shape Bloom remains available.
-- Real focused `b` keypress triggers Supreme Bloom, with 64 tiles and no broken images.
+- Vercel and GitHub Pages direct playable HTML returned `200` and contained `pathLedgerDrawer`, `roundFiftyTwoPreview`, `Round 52 Moonlit Wreath Encore`, `Moonlit Wreath 11`, `data-round-fifty-two-state`, `function renderRoundFiftyTwoPreview`, and preserved `roundFiftyOnePreview`.
+- Vercel key tile assets returned `200`: `crimson_rose_rune.png`, `bone_white_thorn_star.png`, `bloodroot_ruby_shard.png`, `withered_sun_medallion.png`, `purple_nightshade_bloom.png`, and `amber_resin_seed.png`.
+- Fresh Vercel browser load: 64 tiles, 95 images, 0 broken images, 0 visible future preview sections, drawer closed by default, first tile around `480px`.
+- Round 1 → Round 52 review loop preserved 64 tiles and collapsed diary; Round 52 current/complete names `Moonlit Wreath 11`, Nightshade, Amber Seed, Thorn Rose, Cursed Thorn, and the Moonlit Wreath Cache payoff.
+- Round 2 Cursed Thorn fail via visible Shuffle exhaustion produced `RETRY BOUQUET`; retry restored active Round 2 objective, moves, and 64 tiles.
+- All four boosters arm/cancel and return to 64-tile active play; Chest opens/closes; Sacrifice opens/cancels; Shape Bloom remains available.
+- Real focused lowercase `b` keypress triggers Supreme Bloom and returns to 64 tiles with no broken images.
 - Same-origin mobile iframe: 64 tiles, 0 broken images, 0 visible future preview sections, and no horizontal overflow.
 - Browser console/page status: no console messages or JS errors observed.
 - Usage notes/docs search found no low-allowance warning beyond the standing cadence policy.
 
 ## Current next priority for Codex
 
-Make the next pass a narrow **Round 52 `Moonlit Wreath 11` clarity/payoff slice** using the existing continuing-round, Cursed Thorn, reward-choice, and Chest systems only:
+Make the next pass a narrow **Round 53 `Bloodroot Compact 11` clarity/payoff slice** using the existing continuing-round, reward-choice, and Chest systems only:
 
-1. Add explicit Round 52 preview/current/complete clarity for `Moonlit Wreath 11` below the existing Round 51 surface.
-2. Round 52 current copy should name Nightshade, Amber Seed, Thorn Rose, Cursed Thorn, higher stakes, and the existing Moonlit Wreath Cache reward path.
+1. Add explicit Round 53 preview/current/complete clarity for `Bloodroot Compact 11` below the existing Round 52 surface.
+2. Round 53 current copy should name Bloodroot, Sol Rot, higher stakes, and the existing Bloodroot Compact reward path.
 3. Preserve the board-first layout: future-round detail remains collapsed by default, compact Bouquet Path shows current + next only, and the board remains the hero.
-4. Preserve all existing mechanics, saves, rounds, reward choices, Cursed Thorn retry, all four boosters, Chest/Sacrifice, Shape Bloom, Supreme Bloom, and Round 51 markers.
-5. Verify fresh Vercel load has 64 tiles, 0 broken images, no console errors, 0 visible future diary sections, board near top, Round 1 → Round 52 works, Round 52 current/complete works, Round 2 Cursed Thorn retry still works, all four boosters arm/cancel, Chest/Sacrifice, Shape Bloom, real-key Supreme Bloom, and mobile no-overflow.
+4. Preserve all existing mechanics, saves, rounds, reward choices, Cursed Thorn retry, all four boosters, Chest/Sacrifice, Shape Bloom, Supreme Bloom, and Round 52 markers.
+5. Verify fresh Vercel load has 64 tiles, 0 broken images, no console errors, 0 visible future diary sections, board near top, Round 1 → Round 53 works, Round 53 current/complete works, Round 2 Cursed Thorn retry still works, all four boosters arm/cancel, Chest/Sacrifice, Shape Bloom, real-key Supreme Bloom, and mobile no-overflow.
 6. Keep it narrow: no broad map/progression framework, accounts, backend, analytics, monetization, ads, SDKs, trackers, new assets, secrets, or permissions.
 
 ### Acceptance checks for the next pass
 
-- Round 52 markers exist in source/verifier and live HTML: explicit preview/current/complete surface, `Moonlit Wreath 11`, payoff copy, Cursed Thorn copy, and render helper/state markers.
+- Round 53 markers exist in source/verifier and live HTML: explicit preview/current/complete surface, `Bloodroot Compact 11`, payoff copy, and render helper/state markers.
 - Fresh first load still shows 0 visible long diary sections before the board.
 - Board remains near the top after objective/compact Bouquet Path; `Path / Ledger` can expose future details but is closed by default.
-- Round 1 → Round 52 flow preserves 64 tiles and reward/default flow.
-- Round 51 markers and functionality remain intact.
+- Round 1 → Round 53 flow preserves 64 tiles and reward/default flow.
+- Round 52 markers and functionality remain intact.
 - Round 2 Cursed Thorn fail → `Retry Bouquet` restores objective/moves/tiles using targeted current-state checks.
 - All four boosters still arm/cancel/use and preserve 64 tiles.
 - Shape Bloom, Supreme Bloom via real focused `b`, Chest, Sacrifice, reward choice/default, and mobile portrait still work.
