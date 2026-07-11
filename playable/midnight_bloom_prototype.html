@@ -4386,7 +4386,7 @@
       </details>
       <script type="application/json" id="shapeAuditData"></script>
       <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
-      <div class="first-swap-cue" id="firstSwapCue" aria-live="polite">Tap a glowing flower, then its glowing neighbor ↔</div>
+      <div class="first-swap-cue" id="firstSwapCue" aria-live="polite">Swap the two glowing flowers ↔</div>
       <div class="board" id="board"></div>
       <div class="controls">
         <button class="btn" id="shuffleBtn" type="button">
@@ -9397,6 +9397,7 @@
       if (hasMadeValidMove || roundComplete || isBouquetFailed() || isResolving || sacrificeState.active || activeBooster) {
         return;
       }
+      const hintDelay = currentRound === 1 ? 350 : 7000;
       idleHintTimer = window.setTimeout(() => {
         if (hasMadeValidMove || roundComplete || isBouquetFailed() || isResolving || sacrificeState.active || activeBooster) {
           return;
@@ -9407,7 +9408,7 @@
         }
         idleHintCells = new Set([`${a.x},${a.y}`, `${b.x},${b.y}`]);
         render();
-      }, 7000);
+      }, hintDelay);
     }
 
     function notePlayerInteraction() {
