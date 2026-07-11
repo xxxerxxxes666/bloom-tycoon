@@ -1880,6 +1880,16 @@
       animation: swap-snap 180ms cubic-bezier(.2,.9,.25,1.35) both;
     }
 
+    .objective-flight {
+      position: fixed;
+      z-index: 1000;
+      width: 30px;
+      height: 30px;
+      pointer-events: none;
+      filter: drop-shadow(0 0 8px #e7bd67);
+      will-change: transform, opacity;
+    }
+
     .tile.legal-target {
       outline: 2px solid #5f8338;
       box-shadow:
@@ -5217,7 +5227,7 @@
       const displayCount = Math.min(current, needed);
       const pulseClass = orderPulseTargets.has(flowerId) ? "order-pulse" : "";
       return `
-        <span class="objective-target ${pulseClass}">
+        <span class="objective-target ${pulseClass}" data-flower-id="${flowerId}">
           ${iconMarkup(flowerId, "objective-icon", flower[0])}
           ${flower[0]} ${displayCount}/${needed}
         </span>
@@ -11392,8 +11402,35 @@
         }
       });
       if (orderPulseTargets.size) {
+        launchObjectiveFlights(gained);
         scheduleOrderPulseClear();
       }
+    }
+
+    function launchObjectiveFlights(gained) {
+      const boardRect = $("board").getBoundingClientRect();
+      activeRoundPlan().targets.forEach((target, index) => {
+        if (!(gained[target.flowerId] > 0)) return;
+        const destination = document.querySelector(`.objective-target[data-flower-id="${target.flowerId}"]`);
+        if (!destination) return;
+        const targetRect = destination.getBoundingClientRect();
+        const flight = document.createElement("img");
+        flight.className = "objective-flight";
+        flight.alt = "";
+        flight.setAttribute("aria-hidden", "true");
+        flight.src = flowers[target.flowerId][2];
+        flight.style.left = `${boardRect.left + boardRect.width / 2 - 15}px`;
+        flight.style.top = `${boardRect.top + boardRect.height / 2 - 15}px`;
+        document.body.appendChild(flight);
+        const dx = targetRect.left + targetRect.width / 2 - (boardRect.left + boardRect.width / 2);
+        const dy = targetRect.top + targetRect.height / 2 - (boardRect.top + boardRect.height / 2);
+        const animation = flight.animate([
+          { transform: `translate(${index * 8 - 4}px, 0) scale(.65)`, opacity: 0 },
+          { transform: `translate(${dx * .45}px, ${dy * .35 - 24}px) scale(1.15)`, opacity: 1, offset: .42 },
+          { transform: `translate(${dx}px, ${dy}px) scale(.45)`, opacity: .25 }
+        ], { duration: 620, easing: "cubic-bezier(.2,.75,.25,1)", fill: "forwards" });
+        animation.finished.finally(() => flight.remove());
+      });
     }
 
     function scheduleOrderPulseClear() {
