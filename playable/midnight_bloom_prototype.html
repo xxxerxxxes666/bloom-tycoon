@@ -4242,7 +4242,17 @@
     .next-order-btn { display:none; background:linear-gradient(#56733a,#263b25); }
     .round-one-restoration.restored .restore-btn { display:none; }
     .round-one-restoration.restored .next-order-btn { display:block; }
+    .first-swap-cue.swap-refused {
+      color:#f0b0a5;
+      text-shadow:0 0 12px #9b1d22;
+      animation:cue-refused 420ms ease-out both;
+    }
     @keyframes cue-breathe { to { color:#fff; text-shadow:0 0 12px #e2a94d; } }
+    @keyframes cue-refused {
+      0%,100% { transform:translateX(0); }
+      30% { transform:translateX(-5px); }
+      65% { transform:translateX(5px); }
+    }
     @keyframes swap-snap {
       0% { transform:scale(.88); filter:brightness(1.7) saturate(1.35); }
       55% { transform:scale(1.11); box-shadow:inset 0 0 12px #000,0 0 18px #e7bd67; }
@@ -9439,6 +9449,12 @@
       if (invalidSwapTimer && window.clearTimeout) {
         window.clearTimeout(invalidSwapTimer);
       }
+      clearIdleHint();
+      const cue = $("firstSwapCue");
+      if (!hasMadeValidMove && cue) {
+        cue.textContent = "No bloom — follow the glowing pair.";
+        cue.classList.add("swap-refused");
+      }
       invalidSwapCells = new Set([`${a.x},${a.y}`, `${b.x},${b.y}`]);
       render();
       invalidSwapTimer = window.setTimeout(() => {
@@ -9447,6 +9463,11 @@
         }
         invalidSwapCells.clear();
         invalidSwapTimer = null;
+        if (!hasMadeValidMove && cue) {
+          cue.classList.remove("swap-refused");
+          cue.textContent = "Watch for two glowing flowers…";
+          scheduleIdleHint();
+        }
         render();
       }, 880);
     }

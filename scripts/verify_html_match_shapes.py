@@ -169,6 +169,8 @@ def verify_source_hooks():
         "<strong>First bloom!</strong> Your bouquet is already taking shape.",
         "function launchObjectiveFlights(gained)",
         "objective-flight",
+        "No bloom — follow the glowing pair.",
+        "swap-refused",
         "data-flower-id",
         "roundOneRestoration",
         "Restore Greenhouse · 100 coins",
