@@ -4386,7 +4386,7 @@
       </details>
       <script type="application/json" id="shapeAuditData"></script>
       <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
-      <div class="first-swap-cue" id="firstSwapCue" aria-live="polite">Swap the two glowing flowers ↔</div>
+      <div class="first-swap-cue" id="firstSwapCue" aria-live="polite">Watch for two glowing flowers…</div>
       <div class="board" id="board"></div>
       <div class="controls">
         <button class="btn" id="shuffleBtn" type="button">
@@ -9392,6 +9392,11 @@
       return " Cursed Thorn lesson: swap the glowing tiles under the thorn lane; any adjacent match cracks those blockers.";
     }
 
+    function firstSwapCueText(a, b) {
+      const direction = a && b && a.x === b.x ? "↑↓" : "↔";
+      return `Swap the two glowing flowers ${direction}`;
+    }
+
     function scheduleIdleHint() {
       clearIdleHint();
       if (hasMadeValidMove || roundComplete || isBouquetFailed() || isResolving || sacrificeState.active || activeBooster) {
@@ -9407,6 +9412,7 @@
           return;
         }
         idleHintCells = new Set([`${a.x},${a.y}`, `${b.x},${b.y}`]);
+        $("firstSwapCue").textContent = firstSwapCueText(a, b);
         render();
       }, hintDelay);
     }

@@ -162,6 +162,7 @@ def verify_source_hooks():
         "round-one-active",
         "firstSwapCue",
         "Swap the two glowing flowers",
+        "function firstSwapCueText(a, b)",
         "const hintDelay = currentRound === 1 ? 350 : 7000;",
         "swap-snap",
         "activeSwapCells",
