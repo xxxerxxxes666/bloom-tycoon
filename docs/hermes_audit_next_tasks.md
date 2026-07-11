@@ -1,5 +1,43 @@
 ---
 
+# SUPERSEDING PRODUCT MANDATE — restore the original game
+
+Xerxes explicitly approved returning Bloom Tycoon to the original goal. This directive supersedes every numbered-round instruction below, including Round 58.
+
+## North star
+
+Build a simple, immediately understandable, addictive match-3 game with a curated Diablo-like occult floral atmosphere. The complete heartbeat is:
+
+`match flowers -> complete bouquet -> earn coins -> visibly restore/upgrade greenhouse -> play next order`
+
+Match feel and the first 60 seconds outrank content volume. The board is the altar and must be the hero. The tycoon layer is light, visual, and aspirational—not multiple ledgers, economies, or exposed systems.
+
+## Stop now
+
+- Do not add Round 58 or any further bespoke preview/current/complete surface.
+- Do not add rounds, currencies, resources, factions, boosters, blockers, crafting, storage, collections, chapters, lore panels, or debug controls.
+- Do not treat hidden preview nodes, audit markers, or repeated round templates as player progress.
+- Do not expose `Complete Bouquet`, `Shape Bloom`, or other review shortcuts as ordinary player controls.
+
+## Current implementation priority
+
+Implement and refine only the **First 60 Seconds / Board-First Vertical Slice** until it feels excellent:
+
+1. On mobile, show compact objective/moves and at least six complete board rows without scrolling.
+2. Let the player make the first instructed swap within 10 seconds.
+3. Show no more than two non-tile buttons during active Round 1.
+4. Hide Path/Ledger, future previews, left progression rail, Elements, Chest, Flowerpedia, Chapter Progress, Black Market, factions, Sacrifice, booster block, `Complete Bouquet`, and `Shape Bloom` during Round 1.
+5. Strengthen swap/snap, invalid-swap response, clears, cascades, target-flight feedback, sound/visual timing, and fast control return.
+6. Teach one naturally formed four-match Black Candle Vine without a paragraph.
+7. Complete Round 1 with one bouquet, one coin reward, and one obvious greenhouse restoration action.
+8. Make the restoration an unmistakable visual before/after transformation, then offer one-tap Next Order.
+9. Keep Supreme Bloom rare and absent from the normal tutorial path.
+10. Preserve saves, retry, 64-tile integrity where applicable, no broken images, no console errors, and no mobile overflow.
+
+## Definition of progress
+
+A pass counts only when it materially improves player-visible game feel, first-viewport hierarchy, bouquet payoff, or greenhouse transformation and is verified in a real browser. Documentation-only churn and another numbered round do not count.
+
 # Visual stripback directive — Diablo/simple game feel
 
 Xerxes likes the new mechanics, but the page became visually polluted. Keep the mechanics, but strip the visible screen back toward the original dark Diablo-like reference: simple, readable, ominous, game-first.
