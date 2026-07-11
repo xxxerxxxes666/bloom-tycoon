@@ -1,5 +1,14 @@
 # Codex Build Notes
 
+## 2026-07-11 First 60 Seconds / Board-First vertical slice
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `docs/codex_build_notes.md`.
+- Round 1 now hides progression/ledger/previews/resources/storage/faction/sacrifice/boosters/review controls, presents the full 8x8 board immediately, and exposes only Shuffle during active play.
+- Added an immediate glowing legal-swap cue, clearer selection instruction, preserved invalid/clear/cascade/collection effects, and kept Supreme Bloom out of the tutorial.
+- Added a concise completion screen with one 100-coin greenhouse restoration, a strong withered-to-lit visual transformation, persisted restoration state, and one-tap `Next Order`.
+- Verification: `python3 scripts/verify_project.py` passed; HTML regression checks passed; `git diff --check` passed. Local real-browser 390x844 iframe measured board top 175px/bottom 553px (all 8 rows), 64 tiles, one non-tile button, 0 broken images, 0 horizontal overflow, and 0 console/JS errors. Completion showed only Restore; restoration changed to `RESTORED · MIDNIGHT BLOOM` and only Next Order; Next Order reached Round 2 with 64 tiles and no overflow. Reload preserved the completed save before restoration, and restoration explicitly saves its state. Lightweight changed-file secret scan: 0 hits. No live deployment checked before push.
+- Known issues: none found in the focused slice.
+
 ## 2026-07-09 Codex Round 57 Moonlit Wreath pass
 
 - Read `docs/hermes_audit_next_tasks.md` before coding; Hermes confirmed Round 56 and requested a narrow Round 57 `Moonlit Wreath 12` clarity/payoff slice.

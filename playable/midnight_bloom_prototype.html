@@ -4204,6 +4204,43 @@
         grid-template-columns: 1fr;
       }
     }
+
+    /* First 60 seconds: hide secondary systems in Round 1; preserve them later. */
+    body.round-one-active .left, body.round-one-active .bottom,
+    body.round-one-active .bouquet-path, body.round-one-active .path-ledger-drawer,
+    body.round-one-active .first-session-plaque, body.round-one-active .progress,
+    body.round-one-active .sacrifice-panel, body.round-one-active .booster-panel,
+    body.round-one-active .controls .red, body.round-one-active .controls .booster,
+    body.round-one-active .controls .demo, body.round-one-active #renewBtn,
+    body.round-one-active #roundCeremony { display:none!important; }
+    .first-swap-cue,.round-one-restoration { display:none; }
+    body.round-one-active:not(.round-one-complete):not(.first-move-made) .first-swap-cue { display:block; margin:7px auto 0; color:#f0d99a; font:700 13px Georgia,serif; text-align:center; animation:cue-breathe 1.2s ease-in-out infinite alternate; }
+    body.round-one-active.round-one-complete .round-one-restoration { display:grid; width:min(520px,calc(100% - 16px)); margin:10px auto; padding:14px; gap:10px; border:1px solid #b98b42; background:radial-gradient(circle at 50% 0,#34210f,#100d0d 70%); box-shadow:0 0 28px #b8793038,inset 0 0 22px #000; text-align:center; }
+    .restoration-scene { height:112px; border:1px solid #56432f; position:relative; overflow:hidden; background:#090908; }
+    .restoration-scene::before { content:""; position:absolute; inset:15px 24px 0; border:8px solid #40372e; border-bottom:0; clip-path:polygon(50% 0,100% 36%,92% 100%,8% 100%,0 36%); background:repeating-linear-gradient(90deg,#141817 0 24px,#070909 25px 28px); filter:grayscale(1); }
+    .round-one-restoration.restored .restoration-scene { background:radial-gradient(circle,#5d7d42 0,#18251a 58%,#090908); }
+    .round-one-restoration.restored .restoration-scene::before { border-color:#b88c52; background:repeating-linear-gradient(90deg,#568044 0 24px,#b9d995 25px 28px); filter:none; box-shadow:0 0 24px #7fcf65; }
+    .restoration-state { position:absolute; inset:auto 0 8px; color:#ead9a9; font-weight:800; letter-spacing:.12em; text-shadow:0 2px 4px #000; }
+    .restoration-title { color:#f3dfaa; font:700 21px Georgia,serif; }
+    .restoration-copy { color:#c8b996; font-size:14px; }
+    .restore-btn,.next-order-btn { min-height:46px; border:1px solid #d3a657; color:#fff2c4; background:linear-gradient(#8d5425,#4c2517); font-weight:900; letter-spacing:.06em; cursor:pointer; }
+    .next-order-btn { display:none; background:linear-gradient(#56733a,#263b25); }
+    .round-one-restoration.restored .restore-btn { display:none; }
+    .round-one-restoration.restored .next-order-btn { display:block; }
+    @keyframes cue-breathe { to { color:#fff; text-shadow:0 0 12px #e2a94d; } }
+    @media (max-width:760px) {
+      body.round-one-active .game { display:block; padding:4px 6px 8px; }
+      body.round-one-active .main { padding:0; }
+      body.round-one-active .sigil { font-size:9px; letter-spacing:4px; }
+      body.round-one-active .title { font-size:29px; margin:2px 0 4px; line-height:1; }
+      body.round-one-active .objective { margin:0 5px; padding:6px 8px; font-size:13px; gap:4px 8px; }
+      body.round-one-active .objective .objective-separator { display:none; }
+      body.round-one-active .board { width:calc(100vw - 12px); max-width:378px; gap:3px; padding:5px; margin:7px auto 0; }
+      body.round-one-active .ritual-log { margin:7px 7px 0; padding:7px 9px; min-height:0; font-size:12px; line-height:1.25; }
+      body.round-one-active .controls { margin:7px auto 0; }
+      body.round-one-active .controls .btn { min-width:0; padding:7px 11px; font-size:12px; min-height:36px; }
+      body.round-one-active.round-one-complete .board, body.round-one-active.round-one-complete .controls, body.round-one-active.round-one-complete .ritual-log { display:none; }
+    }
   </style>
 </head>
 <body>
@@ -4339,6 +4376,7 @@
       </details>
       <script type="application/json" id="shapeAuditData"></script>
       <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
+      <div class="first-swap-cue" id="firstSwapCue" aria-live="polite">Tap a glowing flower, then its glowing neighbor ↔</div>
       <div class="board" id="board"></div>
       <div class="controls">
         <button class="btn" id="shuffleBtn" type="button">
@@ -4392,6 +4430,13 @@
         </div>
       </div>
       <div class="ritual-log" id="ritualLog">Match botanical elements to feed the First Bouquet.</div>
+      <section class="round-one-restoration" id="roundOneRestoration" aria-live="polite">
+        <div class="restoration-title">First Bouquet Sealed · +120 coins</div>
+        <div class="restoration-scene" aria-label="Greenhouse restoration before and after"><span class="restoration-state" id="restorationState">WITHERED GLASSHOUSE</span></div>
+        <div class="restoration-copy" id="restorationCopy">Spend 100 coins to relight the abandoned greenhouse.</div>
+        <button class="restore-btn" id="restoreGreenhouseBtn" type="button">Restore Greenhouse · 100 coins</button>
+        <button class="next-order-btn" id="nextOrderBtn" type="button">Next Order →</button>
+      </section>
       <div class="round-ceremony" id="roundCeremony" hidden></div>
       <button class="renew-btn" id="renewBtn" type="button">Next Bouquet</button>
       <div class="supreme" id="supreme" aria-live="polite">
@@ -5024,6 +5069,7 @@
     let hasMadeValidMove = false;
     let currentRound = 1;
     let roundComplete = false;
+    let roundOneRestored = false;
     let pendingRuneTendedSoil = false;
     let activeRuneTendedSoil = false;
     let shapeDemoIndex = 0;
@@ -9387,6 +9433,15 @@
     }
 
     function render() {
+      const roundOneActive = currentRound === 1;
+      document.body.classList.toggle("round-one-active", roundOneActive);
+      document.body.classList.toggle("round-one-complete", roundOneActive && roundComplete);
+      document.body.classList.toggle("first-move-made", hasMadeValidMove);
+      $("roundOneRestoration").classList.toggle("restored", roundOneRestored);
+      $("restorationState").textContent = roundOneRestored ? "RESTORED · MIDNIGHT BLOOM" : "WITHERED GLASSHOUSE";
+      $("restorationCopy").textContent = roundOneRestored
+        ? "Warm lanterns, living vines, and new glass answer your bouquet."
+        : "Spend 100 coins to relight the abandoned greenhouse.";
       const boardEl = $("board");
       boardEl.innerHTML = "";
       boardEl.classList.toggle("supreme-charge", supremeChargeActive);
@@ -10013,6 +10068,7 @@
 
       if (!selected) {
         selected = { x, y };
+        ritualMessage = "<strong>Selected.</strong> Tap a glowing adjacent flower to swap.";
         render();
         return;
       }
@@ -11178,6 +11234,7 @@
         return false;
       }
       roundComplete = true;
+      if (plan.round === 1) roundOneRestored = false;
       bouquetStreak += 1;
       const streakPayout = bouquetStreakPayout(plan.reward.coins, bouquetStreak);
       coins += streakPayout.total;
@@ -11191,7 +11248,7 @@
         flowerId: plan.reward.flowerId,
         tags: ["order", "reward"]
       });
-      rewardChoiceState = { pending: true, selected: "" };
+      rewardChoiceState = plan.round === 1 ? { pending: false, selected: "greenhouse" } : { pending: true, selected: "" };
       const flowerpediaMessage = plan.round === 1 ? unlockFlowerpediaEntry(FLOWERPEDIA_FIRST_BOUQUET_ID) : "";
       const flowerpediaCopy = flowerpediaMessage ? ` ${flowerpediaMessage}` : "";
       const chapterRewardMessageText = maybeClaimChapterOneReward();
@@ -11199,6 +11256,15 @@
       const completionMessage = `<strong>${plan.name} fulfilled.</strong> <strong>Bouquet Streak ${bouquetStreak}:</strong> +${streakPayout.total} coins (${plan.reward.coins} base + ${streakPayout.bonus} streak bonus at ${streakPayout.percent}%), +${plan.reward.greenhouse} Greenhouse XP, +${plan.reward.apothecary} Apothecary XP, +${plan.reward.faction} Sub Rosa Favor, and ${plan.reward.item} placed in Chest Storage.${nextBouquetStreakTargetCopy()}${flowerpediaCopy}${chapterRewardCopy} Choose a reward before Next Bouquet, or Greenhouse Cuttings will be taken by default.`;
       ritualMessage = carryMessage ? `${carryMessage} ${completionMessage}` : completionMessage;
       return true;
+    }
+
+    function restoreRoundOneGreenhouse() {
+      if (currentRound !== 1 || !roundComplete || roundOneRestored || coins < 100) return;
+      coins -= 100;
+      roundOneRestored = true;
+      ritualMessage = "<strong>Greenhouse restored.</strong> The dead glass burns gold and the first vines wake.";
+      render();
+      saveProgress();
     }
 
     function bouquetStreakBonusPercent(streak = bouquetStreak) {
@@ -12718,6 +12784,7 @@
         clearedCursedThorns,
         currentRound,
         roundComplete,
+        roundOneRestored,
         pendingRuneTendedSoil,
         activeRuneTendedSoil,
         greenhouse,
@@ -12765,6 +12832,7 @@
         coins = Math.max(0, Number(state.coins) || coins);
         currentRound = Math.max(1, Number(state.currentRound) || 1);
         roundComplete = Boolean(state.roundComplete || state.firstBouquetComplete);
+        roundOneRestored = Boolean(state.roundOneRestored);
         pendingRuneTendedSoil = Boolean(state.pendingRuneTendedSoil);
         activeRuneTendedSoil = Boolean(state.activeRuneTendedSoil);
         greenhouse = validProgressState(state.greenhouse, greenhouse);
@@ -12946,6 +13014,8 @@
       }
     });
     $("renewBtn").addEventListener("click", renewBouquet);
+    $("restoreGreenhouseBtn").addEventListener("click", restoreRoundOneGreenhouse);
+    $("nextOrderBtn").addEventListener("click", renewBouquet);
     $("chestTrigger").addEventListener("click", openChest);
     $("closeChest").addEventListener("click", closeChest);
     $("chestModal").addEventListener("click", (event) => {
@@ -12983,6 +13053,10 @@
       build();
     }
     ensureCursedThornsForPlan(activeRoundPlan());
+    if (currentRound === 1 && !roundComplete && !hasMadeValidMove) {
+      const firstMove = legalMoves()[0];
+      if (firstMove) idleHintCells = new Set(firstMove.map((cell) => `${cell.x},${cell.y}`));
+    }
     render();
     renderChest();
     scheduleIdleHint();
