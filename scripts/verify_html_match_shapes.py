@@ -162,6 +162,8 @@ def verify_source_hooks():
         "round-one-active",
         "firstSwapCue",
         "Tap a glowing flower",
+        "swap-snap",
+        "activeSwapCells",
         "roundOneRestoration",
         "Restore Greenhouse · 100 coins",
         "function restoreRoundOneGreenhouse",

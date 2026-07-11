@@ -1875,6 +1875,11 @@
       animation: invalid-swap 720ms ease-out both;
     }
 
+    .tile.swap-snap {
+      z-index: 4;
+      animation: swap-snap 180ms cubic-bezier(.2,.9,.25,1.35) both;
+    }
+
     .tile.legal-target {
       outline: 2px solid #5f8338;
       box-shadow:
@@ -4228,6 +4233,11 @@
     .round-one-restoration.restored .restore-btn { display:none; }
     .round-one-restoration.restored .next-order-btn { display:block; }
     @keyframes cue-breathe { to { color:#fff; text-shadow:0 0 12px #e2a94d; } }
+    @keyframes swap-snap {
+      0% { transform:scale(.88); filter:brightness(1.7) saturate(1.35); }
+      55% { transform:scale(1.11); box-shadow:inset 0 0 12px #000,0 0 18px #e7bd67; }
+      100% { transform:scale(1); filter:brightness(1); }
+    }
     @media (max-width:760px) {
       body.round-one-active .game { display:block; padding:4px 6px 8px; }
       body.round-one-active .main { padding:0; }
@@ -5057,6 +5067,7 @@
     let invalidSwapTimer = null;
     let superBloomCells = new Set();
     let invalidSwapCells = new Set();
+    let activeSwapCells = new Set();
     let idleHintCells = new Set();
     let thornPulseCells = new Set();
     let thornClearedCells = new Set();
@@ -9467,6 +9478,7 @@
           const harvestClass = harvestFlashCells.has(`${x},${y}`) ? "harvest-flash" : "";
           const superClass = superBloomCells.has(`${x},${y}`) ? "super-bloom-hot" : "";
           const invalidClass = invalidSwapCells.has(`${x},${y}`) ? "invalid-swap" : "";
+          const swapClass = activeSwapCells.has(`${x},${y}`) ? "swap-snap" : "";
           const idleHintClass = idleHintCells.has(`${x},${y}`) ? "idle-hint" : "";
           const thornTeachClass = thornTeachingCells.has(`${x},${y}`) ? "thorn-teach" : "";
           const transmuteClass = transmuteFlashCell === `${x},${y}` ? "transmute-flash" : "";
@@ -9478,7 +9490,7 @@
           const fallKey = `${x},${y}`;
           const fallRows = fallAnimations.get(fallKey) || 0;
           const fallClass = fallRows ? "fall-in" : "";
-          tile.className = `tile ${selectedClass} ${legalClass} ${sacrificeClass} ${profitableClass} ${shearsClass} ${moonwaterTargetClass} ${moonwaterAreaClass} ${moonwaterCenterClass} ${blackCandleLineClass} ${graveSoilTargetClass} ${graveSoilReadyClass} ${harvestClass} ${superClass} ${invalidClass} ${idleHintClass} ${thornTeachClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass}`;
+          tile.className = `tile ${selectedClass} ${legalClass} ${sacrificeClass} ${profitableClass} ${shearsClass} ${moonwaterTargetClass} ${moonwaterAreaClass} ${moonwaterCenterClass} ${blackCandleLineClass} ${graveSoilTargetClass} ${graveSoilReadyClass} ${harvestClass} ${superClass} ${invalidClass} ${swapClass} ${idleHintClass} ${thornTeachClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass}`;
           tile.disabled = isResolving || roundComplete || isBouquetFailed();
           if (fallRows) {
             tile.style.setProperty("--fall-y", `${-fallRows * 112}%`);
@@ -10094,10 +10106,14 @@
       const isFirstValidMove = !hasMadeValidMove;
       hasMadeValidMove = true;
       swapBoardCells(selected, target);
+      activeSwapCells = new Set([`${selected.x},${selected.y}`, `${target.x},${target.y}`]);
       moves -= 1;
       selected = null;
       isResolving = true;
       render();
+      await delay(150);
+      activeSwapCells.clear();
+      document.querySelectorAll(".tile.swap-snap").forEach((tile) => tile.classList.remove("swap-snap"));
       let result = null;
       try {
         result = await resolveAnimated();
