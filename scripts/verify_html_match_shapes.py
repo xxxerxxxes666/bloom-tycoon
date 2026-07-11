@@ -166,6 +166,7 @@ def verify_source_hooks():
         "const hintDelay = currentRound === 1 ? 350 : 7000;",
         "swap-snap",
         "activeSwapCells",
+        "<strong>First bloom!</strong> Your bouquet is already taking shape.",
         "roundOneRestoration",
         "Restore Greenhouse · 100 coins",
         "function restoreRoundOneGreenhouse",
