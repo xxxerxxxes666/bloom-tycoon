@@ -9448,11 +9448,18 @@
       }
     }
 
+    function pulseHaptic(pattern) {
+      if (navigator.vibrate && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        navigator.vibrate(pattern);
+      }
+    }
+
     function markInvalidSwap(a, b) {
       if (invalidSwapTimer && window.clearTimeout) {
         window.clearTimeout(invalidSwapTimer);
       }
       clearIdleHint();
+      pulseHaptic([10, 35, 18]);
       const cue = $("firstSwapCue");
       if (!hasMadeValidMove && cue) {
         cue.textContent = "No bloom — follow the glowing pair.";
@@ -10182,6 +10189,7 @@
       const isFirstValidMove = !hasMadeValidMove;
       hasMadeValidMove = true;
       swapBoardCells(selected, target);
+      pulseHaptic(18);
       activeSwapCells = new Set([`${selected.x},${selected.y}`, `${target.x},${target.y}`]);
       moves -= 1;
       selected = null;
@@ -10792,6 +10800,7 @@
         }
         harvestFlashCells = new Set(wave.clearKeys);
         superBloomCells = new Set(effectRareCells.map((cell) => cell.join(",")));
+        pulseHaptic(result.cascades > 1 ? [14, 28, 14] : 12);
         render();
 
         if (effectRareCells.length) {
