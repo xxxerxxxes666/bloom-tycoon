@@ -4230,6 +4230,7 @@
     body.round-one-active #roundCeremony { display:none!important; }
     .first-swap-cue,.round-one-restoration { display:none; }
     body.round-one-active:not(.round-one-complete):not(.first-move-made) .first-swap-cue { display:block; margin:7px auto 0; color:#f0d99a; font:700 13px Georgia,serif; text-align:center; animation:cue-breathe 1.2s ease-in-out infinite alternate; }
+    body.round-one-active .board { touch-action:none; }
     body.round-one-active.round-one-complete .round-one-restoration { display:grid; width:min(520px,calc(100% - 16px)); margin:10px auto; padding:14px; gap:10px; border:1px solid #b98b42; background:radial-gradient(circle at 50% 0,#34210f,#100d0d 70%); box-shadow:0 0 28px #b8793038,inset 0 0 22px #000; text-align:center; }
     .restoration-scene { height:112px; border:1px solid #56432f; position:relative; overflow:hidden; background:#090908; }
     .restoration-scene::before { content:""; position:absolute; inset:15px 24px 0; border:8px solid #40372e; border-bottom:0; clip-path:polygon(50% 0,100% 36%,92% 100%,8% 100%,0 36%); background:repeating-linear-gradient(90deg,#141817 0 24px,#070909 25px 28px); filter:grayscale(1); }
@@ -5085,6 +5086,8 @@
     let supremeChargeTimer = null;
     let idleHintTimer = null;
     let invalidSwapTimer = null;
+    const SWIPE_THRESHOLD = 18;
+    let tileSwipeStart = null;
     let superBloomCells = new Set();
     let invalidSwapCells = new Set();
     let activeSwapCells = new Set();
@@ -9472,6 +9475,30 @@
       }, 880);
     }
 
+    function finishTileSwipe(event, x, y) {
+      const start = tileSwipeStart;
+      tileSwipeStart = null;
+      if (!start || start.pointerId !== event.pointerId || isResolving || sacrificeState.active || activeBooster) {
+        return;
+      }
+      const dx = event.clientX - start.clientX;
+      const dy = event.clientY - start.clientY;
+      if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE_THRESHOLD) {
+        return;
+      }
+      const horizontal = Math.abs(dx) > Math.abs(dy);
+      const target = {
+        x: x + (horizontal ? Math.sign(dx) : 0),
+        y: y + (horizontal ? 0 : Math.sign(dy))
+      };
+      if (target.x < 0 || target.x >= BOARD_SIZE || target.y < 0 || target.y >= BOARD_SIZE) {
+        return;
+      }
+      event.preventDefault();
+      tap(x, y);
+      tap(target.x, target.y);
+    }
+
     function ensurePlayableBoardAfterCascade() {
       if (!matches().length && hasLegalMoves()) {
         return false;
@@ -9557,6 +9584,17 @@
             tile.addEventListener("mouseenter", () => previewBlackCandleLine(x, y));
             tile.addEventListener("focus", () => previewBlackCandleLine(x, y));
           }
+          tile.addEventListener("pointerdown", (event) => {
+            if (!event.isPrimary) {
+              return;
+            }
+            tileSwipeStart = { pointerId: event.pointerId, clientX: event.clientX, clientY: event.clientY };
+            if (event.isTrusted) {
+              tile.setPointerCapture(event.pointerId);
+            }
+          });
+          tile.addEventListener("pointerup", (event) => finishTileSwipe(event, x, y));
+          tile.addEventListener("pointercancel", () => { tileSwipeStart = null; });
           tile.addEventListener("click", () => tap(x, y));
           boardEl.appendChild(tile);
         }
