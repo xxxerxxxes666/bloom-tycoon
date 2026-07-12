@@ -4275,7 +4275,7 @@
     body.round-one-active.round-one-black-candle-cue .first-swap-cue::before { content:"BLACK CANDLE"; }
     body.round-one-active .board { touch-action:none; }
     body.round-one-active.round-one-complete .ritual-log { display:none; }
-    body.round-one-active.round-one-complete .round-one-restoration { display:grid; width:min(520px,calc(100% - 16px)); margin:10px auto; padding:14px; gap:10px; border:1px solid #b98b42; background:radial-gradient(circle at 50% 0,#34210f,#100d0d 70%); box-shadow:0 0 28px #b8793038,inset 0 0 22px #000; text-align:center; }
+    body.round-one-active.round-one-complete .round-one-restoration { position:relative; overflow:hidden; display:grid; width:min(520px,calc(100% - 16px)); margin:10px auto; padding:14px; gap:10px; border:1px solid #b98b42; background:radial-gradient(circle at 50% 0,#34210f,#100d0d 70%); box-shadow:0 0 28px #b8793038,inset 0 0 22px #000; text-align:center; }
     .restoration-scene { height:112px; border:1px solid #56432f; position:relative; overflow:hidden; background:#090908; transition:background 700ms ease,border-color 700ms ease,box-shadow 700ms ease; }
     .restoration-scene::before { content:""; position:absolute; inset:15px 24px 0; border:8px solid #40372e; border-bottom:0; clip-path:polygon(50% 0,100% 36%,92% 100%,8% 100%,0 36%); background:repeating-linear-gradient(90deg,#141817 0 24px,#070909 25px 28px); filter:grayscale(1); transition:background 750ms ease,border-color 750ms ease,filter 750ms ease,box-shadow 750ms ease; }
     .restoration-scene::after { content:""; position:absolute; inset:-45% -20%; pointer-events:none; opacity:0; transform:translateX(-65%) rotate(-12deg); background:linear-gradient(90deg,transparent 30%,#fff4b8cc 50%,transparent 70%); }
@@ -4288,6 +4288,10 @@
     .round-one-restoration.restored .greenhouse-lanterns,.round-one-restoration.restored .greenhouse-vines { opacity:1; transform:none; }
     .restoration-state { position:absolute; inset:auto 0 8px; color:#ead9a9; font-weight:800; letter-spacing:.12em; text-shadow:0 2px 4px #000; }
     .restoration-title { color:#f3dfaa; font:700 21px Georgia,serif; }
+    .coin-payoff { position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:2; }
+    .coin-payoff span { position:absolute; left:50%; top:15px; width:16px; height:16px; margin:-8px 0 0 -8px; border:1px solid #ffe2a4; border-radius:50%; background:radial-gradient(circle at 34% 32%,#fff7c7 0 18%,#e9b652 42%,#7a421c 78%); box-shadow:0 0 12px #e9b652aa; opacity:0; transform:translate(0,0) scale(.62); animation:coin-payoff-flight 1450ms ease-out var(--coin-delay,0ms) both; }
+    .coin-payoff span::after { content:""; position:absolute; inset:4px; border-radius:50%; border:1px solid #7b4a20; opacity:.75; }
+    .round-one-restoration.restored .coin-payoff span { animation:none; opacity:0; }
     .restoration-copy { color:#c8b996; font-size:14px; }
     .restoration-ledger { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
     .restoration-step { min-height:42px; display:grid; align-content:center; gap:2px; padding:6px; border:1px solid #5a452a; background:#0b0807d9; color:#ead9a9; font:800 12px/1.1 system-ui,sans-serif; text-transform:uppercase; letter-spacing:.06em; }
@@ -4314,6 +4318,12 @@
       0% { transform:scale(1); }
       42% { transform:scale(1.06); color:#fff4b7; box-shadow:0 0 20px #e0ab50; }
       100% { transform:scale(1); }
+    }
+    @keyframes coin-payoff-flight {
+      0% { opacity:0; transform:translate(0,0) scale(.5) rotateY(0deg); }
+      18% { opacity:1; transform:translate(var(--coin-rise-x),-34px) scale(1) rotateY(130deg); }
+      72% { opacity:1; transform:translate(var(--coin-mid-x),58px) scale(.88) rotateY(340deg); }
+      100% { opacity:0; transform:translate(var(--coin-end-x),95px) scale(.56) rotateY(520deg); }
     }
     @keyframes cue-breathe { to { color:#fff; text-shadow:0 0 12px #e2a94d; } }
     @keyframes cue-refused {
@@ -4539,6 +4549,14 @@
       </div>
       <div class="ritual-log" id="ritualLog">Match botanical elements to feed the First Bouquet.</div>
       <section class="round-one-restoration" id="roundOneRestoration" aria-live="polite">
+        <div class="coin-payoff" id="coinPayoff" aria-hidden="true">
+          <span style="--coin-delay:0ms;--coin-rise-x:-78px;--coin-mid-x:-95px;--coin-end-x:-118px;"></span>
+          <span style="--coin-delay:90ms;--coin-rise-x:-42px;--coin-mid-x:-54px;--coin-end-x:-68px;"></span>
+          <span style="--coin-delay:170ms;--coin-rise-x:-12px;--coin-mid-x:-14px;--coin-end-x:-18px;"></span>
+          <span style="--coin-delay:250ms;--coin-rise-x:18px;--coin-mid-x:18px;--coin-end-x:24px;"></span>
+          <span style="--coin-delay:330ms;--coin-rise-x:48px;--coin-mid-x:62px;--coin-end-x:76px;"></span>
+          <span style="--coin-delay:410ms;--coin-rise-x:82px;--coin-mid-x:104px;--coin-end-x:124px;"></span>
+        </div>
         <div class="restoration-title" id="restorationTitle">First Bouquet Sealed · 120 coins earned · 120 available</div>
         <div class="restoration-scene" aria-label="Greenhouse restoration before and after">
           <span class="greenhouse-lanterns" aria-hidden="true"></span>

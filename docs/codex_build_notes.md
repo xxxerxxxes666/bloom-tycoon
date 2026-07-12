@@ -1,5 +1,20 @@
 # Codex Build Notes
 
+## 2026-07-12 Round 1 coin payoff burst
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `docs/codex_build_notes.md`.
+- Gap chosen: bouquet payoff readability. Recent commits already covered board-first hierarchy, first swap guidance, invalid recovery, Black Candle teaching, greenhouse restoration clarity, and audio; this pass makes the first bouquet coin reward visibly burst across the existing restoration card before the player spends coins on the greenhouse.
+- Gameplay change: Round 1 completion now shows six animated coin motes in the existing restoration surface. They are decorative, clipped inside the card, removed visually after `Restore Greenhouse`, and add no controls, currencies, systems, assets, permissions, or Round 58 content.
+- Verification: `python3 scripts/verify_project.py` passed; `git diff --check` passed.
+- Browser checks: local static server on `127.0.0.1:41006` with Chromium/Playwright from `/tmp` because `agent-browser` was unavailable. Mobile portrait 390x844 verified fresh Round 1 had 64 tiles, 2 highlighted hint tiles, 1 swap arrow, board top 199px/bottom 577px, 0 visible non-tile buttons, no horizontal overflow, and 0 broken images. The guided Round 1 flow completed through the glowing pairs, showed the restoration card with 6 `coin-payoff` motes using `coin-payoff-flight`, restored the greenhouse, verified the coin motes were hidden, clicked `Next Order`, and reached Round 2 with 64 tiles, no broken images, and no overflow.
+- Browser console status: 0 console messages, 0 page errors, and 0 failed browser requests in the focused mobile run.
+- Vercel deployment URL/identifier checked: not deployed or checked; this pass is source-local only.
+- GitHub Pages preview status: not checked in this local pass.
+- Known issues: Round 2 still returns the broader prototype controls after Next Order; unchanged by this pass.
+- How to trigger and verify L/T/cross matches without console: after Round 1, click `Shape Bloom` repeatedly or press `M`; demos cycle through line5, line4, `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom`.
+- How to trigger and verify Supreme Bloom without console: focus the playable after Round 1 and press `B`; the `SUPREME BLOOM!` overlay should appear and return the board to 64 tiles.
+- Security/secret-scan status: changed-file credential-pattern scan passed with no credential-like secrets found.
+
 ## 2026-07-12 First-minute ritual audio cues
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `docs/codex_build_notes.md`.
