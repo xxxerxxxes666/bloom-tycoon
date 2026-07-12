@@ -1,5 +1,18 @@
 # Codex Build Notes
 
+## 2026-07-12 Round 2 next-bloom control return
+
+- Weakness selected: after the first Cursed Thorn clear, the game already found and highlighted the next legal target move, but the focused cue stayed hidden because Round 2 had recorded its first move. Tapping the first highlighted flower also cleared the pair. This was the highest-impact remaining issue because control appeared to stall immediately after the blocker lesson.
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible change: focused Round 2 now returns a compact `NEXT BLOOM` cue naming the next target and direction, keeps the arrow/highlight visible through the first tap, and resolves the second tap normally. No controls, systems, rewards, saves, or mechanics were added.
+- Verification: `python3 scripts/verify_project.py` passed, including HTML match-shape regression checks; `git diff --check` passed.
+- Mobile browser at 390x844: after the real thorn-clearing swap, `NEXT BLOOM · Nightshade next ↔` appeared immediately with 2 hint tiles and 1 arrow. The first tap preserved the cue, pair, arrow, and selected tile; the second tap resolved the Nightshade match. The focused board remained 64 tiles at 287px–665px with 0 visible non-tile controls, 0 broken images, and 0 overflow.
+- Desktop browser at 1440x1000: the same follow-up cue, selection persistence, and ordinary swap passed with 64 tiles, board top 414px, 0 visible non-tile controls, 0 broken images, and 0 overflow.
+- Browser console/runtime status: 0 console warnings/errors and 0 page errors in the mobile and desktop thorn -> next-bloom flows.
+- Known issues / next audit target: assess whether focused Round 2 should remain guided after this ordinary follow-up or hand back fully unguided matching; prioritize player feel over adding content.
+- Live/deploy status: source-local before commit and push; live previews not yet checked for this pass.
+- Security: no assets, trackers, analytics, backend, accounts, ads, IAP, secrets, `.env`, credentials, or permissions added. Changed-file credential scan required immediately before commit.
+
 ## 2026-07-12 Focused Round 2 Cursed Thorn lesson
 
 - Weakness selected: the first Round 2 blocker interaction worked mechanically but immediately reintroduced prototype-system noise. The focused objective exposed Shape Bloom and streak badges, while the first thorn clear dumped Flowerpedia and chapter reward copy. This was the highest-impact remaining issue because it diluted the first taught blocker and pushed the board down on mobile.

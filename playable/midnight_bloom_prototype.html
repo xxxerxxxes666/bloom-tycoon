@@ -4322,9 +4322,11 @@
     body.restored-next-order-focus .sacrifice-panel, body.restored-next-order-focus .booster-panel,
     body.restored-next-order-focus .controls, body.restored-next-order-focus #roundCeremony { display:none!important; }
     body.restored-greenhouse-handoff .next-order-cue { display:flex; width:max-content; max-width:calc(100% - 20px); min-height:30px; margin:7px auto 0; padding:5px 11px; align-items:center; justify-content:center; border:1px solid #77944f; color:#e8ffc5; background:linear-gradient(90deg,#10170d,#25381c,#10170d); box-shadow:0 0 18px #7fcf6536,inset 0 0 10px #000; font:800 13px Georgia,serif; letter-spacing:.07em; text-align:center; text-transform:uppercase; animation:handoff-cue-rise 1.9s ease-out both; }
-    body.restored-next-order-focus:not(.restored-greenhouse-handoff):not(.first-move-made) .first-swap-cue { display:flex; width:max-content; max-width:calc(100% - 20px); min-height:30px; margin:7px auto 0; padding:5px 10px; align-items:center; gap:8px; border:1px solid #6f944d; border-radius:999px; color:#e8ffc5; background:linear-gradient(90deg,#10170d,#25381c,#10170d); box-shadow:0 0 16px #7fcf6536,inset 0 0 9px #000; font:800 14px Georgia,serif; letter-spacing:.035em; text-align:center; animation:cue-breathe 1.2s ease-in-out infinite alternate; }
+    body.restored-next-order-focus:not(.restored-greenhouse-handoff):not(.first-move-made) .first-swap-cue,
+    body.restored-next-order-focus.round-two-followup-cue .first-swap-cue { display:flex; width:max-content; max-width:calc(100% - 20px); min-height:30px; margin:7px auto 0; padding:5px 10px; align-items:center; gap:8px; border:1px solid #6f944d; border-radius:999px; color:#e8ffc5; background:linear-gradient(90deg,#10170d,#25381c,#10170d); box-shadow:0 0 16px #7fcf6536,inset 0 0 9px #000; font:800 14px Georgia,serif; letter-spacing:.035em; text-align:center; animation:cue-breathe 1.2s ease-in-out infinite alternate; }
     body.restored-next-order-focus:not(.restored-greenhouse-handoff) .first-swap-cue::before { content:"NEXT ORDER"; }
     body.restored-next-order-focus.thorn-lesson-active:not(.restored-greenhouse-handoff) .first-swap-cue::before { content:"CURSED THORN"; }
+    body.restored-next-order-focus.round-two-followup-cue .first-swap-cue::before { content:"NEXT BLOOM"; }
     body.restored-next-order-focus .restored-greenhouse-status { display:grid; width:min(520px,calc(100% - 16px)); margin:7px auto 0; padding:7px 10px; grid-template-columns:auto 1fr; gap:5px 9px; align-items:center; border:1px solid #6f944d; background:linear-gradient(90deg,#0a0d08,#172414,#0a0d08); box-shadow:0 0 16px #7fcf652d,inset 0 0 10px #000; color:#dff5b8; text-align:left; }
     .restored-greenhouse-kicker { color:#f3dfaa; font:900 10px/1 system-ui,sans-serif; letter-spacing:.09em; text-transform:uppercase; white-space:nowrap; }
     .restored-greenhouse-copy { color:#c5e4a4; font:700 12px/1.15 system-ui,sans-serif; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -9621,6 +9623,10 @@
       }
       const [a, b] = move;
       idleHintCells = new Set([`${a.x},${a.y}`, `${b.x},${b.y}`]);
+      if (isRestoredNextOrderFocus() && hasMadeValidMove) {
+        const direction = a.x === b.x ? "↑↓" : "↔";
+        $("firstSwapCue").textContent = `${flowers[remainingTarget.flowerId][0]} next ${direction}`;
+      }
       if (plan.round === 1 && remainingTargetIndex === 1) {
         $("firstSwapCue").textContent = "Make 4 Bone Stars - Black Candle Vine burns a row.";
       }
@@ -9737,9 +9743,8 @@
       return hintCells instanceof Set
         && hintCells.size === 2
         && hintCells.has(`${cell.x},${cell.y}`)
-        && !hasMadeValidMove
         && !roundComplete
-        && (currentRound === 1 || isRestoredNextOrderFocus());
+        && ((currentRound === 1 && !hasMadeValidMove) || isRestoredNextOrderFocus());
     }
 
     function notePlayerInteraction() {
@@ -9893,6 +9898,7 @@
       document.body.classList.toggle("restored-next-order-focus", isRestoredNextOrderFocus());
       const activePlan = activeRoundPlan();
       document.body.classList.toggle("thorn-lesson-active", activePlan.round === 2 && Boolean(activePlan.thornGoal) && thornGoalProgress(activePlan) === 0 && !roundComplete);
+      document.body.classList.toggle("round-two-followup-cue", isRestoredNextOrderFocus() && hasMadeValidMove && idleHintCells.size === 2 && !roundComplete);
       document.body.classList.toggle("first-move-made", hasMadeValidMove);
       const roundOneBlackCandleCue = roundOneActive && !roundComplete && $("firstSwapCue").textContent.includes("Black Candle Vine");
       document.body.classList.toggle("round-one-black-candle-cue", roundOneBlackCandleCue);
