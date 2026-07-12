@@ -165,6 +165,8 @@ def verify_source_hooks():
         "Swap the glowing pair",
         "first-swap-cue::before",
         "GLYPH GUIDE",
+        "moves-counter",
+        "body.round-one-active .objective-target",
         "function firstSwapCueText(a, b)",
         "const hintDelay = currentRound === 1 ? 350 : 7000;",
         "swap-snap",

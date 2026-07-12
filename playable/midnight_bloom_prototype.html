@@ -4274,7 +4274,11 @@
       body.round-one-active .main { padding:0; }
       body.round-one-active .sigil { font-size:9px; letter-spacing:4px; }
       body.round-one-active .title { font-size:29px; margin:2px 0 4px; line-height:1; }
-      body.round-one-active .objective { margin:0 5px; padding:6px 8px; font-size:13px; gap:4px 8px; }
+      body.round-one-active .objective { margin:0 5px; padding:6px 8px; font-size:13px; gap:5px 6px; }
+      body.round-one-active .objective .objective-text { flex-basis:100%; font-size:11px; letter-spacing:.11em; }
+      body.round-one-active .objective-target { min-height:29px; padding:2px 6px 2px 3px; border:1px solid #594126; border-radius:4px; background:#0b0807cc; box-shadow:inset 0 0 8px #000; font-weight:700; }
+      body.round-one-active .objective-target .objective-icon { width:25px; height:25px; }
+      body.round-one-active .moves-counter { min-height:29px; display:inline-flex; align-items:center; padding:2px 8px; border:1px solid #70502d; border-radius:4px; color:#f2d896; background:#1b110bcc; font-weight:800; white-space:nowrap; }
       body.round-one-active .objective .objective-separator { display:none; }
       body.round-one-active .board { width:calc(100vw - 12px); max-width:378px; gap:3px; padding:5px; margin:7px auto 0; }
       body.round-one-active .ritual-log { margin:7px 7px 0; padding:7px 9px; min-height:0; font-size:12px; line-height:1.25; }
@@ -4346,7 +4350,7 @@
       <div class="objective" id="objective">
         <span class="objective-text">Round 1 · Collect Thorn Rose 0/8 and Bone Star 0/6</span>
         <span class="objective-separator">·</span>
-        <span>Moves 12</span>
+        <span class="moves-counter">Moves 12</span>
       </div>
       <div class="first-session-plaque" id="firstSessionPlaque">
         Match Thorn Rose and Bone Star to complete Round 1: First Bouquet.
@@ -9659,7 +9663,7 @@
         ${bouquetStreakMarkup()}
         ${nextStreakTargetMarkup()}
         <span class="objective-separator">·</span>
-        <span>Moves ${moves}</span>
+        <span class="moves-counter">Moves ${moves}</span>
       `;
       $("objective").classList.toggle("complete", roundComplete);
       $("objective").classList.toggle("failed", failed);
