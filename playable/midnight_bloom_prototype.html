@@ -4267,7 +4267,7 @@
     body.round-one-active .controls .demo, body.round-one-active #renewBtn,
     body.round-one-active:not(.first-move-made) #shuffleBtn,
     body.round-one-active #roundCeremony { display:none!important; }
-    .first-swap-cue,.next-order-cue,.round-one-restoration { display:none; }
+    .first-swap-cue,.next-order-cue,.restored-greenhouse-status,.round-one-restoration { display:none; }
     body.round-one-active:not(.round-one-complete):not(.first-move-made) .first-swap-cue,
     body.round-one-active.round-one-black-candle-cue:not(.round-one-complete) .first-swap-cue,
     body.round-one-active.round-one-followup-cue:not(.round-one-complete) .first-swap-cue,
@@ -4289,6 +4289,11 @@
     body.restored-greenhouse-handoff .next-order-cue { display:flex; width:max-content; max-width:calc(100% - 20px); min-height:30px; margin:7px auto 0; padding:5px 11px; align-items:center; justify-content:center; border:1px solid #77944f; color:#e8ffc5; background:linear-gradient(90deg,#10170d,#25381c,#10170d); box-shadow:0 0 18px #7fcf6536,inset 0 0 10px #000; font:800 13px Georgia,serif; letter-spacing:.07em; text-align:center; text-transform:uppercase; animation:handoff-cue-rise 1.9s ease-out both; }
     body.restored-next-order-focus:not(.restored-greenhouse-handoff):not(.first-move-made) .first-swap-cue { display:flex; width:max-content; max-width:calc(100% - 20px); min-height:30px; margin:7px auto 0; padding:5px 10px; align-items:center; gap:8px; border:1px solid #6f944d; border-radius:999px; color:#e8ffc5; background:linear-gradient(90deg,#10170d,#25381c,#10170d); box-shadow:0 0 16px #7fcf6536,inset 0 0 9px #000; font:800 14px Georgia,serif; letter-spacing:.035em; text-align:center; animation:cue-breathe 1.2s ease-in-out infinite alternate; }
     body.restored-next-order-focus:not(.restored-greenhouse-handoff) .first-swap-cue::before { content:"NEXT ORDER"; }
+    body.restored-next-order-focus .restored-greenhouse-status { display:grid; width:min(520px,calc(100% - 16px)); margin:7px auto 0; padding:7px 10px; grid-template-columns:auto 1fr; gap:5px 9px; align-items:center; border:1px solid #6f944d; background:linear-gradient(90deg,#0a0d08,#172414,#0a0d08); box-shadow:0 0 16px #7fcf652d,inset 0 0 10px #000; color:#dff5b8; text-align:left; }
+    .restored-greenhouse-kicker { color:#f3dfaa; font:900 10px/1 system-ui,sans-serif; letter-spacing:.09em; text-transform:uppercase; white-space:nowrap; }
+    .restored-greenhouse-copy { color:#c5e4a4; font:700 12px/1.15 system-ui,sans-serif; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .restored-greenhouse-meter { grid-column:1/-1; height:8px; border:1px solid #5f7f3e; background:#060805; box-shadow:inset 0 0 7px #000; overflow:hidden; }
+    .restored-greenhouse-meter span { display:block; height:100%; width:var(--restored-greenhouse-xp-pct,0%); min-width:12px; background:linear-gradient(90deg,#4f762c,#c1dd75); box-shadow:0 0 11px #8fc65a; transition:width 480ms ease; }
     body.restored-greenhouse-handoff .board { box-shadow:0 0 0 1px #7fa35a,0 0 26px #7fcf6545,inset 0 0 16px #000; animation:handoff-board-glow 1.9s ease-out both; }
     body.restored-next-order-focus .board { touch-action:none; box-shadow:0 0 0 1px #6f944d,0 0 22px #7fcf6530,inset 0 0 16px #000; }
     body.round-one-active.round-one-complete .round-one-restoration { position:relative; overflow:hidden; display:grid; width:min(520px,calc(100% - 16px)); margin:10px auto; padding:14px; gap:10px; border:1px solid #b98b42; background:radial-gradient(circle at 50% 0,#34210f,#100d0d 70%); box-shadow:0 0 28px #b8793038,inset 0 0 22px #000; text-align:center; }
@@ -4411,6 +4416,9 @@
       body.restored-next-order-focus .board,
       body.restored-greenhouse-handoff .board,
       body.round-one-active .board { width:calc(100vw - 12px); max-width:378px; gap:3px; padding:5px; margin:7px auto 0; }
+      body.restored-next-order-focus .restored-greenhouse-status { padding:6px 8px; }
+      .restored-greenhouse-kicker { font-size:9px; }
+      .restored-greenhouse-copy { font-size:11px; }
       body.restored-next-order-focus .ritual-log,
       body.restored-greenhouse-handoff .ritual-log,
       body.round-one-active .ritual-log { margin:7px 7px 0; padding:7px 9px; min-height:0; font-size:12px; line-height:1.25; }
@@ -4558,6 +4566,11 @@
       <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
       <div class="first-swap-cue" id="firstSwapCue" aria-live="polite">Glowing pair incoming…</div>
       <div class="next-order-cue" id="nextOrderCue" aria-live="polite">Restored Greenhouse - Moonlit Wreath begins</div>
+      <div class="restored-greenhouse-status" id="restoredGreenhouseStatus" aria-live="polite">
+        <span class="restored-greenhouse-kicker">Restored Greenhouse</span>
+        <span class="restored-greenhouse-copy" id="restoredGreenhouseStatusText">Glass relit · Moonlit Wreath grows under repaired panes.</span>
+        <span class="restored-greenhouse-meter" aria-hidden="true"><span id="restoredGreenhouseStatusFill"></span></span>
+      </div>
       <div class="board" id="board"></div>
       <div class="controls">
         <button class="btn" id="shuffleBtn" type="button">
@@ -9838,6 +9851,7 @@
         ? "Next Order: Moonlit Wreath is ready. Match Nightshade and Amber Seed in the restored glass."
         : "Spend 100 coins to relight the abandoned greenhouse.";
       restorationGreenhouseXpPreview();
+      renderRestoredGreenhouseStatus();
       const boardEl = $("board");
       boardEl.innerHTML = "";
       boardEl.classList.toggle("supreme-charge", supremeChargeActive);
@@ -10082,6 +10096,17 @@
       $("restorationXpCopy").textContent = roundOneRestored
         ? `Upgrade progress locked in: ${greenhouse.xp.toLocaleString()} / ${greenhouse.next.toLocaleString()} XP.`
         : `Bouquet reward banked: ${greenhouse.xp.toLocaleString()} / ${greenhouse.next.toLocaleString()} XP. Restore to see it in the greenhouse.`;
+    }
+
+    function renderRestoredGreenhouseStatus() {
+      const text = $("restoredGreenhouseStatusText");
+      const fill = $("restoredGreenhouseStatusFill");
+      if (!text || !fill) {
+        return;
+      }
+      const pct = Math.min(100, (greenhouse.xp / greenhouse.next) * 100);
+      fill.style.setProperty("--restored-greenhouse-xp-pct", `${pct}%`);
+      text.textContent = `Glass relit · Greenhouse ${greenhouse.level} · ${greenhouse.xp.toLocaleString()} / ${greenhouse.next.toLocaleString()} XP feeds Moonlit Wreath.`;
     }
 
     function renderFirstSwapArrow(boardEl) {
