@@ -4270,7 +4270,8 @@
     .first-swap-cue,.round-one-restoration { display:none; }
     body.round-one-active:not(.round-one-complete):not(.first-move-made) .first-swap-cue,
     body.round-one-active.round-one-black-candle-cue:not(.round-one-complete) .first-swap-cue,
-    body.round-one-active.round-one-followup-cue:not(.round-one-complete) .first-swap-cue { display:flex; width:max-content; max-width:calc(100% - 20px); min-height:30px; margin:7px auto 0; padding:5px 10px; align-items:center; gap:8px; border:1px solid #8e6b35; border-radius:999px; color:#fff0b4; background:linear-gradient(90deg,#17100c,#2b1d0d,#17100c); box-shadow:0 0 16px #c58a3330,inset 0 0 9px #000; font:800 14px Georgia,serif; letter-spacing:.035em; text-align:center; animation:cue-breathe 1.2s ease-in-out infinite alternate; }
+    body.round-one-active.round-one-followup-cue:not(.round-one-complete) .first-swap-cue,
+    body.round-one-active.round-one-refused:not(.round-one-complete) .first-swap-cue { display:flex; width:max-content; max-width:calc(100% - 20px); min-height:30px; margin:7px auto 0; padding:5px 10px; align-items:center; gap:8px; border:1px solid #8e6b35; border-radius:999px; color:#fff0b4; background:linear-gradient(90deg,#17100c,#2b1d0d,#17100c); box-shadow:0 0 16px #c58a3330,inset 0 0 9px #000; font:800 14px Georgia,serif; letter-spacing:.035em; text-align:center; animation:cue-breathe 1.2s ease-in-out infinite alternate; }
     .first-swap-cue::before { content:"GLYPH GUIDE"; flex:none; padding-right:8px; border-right:1px solid #76582e; color:#b9965f; font:700 9px/1.1 system-ui,sans-serif; letter-spacing:.12em; }
     body.round-one-active.round-one-black-candle-cue .first-swap-cue::before { content:"BLACK CANDLE"; }
     body.round-one-active .board { touch-action:none; }
@@ -9587,6 +9588,14 @@
         return;
       }
       idleHintCells = new Set([`${a.x},${a.y}`, `${b.x},${b.y}`]);
+      if (plan.round === 1 && hasMadeValidMove && targetIndex === 1) {
+        $("firstSwapCue").textContent = "Make 4 Bone Stars - Black Candle Vine burns a row.";
+        return;
+      }
+      if (plan.round === 1 && hasMadeValidMove) {
+        $("firstSwapCue").textContent = "Keep matching - swap the glowing pair.";
+        return;
+      }
       $("firstSwapCue").textContent = firstSwapCueText(a, b);
     }
 
@@ -9679,19 +9688,16 @@
       pulseHaptic([10, 35, 18]);
       playBloomSound("invalid");
       const cue = $("firstSwapCue");
-      if (!hasMadeValidMove && cue) {
+      if (currentRound === 1 && !roundComplete && cue) {
         cue.textContent = "No bloom — follow the glowing pair.";
         cue.classList.add("swap-refused");
       }
       invalidSwapCells = new Set([`${a.x},${a.y}`, `${b.x},${b.y}`]);
       render();
       invalidSwapTimer = window.setTimeout(() => {
-        if (!invalidSwapCells.size) {
-          return;
-        }
         invalidSwapCells.clear();
         invalidSwapTimer = null;
-        if (!hasMadeValidMove && cue) {
+        if (currentRound === 1 && !roundComplete && cue) {
           cue.classList.remove("swap-refused");
           restoreFirstSwapCueAfterRefusal();
         }
@@ -9741,6 +9747,7 @@
       document.body.classList.toggle("round-one-black-candle-cue", roundOneBlackCandleCue);
       const roundOneFollowupCue = roundOneActive && !roundComplete && $("firstSwapCue").textContent.includes("Keep matching");
       document.body.classList.toggle("round-one-followup-cue", roundOneFollowupCue);
+      document.body.classList.toggle("round-one-refused", roundOneActive && !roundComplete && $("firstSwapCue").classList.contains("swap-refused"));
       $("roundOneRestoration").classList.toggle("restored", roundOneRestored);
       $("restorationTitle").textContent = roundOneRestored
         ? `Greenhouse Restored · ${coins.toLocaleString()} coins remain`

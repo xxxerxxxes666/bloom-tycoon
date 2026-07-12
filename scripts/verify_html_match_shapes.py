@@ -171,6 +171,7 @@ def verify_source_hooks():
         "Make 4 Bone Stars - Black Candle Vine burns a row.",
         "round-one-followup-cue",
         "Keep matching - swap the glowing pair.",
+        "round-one-refused",
         "Swap the glowing pair to open the next harvest.",
         "first-swap-cue::before",
         "GLYPH GUIDE",

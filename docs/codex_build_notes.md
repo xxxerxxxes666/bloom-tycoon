@@ -1,5 +1,18 @@
 # Codex Build Notes
 
+## 2026-07-12 Round 1 refused follow-up cue
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `docs/codex_build_notes.md`.
+- Gap chosen: first-minute recovery after a wrong swap during the Black Candle follow-up. Recent commits already covered first swap guidance, Black Candle teaching, restoration, audio, and coin payoff; this pass keeps the compact Round 1 cue visible after a refused post-first-move swap and restores the Black Candle/follow-up cue once the red tile flash clears.
+- Verification: `python3 scripts/verify_project.py` passed; `git diff --check` passed.
+- Browser checks: local static server on `127.0.0.1:41007` with Chromium/Playwright from `/tmp/bloom-playwright`. Mobile portrait 390x844 verified fresh Round 1 had 64 tiles, 2 highlighted hint tiles, 1 swap arrow, board top 199px/bottom 577px, 0 visible non-tile buttons, 0 visible future preview sections, 0 broken images, and no horizontal overflow. After the first valid swap, one Shuffle button was visible; an intentionally illegal adjacent swap showed `No bloom - follow the glowing pair.`, 2 invalid tiles, then restored `Make 4 Bone Stars - Black Candle Vine burns a row.` with 2 hint tiles and 1 arrow. Console/page/request status stayed clean.
+- Vercel deployment URL/identifier checked: not deployed or checked; this pass is source-local only.
+- GitHub Pages preview status: not checked in this local pass.
+- Known issues: Round 2 still returns the broader prototype controls after Next Order; unchanged by this pass.
+- How to trigger and verify L/T/cross matches without console: after Round 1, click `Shape Bloom` repeatedly or press `M`; demos cycle through line5, line4, `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom`.
+- How to trigger and verify Supreme Bloom without console: focus the playable after Round 1 and press `B`; the `SUPREME BLOOM!` overlay should appear and return the board to 64 tiles.
+- Security/secret-scan status: changed-line credential-pattern scan only matched this security-status sentence; whole changed-file scan otherwise flagged existing harmless docs wording and local `*Token` display variable names, with no credential-like secrets found.
+
 ## 2026-07-12 Round 1 coin payoff burst
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `docs/codex_build_notes.md`.
