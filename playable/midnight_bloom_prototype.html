@@ -1780,6 +1780,44 @@
       animation: idle-hint-pulse 1.35s ease-in-out infinite;
     }
 
+    .swap-path-arrow {
+      --arrow-x: 0;
+      --arrow-y: 0;
+      --arrow-rot: 0deg;
+      position: absolute;
+      left: calc(var(--arrow-x) * 12.5%);
+      top: calc(var(--arrow-y) * 12.5%);
+      z-index: 3;
+      width: min(46px, 10.8%);
+      height: 22px;
+      transform: translate(-50%, -50%) rotate(var(--arrow-rot));
+      pointer-events: none;
+      filter: drop-shadow(0 0 8px #e0a84f) drop-shadow(0 1px 3px #000);
+      animation: swap-arrow-pulse 980ms ease-in-out infinite alternate;
+    }
+
+    .swap-path-arrow::before {
+      content: "";
+      position: absolute;
+      left: 3px;
+      right: 12px;
+      top: 9px;
+      height: 4px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #b47c32, #fff0aa);
+      box-shadow: 0 0 10px #d7b16d;
+    }
+
+    .swap-path-arrow::after {
+      content: "";
+      position: absolute;
+      right: 1px;
+      top: 4px;
+      border-left: 14px solid #fff0aa;
+      border-top: 7px solid transparent;
+      border-bottom: 7px solid transparent;
+    }
+
     .tile.thorn-teach {
       outline: 2px solid #ffb35a;
       box-shadow:
@@ -4282,6 +4320,10 @@
       0%,100% { transform:translateX(0); }
       30% { transform:translateX(-5px); }
       65% { transform:translateX(5px); }
+    }
+    @keyframes swap-arrow-pulse {
+      from { opacity:.68; transform:translate(-50%,-50%) rotate(var(--arrow-rot)) scale(.92); }
+      to { opacity:1; transform:translate(-50%,-50%) rotate(var(--arrow-rot)) scale(1.08); }
     }
     @keyframes swap-snap {
       0% { transform:scale(.88); filter:brightness(1.7) saturate(1.35); }
@@ -9704,6 +9746,7 @@
           boardEl.appendChild(tile);
         }
       }
+      renderFirstSwapArrow(boardEl);
       applyImageFallbacks(boardEl);
 
       harvestFlashCells.forEach((cell) => {
@@ -9853,6 +9896,27 @@
       applyImageFallbacks($("objective"));
       applyImageFallbacks(document);
       saveProgress();
+    }
+
+    function renderFirstSwapArrow(boardEl) {
+      if (currentRound !== 1 || roundComplete || idleHintCells.size !== 2) {
+        return;
+      }
+      const cells = [...idleHintCells].map((cell) => {
+        const [x, y] = cell.split(",").map(Number);
+        return { x, y };
+      });
+      const [a, b] = cells;
+      if (!a || !b || Math.abs(a.x - b.x) + Math.abs(a.y - b.y) !== 1) {
+        return;
+      }
+      const arrow = document.createElement("span");
+      arrow.className = "swap-path-arrow";
+      arrow.setAttribute("aria-hidden", "true");
+      arrow.style.setProperty("--arrow-x", String((a.x + b.x + 1) / 2));
+      arrow.style.setProperty("--arrow-y", String((a.y + b.y + 1) / 2));
+      arrow.style.setProperty("--arrow-rot", a.y === b.y ? (a.x < b.x ? "0deg" : "180deg") : (a.y < b.y ? "90deg" : "-90deg"));
+      boardEl.appendChild(arrow);
     }
 
     function runeBoonMarkup() {
