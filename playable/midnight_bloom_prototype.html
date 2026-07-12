@@ -4305,6 +4305,12 @@
     .restoration-step { min-height:42px; display:grid; align-content:center; gap:2px; padding:6px; border:1px solid #5a452a; background:#0b0807d9; color:#ead9a9; font:800 12px/1.1 system-ui,sans-serif; text-transform:uppercase; letter-spacing:.06em; }
     .restoration-step b { color:#fff2bf; font:900 15px/1 Georgia,serif; letter-spacing:0; text-transform:none; }
     .restoration-step.spend { color:#d5b06c; }
+    .restoration-xp-preview { display:grid; gap:5px; padding:8px; border:1px solid #5f7f3e; background:linear-gradient(180deg,#10170d,#080706); box-shadow:inset 0 0 12px #000,0 0 14px #5f833830; color:#dff5b8; text-align:left; }
+    .restoration-xp-topline { display:flex; align-items:center; justify-content:space-between; gap:8px; color:#f3dfaa; font:900 11px/1 system-ui,sans-serif; letter-spacing:.08em; text-transform:uppercase; }
+    .greenhouse-payoff-fill { height:13px; overflow:hidden; border:1px solid #7d5c32; background:#070504; box-shadow:inset 0 0 9px #000; }
+    .greenhouse-payoff-fill span { display:block; height:100%; width:var(--greenhouse-xp-pct,0%); min-width:14px; background:linear-gradient(90deg,#4f762c,#c1dd75); box-shadow:0 0 14px #8fc65a; transition:width 480ms ease; }
+    .restoration-xp-copy { color:#b8d592; font:700 12px/1.15 system-ui,sans-serif; }
+    .round-one-restoration.restored .restoration-xp-preview { border-color:#a5c56a; box-shadow:inset 0 0 12px #000,0 0 18px #8fc65a45; animation:greenhouse-xp-confirm 850ms ease-out both; }
     .round-one-restoration.restored .restoration-step.spend { border-color:#d3a657; color:#ffe0a3; box-shadow:0 0 14px #d3a65730; }
     .round-one-restoration.spend-pulse .restoration-step.spend { animation:coin-spend-pulse 760ms ease-out both; }
     .round-one-restoration.restored .restoration-step.next { border-color:#6f944d; color:#dff5b8; }
@@ -4332,6 +4338,11 @@
       18% { opacity:1; transform:translate(var(--coin-rise-x),-34px) scale(1) rotateY(130deg); }
       72% { opacity:1; transform:translate(var(--coin-mid-x),58px) scale(.88) rotateY(340deg); }
       100% { opacity:0; transform:translate(var(--coin-end-x),95px) scale(.56) rotateY(520deg); }
+    }
+    @keyframes greenhouse-xp-confirm {
+      0% { filter:brightness(.88); transform:scale(.985); }
+      45% { filter:brightness(1.18); transform:scale(1.015); }
+      100% { filter:brightness(1); transform:scale(1); }
     }
     @keyframes cue-breathe { to { color:#fff; text-shadow:0 0 12px #e2a94d; } }
     @keyframes cue-refused {
@@ -4388,6 +4399,7 @@
       body.round-one-active.round-one-complete .board, body.round-one-active.round-one-complete .controls, body.round-one-active.round-one-complete .ritual-log { display:none; }
       body.round-one-active .restoration-ledger { grid-template-columns:1fr; }
       body.round-one-active .restoration-step { min-height:34px; }
+      body.round-one-active .restoration-xp-preview { padding:7px; }
     }
   </style>
 </head>
@@ -4598,6 +4610,14 @@
           <span class="restoration-step"><b id="restorationEarned">+120</b> Bouquet coins</span>
           <span class="restoration-step spend"><b id="restorationSpent">-100</b> Greenhouse</span>
           <span class="restoration-step next"><b id="restorationNext">Next</b> Moonlit Wreath</span>
+        </div>
+        <div class="restoration-xp-preview" id="restorationXpPreview" aria-label="Greenhouse upgrade progress">
+          <span class="restoration-xp-topline">
+            <span>Greenhouse +180 XP</span>
+            <span id="restorationXpLevel">Level 4</span>
+          </span>
+          <span class="greenhouse-payoff-fill" aria-hidden="true"><span id="restorationXpFill"></span></span>
+          <span class="restoration-xp-copy" id="restorationXpCopy">Upgrade progress will lock in when the glasshouse relights.</span>
         </div>
         <div class="restoration-copy" id="restorationCopy">Spend 100 coins to relight the abandoned greenhouse.</div>
         <button class="restore-btn" id="restoreGreenhouseBtn" type="button">Restore Greenhouse · 100 coins</button>
@@ -9792,6 +9812,7 @@
       $("restorationCopy").textContent = roundOneRestored
         ? "Next Order: Moonlit Wreath is ready. Match Nightshade and Amber Seed in the restored glass."
         : "Spend 100 coins to relight the abandoned greenhouse.";
+      restorationGreenhouseXpPreview();
       const boardEl = $("board");
       boardEl.innerHTML = "";
       boardEl.classList.toggle("supreme-charge", supremeChargeActive);
@@ -10023,6 +10044,19 @@
       applyImageFallbacks($("objective"));
       applyImageFallbacks(document);
       saveProgress();
+    }
+
+    function restorationGreenhouseXpPreview() {
+      const preview = $("restorationXpPreview");
+      if (!preview) {
+        return;
+      }
+      const pct = Math.min(100, (greenhouse.xp / greenhouse.next) * 100);
+      $("restorationXpLevel").textContent = `Level ${greenhouse.level}`;
+      $("restorationXpFill").style.setProperty("--greenhouse-xp-pct", `${pct}%`);
+      $("restorationXpCopy").textContent = roundOneRestored
+        ? `Upgrade progress locked in: ${greenhouse.xp.toLocaleString()} / ${greenhouse.next.toLocaleString()} XP.`
+        : `Bouquet reward banked: ${greenhouse.xp.toLocaleString()} / ${greenhouse.next.toLocaleString()} XP. Restore to see it in the greenhouse.`;
     }
 
     function renderFirstSwapArrow(boardEl) {

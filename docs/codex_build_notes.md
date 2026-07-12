@@ -1,5 +1,20 @@
 # Codex Build Notes
 
+## 2026-07-12 Greenhouse XP payoff vial
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `docs/codex_build_notes.md`.
+- Gap chosen: first bouquet restoration payoff. Recent commits already covered first swap clarity, Black Candle teaching, audio, coin burst, restoration, and Next Order handoff; this pass makes the hidden Greenhouse XP upgrade visible inside the existing restoration card without adding controls, rounds, currencies, or systems.
+- Gameplay change: after Round 1 completion, the restoration card now shows a compact `Greenhouse +180 XP` vial using the real saved Greenhouse XP total. Before Restore it reads as banked progress; after `Restore Greenhouse` it pulses and changes to locked-in progress before `Next Order`.
+- Verification: `python3 scripts/verify_project.py` passed.
+- Browser checks: local static server on `127.0.0.1:41009` with Chromium/Playwright from `/tmp/bloom-playwright` because `agent-browser` was unavailable. Mobile 390x844 verified fresh Round 1 had 64 tiles, 8 complete board rows, board top 199px/bottom 577px, 0 visible non-tile controls, no overflow, and 0 broken images. Guided tile clicks completed Round 1, showed the restoration card with `GREENHOUSE +180 XP`, `1,420 / 2,000 XP`, and a visible XP fill; `Restore Greenhouse` changed the copy to `Upgrade progress locked in`; `Next Order` reached Round 2 handoff with 64 tiles, 8 complete board rows, no visible controls, no overflow, and the handoff cue visible.
+- Browser console status: 0 console messages, 0 page errors, and 0 failed browser requests in the focused mobile run.
+- Vercel deployment URL/identifier checked: not deployed or checked; this pass is source-local only.
+- GitHub Pages preview status: not checked in this local pass.
+- Known issues: after the transient handoff clears, Round 2 still returns the broader prototype layout and only 4 complete board rows are visible on 390x844; unchanged by this pass.
+- How to trigger and verify L/T/cross matches without console: after Round 1, click `Shape Bloom` repeatedly or press `M`; demos cycle through line5, line4, `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom`.
+- How to trigger and verify Supreme Bloom without console: focus the playable after Round 1 and press `B`; the `SUPREME BLOOM!` overlay should appear and return the board to 64 tiles.
+- Security/secret-scan status: changed-line credential-pattern scan only matched this security-status sentence; broader changed-file scan only flagged historical build-note wording and existing UI names like `reward-token`/`flowerpediaToken`, with no credential-like secrets found. No secrets, trackers, backend, SDKs, or new permissions were added.
+
 ## 2026-07-12 Restored greenhouse Next Order handoff
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `docs/codex_build_notes.md`.
