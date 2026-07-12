@@ -4241,9 +4241,20 @@
     .round-one-restoration.restored .restoration-scene { background:radial-gradient(circle,#5d7d42 0,#18251a 58%,#090908); border-color:#b88c52; box-shadow:inset 0 0 24px #7fcf6540,0 0 20px #b8793040; }
     .round-one-restoration.restored .restoration-scene::before { border-color:#b88c52; background:repeating-linear-gradient(90deg,#568044 0 24px,#b9d995 25px 28px); filter:none; box-shadow:0 0 24px #7fcf65; }
     .round-one-restoration.restored .restoration-scene::after { animation:greenhouse-awakening 950ms ease-out both; }
+    .greenhouse-lanterns,.greenhouse-vines { position:absolute; opacity:0; transition:opacity 450ms ease,transform 650ms ease; pointer-events:none; }
+    .greenhouse-lanterns { inset:24px 34px auto; height:46px; background:radial-gradient(circle at 20% 48%,#ffe7a8 0 6px,transparent 9px),radial-gradient(circle at 50% 28%,#fff0b2 0 7px,transparent 11px),radial-gradient(circle at 80% 48%,#ffe7a8 0 6px,transparent 9px); filter:drop-shadow(0 0 10px #f0b348); transform:translateY(6px); }
+    .greenhouse-vines { inset:auto 38px 18px; height:30px; border-top:4px solid #91c66a; border-radius:50% 50% 0 0; box-shadow:0 -8px 0 -5px #c2df86,18px -5px 0 -6px #c2df86,-18px -5px 0 -6px #c2df86; transform:scaleX(.72); }
+    .round-one-restoration.restored .greenhouse-lanterns,.round-one-restoration.restored .greenhouse-vines { opacity:1; transform:none; }
     .restoration-state { position:absolute; inset:auto 0 8px; color:#ead9a9; font-weight:800; letter-spacing:.12em; text-shadow:0 2px 4px #000; }
     .restoration-title { color:#f3dfaa; font:700 21px Georgia,serif; }
     .restoration-copy { color:#c8b996; font-size:14px; }
+    .restoration-ledger { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+    .restoration-step { min-height:42px; display:grid; align-content:center; gap:2px; padding:6px; border:1px solid #5a452a; background:#0b0807d9; color:#ead9a9; font:800 12px/1.1 system-ui,sans-serif; text-transform:uppercase; letter-spacing:.06em; }
+    .restoration-step b { color:#fff2bf; font:900 15px/1 Georgia,serif; letter-spacing:0; text-transform:none; }
+    .restoration-step.spend { color:#d5b06c; }
+    .round-one-restoration.restored .restoration-step.spend { border-color:#d3a657; color:#ffe0a3; box-shadow:0 0 14px #d3a65730; }
+    .round-one-restoration.spend-pulse .restoration-step.spend { animation:coin-spend-pulse 760ms ease-out both; }
+    .round-one-restoration.restored .restoration-step.next { border-color:#6f944d; color:#dff5b8; }
     .restore-btn,.next-order-btn { min-height:46px; border:1px solid #d3a657; color:#fff2c4; background:linear-gradient(#8d5425,#4c2517); font-weight:900; letter-spacing:.06em; cursor:pointer; }
     .next-order-btn { display:none; background:linear-gradient(#56733a,#263b25); }
     .round-one-restoration.restored .restore-btn { display:none; }
@@ -4257,6 +4268,11 @@
       0% { opacity:0; transform:translateX(-65%) rotate(-12deg); }
       35% { opacity:.9; }
       100% { opacity:0; transform:translateX(65%) rotate(-12deg); }
+    }
+    @keyframes coin-spend-pulse {
+      0% { transform:scale(1); }
+      42% { transform:scale(1.06); color:#fff4b7; box-shadow:0 0 20px #e0ab50; }
+      100% { transform:scale(1); }
     }
     @keyframes cue-breathe { to { color:#fff; text-shadow:0 0 12px #e2a94d; } }
     @keyframes cue-refused {
@@ -4285,6 +4301,8 @@
       body.round-one-active .controls { margin:7px auto 0; }
       body.round-one-active .controls .btn { min-width:0; padding:7px 11px; font-size:12px; min-height:36px; }
       body.round-one-active.round-one-complete .board, body.round-one-active.round-one-complete .controls, body.round-one-active.round-one-complete .ritual-log { display:none; }
+      body.round-one-active .restoration-ledger { grid-template-columns:1fr; }
+      body.round-one-active .restoration-step { min-height:34px; }
     }
   </style>
 </head>
@@ -4477,7 +4495,16 @@
       <div class="ritual-log" id="ritualLog">Match botanical elements to feed the First Bouquet.</div>
       <section class="round-one-restoration" id="roundOneRestoration" aria-live="polite">
         <div class="restoration-title" id="restorationTitle">First Bouquet Sealed · 120 coins earned · 120 available</div>
-        <div class="restoration-scene" aria-label="Greenhouse restoration before and after"><span class="restoration-state" id="restorationState">WITHERED GLASSHOUSE</span></div>
+        <div class="restoration-scene" aria-label="Greenhouse restoration before and after">
+          <span class="greenhouse-lanterns" aria-hidden="true"></span>
+          <span class="greenhouse-vines" aria-hidden="true"></span>
+          <span class="restoration-state" id="restorationState">WITHERED GLASSHOUSE</span>
+        </div>
+        <div class="restoration-ledger" aria-label="First bouquet payoff">
+          <span class="restoration-step"><b id="restorationEarned">+120</b> Bouquet coins</span>
+          <span class="restoration-step spend"><b id="restorationSpent">-100</b> Greenhouse</span>
+          <span class="restoration-step next"><b id="restorationNext">Next</b> Moonlit Wreath</span>
+        </div>
         <div class="restoration-copy" id="restorationCopy">Spend 100 coins to relight the abandoned greenhouse.</div>
         <button class="restore-btn" id="restoreGreenhouseBtn" type="button">Restore Greenhouse · 100 coins</button>
         <button class="next-order-btn" id="nextOrderBtn" type="button">Next Order →</button>
@@ -9555,11 +9582,14 @@
       document.body.classList.toggle("first-move-made", hasMadeValidMove);
       $("roundOneRestoration").classList.toggle("restored", roundOneRestored);
       $("restorationTitle").textContent = roundOneRestored
-        ? `${coins.toLocaleString()} coins remain · Greenhouse restored`
+        ? `Greenhouse Restored · ${coins.toLocaleString()} coins remain`
         : `First Bouquet Sealed · 120 coins earned · ${coins.toLocaleString()} available`;
       $("restorationState").textContent = roundOneRestored ? "RESTORED · MIDNIGHT BLOOM" : "WITHERED GLASSHOUSE";
+      $("restorationEarned").textContent = "+120";
+      $("restorationSpent").textContent = roundOneRestored ? "-100 spent" : "-100";
+      $("restorationNext").textContent = roundOneRestored ? "Unlocked" : "Next";
       $("restorationCopy").textContent = roundOneRestored
-        ? "Warm lanterns, living vines, and new glass answer your bouquet."
+        ? "Next Order: Moonlit Wreath is ready. Match Nightshade and Amber Seed in the restored glass."
         : "Spend 100 coins to relight the abandoned greenhouse.";
       const boardEl = $("board");
       boardEl.innerHTML = "";
@@ -11403,6 +11433,9 @@
       roundOneRestored = true;
       ritualMessage = "<strong>Greenhouse restored.</strong> The dead glass burns gold and the first vines wake.";
       render();
+      const panel = $("roundOneRestoration");
+      panel.classList.add("spend-pulse");
+      window.setTimeout(() => panel.classList.remove("spend-pulse"), 820);
       saveProgress();
     }
 

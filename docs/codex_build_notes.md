@@ -1,5 +1,20 @@
 # Codex Build Notes
 
+## 2026-07-12 Greenhouse restoration payoff clarity
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `docs/codex_build_notes.md`.
+- Gap chosen: first bouquet restoration payoff clarity. Recent commits already handled the opening swap, objective clarity, reward meaning, restoration animation, and Black Candle Vine lesson, so this pass made the existing coin spend and Next Order handoff more obvious without adding systems.
+- Gameplay change: the Round 1 completion surface now shows a compact payoff ledger (`+120` bouquet coins, `-100` greenhouse spend, `Moonlit Wreath` next order), adds lit lantern/vine restoration details, changes the restored title to `Greenhouse Restored`, and names the next order directly before the one-tap `Next Order`.
+- Verification: `python3 scripts/verify_project.py` passed; `git diff --check` passed. Local static server on `127.0.0.1:41001` returned `200 OK` for the playable. `agent-browser` was unavailable in this environment, so transient Playwright/Chromium from `/tmp` was used for real browser checks.
+- Browser checks: mobile Chromium 390x844 verified fresh Round 1 had 64 tiles, board top 199px/bottom 577px, all 8 rows visible, 0 visible future diary sections, no horizontal overflow, and no visible non-tile controls before first move. Mobile and desktop Chromium both completed Round 1 through the guided swaps, showed the withered greenhouse with Restore only, restored to `RESTORED · MIDNIGHT BLOOM` with `Greenhouse Restored` and `Unlocked Moonlit Wreath`, showed Next Order only, then reached Round 2 with 64 tiles and board visible.
+- Browser console status: mobile and desktop Playwright runs observed 0 console warnings/errors, 0 page errors, 0 failed browser requests, and 0 broken images.
+- Vercel deployment URL/identifier checked: not redeployed or checked in this local pass.
+- GitHub Pages preview status: not checked in this local pass.
+- Known issues: Round 2 still returns the broader prototype controls after Next Order; unchanged by this pass.
+- How to trigger and verify L/T/cross matches without console: after Round 1, click `Shape Bloom` repeatedly or press `M`; demos cycle through line5, line4, `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom`.
+- How to trigger and verify Supreme Bloom without console: focus the playable after Round 1 and press `B`; the `SUPREME BLOOM!` overlay should appear and return the board to 64 tiles.
+- Security/secret-scan status: changed-file credential-pattern scan passed with no credential-like secrets found.
+
 ## 2026-07-12 Authored Black Candle Vine first-minute lesson
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `docs/codex_build_notes.md`.
