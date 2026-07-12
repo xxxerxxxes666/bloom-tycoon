@@ -1,5 +1,14 @@
 # Codex Build Notes
 
+## 2026-07-12 Focused restoration ceremony
+
+- Weakness selected: the expanded Round 1 greenhouse payoff exposed streak progression and a Greenhouse XP track at the exact moment the first-minute loop should read as one bouquet, one coin reward, one transformation, and one Next Order action.
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible change: the focused Round 1 completion ceremony now hides the Bouquet Streak badge, Next Streak Target badge, and restoration XP panel. The bouquet result, +120 coins, -100 restoration spend, greenhouse before/after transformation, remaining coin balance, and Next Order action remain visible. Underlying progression and save data are unchanged.
+- Verification: `python3 scripts/verify_project.py` passed, including the focused HTML source hooks; `git diff --check` passed. Desktop 1440x1000 and mobile 390x844 both kept 64 tiles, 8 rows, 0 visible active-play controls, 0 broken images, 0 overflow, and 0 console/page/request errors.
+- Exact browser flow: both completion viewports showed the restoration card and Restore action while the streak badge, next-streak badge, and XP panel were absent. Mobile Restore -> Next Order reached Round 2 with 64 tiles, 0 broken images, and 0 overflow.
+- Security: changed-file credential-shaped scan returned no findings. No assets, services, trackers, analytics, accounts, backend, credentials, permissions, or save-schema changes added.
+
 ## 2026-07-12 Finished first two minutes vertical slice
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `docs/codex_build_notes.md`.

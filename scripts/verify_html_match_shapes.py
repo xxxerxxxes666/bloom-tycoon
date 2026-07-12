@@ -241,6 +241,8 @@ def verify_source_hooks():
         "Greenhouse Restored ·",
         "restoration-ledger",
         "restoration-xp-preview",
+        "body.round-one-active.round-one-complete #bouquetStreakBadge",
+        "body.round-one-active.round-one-complete #nextStreakTargetBadge",
         "function restorationGreenhouseXpPreview",
         "Greenhouse +180 XP",
         "greenhouse-payoff-fill",
