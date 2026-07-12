@@ -1,5 +1,21 @@
 # Codex Build Notes
 
+## 2026-07-12 Restored greenhouse Next Order handoff
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `docs/codex_build_notes.md`.
+- Gap chosen: Round 1-to-Next-Order handoff clarity. Recent commits already covered opening objective, guided swap/arrow/recovery, authored Black Candle lesson, audio, coin burst, and restoration; this pass makes the tap from restored greenhouse into Moonlit Wreath feel like a deliberate board-first return.
+- Gameplay change: tapping `Next Order` after the first greenhouse restoration now triggers a short `Restored Greenhouse - Moonlit Wreath begins` banner, green board glow, compact mobile hierarchy, no visible controls, and ritual copy that names the relit glass. It is transient, unsaved, and only applies to the restored Round 1 -> Round 2 handoff.
+- Verification: `python3 scripts/verify_project.py` passed; `git diff --check` passed.
+- Browser checks: local static server on `127.0.0.1:41008` with Chromium/Playwright from `/tmp/bloom-playwright`. Fresh mobile 390x844 Round 1 had 64 tiles, 8 complete board rows, board top 199px/bottom 577px, 0 visible non-tile controls, 0 visible future preview sections, 0 broken images, and no horizontal overflow. Normal guided tile taps completed Round 1, showed restoration, restored the greenhouse, clicked `Next Order`, and verified the handoff with 64 tiles, 8 complete board rows, board top 318px/bottom 696px, 0 visible controls, no overflow, `Restored Greenhouse` cue text, and Round 2 objective visible. The transient handoff cleared after ~2.4s with 64 tiles and no overflow.
+- Browser console status: 0 console messages, 0 page errors, and 0 failed browser requests in the focused mobile run.
+- Vercel deployment URL/identifier checked: not deployed or checked; this pass is source-local only.
+- GitHub Pages preview status: not checked in this local pass.
+- Known issues: after the transient handoff clears, Round 2 still returns the broader prototype controls and only 4 complete board rows are visible on 390x844; unchanged by this pass.
+- How to trigger and verify L/T/cross matches without console: after Round 1, click `Shape Bloom` repeatedly or press `M`; demos cycle through line5, line4, `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom`.
+- How to trigger and verify Supreme Bloom without console: focus the playable after Round 1 and press `B`; the `SUPREME BLOOM!` overlay should appear and return the board to 64 tiles.
+- Security/secret-scan status: changed-line credential-pattern scan returned no hits. Whole changed-file scan only flagged existing harmless `*Token` display variable names and historical build-note wording, with no credential-like secrets found. No secrets, trackers, backend, SDKs, or new permissions were added.
+- Live/deploy status: source-only change committed locally for push; no deployment performed and no broad credentials used.
+
 ## 2026-07-12 Round 1 refused follow-up cue
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `docs/codex_build_notes.md`.
