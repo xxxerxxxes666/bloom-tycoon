@@ -10578,7 +10578,7 @@
           ? "<strong>First bloom!</strong> Your bouquet is already taking shape. "
           : "";
         const harvestMessage = firstMoveCopy + harvestSummary(result) + awardRareBloomDrop(result);
-        pulseOrderCounts(result.gained);
+        pulseOrderCounts(result.gained, result.gainedCells);
         if (maybeCompleteRound(harvestMessage)) {
           return;
         }
@@ -10788,6 +10788,7 @@
         coinsEarned: 0,
         cascades: 0,
         gained: Array(flowers.length).fill(0),
+        gainedCells: flowers.map(() => []),
         rareCells: [],
         shapeBonuses: [],
         shapeCells: [],
@@ -10946,6 +10947,9 @@
         const flowerId = board[y][x];
         counts[flowerId] += resourceMultiplier;
         result.gained[flowerId] += resourceMultiplier;
+        if (result.gainedCells[flowerId]) {
+          result.gainedCells[flowerId].push([x, y]);
+        }
         elementPulseTargets.add(flowerId);
         queueResourceBurst(x, y, flowerId, cascadeIndex);
       });
@@ -11856,7 +11860,7 @@
       }
     }
 
-    function pulseOrderCounts(gained) {
+    function pulseOrderCounts(gained, gainedCells = []) {
       orderPulseTargets.clear();
       activeRoundPlan().targets.forEach((target) => {
         if (gained[target.flowerId] > 0) {
@@ -11864,28 +11868,32 @@
         }
       });
       if (orderPulseTargets.size) {
-        launchObjectiveFlights(gained);
+        launchObjectiveFlights(gained, gainedCells);
         scheduleOrderPulseClear();
       }
     }
 
-    function launchObjectiveFlights(gained) {
+    function launchObjectiveFlights(gained, gainedCells = []) {
       const boardRect = $("board").getBoundingClientRect();
       activeRoundPlan().targets.forEach((target, index) => {
         if (!(gained[target.flowerId] > 0)) return;
         const destination = document.querySelector(`.objective-target[data-flower-id="${target.flowerId}"]`);
         if (!destination) return;
         const targetRect = destination.getBoundingClientRect();
+        const origins = gainedCells[target.flowerId] || [];
+        const origin = origins[Math.min(index, origins.length - 1)] || [BOARD_SIZE / 2 - 0.5, BOARD_SIZE / 2 - 0.5];
+        const originX = boardRect.left + ((origin[0] + 0.5) / BOARD_SIZE) * boardRect.width;
+        const originY = boardRect.top + ((origin[1] + 0.5) / BOARD_SIZE) * boardRect.height;
         const flight = document.createElement("img");
         flight.className = "objective-flight";
         flight.alt = "";
         flight.setAttribute("aria-hidden", "true");
         flight.src = flowers[target.flowerId][1];
-        flight.style.left = `${boardRect.left + boardRect.width / 2 - 15}px`;
-        flight.style.top = `${boardRect.top + boardRect.height / 2 - 15}px`;
+        flight.style.left = `${originX - 15}px`;
+        flight.style.top = `${originY - 15}px`;
         document.body.appendChild(flight);
-        const dx = targetRect.left + targetRect.width / 2 - (boardRect.left + boardRect.width / 2);
-        const dy = targetRect.top + targetRect.height / 2 - (boardRect.top + boardRect.height / 2);
+        const dx = targetRect.left + targetRect.width / 2 - originX;
+        const dy = targetRect.top + targetRect.height / 2 - originY;
         const animation = flight.animate([
           { transform: `translate(${index * 8 - 4}px, 0) scale(.65)`, opacity: 0 },
           { transform: `translate(${dx * .45}px, ${dy * .35 - 24}px) scale(1.15)`, opacity: 1, offset: .42 },
@@ -12637,10 +12645,12 @@
       const originalBoard = boardSnapshot();
       const originalGraveSoilCells = graveSoilSnapshot();
       const gained = Array(flowers.length).fill(0);
+      const gainedCells = flowers.map(() => []);
       burnedCells.forEach(([cellX, cellY]) => {
         const flowerId = board[cellY][cellX];
         counts[flowerId] += 1;
         gained[flowerId] += 1;
+        gainedCells[flowerId].push([cellX, cellY]);
         elementPulseTargets.add(flowerId);
         queueResourceBurst(cellX, cellY, flowerId);
       });
@@ -12651,7 +12661,7 @@
       queueBlackCandleBurst(lineCells, axis, index);
       const anchorKeys = new Set(cursedThorns.map((thorn) => thornKey(thorn.x, thorn.y)));
       const { reshuffled } = refillBlackCandleLine(originalBoard, burnedCells, anchorKeys, originalGraveSoilCells);
-      pulseOrderCounts(gained);
+      pulseOrderCounts(gained, gainedCells);
       if (elementPulseTargets.size) {
         scheduleElementPulseClear();
       }
@@ -12961,7 +12971,7 @@
           ? `<strong>Sacrifice complete:</strong> ${replacementName} claimed the tile. ${harvestSummary(result)}${awardRareBloomDrop(result)}`
           : `<strong>Sacrifice complete:</strong> ${replacementName} replaced the tile. No harvest yet.`;
         if (result.matched) {
-          pulseOrderCounts(result.gained);
+          pulseOrderCounts(result.gained, result.gainedCells);
           maybeCompleteRound(ritualMessage);
         }
         if (!roundComplete && isBouquetFailed()) {
@@ -13119,7 +13129,7 @@
             ? `<strong>Shape demo complete:</strong> ${harvestSummary(result)}`
             : "Shape demo did not find a match.";
           if (result.matched) {
-            pulseOrderCounts(result.gained);
+            pulseOrderCounts(result.gained, result.gainedCells);
           }
         } finally {
           isResolving = false;

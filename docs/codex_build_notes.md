@@ -1,5 +1,20 @@
 # Codex Build Notes
 
+## 2026-07-12 Objective flights from matched flowers
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `docs/codex_build_notes.md`.
+- Gap chosen: first-minute match-to-order feedback. The existing objective-flight animation always began at board center, so the harvested flowers did not visibly travel from the matched cells into the order targets. This pass keeps the same animation but starts it from the actual matched flower cells when source cells are known.
+- Gameplay change: match resolution now records `gainedCells` alongside order counts; objective flights use those board-cell origins, and Black Candle line clears pass their burned cells through the same path. No rounds, controls, currencies, systems, assets, SDKs, backend, analytics, ads, IAP, debug surfaces, permissions, or save-shape changes were added.
+- Verification: `python3 scripts/verify_project.py` passed before and after the change.
+- Browser checks: local static server on `127.0.0.1:8000`; Chromium/Playwright via `NODE_PATH=/opt/data/home/.npm/_npx/420ff84f11983ee5/node_modules`. Mobile 390x844 fresh Round 1 had 64 tiles, 8 complete board rows, board top 199px/bottom 577px, 0 visible controls before first move, 0 broken images, and no horizontal overflow. Guided first swap preserved 64 tiles and showed post-match order progress. Targeted timing check observed an `objective-flight` image during the post-match window with 64 tiles, 0 broken images, and no overflow. Review-key payoff check completed Round 1, restored the greenhouse, and entered restored Round 2 focus with 64 tiles, 0 broken images, no overflow, and restored Greenhouse status visible.
+- Browser console status: 0 console messages and 0 page errors in the mobile first-swap, objective-flight timing, and Round 1 -> restored Round 2 payoff checks.
+- Vercel deployment URL/identifier checked: not deployed or checked; this pass is source-local before push.
+- GitHub Pages preview status: not checked in this local pass.
+- Known issues: none found in the focused mobile first-swap and Round 1 -> restored Round 2 checks.
+- How to trigger and verify L/T/cross matches without console: after Round 1, click `Shape Bloom` repeatedly or press `M`; demos cycle through line5, line4, `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom`.
+- How to trigger and verify Supreme Bloom without console: focus the playable after Round 1 and press `B`; the `SUPREME BLOOM!` overlay should appear and return the board to 64 tiles.
+- Security/secret-scan status: changed-file credential scan found no credential-like secrets. No secrets, trackers, backend, SDKs, broad permissions, ads, IAP, analytics, or cron jobs were added.
+
 ## 2026-07-12 Restored greenhouse status in Round 2 focus
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `docs/codex_build_notes.md`.
