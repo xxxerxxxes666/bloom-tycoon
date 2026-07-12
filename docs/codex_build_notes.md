@@ -1,5 +1,19 @@
 # Codex Build Notes
 
+## 2026-07-12 Selected hint-pair persistence
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `docs/codex_build_notes.md`.
+- Gap chosen: first-minute instructed-swap clarity. On mobile, tapping the first glowing tile cleared the glowing pair before the second tap, while the cue still said to tap the glowing adjacent flower. The selected state now preserves the two highlighted tiles and arrow until the actual swap resolves, without adding rounds, controls, systems, assets, save changes, backend, analytics, ads, IAP, debug surfaces, or permissions.
+- Verification: `python3 scripts/verify_project.py` passed; `git diff --check` passed.
+- Browser checks: local static server on `127.0.0.1:41014`; Chromium/Playwright via `NODE_PATH=/opt/data/home/.npm/_npx/420ff84f11983ee5/node_modules`. Mobile 390x844 fresh Round 1 had 64 tiles, 8 complete board rows, board top 199px/bottom 577px, 2 hint tiles, 1 swap arrow, 0 broken images, and no horizontal overflow. After the first highlighted tap, the selected state kept 64 tiles, 2 hint tiles, 1 swap arrow, 1 selected tile, 8 complete rows, no overflow, and the real cue `Selected. Tap a glowing adjacent flower to swap.` The second mobile tap completed the instructed swap, triggered the Black Candle Vine bouquet completion path, preserved 64 tiles, removed hints/arrow, and showed only `Restore Greenhouse`.
+- Restoration/Next Order browser check: same mobile run restored the greenhouse, switched from `Restore Greenhouse` to `Next Order`, then reached `restored-next-order-focus` Round 2 with 64 tiles, 8 complete rows, restored Greenhouse status visible, 0 broken images, and no horizontal overflow.
+- Browser console status: 0 console messages, 0 page errors, and 0 failed browser requests in the selected-hint and restoration handoff checks.
+- Vercel deployment URL/identifier checked: not deployed or checked; this pass is source-local before push.
+- GitHub Pages preview status: not checked in this local pass.
+- Known issues: none found in the focused first-tap, instructed-swap, and restoration handoff path.
+- Review-hook verification notes: no visible debug/review controls were added. Existing post-Round-1 review hooks remain unchanged; L/T/cross can still be verified after Round 1 by clicking `Shape Bloom` or pressing `M`, and Supreme Bloom can still be verified without console by focusing the playable after Round 1 and pressing `B`.
+- Security/secret-scan status: changed-file credential scan found no credential-format matches. Harmless words such as `token` in existing UI/build-note context were not treated as secrets.
+
 ## 2026-07-12 Objective token intake pulse
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `docs/codex_build_notes.md`.

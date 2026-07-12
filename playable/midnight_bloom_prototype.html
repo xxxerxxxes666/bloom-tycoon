@@ -9719,6 +9719,15 @@
       $("firstSwapCue").textContent = firstSwapCueText(a, b);
     }
 
+    function shouldPreserveSelectedHintPair(hintCells, cell) {
+      return hintCells instanceof Set
+        && hintCells.size === 2
+        && hintCells.has(`${cell.x},${cell.y}`)
+        && !hasMadeValidMove
+        && !roundComplete
+        && (currentRound === 1 || isRestoredNextOrderFocus());
+    }
+
     function notePlayerInteraction() {
       clearIdleHint();
       clearThornTeachingCue(false);
@@ -10536,6 +10545,7 @@
         render();
         return;
       }
+      const selectedHintPair = new Set(idleHintCells);
       notePlayerInteraction();
       if (activeBooster === "pruningShears") {
         usePruningShears(x, y);
@@ -10571,6 +10581,9 @@
 
       if (!selected) {
         selected = { x, y };
+        if (shouldPreserveSelectedHintPair(selectedHintPair, selected)) {
+          idleHintCells = selectedHintPair;
+        }
         ritualMessage = "<strong>Selected.</strong> Tap a glowing adjacent flower to swap.";
         render();
         return;
