@@ -1,5 +1,18 @@
 # Codex Build Notes
 
+## 2026-07-12 Focused Round 2 refused-swap recovery
+
+- Weakness selected: after the restored greenhouse handoff and first Cursed Thorn lesson, a bad adjacent swap in focused Round 2 fell back to the generic refusal log and did not restore the compact glowing-pair cue. This could make the first Moonlit Wreath follow-up feel stalled.
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible change: restored Round 2 now uses the same compact `No bloom - follow the glowing pair` refusal recovery as Round 1, then restores the `NEXT BLOOM` target cue, two highlighted flowers, and the swap arrow. No controls, rounds, systems, assets, saves, backend, ads, analytics, IAP, or permissions were added.
+- Verification: `python3 scripts/verify_project.py` passed, including HTML match-shape regression checks; `git diff --check` passed.
+- Mobile browser at 390x844: fresh Round 1 showed 64 tiles, 8 complete rows, board 165px-543px, 2 hint tiles, 1 arrow, 0 visible non-tile controls, 0 broken images, and 0 overflow. The real two-swap Round 1 flow completed, `Restore Greenhouse` worked, `Next Order` reached focused Round 2 with 64 tiles, 8 rows, 2 hints, 1 arrow, and 0 controls. After the real thorn swap, an intentionally refused adjacent swap showed `No bloom - follow the glowing pair`, 2 invalid tiles, then restored `Nightshade next`, 2 hints, 1 arrow, 64 tiles, 0 broken images, and 0 overflow.
+- Desktop browser at 1440x1000: fresh Round 1, completion, restore, and `Next Order` reached focused Round 2 with 64 tiles, 8 rows, 2 hints, 1 arrow, 0 visible non-tile controls, 0 broken images, and 0 overflow.
+- Browser console/runtime status: 0 console warnings/errors, 0 page errors, and 0 failed requests in the final mobile and desktop checks.
+- Known issues / next audit target: once focused Round 2 has taught the thorn and one ordinary follow-up, decide whether later Moonlit Wreath play should stay lightly guided or hand back fully unguided matching.
+- Live/deploy status: source-local before commit and push; Vercel and GitHub Pages previews not checked in this pass.
+- Security/secret-scan status: changed-file credential scan distinguished harmless UI/build-note words such as `reward-token`, `flowerpediaToken`, and historical security text from actual credential formats; no credential-like secrets found. No assets, trackers, analytics, backend, accounts, ads, IAP, `.env`, credentials, broad permissions, or cron jobs added.
+
 ## 2026-07-12 Round 2 next-bloom control return
 
 - Weakness selected: after the first Cursed Thorn clear, the game already found and highlighted the next legal target move, but the focused cue stayed hidden because Round 2 had recorded its first move. Tapping the first highlighted flower also cleared the pair. This was the highest-impact remaining issue because control appeared to stall immediately after the blocker lesson.

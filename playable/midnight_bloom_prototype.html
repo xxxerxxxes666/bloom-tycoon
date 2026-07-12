@@ -9736,6 +9736,11 @@
         $("firstSwapCue").textContent = "Keep matching - swap the glowing pair.";
         return;
       }
+      if (isRestoredNextOrderFocus() && hasMadeValidMove && target) {
+        const direction = a.x === b.x ? "↑↓" : "↔";
+        $("firstSwapCue").textContent = `${flowers[target.flowerId][0]} next ${direction}`;
+        return;
+      }
       $("firstSwapCue").textContent = firstSwapCueText(a, b);
     }
 
@@ -9836,7 +9841,8 @@
       pulseHaptic([10, 35, 18]);
       playBloomSound("invalid");
       const cue = $("firstSwapCue");
-      if (currentRound === 1 && !roundComplete && cue) {
+      const focusedCueActive = (currentRound === 1 || isRestoredNextOrderFocus()) && !roundComplete && cue;
+      if (focusedCueActive) {
         cue.textContent = "No bloom — follow the glowing pair.";
         cue.classList.add("swap-refused");
       }
@@ -9845,7 +9851,7 @@
       invalidSwapTimer = window.setTimeout(() => {
         invalidSwapCells.clear();
         invalidSwapTimer = null;
-        if (currentRound === 1 && !roundComplete && cue) {
+        if (focusedCueActive) {
           cue.classList.remove("swap-refused");
           restoreFirstSwapCueAfterRefusal();
         }
