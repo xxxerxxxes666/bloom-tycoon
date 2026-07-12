@@ -188,6 +188,8 @@ def verify_source_hooks():
         "pulseOrderCounts(result.gained, result.gainedCells)",
         "const originX = boardRect.left + ((origin[0] + 0.5) / BOARD_SIZE) * boardRect.width;",
         "objective-flight",
+        "objective-target.order-pulse::after",
+        "objective-sip",
         "flight.src = flowers[target.flowerId][1]",
         "No bloom — follow the glowing pair.",
         "swap-refused",

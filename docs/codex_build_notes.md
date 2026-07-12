@@ -1,5 +1,19 @@
 # Codex Build Notes
 
+## 2026-07-12 Objective token intake pulse
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `docs/codex_build_notes.md`.
+- Gap chosen: first-minute match-to-order readability. The matched-flower flight now lands into an objective token that visibly glints/absorbs the flower through the existing `order-pulse` state, making `match flowers -> complete bouquet` clearer without adding controls, rounds, systems, assets, save changes, backend, analytics, ads, IAP, or debug surfaces.
+- Verification: `python3 scripts/verify_project.py` passed.
+- Browser checks: local static server on `127.0.0.1:41013`; Chromium/Playwright via `NODE_PATH=/opt/data/home/.npm/_npx/420ff84f11983ee5/node_modules`. Mobile 390x844 fresh Round 1 had 64 tiles, 8 complete board rows, board top 199px/bottom 577px, 2 hint tiles, 1 swap arrow, 0 visible non-tile controls, 0 broken images, and no horizontal overflow. After the guided first swap, a timing probe caught `.objective-target.order-pulse::after` running `objective-sip` on `Thorn Rose 3/3`, with 64 tiles, 0 broken images, and no overflow. A preservation pass used the existing hidden `N` review key to reach bouquet completion, clicked real `Restore Greenhouse` and `Next Order`, and reached restored Round 2 focus with 64 tiles, 8 complete board rows, restored Greenhouse status visible, 0 broken images, and no overflow.
+- Browser console status: 0 console messages, 0 page errors, and 0 failed browser requests in the mobile first-swap pulse and restoration handoff checks.
+- Vercel deployment URL/identifier checked: not deployed or checked; this pass is source-local before push.
+- GitHub Pages preview status: not checked in this local pass.
+- Known issues: normal mobile guided-click automation can lose the second tap after the first swap because the board re-renders under the test harness; manual play and the focused pulse path are clean. No new player-visible issue found.
+- How to trigger and verify L/T/cross matches without console: after Round 1, click `Shape Bloom` repeatedly or press `M`; demos cycle through line5, line4, `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom`.
+- How to trigger and verify Supreme Bloom without console: focus the playable after Round 1 and press `B`; the `SUPREME BLOOM!` overlay should appear and return the board to 64 tiles.
+- Security/secret-scan status: changed-file credential scan found no credential-format matches. Harmless words such as `token` in existing UI/build-note context were not treated as secrets.
+
 ## 2026-07-12 Objective flights from matched flowers
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `docs/codex_build_notes.md`.
