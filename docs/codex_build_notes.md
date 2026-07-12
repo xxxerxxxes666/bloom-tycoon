@@ -1,5 +1,20 @@
 # Codex Build Notes
 
+## 2026-07-12 Deterministic opening lesson
+
+- Weakness selected: the authored Round 1 lesson was still probabilistic. Random neighbors/refills could extend the first Thorn Rose match into a four-line or cascade into Bone Star, completing the bouquet before the player saw the dedicated Black Candle Vine move. This was the highest-impact remaining issue because it made the first-minute special-piece teaching unreliable.
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible change: the opening three-match now has explicit non-target boundaries, the dedicated Bone Star four-match has a left boundary, and only the two authored Round 1 tutorial swaps resolve a single wave before quietly normalizing accidental refill matches. The reliable flow is now Thorn Rose bloom -> Black Candle cue -> Black Candle Vine row clear -> bouquet completion. Full cascades remain unchanged after the tutorial swaps and in later rounds.
+- Verification: `python3 scripts/verify_project.py` passed, including HTML match-shape regression checks; `git diff --check` passed.
+- Focused browser regression: pre-fix sampling reproduced premature first-swap completion and accidental five-line Rune outcomes. Post-fix repeated real-click runs showed 0 first-swap completions, 4/4 second-swap completions, 4/4 `Black Candle Vine swept row 1` results, 64 tiles, 0 broken images, and 0 overflow.
+- Mobile browser at 390x844: fresh Round 1 showed 64 tiles, all 8 rows from 199px to 577px, 2 hint tiles, 1 swap arrow, 0 visible non-tile controls, 0 broken images, and 0 horizontal overflow. The exact two-swap lesson completed, Restore Greenhouse worked, saved restoration survived reload, and Next Order reached focused Round 2 with 64 tiles, board 387px to 765px, 0 broken images, and 0 overflow.
+- Desktop browser at 1440x1000: fresh Round 1 showed 64 tiles, 2 hint tiles, 1 swap arrow, 0 visible non-tile controls, 0 broken images, and 0 overflow. The exact two-swap lesson, restoration, save/reload, and Next Order flow passed with 64 tiles and focused Round 2.
+- Browser console/runtime status: 0 console warnings/errors, 0 page errors, and 0 failed requests in the final mobile and desktop passes.
+- Save/reload status: restored Round 1 persisted with Next Order visible; continuing reached active Round 2 with the restored board-first focus intact.
+- Live/deploy status: source-local before commit and push; Vercel and GitHub Pages not yet checked for this pass.
+- Known issue / next highest-impact item: desktop Next Order can retain the restoration scroll position, leaving the Round 2 board partly above the viewport. A later surgical pass should restore board focus without changing mobile behavior.
+- Security: no assets, trackers, analytics, backend, accounts, ads, IAP, secrets, `.env`, credentials, or permissions added. Changed-file credential scan required immediately before commit.
+
 ## 2026-07-12 Selected hint-pair persistence
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `docs/codex_build_notes.md`.

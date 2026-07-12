@@ -9428,14 +9428,23 @@
       const fillerA = (flowerId + 1) % flowers.length;
       const fillerB = (flowerId + 2) % flowers.length;
       const fillerC = (flowerId + 3) % flowers.length;
+      const fillerD = (flowerId + 4) % flowers.length;
       // Adjacent swap at the middle column turns [target, filler, target]
       // into a 3- or 4-flower line, guaranteeing an obvious useful move.
       board[originY][originX] = flowerId;
       board[originY][originX + 1] = fillerA;
       board[originY][originX + 2] = flowerId;
       if (safeLineLength === 4) {
+        if (originX > 0) {
+          board[originY][originX - 1] = fillerC;
+        }
         board[originY][originX + 3] = flowerId;
         board[originY + 1][originX + 3] = fillerB;
+      } else {
+        // Keep the authored opening three-match from randomly extending into
+        // the Black Candle lesson before the player sees its dedicated cue.
+        board[originY][originX + 3] = fillerB;
+        board[originY + 2][originX + 1] = fillerD;
       }
       board[originY + 1][originX] = fillerB;
       board[originY + 1][originX + 1] = flowerId;
@@ -10621,7 +10630,12 @@
       document.querySelectorAll(".tile.swap-snap").forEach((tile) => tile.classList.remove("swap-snap"));
       let result = null;
       try {
-        result = await resolveAnimated();
+        const authoredRoundOneLesson = currentRound === 1 && (
+          isFirstValidMove || $("firstSwapCue").textContent.includes("Black Candle Vine")
+        );
+        result = await resolveAnimated(authoredRoundOneLesson
+          ? { maxCascades: 1, quietReseed: true }
+          : {});
         const firstMoveCopy = isFirstValidMove
           ? "<strong>First bloom!</strong> Your bouquet is already taking shape. "
           : "";
@@ -11121,11 +11135,12 @@
       collapseColumns();
     }
 
-    function finishResolve(result) {
+    function finishResolve(result, options = {}) {
       if (!result.matched) {
         return result;
       }
-      result.reshuffled = ensurePlayableBoardAfterCascade();
+      const rebuilt = ensurePlayableBoardAfterCascade();
+      result.reshuffled = rebuilt && !options.quietReseed;
       result.rareCells = dedupeCells(result.rareCells);
       result.shapeCells = dedupeCells(result.shapeCells);
       result.lineRelicCells = dedupeCells(result.lineRelicCells);
@@ -11243,7 +11258,7 @@
       harvestFlashCells.clear();
       superBloomCells.clear();
       fallAnimations.clear();
-      return finishResolve(result);
+      return finishResolve(result, options);
     }
 
     function collapseColumns() {
