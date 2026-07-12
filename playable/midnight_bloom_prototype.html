@@ -5190,6 +5190,7 @@
     let currentRound = 1;
     let roundComplete = false;
     let roundOneRestored = false;
+    let bloomAudioContext = null;
     let pendingRuneTendedSoil = false;
     let activeRuneTendedSoil = false;
     let shapeDemoIndex = 0;
@@ -9585,12 +9586,80 @@
       }
     }
 
+    function bloomAudioCtx() {
+      if (!window.AudioContext && !window.webkitAudioContext) {
+        return null;
+      }
+      if (!bloomAudioContext) {
+        const AudioCtor = window.AudioContext || window.webkitAudioContext;
+        bloomAudioContext = new AudioCtor();
+      }
+      if (bloomAudioContext.state === "suspended") {
+        bloomAudioContext.resume().catch(() => {});
+      }
+      return bloomAudioContext;
+    }
+
+    function playBloomTone(frequency, startOffset, duration, gain = 0.028, type = "sine") {
+      const ctx = bloomAudioCtx();
+      if (!ctx) {
+        return;
+      }
+      const startAt = ctx.currentTime + Math.max(0, startOffset || 0);
+      const stopAt = startAt + Math.max(0.03, duration || 0.1);
+      const osc = ctx.createOscillator();
+      const amp = ctx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(frequency, startAt);
+      amp.gain.setValueAtTime(0.0001, startAt);
+      amp.gain.exponentialRampToValueAtTime(gain, startAt + 0.018);
+      amp.gain.exponentialRampToValueAtTime(0.0001, stopAt);
+      osc.connect(amp);
+      amp.connect(ctx.destination);
+      osc.start(startAt);
+      osc.stop(stopAt + 0.02);
+    }
+
+    function playBloomSound(kind, detail = {}) {
+      try {
+        if (kind === "invalid") {
+          playBloomTone(154, 0, 0.09, 0.022, "triangle");
+          playBloomTone(106, 0.055, 0.11, 0.018, "sawtooth");
+          return;
+        }
+        if (kind === "match") {
+          const cascade = Math.min(4, Math.max(0, detail.cascade || 0));
+          const root = detail.lineRelic ? 294 : 247;
+          playBloomTone(root + cascade * 18, 0, 0.11, 0.026, "sine");
+          playBloomTone(root * 1.5 + cascade * 24, 0.055, 0.14, 0.022, "triangle");
+          if (detail.lineRelic) {
+            playBloomTone(92, 0.02, 0.28, 0.018, "sawtooth");
+          }
+          return;
+        }
+        if (kind === "complete") {
+          [247, 330, 392].forEach((frequency, index) => {
+            playBloomTone(frequency, index * 0.075, 0.16, 0.026, "triangle");
+          });
+          return;
+        }
+        if (kind === "restore") {
+          [196, 247, 330, 494].forEach((frequency, index) => {
+            playBloomTone(frequency, index * 0.085, 0.2, 0.024, "sine");
+          });
+        }
+      } catch (error) {
+        // Browser audio startup can be denied; keep the playable silent instead of noisy.
+      }
+    }
+
     function markInvalidSwap(a, b) {
       if (invalidSwapTimer && window.clearTimeout) {
         window.clearTimeout(invalidSwapTimer);
       }
       clearIdleHint();
       pulseHaptic([10, 35, 18]);
+      playBloomSound("invalid");
       const cue = $("firstSwapCue");
       if (!hasMadeValidMove && cue) {
         cue.textContent = "No bloom — follow the glowing pair.";
@@ -10956,7 +11025,9 @@
 
         const forcedRareCells = result.cascades === 0 ? (options.forceSupremeCells || []) : [];
         const effectRareCells = dedupeCells([...wave.rareCells, ...forcedRareCells]);
+        const cascadeIndex = result.cascades;
         collectWaveRewards(wave, result, result.cascades, forcedRareCells);
+        playBloomSound("match", { cascade: cascadeIndex, lineRelic: wave.lineRelics.length > 0 });
         if (boardParticles.length > 180) {
           boardParticles = boardParticles.slice(-180);
         }
@@ -11520,6 +11591,7 @@
       const chapterRewardCopy = chapterRewardMessageText ? ` ${chapterRewardMessageText}` : "";
       const completionMessage = `<strong>${plan.name} fulfilled.</strong> <strong>Bouquet Streak ${bouquetStreak}:</strong> +${streakPayout.total} coins (${plan.reward.coins} base + ${streakPayout.bonus} streak bonus at ${streakPayout.percent}%), +${plan.reward.greenhouse} Greenhouse XP, +${plan.reward.apothecary} Apothecary XP, +${plan.reward.faction} Sub Rosa Favor, and ${plan.reward.item} placed in Chest Storage.${nextBouquetStreakTargetCopy()}${flowerpediaCopy}${chapterRewardCopy} Choose a reward before Next Bouquet, or Greenhouse Cuttings will be taken by default.`;
       ritualMessage = carryMessage ? `${carryMessage} ${completionMessage}` : completionMessage;
+      playBloomSound("complete");
       return true;
     }
 
@@ -11529,6 +11601,7 @@
       roundOneRestored = true;
       ritualMessage = "<strong>Greenhouse restored.</strong> The dead glass burns gold and the first vines wake.";
       render();
+      playBloomSound("restore");
       const panel = $("roundOneRestoration");
       panel.classList.add("spend-pulse");
       window.setTimeout(() => panel.classList.remove("spend-pulse"), 820);
