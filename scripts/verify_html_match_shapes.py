@@ -180,6 +180,7 @@ def verify_source_hooks():
         "pulseHaptic([10, 35, 18])",
         "data-flower-id",
         "roundOneRestoration",
+        "greenhouse-awakening",
         "Restore Greenhouse · 100 coins",
         "function restoreRoundOneGreenhouse",
         "nextOrderBtn",
