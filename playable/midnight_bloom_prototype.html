@@ -4232,6 +4232,7 @@
     .first-swap-cue,.round-one-restoration { display:none; }
     body.round-one-active:not(.round-one-complete):not(.first-move-made) .first-swap-cue { display:block; margin:7px auto 0; color:#f0d99a; font:700 13px Georgia,serif; text-align:center; animation:cue-breathe 1.2s ease-in-out infinite alternate; }
     body.round-one-active .board { touch-action:none; }
+    body.round-one-active.round-one-complete .ritual-log { display:none; }
     body.round-one-active.round-one-complete .round-one-restoration { display:grid; width:min(520px,calc(100% - 16px)); margin:10px auto; padding:14px; gap:10px; border:1px solid #b98b42; background:radial-gradient(circle at 50% 0,#34210f,#100d0d 70%); box-shadow:0 0 28px #b8793038,inset 0 0 22px #000; text-align:center; }
     .restoration-scene { height:112px; border:1px solid #56432f; position:relative; overflow:hidden; background:#090908; transition:background 700ms ease,border-color 700ms ease,box-shadow 700ms ease; }
     .restoration-scene::before { content:""; position:absolute; inset:15px 24px 0; border:8px solid #40372e; border-bottom:0; clip-path:polygon(50% 0,100% 36%,92% 100%,8% 100%,0 36%); background:repeating-linear-gradient(90deg,#141817 0 24px,#070909 25px 28px); filter:grayscale(1); transition:background 750ms ease,border-color 750ms ease,filter 750ms ease,box-shadow 750ms ease; }
@@ -4470,7 +4471,7 @@
       </div>
       <div class="ritual-log" id="ritualLog">Match botanical elements to feed the First Bouquet.</div>
       <section class="round-one-restoration" id="roundOneRestoration" aria-live="polite">
-        <div class="restoration-title">First Bouquet Sealed · +120 coins</div>
+        <div class="restoration-title" id="restorationTitle">First Bouquet Sealed · 120 coins earned · 120 available</div>
         <div class="restoration-scene" aria-label="Greenhouse restoration before and after"><span class="restoration-state" id="restorationState">WITHERED GLASSHOUSE</span></div>
         <div class="restoration-copy" id="restorationCopy">Spend 100 coins to relight the abandoned greenhouse.</div>
         <button class="restore-btn" id="restoreGreenhouseBtn" type="button">Restore Greenhouse · 100 coins</button>
@@ -5065,7 +5066,7 @@
     let board = [];
     let selected = null;
     let moves = roundTemplates[0].moves;
-    let coins = 2450;
+    let coins = 0;
     let counts = [0, 0, 0, 0, 0, 0];
     let cursedThorns = [];
     let clearedCursedThorns = 0;
@@ -9529,6 +9530,9 @@
       document.body.classList.toggle("round-one-complete", roundOneActive && roundComplete);
       document.body.classList.toggle("first-move-made", hasMadeValidMove);
       $("roundOneRestoration").classList.toggle("restored", roundOneRestored);
+      $("restorationTitle").textContent = roundOneRestored
+        ? `${coins.toLocaleString()} coins remain · Greenhouse restored`
+        : `First Bouquet Sealed · 120 coins earned · ${coins.toLocaleString()} available`;
       $("restorationState").textContent = roundOneRestored ? "RESTORED · MIDNIGHT BLOOM" : "WITHERED GLASSHOUSE";
       $("restorationCopy").textContent = roundOneRestored
         ? "Warm lanterns, living vines, and new glass answer your bouquet."
@@ -11345,7 +11349,9 @@
       roundComplete = true;
       if (plan.round === 1) roundOneRestored = false;
       bouquetStreak += 1;
-      const streakPayout = bouquetStreakPayout(plan.reward.coins, bouquetStreak);
+      const streakPayout = plan.round === 1
+        ? { base: plan.reward.coins, percent: 0, bonus: 0, total: plan.reward.coins }
+        : bouquetStreakPayout(plan.reward.coins, bouquetStreak);
       coins += streakPayout.total;
       grantTycoonXp(plan.reward.greenhouse, plan.reward.apothecary, plan.reward.faction);
       addChestItem({
