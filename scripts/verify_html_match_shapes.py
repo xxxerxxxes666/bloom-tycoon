@@ -255,6 +255,8 @@ def verify_source_hooks():
         "isRestoredNextOrderFocus() ? 650 : 7000",
         "body.restored-greenhouse-handoff .controls",
         "function startRestoredGreenhouseHandoff",
+        "function focusRestoredNextOrderViewport",
+        "window.scrollTo({ top: 0, behavior: \"auto\" })",
         "<strong>Restored Greenhouse:</strong> Round ${plan.round}: ${plan.name} begins in the relit glass.",
         "Bouquet Streak",
         "bouquetStreak",

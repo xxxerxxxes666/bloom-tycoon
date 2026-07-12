@@ -11829,6 +11829,13 @@
       }, 2200);
     }
 
+    function focusRestoredNextOrderViewport() {
+      if (!window.matchMedia("(min-width: 761px)").matches) {
+        return;
+      }
+      window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "auto" }));
+    }
+
     function bouquetStreakBonusPercent(streak = bouquetStreak) {
       const safeStreak = Math.max(0, Math.floor(Number(streak) || 0));
       return Math.min(STREAK_COIN_BONUS_CAP, safeStreak * STREAK_COIN_BONUS_STEP);
@@ -12084,6 +12091,9 @@
         restoredGreenhouseHandoff = false;
       }
       render();
+      if (restoredGreenhouseNextOrder) {
+        focusRestoredNextOrderViewport();
+      }
       scheduleIdleHint();
     }
 

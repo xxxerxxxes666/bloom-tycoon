@@ -15,6 +15,19 @@
 - Security/secret-scan status: changed-file credential scan found no credential-format matches; harmless coin/reward copy was not treated as secret material.
 - Commit/push status: Codex created the local commit; its direct push lacked SSH permission, so the foreman integrated it safely after the concurrent remote commit and pushed with the repo-scoped key.
 
+## 2026-07-12 Desktop Next Order viewport focus
+
+- Weakness selected: after the restored greenhouse handoff, desktop could retain the completion card's scroll position and return to Round 2 with the board partly above the viewport. This was the highest-impact remaining first-minute hierarchy issue identified by the deterministic opening pass.
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible change: the restored Round 1 -> Round 2 Next Order transition now anchors wide desktop viewports to the top of the game on the next animation frame. Mobile is deliberately unchanged.
+- Verification: `python3 scripts/verify_project.py` passed, including HTML match-shape regression checks; `git diff --check` passed.
+- Real-browser desktop 1440x1000: the focused regression deliberately scrolled the restored completion surface to scrollY 533 before clicking Next Order. The handoff returned to scrollY 0 with Round 2 active, board top 451px/bottom 1101px, 64 tiles, 0 visible non-tile controls, 0 broken images, and 0 horizontal overflow.
+- Real-browser mobile 390x844: Next Order remained at scrollY 0 with Round 2 active, board top 399px/bottom 777px, 64 tiles, 0 visible non-tile controls, 0 broken images, and 0 horizontal overflow.
+- Browser console/runtime status: 0 console warnings/errors and 0 page errors in the final mobile and desktop handoff checks.
+- Known issues / next audit target: evaluate Round 2's first Cursed Thorn teaching cue and control return as one cohesive mobile interaction; do not add another system.
+- Live/deploy status: source-local before commit and push; live previews not yet checked for this pass.
+- Security: no assets, trackers, analytics, backend, accounts, ads, IAP, secrets, `.env`, credentials, or permissions added. Changed-file credential scan required immediately before commit.
+
 ## 2026-07-12 Deterministic opening lesson
 
 - Weakness selected: the authored Round 1 lesson was still probabilistic. Random neighbors/refills could extend the first Thorn Rose match into a four-line or cascade into Bone Star, completing the bouquet before the player saw the dedicated Black Candle Vine move. This was the highest-impact remaining issue because it made the first-minute special-piece teaching unreliable.
