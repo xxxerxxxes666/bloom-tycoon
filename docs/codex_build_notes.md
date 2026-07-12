@@ -1,5 +1,21 @@
 # Codex Build Notes
 
+## 2026-07-12 Authored Black Candle Vine first-minute lesson
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `docs/codex_build_notes.md`.
+- Gap chosen: authored four-match Black Candle Vine teaching. This was the highest-impact remaining first-60-seconds item because recent commits already covered objective clarity, first swap cue, tactile feedback, bouquet payoff, and greenhouse restoration.
+- Gameplay change: Round 1 still opens with a simple target match, then the next Bone Star target is resiliently authored into a four-line swap that triggers the existing `Black Candle Vine swept row 1` payoff before bouquet completion.
+- Stability fix: target-flight particles now use the tile asset path instead of flower lore text, removing transient 404 console errors during collection feedback.
+- Verification: `python3 scripts/verify_project.py` passed; `git diff --check` passed. Local Chromium via Playwright at 390x844 verified fresh Round 1 had 64 tiles, board top 199px/bottom 577px, no horizontal overflow, 0 broken images, 0 visible future diary sections, 0 non-tile controls before first move, and no console/page/request errors. First guided swap collected Thorn Rose; second guided swap produced `Black Candle Vine swept row 1`, completed the bouquet, showed `Restore Greenhouse`, then `Next Order` reached Round 2 with 64 tiles and no overflow.
+- Focused interaction tested: target-first cue, first swap, authored Bone Star four-match, Black Candle Vine payoff, bouquet completion, greenhouse restore, Next Order.
+- Browser console status: 0 warnings/errors after the target-flight source fix.
+- Vercel deployment URL/identifier checked: not redeployed or checked in this local pass.
+- GitHub Pages preview status: not checked in this local pass.
+- Known issues: Round 2 returns the broader prototype controls after Next Order; unchanged by this pass.
+- How to trigger and verify L/T/cross matches without console: after Round 1, click `Shape Bloom` repeatedly or press `M`; demos cycle through line5, line4, `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom`.
+- How to trigger and verify Supreme Bloom without console: focus the playable after Round 1 and press `B`; the `SUPREME BLOOM!` overlay should appear and return the board to 64 tiles.
+- Security/secret-scan status: changed-file credential-pattern scan passed with no credential-like secrets found.
+
 ## 2026-07-11 First 60 Seconds / Board-First vertical slice
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `docs/codex_build_notes.md`.

@@ -9139,7 +9139,7 @@
         writeTargetLegalMovePatch(0, 0, targetIds[0]);
       }
       if (targetIds[1] !== undefined) {
-        writeTargetLegalMovePatch(4, 0, targetIds[1]);
+        writeTargetLegalMovePatch(4, 0, targetIds[1], 4);
       }
     }
 
@@ -9208,18 +9208,23 @@
       )));
     }
 
-    function writeTargetLegalMovePatch(originX, originY, flowerId) {
-      if (originX + 2 >= BOARD_SIZE || originY + 1 >= BOARD_SIZE) {
+    function writeTargetLegalMovePatch(originX, originY, flowerId, lineLength = 3) {
+      const safeLineLength = Math.min(4, Math.max(3, Math.floor(Number(lineLength) || 3)));
+      if (originX + safeLineLength - 1 >= BOARD_SIZE || originY + 1 >= BOARD_SIZE) {
         return;
       }
       const fillerA = (flowerId + 1) % flowers.length;
       const fillerB = (flowerId + 2) % flowers.length;
       const fillerC = (flowerId + 3) % flowers.length;
       // Adjacent swap at the middle column turns [target, filler, target]
-      // into [target, target, target], guaranteeing an obvious useful move.
+      // into a 3- or 4-flower line, guaranteeing an obvious useful move.
       board[originY][originX] = flowerId;
       board[originY][originX + 1] = fillerA;
       board[originY][originX + 2] = flowerId;
+      if (safeLineLength === 4) {
+        board[originY][originX + 3] = flowerId;
+        board[originY + 1][originX + 3] = fillerB;
+      }
       board[originY + 1][originX] = fillerB;
       board[originY + 1][originX + 1] = flowerId;
       board[originY + 1][originX + 2] = fillerC;
@@ -9354,6 +9359,16 @@
       return legalMoves().find(([a, b]) => targetMoveCreatesHarvest(a, b, flowerId)) || null;
     }
 
+    function seedRoundOneBlackCandleVineLesson(targetIndex, target) {
+      if (currentRound !== 1 || targetIndex !== 1 || !hasMadeValidMove || roundComplete || !target) {
+        return;
+      }
+      if (targetProgress(target) > 0) {
+        return;
+      }
+      writeTargetLegalMovePatch(4, 0, target.flowerId, 4);
+    }
+
     function nextTargetMoveHint() {
       if (roundComplete) {
         return "";
@@ -9368,6 +9383,7 @@
         }
         return "";
       }
+      seedRoundOneBlackCandleVineLesson(remainingTargetIndex, remainingTarget);
       const move = findTargetLegalMove(remainingTarget.flowerId, remainingTargetIndex);
       if (!move) {
         return "";
@@ -9444,7 +9460,10 @@
         if (hasMadeValidMove || roundComplete || isBouquetFailed() || isResolving || sacrificeState.active || activeBooster) {
           return;
         }
-        const [a, b] = legalMoves()[0] || [];
+        const plan = activeRoundPlan();
+        const targetIndex = plan.targets.findIndex((target) => targetProgress(target) < target.needed);
+        const target = plan.targets[targetIndex];
+        const [a, b] = (target ? findTargetLegalMove(target.flowerId, targetIndex) : null) || legalMoves()[0] || [];
         if (!a || !b) {
           return;
         }
@@ -11505,7 +11524,7 @@
         flight.className = "objective-flight";
         flight.alt = "";
         flight.setAttribute("aria-hidden", "true");
-        flight.src = flowers[target.flowerId][2];
+        flight.src = flowers[target.flowerId][1];
         flight.style.left = `${boardRect.left + boardRect.width / 2 - 15}px`;
         flight.style.top = `${boardRect.top + boardRect.height / 2 - 15}px`;
         document.body.appendChild(flight);
