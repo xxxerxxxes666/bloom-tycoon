@@ -1,5 +1,18 @@
 # Codex Build Notes
 
+## 2026-07-12 Focused Round 2 Cursed Thorn lesson
+
+- Weakness selected: the first Round 2 blocker interaction worked mechanically but immediately reintroduced prototype-system noise. The focused objective exposed Shape Bloom and streak badges, while the first thorn clear dumped Flowerpedia and chapter reward copy. This was the highest-impact remaining issue because it diluted the first taught blocker and pushed the board down on mobile.
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible change: focused Round 2 now labels the cue `CURSED THORN` with `Crack the marked thorns`, hides Shape Bloom/streak badges from the objective, suppresses Shape Bloom prose during the focused handoff, and summarizes active matches as thorn damage, collected order flowers, and coins. Existing unlock/reward state is still granted silently; no mechanics or saves were removed.
+- Verification: `python3 scripts/verify_project.py` passed, including HTML match-shape regression checks; `git diff --check` passed.
+- Mobile browser at 390x844: restored Round 2 showed the explicit thorn cue, 7 marked teaching cells, 64 tiles, board top 321px/bottom 699px, 0 visible non-tile controls, 0 broken images, and 0 horizontal overflow. The real guided swap cleared all 3 thorns, preserved 64 tiles, and produced concise thorn/flower/coin feedback with no chapter or Flowerpedia copy.
+- Desktop browser at 1440x1000: restored Round 2 showed the same explicit cue and focused objective with 64 tiles, board top 414px, 0 visible non-tile controls, 0 broken images, and 0 horizontal overflow. The guided swap cleared all 3 thorns and kept the concise result copy.
+- Browser console/runtime status: 0 console warnings/errors, 0 page errors, and 0 failed requests in the final mobile and desktop checks.
+- Known issues / next audit target: after the first Cursed Thorn clear, evaluate whether the next ordinary target cue returns quickly enough without exposing legacy controls; do not add another system.
+- Live/deploy status: source-local before commit and push; live previews not yet checked for this pass.
+- Security: no assets, trackers, analytics, backend, accounts, ads, IAP, secrets, `.env`, credentials, or permissions added. Changed-file credential scan required immediately before commit.
+
 ## 2026-07-12 First bouquet coin reward clarity
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `docs/codex_build_notes.md`.
