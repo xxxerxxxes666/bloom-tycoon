@@ -4281,8 +4281,16 @@
     body.restored-greenhouse-handoff .first-session-plaque, body.restored-greenhouse-handoff .progress,
     body.restored-greenhouse-handoff .sacrifice-panel, body.restored-greenhouse-handoff .booster-panel,
     body.restored-greenhouse-handoff .controls, body.restored-greenhouse-handoff #roundCeremony { display:none!important; }
+    body.restored-next-order-focus .left, body.restored-next-order-focus .bottom,
+    body.restored-next-order-focus .bouquet-path, body.restored-next-order-focus .path-ledger-drawer,
+    body.restored-next-order-focus .first-session-plaque, body.restored-next-order-focus .progress,
+    body.restored-next-order-focus .sacrifice-panel, body.restored-next-order-focus .booster-panel,
+    body.restored-next-order-focus .controls, body.restored-next-order-focus #roundCeremony { display:none!important; }
     body.restored-greenhouse-handoff .next-order-cue { display:flex; width:max-content; max-width:calc(100% - 20px); min-height:30px; margin:7px auto 0; padding:5px 11px; align-items:center; justify-content:center; border:1px solid #77944f; color:#e8ffc5; background:linear-gradient(90deg,#10170d,#25381c,#10170d); box-shadow:0 0 18px #7fcf6536,inset 0 0 10px #000; font:800 13px Georgia,serif; letter-spacing:.07em; text-align:center; text-transform:uppercase; animation:handoff-cue-rise 1.9s ease-out both; }
+    body.restored-next-order-focus:not(.restored-greenhouse-handoff) .first-swap-cue { display:flex; width:max-content; max-width:calc(100% - 20px); min-height:30px; margin:7px auto 0; padding:5px 10px; align-items:center; gap:8px; border:1px solid #6f944d; border-radius:999px; color:#e8ffc5; background:linear-gradient(90deg,#10170d,#25381c,#10170d); box-shadow:0 0 16px #7fcf6536,inset 0 0 9px #000; font:800 14px Georgia,serif; letter-spacing:.035em; text-align:center; animation:cue-breathe 1.2s ease-in-out infinite alternate; }
+    body.restored-next-order-focus:not(.restored-greenhouse-handoff) .first-swap-cue::before { content:"NEXT ORDER"; }
     body.restored-greenhouse-handoff .board { box-shadow:0 0 0 1px #7fa35a,0 0 26px #7fcf6545,inset 0 0 16px #000; animation:handoff-board-glow 1.9s ease-out both; }
+    body.restored-next-order-focus .board { touch-action:none; box-shadow:0 0 0 1px #6f944d,0 0 22px #7fcf6530,inset 0 0 16px #000; }
     body.round-one-active.round-one-complete .round-one-restoration { position:relative; overflow:hidden; display:grid; width:min(520px,calc(100% - 16px)); margin:10px auto; padding:14px; gap:10px; border:1px solid #b98b42; background:radial-gradient(circle at 50% 0,#34210f,#100d0d 70%); box-shadow:0 0 28px #b8793038,inset 0 0 22px #000; text-align:center; }
     .restoration-scene { height:112px; border:1px solid #56432f; position:relative; overflow:hidden; background:#090908; transition:background 700ms ease,border-color 700ms ease,box-shadow 700ms ease; }
     .restoration-scene::before { content:""; position:absolute; inset:15px 24px 0; border:8px solid #40372e; border-bottom:0; clip-path:polygon(50% 0,100% 36%,92% 100%,8% 100%,0 36%); background:repeating-linear-gradient(90deg,#141817 0 24px,#070909 25px 28px); filter:grayscale(1); transition:background 750ms ease,border-color 750ms ease,filter 750ms ease,box-shadow 750ms ease; }
@@ -4370,28 +4378,40 @@
       100% { filter:brightness(1); }
     }
     @media (max-width:760px) {
+      body.restored-next-order-focus .game,
       body.restored-greenhouse-handoff .game,
       body.round-one-active .game { display:block; padding:4px 6px 8px; }
+      body.restored-next-order-focus .main,
       body.restored-greenhouse-handoff .main,
       body.round-one-active .main { padding:0; }
+      body.restored-next-order-focus .sigil,
       body.restored-greenhouse-handoff .sigil,
       body.round-one-active .sigil { font-size:9px; letter-spacing:4px; }
+      body.restored-next-order-focus .title,
       body.restored-greenhouse-handoff .title,
       body.round-one-active .title { font-size:29px; margin:2px 0 4px; line-height:1; }
+      body.restored-next-order-focus .objective,
       body.restored-greenhouse-handoff .objective,
       body.round-one-active .objective { margin:0 5px; padding:6px 8px; font-size:13px; gap:5px 6px; }
+      body.restored-next-order-focus .objective .objective-text,
       body.restored-greenhouse-handoff .objective .objective-text,
       body.round-one-active .objective .objective-text { flex-basis:100%; font-size:11px; letter-spacing:.11em; }
+      body.restored-next-order-focus .objective-target,
       body.restored-greenhouse-handoff .objective-target,
       body.round-one-active .objective-target { min-height:29px; padding:2px 6px 2px 3px; border:1px solid #594126; border-radius:4px; background:#0b0807cc; box-shadow:inset 0 0 8px #000; font-weight:700; }
+      body.restored-next-order-focus .objective-target .objective-icon,
       body.restored-greenhouse-handoff .objective-target .objective-icon,
       body.round-one-active .objective-target .objective-icon { width:25px; height:25px; }
+      body.restored-next-order-focus .moves-counter,
       body.restored-greenhouse-handoff .moves-counter,
       body.round-one-active .moves-counter { min-height:29px; display:inline-flex; align-items:center; padding:2px 8px; border:1px solid #70502d; border-radius:4px; color:#f2d896; background:#1b110bcc; font-weight:800; white-space:nowrap; }
+      body.restored-next-order-focus .objective .objective-separator,
       body.restored-greenhouse-handoff .objective .objective-separator,
       body.round-one-active .objective .objective-separator { display:none; }
+      body.restored-next-order-focus .board,
       body.restored-greenhouse-handoff .board,
       body.round-one-active .board { width:calc(100vw - 12px); max-width:378px; gap:3px; padding:5px; margin:7px auto 0; }
+      body.restored-next-order-focus .ritual-log,
       body.restored-greenhouse-handoff .ritual-log,
       body.round-one-active .ritual-log { margin:7px 7px 0; padding:7px 9px; min-height:0; font-size:12px; line-height:1.25; }
       body.round-one-active .controls { margin:7px auto 0; }
@@ -9611,7 +9631,7 @@
       if (hasMadeValidMove || roundComplete || isBouquetFailed() || isResolving || sacrificeState.active || activeBooster) {
         return;
       }
-      const hintDelay = currentRound === 1 ? 350 : 7000;
+      const hintDelay = currentRound === 1 ? 350 : isRestoredNextOrderFocus() ? 650 : 7000;
       idleHintTimer = window.setTimeout(() => {
         if (hasMadeValidMove || roundComplete || isBouquetFailed() || isResolving || sacrificeState.active || activeBooster) {
           return;
@@ -9790,11 +9810,16 @@
       return true;
     }
 
+    function isRestoredNextOrderFocus() {
+      return currentRound === 2 && roundOneRestored && !roundComplete && !hasMadeValidMove;
+    }
+
     function render() {
       const roundOneActive = currentRound === 1;
       document.body.classList.toggle("round-one-active", roundOneActive);
       document.body.classList.toggle("round-one-complete", roundOneActive && roundComplete);
       document.body.classList.toggle("restored-greenhouse-handoff", restoredGreenhouseHandoff && currentRound === 2 && !roundComplete);
+      document.body.classList.toggle("restored-next-order-focus", isRestoredNextOrderFocus());
       document.body.classList.toggle("first-move-made", hasMadeValidMove);
       const roundOneBlackCandleCue = roundOneActive && !roundComplete && $("firstSwapCue").textContent.includes("Black Candle Vine");
       document.body.classList.toggle("round-one-black-candle-cue", roundOneBlackCandleCue);
@@ -10060,7 +10085,7 @@
     }
 
     function renderFirstSwapArrow(boardEl) {
-      if (currentRound !== 1 || roundComplete || idleHintCells.size !== 2) {
+      if ((currentRound !== 1 && !isRestoredNextOrderFocus()) || roundComplete || idleHintCells.size !== 2) {
         return;
       }
       const cells = [...idleHintCells].map((cell) => {
