@@ -4668,7 +4668,7 @@
           <span style="--coin-delay:330ms;--coin-rise-x:48px;--coin-mid-x:62px;--coin-end-x:76px;"></span>
           <span style="--coin-delay:410ms;--coin-rise-x:82px;--coin-mid-x:104px;--coin-end-x:124px;"></span>
         </div>
-        <div class="restoration-title" id="restorationTitle">First Bouquet Sealed · 120 coins earned · 120 available</div>
+        <div class="restoration-title" id="restorationTitle">First Bouquet Sealed · +120 coin reward</div>
         <div class="restoration-scene" aria-label="Greenhouse restoration before and after">
           <span class="greenhouse-lanterns" aria-hidden="true"></span>
           <span class="greenhouse-vines" aria-hidden="true"></span>
@@ -9895,7 +9895,7 @@
       $("roundOneRestoration").classList.toggle("restored", roundOneRestored);
       $("restorationTitle").textContent = roundOneRestored
         ? `Greenhouse Restored · ${coins.toLocaleString()} coins remain`
-        : `First Bouquet Sealed · 120 coins earned · ${coins.toLocaleString()} available`;
+        : "First Bouquet Sealed · +120 coin reward";
       $("restorationState").textContent = roundOneRestored ? "RESTORED · MIDNIGHT BLOOM" : "WITHERED GLASSHOUSE";
       $("restorationEarned").textContent = "+120";
       $("restorationSpent").textContent = roundOneRestored ? "-100 spent" : "-100";

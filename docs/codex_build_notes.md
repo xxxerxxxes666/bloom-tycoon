@@ -1,5 +1,20 @@
 # Codex Build Notes
 
+## 2026-07-12 First bouquet coin reward clarity
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `docs/codex_build_notes.md`.
+- Gap chosen: first bouquet payoff clarity. The restoration headline now names one clear `+120 coin reward` instead of mixing the bouquet reward with incidental match-coin balance, keeping `match flowers -> complete bouquet -> earn coins -> restore greenhouse -> Next Order` easier to read without adding systems, controls, assets, saves, backend, analytics, ads, IAP, or permissions.
+- Verification: `python3 scripts/verify_project.py` passed; `git diff --check` passed.
+- Browser checks: local static server on `127.0.0.1:41015`; Chromium/Playwright via `NODE_PATH=/opt/data/home/.npm/_npx/420ff84f11983ee5/node_modules`. Mobile 390x844 fresh Round 1 had 64 tiles, 8 complete board rows, board top 199px/bottom 577px, 2 hint tiles, 1 swap arrow, 0 visible non-tile buttons, 0 broken images, and no horizontal overflow. Guided play completed Round 1 and showed `First Bouquet Sealed · +120 coin reward` with only `Restore Greenhouse`; restore switched to only `Next Order`; Next Order reached `restored-next-order-focus` Round 2 with 64 tiles, 8 complete rows, board top 351px/bottom 729px, 0 visible non-tile buttons, 0 broken images, and no horizontal overflow.
+- Browser console status: 0 console messages, 0 page errors, and 0 failed browser requests in the mobile first-order replay.
+- Vercel deployment URL/identifier checked: not deployed or checked; this pass is source-local before push.
+- GitHub Pages preview status: not checked in this local pass.
+- Known issues: none found in the focused first-order mobile heartbeat path.
+- How to trigger and verify L/T/cross matches without console: after Round 1, click `Shape Bloom` repeatedly or press `M`; demos cycle through line5, line4, `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom`.
+- How to trigger and verify Supreme Bloom without console: focus the playable after Round 1 and press `B`; the `SUPREME BLOOM!` overlay should appear and return the board to 64 tiles.
+- Security/secret-scan status: changed-file credential scan found no credential-format matches; harmless coin/reward copy was not treated as secret material.
+- Commit/push status: Codex created the local commit; its direct push lacked SSH permission, so the foreman integrated it safely after the concurrent remote commit and pushed with the repo-scoped key.
+
 ## 2026-07-12 Deterministic opening lesson
 
 - Weakness selected: the authored Round 1 lesson was still probabilistic. Random neighbors/refills could extend the first Thorn Rose match into a four-line or cascade into Bone Star, completing the bouquet before the player saw the dedicated Black Candle Vine move. This was the highest-impact remaining issue because it made the first-minute special-piece teaching unreliable.

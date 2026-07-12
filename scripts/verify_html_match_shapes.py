@@ -228,7 +228,7 @@ def verify_source_hooks():
         "body.round-one-active.round-one-complete .ritual-log { display:none; }",
         "let coins = 0",
         "const streakPayout = plan.round === 1",
-        "120 coins earned · 120 available",
+        "First Bouquet Sealed · +120 coin reward",
         "Greenhouse Restored ·",
         "restoration-ledger",
         "restoration-xp-preview",
