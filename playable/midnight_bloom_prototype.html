@@ -4231,7 +4231,8 @@
     body.round-one-active #roundCeremony { display:none!important; }
     .first-swap-cue,.round-one-restoration { display:none; }
     body.round-one-active:not(.round-one-complete):not(.first-move-made) .first-swap-cue,
-    body.round-one-active.round-one-black-candle-cue:not(.round-one-complete) .first-swap-cue { display:flex; width:max-content; max-width:calc(100% - 20px); min-height:30px; margin:7px auto 0; padding:5px 10px; align-items:center; gap:8px; border:1px solid #8e6b35; border-radius:999px; color:#fff0b4; background:linear-gradient(90deg,#17100c,#2b1d0d,#17100c); box-shadow:0 0 16px #c58a3330,inset 0 0 9px #000; font:800 14px Georgia,serif; letter-spacing:.035em; text-align:center; animation:cue-breathe 1.2s ease-in-out infinite alternate; }
+    body.round-one-active.round-one-black-candle-cue:not(.round-one-complete) .first-swap-cue,
+    body.round-one-active.round-one-followup-cue:not(.round-one-complete) .first-swap-cue { display:flex; width:max-content; max-width:calc(100% - 20px); min-height:30px; margin:7px auto 0; padding:5px 10px; align-items:center; gap:8px; border:1px solid #8e6b35; border-radius:999px; color:#fff0b4; background:linear-gradient(90deg,#17100c,#2b1d0d,#17100c); box-shadow:0 0 16px #c58a3330,inset 0 0 9px #000; font:800 14px Georgia,serif; letter-spacing:.035em; text-align:center; animation:cue-breathe 1.2s ease-in-out infinite alternate; }
     .first-swap-cue::before { content:"GLYPH GUIDE"; flex:none; padding-right:8px; border-right:1px solid #76582e; color:#b9965f; font:700 9px/1.1 system-ui,sans-serif; letter-spacing:.12em; }
     body.round-one-active.round-one-black-candle-cue .first-swap-cue::before { content:"BLACK CANDLE"; }
     body.round-one-active .board { touch-action:none; }
@@ -9415,6 +9416,15 @@
       seedRoundOneBlackCandleVineLesson(remainingTargetIndex, remainingTarget);
       const move = findTargetLegalMove(remainingTarget.flowerId, remainingTargetIndex);
       if (!move) {
+        if (plan.round === 1 && hasMadeValidMove) {
+          const fallbackMove = legalMoves()[0];
+          if (fallbackMove) {
+            const [fallbackA, fallbackB] = fallbackMove;
+            idleHintCells = new Set([`${fallbackA.x},${fallbackA.y}`, `${fallbackB.x},${fallbackB.y}`]);
+            $("firstSwapCue").textContent = "Keep matching - swap the glowing pair.";
+            return " <strong>Keep matching.</strong> Swap the glowing pair to open the next harvest.";
+          }
+        }
         return "";
       }
       const [a, b] = move;
@@ -9505,6 +9515,20 @@
       }, hintDelay);
     }
 
+    function restoreFirstSwapCueAfterRefusal() {
+      const plan = activeRoundPlan();
+      const targetIndex = plan.targets.findIndex((target) => targetProgress(target) < target.needed);
+      const target = plan.targets[targetIndex];
+      const [a, b] = (target ? findTargetLegalMove(target.flowerId, targetIndex) : null) || legalMoves()[0] || [];
+      if (!a || !b) {
+        $("firstSwapCue").textContent = "Glowing pair incoming…";
+        scheduleIdleHint();
+        return;
+      }
+      idleHintCells = new Set([`${a.x},${a.y}`, `${b.x},${b.y}`]);
+      $("firstSwapCue").textContent = firstSwapCueText(a, b);
+    }
+
     function notePlayerInteraction() {
       clearIdleHint();
       clearThornTeachingCue(false);
@@ -9540,8 +9564,7 @@
         invalidSwapTimer = null;
         if (!hasMadeValidMove && cue) {
           cue.classList.remove("swap-refused");
-          cue.textContent = "Glowing pair incoming…";
-          scheduleIdleHint();
+          restoreFirstSwapCueAfterRefusal();
         }
         render();
       }, 880);
@@ -9587,6 +9610,8 @@
       document.body.classList.toggle("first-move-made", hasMadeValidMove);
       const roundOneBlackCandleCue = roundOneActive && !roundComplete && $("firstSwapCue").textContent.includes("Black Candle Vine");
       document.body.classList.toggle("round-one-black-candle-cue", roundOneBlackCandleCue);
+      const roundOneFollowupCue = roundOneActive && !roundComplete && $("firstSwapCue").textContent.includes("Keep matching");
+      document.body.classList.toggle("round-one-followup-cue", roundOneFollowupCue);
       $("roundOneRestoration").classList.toggle("restored", roundOneRestored);
       $("restorationTitle").textContent = roundOneRestored
         ? `Greenhouse Restored · ${coins.toLocaleString()} coins remain`

@@ -1,5 +1,20 @@
 # Codex Build Notes
 
+## 2026-07-12 First-minute cue recovery
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `docs/codex_build_notes.md`.
+- Gap chosen: first-minute control return after a refused or non-target follow-up swap. Recent commits already handled the opening cue, authored Black Candle Vine lesson, reward meaning, and greenhouse restoration payoff; this pass keeps the player oriented when a Round 1 move does not immediately hand back the target-specific cue.
+- Gameplay change: invalid first swaps now briefly show `No bloom — follow the glowing pair.` and then restore the exact glowing-pair cue plus highlighted tiles. If Round 1 remains active after a valid move but no target-specific legal move is available, the board now highlights a legal fallback pair with `Keep matching - swap the glowing pair.` No new controls, rounds, systems, currencies, or debug surfaces were added.
+- Verification: `python3 scripts/verify_project.py` passed; `git diff --check` passed.
+- Browser checks: local static server on `127.0.0.1:41003` with transient Playwright/Chromium from `/tmp`. Mobile portrait 390x844 verified fresh Round 1 had 64 tiles, board top 199px/bottom 577px, 0 broken images, 0 visible future preview sections, no horizontal overflow, 0 visible non-tile buttons before the first move, and the opening `Swap the glowing pair` cue with two highlighted tiles. Focused path clicked an invalid adjacent pair, verified two invalid-swap tiles and `No bloom — follow the glowing pair.`, then verified the cue restored to `Swap the glowing pair` with two highlighted tiles and 64 tiles. The same run completed Round 1 through the guided path, saw the Black Candle Vine cue, restored the greenhouse, clicked `Next Order`, and reached Round 2 with 64 tiles, no broken images, and no overflow.
+- Browser console status: 0 console messages, 0 page errors, and 0 failed browser requests in the focused mobile run.
+- Vercel deployment URL/identifier checked: not deployed or checked; this pass is source-local only.
+- GitHub Pages preview status: not checked in this local pass.
+- Known issues: Round 2 still returns the broader prototype controls after Next Order; unchanged by this pass.
+- How to trigger and verify L/T/cross matches without console: after Round 1, click `Shape Bloom` repeatedly or press `M`; demos cycle through line5, line4, `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom`.
+- How to trigger and verify Supreme Bloom without console: focus the playable after Round 1 and press `B`; the `SUPREME BLOOM!` overlay should appear and return the board to 64 tiles.
+- Security/secret-scan status: changed-file credential-pattern scan passed with no credential-like secrets found.
+
 ## 2026-07-12 Black Candle Vine cue clarity
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `docs/codex_build_notes.md`.
