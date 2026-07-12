@@ -1,5 +1,21 @@
 # Codex Build Notes
 
+## 2026-07-12 Finished first two minutes vertical slice
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `docs/codex_build_notes.md`.
+- Player-visible outcome: active desktop now presents a composed greenhouse/altar screen with a compact Greenhouse + Active Orders rail, stronger carved board/socket materiality, higher-contrast tiles, and a compact Elements strip instead of a board floating in empty black space. Mobile keeps the full 8-row board first and adds a subdued greenhouse silhouette below the log without extra controls.
+- Gameplay feel: normal clears now thump the board and throw flower-colored petal particles from matched cells; the authored Black Candle Vine payoff uses a brighter double lane sweep with relic particles. The match engine, authored Round 1 swaps, objective flights, swipe/tap controls, 64-tile board, rare Supreme Bloom, and Cursed Thorn behavior are preserved.
+- Tycoon payoff: Round 1 completion now replaces the board with a larger greenhouse restoration card in the first viewport. It shows withered glass, +120 bouquet coins, -100 coin spend, Greenhouse XP, an animated restored greenhouse state, and one primary `Next Order` action.
+- Verification: `python3 scripts/verify_project.py` passed; `git diff --check` passed. Local browser server used `127.0.0.1:41020`; Chromium/Playwright used `NODE_PATH=/opt/data/home/.npm/_npx/420ff84f11983ee5/node_modules`.
+- Browser measurements: desktop 1440x1000 fresh load had 64 tiles, board 525px-1175px x 282px-932px, 2 side cards, compact Elements visible, 0 visible non-tile buttons, 0 broken images, and no overflow. Mobile 390x844 fresh load had 64 tiles, board 8px-386px x 199px-577px, 0 buttons, 0 broken images, and `scrollWidth 390`.
+- Journey verification: real browser clicks completed fresh load -> first swap -> Black Candle Vine -> bouquet completion -> Restore Greenhouse -> reload persistence -> Next Order -> focused Round 2 -> Cursed Thorn teaching swap. Mobile stayed `scrollWidth 390`; Round 2 board stayed 8px-386px with 64 tiles, restored status visible, no prototype controls, and Cursed Thorn progress reached 3/3. FX probes saw 6 petal particles on normal match and 16 petal + 2 line relic particles on Black Candle.
+- Browser console/runtime status: 0 console messages, 0 page errors, and 0 failed browser requests in the desktop and mobile journey runs.
+- Vercel/GitHub Pages status: not deployed or checked in this local pass.
+- Known issues: Cursed Thorn fail/retry was not separately forced in this pass; the focused Round 2 Cursed Thorn clear path remained intact. The greenhouse scene is CSS-built and should eventually be replaced or supplemented with bespoke final art.
+- How to trigger and verify L/T/cross matches without console: after Round 1, click `Shape Bloom` repeatedly or press `M`; demos cycle through line5, line4, `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom`.
+- How to trigger and verify Supreme Bloom without console: focus the playable after Round 1 and press `B`; the `SUPREME BLOOM!` overlay should appear and return the board to 64 tiles.
+- Security/secret-scan status: changed-file credential scan found no private keys, common cloud/API tokens, JWTs, or key/token assignment patterns. No secrets, trackers, analytics, backend, accounts, ads, IAP, `.env`, credentials, broad permissions, or cron jobs added.
+
 ## 2026-07-12 Focused Round 2 refused-swap recovery
 
 - Weakness selected: after the restored greenhouse handoff and first Cursed Thorn lesson, a bad adjacent swap in focused Round 2 fell back to the generic refusal log and did not restore the compact glowing-pair cue. This could make the first Moonlit Wreath follow-up feel stalled.

@@ -28,8 +28,10 @@
       margin: 0;
       min-height: 100vh;
       background:
-        radial-gradient(circle at 50% 0, #150a09 0, #050404 44%, #000 100%),
-        repeating-linear-gradient(90deg, #080606 0 1px, #030202 1px 3px);
+        radial-gradient(circle at 50% 0, #1a0c0a 0, #070504 42%, #000 100%),
+        radial-gradient(circle at 12% 78%, #231109 0, #0000 28%),
+        radial-gradient(circle at 88% 82%, #160d09 0, #0000 24%),
+        repeating-linear-gradient(90deg, #090706 0 1px, #030202 1px 3px);
       color: var(--ink);
       font-family: Georgia, "Times New Roman", serif;
       display: flex;
@@ -81,6 +83,9 @@
       inset: 0;
       pointer-events: none;
       background-image:
+        radial-gradient(circle at 11% 6%, #d7b16d18 0 1px, #0000 4px),
+        radial-gradient(circle at 89% 6%, #d7b16d18 0 1px, #0000 4px),
+        radial-gradient(circle at 5% 95%, #9b1d221a 0 1px, #0000 5px),
         linear-gradient(45deg, #0000 0 48%, #4b342626 49% 51%, #0000 52%),
         repeating-linear-gradient(90deg, #0000 0 17px, #6b4a2f10 18px, #0000 19px);
       opacity: 0.7;
@@ -1617,21 +1622,29 @@
       padding: 10px;
       border: 2px solid #33261f;
       background:
-        radial-gradient(circle at 50% 50%, #130908 0, #050404 66%),
-        linear-gradient(180deg, #16100e, #050404);
+        radial-gradient(circle at 50% 48%, #24100d 0, #0b0605 52%, #030202 78%),
+        repeating-linear-gradient(0deg, #0000 0 52px, #805c3520 53px 54px),
+        repeating-linear-gradient(90deg, #0000 0 52px, #805c3520 53px 54px),
+        linear-gradient(180deg, #21160f, #050404);
       box-shadow:
-        inset 0 0 28px #000,
+        inset 0 0 42px #000,
+        inset 0 0 0 5px #080504,
         0 0 0 1px #000,
-        0 0 22px #000;
+        0 0 28px #000,
+        0 18px 42px #000b;
       position: relative;
     }
 
     .board::before {
       content: "";
       position: absolute;
-      inset: 5px;
-      border: 1px solid #6b4a2f55;
+      inset: -9px;
+      border: 1px solid #755538;
       pointer-events: none;
+      box-shadow:
+        inset 0 0 0 3px #050303,
+        inset 0 0 26px #000,
+        0 0 18px #000;
     }
 
     .board::after {
@@ -1640,11 +1653,12 @@
       inset: 0;
       pointer-events: none;
       background:
-        linear-gradient(135deg, #b9874d 0 12px, #0000 12px) left top / 48px 48px no-repeat,
-        linear-gradient(225deg, #b9874d 0 12px, #0000 12px) right top / 48px 48px no-repeat,
-        linear-gradient(45deg, #b9874d 0 12px, #0000 12px) left bottom / 48px 48px no-repeat,
-        linear-gradient(315deg, #b9874d 0 12px, #0000 12px) right bottom / 48px 48px no-repeat;
-      opacity: 0.5;
+        linear-gradient(135deg, #d2a15b 0 13px, #0000 13px) left top / 54px 54px no-repeat,
+        linear-gradient(225deg, #d2a15b 0 13px, #0000 13px) right top / 54px 54px no-repeat,
+        linear-gradient(45deg, #d2a15b 0 13px, #0000 13px) left bottom / 54px 54px no-repeat,
+        linear-gradient(315deg, #d2a15b 0 13px, #0000 13px) right bottom / 54px 54px no-repeat,
+        radial-gradient(circle at 50% 50%, #0000 52%, #000a 100%);
+      opacity: 0.82;
     }
 
     .tile {
@@ -1653,24 +1667,32 @@
       align-items: center;
       justify-content: center;
       background:
-        radial-gradient(circle at 50% 42%, #18110f 0, #060505 64%),
-        linear-gradient(180deg, #13100d, #050404);
-      border-color: #4a392c;
+        radial-gradient(circle at 50% 42%, #281a13 0, #0b0706 54%, #030202 78%),
+        linear-gradient(145deg, #3c2c20 0 7%, #070504 8% 92%, #2a1d16 93%),
+        linear-gradient(180deg, #18120e, #050404);
+      border-color: #6a4c32;
       position: relative;
       z-index: 1;
       cursor: pointer;
       overflow: hidden;
       box-shadow:
-        inset 0 0 14px #000,
+        inset 0 0 18px #000,
+        inset 0 0 0 2px #130d0a,
+        inset 0 0 0 4px #0008,
         inset 0 0 0 1px #000,
-        0 0 0 1px #160f0c;
+        0 0 0 1px #24170f,
+        0 3px 9px #0009;
     }
 
     .tile::before {
       content: "";
       position: absolute;
       inset: 5px;
-      border: 1px solid #6b4a2f35;
+      border: 1px solid #8a663e66;
+      background:
+        radial-gradient(circle at 50% 44%, #0000 0 48%, #0009 82%),
+        linear-gradient(135deg, #d5a76522 0 1px, #0000 1px 100%);
+      box-shadow: inset 0 0 12px #000;
       pointer-events: none;
     }
 
@@ -1679,8 +1701,8 @@
       position: absolute;
       inset: 0;
       background:
-        radial-gradient(circle, #ffffff16 0, #0000 52%),
-        linear-gradient(135deg, #0000 0 46%, #8b5f3433 49%, #0000 53%);
+        radial-gradient(circle, #ffffff22 0, #0000 50%),
+        linear-gradient(135deg, #0000 0 46%, #d49b563f 49%, #0000 53%);
       opacity: 0;
       transition: opacity 120ms ease;
     }
@@ -1691,10 +1713,15 @@
     }
 
     .tile img {
-      width: 100%;
-      height: 100%;
+      width: 108%;
+      height: 108%;
       object-fit: contain;
-      filter: drop-shadow(0 0 7px #000) drop-shadow(0 0 2px #2b0b08);
+      filter:
+        drop-shadow(0 4px 5px #000)
+        drop-shadow(0 0 5px #000)
+        drop-shadow(0 0 2px #3b0e09)
+        saturate(1.16)
+        contrast(1.08);
       position: relative;
       z-index: 1;
     }
@@ -1710,8 +1737,8 @@
     }
 
     .tile .icon-wrap {
-      width: 94%;
-      height: 94%;
+      width: 98%;
+      height: 98%;
       z-index: 1;
     }
 
@@ -4293,15 +4320,131 @@
       }
     }
 
-    /* First 60 seconds: hide secondary systems in Round 1; preserve them later. */
-    body.round-one-active .left, body.round-one-active .bottom,
-    body.round-one-active .bouquet-path, body.round-one-active .path-ledger-drawer,
-    body.round-one-active .first-session-plaque, body.round-one-active .progress,
-    body.round-one-active .sacrifice-panel, body.round-one-active .booster-panel,
-    body.round-one-active .controls .red, body.round-one-active .controls .booster,
-    body.round-one-active .controls .demo, body.round-one-active #renewBtn,
+    /* First two minutes: keep the match board primary, but restore the
+       greenhouse/shop fantasy on larger screens instead of leaving dead space. */
+    body.round-one-active .game,
+    body.restored-next-order-focus .game {
+      width: min(1100px, calc(100vw - 16px));
+      min-height: calc(100vh - 16px);
+      grid-template-columns: 248px minmax(0, 1fr);
+      grid-template-rows: auto auto;
+      align-content: start;
+      gap: 12px;
+      background:
+        radial-gradient(circle at 34% 20%, #22100c 0, #090606 38%, #030202 74%),
+        linear-gradient(90deg, #060504, #100907 52%, #050404);
+    }
+
+    body.round-one-active .main,
+    body.restored-next-order-focus .main {
+      display: grid;
+      justify-items: center;
+      align-content: start;
+      min-height: 0;
+      padding: 4px 8px 0;
+    }
+
+    body.round-one-active .left,
+    body.restored-next-order-focus .left {
+      display: flex;
+      grid-row: 1;
+      gap: 8px;
+    }
+
+    body.round-one-active .hero,
+    body.restored-next-order-focus .hero {
+      height: 206px;
+      background-position: left top;
+      background-size: 1040px auto;
+      filter: contrast(1.18) saturate(0.94) brightness(0.82);
+    }
+
+    body.round-one-active .hero::before,
+    body.restored-next-order-focus .hero::before {
+      content: "GREENHOUSE";
+      position: absolute;
+      left: 16px;
+      bottom: 13px;
+      z-index: 1;
+      color: #f1d595;
+      font: 900 12px/1 system-ui, sans-serif;
+      letter-spacing: 0.18em;
+      text-shadow: 0 2px 4px #000, 0 0 12px #000;
+    }
+
+    body.round-one-active .apothecary-card,
+    body.round-one-active .faction-card,
+    body.round-one-active .market-card,
+    body.restored-next-order-focus .apothecary-card,
+    body.restored-next-order-focus .faction-card,
+    body.restored-next-order-focus .market-card {
+      display: none;
+    }
+
+    body.round-one-active .greenhouse-card,
+    body.round-one-active .active-orders-card,
+    body.restored-next-order-focus .greenhouse-card,
+    body.restored-next-order-focus .active-orders-card {
+      min-height: 0;
+      padding: 12px;
+    }
+
+    body.round-one-active .bottom {
+      display: block;
+      grid-column: 1 / 3;
+    }
+
+    body.round-one-active .bottom-card {
+      padding: 11px 14px 12px;
+    }
+
+    body.round-one-active .elements-heading {
+      margin-bottom: 7px;
+      font-size: 11px;
+      letter-spacing: 10px;
+    }
+
+    body.round-one-active .elements {
+      gap: 7px;
+    }
+
+    body.round-one-active .element-icon-wrap {
+      width: 46px;
+      height: 46px;
+    }
+
+    body.round-one-active .element b {
+      font-size: 11px;
+    }
+
+    body.round-one-active .element-count {
+      font-size: 15px;
+    }
+
+    body.round-one-active .coins {
+      margin-top: 8px;
+      padding: 5px 12px;
+      font-size: 24px;
+    }
+
+    body.round-one-active .chest-access,
+    body.round-one-active .flowerpedia-ledger,
+    body.round-one-active .chapter-progress,
+    body.restored-next-order-focus .bottom,
+    body.round-one-active .bouquet-path,
+    body.round-one-active .path-ledger-drawer,
+    body.round-one-active .first-session-plaque,
+    body.round-one-active .progress,
+    body.round-one-active .sacrifice-panel,
+    body.round-one-active .booster-panel,
+    body.round-one-active .controls .red,
+    body.round-one-active .controls .booster,
+    body.round-one-active .controls .demo,
+    body.round-one-active #renewBtn,
     body.round-one-active:not(.first-move-made) #shuffleBtn,
-    body.round-one-active #roundCeremony { display:none!important; }
+    body.round-one-active #roundCeremony {
+      display: none !important;
+    }
     .first-swap-cue,.next-order-cue,.restored-greenhouse-status,.round-one-restoration { display:none; }
     body.round-one-active:not(.round-one-complete):not(.first-move-made) .first-swap-cue,
     body.round-one-active.round-one-black-candle-cue:not(.round-one-complete) .first-swap-cue,
@@ -4311,12 +4454,17 @@
     body.round-one-active.round-one-black-candle-cue .first-swap-cue::before { content:"BLACK CANDLE"; }
     body.round-one-active .board { touch-action:none; }
     body.round-one-active.round-one-complete .ritual-log { display:none; }
+    body.round-one-active.round-one-complete .board,
+    body.round-one-active.round-one-complete .controls,
+    body.round-one-active.round-one-complete .bottom {
+      display: none !important;
+    }
     body.restored-greenhouse-handoff .left, body.restored-greenhouse-handoff .bottom,
     body.restored-greenhouse-handoff .bouquet-path, body.restored-greenhouse-handoff .path-ledger-drawer,
     body.restored-greenhouse-handoff .first-session-plaque, body.restored-greenhouse-handoff .progress,
     body.restored-greenhouse-handoff .sacrifice-panel, body.restored-greenhouse-handoff .booster-panel,
     body.restored-greenhouse-handoff .controls, body.restored-greenhouse-handoff #roundCeremony { display:none!important; }
-    body.restored-next-order-focus .left, body.restored-next-order-focus .bottom,
+    body.restored-next-order-focus .bottom,
     body.restored-next-order-focus .bouquet-path, body.restored-next-order-focus .path-ledger-drawer,
     body.restored-next-order-focus .first-session-plaque, body.restored-next-order-focus .progress,
     body.restored-next-order-focus .sacrifice-panel, body.restored-next-order-focus .booster-panel,
@@ -4334,16 +4482,36 @@
     .restored-greenhouse-meter span { display:block; height:100%; width:var(--restored-greenhouse-xp-pct,0%); min-width:12px; background:linear-gradient(90deg,#4f762c,#c1dd75); box-shadow:0 0 11px #8fc65a; transition:width 480ms ease; }
     body.restored-greenhouse-handoff .board { box-shadow:0 0 0 1px #7fa35a,0 0 26px #7fcf6545,inset 0 0 16px #000; animation:handoff-board-glow 1.9s ease-out both; }
     body.restored-next-order-focus .board { touch-action:none; box-shadow:0 0 0 1px #6f944d,0 0 22px #7fcf6530,inset 0 0 16px #000; }
-    body.round-one-active.round-one-complete .round-one-restoration { position:relative; overflow:hidden; display:grid; width:min(520px,calc(100% - 16px)); margin:10px auto; padding:14px; gap:10px; border:1px solid #b98b42; background:radial-gradient(circle at 50% 0,#34210f,#100d0d 70%); box-shadow:0 0 28px #b8793038,inset 0 0 22px #000; text-align:center; }
-    .restoration-scene { height:112px; border:1px solid #56432f; position:relative; overflow:hidden; background:#090908; transition:background 700ms ease,border-color 700ms ease,box-shadow 700ms ease; }
-    .restoration-scene::before { content:""; position:absolute; inset:15px 24px 0; border:8px solid #40372e; border-bottom:0; clip-path:polygon(50% 0,100% 36%,92% 100%,8% 100%,0 36%); background:repeating-linear-gradient(90deg,#141817 0 24px,#070909 25px 28px); filter:grayscale(1); transition:background 750ms ease,border-color 750ms ease,filter 750ms ease,box-shadow 750ms ease; }
-    .restoration-scene::after { content:""; position:absolute; inset:-45% -20%; pointer-events:none; opacity:0; transform:translateX(-65%) rotate(-12deg); background:linear-gradient(90deg,transparent 30%,#fff4b8cc 50%,transparent 70%); }
-    .round-one-restoration.restored .restoration-scene { background:radial-gradient(circle,#5d7d42 0,#18251a 58%,#090908); border-color:#b88c52; box-shadow:inset 0 0 24px #7fcf6540,0 0 20px #b8793040; }
-    .round-one-restoration.restored .restoration-scene::before { border-color:#b88c52; background:repeating-linear-gradient(90deg,#568044 0 24px,#b9d995 25px 28px); filter:none; box-shadow:0 0 24px #7fcf65; }
+    .board.bloom-hit { animation:board-bloom-hit 520ms cubic-bezier(.12,.82,.18,1) both; }
+    .board.line-relic-hit { animation:board-line-relic-hit 880ms cubic-bezier(.12,.82,.18,1) both; }
+    .board-particle.petal-pop {
+      z-index: 5;
+      border-radius: 66% 34% 62% 38%;
+      background:
+        radial-gradient(circle at 35% 28%, #fff7d6 0 10%, var(--particle-color, #d7b16d) 36%, #230403 78%);
+      box-shadow:
+        0 0 10px var(--particle-color, #d7b16d),
+        0 0 16px #000;
+      animation: petal-pop 820ms cubic-bezier(.12,.82,.18,1) forwards;
+    }
+    body.round-one-active.round-one-complete .round-one-restoration { position:relative; overflow:hidden; display:grid; width:min(720px,calc(100% - 16px)); margin:12px auto 0; padding:16px; gap:12px; border:1px solid #b98b42; background:radial-gradient(circle at 50% 0,#3a2410,#100d0d 70%); box-shadow:0 0 36px #b8793045,inset 0 0 28px #000,0 18px 45px #000b; text-align:center; }
+    .restoration-scene { height:206px; border:1px solid #56432f; position:relative; overflow:hidden; background:radial-gradient(circle at 50% 10%,#171717,#070706 58%,#030202); transition:background 700ms ease,border-color 700ms ease,box-shadow 700ms ease; }
+    .restoration-scene::before { content:""; position:absolute; inset:18px 42px 16px; border:10px solid #3b332b; border-bottom-width:12px; clip-path:polygon(50% 0,100% 30%,94% 100%,6% 100%,0 30%); background:linear-gradient(90deg,#0000 0 18%,#1a1b19 19% 21%,#0000 22% 48%,#1a1b19 49% 51%,#0000 52% 78%,#1a1b19 79% 81%,#0000 82%),repeating-linear-gradient(90deg,#101211 0 26px,#050606 27px 31px),linear-gradient(180deg,#161c18,#060707); filter:grayscale(1) brightness(.62); transition:background 750ms ease,border-color 750ms ease,filter 750ms ease,box-shadow 750ms ease; }
+    .restoration-scene::after { content:""; position:absolute; inset:-35% -20%; pointer-events:none; opacity:0; transform:translateX(-65%) rotate(-12deg); background:linear-gradient(90deg,transparent 30%,#fff4b8dd 50%,transparent 70%); z-index:5; }
+    .greenhouse-ruin { position:absolute; left:14%; right:14%; bottom:21px; z-index:2; height:42px; background:radial-gradient(ellipse at 50% 100%,#1c130f 0 48%,#0000 50%),repeating-linear-gradient(90deg,#2b2018 0 14px,#120d0b 15px 30px); border-top:1px solid #3a2a20; box-shadow:inset 0 7px 14px #000; transition:background 700ms ease,border-color 700ms ease,box-shadow 700ms ease; }
+    .greenhouse-ruin::before { content:""; position:absolute; left:8%; right:8%; top:-18px; height:28px; background:repeating-linear-gradient(92deg,#5a4b3b 0 2px,#0000 3px 18px); opacity:.48; filter:grayscale(1); transition:opacity 700ms ease,filter 700ms ease; }
+    .greenhouse-blooms { position:absolute; left:17%; right:17%; bottom:29px; z-index:4; height:40px; opacity:0; transform:translateY(16px) scale(.86); background:radial-gradient(circle at 14% 72%,#d01e50 0 5px,#0000 7px),radial-gradient(circle at 27% 46%,#7d49b2 0 6px,#0000 8px),radial-gradient(circle at 44% 68%,#d8a657 0 5px,#0000 8px),radial-gradient(circle at 59% 42%,#d01e50 0 6px,#0000 9px),radial-gradient(circle at 76% 65%,#7d49b2 0 6px,#0000 8px),radial-gradient(circle at 88% 50%,#f1d595 0 5px,#0000 8px),linear-gradient(90deg,#0000,#5f833855,#0000); filter:drop-shadow(0 0 8px #82b958); transition:opacity 520ms ease,transform 760ms ease; }
+    .greenhouse-light { position:absolute; inset:25px 28% 54px; z-index:3; opacity:.04; background:radial-gradient(circle,#ffe7a8 0 18%,#d7b16d66 34%,#0000 70%); filter:blur(7px); transition:opacity 760ms ease,filter 760ms ease; }
+    .round-one-restoration.restored .restoration-scene { background:radial-gradient(circle at 50% 10%,#6c7f45 0,#17281a 50%,#090908 78%); border-color:#b88c52; box-shadow:inset 0 0 28px #7fcf654d,0 0 26px #b8793045; }
+    .round-one-restoration.restored .restoration-scene::before { border-color:#b88c52; background:linear-gradient(90deg,#0000 0 18%,#87653d 19% 21%,#0000 22% 48%,#87653d 49% 51%,#0000 52% 78%,#87653d 79% 81%,#0000 82%),repeating-linear-gradient(90deg,#516e45 0 26px,#d2e39c 27px 31px),linear-gradient(180deg,#9fcf88,#203d23); filter:none; box-shadow:0 0 28px #7fcf65; }
+    .round-one-restoration.restored .greenhouse-ruin { background:radial-gradient(ellipse at 50% 100%,#26371d 0 48%,#0000 50%),repeating-linear-gradient(90deg,#426d32 0 14px,#172512 15px 30px); border-color:#88b65a; box-shadow:inset 0 7px 14px #000,0 0 18px #7fcf6555; }
+    .round-one-restoration.restored .greenhouse-ruin::before { opacity:.75; filter:none; }
+    .round-one-restoration.restored .greenhouse-blooms { opacity:1; transform:none; }
+    .round-one-restoration.restored .greenhouse-light { opacity:.9; filter:blur(10px); }
     .round-one-restoration.restored .restoration-scene::after { animation:greenhouse-awakening 950ms ease-out both; }
-    .greenhouse-lanterns,.greenhouse-vines { position:absolute; opacity:0; transition:opacity 450ms ease,transform 650ms ease; pointer-events:none; }
-    .greenhouse-lanterns { inset:24px 34px auto; height:46px; background:radial-gradient(circle at 20% 48%,#ffe7a8 0 6px,transparent 9px),radial-gradient(circle at 50% 28%,#fff0b2 0 7px,transparent 11px),radial-gradient(circle at 80% 48%,#ffe7a8 0 6px,transparent 9px); filter:drop-shadow(0 0 10px #f0b348); transform:translateY(6px); }
-    .greenhouse-vines { inset:auto 38px 18px; height:30px; border-top:4px solid #91c66a; border-radius:50% 50% 0 0; box-shadow:0 -8px 0 -5px #c2df86,18px -5px 0 -6px #c2df86,-18px -5px 0 -6px #c2df86; transform:scaleX(.72); }
+    .greenhouse-lanterns,.greenhouse-vines { position:absolute; opacity:0; z-index:4; transition:opacity 450ms ease,transform 650ms ease; pointer-events:none; }
+    .greenhouse-lanterns { inset:42px 78px auto; height:70px; background:radial-gradient(circle at 20% 48%,#ffe7a8 0 7px,transparent 11px),radial-gradient(circle at 50% 24%,#fff0b2 0 8px,transparent 13px),radial-gradient(circle at 80% 48%,#ffe7a8 0 7px,transparent 11px); filter:drop-shadow(0 0 13px #f0b348); transform:translateY(8px); }
+    .greenhouse-vines { inset:auto 74px 28px; height:48px; border-top:5px solid #91c66a; border-radius:50% 50% 0 0; box-shadow:0 -10px 0 -6px #c2df86,24px -6px 0 -7px #c2df86,-24px -6px 0 -7px #c2df86,46px -14px 0 -9px #e2b35c,-46px -14px 0 -9px #b01857; transform:scaleX(.72); }
     .round-one-restoration.restored .greenhouse-lanterns,.round-one-restoration.restored .greenhouse-vines { opacity:1; transform:none; }
     .restoration-state { position:absolute; inset:auto 0 8px; color:#ead9a9; font-weight:800; letter-spacing:.12em; text-shadow:0 2px 4px #000; }
     .restoration-title { color:#f3dfaa; font:700 21px Georgia,serif; }
@@ -4420,13 +4588,33 @@
       35% { filter:brightness(1.14) saturate(1.12); }
       100% { filter:brightness(1); }
     }
+    @keyframes board-bloom-hit {
+      0% { transform:scale(1); filter:brightness(1); }
+      35% { transform:scale(1.006); filter:brightness(1.13) saturate(1.16); }
+      100% { transform:scale(1); filter:brightness(1); }
+    }
+    @keyframes board-line-relic-hit {
+      0% { transform:scale(1); filter:brightness(.9) saturate(1); }
+      28% { transform:scale(1.012); filter:brightness(1.28) saturate(1.36); }
+      100% { transform:scale(1); filter:brightness(1); }
+    }
+    @keyframes petal-pop {
+      0% { opacity:0; transform:translate(-50%,-50%) scale(.35) rotate(0deg); }
+      18% { opacity:1; }
+      58% { opacity:.95; transform:translate(calc(-50% + var(--dx, 0px) * .42), calc(-50% + var(--dy, -60px) * .42)) scale(1.18) rotate(calc(var(--spin, 0deg) * .45)); }
+      100% { opacity:0; transform:translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, -84px))) scale(.72) rotate(var(--spin, 0deg)); }
+    }
     @media (max-width:760px) {
       body.restored-next-order-focus .game,
       body.restored-greenhouse-handoff .game,
-      body.round-one-active .game { display:block; padding:4px 6px 8px; }
+      body.round-one-active .game { display:block; width:100vw; min-height:100vh; padding:4px 6px 8px; }
+      body.restored-next-order-focus .left,
+      body.restored-greenhouse-handoff .left,
+      body.round-one-active .left,
+      body.round-one-active .bottom { display:none!important; }
       body.restored-next-order-focus .main,
       body.restored-greenhouse-handoff .main,
-      body.round-one-active .main { padding:0; }
+      body.round-one-active .main { display:block; width:100%; overflow:hidden; padding:0; }
       body.restored-next-order-focus .sigil,
       body.restored-greenhouse-handoff .sigil,
       body.round-one-active .sigil { font-size:9px; letter-spacing:4px; }
@@ -4435,7 +4623,7 @@
       body.round-one-active .title { font-size:29px; margin:2px 0 4px; line-height:1; }
       body.restored-next-order-focus .objective,
       body.restored-greenhouse-handoff .objective,
-      body.round-one-active .objective { margin:0 5px; padding:6px 8px; font-size:13px; gap:5px 6px; }
+      body.round-one-active .objective { width:calc(100vw - 26px); max-width:calc(100vw - 26px); margin:0 5px; padding:6px 8px; font-size:13px; gap:5px 6px; }
       body.restored-next-order-focus .objective .objective-text,
       body.restored-greenhouse-handoff .objective .objective-text,
       body.round-one-active .objective .objective-text { flex-basis:100%; font-size:11px; letter-spacing:.11em; }
@@ -4460,9 +4648,30 @@
       body.restored-next-order-focus .ritual-log,
       body.restored-greenhouse-handoff .ritual-log,
       body.round-one-active .ritual-log { margin:7px 7px 0; padding:7px 9px; min-height:0; font-size:12px; line-height:1.25; }
+      body.round-one-active:not(.round-one-complete) .main::after {
+        content:"";
+        display:block;
+        width:calc(100% - 18px);
+        height:184px;
+        margin:8px auto 0;
+        border-top:1px solid #2c1d16;
+        background:
+          radial-gradient(circle at 18% 72%,#b9874d33 0 3px,#0000 8px),
+          radial-gradient(circle at 82% 72%,#b9874d33 0 3px,#0000 8px),
+          linear-gradient(90deg,#0000 0 11%,#2a211a 12% 13%,#0000 14% 47%,#2a211a 48% 52%,#0000 53% 86%,#2a211a 87% 88%,#0000 89%),
+          radial-gradient(ellipse at 50% 100%,#182411 0 25%,#0b0907 45%,#0000 68%);
+        clip-path:polygon(12% 100%,18% 38%,50% 0,82% 38%,88% 100%);
+        opacity:.54;
+        pointer-events:none;
+        filter:drop-shadow(0 0 18px #000);
+      }
+      body.round-one-active.round-one-complete .main::after { display:none; }
       body.round-one-active .controls { margin:7px auto 0; }
       body.round-one-active .controls .btn { min-width:0; padding:7px 11px; font-size:12px; min-height:36px; }
       body.round-one-active.round-one-complete .board, body.round-one-active.round-one-complete .controls, body.round-one-active.round-one-complete .ritual-log { display:none; }
+      body.round-one-active.round-one-complete .round-one-restoration { margin-top:8px; padding:11px; gap:8px; }
+      body.round-one-active .restoration-scene { height:142px; }
+      body.round-one-active .restoration-title { font-size:18px; }
       body.round-one-active .restoration-ledger { grid-template-columns:1fr; }
       body.round-one-active .restoration-step { min-height:34px; }
       body.round-one-active .restoration-xp-preview { padding:7px; }
@@ -4475,7 +4684,7 @@
       <div class="hero frame" aria-hidden="true"></div>
 
       <!-- Left panel progression placeholders stay separate from the chest system. -->
-      <div class="side-card">
+      <div class="side-card greenhouse-card">
         <div class="panel-title">
           <img class="panel-icon" src="../assets/tiles/96/withered_sun_medallion.png" alt="">
           <h3>Greenhouse</h3>
@@ -4486,7 +4695,7 @@
         <div class="small" id="greenhouseXpText">1,240 / 2,000 XP</div>
       </div>
 
-      <div class="side-card">
+      <div class="side-card apothecary-card">
         <div class="panel-title">
           <img class="panel-icon" src="../assets/tiles/96/purple_nightshade_bloom.png" alt="">
           <h3>Apothecary</h3>
@@ -4497,7 +4706,7 @@
         <div class="small" id="apothecaryXpText">420 / 1,000 XP</div>
       </div>
 
-      <div class="side-card">
+      <div class="side-card faction-card">
         <div class="panel-title">
           <img class="panel-icon" src="../assets/tiles/96/bone_white_thorn_star.png" alt="">
           <h3>Faction: Sub Rosa</h3>
@@ -4507,7 +4716,7 @@
         <div class="small" id="factionXpText">510 / 1,200 Favor</div>
       </div>
 
-      <div class="side-card">
+      <div class="side-card active-orders-card">
         <div class="panel-title">
           <img class="panel-icon" src="../assets/tiles/96/crimson_rose_rune.png" alt="">
           <h3>Active Orders</h3>
@@ -4515,7 +4724,7 @@
         <div id="activeOrders"></div>
       </div>
 
-      <div class="side-card">
+      <div class="side-card market-card">
         <div class="panel-title">
           <img class="panel-icon" src="../assets/tiles/96/amber_resin_seed.png" alt="">
           <h3>Black Market</h3>
@@ -4673,6 +4882,9 @@
         </div>
         <div class="restoration-title" id="restorationTitle">First Bouquet Sealed · +120 coin reward</div>
         <div class="restoration-scene" aria-label="Greenhouse restoration before and after">
+          <span class="greenhouse-light" aria-hidden="true"></span>
+          <span class="greenhouse-ruin" aria-hidden="true"></span>
+          <span class="greenhouse-blooms" aria-hidden="true"></span>
           <span class="greenhouse-lanterns" aria-hidden="true"></span>
           <span class="greenhouse-vines" aria-hidden="true"></span>
           <span class="restoration-state" id="restorationState">WITHERED GLASSHOUSE</span>
@@ -9927,6 +10139,8 @@
       const boardEl = $("board");
       boardEl.innerHTML = "";
       boardEl.classList.toggle("supreme-charge", supremeChargeActive);
+      boardEl.classList.toggle("bloom-hit", harvestFlashCells.size > 0 || boardParticles.some((particle) => particle.type === "petal-pop" || particle.type === "coin-pop"));
+      boardEl.classList.toggle("line-relic-hit", boardParticles.some((particle) => particle.type === "line-relic"));
 
       for (let y = 0; y < BOARD_SIZE; y += 1) {
         for (let x = 0; x < BOARD_SIZE; x += 1) {
@@ -10030,6 +10244,9 @@
         effect.style.setProperty("--spin", `${particle.spin || 0}deg`);
         effect.style.setProperty("--scale", `${particle.scale || 1.2}`);
         effect.style.setProperty("--delay", `${particle.delay || 0}ms`);
+        if (particle.color) {
+          effect.style.setProperty("--particle-color", particle.color);
+        }
         boardEl.appendChild(effect);
       });
 
@@ -11357,6 +11574,22 @@
 
     function queueResourceBurst(x, y, flowerId, cascadeIndex = 0) {
       const flower = flowers[flowerId] || flowers[0];
+      for (let index = 0; index < 2; index += 1) {
+        const angle = -Math.PI / 2 + (Math.random() - 0.5) * 1.35;
+        const distance = 30 + Math.random() * 42;
+        boardParticles.push({
+          type: "petal-pop",
+          x,
+          y,
+          dx: Math.cos(angle) * distance,
+          dy: Math.sin(angle) * distance - 18 - Math.random() * 26,
+          size: 12 + Math.random() * 8,
+          spin: (Math.random() - 0.5) * 220,
+          scale: 1.05 + Math.random() * 0.28,
+          color: flower[4],
+          delay: cascadeIndex * 120 + index * 34 + Math.random() * 36
+        });
+      }
       boardParticles.push({
         type: "resource-pop",
         text: flower[3],
@@ -11437,10 +11670,21 @@
           y: center[1],
           dx: 0,
           dy: 0,
-          size: relic.direction === "vertical" ? 10 : 18,
+          size: relic.direction === "vertical" ? 13 : 24,
           spin: relic.direction === "vertical" ? 90 : 0,
-          scale: 5.8,
+          scale: 7.2,
           delay: baseDelay + relicIndex * 90
+        });
+        boardParticles.push({
+          type: "line-relic",
+          x: center[0],
+          y: center[1],
+          dx: 0,
+          dy: 0,
+          size: relic.direction === "vertical" ? 7 : 12,
+          spin: relic.direction === "vertical" ? 90 : 0,
+          scale: 8.1,
+          delay: baseDelay + relicIndex * 90 + 80
         });
         relic.matchCells.forEach(([x, y], cellIndex) => {
           boardParticles.push({
@@ -12640,9 +12884,20 @@
         y: center[1],
         dx: 0,
         dy: 0,
-        size: axis === "column" ? 10 : 18,
+        size: axis === "column" ? 13 : 24,
         spin: axis === "column" ? 90 : 0,
-        scale: 5.9
+        scale: 7.4
+      });
+      boardParticles.push({
+        type: "line-relic",
+        x: center[0],
+        y: center[1],
+        dx: 0,
+        dy: 0,
+        size: axis === "column" ? 7 : 12,
+        spin: axis === "column" ? 90 : 0,
+        scale: 8.3,
+        delay: 90
       });
       cells.forEach(([cellX, cellY], cellIndex) => {
         boardParticles.push({
