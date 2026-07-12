@@ -4230,8 +4230,10 @@
     body.round-one-active:not(.first-move-made) #shuffleBtn,
     body.round-one-active #roundCeremony { display:none!important; }
     .first-swap-cue,.round-one-restoration { display:none; }
-    body.round-one-active:not(.round-one-complete):not(.first-move-made) .first-swap-cue { display:flex; width:max-content; max-width:calc(100% - 20px); min-height:30px; margin:7px auto 0; padding:5px 10px; align-items:center; gap:8px; border:1px solid #8e6b35; border-radius:999px; color:#fff0b4; background:linear-gradient(90deg,#17100c,#2b1d0d,#17100c); box-shadow:0 0 16px #c58a3330,inset 0 0 9px #000; font:800 14px Georgia,serif; letter-spacing:.035em; text-align:center; animation:cue-breathe 1.2s ease-in-out infinite alternate; }
+    body.round-one-active:not(.round-one-complete):not(.first-move-made) .first-swap-cue,
+    body.round-one-active.round-one-black-candle-cue:not(.round-one-complete) .first-swap-cue { display:flex; width:max-content; max-width:calc(100% - 20px); min-height:30px; margin:7px auto 0; padding:5px 10px; align-items:center; gap:8px; border:1px solid #8e6b35; border-radius:999px; color:#fff0b4; background:linear-gradient(90deg,#17100c,#2b1d0d,#17100c); box-shadow:0 0 16px #c58a3330,inset 0 0 9px #000; font:800 14px Georgia,serif; letter-spacing:.035em; text-align:center; animation:cue-breathe 1.2s ease-in-out infinite alternate; }
     .first-swap-cue::before { content:"GLYPH GUIDE"; flex:none; padding-right:8px; border-right:1px solid #76582e; color:#b9965f; font:700 9px/1.1 system-ui,sans-serif; letter-spacing:.12em; }
+    body.round-one-active.round-one-black-candle-cue .first-swap-cue::before { content:"BLACK CANDLE"; }
     body.round-one-active .board { touch-action:none; }
     body.round-one-active.round-one-complete .ritual-log { display:none; }
     body.round-one-active.round-one-complete .round-one-restoration { display:grid; width:min(520px,calc(100% - 16px)); margin:10px auto; padding:14px; gap:10px; border:1px solid #b98b42; background:radial-gradient(circle at 50% 0,#34210f,#100d0d 70%); box-shadow:0 0 28px #b8793038,inset 0 0 22px #000; text-align:center; }
@@ -9417,6 +9419,9 @@
       }
       const [a, b] = move;
       idleHintCells = new Set([`${a.x},${a.y}`, `${b.x},${b.y}`]);
+      if (plan.round === 1 && remainingTargetIndex === 1) {
+        $("firstSwapCue").textContent = "Make 4 Bone Stars - Black Candle Vine burns a row.";
+      }
       return ` <strong>${flowers[remainingTarget.flowerId][0]} remains.</strong> Swap the glowing tiles to feed ${remainingTarget.order}.`;
     }
 
@@ -9580,6 +9585,8 @@
       document.body.classList.toggle("round-one-active", roundOneActive);
       document.body.classList.toggle("round-one-complete", roundOneActive && roundComplete);
       document.body.classList.toggle("first-move-made", hasMadeValidMove);
+      const roundOneBlackCandleCue = roundOneActive && !roundComplete && $("firstSwapCue").textContent.includes("Black Candle Vine");
+      document.body.classList.toggle("round-one-black-candle-cue", roundOneBlackCandleCue);
       $("roundOneRestoration").classList.toggle("restored", roundOneRestored);
       $("restorationTitle").textContent = roundOneRestored
         ? `Greenhouse Restored · ${coins.toLocaleString()} coins remain`
