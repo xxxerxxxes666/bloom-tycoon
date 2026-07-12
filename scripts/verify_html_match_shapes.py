@@ -160,6 +160,7 @@ def verify_source_hooks():
         "demoCompleteBtn",
         "Complete Bouquet",
         "round-one-active",
+        "body.round-one-active:not(.first-move-made) #shuffleBtn",
         "firstSwapCue",
         "Swap the two glowing flowers",
         "function firstSwapCueText(a, b)",
