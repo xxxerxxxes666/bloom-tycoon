@@ -1965,6 +1965,12 @@
       animation: swap-snap 180ms cubic-bezier(.2,.9,.25,1.35) both;
     }
 
+    .tile.swap-glide {
+      z-index: 5;
+      animation: swap-glide 210ms cubic-bezier(.16,.84,.22,1) both;
+      will-change: transform, filter;
+    }
+
     .objective-flight {
       position: fixed;
       z-index: 1000;
@@ -2207,6 +2213,27 @@
       font-size: var(--font-size, 15px);
       text-shadow: 0 0 8px #000, 0 0 10px #d8a657;
       animation: coin-pop 880ms cubic-bezier(0.14, 0.8, 0.22, 1) forwards;
+    }
+
+    .board-particle.cascade-ring {
+      z-index: 2;
+      border: 1px solid #f0c477a8;
+      border-radius: 50%;
+      background: radial-gradient(circle, #f0c4772b 0, #9b1d221c 38%, #0000 70%);
+      box-shadow: 0 0 16px #d7b16d, 0 0 30px #9b1d2255, inset 0 0 18px #f0c47738;
+      animation: cascade-ring 680ms cubic-bezier(.12,.82,.18,1) forwards;
+    }
+
+    .board-particle.cascade-mark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 8;
+      color: #fff0b4;
+      font: 900 var(--font-size, 16px)/1 Georgia, serif;
+      letter-spacing: .08em;
+      text-shadow: 0 2px 4px #000, 0 0 12px #9b1d22, 0 0 18px #d7b16d;
+      animation: cascade-mark 780ms cubic-bezier(.12,.82,.18,1) forwards;
     }
 
     .board-particle.resource-pop {
@@ -3777,6 +3804,36 @@
       }
     }
 
+    @keyframes cascade-ring {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(.22);
+      }
+      22% {
+        opacity: .95;
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(var(--scale, 1.7));
+      }
+    }
+
+    @keyframes cascade-mark {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -30%) scale(.72);
+      }
+      24%,
+      68% {
+        opacity: 1;
+        transform: translate(-50%, -72%) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -118%) scale(.92);
+      }
+    }
+
     @keyframes resource-pop {
       0% {
         opacity: 0;
@@ -4489,6 +4546,8 @@
     body.restored-next-order-focus .board { touch-action:none; box-shadow:0 0 0 1px #6f944d,0 0 22px #7fcf6530,inset 0 0 16px #000; }
     .board.bloom-hit { animation:board-bloom-hit 520ms cubic-bezier(.12,.82,.18,1) both; }
     .board.line-relic-hit { animation:board-line-relic-hit 880ms cubic-bezier(.12,.82,.18,1) both; }
+    .board.cascade-wave { animation:cascade-wave-hit 420ms cubic-bezier(.12,.82,.18,1) both; }
+    .cascade-wave-label { position:absolute; left:50%; top:10px; z-index:9; padding:3px 9px; border:1px solid #b98b42; background:linear-gradient(90deg,#160b08e8,#3a180fe8,#160b08e8); box-shadow:0 0 16px #9b1d2248,inset 0 0 9px #000; color:#fff0b4; font:900 10px/1 system-ui,sans-serif; letter-spacing:.16em; text-transform:uppercase; pointer-events:none; transform:translate(-50%,-8px); animation:cascade-label-rise 640ms ease-out both; }
     .board-particle.petal-pop {
       z-index: 5;
       border-radius: 66% 34% 62% 38%;
@@ -4577,6 +4636,11 @@
       55% { transform:scale(1.11); box-shadow:inset 0 0 12px #000,0 0 18px #e7bd67; }
       100% { transform:scale(1); filter:brightness(1); }
     }
+    @keyframes swap-glide {
+      0% { transform:translate(calc(var(--swap-dx, 0) * 115%),calc(var(--swap-dy, 0) * 115%)) scale(.96); filter:brightness(1.38) saturate(1.2); }
+      58% { transform:translate(0,0) scale(1.06); filter:brightness(1.14) saturate(1.12); }
+      100% { transform:translate(0,0) scale(1); filter:brightness(1); }
+    }
     @keyframes handoff-cue-rise {
       0% { opacity:0; transform:translateY(6px); filter:brightness(.8); }
       22%,78% { opacity:1; transform:translateY(0); filter:brightness(1.12); }
@@ -4591,6 +4655,16 @@
       0% { transform:scale(1); filter:brightness(1); }
       35% { transform:scale(1.006); filter:brightness(1.13) saturate(1.16); }
       100% { transform:scale(1); filter:brightness(1); }
+    }
+    @keyframes cascade-wave-hit {
+      0% { filter:brightness(.94) saturate(1); }
+      38% { filter:brightness(1.2) saturate(1.24); }
+      100% { filter:brightness(1) saturate(1); }
+    }
+    @keyframes cascade-label-rise {
+      0% { opacity:0; transform:translate(-50%,2px) scale(.92); }
+      20%,72% { opacity:1; transform:translate(-50%,-8px) scale(1); }
+      100% { opacity:0; transform:translate(-50%,-18px) scale(.96); }
     }
     @keyframes board-line-relic-hit {
       0% { transform:scale(1); filter:brightness(.9) saturate(1); }
@@ -5527,6 +5601,7 @@
     let superBloomCells = new Set();
     let invalidSwapCells = new Set();
     let activeSwapCells = new Set();
+    let swapGlideCells = new Map();
     let idleHintCells = new Set();
     let thornPulseCells = new Set();
     let thornClearedCells = new Set();
@@ -5544,6 +5619,8 @@
     let restoredGreenhouseHandoff = false;
     let restoredGreenhouseHandoffTimer = null;
     let bloomAudioContext = null;
+    let currentCascadeWave = 0;
+    let lastSettledCascadeCount = 0;
     let pendingRuneTendedSoil = false;
     let activeRuneTendedSoil = false;
     let shapeDemoIndex = 0;
@@ -9735,6 +9812,22 @@
       board[b.y][b.x] = previous;
     }
 
+    function markSwapGlide(a, b) {
+      activeSwapCells = new Set([`${a.x},${a.y}`, `${b.x},${b.y}`]);
+      swapGlideCells = new Map([
+        [`${a.x},${a.y}`, { dx: b.x - a.x, dy: b.y - a.y }],
+        [`${b.x},${b.y}`, { dx: a.x - b.x, dy: a.y - b.y }]
+      ]);
+    }
+
+    function clearSwapGlide() {
+      activeSwapCells.clear();
+      swapGlideCells.clear();
+      document.querySelectorAll(".tile.swap-snap,.tile.swap-glide").forEach((tile) => {
+        tile.classList.remove("swap-snap", "swap-glide");
+      });
+    }
+
     function isLegalSwap(a, b) {
       // Standard switch-match rule: a normal swap is legal only if the moved tiles create a match.
       if (!isAdjacent(a, b) || board[a.y][a.x] === board[b.y][b.x]) {
@@ -9969,7 +10062,7 @@
     }
 
     function shouldPreserveSelectedHintPair(hintCells, cell) {
-      return hintCells instanceof Set
+      return hintCells && typeof hintCells.has === "function"
         && hintCells.size === 2
         && hintCells.has(`${cell.x},${cell.y}`)
         && !roundComplete
@@ -10026,6 +10119,11 @@
 
     function playBloomSound(kind, detail = {}) {
       try {
+        if (kind === "swap") {
+          playBloomTone(185, 0, 0.055, 0.014, "triangle");
+          playBloomTone(247, 0.034, 0.075, 0.012, "sine");
+          return;
+        }
         if (kind === "invalid") {
           playBloomTone(154, 0, 0.09, 0.022, "triangle");
           playBloomTone(106, 0.055, 0.11, 0.018, "sawtooth");
@@ -10033,9 +10131,15 @@
         }
         if (kind === "match") {
           const cascade = Math.min(4, Math.max(0, detail.cascade || 0));
-          const root = detail.lineRelic ? 294 : 247;
-          playBloomTone(root + cascade * 18, 0, 0.11, 0.026, "sine");
-          playBloomTone(root * 1.5 + cascade * 24, 0.055, 0.14, 0.022, "triangle");
+          const cleared = Math.min(12, Math.max(3, Number(detail.cleared) || 3));
+          const root = detail.lineRelic ? 294 : detail.shape ? 262 : 247;
+          const chainLift = cascade * 22;
+          playBloomTone(82 + cascade * 14, 0, 0.08, 0.012 + cascade * 0.002, "sawtooth");
+          playBloomTone(root + chainLift, 0.018, 0.1 + cleared * 0.004, 0.022 + cascade * 0.002, "sine");
+          playBloomTone(root * 1.5 + chainLift, 0.07, 0.13 + cascade * 0.018, 0.018 + cascade * 0.002, "triangle");
+          if (cascade > 0) {
+            playBloomTone(392 + cascade * 42, 0.12, 0.1, 0.014, "sine");
+          }
           if (detail.lineRelic) {
             playBloomTone(92, 0.02, 0.28, 0.018, "sawtooth");
           }
@@ -10155,7 +10259,10 @@
       renderRestoredGreenhouseStatus();
       const boardEl = $("board");
       boardEl.innerHTML = "";
+      boardEl.dataset.cascadeWave = String(currentCascadeWave);
+      boardEl.dataset.lastCascadeCount = String(lastSettledCascadeCount);
       boardEl.classList.toggle("supreme-charge", supremeChargeActive);
+      boardEl.classList.toggle("cascade-wave", currentCascadeWave > 0);
       boardEl.classList.toggle("bloom-hit", harvestFlashCells.size > 0 || boardParticles.some((particle) => particle.type === "petal-pop" || particle.type === "coin-pop"));
       boardEl.classList.toggle("line-relic-hit", boardParticles.some((particle) => particle.type === "line-relic"));
 
@@ -10181,6 +10288,8 @@
           const superClass = superBloomCells.has(`${x},${y}`) ? "super-bloom-hot" : "";
           const invalidClass = invalidSwapCells.has(`${x},${y}`) ? "invalid-swap" : "";
           const swapClass = activeSwapCells.has(`${x},${y}`) ? "swap-snap" : "";
+          const swapGlide = swapGlideCells.get(`${x},${y}`);
+          const swapGlideClass = swapGlide ? "swap-glide" : "";
           const idleHintClass = idleHintCells.has(`${x},${y}`) ? "idle-hint" : "";
           const thornTeachClass = thornTeachingCells.has(`${x},${y}`) ? "thorn-teach" : "";
           const transmuteClass = transmuteFlashCell === `${x},${y}` ? "transmute-flash" : "";
@@ -10192,8 +10301,12 @@
           const fallKey = `${x},${y}`;
           const fallRows = fallAnimations.get(fallKey) || 0;
           const fallClass = fallRows ? "fall-in" : "";
-          tile.className = `tile ${selectedClass} ${legalClass} ${sacrificeClass} ${profitableClass} ${shearsClass} ${moonwaterTargetClass} ${moonwaterAreaClass} ${moonwaterCenterClass} ${blackCandleLineClass} ${graveSoilTargetClass} ${graveSoilReadyClass} ${harvestClass} ${superClass} ${invalidClass} ${swapClass} ${idleHintClass} ${thornTeachClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass}`;
+          tile.className = `tile ${selectedClass} ${legalClass} ${sacrificeClass} ${profitableClass} ${shearsClass} ${moonwaterTargetClass} ${moonwaterAreaClass} ${moonwaterCenterClass} ${blackCandleLineClass} ${graveSoilTargetClass} ${graveSoilReadyClass} ${harvestClass} ${superClass} ${invalidClass} ${swapClass} ${swapGlideClass} ${idleHintClass} ${thornTeachClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass}`;
           tile.disabled = isResolving || roundComplete || isBouquetFailed();
+          if (swapGlide) {
+            tile.style.setProperty("--swap-dx", String(swapGlide.dx));
+            tile.style.setProperty("--swap-dy", String(swapGlide.dy));
+          }
           if (fallRows) {
             tile.style.setProperty("--fall-y", `${-fallRows * 112}%`);
             tile.style.setProperty("--fall-delay", `${Math.min(130, y * 12)}ms`);
@@ -10238,6 +10351,14 @@
       }
       renderFirstSwapArrow(boardEl);
       applyImageFallbacks(boardEl);
+
+      if (currentCascadeWave > 1) {
+        const chainLabel = document.createElement("span");
+        chainLabel.className = "cascade-wave-label";
+        chainLabel.textContent = `Chain ${currentCascadeWave}`;
+        chainLabel.setAttribute("aria-hidden", "true");
+        boardEl.appendChild(chainLabel);
+      }
 
       harvestFlashCells.forEach((cell) => {
         const [x, y] = cell.split(",").map(Number);
@@ -10882,14 +11003,14 @@
       }
       swapBoardCells(selected, target);
       pulseHaptic(18);
-      activeSwapCells = new Set([`${selected.x},${selected.y}`, `${target.x},${target.y}`]);
+      playBloomSound("swap");
+      markSwapGlide(selected, target);
       moves -= 1;
       selected = null;
       isResolving = true;
       render();
-      await delay(150);
-      activeSwapCells.clear();
-      document.querySelectorAll(".tile.swap-snap").forEach((tile) => tile.classList.remove("swap-snap"));
+      await delay(210);
+      clearSwapGlide();
       let result = null;
       let schedulePostResolveIdleHint = false;
       try {
@@ -10927,7 +11048,7 @@
           scheduleIdleHint();
         }
         if (result && result.matched) {
-          scheduleBoardParticleClear();
+          scheduleBoardParticleClear(result.cascades);
         }
       }
     }
@@ -11456,6 +11577,8 @@
       fallClearTimer = null;
       boardParticleClearTimer = null;
       supremeChargeTimer = null;
+      currentCascadeWave = 0;
+      clearSwapGlide();
     }
 
     function resolve() {
@@ -11466,6 +11589,8 @@
       thornPulseCells.clear();
       thornClearedCells.clear();
       clearThornTeachingCue(false);
+      currentCascadeWave = 0;
+      lastSettledCascadeCount = 0;
       const result = createResolveResult();
       const flashedCells = new Set();
 
@@ -11483,6 +11608,7 @@
       }
 
       harvestFlashCells = flashedCells;
+      lastSettledCascadeCount = result.cascades;
       return finishResolve(result);
     }
 
@@ -11495,6 +11621,8 @@
       thornPulseCells.clear();
       thornClearedCells.clear();
       clearThornTeachingCue(false);
+      currentCascadeWave = 0;
+      lastSettledCascadeCount = 0;
       const result = createResolveResult();
       const maxCascades = Math.max(1, Number(options.maxCascades) || 20);
 
@@ -11512,28 +11640,37 @@
         const effectRareCells = dedupeCells([...wave.rareCells, ...forcedRareCells]);
         const cascadeIndex = result.cascades;
         collectWaveRewards(wave, result, result.cascades, forcedRareCells);
-        playBloomSound("match", { cascade: cascadeIndex, lineRelic: wave.lineRelics.length > 0 });
+        currentCascadeWave = cascadeIndex + 1;
+        queueCascadeImpact(wave, cascadeIndex);
+        playBloomSound("match", {
+          cascade: cascadeIndex,
+          lineRelic: wave.lineRelics.length > 0,
+          cleared: wave.clearCells.length,
+          shape: Boolean(wave.strongestShape)
+        });
         if (boardParticles.length > 180) {
           boardParticles = boardParticles.slice(-180);
         }
         harvestFlashCells = new Set(wave.clearKeys);
         superBloomCells = new Set(effectRareCells.map((cell) => cell.join(",")));
-        pulseHaptic(result.cascades > 1 ? [14, 28, 14] : 12);
+        pulseHaptic(cascadeIndex > 0 ? [12, 24, 18] : 12);
         render();
 
         if (effectRareCells.length) {
           chargeSupreme(effectRareCells);
         }
 
-        await delay(wave.rare ? 340 : 240);
+        await delay(wave.rare ? 330 : 230);
         clearWaveCells(wave);
         render();
-        await delay(560);
+        await delay(Math.min(500, 360 + cascadeIndex * 45));
       }
 
       harvestFlashCells.clear();
       superBloomCells.clear();
       fallAnimations.clear();
+      currentCascadeWave = 0;
+      lastSettledCascadeCount = result.cascades;
       return finishResolve(result, options);
     }
 
@@ -11569,6 +11706,39 @@
       }
       const key = `${x},${y}`;
       fallAnimations.set(key, Math.max(fallAnimations.get(key) || 0, rows));
+    }
+
+    function queueCascadeImpact(wave, cascadeIndex = 0) {
+      if (!wave || !wave.clearCells.length) {
+        return;
+      }
+      const center = wave.clearCells.reduce((acc, [x, y]) => {
+        acc.x += x;
+        acc.y += y;
+        return acc;
+      }, { x: 0, y: 0 });
+      const x = center.x / wave.clearCells.length;
+      const y = center.y / wave.clearCells.length;
+      const chain = cascadeIndex + 1;
+      boardParticles.push({
+        type: "cascade-ring",
+        x,
+        y,
+        size: 76 + Math.min(44, wave.clearCells.length * 4),
+        scale: 1.35 + Math.min(0.75, cascadeIndex * 0.18),
+        delay: 0
+      });
+      if (cascadeIndex > 0) {
+        boardParticles.push({
+          type: "cascade-mark",
+          text: `CHAIN ${chain}`,
+          x,
+          y: Math.max(0.4, y - 0.18),
+          size: 78,
+          fontSize: 14 + Math.min(4, cascadeIndex),
+          delay: 40
+        });
+      }
     }
 
     function queueCoinBurst(cells, coinsEarned, cascadeIndex = 0) {
@@ -11820,7 +11990,7 @@
       }, 560);
     }
 
-    function scheduleBoardParticleClear() {
+    function scheduleBoardParticleClear(cascadeCount = lastSettledCascadeCount) {
       if (boardParticleClearTimer && window.clearTimeout) {
         window.clearTimeout(boardParticleClearTimer);
       }
@@ -11837,7 +12007,7 @@
         thornClearedCells.clear();
         transmuteFlashCell = "";
         render();
-      }, 1250);
+      }, 1250 + Math.max(0, Number(cascadeCount) || 0) * 150);
     }
 
     function harvestSummary(result) {
@@ -13534,7 +13704,7 @@
           isResolving = false;
           render();
           if (result && result.matched) {
-            scheduleBoardParticleClear();
+            scheduleBoardParticleClear(result.cascades);
           }
         }
       }, 260);
