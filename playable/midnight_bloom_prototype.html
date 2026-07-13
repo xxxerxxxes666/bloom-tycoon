@@ -4651,25 +4651,14 @@
     body.focused-slice-failed #renewBtn.visible { position:fixed; left:50%; bottom:14px; z-index:40; display:block; min-width:190px; transform:translateX(-50%); box-shadow:0 0 22px #9b1d2266,0 10px 24px #000c; }
     .round-one-restoration.second-greenhouse-upgrade .restoration-scene { border-color:#7d49b2; box-shadow:inset 0 0 30px #7d49b255,0 0 28px #9b1d2245; }
     .round-one-restoration.second-greenhouse-upgrade .restoration-scene::before { background:radial-gradient(circle at 50% 30%,#7d49b244 0 14%,#0000 42%),radial-gradient(circle at 50% 42%,#0000 0 48%,#0008 88%),linear-gradient(180deg,#0008,#2c092055 34%,#0004 76%,#000a); }
-    .greenhouse-upgrade-moon,
-    .greenhouse-upgrade-vines,
-    .greenhouse-upgrade-lanterns { display:none; position:absolute; pointer-events:none; z-index:6; }
-    .round-one-restoration.second-greenhouse-upgrade .greenhouse-upgrade-moon { display:block; left:50%; top:12%; width:82px; height:82px; border-radius:50%; transform:translateX(-50%); background:radial-gradient(circle at 42% 38%,#fff7d6 0 14%,#d9c7ff 42%,#7d49b2 68%,#0000 70%); box-shadow:0 0 34px #d9c7ff99,0 0 70px #7d49b266; opacity:.88; animation:greenhouse-moon-rise 1050ms ease-out both; }
-    .round-one-restoration.second-greenhouse-upgrade .greenhouse-upgrade-vines { display:block; inset:10% 8% 0; background:linear-gradient(118deg,#0000 0 38%,#7d49b2 39% 40%,#0000 42%),linear-gradient(64deg,#0000 0 46%,#9b1d22 47% 48%,#0000 50%),radial-gradient(circle at 22% 68%,#c02036 0 2%,#0000 3%),radial-gradient(circle at 78% 62%,#c02036 0 2%,#0000 3%); opacity:.72; mix-blend-mode:screen; animation:greenhouse-vines-wake 1250ms ease-out both; }
-    .round-one-restoration.second-greenhouse-upgrade .greenhouse-upgrade-lanterns { display:block; inset:0; background:radial-gradient(circle at 34% 54%,#ffe7a2 0 2%,#d7b16d88 3%,#0000 7%),radial-gradient(circle at 66% 53%,#ffe7a2 0 2%,#d7b16d88 3%,#0000 7%),radial-gradient(circle at 50% 64%,#e7c8ff 0 2%,#7d49b288 3%,#0000 8%); filter:blur(.2px); opacity:.92; animation:greenhouse-lantern-kindled 1150ms ease-out both; }
+    .round-one-restoration.second-greenhouse-upgrade .greenhouse-art-restored { filter:brightness(1.08) saturate(1.14) contrast(1.04); }
     .round-one-restoration.second-greenhouse-upgrade .restoration-step.spend { border-color:#7d49b2; color:#e7d6ff; box-shadow:0 0 14px #7d49b238; }
     .round-one-restoration.second-greenhouse-upgrade .restoration-step.next { border-color:#9b1d22; color:#ffd4d7; box-shadow:0 0 14px #9b1d2238; }
     .round-one-restoration.second-greenhouse-upgrade .next-order-btn { display:block; border-color:#9b1d22; background:linear-gradient(#7d2431,#35131c); }
     body.round-three-final-complete .round-one-restoration { position:relative; overflow:hidden; display:grid; width:min(790px,calc(100% - 16px)); margin:12px auto 0; padding:16px; gap:12px; border:1px solid #b51d2f; background:radial-gradient(circle at 50% 0,#3a1014,#0b0707 72%); box-shadow:0 0 44px #9b1d2260,inset 0 0 32px #000,0 18px 45px #000c; text-align:center; }
     .round-one-restoration.third-greenhouse-finale .restoration-scene { border-color:#b51d2f; box-shadow:inset 0 0 34px #9b1d2266,0 0 34px #d7b16d42; }
     .round-one-restoration.third-greenhouse-finale .restoration-scene::before { background:radial-gradient(circle at 50% 34%,#b51d2f52 0 16%,#0000 40%),radial-gradient(circle at 50% 42%,#0000 0 48%,#0009 88%),linear-gradient(180deg,#0008,#3a090f66 34%,#0005 76%,#000b); }
-    .greenhouse-upgrade-bloodsun,
-    .greenhouse-upgrade-roots,
-    .greenhouse-upgrade-seal { display:none; position:absolute; pointer-events:none; z-index:7; }
-    .round-one-restoration.third-greenhouse-finale .greenhouse-upgrade-bloodsun { display:block; left:50%; top:8%; width:112px; height:112px; border-radius:50%; transform:translateX(-50%); background:radial-gradient(circle at 47% 43%,#fff1bd 0 7%,#d7b16d 20%,#b51d2f 48%,#33060b 66%,#0000 69%); box-shadow:0 0 36px #d7b16dcc,0 0 88px #9b1d2288; opacity:.95; animation:greenhouse-bloodsun-crown 1050ms ease-out both; }
-    .round-one-restoration.third-greenhouse-finale .greenhouse-upgrade-roots { display:block; inset:28% 5% 0; background:linear-gradient(102deg,#0000 0 23%,#8d111d 24% 25%,#0000 27%),linear-gradient(78deg,#0000 0 34%,#d7b16d 35% 36%,#0000 38%),linear-gradient(128deg,#0000 0 57%,#8d111d 58% 59%,#0000 61%),radial-gradient(ellipse at 50% 92%,#b51d2f88 0 6%,#0000 30%),radial-gradient(circle at 29% 72%,#fff1bd 0 1.6%,#b51d2f99 2.2%,#0000 6%),radial-gradient(circle at 71% 69%,#fff1bd 0 1.6%,#b51d2f99 2.2%,#0000 6%); opacity:.82; mix-blend-mode:screen; animation:greenhouse-root-weave 1200ms ease-out both; }
-    .round-one-restoration.third-greenhouse-finale .greenhouse-upgrade-seal { display:grid; place-items:center; left:50%; top:50%; width:148px; height:148px; border:1px solid #d7b16d; border-radius:50%; color:#fff2bf; transform:translate(-50%,-50%); background:radial-gradient(circle,#140606cc 0 36%,#b51d2f33 37% 49%,#0000 50%),conic-gradient(from 0deg,#d7b16d 0 5deg,#0000 5deg 40deg,#b51d2f 40deg 45deg,#0000 45deg 80deg,#d7b16d 80deg 85deg,#0000 85deg 120deg,#b51d2f 120deg 125deg,#0000 125deg 160deg,#d7b16d 160deg 165deg,#0000 165deg 200deg,#b51d2f 200deg 205deg,#0000 205deg 240deg,#d7b16d 240deg 245deg,#0000 245deg 280deg,#b51d2f 280deg 285deg,#0000 285deg 320deg,#d7b16d 320deg 325deg,#0000 325deg); box-shadow:0 0 24px #d7b16d88,inset 0 0 26px #000; font:900 12px/1 Georgia,serif; letter-spacing:.18em; text-align:center; text-shadow:0 2px 5px #000; animation:greenhouse-seal-lock 1150ms ease-out both; }
-    .round-one-restoration.third-greenhouse-finale .greenhouse-upgrade-seal::before { content:"III"; }
+    .round-one-restoration.third-greenhouse-finale .greenhouse-art-restored { filter:brightness(1.07) saturate(1.2) contrast(1.06); }
     .round-one-restoration.third-greenhouse-finale .greenhouse-light { background:radial-gradient(circle at 50% 43%,#fff1bdaa 0 10%,#b51d2f77 24%,#d7b16d24 44%,#0000 70%); opacity:1; filter:blur(8px); }
     .round-one-restoration.third-greenhouse-finale .restoration-state { left:5%; right:5%; bottom:7px; z-index:10; padding:5px 8px; border-top:1px solid #d7b16d88; background:linear-gradient(90deg,#08030300,#080303e8 14%,#080303e8 86%,#08030300); font-size:12px; line-height:1.1; letter-spacing:.1em; }
     .round-one-restoration.third-greenhouse-finale .restoration-step.spend { border-color:#d7b16d; color:#fff1bd; box-shadow:0 0 16px #d7b16d38; }
@@ -4679,31 +4668,6 @@
       color:#f0b0a5;
       text-shadow:0 0 12px #9b1d22;
       animation:cue-refused 420ms ease-out both;
-    }
-    @keyframes greenhouse-bloodsun-crown {
-      0% { opacity:0; transform:translate(-50%,34px) scale(.6); filter:blur(7px); }
-      100% { opacity:.95; transform:translate(-50%,0) scale(1); filter:blur(0); }
-    }
-    @keyframes greenhouse-root-weave {
-      0% { opacity:0; transform:translateY(34px) scaleY(.64); }
-      100% { opacity:.82; transform:translateY(0) scaleY(1); }
-    }
-    @keyframes greenhouse-seal-lock {
-      0% { opacity:0; transform:translate(-50%,-50%) scale(.52) rotate(-22deg); filter:blur(5px); }
-      66% { opacity:1; transform:translate(-50%,-50%) scale(1.08) rotate(4deg); }
-      100% { opacity:.96; transform:translate(-50%,-50%) scale(1) rotate(0); filter:blur(0); }
-    }
-    @keyframes greenhouse-moon-rise {
-      0% { opacity:0; transform:translate(-50%,28px) scale(.72); filter:blur(5px); }
-      100% { opacity:.88; transform:translate(-50%,0) scale(1); filter:blur(0); }
-    }
-    @keyframes greenhouse-vines-wake {
-      0% { opacity:0; transform:translateY(28px) scaleY(.75); }
-      100% { opacity:.72; transform:translateY(0) scaleY(1); }
-    }
-    @keyframes greenhouse-lantern-kindled {
-      0%, 36% { opacity:0; filter:blur(8px); }
-      100% { opacity:.92; filter:blur(.2px); }
     }
     @keyframes greenhouse-awakening {
       0% { opacity:0; transform:translateX(-65%) rotate(-12deg); }
@@ -4853,6 +4817,7 @@
       body.round-three-final-complete .round-one-restoration { margin-top:8px; padding:11px; gap:8px; }
       body.round-one-active .restoration-scene { height:156px; }
       body.round-three-final-complete .restoration-scene { height:166px; }
+      body.round-two-upgrade-complete .second-greenhouse-upgrade .restoration-state { left:2%; right:2%; bottom:7px; padding:4px 2px; font-size:9px; letter-spacing:.055em; white-space:nowrap; }
       body.round-three-final-complete .third-greenhouse-finale .restoration-state { left:2%; right:2%; padding:4px 2px; font-size:9px; letter-spacing:.055em; white-space:nowrap; }
       body.round-one-active .restoration-title { font-size:18px; }
       body.round-three-final-complete .restoration-title { font-size:18px; }
@@ -5071,12 +5036,6 @@
           <img class="greenhouse-art greenhouse-art-withered" src="../assets/greenhouse/first_greenhouse_withered.png" width="1672" height="941" alt="" decoding="async" loading="eager">
           <img class="greenhouse-art greenhouse-art-restored" src="../assets/greenhouse/first_greenhouse_restored.png" width="1672" height="941" alt="" decoding="async" loading="eager">
           <span class="greenhouse-light" aria-hidden="true"></span>
-          <span class="greenhouse-upgrade-moon" aria-hidden="true"></span>
-          <span class="greenhouse-upgrade-vines" aria-hidden="true"></span>
-          <span class="greenhouse-upgrade-lanterns" aria-hidden="true"></span>
-          <span class="greenhouse-upgrade-bloodsun" aria-hidden="true"></span>
-          <span class="greenhouse-upgrade-roots" aria-hidden="true"></span>
-          <span class="greenhouse-upgrade-seal" aria-hidden="true"></span>
           <span class="restoration-state" id="restorationState">WITHERED GLASSHOUSE</span>
         </div>
         <div class="restoration-ledger" aria-label="First bouquet payoff">
@@ -5150,6 +5109,29 @@
       ["Amber Seed", "../assets/tiles/96/amber_resin_seed.png", "Ancient resin holds essence.", "◆", "#c78348"],
       ["Thorn Rose", "../assets/tiles/96/crimson_rose_rune.png", "Love that blooms in darkness.", "✧", "#b01857"]
     ];
+    const greenhouseArtwork = {
+      first: {
+        withered: "../assets/greenhouse/first_greenhouse_withered.png",
+        restored: "../assets/greenhouse/first_greenhouse_restored.png",
+        width: 1672,
+        height: 941,
+        label: "Greenhouse restoration before and after"
+      },
+      moonlit: {
+        withered: "../assets/greenhouse/first_greenhouse_restored.png",
+        restored: "../assets/greenhouse/moonlit_wreath_greenhouse.svg",
+        width: 1280,
+        height: 720,
+        label: "Moonlit Wreath greenhouse transformation with nightshade lanterns"
+      },
+      bloodroot: {
+        withered: "../assets/greenhouse/moonlit_wreath_greenhouse.svg",
+        restored: "../assets/greenhouse/bloodroot_compact_greenhouse.svg",
+        width: 1280,
+        height: 720,
+        label: "Bloodroot Compact greenhouse transformation with crimson root conservatory"
+      }
+    };
 
     const SAVE_KEY = "bloomTycoonPlayableStateV1";
     const BOARD_SIZE = 8;
@@ -10378,10 +10360,35 @@
         && restoredRoundTwoGuideMoves < RESTORED_ROUND_TWO_GUIDE_LIMIT;
     }
 
+    function applyGreenhouseArtwork(stageKey) {
+      const artwork = greenhouseArtwork[stageKey] || greenhouseArtwork.first;
+      const witheredArt = document.querySelector(".greenhouse-art-withered");
+      const restoredArt = document.querySelector(".greenhouse-art-restored");
+      const scene = witheredArt ? witheredArt.closest(".restoration-scene") : null;
+      if (!witheredArt || !restoredArt) {
+        return;
+      }
+      if (witheredArt.getAttribute("src") !== artwork.withered) {
+        witheredArt.src = artwork.withered;
+      }
+      if (restoredArt.getAttribute("src") !== artwork.restored) {
+        restoredArt.src = artwork.restored;
+      }
+      witheredArt.width = artwork.width;
+      witheredArt.height = artwork.height;
+      restoredArt.width = artwork.width;
+      restoredArt.height = artwork.height;
+      if (scene) {
+        scene.setAttribute("aria-label", artwork.label);
+        scene.dataset.greenhouseArt = stageKey;
+      }
+    }
+
     function render() {
       const roundOneActive = currentRound === 1;
       const roundTwoUpgradeComplete = currentRound === 2 && roundComplete && roundOneRestored;
       const roundThreeFinalComplete = currentRound === 3 && roundComplete;
+      applyGreenhouseArtwork(roundThreeFinalComplete ? "bloodroot" : roundTwoUpgradeComplete ? "moonlit" : "first");
       document.body.classList.toggle("round-one-active", roundOneActive);
       document.body.classList.toggle("round-one-complete", roundOneActive && roundComplete);
       document.body.classList.toggle("restored-greenhouse-handoff", restoredGreenhouseHandoff && currentRound === 2 && !roundComplete);

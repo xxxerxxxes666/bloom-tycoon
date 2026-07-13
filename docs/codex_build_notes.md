@@ -1,5 +1,25 @@
 # Codex Build Notes
 
+## 2026-07-13 Moonlit and Bloodroot greenhouse artwork
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `docs/codex_build_notes.md`, `assets/greenhouse/moonlit_wreath_greenhouse.svg`, and `assets/greenhouse/bloodroot_compact_greenhouse.svg`.
+- Player-visible milestone: the second and third greenhouse ceremonies no longer rely on CSS-only moon/vine/lantern or blood-sun/root/seal overlays. Round 2 now swaps the restored art layer to an original repo-local Moonlit Wreath greenhouse with violet panes, moon, lanterns, and nightshade wreath beds; Round 3 swaps from that stage into an original Bloodroot Compact conservatory with crimson glass, root beds, and a compact sigil. The first greenhouse PNG art remains unchanged.
+- Implementation notes: `greenhouseArtwork` and `applyGreenhouseArtwork()` choose the correct before/after image sources for first restore, Moonlit Wreath, and Bloodroot Compact, including saved/reloaded ceremonies. The old overlay spans/CSS/keyframes were removed, and mobile Moonlit captions were tightened to avoid wrapping over the art.
+- Focused verifier coverage: `scripts/verify_html_match_shapes.py` now checks the new asset filenames, artwork map, render hook, and `data-greenhouse-art` stage marker instead of the removed overlay class markers.
+- Local browser verification: static server `127.0.0.1:41061`; Chromium/Playwright with `NODE_PATH=/opt/data/home/.npm/_npx/420ff84f11983ee5/node_modules`.
+- Desktop 1440x1000 journey: real tile clicks completed Round 1 -> restore -> reload -> Next Order -> Round 2 guided thorn/follow-up plus unguided real completion -> Moonlit ceremony -> reload -> Next Order -> Round 3 real completion -> Bloodroot final ceremony -> reload -> `Play Again -> First Bouquet`; active play preserved 64 tiles, no horizontal overflow, no broken images, and no console/page/request errors.
+- Mobile 390x844 journey: the same full path passed at 390x844 with 64 tiles during active play, no horizontal overflow, no broken images, no browser errors, reload persistence at each greenhouse payoff, and replay back to active Round 1.
+- Visual inspection: screenshots captured and inspected at `/tmp/bloom-desktop-moonlit-ceremony.png`, `/tmp/bloom-mobile390-moonlit-ceremony.png`, `/tmp/bloom-desktop-bloodroot-ceremony.png`, and `/tmp/bloom-mobile390-bloodroot-ceremony.png`. Moonlit reads as a violet/moon/lantern greenhouse on desktop and mobile; Bloodroot reads as a crimson conservatory with root beds and central compact seal on desktop and mobile.
+- Retry/Next Order: a focused mobile retry regression forced a saved failed Round 2 state, verified visible `Retry Bouquet`, clicked it, and confirmed Round 2 restored with 64 tiles and moves reset. `Next Order -> Bloodroot Compact` and final replay were verified in both full journeys.
+- Verification commands: `python3 scripts/verify_project.py`, `/opt/data/tools/godot/Godot_v4.2.2-stable_linux.x86_64 --headless --path . --script res://tests/godot_smoke_test.gd`, `git diff --check`, XML parse for both new SVGs, and `node --check /tmp/bloom-playable-inline.js` passed.
+- Browser console/runtime status: the final desktop journey, mobile journey, and retry regression had 0 console messages, 0 page errors, and 0 failed browser requests.
+- Vercel deployment URL/identifier checked: not redeployed or checked in this local pass before push.
+- GitHub Pages preview status: not checked in this local pass before push.
+- Known issues: none found in the verified first three-order greenhouse progression. Existing L/T/cross and Supreme Bloom review hooks remain unchanged; no new controls, systems, currencies, dependencies, backend, trackers, accounts, ads/IAP, secrets, or broad permissions were added.
+- How to trigger and verify L/T/cross matches without console: after Round 1, click `Shape Bloom` repeatedly or press `M`; demos cycle through line5, line4, `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom`.
+- How to trigger and verify Supreme Bloom without console: focus the playable after Round 1 and press `B`; the `SUPREME BLOOM!` overlay should appear and return the board to 64 tiles.
+- Security/secret-scan status: precise changed-file scan passed for private-key headers, AWS/GitHub/OpenAI/Slack/Stripe token prefixes, JWTs, and suspicious credential assignments in the final changed files.
+
 ## 2026-07-13 Final three-order greenhouse payoff
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
