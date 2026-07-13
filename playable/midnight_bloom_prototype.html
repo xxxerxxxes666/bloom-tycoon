@@ -4516,9 +4516,26 @@
     body.round-one-active.round-one-complete .bottom {
       display: none !important;
     }
+    body.round-two-upgrade-complete .left,
+    body.round-two-upgrade-complete .bottom,
+    body.round-two-upgrade-complete .bouquet-path,
+    body.round-two-upgrade-complete .path-ledger-drawer,
+    body.round-two-upgrade-complete .first-session-plaque,
+    body.round-two-upgrade-complete .progress,
+    body.round-two-upgrade-complete .board,
+    body.round-two-upgrade-complete .controls,
+    body.round-two-upgrade-complete .ritual-log,
+    body.round-two-upgrade-complete .sacrifice-panel,
+    body.round-two-upgrade-complete .booster-panel,
+    body.round-two-upgrade-complete #roundCeremony,
+    body.round-two-upgrade-complete #renewBtn {
+      display: none !important;
+    }
     body.round-one-active.round-one-complete #bouquetStreakBadge,
     body.round-one-active.round-one-complete #nextStreakTargetBadge,
-    body.round-one-active.round-one-complete .restoration-xp-preview {
+    body.round-one-active.round-one-complete .restoration-xp-preview,
+    body.round-two-upgrade-complete #bouquetStreakBadge,
+    body.round-two-upgrade-complete #nextStreakTargetBadge {
       display: none !important;
     }
     body.restored-greenhouse-handoff .left, body.restored-greenhouse-handoff .bottom,
@@ -4537,6 +4554,7 @@
     body.restored-next-order-focus:not(.restored-greenhouse-handoff) .first-swap-cue::before { content:"NEXT ORDER"; }
     body.restored-next-order-focus.thorn-lesson-active:not(.restored-greenhouse-handoff) .first-swap-cue::before { content:"CURSED THORN"; }
     body.restored-next-order-focus.round-two-followup-cue .first-swap-cue::before { content:"NEXT BLOOM"; }
+    body.round-three-focus-active.restored-next-order-focus:not(.restored-greenhouse-handoff) .first-swap-cue::before { content:"FINAL ORDER"; }
     body.restored-next-order-focus .restored-greenhouse-status { display:grid; width:min(520px,calc(100% - 16px)); margin:7px auto 0; padding:7px 10px; grid-template-columns:auto 1fr; gap:5px 9px; align-items:center; border:1px solid #6f944d; background:linear-gradient(90deg,#0a0d08,#172414,#0a0d08); box-shadow:0 0 16px #7fcf652d,inset 0 0 10px #000; color:#dff5b8; text-align:left; }
     .restored-greenhouse-kicker { color:#f3dfaa; font:900 10px/1 system-ui,sans-serif; letter-spacing:.09em; text-transform:uppercase; white-space:nowrap; }
     .restored-greenhouse-copy { color:#c5e4a4; font:700 12px/1.15 system-ui,sans-serif; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -4595,10 +4613,35 @@
     .next-order-btn { display:none; background:linear-gradient(#56733a,#263b25); }
     .round-one-restoration.restored .restore-btn { display:none; }
     .round-one-restoration.restored .next-order-btn { display:block; }
+    body.round-two-upgrade-complete .round-one-restoration { position:relative; overflow:hidden; display:grid; width:min(760px,calc(100% - 16px)); margin:12px auto 0; padding:16px; gap:12px; border:1px solid #8a4f5e; background:radial-gradient(circle at 50% 0,#2c0f20,#0d0a0d 72%); box-shadow:0 0 40px #7d49b245,inset 0 0 30px #000,0 18px 45px #000b; text-align:center; }
+    body.focused-slice-failed #renewBtn.visible { position:fixed; left:50%; bottom:14px; z-index:40; display:block; min-width:190px; transform:translateX(-50%); box-shadow:0 0 22px #9b1d2266,0 10px 24px #000c; }
+    .round-one-restoration.second-greenhouse-upgrade .restoration-scene { border-color:#7d49b2; box-shadow:inset 0 0 30px #7d49b255,0 0 28px #9b1d2245; }
+    .round-one-restoration.second-greenhouse-upgrade .restoration-scene::before { background:radial-gradient(circle at 50% 30%,#7d49b244 0 14%,#0000 42%),radial-gradient(circle at 50% 42%,#0000 0 48%,#0008 88%),linear-gradient(180deg,#0008,#2c092055 34%,#0004 76%,#000a); }
+    .greenhouse-upgrade-moon,
+    .greenhouse-upgrade-vines,
+    .greenhouse-upgrade-lanterns { display:none; position:absolute; pointer-events:none; z-index:6; }
+    .round-one-restoration.second-greenhouse-upgrade .greenhouse-upgrade-moon { display:block; left:50%; top:12%; width:82px; height:82px; border-radius:50%; transform:translateX(-50%); background:radial-gradient(circle at 42% 38%,#fff7d6 0 14%,#d9c7ff 42%,#7d49b2 68%,#0000 70%); box-shadow:0 0 34px #d9c7ff99,0 0 70px #7d49b266; opacity:.88; animation:greenhouse-moon-rise 1050ms ease-out both; }
+    .round-one-restoration.second-greenhouse-upgrade .greenhouse-upgrade-vines { display:block; inset:10% 8% 0; background:linear-gradient(118deg,#0000 0 38%,#7d49b2 39% 40%,#0000 42%),linear-gradient(64deg,#0000 0 46%,#9b1d22 47% 48%,#0000 50%),radial-gradient(circle at 22% 68%,#c02036 0 2%,#0000 3%),radial-gradient(circle at 78% 62%,#c02036 0 2%,#0000 3%); opacity:.72; mix-blend-mode:screen; animation:greenhouse-vines-wake 1250ms ease-out both; }
+    .round-one-restoration.second-greenhouse-upgrade .greenhouse-upgrade-lanterns { display:block; inset:0; background:radial-gradient(circle at 34% 54%,#ffe7a2 0 2%,#d7b16d88 3%,#0000 7%),radial-gradient(circle at 66% 53%,#ffe7a2 0 2%,#d7b16d88 3%,#0000 7%),radial-gradient(circle at 50% 64%,#e7c8ff 0 2%,#7d49b288 3%,#0000 8%); filter:blur(.2px); opacity:.92; animation:greenhouse-lantern-kindled 1150ms ease-out both; }
+    .round-one-restoration.second-greenhouse-upgrade .restoration-step.spend { border-color:#7d49b2; color:#e7d6ff; box-shadow:0 0 14px #7d49b238; }
+    .round-one-restoration.second-greenhouse-upgrade .restoration-step.next { border-color:#9b1d22; color:#ffd4d7; box-shadow:0 0 14px #9b1d2238; }
+    .round-one-restoration.second-greenhouse-upgrade .next-order-btn { display:block; border-color:#9b1d22; background:linear-gradient(#7d2431,#35131c); }
     .first-swap-cue.swap-refused {
       color:#f0b0a5;
       text-shadow:0 0 12px #9b1d22;
       animation:cue-refused 420ms ease-out both;
+    }
+    @keyframes greenhouse-moon-rise {
+      0% { opacity:0; transform:translate(-50%,28px) scale(.72); filter:blur(5px); }
+      100% { opacity:.88; transform:translate(-50%,0) scale(1); filter:blur(0); }
+    }
+    @keyframes greenhouse-vines-wake {
+      0% { opacity:0; transform:translateY(28px) scaleY(.75); }
+      100% { opacity:.72; transform:translateY(0) scaleY(1); }
+    }
+    @keyframes greenhouse-lantern-kindled {
+      0%, 36% { opacity:0; filter:blur(8px); }
+      100% { opacity:.92; filter:blur(.2px); }
     }
     @keyframes greenhouse-awakening {
       0% { opacity:0; transform:translateX(-65%) rotate(-12deg); }
@@ -4958,6 +5001,9 @@
           <img class="greenhouse-art greenhouse-art-withered" src="../assets/greenhouse/first_greenhouse_withered.png" width="1672" height="941" alt="" decoding="async" loading="eager">
           <img class="greenhouse-art greenhouse-art-restored" src="../assets/greenhouse/first_greenhouse_restored.png" width="1672" height="941" alt="" decoding="async" loading="eager">
           <span class="greenhouse-light" aria-hidden="true"></span>
+          <span class="greenhouse-upgrade-moon" aria-hidden="true"></span>
+          <span class="greenhouse-upgrade-vines" aria-hidden="true"></span>
+          <span class="greenhouse-upgrade-lanterns" aria-hidden="true"></span>
           <span class="restoration-state" id="restorationState">WITHERED GLASSHOUSE</span>
         </div>
         <div class="restoration-ledger" aria-label="First bouquet payoff">
@@ -9887,6 +9933,17 @@
       return legalMoves().find(([a, b]) => targetMoveCreatesHarvest(a, b, flowerId)) || null;
     }
 
+    function seedFocusedGuideMove(targetIndex, target) {
+      if (!target || !isRestoredRoundTwoGuideActive()) {
+        return;
+      }
+      if (targetIndex === 0) {
+        writeTargetLegalMovePatch(0, 0, target.flowerId);
+      } else if (targetIndex === 1) {
+        writeTargetLegalMovePatch(4, 0, target.flowerId, 4);
+      }
+    }
+
     function seedRoundOneBlackCandleVineLesson(targetIndex, target) {
       if (currentRound !== 1 || targetIndex !== 1 || !hasMadeValidMove || roundComplete || !target) {
         return;
@@ -9912,7 +9969,11 @@
         return "";
       }
       seedRoundOneBlackCandleVineLesson(remainingTargetIndex, remainingTarget);
-      const move = findTargetLegalMove(remainingTarget.flowerId, remainingTargetIndex);
+      let move = findTargetLegalMove(remainingTarget.flowerId, remainingTargetIndex);
+      if (!move && isRestoredRoundTwoGuideActive()) {
+        seedFocusedGuideMove(remainingTargetIndex, remainingTarget);
+        move = findTargetLegalMove(remainingTarget.flowerId, remainingTargetIndex);
+      }
       if (!move) {
         if (plan.round === 1 && hasMadeValidMove) {
           const fallbackMove = legalMoves()[0];
@@ -9940,6 +10001,20 @@
         $("firstSwapCue").textContent = "Make 4 Bone Stars - Black Candle Vine burns a row.";
       }
       return ` <strong>${flowers[remainingTarget.flowerId][0]} remains.</strong> Swap the glowing tiles to feed ${remainingTarget.order}.`;
+    }
+
+    function primeFocusedFirstMoveHint(plan = activeRoundPlan()) {
+      if (!isRestoredNextOrderFocus() || hasMadeValidMove || roundComplete) {
+        return "";
+      }
+      const targetIndex = plan.targets.findIndex((target) => targetProgress(target) < target.needed);
+      const target = plan.targets[targetIndex];
+      const [a, b] = (target ? findTargetLegalMove(target.flowerId, targetIndex) : null) || legalMoves()[0] || [];
+      if (!a || !b) {
+        return "";
+      }
+      idleHintCells = new Set([`${a.x},${a.y}`, `${b.x},${b.y}`]);
+      return firstSwapCueText(a, b);
     }
 
     function hasLegalMoves() {
@@ -10221,21 +10296,26 @@
     }
 
     function isRestoredNextOrderFocus() {
-      return currentRound === 2 && roundOneRestored && !roundComplete;
+      return roundOneRestored && currentRound >= 2 && currentRound <= 3 && !roundComplete && !isBouquetFailed();
     }
 
     function isRestoredRoundTwoGuideActive() {
       return isRestoredNextOrderFocus()
+        && currentRound === 2
         && restoredRoundTwoGuideMoves < RESTORED_ROUND_TWO_GUIDE_LIMIT;
     }
 
     function render() {
       const roundOneActive = currentRound === 1;
+      const roundTwoUpgradeComplete = currentRound === 2 && roundComplete && roundOneRestored;
       document.body.classList.toggle("round-one-active", roundOneActive);
       document.body.classList.toggle("round-one-complete", roundOneActive && roundComplete);
       document.body.classList.toggle("restored-greenhouse-handoff", restoredGreenhouseHandoff && currentRound === 2 && !roundComplete);
       document.body.classList.toggle("restored-next-order-focus", isRestoredNextOrderFocus());
+      document.body.classList.toggle("round-two-upgrade-complete", roundTwoUpgradeComplete);
+      document.body.classList.toggle("round-three-focus-active", currentRound === 3 && isRestoredNextOrderFocus());
       const activePlan = activeRoundPlan();
+      document.body.classList.toggle("focused-slice-failed", activePlan.round <= 3 && isBouquetFailed(activePlan));
       document.body.classList.toggle("thorn-lesson-active", activePlan.round === 2 && Boolean(activePlan.thornGoal) && thornGoalProgress(activePlan) === 0 && !roundComplete);
       document.body.classList.toggle("round-two-followup-cue", isRestoredRoundTwoGuideActive() && hasMadeValidMove && idleHintCells.size === 2 && !roundComplete);
       document.body.classList.toggle("first-move-made", hasMadeValidMove);
@@ -10244,17 +10324,30 @@
       const roundOneFollowupCue = roundOneActive && !roundComplete && $("firstSwapCue").textContent.includes("Keep matching");
       document.body.classList.toggle("round-one-followup-cue", roundOneFollowupCue);
       document.body.classList.toggle("round-one-refused", roundOneActive && !roundComplete && $("firstSwapCue").classList.contains("swap-refused"));
-      $("roundOneRestoration").classList.toggle("restored", roundOneRestored);
-      $("restorationTitle").textContent = roundOneRestored
-        ? `Greenhouse Restored · ${coins.toLocaleString()} coins remain`
-        : "First Bouquet Sealed · +120 coin reward";
-      $("restorationState").textContent = roundOneRestored ? "RESTORED · MIDNIGHT BLOOM" : "WITHERED GLASSHOUSE";
-      $("restorationEarned").textContent = "+120";
-      $("restorationSpent").textContent = roundOneRestored ? "-100 spent" : "-100";
-      $("restorationNext").textContent = roundOneRestored ? "Unlocked" : "Next";
-      $("restorationCopy").textContent = roundOneRestored
-        ? "Next Order: Moonlit Wreath is ready. Match Nightshade and Amber Seed in the restored glass."
-        : "Spend 100 coins to relight the abandoned greenhouse.";
+      $("roundOneRestoration").classList.toggle("restored", roundOneRestored || roundTwoUpgradeComplete);
+      $("roundOneRestoration").classList.toggle("second-greenhouse-upgrade", roundTwoUpgradeComplete);
+      const roundTwoPlan = buildRoundPlan(2);
+      if (roundTwoUpgradeComplete) {
+        $("restorationTitle").textContent = `Moonlit Wreath Sealed · +${roundTwoPlan.reward.coins} coin reward`;
+        $("restorationState").textContent = "GREENHOUSE UPGRADE · NIGHTSHADE HOUSE";
+        $("restorationEarned").textContent = `+${roundTwoPlan.reward.coins}`;
+        $("restorationSpent").textContent = `+${roundTwoPlan.reward.greenhouse} XP`;
+        $("restorationNext").textContent = "Final";
+        $("restorationCopy").textContent = "Moonlit panes, bloodroot beds, and violet lanterns wake for the final compact.";
+        $("nextOrderBtn").textContent = "Next Order → Bloodroot Compact";
+      } else {
+        $("restorationTitle").textContent = roundOneRestored
+          ? `Greenhouse Restored · ${coins.toLocaleString()} coins remain`
+          : "First Bouquet Sealed · +120 coin reward";
+        $("restorationState").textContent = roundOneRestored ? "RESTORED · MIDNIGHT BLOOM" : "WITHERED GLASSHOUSE";
+        $("restorationEarned").textContent = "+120";
+        $("restorationSpent").textContent = roundOneRestored ? "-100 spent" : "-100";
+        $("restorationNext").textContent = roundOneRestored ? "Unlocked" : "Next";
+        $("restorationCopy").textContent = roundOneRestored
+          ? "Next Order: Moonlit Wreath is ready. Match Nightshade and Amber Seed in the restored glass."
+          : "Spend 100 coins to relight the abandoned greenhouse.";
+        $("nextOrderBtn").textContent = "Next Order →";
+      }
       restorationGreenhouseXpPreview();
       renderRestoredGreenhouseStatus();
       const boardEl = $("board");
@@ -10273,6 +10366,7 @@
           tile.type = "button";
           tile.dataset.x = x;
           tile.dataset.y = y;
+          tile.dataset.flowerId = value;
           const selectedClass = selected && selected.x === x && selected.y === y ? "sel" : "";
           const legalClass = selected && !sacrificeState.active && isLegalSwap(selected, { x, y }) ? "legal-target" : "";
           const sacrificeClass = sacrificeState.active && sacrificeState.choice !== null ? "sacrifice-target" : "";
@@ -10520,6 +10614,12 @@
       const pct = Math.min(100, (greenhouse.xp / greenhouse.next) * 100);
       $("restorationXpLevel").textContent = `Level ${greenhouse.level}`;
       $("restorationXpFill").style.setProperty("--greenhouse-xp-pct", `${pct}%`);
+      if (currentRound === 2 && roundComplete && roundOneRestored) {
+        preview.querySelector(".restoration-xp-topline span:first-child").textContent = "Greenhouse +150 XP";
+        $("restorationXpCopy").textContent = `Moonlit upgrade locked in: ${greenhouse.xp.toLocaleString()} / ${greenhouse.next.toLocaleString()} XP.`;
+        return;
+      }
+      preview.querySelector(".restoration-xp-topline span:first-child").textContent = "Greenhouse +180 XP";
       $("restorationXpCopy").textContent = roundOneRestored
         ? `Upgrade progress locked in: ${greenhouse.xp.toLocaleString()} / ${greenhouse.next.toLocaleString()} XP.`
         : `Bouquet reward banked: ${greenhouse.xp.toLocaleString()} / ${greenhouse.next.toLocaleString()} XP. Restore to see it in the greenhouse.`;
@@ -10533,11 +10633,13 @@
       }
       const pct = Math.min(100, (greenhouse.xp / greenhouse.next) * 100);
       fill.style.setProperty("--restored-greenhouse-xp-pct", `${pct}%`);
-      text.textContent = `Glass relit · Greenhouse ${greenhouse.level} · ${greenhouse.xp.toLocaleString()} / ${greenhouse.next.toLocaleString()} XP feeds Moonlit Wreath.`;
+      text.textContent = currentRound === 3
+        ? `Nightshade house awake · Greenhouse ${greenhouse.level} · ${greenhouse.xp.toLocaleString()} / ${greenhouse.next.toLocaleString()} XP feeds Bloodroot Compact.`
+        : `Glass relit · Greenhouse ${greenhouse.level} · ${greenhouse.xp.toLocaleString()} / ${greenhouse.next.toLocaleString()} XP feeds Moonlit Wreath.`;
     }
 
     function renderFirstSwapArrow(boardEl) {
-      if ((currentRound !== 1 && !isRestoredRoundTwoGuideActive()) || roundComplete || idleHintCells.size !== 2) {
+      if ((currentRound !== 1 && !isRestoredRoundTwoGuideActive() && !(currentRound === 3 && isRestoredNextOrderFocus() && !hasMadeValidMove)) || roundComplete || idleHintCells.size !== 2) {
         return;
       }
       const cells = [...idleHintCells].map((cell) => {
@@ -12164,14 +12266,15 @@
         return;
       }
       const reward = plan.reward;
-      const streakPayout = bouquetStreakPayout(reward.coins, bouquetStreak);
-      const streakRewardToken = bouquetStreak
+      const streakPayout = completionCoinPayout(plan);
+      const showStreakReward = !focusedSliceRound(plan) && bouquetStreak;
+      const streakRewardToken = showStreakReward
         ? `<span class="reward-token">Bouquet Streak ${bouquetStreak} · +${streakPayout.percent}% coins (+${streakPayout.bonus})</span>`
         : "";
-      const streakCopy = bouquetStreak
+      const streakCopy = showStreakReward
         ? ` Bouquet Streak ${bouquetStreak} adds +${streakPayout.bonus} bonus coins (${streakPayout.percent}%).`
         : "";
-      const nextTargetCopy = nextBouquetStreakTargetCopy();
+      const nextTargetCopy = focusedSliceRound(plan) ? "" : nextBouquetStreakTargetCopy();
       const flowerpediaEntry = latestFlowerpediaEntry();
       const flowerpediaCopy = flowerpediaEntry
         ? ` Flowerpedia records ${flowerpediaEntry.name}; ${flowerpediaEntry.nextGoal}`
@@ -12206,6 +12309,9 @@
     }
 
     function renderPostBouquetRewardChoice() {
+      if (activeRoundPlan().round <= 3) {
+        return "";
+      }
       if (!rewardChoiceState.pending && !rewardChoiceState.selected) {
         return "";
       }
@@ -12263,9 +12369,7 @@
       roundComplete = true;
       if (plan.round === 1) roundOneRestored = false;
       bouquetStreak += 1;
-      const streakPayout = plan.round === 1
-        ? { base: plan.reward.coins, percent: 0, bonus: 0, total: plan.reward.coins }
-        : bouquetStreakPayout(plan.reward.coins, bouquetStreak);
+      const streakPayout = completionCoinPayout(plan);
       coins += streakPayout.total;
       grantTycoonXp(plan.reward.greenhouse, plan.reward.apothecary, plan.reward.faction);
       addChestItem({
@@ -12277,15 +12381,38 @@
         flowerId: plan.reward.flowerId,
         tags: ["order", "reward"]
       });
-      rewardChoiceState = plan.round === 1 ? { pending: false, selected: "greenhouse" } : { pending: true, selected: "" };
+      rewardChoiceState = plan.round <= 3 ? { pending: false, selected: "greenhouse" } : { pending: true, selected: "" };
       const flowerpediaMessage = plan.round === 1 ? unlockFlowerpediaEntry(FLOWERPEDIA_FIRST_BOUQUET_ID) : "";
       const flowerpediaCopy = flowerpediaMessage ? ` ${flowerpediaMessage}` : "";
       const chapterRewardMessageText = maybeClaimChapterOneReward();
       const chapterRewardCopy = chapterRewardMessageText ? ` ${chapterRewardMessageText}` : "";
-      const completionMessage = `<strong>${plan.name} fulfilled.</strong> <strong>Bouquet Streak ${bouquetStreak}:</strong> +${streakPayout.total} coins (${plan.reward.coins} base + ${streakPayout.bonus} streak bonus at ${streakPayout.percent}%), +${plan.reward.greenhouse} Greenhouse XP, +${plan.reward.apothecary} Apothecary XP, +${plan.reward.faction} Sub Rosa Favor, and ${plan.reward.item} placed in Chest Storage.${nextBouquetStreakTargetCopy()}${flowerpediaCopy}${chapterRewardCopy} Choose a reward before Next Bouquet, or Greenhouse Cuttings will be taken by default.`;
+      const completionMessage = focusedSliceRound(plan)
+        ? focusedSliceCompletionMessage(plan, streakPayout, flowerpediaCopy, chapterRewardCopy)
+        : `<strong>${plan.name} fulfilled.</strong> <strong>Bouquet Streak ${bouquetStreak}:</strong> +${streakPayout.total} coins (${plan.reward.coins} base + ${streakPayout.bonus} streak bonus at ${streakPayout.percent}%), +${plan.reward.greenhouse} Greenhouse XP, +${plan.reward.apothecary} Apothecary XP, +${plan.reward.faction} Sub Rosa Favor, and ${plan.reward.item} placed in Chest Storage.${nextBouquetStreakTargetCopy()}${flowerpediaCopy}${chapterRewardCopy} Choose a reward before Next Bouquet, or Greenhouse Cuttings will be taken by default.`;
       ritualMessage = carryMessage ? `${carryMessage} ${completionMessage}` : completionMessage;
       playBloomSound("complete");
       return true;
+    }
+
+    function focusedSliceRound(plan = activeRoundPlan()) {
+      return plan.round <= 3;
+    }
+
+    function completionCoinPayout(plan = activeRoundPlan(), streak = bouquetStreak) {
+      if (focusedSliceRound(plan)) {
+        return { base: plan.reward.coins, percent: 0, bonus: 0, total: plan.reward.coins };
+      }
+      return bouquetStreakPayout(plan.reward.coins, streak);
+    }
+
+    function focusedSliceCompletionMessage(plan, payout, flowerpediaCopy = "", chapterRewardCopy = "") {
+      if (plan.round === 1) {
+        return `<strong>${plan.name} fulfilled.</strong> +${payout.total} coins. The greenhouse is ready to relight.${flowerpediaCopy}${chapterRewardCopy}`;
+      }
+      if (plan.round === 2) {
+        return `<strong>${plan.name} fulfilled.</strong> +${payout.total} coins. Moonlit glass climbs into a second greenhouse upgrade.`;
+      }
+      return `<strong>${plan.name} fulfilled.</strong> +${payout.total} coins. The three-order conservatory slice is sealed.`;
     }
 
     function restoreRoundOneGreenhouse() {
@@ -12527,6 +12654,7 @@
       const retryingFailedBouquet = isBouquetFailed();
       const nextRound = roundComplete ? currentRound + 1 : currentRound;
       const restoredGreenhouseNextOrder = currentRound === 1 && roundComplete && roundOneRestored && nextRound === 2;
+      const secondUpgradeNextOrder = currentRound === 2 && roundComplete && roundOneRestored && nextRound === 3;
       const plan = buildRoundPlan(nextRound);
       const defaultChoiceMessage = roundComplete ? applyDefaultRewardChoice() : "";
       clearIdleHint();
@@ -12565,18 +12693,24 @@
         ? `<strong>Retry Bouquet:</strong> Round ${plan.round}: ${plan.name} is restored. `
         : restoredGreenhouseNextOrder
           ? `<strong>Restored Greenhouse:</strong> Round ${plan.round}: ${plan.name} begins in the relit glass. `
+        : secondUpgradeNextOrder
+          ? `<strong>Final Order:</strong> Round ${plan.round}: ${plan.name} blooms under the moonlit greenhouse upgrade. `
         : `<strong>Round ${plan.round}: ${plan.name}</strong> begins. `;
       ritualMessage = `${introCopy}${goalCopy(plan)}${thornObjectiveHintCopy(plan)}${thornTeachingCopy(plan)}${patternDiscoveryCopy()}${boonCopy}${defaultChoiceMessage}`;
       resetCursedThorns(plan);
       build();
       startThornTeachingCue(plan);
+      const focusedFirstMoveCue = secondUpgradeNextOrder ? primeFocusedFirstMoveHint(plan) : "";
       if (restoredGreenhouseNextOrder) {
         startRestoredGreenhouseHandoff();
       } else {
         restoredGreenhouseHandoff = false;
       }
       render();
-      if (restoredGreenhouseNextOrder) {
+      if (focusedFirstMoveCue) {
+        $("firstSwapCue").textContent = focusedFirstMoveCue;
+      }
+      if (restoredGreenhouseNextOrder || secondUpgradeNextOrder) {
         focusRestoredNextOrderViewport();
       }
       scheduleIdleHint();
@@ -12601,7 +12735,7 @@
       }
       cancelActiveBooster(false);
       notePlayerInteraction();
-      if (maybeCompleteRound()) {
+      if (maybeCompleteRound() && activeRoundPlan().round > 3) {
         ritualMessage += " <strong>Choose a reward, or press Next Bouquet for Greenhouse Cuttings.</strong>";
       }
       render();
@@ -13965,6 +14099,9 @@
         faction.title = typeof state.faction?.title === "string" ? state.faction.title : (faction.level >= 5 ? "Favored" : "Trusted");
         boosters = validBoosterState(state.boosters, boosters);
         rewardChoiceState = validRewardChoiceState(state.rewardChoiceState);
+        if (currentRound <= 3 && roundComplete) {
+          rewardChoiceState = { pending: false, selected: "greenhouse" };
+        }
         bouquetStreak = validBouquetStreak(state.bouquetStreak);
         flowerpediaUnlocked = validFlowerpediaUnlocks(state.flowerpediaUnlocked);
         chapterRewardsClaimed = validChapterRewardsClaimed(state.chapterRewardsClaimed);

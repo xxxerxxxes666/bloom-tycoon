@@ -1,5 +1,23 @@
 # Codex Build Notes
 
+## 2026-07-13 Focused three-order greenhouse payoff
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible milestone: Round 2 completion no longer drops into the legacy reward-choice ceremony. Moonlit Wreath now pays one clear `+150 coin reward`, shows a distinct second-stage greenhouse upgrade ceremony using the existing greenhouse art plus repo-local moon/vine/lantern overlays, persists through reload, and offers one `Next Order -> Bloodroot Compact` action. Round 3 opens as a focused final-order Bloodroot Compact board with an immediate glowing-pair cue, hidden reward-choice/round ceremony clutter, and the board still first.
+- Live Vercel pre-edit inspection: `https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html` loaded in agent-browser with 64 tiles, 0 broken images, no framework overlay, and meaningful board-first content. No redeploy was performed in this local pass.
+- Local browser verification: static server `127.0.0.1:41042`; agent-browser verified page load, `HAS_CONTENT`, 64 tiles, and 0 broken images. Playwright/Chromium used `NODE_PATH=/opt/data/home/.npm/_npx/420ff84f11983ee5/node_modules`.
+- Desktop 1440x1000: fresh load had 64 tiles, 8 visible rows, 0 overflow, 0 broken images, and no browser errors. Real clicks completed Round 1, Restore, save/reload, Next Order, Round 2 Cursed Thorn cue, Round 2 follow-up cue, then 3 unguided Round 2 swaps to completion. The new upgrade showed `Moonlit Wreath Sealed · +150 coin reward`, `GREENHOUSE UPGRADE · NIGHTSHADE HOUSE`, no reward choice, and no round ceremony. Reload preserved the upgrade; `Next Order -> Bloodroot Compact` reached focused Round 3 with 64 tiles, 8 rows, 0 overflow, no reward choice/ceremony, and a real first Bloodroot swap preserved 64 tiles.
+- Mobile 390x844: fresh load had 64 tiles, 8 visible rows, 0 overflow, and 0 broken images. The same Round 1 restore/reload, Round 2 guided handoff, and 4 unguided Round 2 swaps completed the bouquet. The second greenhouse upgrade, upgrade reload, and focused Round 3 handoff passed with 64 tiles, 8 visible rows, no horizontal overflow, no broken images, no reward choice/ceremony, and no console/page/request errors.
+- Retry/save path: forced failed focused Round 2 mobile save showed pinned `Retry Bouquet` in the viewport, 64 tiles, 0 broken images, and no overflow. Clicking Retry restored Round 2 to `Moves 17`, 64 tiles, no overflow, and no browser errors.
+- Verification commands: `python3 scripts/verify_project.py`, `/opt/data/tools/godot/Godot_v4.2.2-stable_linux.x86_64 --headless --path . --script res://tests/godot_smoke_test.gd`, `git diff --check`, and `node --check /tmp/bloom-playable-inline.js` passed.
+- Browser console/runtime status: final desktop, mobile, retry, and agent-browser runs had 0 console messages, 0 page errors, and 0 failed browser requests.
+- GitHub Pages preview status: not checked in this local pass.
+- Known issues: Round 3 completion still exists beyond the verified first playable Bloodroot swap; this pass focused on the requested Round 2 payoff and focused Round 3 handoff. Existing review hooks for L/T/cross and Supreme Bloom remain keyboard/button-accessible after Round 1 for audit, but no new visible debug controls were added.
+- How to trigger and verify L/T/cross matches without console: after Round 1, click `Shape Bloom` repeatedly or press `M`; demos cycle through line5, line4, `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom`.
+- How to trigger and verify Supreme Bloom without console: focus the playable after Round 1 and press `B`; the `SUPREME BLOOM!` overlay should appear and return the board to 64 tiles.
+- Security/secret-scan status: changed-file credential scan passed for `docs/codex_build_notes.md`, `playable/midnight_bloom_prototype.html`, and `scripts/verify_html_match_shapes.py`; no private-key headers, known provider token prefixes, JWTs, or suspicious credential assignments found.
+- Foreman visual QA: the first independent ceremony screenshot exposed legacy Bouquet Streak / Next Streak badges above the new one-reward payoff. They are now explicitly hidden during the focused Round 2 upgrade ceremony, with verifier coverage, so the screen presents one coin reward, one greenhouse transformation, and one next action.
+
 ## 2026-07-13 Cascade-juice game-feel pass
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
