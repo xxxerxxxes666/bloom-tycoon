@@ -1,5 +1,22 @@
 # Codex Build Notes
 
+## 2026-07-13 Swap/cascade game-feel pass
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible milestone: ordinary swaps now have distinct accepted-swap glow, invalid-swap refusal, quieter landing sparks, a subtle procedural settle tick, bouquet-seal pulse, and next-order readiness pulse. Cascade timing was tightened so control returns promptly while chained drops remain visibly/audibly legible. Reduced-motion keeps the new motion effects disabled, and audio-denied browsers still play silently.
+- Scope constraints preserved: no Round 58/further rounds, no new currencies/boosters/blockers/accounts/backend/analytics/ads/IAP/trackers/SDKs/secrets/cron/permissions, no copied Diablo assets, no save-shape changes, no new visible debug controls, and the first-three-order heartbeat remains match flowers -> bouquet -> coins -> greenhouse restoration -> next order.
+- Browser verification: local static server `http://127.0.0.1:4173/playable/midnight_bloom_prototype.html`; Chromium/Playwright real mouse/coordinate clicks on desktop 1280x720 and exact 390x844 mobile. Fresh load, invalid swap, two authored Round 1 legal swaps, bouquet completion, Restore Greenhouse, Next Order, save/reload into Round 2, one ordinary unguided Round 2 legal swap, forced visible failure, and real `Retry Bouquet` were exercised.
+- Interaction evidence: desktop observed 2 invalid-swap tiles, 2 valid-swap tiles, settle sparks capped at 3, bouquet seal pulse, next-order pulse, 64 tiles after settlement, 8 complete rows in active states, no overflow, and no broken images; settlement timings were about 962ms, 1317ms, and 988ms for the checked legal swaps. Mobile observed the same core states plus a 2-cascade unguided Round 2 chain with 6 capped settle sparks; final retry restored 17 moves, 64 tiles, 8 complete rows, no overflow, and transient board particles back to 0.
+- Visual screenshots inspected: `/tmp/bloom_gamefeel2_desktop1280_complete_pulse.png`, `/tmp/bloom_gamefeel2_desktop1280_restored.png`, `/tmp/bloom_gamefeel2_mobile390_round2_unguided.png`, and `/tmp/bloom_gamefeel2_mobile390_retry_restored.png`. First mobile cascade draft was too cluttered, so landing sparks were reduced to 3-4 per wave before the final pass.
+- Browser console/network status: final desktop and mobile runs reported 0 console messages, 0 page errors, and 0 failed requests.
+- Verification commands: `python3 scripts/verify_project.py`, `git diff --check`, inline playable JavaScript syntax check with `new Function(...)`, and the two-viewport Playwright flow passed.
+- Vercel deployment URL/identifier checked: not redeployed or checked in this local pass before push.
+- GitHub Pages preview status: not checked in this local pass before push.
+- Known issues: desktop deterministic route did not produce a multi-cascade chain in the final run; exact 390x844 mobile did produce and verify a 2-cascade chain. The failed Round 2 state was forced after a real unguided Round 2 swap to reach `Retry Bouquet` quickly; the retry click itself was real.
+- How to trigger and verify L/T/cross matches without console: after the focused opening, use the existing `Shape Bloom` review path where visible or focus the playable and press `M`; demos cycle through `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom` while preserving 64 tiles.
+- How to trigger and verify Supreme Bloom without console: focus the playable and press `B`; the existing hook should show `SUPREME BLOOM!` and return to a 64-tile board.
+- Security/secret-scan status: changed files were scanned for private-key headers, `.env` additions, known provider token prefixes, JWTs, suspicious credential assignments, trackers/analytics SDKs, broad permissions, machine-local paths, and cron-like additions. No findings.
+
 ## 2026-07-13 First-three-order bouquet payoff trophy
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
