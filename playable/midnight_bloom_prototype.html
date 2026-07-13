@@ -5425,6 +5425,85 @@
 
     }
 
+    @media (min-width: 761px) and (max-height: 820px) {
+      body.round-two-upgrade-complete .game,
+      body.round-three-final-complete .game {
+        width: min(1080px, calc(100vw - 16px));
+        min-height: calc(100vh - 16px);
+        grid-template-columns: 1fr;
+        align-content: start;
+        padding: 8px;
+      }
+
+      body.round-two-upgrade-complete .main,
+      body.round-three-final-complete .main {
+        grid-column: 1;
+        padding: 0 8px;
+      }
+
+      body.round-two-upgrade-complete .sigil,
+      body.round-three-final-complete .sigil {
+        margin-top: 0;
+        font-size: 11px;
+        letter-spacing: 8px;
+      }
+
+      body.round-two-upgrade-complete .title,
+      body.round-three-final-complete .title {
+        margin: 6px 0 8px;
+        font-size: 52px;
+      }
+
+      body.round-two-upgrade-complete .objective,
+      body.round-three-final-complete .objective {
+        width: min(900px, 100%);
+        margin: 0 auto;
+        padding: 7px 12px;
+        gap: 6px;
+        font-size: 19px;
+        line-height: 1.12;
+      }
+
+      body.round-two-upgrade-complete .objective-icon,
+      body.round-three-final-complete .objective-icon {
+        width: 28px;
+        height: 28px;
+      }
+
+      body.round-two-upgrade-complete .objective-target .thorn-goal-glyph {
+        width: 24px;
+        height: 24px;
+        font-size: 15px;
+      }
+
+      body.round-two-upgrade-complete .round-one-restoration,
+      body.round-three-final-complete .round-one-restoration {
+        margin-top: 8px;
+        padding: 12px;
+        gap: 8px;
+      }
+
+      body.round-two-upgrade-complete .restoration-title,
+      body.round-three-final-complete .restoration-title {
+        font-size: 20px;
+      }
+
+      body.round-two-upgrade-complete .bouquet-trophy,
+      body.round-three-final-complete .bouquet-trophy {
+        min-height: 220px;
+      }
+
+      body.round-two-upgrade-complete .restoration-scene,
+      body.round-three-final-complete .restoration-scene {
+        height: 220px;
+      }
+
+      body.round-two-upgrade-complete .restoration-xp-preview {
+        padding: 6px 8px;
+        gap: 4px;
+      }
+    }
+
     body.round-one-active .apothecary-card,
     body.round-one-active .greenhouse-card,
     body.round-one-active .active-orders-card,
@@ -5622,7 +5701,32 @@
         0 0 16px #000;
       animation: petal-pop 820ms cubic-bezier(.12,.82,.18,1) forwards;
     }
-    body.round-one-active.round-one-complete .round-one-restoration { position:relative; overflow:hidden; display:grid; width:min(720px,calc(100% - 16px)); margin:12px auto 0; padding:16px; gap:12px; border:1px solid #b98b42; background:radial-gradient(circle at 50% 0,#3a2410,#100d0d 70%); box-shadow:0 0 36px #b8793045,inset 0 0 28px #000,0 18px 45px #000b; text-align:center; }
+    body.round-one-active.round-one-complete .round-one-restoration { position:relative; overflow:hidden; display:grid; width:min(800px,calc(100% - 16px)); margin:12px auto 0; padding:16px; gap:12px; border:1px solid #b98b42; background:radial-gradient(circle at 50% 0,#3a2410,#100d0d 70%); box-shadow:0 0 36px #b8793045,inset 0 0 28px #000,0 18px 45px #000b; text-align:center; }
+    .payoff-stage { display:grid; grid-template-columns:minmax(210px,.42fr) minmax(0,1fr); gap:10px; align-items:stretch; }
+    .bouquet-trophy { min-height:clamp(184px,21vw,270px); position:relative; overflow:hidden; display:grid; grid-template-rows:auto 1fr auto; align-items:center; padding:11px 10px 10px; border:1px solid #60482d; background:radial-gradient(circle at 50% 18%,#3a2013 0,#120807 48%,#030202 100%); box-shadow:inset 0 0 28px #000,0 0 18px #000; isolation:isolate; }
+    .bouquet-trophy::before { content:""; position:absolute; inset:8px; z-index:0; border:1px solid #d7b16d33; clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%); box-shadow:inset 0 0 24px #000; pointer-events:none; }
+    .bouquet-trophy::after { content:""; position:absolute; inset:0; z-index:0; opacity:.74; background:radial-gradient(circle at 50% 45%,var(--bouquet-aura,#d7b16d55) 0,#0000 48%),repeating-conic-gradient(from 16deg,#0000 0 16deg,var(--bouquet-ray,#d7b16d22) 17deg 18deg,#0000 19deg 34deg); pointer-events:none; }
+    .bouquet-trophy[data-bouquet-payoff-state="restored"] { border-color:#8aa657; background:radial-gradient(circle at 50% 18%,#253815 0,#0b1008 52%,#030202 100%); }
+    .bouquet-trophy[data-bouquet-payoff-state="moonlit"] { border-color:#7d49b2; background:radial-gradient(circle at 50% 18%,#24133a 0,#0b0711 52%,#030202 100%); }
+    .bouquet-trophy[data-bouquet-payoff-state="bloodroot"] { border-color:#b51d2f; background:radial-gradient(circle at 50% 18%,#3b0d12 0,#0c0506 54%,#030202 100%); }
+    .bouquet-trophy-kicker,.bouquet-trophy-name,.bouquet-trophy-copy,.bouquet-trophy-bonus,.bouquet-stems { position:relative; z-index:1; }
+    .bouquet-trophy-kicker { color:#d7b16d; font:900 10px/1 system-ui,sans-serif; letter-spacing:.14em; text-transform:uppercase; }
+    .bouquet-trophy-name { display:block; color:#fff2bf; font:900 21px/1.05 Georgia,serif; text-shadow:0 2px 4px #000,0 0 14px var(--bouquet-aura,#d7b16d55); }
+    .bouquet-trophy-copy { display:block; color:#c9b48f; font:700 12px/1.25 system-ui,sans-serif; max-width:25ch; margin:2px auto 0; }
+    .bouquet-stems { min-height:92px; display:flex; align-items:center; justify-content:center; gap:0; margin:3px auto; }
+    .bouquet-stem { width:58px; height:86px; margin:0 -9px; position:relative; display:grid; place-items:start center; transform:rotate(var(--stem-rot,0deg)) translateY(var(--stem-y,0)); filter:drop-shadow(0 5px 8px #000); }
+    .bouquet-stem::before { content:""; position:absolute; left:50%; top:42px; width:2px; height:50px; background:linear-gradient(#d7b16d,#4f762c 58%,#25170d); transform:translateX(-50%); box-shadow:0 0 8px #000; }
+    .bouquet-stem .icon-wrap { width:54px; height:54px; }
+    .bouquet-stem img { width:54px; height:54px; object-fit:contain; filter:drop-shadow(0 0 8px #000) drop-shadow(0 0 8px currentColor); }
+    .bouquet-stem-count { position:absolute; right:0; top:37px; z-index:2; min-width:22px; padding:2px 4px; border:1px solid #d7b16d; background:#080504; color:#f4dfaa; font:900 10px/1 system-ui,sans-serif; box-shadow:0 0 9px #000; }
+    .bouquet-ribbon { position:absolute; left:50%; bottom:17px; z-index:2; width:96px; height:24px; transform:translateX(-50%); background:linear-gradient(90deg,#4c1a16,#b8823f,#4c1a16); border:1px solid #d7b16d; box-shadow:inset 0 0 9px #000,0 0 12px #000; }
+    .bouquet-ribbon::before,.bouquet-ribbon::after { content:""; position:absolute; top:4px; width:28px; height:18px; background:linear-gradient(90deg,#37100f,#8f5d2b); border:1px solid #6f4a29; z-index:-1; }
+    .bouquet-ribbon::before { left:-23px; transform:skewY(18deg); }
+    .bouquet-ribbon::after { right:-23px; transform:skewY(-18deg); }
+    .bouquet-trophy-bonus { display:flex; justify-content:center; gap:5px; flex-wrap:wrap; }
+    .bouquet-payoff-token { max-width:100%; padding:4px 7px; border:1px solid #5a452a; background:#080606d9; color:#ead9a9; font:900 11px/1 system-ui,sans-serif; text-transform:uppercase; letter-spacing:.055em; overflow-wrap:anywhere; }
+    .round-one-restoration.restoration-awakening .bouquet-trophy { animation:bouquet-trophy-awaken 1180ms ease-out both; }
+    .round-one-restoration.restoration-awakening .bouquet-stem { animation:bouquet-stem-settle 980ms cubic-bezier(.12,.82,.18,1) both; animation-delay:var(--stem-delay,0ms); }
     .restoration-scene { height:clamp(184px,21vw,270px); border:1px solid #56432f; position:relative; overflow:hidden; background:#030302; isolation:isolate; box-shadow:inset 0 0 34px #000,0 0 18px #000; transition:border-color 700ms ease,box-shadow 700ms ease; }
     .restoration-scene::before { content:""; position:absolute; inset:0; z-index:3; pointer-events:none; background:radial-gradient(circle at 50% 42%,#0000 0 48%,#0008 88%),linear-gradient(180deg,#0007,#0000 28%,#0003 76%,#000a); box-shadow:inset 0 0 34px #000; }
     .restoration-scene::after { content:""; position:absolute; inset:-35% -20%; pointer-events:none; opacity:0; transform:translateX(-65%) rotate(-12deg); background:linear-gradient(90deg,transparent 30%,#fff4b8dd 50%,transparent 70%); z-index:5; }
@@ -5669,7 +5773,7 @@
     .next-order-btn { display:none; background:linear-gradient(#56733a,#263b25); }
     .round-one-restoration.restored .restore-btn { display:none; }
     .round-one-restoration.restored .next-order-btn { display:block; }
-    body.round-two-upgrade-complete .round-one-restoration { position:relative; overflow:hidden; display:grid; width:min(760px,calc(100% - 16px)); margin:12px auto 0; padding:16px; gap:12px; border:1px solid #8a4f5e; background:radial-gradient(circle at 50% 0,#2c0f20,#0d0a0d 72%); box-shadow:0 0 40px #7d49b245,inset 0 0 30px #000,0 18px 45px #000b; text-align:center; }
+    body.round-two-upgrade-complete .round-one-restoration { position:relative; overflow:hidden; display:grid; width:min(820px,calc(100% - 16px)); margin:12px auto 0; padding:16px; gap:12px; border:1px solid #8a4f5e; background:radial-gradient(circle at 50% 0,#2c0f20,#0d0a0d 72%); box-shadow:0 0 40px #7d49b245,inset 0 0 30px #000,0 18px 45px #000b; text-align:center; }
     body.focused-slice-failed .bottom { display:none!important; }
     body.focused-slice-failed #shuffleBtn { display:none!important; }
     body.focused-slice-failed #renewBtn.visible { position:fixed; left:50%; bottom:14px; z-index:1000; display:block!important; min-width:190px; transform:translateX(-50%); box-shadow:0 0 22px #9b1d2266,0 10px 24px #000c; }
@@ -5679,7 +5783,7 @@
     .round-one-restoration.second-greenhouse-upgrade .restoration-step.spend { border-color:#7d49b2; color:#e7d6ff; box-shadow:0 0 14px #7d49b238; }
     .round-one-restoration.second-greenhouse-upgrade .restoration-step.next { border-color:#9b1d22; color:#ffd4d7; box-shadow:0 0 14px #9b1d2238; }
     .round-one-restoration.second-greenhouse-upgrade .next-order-btn { display:block; border-color:#9b1d22; background:linear-gradient(#7d2431,#35131c); }
-    body.round-three-final-complete .round-one-restoration { position:relative; overflow:hidden; display:grid; width:min(790px,calc(100% - 16px)); margin:12px auto 0; padding:16px; gap:12px; border:1px solid #b51d2f; background:radial-gradient(circle at 50% 0,#3a1014,#0b0707 72%); box-shadow:0 0 44px #9b1d2260,inset 0 0 32px #000,0 18px 45px #000c; text-align:center; }
+    body.round-three-final-complete .round-one-restoration { position:relative; overflow:hidden; display:grid; width:min(840px,calc(100% - 16px)); margin:12px auto 0; padding:16px; gap:12px; border:1px solid #b51d2f; background:radial-gradient(circle at 50% 0,#3a1014,#0b0707 72%); box-shadow:0 0 44px #9b1d2260,inset 0 0 32px #000,0 18px 45px #000c; text-align:center; }
     .round-one-restoration.third-greenhouse-finale .restoration-scene { border-color:#b51d2f; box-shadow:inset 0 0 34px #9b1d2266,0 0 34px #d7b16d42; }
     .round-one-restoration.third-greenhouse-finale .restoration-scene::before { background:radial-gradient(circle at 50% 34%,#b51d2f52 0 16%,#0000 40%),radial-gradient(circle at 50% 42%,#0000 0 48%,#0009 88%),linear-gradient(180deg,#0008,#3a090f66 34%,#0005 76%,#000b); }
     .round-one-restoration.third-greenhouse-finale .greenhouse-art-restored { filter:brightness(1.07) saturate(1.2) contrast(1.06); }
@@ -5693,10 +5797,30 @@
       text-shadow:0 0 12px #9b1d22;
       animation:cue-refused 420ms ease-out both;
     }
+    @media (max-width:760px) {
+      .payoff-stage { grid-template-columns:1fr; }
+      .bouquet-trophy { min-height:168px; }
+      .bouquet-stems { min-height:78px; }
+      .bouquet-stem { width:50px; height:72px; margin:0 -8px; }
+      .bouquet-stem .icon-wrap,.bouquet-stem img { width:48px; height:48px; }
+      .bouquet-stem::before { top:38px; height:42px; }
+      .bouquet-trophy-name { font-size:19px; }
+      .bouquet-trophy-copy { max-width:30ch; }
+    }
     @keyframes greenhouse-awakening {
       0% { opacity:0; transform:translateX(-65%) rotate(-12deg); }
       35% { opacity:.9; }
       100% { opacity:0; transform:translateX(65%) rotate(-12deg); }
+    }
+    @keyframes bouquet-trophy-awaken {
+      0% { filter:brightness(.86); transform:scale(.985); }
+      34% { filter:brightness(1.24) saturate(1.22); transform:scale(1.012); }
+      100% { filter:brightness(1); transform:scale(1); }
+    }
+    @keyframes bouquet-stem-settle {
+      0% { opacity:.2; transform:rotate(var(--stem-rot,0deg)) translateY(18px) scale(.82); }
+      48% { opacity:1; transform:rotate(var(--stem-rot,0deg)) translateY(-3px) scale(1.08); }
+      100% { opacity:1; transform:rotate(var(--stem-rot,0deg)) translateY(var(--stem-y,0)) scale(1); }
     }
     @keyframes restoration-panel-awaken {
       0% { box-shadow:0 0 28px #b8793035,inset 0 0 28px #000,0 18px 45px #000b; }
@@ -6276,21 +6400,24 @@
           <span style="--coin-delay:410ms;--coin-rise-x:82px;--coin-mid-x:104px;--coin-end-x:124px;"></span>
         </div>
         <div class="restoration-title" id="restorationTitle">First Bouquet Sealed · +120 coin reward</div>
-        <div class="restoration-scene" aria-label="Greenhouse restoration before and after">
-          <img class="greenhouse-art greenhouse-art-withered" src="../assets/greenhouse/first_greenhouse_withered.jpg" width="1672" height="941" alt="" decoding="async" loading="eager">
-          <img class="greenhouse-art greenhouse-art-restored" src="../assets/greenhouse/first_greenhouse_restored.jpg" width="1672" height="941" alt="" decoding="async" loading="eager">
-          <span class="greenhouse-light" aria-hidden="true"></span>
-          <span class="restoration-flare" aria-hidden="true"></span>
-          <span class="restoration-spark-field" aria-hidden="true">
-            <span style="--spark-x:21%;--spark-y:67%;--spark-delay:40ms;--spark-drift:-18px;--spark-size:3px;"></span>
-            <span style="--spark-x:33%;--spark-y:53%;--spark-delay:120ms;--spark-drift:14px;--spark-size:4px;"></span>
-            <span style="--spark-x:44%;--spark-y:63%;--spark-delay:0ms;--spark-drift:-9px;--spark-size:5px;"></span>
-            <span style="--spark-x:52%;--spark-y:44%;--spark-delay:180ms;--spark-drift:20px;--spark-size:4px;"></span>
-            <span style="--spark-x:61%;--spark-y:60%;--spark-delay:80ms;--spark-drift:-12px;--spark-size:3px;"></span>
-            <span style="--spark-x:74%;--spark-y:56%;--spark-delay:220ms;--spark-drift:16px;--spark-size:5px;"></span>
-            <span style="--spark-x:83%;--spark-y:70%;--spark-delay:150ms;--spark-drift:-20px;--spark-size:3px;"></span>
-          </span>
-          <span class="restoration-state" id="restorationState">WITHERED GLASSHOUSE</span>
+        <div class="payoff-stage">
+          <div class="bouquet-trophy" id="bouquetTrophy" data-bouquet-payoff-state="sealed" aria-label="Sealed bouquet payoff trophy"></div>
+          <div class="restoration-scene" aria-label="Greenhouse restoration before and after">
+            <img class="greenhouse-art greenhouse-art-withered" src="../assets/greenhouse/first_greenhouse_withered.jpg" width="1672" height="941" alt="" decoding="async" loading="eager">
+            <img class="greenhouse-art greenhouse-art-restored" src="../assets/greenhouse/first_greenhouse_restored.jpg" width="1672" height="941" alt="" decoding="async" loading="eager">
+            <span class="greenhouse-light" aria-hidden="true"></span>
+            <span class="restoration-flare" aria-hidden="true"></span>
+            <span class="restoration-spark-field" aria-hidden="true">
+              <span style="--spark-x:21%;--spark-y:67%;--spark-delay:40ms;--spark-drift:-18px;--spark-size:3px;"></span>
+              <span style="--spark-x:33%;--spark-y:53%;--spark-delay:120ms;--spark-drift:14px;--spark-size:4px;"></span>
+              <span style="--spark-x:44%;--spark-y:63%;--spark-delay:0ms;--spark-drift:-9px;--spark-size:5px;"></span>
+              <span style="--spark-x:52%;--spark-y:44%;--spark-delay:180ms;--spark-drift:20px;--spark-size:4px;"></span>
+              <span style="--spark-x:61%;--spark-y:60%;--spark-delay:80ms;--spark-drift:-12px;--spark-size:3px;"></span>
+              <span style="--spark-x:74%;--spark-y:56%;--spark-delay:220ms;--spark-drift:16px;--spark-size:5px;"></span>
+              <span style="--spark-x:83%;--spark-y:70%;--spark-delay:150ms;--spark-drift:-20px;--spark-size:3px;"></span>
+            </span>
+            <span class="restoration-state" id="restorationState">WITHERED GLASSHOUSE</span>
+          </div>
         </div>
         <div class="restoration-ledger" aria-label="First bouquet payoff">
           <span class="restoration-step"><b id="restorationEarned">+120</b> <span id="restorationEarnedLabel">Bouquet coins</span></span>
@@ -12048,6 +12175,15 @@
           : "Spend 100 coins to relight the abandoned greenhouse.";
         $("nextOrderBtn").textContent = "Next Order →";
       }
+      const payoffPlan = roundThreeFinalComplete ? roundThreePlan : roundTwoUpgradeComplete ? roundTwoPlan : buildRoundPlan(1);
+      const bouquetPayoffState = roundThreeFinalComplete
+        ? "bloodroot"
+        : roundTwoUpgradeComplete
+          ? "moonlit"
+          : roundOneRestored
+            ? "restored"
+            : "sealed";
+      renderBouquetTrophy(payoffPlan, bouquetPayoffState);
       restorationGreenhouseXpPreview();
       renderRestoredGreenhouseStatus();
       const boardEl = $("board");
@@ -14133,6 +14269,48 @@
         return `<strong>${plan.name} fulfilled.</strong> +${payout.total} coins. Moonlit glass climbs into a second greenhouse upgrade.`;
       }
       return `<strong>${plan.name} fulfilled.</strong> +${payout.total} coins. The three-order conservatory slice is sealed.`;
+    }
+
+    function renderBouquetTrophy(plan = activeRoundPlan(), payoffState = "sealed") {
+      const trophy = $("bouquetTrophy");
+      if (!trophy) return;
+      const rewardFlower = flowers[plan.reward.flowerId] || flowers[0];
+      const accent = rewardFlower[4] || "#d7b16d";
+      const stemAngles = [-17, -7, 7, 17];
+      const stemOffsets = [2, -4, -2, 3];
+      trophy.dataset.bouquetPayoffState = payoffState;
+      trophy.style.setProperty("--bouquet-aura", `${accent}55`);
+      trophy.style.setProperty("--bouquet-ray", `${accent}2c`);
+      const stemMarkup = plan.targets.map((target, index) => {
+        const flower = flowers[target.flowerId] || flowers[0];
+        const angle = stemAngles[index % stemAngles.length];
+        const y = stemOffsets[index % stemOffsets.length];
+        return `
+          <span class="bouquet-stem" style="--stem-rot:${angle}deg;--stem-y:${y}px;--stem-delay:${index * 80}ms;">
+            ${iconMarkup(target.flowerId, "bouquet-stem-icon", flower[0], "bouquet-stem-wrap")}
+            <span class="bouquet-stem-count">x${target.needed}</span>
+          </span>
+        `;
+      }).join("");
+      const copy = plan.round === 1
+        ? payoffState === "restored"
+          ? "Coins spent; the sealed bouquet wakes repaired glass."
+          : "Velvet Funeral and Saint's Offering tied for the greenhouse."
+        : plan.round === 2
+          ? "Nightshade, amber, rose, and broken thorns raise the night house."
+          : "Bloodroot and Sol Rot seal the conservatory run.";
+      trophy.innerHTML = `
+        <span class="bouquet-trophy-kicker">Sealed Order</span>
+        <span>
+          <span class="bouquet-trophy-name">${plan.name}</span>
+          <span class="bouquet-trophy-copy">${copy}</span>
+        </span>
+        <span class="bouquet-stems" aria-hidden="true">
+          ${stemMarkup}
+          <span class="bouquet-ribbon"></span>
+        </span>
+      `;
+      applyImageFallbacks(trophy);
     }
 
     function restoreRoundOneGreenhouse() {
