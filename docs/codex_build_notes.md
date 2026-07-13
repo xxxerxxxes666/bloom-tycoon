@@ -193,7 +193,15 @@
 - How to trigger and verify L/T/cross matches without console: after Round 1, click `Shape Bloom` repeatedly or press `M`; demos cycle through line5, line4, `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom`.
 - How to trigger and verify Supreme Bloom without console: focus the playable after Round 1 and press `B`; the `SUPREME BLOOM!` overlay should appear and return the board to 64 tiles.
 - Security/secret-scan status: changed-file credential scan passed for `docs/codex_build_notes.md`, `playable/midnight_bloom_prototype.html`, and `scripts/verify_html_match_shapes.py`. No secrets, trackers, analytics, backend, accounts, ads, IAP, `.env`, broad permissions, or cron jobs added.
+## 2026-07-12 Faster greenhouse artwork delivery
 
+- Weakness selected: Hermes's bespoke withered/restored greenhouse pair materially improved the first restoration, but the two opaque PNGs required about 5.4 MB before the player's first payoff on mobile.
+- Files changed: `assets/greenhouse/first_greenhouse_withered.jpg`, `assets/greenhouse/first_greenhouse_restored.jpg`, `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible change: the playable now loads visually matched JPEG delivery copies totaling about 1.35 MB, roughly 75% smaller, while preserving the original PNG masters untouched. The restoration crossfade, dimensions, save state, coin payoff, and Next Order flow are unchanged.
+- Verification: `python3 scripts/verify_project.py` passed, including the JPEG source hooks; `git diff --check` passed. Desktop 1440x1000 and mobile 390x844 both kept 64 tiles, 8 rows, 0 visible active-play controls, 0 broken images, 0 overflow, and 0 console/page/request errors.
+- Exact browser check: both 1672x941 JPEGs loaded in each viewport; the withered state showed opacity 1/0, Restore crossfaded to 0/1, the state changed to `RESTORED · MIDNIGHT BLOOM`, and Next Order became the sole action. Mobile kept the full board at 199px-577px before completion.
+- Merge follow-up: after reconciling eleven newer Hermes gameplay commits, desktop Round 2 exposed a redundant stage badge colliding with the tutorial copy below the board. Focused play now hides that duplicate badge; the stage remains labeled in the large greenhouse hero and compact status strip.
+- Security: changed-file credential-shaped scan returned no findings. No dependencies, services, trackers, analytics, accounts, backend, credentials, permissions, or save-schema changes added.
 ## 2026-07-13 Bespoke first greenhouse artwork
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `docs/codex_build_notes.md`, `assets/greenhouse/first_greenhouse_withered.png`, and `assets/greenhouse/first_greenhouse_restored.png`.

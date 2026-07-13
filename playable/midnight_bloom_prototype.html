@@ -4667,6 +4667,11 @@
       z-index: 2;
     }
 
+    body.round-one-active .active-greenhouse-badge,
+    body.restored-next-order-focus .active-greenhouse-badge {
+      display: none;
+    }
+
     body.round-one-active .active-greenhouse-stage,
     body.restored-next-order-focus .active-greenhouse-stage {
       display: block;
@@ -4707,7 +4712,7 @@
         radial-gradient(ellipse at 50% 30%, #00000010 0 30%, #0000007a 68%, #000 100%),
         linear-gradient(180deg, #00000020, #00000008 42%, #000000d2),
         radial-gradient(circle at 50% 48%, color-mix(in srgb, var(--stage-accent, #b9874d) 34%, #0000) 0, #0000 46%),
-        var(--active-greenhouse-image, url("../assets/greenhouse/first_greenhouse_withered.png")) center / cover no-repeat;
+        var(--active-greenhouse-image, url("../assets/greenhouse/first_greenhouse_withered.jpg")) center / cover no-repeat;
       filter: contrast(1.18) saturate(1.06) brightness(1);
       box-shadow:
         inset 0 0 0 1px color-mix(in srgb, var(--stage-accent, #b9874d) 34%, #2b1c13),
@@ -5104,7 +5109,7 @@
       background:
         radial-gradient(circle at 50% 48%, #120706f2 0, #080403f0 51%, #030202 78%),
         linear-gradient(180deg, #0000008f, #00000028 42%, #000000a8),
-        var(--active-greenhouse-image, url("../assets/greenhouse/first_greenhouse_withered.png")) center / cover no-repeat,
+        var(--active-greenhouse-image, url("../assets/greenhouse/first_greenhouse_withered.jpg")) center / cover no-repeat,
         repeating-linear-gradient(0deg, #0000 0 52px, #805c3520 53px 54px),
         repeating-linear-gradient(90deg, #0000 0 52px, #805c3520 53px 54px),
         linear-gradient(180deg, #21160f, #050404);
@@ -5421,7 +5426,7 @@
         background:
           radial-gradient(circle at 50% 34%,color-mix(in srgb,var(--stage-accent,#b9874d) 28%,#0000) 0,#0000 44%),
           linear-gradient(180deg,#0000008f,#00000010 46%,#0000008f),
-          var(--active-greenhouse-image, url("../assets/greenhouse/first_greenhouse_withered.png")) center bottom / cover no-repeat;
+          var(--active-greenhouse-image, url("../assets/greenhouse/first_greenhouse_withered.jpg")) center bottom / cover no-repeat;
         clip-path:polygon(6% 100%,10% 32%,50% 0,90% 32%,94% 100%);
         opacity:.96;
         color:#f1d595;
@@ -5513,7 +5518,7 @@
 
     <section class="main" aria-label="Match board">
       <div class="active-greenhouse-stage" id="activeGreenhouseStage" aria-hidden="true" data-stage-key="withered">
-        <img id="activeGreenhouseStageArt" src="../assets/greenhouse/first_greenhouse_withered.png" width="1672" height="941" alt="" decoding="async" loading="eager">
+        <img id="activeGreenhouseStageArt" src="../assets/greenhouse/first_greenhouse_withered.jpg" width="1672" height="941" alt="" decoding="async" loading="eager">
         <span class="active-greenhouse-badge">
           <b id="activeGreenhouseStageLabel">Withered Greenhouse</b>
           <span id="activeGreenhouseStageCopy">The abandoned glass waits around the altar.</span>
@@ -5666,8 +5671,8 @@
         </div>
         <div class="restoration-title" id="restorationTitle">First Bouquet Sealed · +120 coin reward</div>
         <div class="restoration-scene" aria-label="Greenhouse restoration before and after">
-          <img class="greenhouse-art greenhouse-art-withered" src="../assets/greenhouse/first_greenhouse_withered.png" width="1672" height="941" alt="" decoding="async" loading="eager">
-          <img class="greenhouse-art greenhouse-art-restored" src="../assets/greenhouse/first_greenhouse_restored.png" width="1672" height="941" alt="" decoding="async" loading="eager">
+          <img class="greenhouse-art greenhouse-art-withered" src="../assets/greenhouse/first_greenhouse_withered.jpg" width="1672" height="941" alt="" decoding="async" loading="eager">
+          <img class="greenhouse-art greenhouse-art-restored" src="../assets/greenhouse/first_greenhouse_restored.jpg" width="1672" height="941" alt="" decoding="async" loading="eager">
           <span class="greenhouse-light" aria-hidden="true"></span>
           <span class="restoration-flare" aria-hidden="true"></span>
           <span class="restoration-spark-field" aria-hidden="true">
@@ -5754,14 +5759,14 @@
     ];
     const greenhouseArtwork = {
       first: {
-        withered: "../assets/greenhouse/first_greenhouse_withered.png",
-        restored: "../assets/greenhouse/first_greenhouse_restored.png",
+        withered: "../assets/greenhouse/first_greenhouse_withered.jpg",
+        restored: "../assets/greenhouse/first_greenhouse_restored.jpg",
         width: 1672,
         height: 941,
         label: "Greenhouse restoration before and after"
       },
       moonlit: {
-        withered: "../assets/greenhouse/first_greenhouse_restored.png",
+        withered: "../assets/greenhouse/first_greenhouse_restored.jpg",
         restored: "../assets/greenhouse/moonlit_wreath_greenhouse.svg",
         width: 1280,
         height: 720,
@@ -5777,7 +5782,7 @@
     };
     const activeGreenhouseStages = {
       withered: {
-        src: "../assets/greenhouse/first_greenhouse_withered.png",
+        src: "../assets/greenhouse/first_greenhouse_withered.jpg",
         width: 1672,
         height: 941,
         accent: "#b9874d",
