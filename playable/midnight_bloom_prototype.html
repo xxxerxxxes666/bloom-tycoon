@@ -4641,9 +4641,9 @@
        greenhouse/shop fantasy on larger screens instead of leaving dead space. */
     body.round-one-active .game,
     body.restored-next-order-focus .game {
-      width: min(1100px, calc(100vw - 16px));
+      width: min(1220px, calc(100vw - 16px));
       min-height: calc(100vh - 16px);
-      grid-template-columns: 248px minmax(0, 1fr);
+      grid-template-columns: 360px minmax(0, 1fr);
       grid-template-rows: auto auto;
       align-content: start;
       gap: 12px;
@@ -4692,19 +4692,28 @@
 
     body.round-one-active .left,
     body.restored-next-order-focus .left {
-      display: flex;
+      display: block;
       grid-row: 1;
-      gap: 8px;
+      min-height: 0;
     }
 
     body.round-one-active .hero,
     body.restored-next-order-focus .hero {
-      height: 206px;
+      height: clamp(560px, calc(100vh - 40px), 880px);
+      min-height: 0;
+      position: relative;
+      overflow: hidden;
       background:
-        linear-gradient(180deg, #00000054, #00000012 48%, #000000a8),
-        radial-gradient(circle at 50% 48%, color-mix(in srgb, var(--stage-accent, #b9874d) 30%, #0000) 0, #0000 44%),
+        radial-gradient(ellipse at 50% 30%, #00000010 0 30%, #0000007a 68%, #000 100%),
+        linear-gradient(180deg, #00000020, #00000008 42%, #000000d2),
+        radial-gradient(circle at 50% 48%, color-mix(in srgb, var(--stage-accent, #b9874d) 34%, #0000) 0, #0000 46%),
         var(--active-greenhouse-image, url("../assets/greenhouse/first_greenhouse_withered.png")) center / cover no-repeat;
-      filter: contrast(1.16) saturate(1.02) brightness(0.96);
+      filter: contrast(1.18) saturate(1.06) brightness(1);
+      box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--stage-accent, #b9874d) 34%, #2b1c13),
+        inset 0 0 42px #000,
+        inset 0 -80px 120px #000,
+        0 0 28px #000;
     }
 
     body.round-one-active .hero::before,
@@ -4720,12 +4729,24 @@
       text-shadow: 0 2px 4px #000, 0 0 12px #000;
     }
 
+    body.round-one-active .hero::after,
+    body.restored-next-order-focus .hero::after {
+      content: "";
+      position: absolute;
+      inset: 14px;
+      border: 1px solid color-mix(in srgb, var(--stage-accent, #b9874d) 38%, #0000);
+      box-shadow:
+        inset 0 0 36px #000,
+        inset 0 0 46px color-mix(in srgb, var(--stage-accent, #b9874d) 22%, #0000);
+      pointer-events: none;
+    }
+
     @media (min-width: 761px) and (max-height: 820px) {
       body.round-one-active .game,
       body.restored-next-order-focus .game {
         width: min(1180px, calc(100vw - 10px));
         min-height: calc(100vh - 10px);
-        grid-template-columns: 220px minmax(0, 1fr);
+        grid-template-columns: 330px minmax(0, 1fr);
         gap: 8px;
         padding: 8px;
       }
@@ -4737,12 +4758,12 @@
 
       body.round-one-active .left,
       body.restored-next-order-focus .left {
-        gap: 6px;
+        min-height: 0;
       }
 
       body.round-one-active .hero,
       body.restored-next-order-focus .hero {
-        height: 138px;
+        height: calc(100vh - 26px);
       }
 
       body.round-one-active .hero::before,
@@ -4871,7 +4892,7 @@
       body.round-one-active:not(.round-one-complete) .board,
       body.restored-next-order-focus:not(.restored-greenhouse-handoff) .board,
       body.restored-greenhouse-handoff .board {
-        width: min(650px, calc(100vh - 186px), calc(100vw - 360px));
+        width: min(650px, calc(100vh - 186px), calc(100vw - 470px));
         max-width: none;
         gap: 4px;
         margin: 8px auto 10px;
@@ -4911,7 +4932,7 @@
 
       body.round-one-active .ritual-log,
       body.restored-next-order-focus .ritual-log {
-        max-width: min(650px, calc(100vh - 186px), calc(100vw - 360px));
+        max-width: min(650px, calc(100vh - 186px), calc(100vw - 470px));
         min-height: 28px;
         margin: 0 auto 8px;
         padding: 6px 12px;
@@ -4920,14 +4941,18 @@
       }
 
       body.restored-greenhouse-handoff .board {
-        width: min(650px, calc(100vh - 210px), calc(100vw - 360px));
+        width: min(650px, calc(100vh - 210px), calc(100vw - 470px));
       }
     }
 
     body.round-one-active .apothecary-card,
+    body.round-one-active .greenhouse-card,
+    body.round-one-active .active-orders-card,
     body.round-one-active .faction-card,
     body.round-one-active .market-card,
     body.restored-next-order-focus .apothecary-card,
+    body.restored-next-order-focus .greenhouse-card,
+    body.restored-next-order-focus .active-orders-card,
     body.restored-next-order-focus .faction-card,
     body.restored-next-order-focus .market-card {
       display: none;
@@ -4941,10 +4966,7 @@
       padding: 12px;
     }
 
-    body.round-one-active .bottom {
-      display: block;
-      grid-column: 1 / 3;
-    }
+    body.round-one-active .bottom { display: none !important; }
 
     body.round-one-active .bottom-card {
       padding: 11px 14px 12px;
@@ -5054,6 +5076,9 @@
     body.restored-greenhouse-handoff .first-session-plaque, body.restored-greenhouse-handoff .progress,
     body.restored-greenhouse-handoff .sacrifice-panel, body.restored-greenhouse-handoff .booster-panel,
     body.restored-greenhouse-handoff .controls, body.restored-greenhouse-handoff #roundCeremony { display:none!important; }
+    @media (min-width:761px) {
+      body.restored-greenhouse-handoff .left { display:block!important; }
+    }
     body.restored-next-order-focus .bottom,
     body.restored-next-order-focus .bouquet-path, body.restored-next-order-focus .path-ledger-drawer,
     body.restored-next-order-focus .first-session-plaque, body.restored-next-order-focus .progress,
@@ -5066,10 +5091,11 @@
     body.restored-next-order-focus.thorn-lesson-active:not(.restored-greenhouse-handoff) .first-swap-cue::before { content:"CURSED THORN"; }
     body.restored-next-order-focus.round-two-followup-cue .first-swap-cue::before { content:"NEXT BLOOM"; }
     body.round-three-focus-active.restored-next-order-focus:not(.restored-greenhouse-handoff) .first-swap-cue::before { content:"FINAL ORDER"; }
-    body.restored-next-order-focus .restored-greenhouse-status { display:grid; width:min(520px,calc(100% - 16px)); margin:7px auto 0; padding:7px 10px; grid-template-columns:auto 1fr; gap:5px 9px; align-items:center; border:1px solid #6f944d; background:linear-gradient(90deg,#0a0d08,#172414,#0a0d08); box-shadow:0 0 16px #7fcf652d,inset 0 0 10px #000; color:#dff5b8; text-align:left; }
+    body.restored-next-order-focus .restored-greenhouse-status { display:grid; width:min(560px,calc(100% - 16px)); margin:7px auto 0; padding:7px 10px; grid-template-columns:auto 1fr; gap:5px 9px; align-items:center; border:1px solid #6f944d; background:linear-gradient(90deg,#0a0d08,#172414,#0a0d08); box-shadow:0 0 16px #7fcf652d,inset 0 0 10px #000; color:#dff5b8; text-align:left; }
     .restored-greenhouse-kicker { color:#f3dfaa; font:900 10px/1 system-ui,sans-serif; letter-spacing:.09em; text-transform:uppercase; white-space:nowrap; }
     .restored-greenhouse-copy { color:#c5e4a4; font:700 12px/1.15 system-ui,sans-serif; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .restored-greenhouse-meter { grid-column:1/-1; height:8px; border:1px solid #5f7f3e; background:#060805; box-shadow:inset 0 0 7px #000; overflow:hidden; }
+    body.restored-next-order-focus .restored-greenhouse-meter { display:none; }
     .restored-greenhouse-meter span { display:block; height:100%; width:var(--restored-greenhouse-xp-pct,0%); min-width:12px; background:linear-gradient(90deg,#4f762c,#c1dd75); box-shadow:0 0 11px #8fc65a; transition:width 480ms ease; }
     body.restored-greenhouse-handoff .board { box-shadow:0 0 0 1px #7fa35a,0 0 26px #7fcf6545,inset 0 0 16px #000; animation:handoff-board-glow 1.9s ease-out both; }
     body.round-one-active:not(.round-one-complete) .board,
@@ -11434,6 +11460,7 @@
     }
 
     function renderRestoredGreenhouseStatus() {
+      const kicker = document.querySelector(".restored-greenhouse-kicker");
       const text = $("restoredGreenhouseStatusText");
       const fill = $("restoredGreenhouseStatusFill");
       if (!text || !fill) {
@@ -11441,9 +11468,12 @@
       }
       const pct = Math.min(100, (greenhouse.xp / greenhouse.next) * 100);
       fill.style.setProperty("--restored-greenhouse-xp-pct", `${pct}%`);
+      if (kicker) {
+        kicker.textContent = currentRound === 3 ? "Bloodroot Conservatory" : "Moonlit Greenhouse";
+      }
       text.textContent = currentRound === 3
-        ? `Nightshade house awake · Greenhouse ${greenhouse.level} · ${greenhouse.xp.toLocaleString()} / ${greenhouse.next.toLocaleString()} XP feeds Bloodroot Compact.`
-        : `Glass relit · Greenhouse ${greenhouse.level} · ${greenhouse.xp.toLocaleString()} / ${greenhouse.next.toLocaleString()} XP feeds Moonlit Wreath.`;
+        ? "Bloodroot under crimson glass."
+        : "Moonlit order under glass.";
     }
 
     function renderFirstSwapArrow(boardEl) {
@@ -11478,7 +11508,7 @@
     }
 
     function bouquetStreakMarkup() {
-      if (!bouquetStreak || isRestoredNextOrderFocus()) {
+      if (!bouquetStreak || focusedSliceRound() || isRestoredNextOrderFocus()) {
         return "";
       }
       const bonusPercent = bouquetStreakBonusPercent(bouquetStreak);
@@ -11486,7 +11516,7 @@
     }
 
     function nextStreakTargetMarkup() {
-      if (!roundComplete) {
+      if (!roundComplete || focusedSliceRound()) {
         return "";
       }
       const nextStreak = bouquetStreak + 1;
@@ -11503,7 +11533,7 @@
 
     function shapeDiscoveryHintMarkup() {
       const plan = activeRoundPlan();
-      if (roundComplete || isRestoredNextOrderFocus() || (bouquetStreak < 1 && plan.round < 2)) {
+      if (focusedSliceRound(plan) || roundComplete || isRestoredNextOrderFocus() || (bouquetStreak < 1 && plan.round < 2)) {
         return "";
       }
       return '<span class="objective-boon pattern" id="shapeDiscoveryHint">L/T/cross = Shape Bloom</span>';

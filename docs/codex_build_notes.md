@@ -1,5 +1,22 @@
 # Codex Build Notes
 
+## 2026-07-13 Clean first-three-order active composition
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible milestone: focused active play for First Bouquet, Moonlit Wreath, and Bloodroot Compact now presents a clean two-pane altar composition on desktop: the board remains primary while the existing stage-aware repo-local greenhouse art becomes a large legible environmental companion. Active Round 1 no longer shows the Elements economy strip, and focused active rounds hide the XP/progression dashboard cards, Active Orders card, Shape Bloom hint chips, streak chips, and XP meter copy. Mobile keeps the board-first stack.
+- Visual evidence inspected: `/tmp/bloom-final-fresh-1280x720.png`, `/tmp/bloom-final-fresh-1440x1000.png`, `/tmp/bloom-final-round2-active-1280x720.png`, `/tmp/bloom-final-round3-active-1280x720.png`, `/tmp/bloom-final-fresh-390x844.png`, `/tmp/bloom-mobile-status-final.png`, `/tmp/bloom-target-failed-no-shape.png`, and `/tmp/bloom-target-replay-no-shape.png`.
+- Browser verification: local static server `127.0.0.1:8765`; Chromium/Playwright with `NODE_PATH=/opt/data/home/.npm/_npx/705bc6b22212b352/node_modules`. Fresh 1280x720, 1440x1000, and 390x844 rendered 64 tiles, 0 broken images, 0 console/page/request errors, and no horizontal overflow. Mobile 390x844 kept 8 complete board rows for fresh Round 1, Round 2, and Round 3.
+- Interaction verification: real desktop tile clicks completed Round 1 match -> bouquet -> +120 coin payoff -> Restore Greenhouse -> saved reload -> Next Order. Round 2 guided thorn handoff, second guided bloom, and one unguided legal swap were exercised with 64 tiles preserved; save/reload kept the active Round 2 state. A diagnostic forced failed Round 2 state exposed only `Retry Bouquet`, and clicking it restored the Moonlit Wreath objective to 17 moves with 64 tiles. Existing `N` review key was used only for later-state reachability to inspect Round 2 payoff, Next Order into Round 3, Bloodroot Compact payoff, and Play Again replay.
+- FX cleanup: first real Round 1 match produced 14 transient board/bouquet/cascade FX nodes; after the animation window, transient FX count returned to 0.
+- Browser console/network status: final desktop, tall desktop, mobile, failed/retry, and replay checks reported 0 console messages, 0 page errors, and 0 failed browser requests.
+- Verification commands: `python3 scripts/verify_project.py`, `git diff --check`, extracted playable `node --check`, and `/opt/data/tools/godot/Godot_v4.2.2-stable_linux.x86_64 --headless --path . --script res://tests/godot_smoke_test.gd` passed.
+- Vercel deployment URL/identifier checked: not redeployed or checked in this local pass before push.
+- GitHub Pages preview status: not checked in this local pass before push.
+- Known issues: none found in the focused changed path. The diagnostic Round 2 forced-failure path uses internal state to reach retry quickly; the player-facing retry click itself was exercised.
+- How to trigger and verify L/T/cross matches without console: after Round 3/replay or outside the focused first-three active composition, press `M` or use the clearly marked prototype `Shape Bloom` control where visible; this pass verified `M` still completes a shape demo with 64 tiles while focused first-three active play suppresses that hint/control exposure.
+- How to trigger and verify Supreme Bloom without console: focus the playable and press `B`; this pass verified `SUPREME BLOOM!` appears, cleans up after the animation window, removes its particles, preserves 64 tiles, and remains absent from normal focused active controls.
+- Security/secret-scan status: precise changed-file scan passed for private-key headers, known provider token prefixes, JWTs, and suspicious credential assignments. No secrets, `.env`, trackers, analytics, backend, accounts, ads/IAP, new dependencies, broad permissions, or cron jobs were added.
+
 ## 2026-07-13 Bouquet binding feedback
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
