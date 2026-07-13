@@ -4401,6 +4401,24 @@
       padding: 4px 8px 0;
     }
 
+    body.round-three-final-complete .game {
+      width: min(980px, calc(100vw - 16px));
+      min-height: calc(100vh - 16px);
+      grid-template-columns: 1fr;
+      align-content: start;
+      background:
+        radial-gradient(circle at 50% 20%, #2b0d10 0, #090606 42%, #030202 78%),
+        linear-gradient(90deg, #060504, #120706 52%, #050404);
+    }
+
+    body.round-three-final-complete .main {
+      display: grid;
+      justify-items: center;
+      align-content: start;
+      min-height: 0;
+      padding: 4px 8px 0;
+    }
+
     body.round-one-active .left,
     body.restored-next-order-focus .left {
       display: flex;
@@ -4517,25 +4535,41 @@
       display: none !important;
     }
     body.round-two-upgrade-complete .left,
+    body.round-three-final-complete .left,
     body.round-two-upgrade-complete .bottom,
+    body.round-three-final-complete .bottom,
     body.round-two-upgrade-complete .bouquet-path,
+    body.round-three-final-complete .bouquet-path,
     body.round-two-upgrade-complete .path-ledger-drawer,
+    body.round-three-final-complete .path-ledger-drawer,
     body.round-two-upgrade-complete .first-session-plaque,
+    body.round-three-final-complete .first-session-plaque,
     body.round-two-upgrade-complete .progress,
+    body.round-three-final-complete .progress,
     body.round-two-upgrade-complete .board,
+    body.round-three-final-complete .board,
     body.round-two-upgrade-complete .controls,
+    body.round-three-final-complete .controls,
     body.round-two-upgrade-complete .ritual-log,
+    body.round-three-final-complete .ritual-log,
     body.round-two-upgrade-complete .sacrifice-panel,
+    body.round-three-final-complete .sacrifice-panel,
     body.round-two-upgrade-complete .booster-panel,
+    body.round-three-final-complete .booster-panel,
     body.round-two-upgrade-complete #roundCeremony,
-    body.round-two-upgrade-complete #renewBtn {
+    body.round-three-final-complete #roundCeremony,
+    body.round-two-upgrade-complete #renewBtn,
+    body.round-three-final-complete #renewBtn {
       display: none !important;
     }
     body.round-one-active.round-one-complete #bouquetStreakBadge,
     body.round-one-active.round-one-complete #nextStreakTargetBadge,
     body.round-one-active.round-one-complete .restoration-xp-preview,
     body.round-two-upgrade-complete #bouquetStreakBadge,
-    body.round-two-upgrade-complete #nextStreakTargetBadge {
+    body.round-two-upgrade-complete #nextStreakTargetBadge,
+    body.round-three-final-complete #bouquetStreakBadge,
+    body.round-three-final-complete #nextStreakTargetBadge,
+    body.round-three-final-complete .restoration-xp-preview {
       display: none !important;
     }
     body.restored-greenhouse-handoff .left, body.restored-greenhouse-handoff .bottom,
@@ -4626,10 +4660,38 @@
     .round-one-restoration.second-greenhouse-upgrade .restoration-step.spend { border-color:#7d49b2; color:#e7d6ff; box-shadow:0 0 14px #7d49b238; }
     .round-one-restoration.second-greenhouse-upgrade .restoration-step.next { border-color:#9b1d22; color:#ffd4d7; box-shadow:0 0 14px #9b1d2238; }
     .round-one-restoration.second-greenhouse-upgrade .next-order-btn { display:block; border-color:#9b1d22; background:linear-gradient(#7d2431,#35131c); }
+    body.round-three-final-complete .round-one-restoration { position:relative; overflow:hidden; display:grid; width:min(790px,calc(100% - 16px)); margin:12px auto 0; padding:16px; gap:12px; border:1px solid #b51d2f; background:radial-gradient(circle at 50% 0,#3a1014,#0b0707 72%); box-shadow:0 0 44px #9b1d2260,inset 0 0 32px #000,0 18px 45px #000c; text-align:center; }
+    .round-one-restoration.third-greenhouse-finale .restoration-scene { border-color:#b51d2f; box-shadow:inset 0 0 34px #9b1d2266,0 0 34px #d7b16d42; }
+    .round-one-restoration.third-greenhouse-finale .restoration-scene::before { background:radial-gradient(circle at 50% 34%,#b51d2f52 0 16%,#0000 40%),radial-gradient(circle at 50% 42%,#0000 0 48%,#0009 88%),linear-gradient(180deg,#0008,#3a090f66 34%,#0005 76%,#000b); }
+    .greenhouse-upgrade-bloodsun,
+    .greenhouse-upgrade-roots,
+    .greenhouse-upgrade-seal { display:none; position:absolute; pointer-events:none; z-index:7; }
+    .round-one-restoration.third-greenhouse-finale .greenhouse-upgrade-bloodsun { display:block; left:50%; top:8%; width:112px; height:112px; border-radius:50%; transform:translateX(-50%); background:radial-gradient(circle at 47% 43%,#fff1bd 0 7%,#d7b16d 20%,#b51d2f 48%,#33060b 66%,#0000 69%); box-shadow:0 0 36px #d7b16dcc,0 0 88px #9b1d2288; opacity:.95; animation:greenhouse-bloodsun-crown 1050ms ease-out both; }
+    .round-one-restoration.third-greenhouse-finale .greenhouse-upgrade-roots { display:block; inset:28% 5% 0; background:linear-gradient(102deg,#0000 0 23%,#8d111d 24% 25%,#0000 27%),linear-gradient(78deg,#0000 0 34%,#d7b16d 35% 36%,#0000 38%),linear-gradient(128deg,#0000 0 57%,#8d111d 58% 59%,#0000 61%),radial-gradient(ellipse at 50% 92%,#b51d2f88 0 6%,#0000 30%),radial-gradient(circle at 29% 72%,#fff1bd 0 1.6%,#b51d2f99 2.2%,#0000 6%),radial-gradient(circle at 71% 69%,#fff1bd 0 1.6%,#b51d2f99 2.2%,#0000 6%); opacity:.82; mix-blend-mode:screen; animation:greenhouse-root-weave 1200ms ease-out both; }
+    .round-one-restoration.third-greenhouse-finale .greenhouse-upgrade-seal { display:grid; place-items:center; left:50%; top:50%; width:148px; height:148px; border:1px solid #d7b16d; border-radius:50%; color:#fff2bf; transform:translate(-50%,-50%); background:radial-gradient(circle,#140606cc 0 36%,#b51d2f33 37% 49%,#0000 50%),conic-gradient(from 0deg,#d7b16d 0 5deg,#0000 5deg 40deg,#b51d2f 40deg 45deg,#0000 45deg 80deg,#d7b16d 80deg 85deg,#0000 85deg 120deg,#b51d2f 120deg 125deg,#0000 125deg 160deg,#d7b16d 160deg 165deg,#0000 165deg 200deg,#b51d2f 200deg 205deg,#0000 205deg 240deg,#d7b16d 240deg 245deg,#0000 245deg 280deg,#b51d2f 280deg 285deg,#0000 285deg 320deg,#d7b16d 320deg 325deg,#0000 325deg); box-shadow:0 0 24px #d7b16d88,inset 0 0 26px #000; font:900 12px/1 Georgia,serif; letter-spacing:.18em; text-align:center; text-shadow:0 2px 5px #000; animation:greenhouse-seal-lock 1150ms ease-out both; }
+    .round-one-restoration.third-greenhouse-finale .greenhouse-upgrade-seal::before { content:"III"; }
+    .round-one-restoration.third-greenhouse-finale .greenhouse-light { background:radial-gradient(circle at 50% 43%,#fff1bdaa 0 10%,#b51d2f77 24%,#d7b16d24 44%,#0000 70%); opacity:1; filter:blur(8px); }
+    .round-one-restoration.third-greenhouse-finale .restoration-state { left:5%; right:5%; bottom:7px; z-index:10; padding:5px 8px; border-top:1px solid #d7b16d88; background:linear-gradient(90deg,#08030300,#080303e8 14%,#080303e8 86%,#08030300); font-size:12px; line-height:1.1; letter-spacing:.1em; }
+    .round-one-restoration.third-greenhouse-finale .restoration-step.spend { border-color:#d7b16d; color:#fff1bd; box-shadow:0 0 16px #d7b16d38; }
+    .round-one-restoration.third-greenhouse-finale .restoration-step.next { border-color:#b51d2f; color:#ffd0d5; box-shadow:0 0 16px #b51d2f44; }
+    .round-one-restoration.third-greenhouse-finale .next-order-btn { display:block; border-color:#d7b16d; background:linear-gradient(#9b1d22,#451017); }
     .first-swap-cue.swap-refused {
       color:#f0b0a5;
       text-shadow:0 0 12px #9b1d22;
       animation:cue-refused 420ms ease-out both;
+    }
+    @keyframes greenhouse-bloodsun-crown {
+      0% { opacity:0; transform:translate(-50%,34px) scale(.6); filter:blur(7px); }
+      100% { opacity:.95; transform:translate(-50%,0) scale(1); filter:blur(0); }
+    }
+    @keyframes greenhouse-root-weave {
+      0% { opacity:0; transform:translateY(34px) scaleY(.64); }
+      100% { opacity:.82; transform:translateY(0) scaleY(1); }
+    }
+    @keyframes greenhouse-seal-lock {
+      0% { opacity:0; transform:translate(-50%,-50%) scale(.52) rotate(-22deg); filter:blur(5px); }
+      66% { opacity:1; transform:translate(-50%,-50%) scale(1.08) rotate(4deg); }
+      100% { opacity:.96; transform:translate(-50%,-50%) scale(1) rotate(0); filter:blur(0); }
     }
     @keyframes greenhouse-moon-rise {
       0% { opacity:0; transform:translate(-50%,28px) scale(.72); filter:blur(5px); }
@@ -4723,14 +4785,16 @@
     @media (max-width:760px) {
       body.restored-next-order-focus .game,
       body.restored-greenhouse-handoff .game,
-      body.round-one-active .game { display:block; width:100vw; min-height:100vh; padding:4px 6px 8px; }
+      body.round-one-active .game,
+      body.round-three-final-complete .game { display:block; width:100vw; min-height:100vh; padding:4px 6px 8px; }
       body.restored-next-order-focus .left,
       body.restored-greenhouse-handoff .left,
       body.round-one-active .left,
       body.round-one-active .bottom { display:none!important; }
       body.restored-next-order-focus .main,
       body.restored-greenhouse-handoff .main,
-      body.round-one-active .main { display:block; width:100%; overflow:hidden; padding:0; }
+      body.round-one-active .main,
+      body.round-three-final-complete .main { display:block; width:100%; overflow:hidden; padding:0; }
       body.restored-next-order-focus .sigil,
       body.restored-greenhouse-handoff .sigil,
       body.round-one-active .sigil { font-size:9px; letter-spacing:4px; }
@@ -4786,10 +4850,16 @@
       body.round-one-active .controls .btn { min-width:0; padding:7px 11px; font-size:12px; min-height:36px; }
       body.round-one-active.round-one-complete .board, body.round-one-active.round-one-complete .controls, body.round-one-active.round-one-complete .ritual-log { display:none; }
       body.round-one-active.round-one-complete .round-one-restoration { margin-top:8px; padding:11px; gap:8px; }
+      body.round-three-final-complete .round-one-restoration { margin-top:8px; padding:11px; gap:8px; }
       body.round-one-active .restoration-scene { height:156px; }
+      body.round-three-final-complete .restoration-scene { height:166px; }
+      body.round-three-final-complete .third-greenhouse-finale .restoration-state { left:2%; right:2%; padding:4px 2px; font-size:9px; letter-spacing:.055em; white-space:nowrap; }
       body.round-one-active .restoration-title { font-size:18px; }
+      body.round-three-final-complete .restoration-title { font-size:18px; }
       body.round-one-active .restoration-ledger { grid-template-columns:1fr; }
+      body.round-three-final-complete .restoration-ledger { grid-template-columns:1fr; }
       body.round-one-active .restoration-step { min-height:34px; }
+      body.round-three-final-complete .restoration-step { min-height:34px; }
       body.round-one-active .restoration-xp-preview { padding:7px; }
     }
   </style>
@@ -5004,12 +5074,15 @@
           <span class="greenhouse-upgrade-moon" aria-hidden="true"></span>
           <span class="greenhouse-upgrade-vines" aria-hidden="true"></span>
           <span class="greenhouse-upgrade-lanterns" aria-hidden="true"></span>
+          <span class="greenhouse-upgrade-bloodsun" aria-hidden="true"></span>
+          <span class="greenhouse-upgrade-roots" aria-hidden="true"></span>
+          <span class="greenhouse-upgrade-seal" aria-hidden="true"></span>
           <span class="restoration-state" id="restorationState">WITHERED GLASSHOUSE</span>
         </div>
         <div class="restoration-ledger" aria-label="First bouquet payoff">
-          <span class="restoration-step"><b id="restorationEarned">+120</b> Bouquet coins</span>
-          <span class="restoration-step spend"><b id="restorationSpent">-100</b> Greenhouse</span>
-          <span class="restoration-step next"><b id="restorationNext">Next</b> Moonlit Wreath</span>
+          <span class="restoration-step"><b id="restorationEarned">+120</b> <span id="restorationEarnedLabel">Bouquet coins</span></span>
+          <span class="restoration-step spend"><b id="restorationSpent">-100</b> <span id="restorationSpentLabel">Greenhouse</span></span>
+          <span class="restoration-step next"><b id="restorationNext">Next</b> <span id="restorationNextLabel">Moonlit Wreath</span></span>
         </div>
         <div class="restoration-xp-preview" id="restorationXpPreview" aria-label="Greenhouse upgrade progress">
           <span class="restoration-xp-topline">
@@ -10308,11 +10381,13 @@
     function render() {
       const roundOneActive = currentRound === 1;
       const roundTwoUpgradeComplete = currentRound === 2 && roundComplete && roundOneRestored;
+      const roundThreeFinalComplete = currentRound === 3 && roundComplete;
       document.body.classList.toggle("round-one-active", roundOneActive);
       document.body.classList.toggle("round-one-complete", roundOneActive && roundComplete);
       document.body.classList.toggle("restored-greenhouse-handoff", restoredGreenhouseHandoff && currentRound === 2 && !roundComplete);
       document.body.classList.toggle("restored-next-order-focus", isRestoredNextOrderFocus());
       document.body.classList.toggle("round-two-upgrade-complete", roundTwoUpgradeComplete);
+      document.body.classList.toggle("round-three-final-complete", roundThreeFinalComplete);
       document.body.classList.toggle("round-three-focus-active", currentRound === 3 && isRestoredNextOrderFocus());
       const activePlan = activeRoundPlan();
       document.body.classList.toggle("focused-slice-failed", activePlan.round <= 3 && isBouquetFailed(activePlan));
@@ -10324,15 +10399,31 @@
       const roundOneFollowupCue = roundOneActive && !roundComplete && $("firstSwapCue").textContent.includes("Keep matching");
       document.body.classList.toggle("round-one-followup-cue", roundOneFollowupCue);
       document.body.classList.toggle("round-one-refused", roundOneActive && !roundComplete && $("firstSwapCue").classList.contains("swap-refused"));
-      $("roundOneRestoration").classList.toggle("restored", roundOneRestored || roundTwoUpgradeComplete);
+      $("roundOneRestoration").classList.toggle("restored", roundOneRestored || roundTwoUpgradeComplete || roundThreeFinalComplete);
       $("roundOneRestoration").classList.toggle("second-greenhouse-upgrade", roundTwoUpgradeComplete);
+      $("roundOneRestoration").classList.toggle("third-greenhouse-finale", roundThreeFinalComplete);
       const roundTwoPlan = buildRoundPlan(2);
-      if (roundTwoUpgradeComplete) {
+      const roundThreePlan = buildRoundPlan(3);
+      if (roundThreeFinalComplete) {
+        $("restorationTitle").textContent = `Bloodroot Compact Sealed · +${roundThreePlan.reward.coins} coin reward`;
+        $("restorationState").textContent = "BLOODROOT CONSERVATORY COMPLETE";
+        $("restorationEarned").textContent = `+${roundThreePlan.reward.coins}`;
+        $("restorationEarnedLabel").textContent = "Bouquet coins";
+        $("restorationSpent").textContent = `+${roundThreePlan.reward.greenhouse} XP`;
+        $("restorationSpentLabel").textContent = "Greenhouse";
+        $("restorationNext").textContent = "Replay";
+        $("restorationNextLabel").textContent = "First Bouquet";
+        $("restorationCopy").textContent = "Three orders sealed the glasshouse: restored panes, nightshade lanterns, and a Bloodroot conservatory ready for another run.";
+        $("nextOrderBtn").textContent = "Play Again → First Bouquet";
+      } else if (roundTwoUpgradeComplete) {
         $("restorationTitle").textContent = `Moonlit Wreath Sealed · +${roundTwoPlan.reward.coins} coin reward`;
         $("restorationState").textContent = "GREENHOUSE UPGRADE · NIGHTSHADE HOUSE";
         $("restorationEarned").textContent = `+${roundTwoPlan.reward.coins}`;
+        $("restorationEarnedLabel").textContent = "Bouquet coins";
         $("restorationSpent").textContent = `+${roundTwoPlan.reward.greenhouse} XP`;
+        $("restorationSpentLabel").textContent = "Greenhouse";
         $("restorationNext").textContent = "Final";
+        $("restorationNextLabel").textContent = "Bloodroot Compact";
         $("restorationCopy").textContent = "Moonlit panes, bloodroot beds, and violet lanterns wake for the final compact.";
         $("nextOrderBtn").textContent = "Next Order → Bloodroot Compact";
       } else {
@@ -10341,8 +10432,11 @@
           : "First Bouquet Sealed · +120 coin reward";
         $("restorationState").textContent = roundOneRestored ? "RESTORED · MIDNIGHT BLOOM" : "WITHERED GLASSHOUSE";
         $("restorationEarned").textContent = "+120";
+        $("restorationEarnedLabel").textContent = "Bouquet coins";
         $("restorationSpent").textContent = roundOneRestored ? "-100 spent" : "-100";
+        $("restorationSpentLabel").textContent = "Greenhouse";
         $("restorationNext").textContent = roundOneRestored ? "Unlocked" : "Next";
+        $("restorationNextLabel").textContent = "Moonlit Wreath";
         $("restorationCopy").textContent = roundOneRestored
           ? "Next Order: Moonlit Wreath is ready. Match Nightshade and Amber Seed in the restored glass."
           : "Spend 100 coins to relight the abandoned greenhouse.";
@@ -10614,6 +10708,11 @@
       const pct = Math.min(100, (greenhouse.xp / greenhouse.next) * 100);
       $("restorationXpLevel").textContent = `Level ${greenhouse.level}`;
       $("restorationXpFill").style.setProperty("--greenhouse-xp-pct", `${pct}%`);
+      if (currentRound === 3 && roundComplete) {
+        preview.querySelector(".restoration-xp-topline span:first-child").textContent = "Greenhouse +210 XP";
+        $("restorationXpCopy").textContent = `Bloodroot conservatory locked in: ${greenhouse.xp.toLocaleString()} / ${greenhouse.next.toLocaleString()} XP.`;
+        return;
+      }
       if (currentRound === 2 && roundComplete && roundOneRestored) {
         preview.querySelector(".restoration-xp-topline span:first-child").textContent = "Greenhouse +150 XP";
         $("restorationXpCopy").textContent = `Moonlit upgrade locked in: ${greenhouse.xp.toLocaleString()} / ${greenhouse.next.toLocaleString()} XP.`;
@@ -12716,6 +12815,59 @@
       scheduleIdleHint();
     }
 
+    function replayFocusedSlice() {
+      if (isResolving || currentRound !== 3 || !roundComplete) {
+        return;
+      }
+      clearIdleHint();
+      selected = null;
+      sacrificeState = { active: false, choice: null };
+      rewardChoiceState = { pending: false, selected: "" };
+      activeBooster = "";
+      moonwaterPreviewCenter = null;
+      blackCandlePreview = null;
+      harvestFlashCells.clear();
+      fallAnimations.clear();
+      superBloomCells.clear();
+      boardParticles = [];
+      transmuteFlashCell = "";
+      thornPulseCells.clear();
+      thornClearedCells.clear();
+      clearThornTeachingCue(false);
+      graveSoilCells.clear();
+      currentRound = 1;
+      restoredRoundTwoGuideMoves = 0;
+      pendingRuneTendedSoil = false;
+      activeRuneTendedSoil = false;
+      roundOneRestored = false;
+      hasMadeValidMove = false;
+      roundComplete = false;
+      const plan = buildRoundPlan(1);
+      moves = plan.moves;
+      counts = [0, 0, 0, 0, 0, 0];
+      cursedThorns = [];
+      clearedCursedThorns = 0;
+      ritualMessage = `<strong>First Bouquet:</strong> ${goalCopy(plan)} Match the glowing pair to begin another greenhouse run.`;
+      build();
+      render();
+      const firstMove = legalMoves()[0];
+      if (firstMove) {
+        idleHintCells = new Set(firstMove.map((cell) => `${cell.x},${cell.y}`));
+        $("firstSwapCue").textContent = firstSwapCueText(firstMove[0], firstMove[1]);
+        render();
+      }
+      focusRestoredNextOrderViewport();
+      scheduleIdleHint();
+    }
+
+    function advanceGreenhousePayoffAction() {
+      if (currentRound === 3 && roundComplete) {
+        replayFocusedSlice();
+        return;
+      }
+      renewBouquet();
+    }
+
     function demoCompleteBouquet() {
       // Prototype review hook; remove or gate before production.
       if (isResolving || roundComplete) {
@@ -14276,7 +14428,7 @@
     });
     $("renewBtn").addEventListener("click", renewBouquet);
     $("restoreGreenhouseBtn").addEventListener("click", restoreRoundOneGreenhouse);
-    $("nextOrderBtn").addEventListener("click", renewBouquet);
+    $("nextOrderBtn").addEventListener("click", advanceGreenhousePayoffAction);
     $("chestTrigger").addEventListener("click", openChest);
     $("closeChest").addEventListener("click", closeChest);
     $("chestModal").addEventListener("click", (event) => {

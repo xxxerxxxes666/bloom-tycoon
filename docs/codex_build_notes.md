@@ -1,5 +1,23 @@
 # Codex Build Notes
 
+## 2026-07-13 Final three-order greenhouse payoff
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible milestone: Round 3 `Bloodroot Compact` completion now resolves into a focused final greenhouse ceremony instead of the legacy completion surface. It shows `Bloodroot Compact Sealed · +180 coin reward`, a distinct Bloodroot conservatory transformation using the existing greenhouse art plus original blood-sun/root/seal overlays, one `+210 XP Greenhouse` upgrade transaction, and one `Play Again -> First Bouquet` action that returns to the focused 64-tile board without exposing reward choice, `Complete Bouquet`, `Shape Bloom`, or Round 4 sprawl.
+- Live Vercel pre-edit inspection: `https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html` loaded visually through agent-browser at `/opt/hermes/node_modules/agent-browser/bin/agent-browser-linux-x64`; snapshot showed the board-first Round 1 page with 64 tile buttons. No redeploy was performed during this local pass.
+- Local browser verification: static server `127.0.0.1:41050`; Playwright/Chromium used `NODE_PATH=/opt/data/home/.npm/_npx/420ff84f11983ee5/node_modules`.
+- Desktop 1440x1000 journey: fresh Round 1 had 64 tiles, 8 visible board rows, 0 overflow, 0 broken images, and no legacy focused-journey controls. Real tile clicks completed Round 1 instructed swaps, restore, reload persistence, Next Order, Round 2 thorn lesson plus unguided completion, second upgrade, reload persistence, Next Order, Round 3 real play/completion, final Bloodroot ceremony, final reload persistence, and `Play Again -> First Bouquet` back to a playable 64-tile Round 1 board. Final ceremony had 0 reward choice, 0 round ceremony, 0 `Next Bouquet`, 0 `Complete Bouquet`, and 0 `Shape Bloom`.
+- Mobile 390x844 journey: same full path passed with 64 tiles during play, at least 7 complete visible board rows after handoff and 8 rows at fresh/Round 3/replay states, 0 horizontal overflow, 0 broken images, no reward-choice/round-ceremony/debug controls in the final payoff, final reload persistence, and replay back to a playable 64-tile board.
+- Focused final visual checks after ledger copy fix: desktop and 390x844 final ceremony both showed `+180 Bouquet coins`, `+210 XP Greenhouse`, `Replay First Bouquet`, and `Play Again -> First Bouquet`; 0 overflow, 0 broken images, 0 console/page/request errors.
+- Verification commands: `python3 scripts/verify_project.py`, `/opt/data/tools/godot/Godot_v4.2.2-stable_linux.x86_64 --headless --path . --script res://tests/godot_smoke_test.gd`, `git diff --check`, and `node --check /tmp/bloom-playable-inline.js` passed.
+- Browser console/runtime status: local smoke, desktop full journey, mobile full journey, and final targeted visual checks had 0 console warnings/errors, 0 page errors, and 0 failed browser requests.
+- GitHub Pages preview status: not checked in this local pass.
+- Known issues: none found in the verified first three-order vertical slice. Existing L/T/cross and Supreme Bloom review hooks remain available after the focused path for audit; no new visible debug controls were added.
+- How to trigger and verify L/T/cross matches without console: after leaving the focused first-order surface, click `Shape Bloom` repeatedly or press `M`; demos cycle through line5, line4, `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom`.
+- How to trigger and verify Supreme Bloom without console: focus the playable after Round 1 and press `B`; the `SUPREME BLOOM!` overlay should appear and return the board to 64 tiles.
+- Security/secret-scan status: precise changed-file scan passed for private-key headers, AWS/GitHub/OpenAI/Slack/Stripe token prefixes, JWTs, and suspicious credential assignments in `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`. No secrets, `.env`, trackers, analytics, backend, accounts, ads, IAP, broad permissions, or cron jobs were added.
+- Foreman visual QA: independent desktop and 390x844 review accepted the substantial ceremony but found the long conservatory state label competing with the central seal on mobile. The same milestone now gives that label a high-contrast lower caption treatment and a single-line portrait rule so the original art remains legible.
+
 ## 2026-07-13 Focused three-order greenhouse payoff
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
