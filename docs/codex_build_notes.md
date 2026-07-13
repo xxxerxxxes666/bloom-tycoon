@@ -1,5 +1,22 @@
 # Codex Build Notes
 
+## 2026-07-13 Bespoke first greenhouse artwork
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `docs/codex_build_notes.md`, `assets/greenhouse/first_greenhouse_withered.png`, and `assets/greenhouse/first_greenhouse_restored.png`.
+- Player-visible milestone: the Round 1 restoration ceremony now uses original repo-local greenhouse artwork instead of the previous CSS-only glasshouse. The card crossfades from a dark broken withered greenhouse to a lit restored greenhouse with living beds, while preserving the first heartbeat: two instructed swaps, bouquet complete, +120 coins, spend 100 coins, visible restoration, one `Next Order` action.
+- Browser verification: local static server `127.0.0.1:41030`; Chromium/Playwright with `NODE_PATH=/opt/data/home/.npm/_npx/420ff84f11983ee5/node_modules`.
+- Desktop 1440x1000: fresh load had 64 tiles, board 525x282 to 1175x932, 2 hints, 1 arrow, 0 visible non-tile buttons, 0 debug buttons, 0 broken images, and no overflow. Real two-swap path reached bouquet complete with only `Restore Greenhouse · 100 coins`; withered art loaded at 1672x941 and restored art opacity was 0. Restore switched to `Greenhouse Restored · 42 coins remain`, restored art opacity 1, only `Next Order →`, 64 saved board tiles, 0 broken images, 0 console messages, 0 page errors, and 0 failed requests.
+- Mobile 390x844: fresh load had 64 tiles, all 8 board rows visible from 199px to 577px, 2 hints, 1 arrow, 0 visible non-tile buttons, 0 overflow, and 0 broken images. Bouquet complete showed the withered artwork card from 163px to 603px with `Restore Greenhouse` in the first viewport; restore showed the lit greenhouse card from 163px to 619px with only `Next Order`.
+- Save/reload and Round 2: after restore, reload preserved `roundComplete: true`, `roundOneRestored: true`, 42 coins, 8x8 saved board, restored art, and `Next Order`. `Next Order` reached focused Round 2 on desktop and mobile with 64 tiles, 2 hints, 1 arrow, no visible debug controls, no overflow, and restored greenhouse status. The real Round 2 guided Cursed Thorn swap preserved 64 tiles and returned the `NEXT BLOOM` cue.
+- Retry/save path: a forced saved failed Round 2 state showed visible `RETRY BOUQUET`, 64 tiles, 0 broken images, and no overflow. Clicking it restored focused Round 2 to 17 moves, 64 tiles, 2 hints, 1 arrow, no visible non-tile buttons, and the Cursed Thorn cue on desktop and mobile.
+- Browser console/runtime status: final desktop and mobile journeys plus targeted retry check had 0 console messages, 0 page errors, and 0 failed browser requests.
+- Vercel deployment URL/identifier checked: not deployed or checked in this local pass.
+- GitHub Pages preview status: not checked in this local pass.
+- Known issues: image assets are PNGs totaling about 5.4 MB because no local PNG/WebP optimizer was available; no dependency was added just to compress them.
+- How to trigger and verify L/T/cross matches without console: after Round 1, click `Shape Bloom` repeatedly or press `M`; demos cycle through line5, line4, `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom`.
+- How to trigger and verify Supreme Bloom without console: focus the playable after Round 1 and press `B`; the `SUPREME BLOOM!` overlay should appear and return the board to 64 tiles.
+- Security/secret-scan status: changed-file credential scan passed for the 5 changed files. No secrets, trackers, analytics, backend, accounts, ads, IAP, `.env`, broad permissions, or cron jobs added.
+
 ## 2026-07-12 Focused restoration ceremony
 
 - Weakness selected: the expanded Round 1 greenhouse payoff exposed streak progression and a Greenhouse XP track at the exact moment the first-minute loop should read as one bouquet, one coin reward, one transformation, and one Next Order action.
