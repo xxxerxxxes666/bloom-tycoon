@@ -1,5 +1,20 @@
 # Codex Build Notes
 
+## 2026-07-13 Active greenhouse surround
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible milestone: active play now reads as happening inside the evolving greenhouse instead of a board floating over black. The focused board stays hero, but the existing repo-local greenhouse art is more legible behind the board, inside the board substrate, in the left hero, and in a clear mobile stage plinth labeled Withered/Moonlit/Bloodroot. No new assets, controls, rounds, systems, save fields, dependencies, backend, trackers, ads/IAP, accounts, permissions, or secrets were added.
+- Visual evidence inspected: live Vercel baseline screenshots `/tmp/bloom-live-desktop-before.png` and `/tmp/bloom-live-mobile-before.png`; local after screenshots `/tmp/bloom-local-desktop-after-fresh.png`, `/tmp/bloom-local-mobile-after-fresh.png`, `/tmp/bloom-local-desktop-restored-after-stage.png`, `/tmp/bloom-local-desktop-round2-moonlit-stage.png`, `/tmp/bloom-local-desktop-round3-final-stage.png`, `/tmp/bloom-local-mobile-restored-stage.png`, `/tmp/bloom-local-mobile-round2-moonlit-stage.png`, `/tmp/bloom-local-mobile-round2-failed-retry.png`, `/tmp/bloom-local-mobile-round2-retry-restored.png`, `/tmp/bloom-local-mobile-round3-bloodroot-stage.png`, and `/tmp/bloom-local-mobile-round3-final-stage.png`.
+- Browser verification: local static server `127.0.0.1:4180`; agent-browser/Chromium. Fresh desktop had 64 tiles, 8 rows, no non-tile controls, Withered stage, 0 broken images, and no overflow. Fresh 390x844 had 64 tiles, 8 complete rows, Withered plinth, no controls, 0 broken images, and no horizontal overflow.
+- Interaction verification: desktop real clicks completed Round 1 instructed swaps, +120 bouquet reward with 148 coin balance after streak, Restore Greenhouse, save/reload, Next Order, Round 2 thorn lesson, guided follow-up, one unguided ordinary move, Round 2 completion, Next Order, Round 3 Bloodroot active play, and final Bloodroot ceremony. Mobile real clicks completed the same first-three-order route after a forced Round 2 failure/retry check; active mobile Round 2 and Round 3 each kept 64 tiles and 8 complete visible rows.
+- Retry verification: a forced saved mobile Round 2 failure showed visible `Retry Bouquet`; clicking it restored Round 2 to 17 moves, 64 tiles, guide counter 0, Moonlit stage, 0 broken images, and no overflow.
+- Browser console/network status: local desktop and mobile verification runs reported 0 console messages/page errors; mobile network log showed only 200 responses for the playable and image/SVG assets. Live Vercel pre-edit baseline at `https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html` loaded with 64 tiles, no broken images, and no mobile overflow. GitHub Pages was not checked.
+- Verification commands: `python3 scripts/verify_project.py`, `git diff --check`, extracted playable `node --check`, and `/opt/data/tools/godot/Godot_v4.2.2-stable_linux.x86_64 --headless --path . --script res://tests/godot_smoke_test.gd` passed.
+- Known issues: none found in the focused first-three-order route. The mobile Round 2 retry state was forced through existing state/render functions to avoid burning turns, then recovered with a real `Retry Bouquet` click.
+- How to trigger and verify L/T/cross matches without console: after Round 1, click `Shape Bloom` repeatedly or press `M`; demos cycle through line5, line4, `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom`.
+- How to trigger and verify Supreme Bloom without console: focus the playable after Round 1 and press `B`; `SUPREME BLOOM!` should appear and return to a 64-tile board.
+- Security/secret-scan status: precise changed-file scan passed for private-key headers, provider token prefixes, JWTs, and suspicious credential assignments.
+
 ## 2026-07-13 Restoration relight ceremony
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.

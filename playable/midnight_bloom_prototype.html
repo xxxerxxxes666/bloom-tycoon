@@ -399,10 +399,11 @@
       z-index: 0;
       overflow: hidden;
       pointer-events: none;
-      opacity: 0.78;
+      opacity: 0.92;
       background:
-        radial-gradient(circle at 50% 44%, #0000 0 26%, #050404b8 57%, #020101 100%),
-        linear-gradient(90deg, #020101, #0000 24% 76%, #020101);
+        radial-gradient(circle at 50% 44%, #0000 0 18%, #05040478 48%, #020101 100%),
+        radial-gradient(circle at 50% 74%, color-mix(in srgb, var(--stage-accent, #b9874d) 24%, #0000) 0, #0000 34%),
+        linear-gradient(90deg, #020101, #0000 18% 82%, #020101);
     }
 
     .active-greenhouse-stage img {
@@ -412,8 +413,8 @@
       height: 110%;
       object-fit: cover;
       object-position: center;
-      opacity: 0.42;
-      filter: brightness(0.92) contrast(1.13) saturate(0.95);
+      opacity: 0.62;
+      filter: brightness(1.02) contrast(1.12) saturate(1.08);
       transform: scale(1.02);
     }
 
@@ -423,8 +424,8 @@
       inset: 0;
       z-index: 1;
       background:
-        radial-gradient(ellipse at 50% 54%, #000 0 24%, #000000d4 39%, #00000030 59%, #000000a8 100%),
-        linear-gradient(180deg, #00000030, #000000b8 76%, #000);
+        radial-gradient(ellipse at 50% 54%, #000 0 20%, #000000d8 34%, #00000018 62%, #0000009c 100%),
+        linear-gradient(180deg, #0000001f, #00000094 76%, #000);
     }
 
     .active-greenhouse-stage::after {
@@ -4889,7 +4890,34 @@
     .restored-greenhouse-meter { grid-column:1/-1; height:8px; border:1px solid #5f7f3e; background:#060805; box-shadow:inset 0 0 7px #000; overflow:hidden; }
     .restored-greenhouse-meter span { display:block; height:100%; width:var(--restored-greenhouse-xp-pct,0%); min-width:12px; background:linear-gradient(90deg,#4f762c,#c1dd75); box-shadow:0 0 11px #8fc65a; transition:width 480ms ease; }
     body.restored-greenhouse-handoff .board { box-shadow:0 0 0 1px #7fa35a,0 0 26px #7fcf6545,inset 0 0 16px #000; animation:handoff-board-glow 1.9s ease-out both; }
+    body.round-one-active:not(.round-one-complete) .board,
+    body.restored-next-order-focus:not(.restored-greenhouse-handoff) .board {
+      border-color: color-mix(in srgb, var(--stage-accent, #b9874d) 44%, #261d18);
+      background:
+        radial-gradient(circle at 50% 48%, #120706f2 0, #080403f0 51%, #030202 78%),
+        linear-gradient(180deg, #0000008f, #00000028 42%, #000000a8),
+        var(--active-greenhouse-image, url("../assets/greenhouse/first_greenhouse_withered.png")) center / cover no-repeat,
+        repeating-linear-gradient(0deg, #0000 0 52px, #805c3520 53px 54px),
+        repeating-linear-gradient(90deg, #0000 0 52px, #805c3520 53px 54px),
+        linear-gradient(180deg, #21160f, #050404);
+      box-shadow:
+        inset 0 0 42px #000,
+        inset 0 0 0 5px #080504,
+        inset 0 0 38px color-mix(in srgb, var(--stage-accent, #b9874d) 18%, #0000),
+        0 0 0 1px #000,
+        0 0 30px color-mix(in srgb, var(--stage-accent, #b9874d) 22%, #0000),
+        0 18px 42px #000c;
+    }
     body.restored-next-order-focus .board { touch-action:none; box-shadow:0 0 0 1px #6f944d,0 0 22px #7fcf6530,inset 0 0 16px #000; }
+    body.restored-next-order-focus:not(.restored-greenhouse-handoff) .board {
+      box-shadow:
+        inset 0 0 42px #000,
+        inset 0 0 0 5px #080504,
+        inset 0 0 38px color-mix(in srgb, var(--stage-accent, #6f944d) 24%, #0000),
+        0 0 0 1px #6f944d,
+        0 0 30px color-mix(in srgb, var(--stage-accent, #6f944d) 26%, #0000),
+        0 18px 42px #000c;
+    }
     .board.bloom-hit { animation:board-bloom-hit 520ms cubic-bezier(.12,.82,.18,1) both; }
     .board.line-relic-hit { animation:board-line-relic-hit 880ms cubic-bezier(.12,.82,.18,1) both; }
     .board.cascade-wave { animation:cascade-wave-hit 420ms cubic-bezier(.12,.82,.18,1) both; }
@@ -5164,19 +5192,29 @@
       body.round-one-active .ritual-log { margin:7px 7px 0; padding:7px 9px; min-height:0; font-size:12px; line-height:1.25; }
       body.round-one-active:not(.round-one-complete) .main::after,
       body.restored-next-order-focus:not(.restored-greenhouse-handoff) .main::after {
-        content:"";
-        display:block;
+        content:attr(data-stage-label);
+        display:grid;
+        align-items:end;
+        justify-items:center;
         width:calc(100% - 18px);
-        height:184px;
+        height:196px;
         margin:8px auto 0;
-        border-top:1px solid #2c1d16;
+        padding:0 12px 11px;
+        border:1px solid color-mix(in srgb,var(--stage-accent,#b9874d) 38%,#241812);
         background:
-          linear-gradient(180deg,#000000c8,#00000018 54%,#00000096),
+          radial-gradient(circle at 50% 34%,color-mix(in srgb,var(--stage-accent,#b9874d) 28%,#0000) 0,#0000 44%),
+          linear-gradient(180deg,#0000008f,#00000010 46%,#0000008f),
           var(--active-greenhouse-image, url("../assets/greenhouse/first_greenhouse_withered.png")) center bottom / cover no-repeat;
-        clip-path:polygon(12% 100%,18% 38%,50% 0,82% 38%,88% 100%);
-        opacity:.76;
+        clip-path:polygon(6% 100%,10% 32%,50% 0,90% 32%,94% 100%);
+        opacity:.96;
+        color:#f1d595;
+        font:900 10px/1.1 system-ui,sans-serif;
+        letter-spacing:.14em;
+        text-align:center;
+        text-transform:uppercase;
+        text-shadow:0 2px 4px #000,0 0 10px #000,0 0 12px var(--stage-accent,#b9874d);
         pointer-events:none;
-        filter:drop-shadow(0 0 18px #000) saturate(1.04) contrast(1.1);
+        filter:drop-shadow(0 0 18px #000) saturate(1.1) contrast(1.12);
       }
       body.round-one-active.round-one-complete .main::after { display:none; }
       body.round-one-active .controls { margin:7px auto 0; }
@@ -10816,6 +10854,7 @@
       const stageLabel = $("activeGreenhouseStageLabel");
       const stageCopy = $("activeGreenhouseStageCopy");
       const hero = document.querySelector(".hero");
+      const main = document.querySelector(".main");
       document.body.dataset.activeGreenhouseStage = stageKey;
       document.body.style.setProperty("--active-greenhouse-image", `url("${stage.src}")`);
       document.body.style.setProperty("--stage-accent", stage.accent);
@@ -10838,6 +10877,9 @@
       if (hero) {
         hero.dataset.stageLabel = stage.shortLabel;
         hero.setAttribute("aria-label", stage.label);
+      }
+      if (main) {
+        main.dataset.stageLabel = stage.shortLabel;
       }
     }
 
