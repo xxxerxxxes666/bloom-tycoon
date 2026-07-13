@@ -5488,6 +5488,7 @@
     ];
     const STREAK_COIN_BONUS_STEP = 5;
     const STREAK_COIN_BONUS_CAP = 25;
+    const RESTORED_ROUND_TWO_GUIDE_LIMIT = 2;
 
     let board = [];
     let selected = null;
@@ -5536,6 +5537,7 @@
     let isResolving = false;
     let supremeChargeActive = false;
     let hasMadeValidMove = false;
+    let restoredRoundTwoGuideMoves = 0;
     let currentRound = 1;
     let roundComplete = false;
     let roundOneRestored = false;
@@ -9831,6 +9833,11 @@
         return "";
       }
       const [a, b] = move;
+      if (isRestoredNextOrderFocus() && hasMadeValidMove) {
+        if (!isRestoredRoundTwoGuideActive()) {
+          return "";
+        }
+      }
       idleHintCells = new Set([`${a.x},${a.y}`, `${b.x},${b.y}`]);
       if (isRestoredNextOrderFocus() && hasMadeValidMove) {
         const direction = a.x === b.x ? "↑↓" : "↔";
@@ -9905,12 +9912,20 @@
 
     function scheduleIdleHint() {
       clearIdleHint();
-      if (hasMadeValidMove || roundComplete || isBouquetFailed() || isResolving || sacrificeState.active || activeBooster) {
+      const restoredFocusIdleHint = isRestoredNextOrderFocus()
+        && restoredRoundTwoGuideMoves >= RESTORED_ROUND_TWO_GUIDE_LIMIT;
+      if ((hasMadeValidMove && !restoredFocusIdleHint) || roundComplete || isBouquetFailed() || isResolving || sacrificeState.active || activeBooster) {
         return;
       }
-      const hintDelay = currentRound === 1 ? 350 : isRestoredNextOrderFocus() ? 650 : 7000;
+      const hintDelay = currentRound === 1
+        ? 350
+        : isRestoredRoundTwoGuideActive()
+          ? 650
+          : 7000;
       idleHintTimer = window.setTimeout(() => {
-        if (hasMadeValidMove || roundComplete || isBouquetFailed() || isResolving || sacrificeState.active || activeBooster) {
+        const restoredFocusIdleHintAfterDelay = isRestoredNextOrderFocus()
+          && restoredRoundTwoGuideMoves >= RESTORED_ROUND_TWO_GUIDE_LIMIT;
+        if ((hasMadeValidMove && !restoredFocusIdleHintAfterDelay) || roundComplete || isBouquetFailed() || isResolving || sacrificeState.active || activeBooster) {
           return;
         }
         const plan = activeRoundPlan();
@@ -9945,7 +9960,7 @@
         $("firstSwapCue").textContent = "Keep matching - swap the glowing pair.";
         return;
       }
-      if (isRestoredNextOrderFocus() && hasMadeValidMove && target) {
+      if (isRestoredRoundTwoGuideActive() && hasMadeValidMove && target) {
         const direction = a.x === b.x ? "↑↓" : "↔";
         $("firstSwapCue").textContent = `${flowers[target.flowerId][0]} next ${direction}`;
         return;
@@ -10105,6 +10120,11 @@
       return currentRound === 2 && roundOneRestored && !roundComplete;
     }
 
+    function isRestoredRoundTwoGuideActive() {
+      return isRestoredNextOrderFocus()
+        && restoredRoundTwoGuideMoves < RESTORED_ROUND_TWO_GUIDE_LIMIT;
+    }
+
     function render() {
       const roundOneActive = currentRound === 1;
       document.body.classList.toggle("round-one-active", roundOneActive);
@@ -10113,7 +10133,7 @@
       document.body.classList.toggle("restored-next-order-focus", isRestoredNextOrderFocus());
       const activePlan = activeRoundPlan();
       document.body.classList.toggle("thorn-lesson-active", activePlan.round === 2 && Boolean(activePlan.thornGoal) && thornGoalProgress(activePlan) === 0 && !roundComplete);
-      document.body.classList.toggle("round-two-followup-cue", isRestoredNextOrderFocus() && hasMadeValidMove && idleHintCells.size === 2 && !roundComplete);
+      document.body.classList.toggle("round-two-followup-cue", isRestoredRoundTwoGuideActive() && hasMadeValidMove && idleHintCells.size === 2 && !roundComplete);
       document.body.classList.toggle("first-move-made", hasMadeValidMove);
       const roundOneBlackCandleCue = roundOneActive && !roundComplete && $("firstSwapCue").textContent.includes("Black Candle Vine");
       document.body.classList.toggle("round-one-black-candle-cue", roundOneBlackCandleCue);
@@ -10396,7 +10416,7 @@
     }
 
     function renderFirstSwapArrow(boardEl) {
-      if ((currentRound !== 1 && !isRestoredNextOrderFocus()) || roundComplete || idleHintCells.size !== 2) {
+      if ((currentRound !== 1 && !isRestoredRoundTwoGuideActive()) || roundComplete || idleHintCells.size !== 2) {
         return;
       }
       const cells = [...idleHintCells].map((cell) => {
@@ -10854,6 +10874,12 @@
       clearIdleHint();
       const isFirstValidMove = !hasMadeValidMove;
       hasMadeValidMove = true;
+      if (isRestoredNextOrderFocus()) {
+        restoredRoundTwoGuideMoves = Math.min(
+          RESTORED_ROUND_TWO_GUIDE_LIMIT,
+          restoredRoundTwoGuideMoves + 1
+        );
+      }
       swapBoardCells(selected, target);
       pulseHaptic(18);
       activeSwapCells = new Set([`${selected.x},${selected.y}`, `${target.x},${target.y}`]);
@@ -10865,6 +10891,7 @@
       activeSwapCells.clear();
       document.querySelectorAll(".tile.swap-snap").forEach((tile) => tile.classList.remove("swap-snap"));
       let result = null;
+      let schedulePostResolveIdleHint = false;
       try {
         const authoredRoundOneLesson = currentRound === 1 && (
           isFirstValidMove || $("firstSwapCue").textContent.includes("Black Candle Vine")
@@ -10885,10 +10912,20 @@
         }
         ritualMessage = isBouquetFailed()
           ? `${harvestMessage} ${failedBouquetRitualMessage()}`
-          : harvestMessage + nextTargetMoveHint();
+          : harvestMessage;
+        if (!isBouquetFailed()) {
+          const targetHintCopy = nextTargetMoveHint();
+          ritualMessage += targetHintCopy;
+          if (!targetHintCopy) {
+            schedulePostResolveIdleHint = true;
+          }
+        }
       } finally {
         isResolving = false;
         render();
+        if (schedulePostResolveIdleHint) {
+          scheduleIdleHint();
+        }
         if (result && result.matched) {
           scheduleBoardParticleClear();
         }
@@ -12339,6 +12376,7 @@
       clearThornTeachingCue(false);
       graveSoilCells.clear();
       currentRound = nextRound;
+      restoredRoundTwoGuideMoves = 0;
       const runeBoonApplied = retryingFailedBouquet
         ? activeRuneTendedSoil
         : pendingRuneTendedSoil;
@@ -13686,6 +13724,8 @@
         currentRound,
         roundComplete,
         roundOneRestored,
+        hasMadeValidMove,
+        restoredRoundTwoGuideMoves,
         pendingRuneTendedSoil,
         activeRuneTendedSoil,
         greenhouse,
@@ -13734,6 +13774,19 @@
         currentRound = Math.max(1, Number(state.currentRound) || 1);
         roundComplete = Boolean(state.roundComplete || state.firstBouquetComplete);
         roundOneRestored = Boolean(state.roundOneRestored);
+        hasMadeValidMove = Boolean(state.hasMadeValidMove)
+          || counts.some((count) => count > 0)
+          || clearedCursedThorns > 0;
+        restoredRoundTwoGuideMoves = Math.max(0, Math.min(
+          RESTORED_ROUND_TWO_GUIDE_LIMIT,
+          Math.floor(Number(state.restoredRoundTwoGuideMoves) || 0)
+        ));
+        if (!Number.isFinite(Number(state.restoredRoundTwoGuideMoves)) && isRestoredNextOrderFocus() && hasMadeValidMove) {
+          restoredRoundTwoGuideMoves = Math.min(RESTORED_ROUND_TWO_GUIDE_LIMIT, clearedCursedThorns > 0 ? 1 : 0);
+        }
+        if (!isRestoredNextOrderFocus()) {
+          restoredRoundTwoGuideMoves = 0;
+        }
         pendingRuneTendedSoil = Boolean(state.pendingRuneTendedSoil);
         activeRuneTendedSoil = Boolean(state.activeRuneTendedSoil);
         greenhouse = validProgressState(state.greenhouse, greenhouse);
