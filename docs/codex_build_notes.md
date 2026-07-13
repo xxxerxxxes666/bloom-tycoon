@@ -1,5 +1,18 @@
 # Codex Build Notes
 
+## 2026-07-13 Selected harvest preview and tactile tile wells
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible milestone: selected swaps now preview the actual harvest run before commitment. Legal selected swaps light the matched flowers with color-aware altar wells, anchor throb, and aria labels; four-match Black Candle Vine selections also preview the full relic lane. Tile wells now pick up each flower's own color for a more premium tactile board without adding controls, systems, assets, rounds, economies, saves, dependencies, backend, trackers, ads/IAP, accounts, permissions, or secrets.
+- Visual evidence inspected: baseline desktop/mobile screenshots plus after screenshots for desktop selected preview, desktop Black Candle preview, mobile selected preview, mobile Black Candle preview, and visible Retry Bouquet.
+- Browser verification: local static server `127.0.0.1:8765`; agent-browser verified page load, no framework overlay, meaningful content, and 64 interactive tile buttons. Playwright/Chromium verified fresh 1280x720 and 390x844 loads with 64 tiles, 8 complete rows, 0 horizontal overflow, 0 broken images, and 0 console/page/request errors.
+- Interaction verification: real clicks exercised invalid swap refusal; first Round 1 selected preview showed 3 harvest tiles and 2 anchors; first guided swap completed Thorn Rose progress; Black Candle selected preview showed a full 8-tile relic lane; the second guided swap completed First Bouquet, +120 coins, Restore Greenhouse, save/reload, and Next Order. Round 2 verified Cursed Thorn selected preview, the authored thorn swap, the follow-up guide, unguided legal swaps to Moonlit Wreath completion, `Next Order -> Bloodroot Compact`, unguided Round 3 completion, and final Play Again availability.
+- Retry/save/review hooks: a forced failed Round 2 state showed visible `Retry Bouquet`; clicking it restored Round 2 to 17 moves, 64 tiles, 0 overflow, and 0 broken images. Keyboard `B` verified Supreme Bloom without console and returned to 64 tiles. Keyboard `M` verified the L/T/cross/shape-demo path with 64 tiles, 0 overflow, and 0 broken images. `Play Again -> First Bouquet` returned to an enabled 64-tile Round 1 board.
+- Browser console/network status: all final agent-browser and Playwright runs reported 0 console messages, 0 page errors, and 0 failed browser requests. Vercel and GitHub Pages live previews were not redeployed or checked in this local pass before push.
+- Verification commands: `python3 scripts/verify_project.py`, `git diff --check`, extracted playable `node --check`, and pinned Godot 4.2.2 smoke test `--headless --path . --script res://tests/godot_smoke_test.gd` passed.
+- Known issues: none found in the focused changed path. Some bouquet-binding and shape-demo particles are intentionally transient immediately after their effects and clear on existing timers.
+- Security/secret-scan status: precise changed-line scan passed for private-key headers, known token prefixes/JWTs, credential assignments, `.env`, trackers, and machine-local paths. A stricter whole-file scan still finds historical documentation-only local screenshot/tool paths in earlier build-note entries; no runtime/code paths, secrets, trackers, analytics, backend, accounts, ads/IAP, new dependencies, broad permissions, or cron jobs were added.
+
 ## 2026-07-13 Stage-aware occult soundscape
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.

@@ -1822,11 +1822,13 @@
     }
 
     .tile {
+      --tile-color: #b9874d;
       aspect-ratio: 1;
       display: flex;
       align-items: center;
       justify-content: center;
       background:
+        radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--tile-color) 24%, #0000) 0, #0000 34%),
         radial-gradient(circle at 50% 42%, #281a13 0, #0b0706 54%, #030202 78%),
         linear-gradient(145deg, #3c2c20 0 7%, #070504 8% 92%, #2a1d16 93%),
         linear-gradient(180deg, #18120e, #050404);
@@ -1899,6 +1901,41 @@
     .tile .icon-wrap {
       width: 98%;
       height: 98%;
+      z-index: 1;
+    }
+
+    .tile .tile-icon-wrap::before {
+      content: "";
+      position: absolute;
+      inset: 8%;
+      z-index: 0;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--tile-color) 34%, #fff2bd) 0 10%, #0000 40%),
+        radial-gradient(circle at 50% 52%, color-mix(in srgb, var(--tile-color) 38%, #000) 0, #0000 66%);
+      opacity: .58;
+      filter: blur(.2px);
+      box-shadow:
+        inset 0 0 14px #000,
+        0 0 12px color-mix(in srgb, var(--tile-color) 28%, #0000);
+      pointer-events: none;
+    }
+
+    .tile .tile-icon-wrap::after {
+      content: "";
+      position: absolute;
+      inset: 16%;
+      z-index: 0;
+      border: 1px solid color-mix(in srgb, var(--tile-color) 38%, #0000);
+      transform: rotate(45deg);
+      opacity: .42;
+      box-shadow: inset 0 0 8px #000;
+      pointer-events: none;
+    }
+
+    .tile .tile-icon-wrap img,
+    .tile .tile-icon-wrap .fallback-glyph {
+      position: relative;
       z-index: 1;
     }
 
@@ -2218,6 +2255,52 @@
       background:
         radial-gradient(circle, #d7b16d20 0, #0000 60%),
         linear-gradient(135deg, #0000 0 45%, #5f833866 49%, #0000 55%);
+    }
+
+    .tile.match-preview {
+      z-index: 3;
+      outline: 2px solid color-mix(in srgb, var(--tile-color) 52%, #d7b16d);
+      box-shadow:
+        inset 0 0 18px #000,
+        inset 0 0 0 2px #130d0a,
+        0 0 0 1px #160f0c,
+        0 0 18px color-mix(in srgb, var(--tile-color) 42%, #d7b16d),
+        0 0 34px #d7b16d42;
+    }
+
+    .tile.match-preview::before {
+      border-color: color-mix(in srgb, var(--tile-color) 54%, #f0c477);
+      box-shadow:
+        inset 0 0 13px #000,
+        0 0 14px color-mix(in srgb, var(--tile-color) 44%, #d7b16d);
+    }
+
+    .tile.match-preview::after {
+      opacity: 1;
+      background:
+        radial-gradient(circle at 50% 46%, color-mix(in srgb, var(--tile-color) 28%, #fff0b4) 0, #0000 58%),
+        linear-gradient(90deg, #0000 0 39%, #fff0b48a 48%, #0000 57%),
+        linear-gradient(0deg, #0000 0 39%, color-mix(in srgb, var(--tile-color) 58%, #d7b16d) 48%, #0000 57%);
+    }
+
+    .tile.match-preview-anchor {
+      animation: harvest-ready-throb 880ms ease-in-out infinite alternate;
+    }
+
+    .tile.relic-preview:not(.match-preview) {
+      outline: 1px solid #b9874d;
+      box-shadow:
+        inset 0 0 16px #000,
+        0 0 0 1px #160f0c,
+        0 0 14px #9b1d2266,
+        0 0 22px #d7b16d38;
+    }
+
+    .tile.relic-preview::after {
+      opacity: 1;
+      background:
+        radial-gradient(circle, #d7b16d1d 0, #0000 58%),
+        linear-gradient(90deg, #0000 0 46%, #ff8a4875 49%, #0000 54%);
     }
 
     .tile.shears-target {
@@ -4171,6 +4254,17 @@
           inset 0 0 14px #000,
           0 0 12px #7d151866;
         transform: scale(1);
+      }
+    }
+
+    @keyframes harvest-ready-throb {
+      0% {
+        filter: brightness(1.02) saturate(1.08);
+        transform: translateY(0) scale(1);
+      }
+      100% {
+        filter: brightness(1.18) saturate(1.3);
+        transform: translateY(-1px) scale(1.025);
       }
     }
 
@@ -10629,6 +10723,46 @@
       return createsMoveMatch;
     }
 
+    function previewSwapMatches(a, b) {
+      if (!isAdjacent(a, b) || board[a.y][a.x] === board[b.y][b.x]) {
+        return [];
+      }
+      swapBoardCells(a, b);
+      const movedKeys = new Set([`${a.x},${a.y}`, `${b.x},${b.y}`]);
+      const found = matches().filter((match) => match.cells.some(([mx, my]) => movedKeys.has(`${mx},${my}`)));
+      swapBoardCells(a, b);
+      return found;
+    }
+
+    function selectedHarvestPreviewFor(cell) {
+      const preview = { cells: new Set(), anchors: new Set(), relicCells: new Set() };
+      if (!cell || isResolving || roundComplete || isBouquetFailed() || sacrificeState.active || activeBooster) {
+        return preview;
+      }
+      const neighbors = [
+        { x: cell.x + 1, y: cell.y },
+        { x: cell.x - 1, y: cell.y },
+        { x: cell.x, y: cell.y + 1 },
+        { x: cell.x, y: cell.y - 1 }
+      ].filter((candidate) => candidate.x >= 0 && candidate.x < BOARD_SIZE && candidate.y >= 0 && candidate.y < BOARD_SIZE);
+      neighbors.forEach((target) => {
+        const found = previewSwapMatches(cell, target);
+        if (!found.length) {
+          return;
+        }
+        preview.anchors.add(`${cell.x},${cell.y}`);
+        preview.anchors.add(`${target.x},${target.y}`);
+        found.forEach((match) => {
+          match.cells.forEach(([mx, my]) => preview.cells.add(`${mx},${my}`));
+          const relic = lineRelicForMatch(match, analyzeMatchShape(match));
+          if (relic && relic.name === "Black Candle Vine") {
+            relic.cells.forEach(([rx, ry]) => preview.relicCells.add(`${rx},${ry}`));
+          }
+        });
+      });
+      return preview;
+    }
+
     function legalMoves() {
       const movesOut = [];
       for (let y = 0; y < BOARD_SIZE; y += 1) {
@@ -11350,6 +11484,7 @@
       boardEl.classList.toggle("cascade-wave", currentCascadeWave > 0);
       boardEl.classList.toggle("bloom-hit", harvestFlashCells.size > 0 || boardParticles.some((particle) => particle.type === "petal-pop" || particle.type === "coin-pop"));
       boardEl.classList.toggle("line-relic-hit", boardParticles.some((particle) => particle.type === "line-relic"));
+      const harvestPreview = selectedHarvestPreviewFor(selected);
 
       for (let y = 0; y < BOARD_SIZE; y += 1) {
         for (let x = 0; x < BOARD_SIZE; x += 1) {
@@ -11387,8 +11522,12 @@
           const fallKey = `${x},${y}`;
           const fallRows = fallAnimations.get(fallKey) || 0;
           const fallClass = fallRows ? "fall-in" : "";
-          tile.className = `tile ${selectedClass} ${legalClass} ${sacrificeClass} ${profitableClass} ${shearsClass} ${moonwaterTargetClass} ${moonwaterAreaClass} ${moonwaterCenterClass} ${blackCandleLineClass} ${graveSoilTargetClass} ${graveSoilReadyClass} ${harvestClass} ${superClass} ${invalidClass} ${swapClass} ${swapGlideClass} ${idleHintClass} ${thornTeachClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass}`;
+          const previewClass = harvestPreview.cells.has(fallKey) ? "match-preview" : "";
+          const previewAnchorClass = harvestPreview.anchors.has(fallKey) ? "match-preview-anchor" : "";
+          const relicPreviewClass = harvestPreview.relicCells.has(fallKey) ? "relic-preview" : "";
+          tile.className = `tile ${selectedClass} ${legalClass} ${previewClass} ${previewAnchorClass} ${relicPreviewClass} ${sacrificeClass} ${profitableClass} ${shearsClass} ${moonwaterTargetClass} ${moonwaterAreaClass} ${moonwaterCenterClass} ${blackCandleLineClass} ${graveSoilTargetClass} ${graveSoilReadyClass} ${harvestClass} ${superClass} ${invalidClass} ${swapClass} ${swapGlideClass} ${idleHintClass} ${thornTeachClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass}`;
           tile.disabled = isResolving || roundComplete || isBouquetFailed();
+          tile.style.setProperty("--tile-color", flowers[value][4]);
           if (swapGlide) {
             tile.style.setProperty("--swap-dx", String(swapGlide.dx));
             tile.style.setProperty("--swap-dy", String(swapGlide.dy));
@@ -11405,7 +11544,8 @@
           const graveSoilLabel = graveSoilReadyClass ? " Grave Soil relic-ready tile" : graveSoilTargetClass ? " Grave Soil upgrade target" : "";
           const thornTeachLabel = thornTeachClass ? " Cursed Thorn teaching cue" : "";
           const thornLabel = thorn ? " with Cursed Thorn blocker" : thornClearedClass ? " where a Cursed Thorn cracked" : "";
-          tile.setAttribute("aria-label", `${flowers[value][0]} tile${profitLabel}${legalLabel}${shearsLabel}${moonwaterLabel}${blackCandleLabel}${graveSoilLabel}${thornTeachLabel}${thornLabel}`);
+          const previewLabel = previewClass ? " in selected harvest preview" : relicPreviewClass ? " in Black Candle Vine lane preview" : "";
+          tile.setAttribute("aria-label", `${flowers[value][0]} tile${profitLabel}${legalLabel}${previewLabel}${shearsLabel}${moonwaterLabel}${blackCandleLabel}${graveSoilLabel}${thornTeachLabel}${thornLabel}`);
           tile.innerHTML = `
             ${iconMarkup(value, "", flowers[value][0], "tile-icon-wrap")}
             ${graveSoilReadyClass ? '<span class="grave-soil-sigil" aria-hidden="true"></span>' : ""}
