@@ -1,5 +1,23 @@
 # Codex Build Notes
 
+## 2026-07-13 Active greenhouse stage composition
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible milestone: active play now inhabits an evolving occult greenhouse instead of a mostly black shell. The focused board remains the altar, while the left hero and the quiet behind-board environment use the existing original repo-local greenhouse art: withered Round 1, violet Moonlit Greenhouse Round 2, and crimson Bloodroot Conservatory Round 3. Mobile keeps the board-first stack and replaces the old abstract below-board silhouette with the same stage-aware greenhouse art.
+- Implementation notes: added `activeGreenhouseStages`, `activeGreenhouseStageKey()`, and `applyActiveGreenhouseStage()` to drive one saved-state-safe stage from existing round/restoration state. Failed focused Round 2/3 now keep the compact restored-greenhouse layout so `Retry Bouquet` does not drop mobile back into the legacy tall layout.
+- Browser evidence: local static server `127.0.0.1:41070`; Chromium/Playwright with `NODE_PATH=/opt/data/home/.npm/_npx/420ff84f11983ee5/node_modules`.
+- Before screenshots inspected: `/tmp/bloom-before-1280x720.png`, `/tmp/bloom-before-390x844.png`, and `/tmp/bloom-before-1440x1000.png` showed the tiny/dark top-left greenhouse and no active mobile art.
+- After screenshots inspected: `/tmp/bloom-after-1280x720.png`, `/tmp/bloom-after-390x844.png`, `/tmp/bloom-short1280x720-round2-moonlit-stage.png`, `/tmp/bloom-short1280x720-round3-bloodroot-stage.png`, `/tmp/bloom-mobile390x844-round2-moonlit-stage.png`, `/tmp/bloom-mobile390x844-round3-bloodroot-stage.png`, `/tmp/bloom-mobile-retry-before.png`, and `/tmp/bloom-mobile-retry-after.png`.
+- Browser verification: fresh 1280x720 had 64 tiles, 8 complete rows, withered stage, board 186px-720px, no overflow, and 0 broken images. Fresh 390x844 had 64 tiles, 8 complete rows, withered stage, board 199px-577px, no overflow, and 0 broken images. Full 1280x720 journey completed Round 1 two guided swaps, +120 payoff, Restore Greenhouse, reload, Next Order, Round 2 moonlit stage and unguided completion, Round 2 reload, Round 3 bloodroot stage, final payoff, final reload, and replay. Full 390x844 journey passed the same path with 8 mobile rows on fresh/Round 2/Round 3/replay. Forced mobile Round 2 failure showed visible `Retry Bouquet`, 64 tiles, 8 rows, moonlit stage, no overflow; retry restored Round 2 with 64 tiles and 8 rows.
+- Deterministic routes used: desktop Round 2 after the two cues used `5,0->5,1`, `4,0->5,0`, `3,4->4,4`, `2,1->3,1`, `3,0->4,0`; desktop Round 3 used `1,0->1,1`, `2,4->2,5`, `4,7->5,7`, `5,0->5,1`. Mobile Round 2 after the two cues used `3,1->3,2`, `2,1->2,2`, `5,2->5,3`; mobile Round 3 used `1,0->1,1`, `6,0->7,0`, `3,2->4,2`, `2,1->2,2`.
+- Verification commands: `python3 scripts/verify_project.py`, `/opt/data/tools/godot/Godot_v4.2.2-stable_linux.x86_64 --headless --path . --script res://tests/godot_smoke_test.gd`, `git diff --check`, and `node --check /tmp/bloom-playable-inline.js` passed.
+- Browser console/runtime status: final desktop journey, final mobile journey, and targeted retry check had 0 console messages, 0 page errors, and 0 failed requests.
+- Live-host status: no Vercel redeploy or GitHub Pages check was performed in this local pass before push.
+- Known issues: none found in the focused first three-order route. On 1280x720, Round 2 active play shows 6 complete rows during the restored status/tutorial stack, while fresh Round 1 still shows all 8 rows and mobile shows 8 rows for the checked active stages.
+- How to trigger and verify L/T/cross matches without console: after Round 1, click `Shape Bloom` repeatedly or press `M`; demos cycle through line5, line4, `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom`.
+- How to trigger and verify Supreme Bloom without console: focus the playable after Round 1 and press `B`; the `SUPREME BLOOM!` overlay should appear and return the board to 64 tiles.
+- Security/secret-scan status: precise changed-file scan passed for private-key headers, provider token prefixes, JWTs, and suspicious credential assignments. No secrets, `.env`, trackers, analytics, backend, accounts, ads/IAP, broad permissions, or cron jobs were added.
+
 ## 2026-07-13 Short desktop board-first composition
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.

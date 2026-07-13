@@ -392,6 +392,83 @@
       padding: 6px 8px 0;
     }
 
+    .active-greenhouse-stage {
+      display: none;
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+      opacity: 0.78;
+      background:
+        radial-gradient(circle at 50% 44%, #0000 0 26%, #050404b8 57%, #020101 100%),
+        linear-gradient(90deg, #020101, #0000 24% 76%, #020101);
+    }
+
+    .active-greenhouse-stage img {
+      position: absolute;
+      inset: -5% -10%;
+      width: 120%;
+      height: 110%;
+      object-fit: cover;
+      object-position: center;
+      opacity: 0.42;
+      filter: brightness(0.92) contrast(1.13) saturate(0.95);
+      transform: scale(1.02);
+    }
+
+    .active-greenhouse-stage::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background:
+        radial-gradient(ellipse at 50% 54%, #000 0 24%, #000000d4 39%, #00000030 59%, #000000a8 100%),
+        linear-gradient(180deg, #00000030, #000000b8 76%, #000);
+    }
+
+    .active-greenhouse-stage::after {
+      content: "";
+      position: absolute;
+      inset: 8px 10px;
+      z-index: 2;
+      border: 1px solid color-mix(in srgb, var(--stage-accent, #b9874d) 44%, #0000);
+      box-shadow:
+        inset 0 0 34px #000,
+        inset 0 0 42px color-mix(in srgb, var(--stage-accent, #b9874d) 24%, #0000);
+      opacity: 0.62;
+    }
+
+    .active-greenhouse-badge {
+      position: absolute;
+      right: 18px;
+      bottom: 18px;
+      z-index: 3;
+      max-width: 260px;
+      padding: 7px 10px;
+      border: 1px solid color-mix(in srgb, var(--stage-accent, #b9874d) 54%, #000);
+      background: #050403d9;
+      box-shadow: inset 0 0 12px #000, 0 0 18px #000;
+      color: #f1d595;
+      text-align: right;
+      text-shadow: 0 2px 0 #000;
+    }
+
+    .active-greenhouse-badge b {
+      display: block;
+      color: var(--stage-accent, #d7b16d);
+      font: 900 10px/1.1 system-ui, sans-serif;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .active-greenhouse-badge span {
+      display: block;
+      margin-top: 3px;
+      color: #cbb894;
+      font: 700 12px/1.15 Georgia, serif;
+    }
+
     .sigil {
       text-align: center;
       letter-spacing: 12px;
@@ -4401,6 +4478,17 @@
       padding: 4px 8px 0;
     }
 
+    body.round-one-active .main > :not(.active-greenhouse-stage),
+    body.restored-next-order-focus .main > :not(.active-greenhouse-stage) {
+      position: relative;
+      z-index: 2;
+    }
+
+    body.round-one-active .active-greenhouse-stage,
+    body.restored-next-order-focus .active-greenhouse-stage {
+      display: block;
+    }
+
     body.round-three-final-complete .game {
       width: min(980px, calc(100vw - 16px));
       min-height: calc(100vh - 16px);
@@ -4429,14 +4517,16 @@
     body.round-one-active .hero,
     body.restored-next-order-focus .hero {
       height: 206px;
-      background-position: left top;
-      background-size: 1040px auto;
-      filter: contrast(1.18) saturate(0.94) brightness(0.82);
+      background:
+        linear-gradient(180deg, #00000054, #00000012 48%, #000000a8),
+        radial-gradient(circle at 50% 48%, color-mix(in srgb, var(--stage-accent, #b9874d) 30%, #0000) 0, #0000 44%),
+        var(--active-greenhouse-image, url("../assets/greenhouse/first_greenhouse_withered.png")) center / cover no-repeat;
+      filter: contrast(1.16) saturate(1.02) brightness(0.96);
     }
 
     body.round-one-active .hero::before,
     body.restored-next-order-focus .hero::before {
-      content: "GREENHOUSE";
+      content: attr(data-stage-label);
       position: absolute;
       left: 16px;
       bottom: 13px;
@@ -4469,8 +4559,7 @@
 
       body.round-one-active .hero,
       body.restored-next-order-focus .hero {
-        height: 106px;
-        background-size: 820px auto;
+        height: 138px;
       }
 
       body.round-one-active .hero::before,
@@ -4991,13 +5080,44 @@
       body.restored-next-order-focus .board,
       body.restored-greenhouse-handoff .board,
       body.round-one-active .board { width:calc(100vw - 12px); max-width:378px; gap:3px; padding:5px; margin:7px auto 0; }
+      body.restored-next-order-focus .active-greenhouse-stage,
+      body.restored-greenhouse-handoff .active-greenhouse-stage,
+      body.round-one-active .active-greenhouse-stage {
+        inset: 0 0 auto;
+        height: 100%;
+        opacity: 0.48;
+      }
+      body.restored-next-order-focus .active-greenhouse-stage img,
+      body.restored-greenhouse-handoff .active-greenhouse-stage img,
+      body.round-one-active .active-greenhouse-stage img {
+        inset: auto -30px -8px;
+        width: calc(100% + 60px);
+        height: 260px;
+        object-position: center bottom;
+        opacity: 0.52;
+        filter: brightness(0.88) contrast(1.12) saturate(1.02);
+      }
+      body.restored-next-order-focus .active-greenhouse-stage::before,
+      body.restored-greenhouse-handoff .active-greenhouse-stage::before,
+      body.round-one-active .active-greenhouse-stage::before {
+        background:
+          linear-gradient(180deg, #000 0 64%, #0000008a 76%, #0000001c 100%),
+          radial-gradient(ellipse at 50% 96%, #00000020 0 32%, #000000d8 88%);
+      }
+      body.restored-next-order-focus .active-greenhouse-stage::after,
+      body.restored-greenhouse-handoff .active-greenhouse-stage::after,
+      body.round-one-active .active-greenhouse-stage::after,
+      .active-greenhouse-badge {
+        display: none;
+      }
       body.restored-next-order-focus .restored-greenhouse-status { padding:6px 8px; }
       .restored-greenhouse-kicker { font-size:9px; }
       .restored-greenhouse-copy { font-size:11px; }
       body.restored-next-order-focus .ritual-log,
       body.restored-greenhouse-handoff .ritual-log,
       body.round-one-active .ritual-log { margin:7px 7px 0; padding:7px 9px; min-height:0; font-size:12px; line-height:1.25; }
-      body.round-one-active:not(.round-one-complete) .main::after {
+      body.round-one-active:not(.round-one-complete) .main::after,
+      body.restored-next-order-focus:not(.restored-greenhouse-handoff) .main::after {
         content:"";
         display:block;
         width:calc(100% - 18px);
@@ -5005,14 +5125,12 @@
         margin:8px auto 0;
         border-top:1px solid #2c1d16;
         background:
-          radial-gradient(circle at 18% 72%,#b9874d33 0 3px,#0000 8px),
-          radial-gradient(circle at 82% 72%,#b9874d33 0 3px,#0000 8px),
-          linear-gradient(90deg,#0000 0 11%,#2a211a 12% 13%,#0000 14% 47%,#2a211a 48% 52%,#0000 53% 86%,#2a211a 87% 88%,#0000 89%),
-          radial-gradient(ellipse at 50% 100%,#182411 0 25%,#0b0907 45%,#0000 68%);
+          linear-gradient(180deg,#000000c8,#00000018 54%,#00000096),
+          var(--active-greenhouse-image, url("../assets/greenhouse/first_greenhouse_withered.png")) center bottom / cover no-repeat;
         clip-path:polygon(12% 100%,18% 38%,50% 0,82% 38%,88% 100%);
-        opacity:.54;
+        opacity:.76;
         pointer-events:none;
-        filter:drop-shadow(0 0 18px #000);
+        filter:drop-shadow(0 0 18px #000) saturate(1.04) contrast(1.1);
       }
       body.round-one-active.round-one-complete .main::after { display:none; }
       body.round-one-active .controls { margin:7px auto 0; }
@@ -5091,6 +5209,13 @@
     </aside>
 
     <section class="main" aria-label="Match board">
+      <div class="active-greenhouse-stage" id="activeGreenhouseStage" aria-hidden="true" data-stage-key="withered">
+        <img id="activeGreenhouseStageArt" src="../assets/greenhouse/first_greenhouse_withered.png" width="1672" height="941" alt="" decoding="async" loading="eager">
+        <span class="active-greenhouse-badge">
+          <b id="activeGreenhouseStageLabel">Withered Greenhouse</b>
+          <span id="activeGreenhouseStageCopy">The abandoned glass waits around the altar.</span>
+        </span>
+      </div>
       <div class="sigil">SOLVE ET COAGULA</div>
       <h1 class="title">Bloom Tycoon</h1>
       <div class="objective" id="objective">
@@ -5335,6 +5460,35 @@
         width: 1280,
         height: 720,
         label: "Bloodroot Compact greenhouse transformation with crimson root conservatory"
+      }
+    };
+    const activeGreenhouseStages = {
+      withered: {
+        src: "../assets/greenhouse/first_greenhouse_withered.png",
+        width: 1672,
+        height: 941,
+        accent: "#b9874d",
+        label: "Withered Greenhouse",
+        shortLabel: "WITHERED GREENHOUSE",
+        copy: "Dead glass surrounds the first altar."
+      },
+      moonlit: {
+        src: "../assets/greenhouse/moonlit_wreath_greenhouse.svg",
+        width: 1280,
+        height: 720,
+        accent: "#8f78d2",
+        label: "Moonlit Greenhouse",
+        shortLabel: "MOONLIT GREENHOUSE",
+        copy: "Repaired panes glow violet around the thorn lesson."
+      },
+      bloodroot: {
+        src: "../assets/greenhouse/bloodroot_compact_greenhouse.svg",
+        width: 1280,
+        height: 720,
+        accent: "#c23a48",
+        label: "Bloodroot Conservatory",
+        shortLabel: "BLOODROOT CONSERVATORY",
+        copy: "Crimson roots claim the final compact."
       }
     };
 
@@ -10589,19 +10743,66 @@
       }
     }
 
+    function activeGreenhouseStageKey() {
+      if (currentRound >= 3) {
+        return "bloodroot";
+      }
+      if (roundOneRestored || currentRound === 2) {
+        return "moonlit";
+      }
+      return "withered";
+    }
+
+    function applyActiveGreenhouseStage(stageKey) {
+      const stage = activeGreenhouseStages[stageKey] || activeGreenhouseStages.withered;
+      const stageEl = $("activeGreenhouseStage");
+      const stageArt = $("activeGreenhouseStageArt");
+      const stageLabel = $("activeGreenhouseStageLabel");
+      const stageCopy = $("activeGreenhouseStageCopy");
+      const hero = document.querySelector(".hero");
+      document.body.dataset.activeGreenhouseStage = stageKey;
+      document.body.style.setProperty("--active-greenhouse-image", `url("${stage.src}")`);
+      document.body.style.setProperty("--stage-accent", stage.accent);
+      if (stageEl) {
+        stageEl.dataset.stageKey = stageKey;
+      }
+      if (stageArt && stageArt.getAttribute("src") !== stage.src) {
+        stageArt.src = stage.src;
+      }
+      if (stageArt) {
+        stageArt.width = stage.width;
+        stageArt.height = stage.height;
+      }
+      if (stageLabel) {
+        stageLabel.textContent = stage.label;
+      }
+      if (stageCopy) {
+        stageCopy.textContent = stage.copy;
+      }
+      if (hero) {
+        hero.dataset.stageLabel = stage.shortLabel;
+        hero.setAttribute("aria-label", stage.label);
+      }
+    }
+
     function render() {
       const roundOneActive = currentRound === 1;
       const roundTwoUpgradeComplete = currentRound === 2 && roundComplete && roundOneRestored;
       const roundThreeFinalComplete = currentRound === 3 && roundComplete;
+      const activePlan = activeRoundPlan();
+      const failedFocusedRestoredOrder = roundOneRestored
+        && activePlan.round >= 2
+        && activePlan.round <= 3
+        && isBouquetFailed(activePlan);
       applyGreenhouseArtwork(roundThreeFinalComplete ? "bloodroot" : roundTwoUpgradeComplete ? "moonlit" : "first");
+      applyActiveGreenhouseStage(activeGreenhouseStageKey());
       document.body.classList.toggle("round-one-active", roundOneActive);
       document.body.classList.toggle("round-one-complete", roundOneActive && roundComplete);
       document.body.classList.toggle("restored-greenhouse-handoff", restoredGreenhouseHandoff && currentRound === 2 && !roundComplete);
-      document.body.classList.toggle("restored-next-order-focus", isRestoredNextOrderFocus());
+      document.body.classList.toggle("restored-next-order-focus", isRestoredNextOrderFocus() || failedFocusedRestoredOrder);
       document.body.classList.toggle("round-two-upgrade-complete", roundTwoUpgradeComplete);
       document.body.classList.toggle("round-three-final-complete", roundThreeFinalComplete);
       document.body.classList.toggle("round-three-focus-active", currentRound === 3 && isRestoredNextOrderFocus());
-      const activePlan = activeRoundPlan();
       document.body.classList.toggle("focused-slice-failed", activePlan.round <= 3 && isBouquetFailed(activePlan));
       document.body.classList.toggle("thorn-lesson-active", activePlan.round === 2 && Boolean(activePlan.thornGoal) && thornGoalProgress(activePlan) === 0 && !roundComplete);
       document.body.classList.toggle("round-two-followup-cue", isRestoredRoundTwoGuideActive() && hasMadeValidMove && idleHintCells.size === 2 && !roundComplete);
