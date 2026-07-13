@@ -1,5 +1,22 @@
 # Codex Build Notes
 
+## 2026-07-13 Stage-aware occult soundscape
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible milestone: the first-three-order board loop now has a gesture-gated occult audio bed and richer procedural motifs. The soundscape starts after real interaction, routes through a master/compressor, shifts from withered to moonlit to bloodroot greenhouse stages, and gives swap, invalid, match, Black Candle, bouquet completion, restore, Next Order, retry, and replay actions distinct tones. No new assets, controls, rounds, systems, dependencies, saves, backend, trackers, ads/IAP, accounts, permissions, or secrets were added.
+- Visual evidence inspected: `/tmp/bloom-baseline-desktop-1440x1000.png`, `/tmp/bloom-baseline-mobile-390x844.png`, `/tmp/bloom-audio-firstmatch-desktop.png`, `/tmp/bloom-audio-final-desktop-round2-active.png`, `/tmp/bloom-audio-final-desktop-round3-active.png`, `/tmp/bloom-audio-final-mobile-round2-active.png`, and `/tmp/bloom-audio-final-mobile-round3-active.png`.
+- Browser verification: local static server `127.0.0.1:8765`; Chromium/Playwright with `NODE_PATH=/opt/data/home/.npm/_npx/705bc6b22212b352/node_modules`. Fresh desktop 1440x1000 and mobile 390x844 had 64 tiles, 8 complete rows, 0 broken images, no horizontal overflow, and no console/page/request errors. Mobile Round 2 and Round 3 active states each kept 64 tiles, 8 complete rows, 0 overflow, and 0 broken images.
+- Interaction verification: real clicks exercised invalid swap, first Round 1 match, Black Candle Vine second swap, bouquet completion, Restore Greenhouse, save/reload, Next Order, Round 2 thorn lesson plus unguided completion, Round 3 completion, and Play Again. First-match FX cleaned to 0 transient nodes; audio context reached `running`, soundscape started, and audio stage advanced `withered -> moonlit -> bloodroot -> withered` across the route.
+- Retry/save path: forced saved Round 2 failure exposed visible `Retry Bouquet`; clicking it restored Round 2 to 17 moves, 64 tiles, 8 complete rows on desktop and mobile, no overflow, no broken images, and started the moonlit retry soundscape.
+- Browser console/network status: final desktop journey, mobile journey, retry checks, Supreme Bloom cleanup, and shape-demo checks reported 0 console messages, 0 page errors, and 0 failed browser requests.
+- Verification commands: `python3 scripts/verify_project.py`, `git diff --check`, extracted playable `node --check /tmp/bloom-playable-inline.js`, and `/opt/data/tools/godot/Godot_v4.2.2-stable_linux.x86_64 --headless --path . --script res://tests/godot_smoke_test.gd` passed.
+- How to trigger and verify L/T/cross matches without console: after Round 3/replay or outside the focused first-three active composition, press `M` or use `Shape Bloom` where visible; this pass verified `M` still resolves a shape demo with 64 tiles, no broken images, no overflow, and starts the soundscape.
+- How to trigger and verify Supreme Bloom without console: focus the playable and press `B`; this pass verified `SUPREME BLOOM!` appears with 84 particles, then cleans to 0 particles with 64 tiles, 0 broken images, and no overflow.
+- Vercel deployment URL/identifier checked: not redeployed or checked in this local pass before push.
+- GitHub Pages preview status: not checked in this local pass before push.
+- Known issues: none found in the focused first-three-order route. Completion/payoff transient FX can still be visible immediately after final bouquet screens, then clear on their existing timers.
+- Security/secret-scan status: precise changed-file scan passed for private-key headers, known provider token prefixes, JWTs, and suspicious credential assignments. No secrets, `.env`, trackers, analytics, backend, accounts, ads/IAP, new dependencies, broad permissions, or cron jobs were added.
+
 ## 2026-07-13 Clean first-three-order active composition
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
