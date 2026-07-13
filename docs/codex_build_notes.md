@@ -1,5 +1,23 @@
 # Codex Build Notes
 
+## 2026-07-13 Restoration relight ceremony
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible milestone: the first greenhouse spend now has a clear relight ceremony at the exact `Restore Greenhouse · 100 coins` click. The existing withered/restored artwork now gets a timed before/after reveal, gold-green flare sweep, sparks, panel glow, spend pulse, and restored-state pop before settling back to the same single `Next Order` action. No new systems, controls, assets, dependencies, saves, backend, trackers, accounts, ads/IAP, or permissions were added.
+- Implementation notes: added `restoration-awakening`, `restoration-flare`, and `restoration-spark-field` layers inside the existing restoration scene, with transient class lifecycle in `restoreRoundOneGreenhouse()`. The verifier now checks the relight ceremony hooks and keyframes.
+- Visual browser evidence: local static server `127.0.0.1:4173`; Chromium/Playwright via temporary npx cache `NODE_PATH=/opt/data/home/.npm/_npx/705bc6b22212b352/node_modules`. Inspected `/tmp/bloom-desktop-before.png`, `/tmp/bloom-mobile-before.png`, `/tmp/bloom-desktop-restore-animating.png`, `/tmp/bloom-desktop-restored-final.png`, `/tmp/bloom-mobile-restore-animating.png`, and `/tmp/bloom-mobile-restored-final.png`.
+- Desktop 1440x1000 verification: fresh load had 64 tiles, 8 visible rows, no visible non-tile controls, 0 broken images, and no overflow. Real clicks verified invalid adjacent refusal, instructed first swaps, bouquet completion, +120 payoff, restore animation class present mid-click, final restored state with only `Next Order`, save/reload preserving restored Round 1, `Next Order` into Round 2, and first Cursed Thorn move.
+- Mobile 390x844 verification: fresh load had 64 tiles, 8 visible rows, no overflow, and 0 broken images. Completion and restore card stayed within the viewport; mid-animation and final restored states had only `Next Order`, 64 tiles retained in state, no overflow, and 0 broken images.
+- Continuation/retry verification: Round 2 start and first real thorn move preserved 64 tiles and 0 errors. Existing `N` review hook verified Moonlit Wreath completion, `Next Order -> Bloodroot Compact`, Bloodroot final payoff, and `Play Again -> First Bouquet`; forced Round 2 failure then `Retry Bouquet` restored moves/objectives/thorns with 64 tiles.
+- Browser console/runtime status: final desktop/mobile visual runs and the interaction/retry/hook regression had 0 console messages, 0 page errors, and 0 failed browser requests.
+- Verification commands: `python3 scripts/verify_project.py` passed; `git diff --check` passed. Godot headless smoke test was not run because no `godot` or `godot4` binary was available on PATH in this environment.
+- Vercel deployment URL/identifier checked: not redeployed or checked in this local pass before push.
+- GitHub Pages preview status: not checked in this local pass before push.
+- Known issues: none found in the focused first three-order route. The continuation to Round 2/3 completion used the existing `N` review hook after the real Round 2 handoff; the player-facing Round 1 restore path was exercised with real tile clicks.
+- How to trigger and verify L/T/cross matches without console: after Round 1, click `Shape Bloom` where visible or press `M`; demos cycle through line5, line4, `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom`. This pass verified the `M` cycle still resolves and preserves 64 tiles.
+- How to trigger and verify Supreme Bloom without console: focus the playable and press `B`; the `SUPREME BLOOM!` overlay should appear and return to 64 tiles. This pass verified `B` set `supremeOn: true`, added coins, and returned without broken images or overflow.
+- Security/secret-scan status: precise changed-file scan passed for private-key headers, AWS/GitHub/OpenAI/Slack/Stripe token prefixes, JWTs, and suspicious credential assignments. No secrets, `.env`, trackers, analytics, backend, accounts, ads/IAP, broad permissions, or cron jobs were added.
+
 ## 2026-07-13 Active greenhouse stage composition
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
