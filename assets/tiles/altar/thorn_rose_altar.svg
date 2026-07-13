@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-labelledby="thorn-rose-title">
+  <title id="thorn-rose-title">Thorn Rose crimson sigil</title>
+  <defs>
+    <radialGradient id="thorn-rose-halo" cx="50%" cy="43%" r="52%">
+      <stop offset="0" stop-color="#ff86bd" stop-opacity=".82"/>
+      <stop offset=".42" stop-color="#c0185e" stop-opacity=".24"/>
+      <stop offset="1" stop-color="#050202" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="thorn-rose-shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#000000" flood-opacity=".86"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="3.4" flood-color="#c0185e" flood-opacity=".48"/>
+    </filter>
+    <linearGradient id="thorn-rose-metal" x1="14" y1="8" x2="84" y2="88" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff3b0"/>
+      <stop offset=".28" stop-color="#ff86bd"/>
+      <stop offset=".62" stop-color="#c0185e"/>
+      <stop offset="1" stop-color="#210806"/>
+    </linearGradient>
+  </defs>
+  <rect width="96" height="96" fill="none"/>
+  <circle cx="48" cy="48" r="42" fill="url(#thorn-rose-halo)"/>
+  <g filter="url(#thorn-rose-shadow)" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M48 14c9 8 11 18 2 30 12-4 21 2 25 13-9 9-20 11-31 3 3 12-3 21-15 25-8-9-9-20-1-30-12 2-21-4-25-16 9-8 20-9 31-1-4-12 1-20 14-24Z" fill="#9f1046" stroke="#260411" stroke-width="3"/>
+    <path d="M48 31c15 3 18 22 3 29-10 5-23-4-18-16 4-10 20-10 23 0 2 7-6 13-13 10" fill="none" stroke="#ff79ad" stroke-width="4"/>
+    <path d="M31 33c9 4 14 9 15 15M63 35c-8 4-13 9-15 16M33 66c6-5 11-8 18-10" stroke="#4b071b" stroke-width="3"/>
+    <path d="M21 23c8 2 14 6 19 13M75 72c-8-3-14-7-19-15" stroke="#6a8f42" stroke-width="4"/>
+    <path d="M23 23l8-7M73 72l-8 7" stroke="#d7b16d" stroke-width="2"/>
+  </g>
+</svg>

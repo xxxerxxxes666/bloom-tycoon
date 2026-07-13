@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-labelledby="sol-rot-title">
+  <title id="sol-rot-title">Sol Rot occult sun medallion</title>
+  <defs>
+    <radialGradient id="sol-rot-halo" cx="50%" cy="43%" r="52%">
+      <stop offset="0" stop-color="#f6d27a" stop-opacity=".82"/>
+      <stop offset=".42" stop-color="#d49a2f" stop-opacity=".24"/>
+      <stop offset="1" stop-color="#050202" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="sol-rot-shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#000000" flood-opacity=".86"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="3.4" flood-color="#d49a2f" flood-opacity=".48"/>
+    </filter>
+    <linearGradient id="sol-rot-metal" x1="14" y1="8" x2="84" y2="88" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff3b0"/>
+      <stop offset=".28" stop-color="#f6d27a"/>
+      <stop offset=".62" stop-color="#d49a2f"/>
+      <stop offset="1" stop-color="#210806"/>
+    </linearGradient>
+  </defs>
+  <rect width="96" height="96" fill="none"/>
+  <circle cx="48" cy="48" r="42" fill="url(#sol-rot-halo)"/>
+  <g filter="url(#sol-rot-shadow)" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="48" cy="48" r="26" fill="#21140a" stroke="#d8a657" stroke-width="3"/>
+    <circle cx="48" cy="48" r="18" fill="url(#sol-rot-metal)" stroke="#4c2c12" stroke-width="2"/>
+    <path d="M48 9v16M48 71v16M9 48h16M71 48h16M20 20l12 12M64 64l12 12M76 20 64 32M32 64 20 76" stroke="#e8c36d" stroke-width="4"/>
+    <path d="M39 37c8-7 22 0 21 12-.8 12-16 18-25 8 11 2 19-5 18-13-.6-6-6-10-14-7Z" fill="#5d300b" stroke="#f1c46d" stroke-width="2"/>
+    <circle cx="48" cy="48" r="6" fill="#fff1aa" opacity=".84"/>
+  </g>
+</svg>

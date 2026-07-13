@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-labelledby="nightshade-title">
+  <title id="nightshade-title">Nightshade violet bloom</title>
+  <defs>
+    <radialGradient id="nightshade-halo" cx="50%" cy="43%" r="52%">
+      <stop offset="0" stop-color="#d59cff" stop-opacity=".82"/>
+      <stop offset=".42" stop-color="#8247c6" stop-opacity=".24"/>
+      <stop offset="1" stop-color="#050202" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="nightshade-shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#000000" flood-opacity=".86"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="3.4" flood-color="#8247c6" flood-opacity=".48"/>
+    </filter>
+    <linearGradient id="nightshade-metal" x1="14" y1="8" x2="84" y2="88" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff3b0"/>
+      <stop offset=".28" stop-color="#d59cff"/>
+      <stop offset=".62" stop-color="#8247c6"/>
+      <stop offset="1" stop-color="#210806"/>
+    </linearGradient>
+  </defs>
+  <rect width="96" height="96" fill="none"/>
+  <circle cx="48" cy="48" r="42" fill="url(#nightshade-halo)"/>
+  <g filter="url(#nightshade-shadow)" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M48 45C38 23 48 14 48 14s10 9 0 31Z" fill="#7c3bc0" stroke="#17091f" stroke-width="2.5"/>
+    <path d="M43 49C20 38 22 25 22 25s13-2 26 18Z" fill="#59229c" stroke="#17091f" stroke-width="2.5"/>
+    <path d="M53 49c23-11 21-24 21-24s-13-2-26 18Z" fill="#9b55df" stroke="#17091f" stroke-width="2.5"/>
+    <path d="M43 52C19 59 21 73 21 73s13 3 27-16Z" fill="#6a2bb0" stroke="#17091f" stroke-width="2.5"/>
+    <path d="M53 52c24 7 22 21 22 21s-13 3-27-16Z" fill="#b26cff" stroke="#17091f" stroke-width="2.5"/>
+    <circle cx="48" cy="50" r="10" fill="#180719" stroke="#d9a5ff" stroke-width="2"/>
+    <circle cx="44" cy="47" r="2.8" fill="#efe0ff"/><circle cx="52" cy="47" r="2.8" fill="#efe0ff"/><circle cx="48" cy="55" r="3.2" fill="#f0c75f"/>
+    <path d="M31 68c7-2 12-6 17-14M64 69c-7-3-12-7-16-15" stroke="#4f8d57" stroke-width="3"/>
+  </g>
+</svg>

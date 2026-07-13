@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-labelledby="amber-seed-title">
+  <title id="amber-seed-title">Amber Seed resin pod</title>
+  <defs>
+    <radialGradient id="amber-seed-halo" cx="50%" cy="43%" r="52%">
+      <stop offset="0" stop-color="#ffd26c" stop-opacity=".82"/>
+      <stop offset=".42" stop-color="#ca7428" stop-opacity=".24"/>
+      <stop offset="1" stop-color="#050202" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="amber-seed-shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#000000" flood-opacity=".86"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="3.4" flood-color="#ca7428" flood-opacity=".48"/>
+    </filter>
+    <linearGradient id="amber-seed-metal" x1="14" y1="8" x2="84" y2="88" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff3b0"/>
+      <stop offset=".28" stop-color="#ffd26c"/>
+      <stop offset=".62" stop-color="#ca7428"/>
+      <stop offset="1" stop-color="#210806"/>
+    </linearGradient>
+  </defs>
+  <rect width="96" height="96" fill="none"/>
+  <circle cx="48" cy="48" r="42" fill="url(#amber-seed-halo)"/>
+  <g filter="url(#amber-seed-shadow)" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M49 10c21 16 28 42 7 76-26-9-34-41-7-76Z" fill="#8b3d11" stroke="#220c04" stroke-width="3"/>
+    <path d="M50 16c15 16 19 36 5 62-18-7-24-31-5-62Z" fill="url(#amber-seed-metal)" stroke="#f2a23b" stroke-width="2"/>
+    <path d="M38 41c9-5 20-8 31-7M35 55c9 3 20 5 31 4M44 20c2 20 6 39 13 59" stroke="#5f2508" stroke-width="3"/>
+    <ellipse cx="46" cy="34" rx="5" ry="11" fill="#fff0a4" opacity=".52" transform="rotate(18 46 34)"/>
+    <path d="M35 76c8 4 17 6 27 3" stroke="#f8bf5c" stroke-width="2"/>
+  </g>
+</svg>

@@ -6,6 +6,14 @@ HTML = ROOT / "playable" / "midnight_bloom_prototype.html"
 BOARD_SIZE = 8
 SHAPE_VALUE = 2
 BASE_VALUES = [0, 1, 3, 4, 5]
+ALTAR_TILE_ASSETS = [
+    "assets/tiles/altar/sol_rot_altar.svg",
+    "assets/tiles/altar/bone_star_altar.svg",
+    "assets/tiles/altar/nightshade_altar.svg",
+    "assets/tiles/altar/bloodroot_altar.svg",
+    "assets/tiles/altar/amber_seed_altar.svg",
+    "assets/tiles/altar/thorn_rose_altar.svg",
+]
 
 
 def make_board(shape_cells):
@@ -1304,10 +1312,24 @@ def verify_source_hooks():
         "roundCeremony",
         "factionXpFill",
         "apothecary-fill",
+        "assets/tiles/altar/sol_rot_altar.svg",
+        "assets/tiles/altar/bone_star_altar.svg",
+        "assets/tiles/altar/nightshade_altar.svg",
+        "assets/tiles/altar/bloodroot_altar.svg",
+        "assets/tiles/altar/amber_seed_altar.svg",
+        "assets/tiles/altar/thorn_rose_altar.svg",
+        "generate_occult_tile_art.py",
     ]
     missing = [needle for needle in required if needle not in html]
     if missing:
         raise SystemExit(f"Missing HTML match-shape hooks: {missing}")
+    missing_assets = [asset for asset in ALTAR_TILE_ASSETS if not (ROOT / asset).exists()]
+    if missing_assets:
+        raise SystemExit(f"Missing altar tile assets: {missing_assets}")
+    for asset in ALTAR_TILE_ASSETS:
+        text = (ROOT / asset).read_text(encoding="utf-8")
+        if "<svg" not in text or "<title" not in text:
+            raise SystemExit(f"Tile asset lacks SVG/title markup: {asset}")
 
 
 verify_source_hooks()

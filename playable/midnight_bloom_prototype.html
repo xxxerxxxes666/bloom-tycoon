@@ -2029,33 +2029,36 @@
       align-items: center;
       justify-content: center;
       background:
-        radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--tile-color) 24%, #0000) 0, #0000 34%),
-        radial-gradient(circle at 50% 42%, #281a13 0, #0b0706 54%, #030202 78%),
-        linear-gradient(145deg, #3c2c20 0 7%, #070504 8% 92%, #2a1d16 93%),
-        linear-gradient(180deg, #18120e, #050404);
-      border-color: #6a4c32;
+        radial-gradient(circle at 50% 43%, color-mix(in srgb, var(--tile-color) 22%, #fff4b4) 0 10%, #0000 47%),
+        radial-gradient(circle at 50% 52%, color-mix(in srgb, var(--tile-color) 18%, #17100b) 0, #070403 66%, #020101 100%),
+        linear-gradient(145deg, #5b3922 0 5%, #0d0806 7% 93%, #3f2618 95%),
+        linear-gradient(180deg, #201711, #050303);
+      border-color: #8a6138;
       position: relative;
       z-index: 1;
       cursor: pointer;
       overflow: hidden;
       box-shadow:
-        inset 0 0 18px #000,
-        inset 0 0 0 2px #130d0a,
-        inset 0 0 0 4px #0008,
+        inset 0 0 14px #000,
+        inset 0 0 0 2px #23140d,
+        inset 0 0 0 4px #0006,
         inset 0 0 0 1px #000,
-        0 0 0 1px #24170f,
+        0 0 0 1px #3a2415,
         0 3px 9px #0009;
     }
 
     .tile::before {
       content: "";
       position: absolute;
-      inset: 5px;
-      border: 1px solid #8a663e66;
+      inset: 4px;
+      border: 1px solid #a5764268;
       background:
-        radial-gradient(circle at 50% 44%, #0000 0 48%, #0009 82%),
-        linear-gradient(135deg, #d5a76522 0 1px, #0000 1px 100%);
-      box-shadow: inset 0 0 12px #000;
+        linear-gradient(135deg, #d7b16d40 0 1px, #0000 1px 100%),
+        linear-gradient(225deg, #d7b16d24 0 1px, #0000 1px 100%),
+        radial-gradient(circle at 50% 48%, #0000 0 57%, #0008 88%);
+      box-shadow:
+        inset 0 0 10px #000,
+        inset 0 0 0 1px #0007;
       pointer-events: none;
     }
 
@@ -2076,15 +2079,15 @@
     }
 
     .tile img {
-      width: 108%;
-      height: 108%;
+      width: 94%;
+      height: 94%;
       object-fit: contain;
       filter:
         drop-shadow(0 4px 5px #000)
-        drop-shadow(0 0 5px #000)
-        drop-shadow(0 0 2px #3b0e09)
-        saturate(1.16)
-        contrast(1.08);
+        drop-shadow(0 0 5px color-mix(in srgb, var(--tile-color) 45%, #000))
+        drop-shadow(0 0 2px #000)
+        saturate(1.26)
+        contrast(1.14);
       position: relative;
       z-index: 1;
     }
@@ -2100,36 +2103,36 @@
     }
 
     .tile .icon-wrap {
-      width: 98%;
-      height: 98%;
+      width: 100%;
+      height: 100%;
       z-index: 1;
     }
 
     .tile .tile-icon-wrap::before {
       content: "";
       position: absolute;
-      inset: 8%;
+      inset: 1%;
       z-index: 0;
       border-radius: 50%;
       background:
-        radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--tile-color) 34%, #fff2bd) 0 10%, #0000 40%),
-        radial-gradient(circle at 50% 52%, color-mix(in srgb, var(--tile-color) 38%, #000) 0, #0000 66%);
-      opacity: .58;
+        radial-gradient(circle at 50% 43%, color-mix(in srgb, var(--tile-color) 42%, #fff2bd) 0 8%, #0000 48%),
+        radial-gradient(circle at 50% 55%, color-mix(in srgb, var(--tile-color) 30%, #000) 0, #0000 70%);
+      opacity: .72;
       filter: blur(.2px);
       box-shadow:
-        inset 0 0 14px #000,
-        0 0 12px color-mix(in srgb, var(--tile-color) 28%, #0000);
+        inset 0 0 10px #000,
+        0 0 13px color-mix(in srgb, var(--tile-color) 34%, #0000);
       pointer-events: none;
     }
 
     .tile .tile-icon-wrap::after {
       content: "";
       position: absolute;
-      inset: 16%;
+      inset: 12%;
       z-index: 0;
       border: 1px solid color-mix(in srgb, var(--tile-color) 38%, #0000);
       transform: rotate(45deg);
-      opacity: .42;
+      opacity: .34;
       box-shadow: inset 0 0 8px #000;
       pointer-events: none;
     }
@@ -2301,16 +2304,16 @@
     }
 
     .tile.cursed-thorn {
-      outline: 2px solid #7d1518;
+      outline: 2px solid #d35b38;
       box-shadow:
         inset 0 0 16px #000,
         0 0 0 1px #160f0c,
-        0 0 18px #7d1518,
-        0 0 10px #d7b16d44;
+        0 0 20px #a51b22,
+        0 0 13px #d7b16d66;
     }
 
     .tile.cursed-thorn .icon-wrap {
-      filter: brightness(0.58) saturate(0.75);
+      filter: brightness(0.64) saturate(0.78);
     }
 
     .tile.thorn-hit {
@@ -2319,16 +2322,16 @@
 
     .cursed-thorn-overlay {
       position: absolute;
-      inset: 8px;
+      inset: 5px;
       z-index: 3;
-      border: 1px solid #b24a4aaa;
+      border: 1px solid #d35b38c8;
       background:
-        radial-gradient(circle at 50% 45%, #1d0707b8 0, #090303d8 55%, #0000009c 100%),
-        repeating-conic-gradient(from 12deg, #0000 0 13deg, #7d151866 14deg 17deg, #0000 18deg 36deg);
+        radial-gradient(circle at 50% 45%, #37100bcc 0, #0a0303d9 59%, #00000086 100%),
+        repeating-conic-gradient(from 12deg, #0000 0 13deg, #a51b2288 14deg 17deg, #0000 18deg 36deg);
       box-shadow:
         inset 0 0 14px #000,
-        0 0 15px #7d1518,
-        0 0 8px #d7b16d66;
+        0 0 16px #a51b22,
+        0 0 10px #d7b16d88;
       pointer-events: none;
     }
 
@@ -2338,8 +2341,8 @@
       position: absolute;
       inset: 48% 8% auto;
       height: 2px;
-      background: linear-gradient(90deg, #0000, #d7b16d, #9b1d22, #0000);
-      box-shadow: 0 0 8px #d7b16d;
+      background: linear-gradient(90deg, #0000, #f4cf87, #d35b38, #0000);
+      box-shadow: 0 0 9px #d7b16d;
       transform: rotate(35deg);
     }
 
@@ -6024,7 +6027,7 @@
       <!-- Left panel progression placeholders stay separate from the chest system. -->
       <div class="side-card greenhouse-card">
         <div class="panel-title">
-          <img class="panel-icon" src="../assets/tiles/96/withered_sun_medallion.png" alt="">
+          <img class="panel-icon" src="../assets/tiles/altar/sol_rot_altar.svg" alt="">
           <h3>Greenhouse</h3>
           <span class="panel-gate" aria-hidden="true">›</span>
         </div>
@@ -6035,7 +6038,7 @@
 
       <div class="side-card apothecary-card">
         <div class="panel-title">
-          <img class="panel-icon" src="../assets/tiles/96/purple_nightshade_bloom.png" alt="">
+          <img class="panel-icon" src="../assets/tiles/altar/nightshade_altar.svg" alt="">
           <h3>Apothecary</h3>
           <span class="panel-gate" aria-hidden="true">›</span>
         </div>
@@ -6046,7 +6049,7 @@
 
       <div class="side-card faction-card">
         <div class="panel-title">
-          <img class="panel-icon" src="../assets/tiles/96/bone_white_thorn_star.png" alt="">
+          <img class="panel-icon" src="../assets/tiles/altar/bone_star_altar.svg" alt="">
           <h3>Faction: Sub Rosa</h3>
         </div>
         <div class="small" id="factionLevel">Level 3 · Trusted</div>
@@ -6056,7 +6059,7 @@
 
       <div class="side-card active-orders-card">
         <div class="panel-title">
-          <img class="panel-icon" src="../assets/tiles/96/crimson_rose_rune.png" alt="">
+          <img class="panel-icon" src="../assets/tiles/altar/thorn_rose_altar.svg" alt="">
           <h3>Active Orders</h3>
         </div>
         <div id="activeOrders"></div>
@@ -6064,7 +6067,7 @@
 
       <div class="side-card market-card">
         <div class="panel-title">
-          <img class="panel-icon" src="../assets/tiles/96/amber_resin_seed.png" alt="">
+          <img class="panel-icon" src="../assets/tiles/altar/amber_seed_altar.svg" alt="">
           <h3>Black Market</h3>
           <span class="panel-gate" aria-hidden="true">›</span>
         </div>
@@ -6181,35 +6184,35 @@
       <div class="mobile-greenhouse-plinth" id="mobileGreenhousePlinth" aria-hidden="true"></div>
       <div class="controls">
         <button class="btn" id="shuffleBtn" type="button">
-          <img class="btn-icon" src="../assets/tiles/96/bone_white_thorn_star.png" alt="">
+          <img class="btn-icon" src="../assets/tiles/altar/bone_star_altar.svg" alt="">
           <span>Shuffle (-1 move)</span>
         </button>
         <button class="btn red" id="sacrificeBtn" type="button">
-          <img class="btn-icon" src="../assets/tiles/96/bloodroot_ruby_shard.png" alt="">
+          <img class="btn-icon" src="../assets/tiles/altar/bloodroot_altar.svg" alt="">
           <span>Sacrifice (-3 moves)</span>
         </button>
         <button class="btn booster" id="pruningShearsBtn" type="button" aria-pressed="false">
-          <img class="btn-icon" src="../assets/tiles/96/bone_white_thorn_star.png" alt="">
+          <img class="btn-icon" src="../assets/tiles/altar/bone_star_altar.svg" alt="">
           <span>Pruning Shears (x<span id="pruningShearsCount">1</span>)</span>
         </button>
         <button class="btn booster" id="moonwaterFlaskBtn" type="button" aria-pressed="false">
-          <img class="btn-icon" src="../assets/tiles/96/purple_nightshade_bloom.png" alt="">
+          <img class="btn-icon" src="../assets/tiles/altar/nightshade_altar.svg" alt="">
           <span>Moonwater Flask (x<span id="moonwaterFlaskCount">1</span>)</span>
         </button>
         <button class="btn booster" id="blackCandleBtn" type="button" aria-pressed="false">
-          <img class="btn-icon" src="../assets/tiles/96/bloodroot_ruby_shard.png" alt="">
+          <img class="btn-icon" src="../assets/tiles/altar/bloodroot_altar.svg" alt="">
           <span>Black Candle (x<span id="blackCandleCount">1</span>)</span>
         </button>
         <button class="btn booster" id="graveSoilBtn" type="button" aria-pressed="false">
-          <img class="btn-icon" src="../assets/tiles/96/amber_resin_seed.png" alt="">
+          <img class="btn-icon" src="../assets/tiles/altar/amber_seed_altar.svg" alt="">
           <span>Grave Soil (x<span id="graveSoilCount">1</span>)</span>
         </button>
         <button class="btn demo" id="demoCompleteBtn" type="button">
-          <img class="btn-icon" src="../assets/tiles/96/crimson_rose_rune.png" alt="">
+          <img class="btn-icon" src="../assets/tiles/altar/thorn_rose_altar.svg" alt="">
           <span>Complete Bouquet</span>
         </button>
         <button class="btn demo" id="shapeBloomBtn" type="button">
-          <img class="btn-icon" src="../assets/tiles/96/purple_nightshade_bloom.png" alt="">
+          <img class="btn-icon" src="../assets/tiles/altar/nightshade_altar.svg" alt="">
           <span>Shape Bloom</span>
         </button>
       </div>
@@ -6320,13 +6323,14 @@
   </div>
 
   <script>
+    // Tile faces are original repo-local SVGs generated by scripts/generate_occult_tile_art.py.
     const flowers = [
-      ["Sol Rot", "../assets/tiles/96/withered_sun_medallion.png", "Withered sun brings golden growth.", "☉", "#d8a657"],
-      ["Bone Star", "../assets/tiles/96/bone_white_thorn_star.png", "Celestial thorns pierce the earth.", "✦", "#e5dbc8"],
-      ["Nightshade", "../assets/tiles/96/purple_nightshade_bloom.png", "Toxic beauty. Handle with care.", "✹", "#7d49b2"],
-      ["Bloodroot", "../assets/tiles/96/bloodroot_ruby_shard.png", "A thirst for life... and more.", "♦", "#c02036"],
-      ["Amber Seed", "../assets/tiles/96/amber_resin_seed.png", "Ancient resin holds essence.", "◆", "#c78348"],
-      ["Thorn Rose", "../assets/tiles/96/crimson_rose_rune.png", "Love that blooms in darkness.", "✧", "#b01857"]
+      ["Sol Rot", "../assets/tiles/altar/sol_rot_altar.svg", "Withered sun brings golden growth.", "☉", "#d8a657"],
+      ["Bone Star", "../assets/tiles/altar/bone_star_altar.svg", "Celestial thorns pierce the earth.", "✦", "#e5dbc8"],
+      ["Nightshade", "../assets/tiles/altar/nightshade_altar.svg", "Toxic beauty. Handle with care.", "✹", "#7d49b2"],
+      ["Bloodroot", "../assets/tiles/altar/bloodroot_altar.svg", "A thirst for life... and more.", "♦", "#d62b32"],
+      ["Amber Seed", "../assets/tiles/altar/amber_seed_altar.svg", "Ancient resin holds essence.", "◆", "#d08335"],
+      ["Thorn Rose", "../assets/tiles/altar/thorn_rose_altar.svg", "Love that blooms in darkness.", "✧", "#c0185e"]
     ];
     const greenhouseArtwork = {
       first: {
