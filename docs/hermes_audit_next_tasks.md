@@ -34,6 +34,10 @@ Implement and refine only the **First 60 Seconds / Board-First Vertical Slice** 
 9. Keep Supreme Bloom rare and absent from the normal tutorial path.
 10. Preserve saves, retry, 64-tile integrity where applicable, no broken images, no console errors, and no mobile overflow.
 
+## Execution authorization
+
+Xerxes authorizes non-interactive Codex operation for Bloom Tycoon. Future automated Codex passes should use `--dangerously-bypass-approvals-and-sandbox` with `/opt/data/bloom-tycoon-live` as the explicit working root so routine edits, tests, local servers, browser automation, commits, and deployment commands do not pause for approval. This authorization is project-scoped: it does not authorize exposing credentials, modifying unrelated repositories or profiles, purchasing services, weakening security controls, adding trackers/backends/accounts, or destructive operations outside the Bloom Tycoon workflow.
+
 ## Definition of progress
 
 A pass counts only when it materially improves player-visible game feel, first-viewport hierarchy, bouquet payoff, or greenhouse transformation and is verified in a real browser. Documentation-only churn and another numbered round do not count.
