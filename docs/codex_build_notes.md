@@ -1,5 +1,23 @@
 # Codex Build Notes
 
+## 2026-07-13 Short desktop board-first composition
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible milestone: focused desktop/laptop play now has a short-height composition for viewports above mobile and up to 820px tall. The title/objective/cue stack, Greenhouse/Active Orders rail, Elements strip, and board sizing are compacted without a transform or game logic change. Fresh 1280x720 and 1366x768 now keep the board as the altar with all 8 rows visible; the immediate restored greenhouse handoff keeps the compact objective/cue/status and 7 complete rows visible at 1280x720. Mobile 390x844 keeps the existing board-first layout.
+- Local browser verification: static server `127.0.0.1:41062`; Chromium/Playwright with `NODE_PATH=/opt/data/home/.npm/_npx/420ff84f11983ee5/node_modules`.
+- Fresh viewport checks: 1280x720 had 64 tiles, 8 complete rows, board 186px-720px, first row 196px-256.75px, last row 649.25px-710px, no horizontal overflow, 0 broken images, readable objective/cue, and no visible non-tile/debug controls. 1366x768 had 64 tiles, 8 complete rows, board 186px-768px, last row bottom 758px, no overflow, 0 broken images, and no visible legacy controls. 1440x1000 remained 64 tiles and 8 rows with the existing larger 650px board. 390x844 remained 64 tiles and 8 rows with board 199px-577px and no overflow.
+- Handoff visual check: `/tmp/bloom-verified-handoff-1280x720.png` showed `Restored Greenhouse - Moonlit Wreath begins`, compact restored greenhouse status, 64 tiles, 7 complete rows, board 267.8px-777.8px, 57.75px tile art, no overflow, and no visible non-tile controls.
+- Gameplay verification: real tile clicks completed deterministic Round 1 swaps, bouquet completion, coin reward, `Restore Greenhouse`, saved reload, `Next Order`, Round 2 Cursed Thorn lesson, Round 2 follow-up, unguided Round 2 completion, second restoration, saved reload, `Next Order -> Bloodroot Compact`, Round 3 completion/final restoration, final reload, replay to Round 1, forced Round 2 fail/retry, and restored Round 2 retry. Active play preserved 64 tiles and no overflow; browser console, page errors, and failed requests were all 0. Unguided moves included Round 2 `5,1->6,1`, `4,0->5,0`, `0,2->1,2`, `1,2->2,2`, `1,1->2,1`, `0,2->1,2`, `2,2->2,3`; Round 3 included `1,0->1,1`, `3,1->4,1`, `2,1->3,1`, `3,1->4,1`, `4,0->5,0`, `2,1->3,1`.
+- Screenshots inspected: `/tmp/bloom-verified-fresh-1280x720.png`, `/tmp/bloom-verified-fresh-1366x768.png`, `/tmp/bloom-verified-handoff-1280x720.png`, and `/tmp/bloom-verified-fresh-390x844.png`.
+- Verification commands: `python3 scripts/verify_project.py`, `/opt/data/tools/godot/Godot_v4.2.2-stable_linux.x86_64 --headless --path . --script res://tests/godot_smoke_test.gd`, `git diff --check`, and `node --check /tmp/bloom-playable-inline.js` passed.
+- Browser console/runtime status: viewport and gameplay verifier runs had 0 console messages, 0 page errors, and 0 failed requests.
+- Vercel deployment URL/identifier checked: live pre-edit baseline was checked at `https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html`; no redeploy was performed in this local pass before push.
+- GitHub Pages preview status: not checked in this local pass before push.
+- Known issues: none found in the verified focused first three-order path. Existing L/T/cross and Supreme Bloom review hooks remain unchanged; no new controls, rounds, currencies, dependencies, backend, trackers, accounts, ads/IAP, secrets, or broad permissions were added.
+- How to trigger and verify L/T/cross matches without console: after Round 1, click `Shape Bloom` repeatedly or press `M`; demos cycle through line5, line4, `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom`.
+- How to trigger and verify Supreme Bloom without console: focus the playable after Round 1 and press `B`; the `SUPREME BLOOM!` overlay should appear and return the board to 64 tiles.
+- Security/secret-scan status: precise changed-file scan passed for private-key headers, provider-token prefixes, JWTs, and suspicious credential assignments in the final changed files.
+
 ## 2026-07-13 Moonlit and Bloodroot greenhouse artwork
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `docs/codex_build_notes.md`, `assets/greenhouse/moonlit_wreath_greenhouse.svg`, and `assets/greenhouse/bloodroot_compact_greenhouse.svg`.
