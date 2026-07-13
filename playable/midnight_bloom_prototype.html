@@ -5347,6 +5347,41 @@
         padding: 8px;
       }
 
+      body.restored-next-order-focus .title {
+        margin: 3px 0 5px;
+        font-size: 42px;
+      }
+
+      body.restored-next-order-focus .objective {
+        padding: 5px 10px;
+        gap: 5px;
+        font-size: 16px;
+        line-height: 1.15;
+      }
+
+      body.restored-next-order-focus .objective-icon {
+        width: 25px;
+        height: 25px;
+      }
+
+      body.restored-next-order-focus:not(.restored-greenhouse-handoff) .first-swap-cue {
+        min-height: 24px;
+        margin-top: 4px;
+        padding: 3px 8px;
+        font-size: 11px;
+      }
+
+      body.restored-next-order-focus .restored-greenhouse-status {
+        margin-top: 4px;
+        padding: 4px 8px;
+      }
+
+      body.restored-next-order-focus:not(.restored-greenhouse-handoff) .board,
+      body.restored-greenhouse-handoff .board {
+        width: min(620px, calc(100vh - 232px), calc(100vw - 470px));
+        margin: 6px auto 8px;
+      }
+
       body.round-one-active .bottom {
         margin-top: 0;
       }
@@ -5388,9 +5423,6 @@
         line-height: 1.25;
       }
 
-      body.restored-greenhouse-handoff .board {
-        width: min(650px, calc(100vh - 210px), calc(100vw - 470px));
-      }
     }
 
     body.round-one-active .apothecary-card,

@@ -31,6 +31,14 @@
 - How to trigger and verify Supreme Bloom without console: focus the playable and press `B`; this pass verified the hidden review hook shows `SUPREME BLOOM!`, then cleans up particles and preserves 64 tiles.
 - Security/secret-scan status: precise changed-file scan passed for private-key headers, `.env`, known provider token prefixes/JWTs, suspicious credential assignments, trackers, machine-local paths, and broad permissions. No secrets, trackers, telemetry, backend, accounts, ads/IAP, new dependencies, broad permissions, or cron jobs were added.
 
+## 2026-07-13 Round 2 short-desktop board fit
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible milestone: Round 2 now keeps all eight board rows visible at 1280x720. Only the focused restored-order layout on short desktop viewports was tightened: the title, goals, teaching cue, greenhouse status, and board scale compact together while every objective remains visible and the board stays the hero. Round 1, mobile sizing, gameplay, progression, and saves are unchanged.
+- Real-browser interaction verification: Chromium/Playwright used real mouse clicks for both authored Round 1 swaps, bouquet completion, `Restore Greenhouse`, saved-state reload, and `Next Order`. Round 2 rendered 64 tiles and eight complete rows at 1280x720 and 390x844, with no broken images, horizontal overflow, console errors, or page errors. A forced failed Round 2 state exposed the existing `Retry Bouquet`; a real mouse click restored 17 moves, 64 tiles, and eight visible rows.
+- Verification commands: `python3 scripts/verify_project.py` and `git diff --check` passed. The HTML regression marker now enforces the short-desktop Round 2 board constraint. A changed-line scan found no private-key headers, provider token prefixes, JWTs, credential assignments, environment files, tracking code, or machine-local paths.
+- Next highest-impact audit item: evaluate whether the multi-target Round 2 objective can become faster to scan without hiding goals or adding tutorial copy.
+
 ## 2026-07-13 Living greenhouse environment pass
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.

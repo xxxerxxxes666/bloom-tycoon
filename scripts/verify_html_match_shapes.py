@@ -412,7 +412,7 @@ def verify_source_hooks():
         "@media (min-width: 761px) and (max-height: 820px)",
         "grid-template-columns: 330px minmax(0, 1fr);",
         "width: min(650px, calc(100vh - 186px), calc(100vw - 470px));",
-        "width: min(650px, calc(100vh - 210px), calc(100vw - 470px));",
+        "width: min(620px, calc(100vh - 232px), calc(100vw - 470px));",
         "height: calc(100vh - 26px);",
         "body.round-one-active .bottom { display: none !important; }",
         "body.restored-next-order-focus .restored-greenhouse-meter { display:none; }",
