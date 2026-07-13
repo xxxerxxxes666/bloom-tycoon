@@ -502,6 +502,141 @@
       font: 700 12px/1.15 Georgia, serif;
     }
 
+    body[data-active-greenhouse-stage="withered"] {
+      --stage-secondary: #d1a15e;
+      --stage-deep: #150a06;
+      --stage-glass: #a57b4930;
+      --stage-bloom: #d0a35b55;
+      --stage-haze: #070403;
+      --stage-rib-opacity: 0.5;
+      --stage-art-brightness: 1.12;
+      --stage-art-saturation: 1.02;
+    }
+
+    body[data-active-greenhouse-stage="moonlit"] {
+      --stage-secondary: #c7b4ff;
+      --stage-deep: #0c0a1a;
+      --stage-glass: #8f78d23d;
+      --stage-bloom: #8f78d266;
+      --stage-haze: #080611;
+      --stage-rib-opacity: 0.62;
+      --stage-art-brightness: 1.08;
+      --stage-art-saturation: 1.16;
+    }
+
+    body[data-active-greenhouse-stage="bloodroot"] {
+      --stage-secondary: #f0b05f;
+      --stage-deep: #170506;
+      --stage-glass: #c23a4845;
+      --stage-bloom: #c23a486e;
+      --stage-haze: #0d0304;
+      --stage-rib-opacity: 0.68;
+      --stage-art-brightness: 1.06;
+      --stage-art-saturation: 1.22;
+    }
+
+    .active-greenhouse-depth,
+    .hero-greenhouse-depth {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .greenhouse-rib,
+    .greenhouse-lamp,
+    .greenhouse-vine,
+    .greenhouse-mist,
+    .greenhouse-bed {
+      position: absolute;
+      display: block;
+      pointer-events: none;
+    }
+
+    .greenhouse-rib {
+      inset: 7% auto 7%;
+      width: 28%;
+      border: 1px solid color-mix(in srgb, var(--stage-secondary, #d1a15e) 46%, #100704);
+      border-bottom: 0;
+      border-radius: 52% 52% 0 0;
+      opacity: var(--stage-rib-opacity, 0.5);
+      filter: drop-shadow(0 0 10px #000);
+    }
+
+    .greenhouse-rib.rib-left { left: 7%; transform: skewX(-5deg); }
+    .greenhouse-rib.rib-center { left: 36%; width: 28%; opacity: calc(var(--stage-rib-opacity, 0.5) + 0.08); }
+    .greenhouse-rib.rib-right { right: 7%; transform: skewX(5deg); }
+
+    .greenhouse-lamp {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle, #fff0b6 0 7%, var(--stage-secondary, #d1a15e) 16%, var(--stage-bloom, #d0a35b55) 34%, #0000 70%);
+      box-shadow:
+        0 0 18px var(--stage-bloom, #d0a35b55),
+        0 0 42px color-mix(in srgb, var(--stage-accent, #b9874d) 42%, #0000);
+      opacity: 0.78;
+      mix-blend-mode: screen;
+    }
+
+    .greenhouse-lamp.lamp-left { left: 18%; top: 25%; }
+    .greenhouse-lamp.lamp-right { right: 17%; top: 31%; transform: scale(0.78); opacity: 0.62; }
+
+    .greenhouse-vine {
+      width: 44%;
+      height: 68%;
+      border: 1px solid color-mix(in srgb, var(--stage-accent, #b9874d) 42%, #201006);
+      border-left: 0;
+      border-bottom: 0;
+      border-radius: 0 76% 0 0;
+      opacity: 0.42;
+      filter: drop-shadow(0 0 8px #000);
+    }
+
+    .greenhouse-vine.vine-left { left: -8%; bottom: 4%; transform: rotate(-8deg); }
+    .greenhouse-vine.vine-right { right: -6%; bottom: 2%; transform: scaleX(-1) rotate(-11deg); }
+
+    .greenhouse-mist {
+      left: 6%;
+      right: 6%;
+      bottom: -7%;
+      height: 33%;
+      background:
+        radial-gradient(ellipse at 50% 70%, color-mix(in srgb, var(--stage-accent, #b9874d) 32%, #0000) 0, #0000 66%),
+        linear-gradient(180deg, #0000, var(--stage-haze, #070403) 72%);
+      opacity: 0.82;
+      filter: blur(9px);
+      transform-origin: 50% 100%;
+    }
+
+    .greenhouse-bed {
+      left: 10%;
+      right: 10%;
+      bottom: 7%;
+      height: 14%;
+      border-top: 1px solid color-mix(in srgb, var(--stage-secondary, #d1a15e) 48%, #0000);
+      background:
+        repeating-linear-gradient(92deg, #0000 0 24px, color-mix(in srgb, var(--stage-accent, #b9874d) 34%, #0000) 25px 26px),
+        radial-gradient(ellipse at 50% 100%, color-mix(in srgb, var(--stage-accent, #b9874d) 24%, #0000) 0, #0000 68%);
+      opacity: 0.7;
+    }
+
+    body[data-active-greenhouse-stage="moonlit"] .greenhouse-vine {
+      opacity: 0.5;
+      border-color: color-mix(in srgb, #8f78d2 58%, #211039);
+    }
+
+    body[data-active-greenhouse-stage="bloodroot"] .greenhouse-vine,
+    body[data-active-greenhouse-stage="bloodroot"] .greenhouse-bed {
+      opacity: 0.78;
+      border-color: color-mix(in srgb, #c23a48 62%, #240607);
+    }
+
+    .mobile-greenhouse-plinth {
+      display: none;
+    }
+
     .sigil {
       text-align: center;
       letter-spacing: 12px;
@@ -4803,16 +4938,21 @@
       position: relative;
       overflow: hidden;
       background:
-        radial-gradient(ellipse at 50% 30%, #00000010 0 30%, #0000007a 68%, #000 100%),
-        linear-gradient(180deg, #00000020, #00000008 42%, #000000d2),
-        radial-gradient(circle at 50% 48%, color-mix(in srgb, var(--stage-accent, #b9874d) 34%, #0000) 0, #0000 46%),
+        radial-gradient(ellipse at 50% 38%, #00000000 0 34%, #00000066 72%, #000 100%),
+        radial-gradient(circle at 50% 39%, color-mix(in srgb, var(--stage-accent, #b9874d) 34%, #0000) 0, #0000 42%),
+        linear-gradient(180deg, #00000005, #00000000 42%, #000000b8),
         var(--active-greenhouse-image, url("../assets/greenhouse/first_greenhouse_withered.jpg")) center / cover no-repeat;
-      filter: contrast(1.18) saturate(1.06) brightness(1);
+      filter:
+        contrast(1.2)
+        saturate(var(--stage-art-saturation, 1.06))
+        brightness(var(--stage-art-brightness, 1.04));
       box-shadow:
         inset 0 0 0 1px color-mix(in srgb, var(--stage-accent, #b9874d) 34%, #2b1c13),
-        inset 0 0 42px #000,
+        inset 0 0 26px #000,
         inset 0 -80px 120px #000,
-        0 0 28px #000;
+        0 0 28px #000,
+        0 0 28px color-mix(in srgb, var(--stage-accent, #b9874d) 18%, #0000);
+      isolation: isolate;
     }
 
     body.round-one-active .hero::before,
@@ -4838,6 +4978,111 @@
         inset 0 0 36px #000,
         inset 0 0 46px color-mix(in srgb, var(--stage-accent, #b9874d) 22%, #0000);
       pointer-events: none;
+    }
+
+    body.round-one-active .hero-greenhouse-depth,
+    body.restored-next-order-focus .hero-greenhouse-depth {
+      z-index: 0;
+      background:
+        linear-gradient(90deg, #000b 0 8%, #0000 24% 76%, #000b 92% 100%),
+        radial-gradient(ellipse at 50% 76%, color-mix(in srgb, var(--stage-accent, #b9874d) 26%, #0000) 0, #0000 58%);
+      mix-blend-mode: screen;
+      opacity: 0.9;
+    }
+
+    body.round-one-active .hero-greenhouse-depth .greenhouse-rib,
+    body.restored-next-order-focus .hero-greenhouse-depth .greenhouse-rib {
+      top: 5%;
+      bottom: 11%;
+      width: 34%;
+      border-width: 2px;
+    }
+
+    body.round-one-active .hero-greenhouse-depth .rib-center,
+    body.restored-next-order-focus .hero-greenhouse-depth .rib-center {
+      left: 30%;
+      width: 40%;
+    }
+
+    body.round-one-active .hero-greenhouse-depth .greenhouse-lamp,
+    body.restored-next-order-focus .hero-greenhouse-depth .greenhouse-lamp {
+      width: 72px;
+      height: 72px;
+    }
+
+    body.round-one-active .hero-greenhouse-depth .lamp-left,
+    body.restored-next-order-focus .hero-greenhouse-depth .lamp-left {
+      left: 19%;
+      top: 42%;
+    }
+
+    body.round-one-active .hero-greenhouse-depth .lamp-right,
+    body.restored-next-order-focus .hero-greenhouse-depth .lamp-right {
+      right: 17%;
+      top: 29%;
+    }
+
+    body.round-one-active .hero-greenhouse-depth .greenhouse-bed,
+    body.restored-next-order-focus .hero-greenhouse-depth .greenhouse-bed {
+      left: 8%;
+      right: 8%;
+      bottom: 11%;
+      height: 18%;
+    }
+
+    body.round-one-active .active-greenhouse-stage,
+    body.restored-next-order-focus .active-greenhouse-stage {
+      background:
+        radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--stage-accent, #b9874d) 16%, #0000) 0, #0000 34%),
+        linear-gradient(90deg, #020101, #0000 16% 84%, #020101);
+    }
+
+    body.round-one-active .active-greenhouse-stage img,
+    body.restored-next-order-focus .active-greenhouse-stage img {
+      opacity: 0.74;
+      filter:
+        brightness(var(--stage-art-brightness, 1.08))
+        contrast(1.16)
+        saturate(var(--stage-art-saturation, 1.08));
+    }
+
+    body.round-one-active .active-greenhouse-stage::before,
+    body.restored-next-order-focus .active-greenhouse-stage::before {
+      background:
+        radial-gradient(ellipse at 50% 53%, #0000008a 0 18%, #000000aa 37%, #00000010 62%, #0000009f 100%),
+        linear-gradient(180deg, #00000016, #00000078 80%, #000);
+    }
+
+    body.round-one-active .active-greenhouse-stage::after,
+    body.restored-next-order-focus .active-greenhouse-stage::after {
+      border-color: color-mix(in srgb, var(--stage-accent, #b9874d) 52%, #0000);
+      box-shadow:
+        inset 0 0 28px #000,
+        inset 0 0 50px color-mix(in srgb, var(--stage-accent, #b9874d) 30%, #0000);
+      opacity: 0.76;
+    }
+
+    body.round-one-active .active-greenhouse-depth,
+    body.restored-next-order-focus .active-greenhouse-depth {
+      z-index: 2;
+      opacity: 0.72;
+    }
+
+    body.round-one-active .active-greenhouse-depth .greenhouse-rib,
+    body.restored-next-order-focus .active-greenhouse-depth .greenhouse-rib {
+      top: 17%;
+      bottom: 12%;
+    }
+
+    body.round-one-active .active-greenhouse-depth .greenhouse-lamp,
+    body.restored-next-order-focus .active-greenhouse-depth .greenhouse-lamp {
+      transform: scale(0.62);
+    }
+
+    body.round-one-active .active-greenhouse-depth .greenhouse-mist,
+    body.restored-next-order-focus .active-greenhouse-depth .greenhouse-mist {
+      bottom: 8%;
+      height: 28%;
     }
 
     @media (min-width: 761px) and (max-height: 820px) {
@@ -5201,18 +5446,20 @@
     body.restored-next-order-focus:not(.restored-greenhouse-handoff) .board {
       border-color: color-mix(in srgb, var(--stage-accent, #b9874d) 44%, #261d18);
       background:
-        radial-gradient(circle at 50% 48%, #120706f2 0, #080403f0 51%, #030202 78%),
+        radial-gradient(circle at 50% 48%, #130807eb 0, #080403ed 49%, #030202 78%),
+        radial-gradient(ellipse at 50% 9%, color-mix(in srgb, var(--stage-accent, #b9874d) 22%, #0000) 0, #0000 54%),
         linear-gradient(180deg, #0000008f, #00000028 42%, #000000a8),
         var(--active-greenhouse-image, url("../assets/greenhouse/first_greenhouse_withered.jpg")) center / cover no-repeat,
-        repeating-linear-gradient(0deg, #0000 0 52px, #805c3520 53px 54px),
-        repeating-linear-gradient(90deg, #0000 0 52px, #805c3520 53px 54px),
+        repeating-linear-gradient(0deg, #0000 0 52px, color-mix(in srgb, var(--stage-accent, #b9874d) 24%, #0000) 53px 54px),
+        repeating-linear-gradient(90deg, #0000 0 52px, color-mix(in srgb, var(--stage-accent, #b9874d) 24%, #0000) 53px 54px),
         linear-gradient(180deg, #21160f, #050404);
       box-shadow:
         inset 0 0 42px #000,
         inset 0 0 0 5px #080504,
-        inset 0 0 38px color-mix(in srgb, var(--stage-accent, #b9874d) 18%, #0000),
+        inset 0 0 38px color-mix(in srgb, var(--stage-accent, #b9874d) 22%, #0000),
+        inset 0 16px 28px color-mix(in srgb, var(--stage-secondary, #d1a15e) 12%, #0000),
         0 0 0 1px #000,
-        0 0 30px color-mix(in srgb, var(--stage-accent, #b9874d) 22%, #0000),
+        0 0 30px color-mix(in srgb, var(--stage-accent, #b9874d) 28%, #0000),
         0 18px 42px #000c;
     }
     body.restored-next-order-focus .board { touch-action:none; box-shadow:0 0 0 1px #6f944d,0 0 22px #7fcf6530,inset 0 0 16px #000; }
@@ -5423,6 +5670,32 @@
       58% { opacity:.95; transform:translate(calc(-50% + var(--dx, 0px) * .42), calc(-50% + var(--dy, -60px) * .42)) scale(1.18) rotate(calc(var(--spin, 0deg) * .45)); }
       100% { opacity:0; transform:translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, -84px))) scale(.72) rotate(var(--spin, 0deg)); }
     }
+    @keyframes greenhouse-mist-drift {
+      from { opacity:0.58; transform:translate3d(-1.5%, 0, 0) scaleY(0.96); }
+      to { opacity:0.9; transform:translate3d(1.5%, -1.5%, 0) scaleY(1.03); }
+    }
+    @keyframes greenhouse-lamp-breathe {
+      from { opacity:0.54; filter:brightness(0.92); }
+      to { opacity:0.86; filter:brightness(1.16); }
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      body.round-one-active .greenhouse-mist,
+      body.restored-next-order-focus .greenhouse-mist {
+        animation:greenhouse-mist-drift 4.8s ease-in-out infinite alternate;
+      }
+      body.round-one-active .greenhouse-lamp,
+      body.restored-next-order-focus .greenhouse-lamp {
+        animation:greenhouse-lamp-breathe 3.2s ease-in-out infinite alternate;
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      body.round-one-active .greenhouse-mist,
+      body.restored-next-order-focus .greenhouse-mist,
+      body.round-one-active .greenhouse-lamp,
+      body.restored-next-order-focus .greenhouse-lamp {
+        animation:none !important;
+      }
+    }
     @media (max-width:760px) {
       body.restored-next-order-focus .game,
       body.restored-greenhouse-handoff .game,
@@ -5475,7 +5748,7 @@
       body.round-one-active .active-greenhouse-stage {
         inset: 0 0 auto;
         height: 100%;
-        opacity: 0.48;
+        opacity: 0.58;
       }
       body.restored-next-order-focus .active-greenhouse-stage img,
       body.restored-greenhouse-handoff .active-greenhouse-stage img,
@@ -5484,15 +5757,18 @@
         width: calc(100% + 60px);
         height: 260px;
         object-position: center bottom;
-        opacity: 0.52;
-        filter: brightness(0.88) contrast(1.12) saturate(1.02);
+        opacity: 0.62;
+        filter:
+          brightness(calc(var(--stage-art-brightness, 1) * 0.9))
+          contrast(1.14)
+          saturate(var(--stage-art-saturation, 1.06));
       }
       body.restored-next-order-focus .active-greenhouse-stage::before,
       body.restored-greenhouse-handoff .active-greenhouse-stage::before,
       body.round-one-active .active-greenhouse-stage::before {
         background:
-          linear-gradient(180deg, #000 0 64%, #0000008a 76%, #0000001c 100%),
-          radial-gradient(ellipse at 50% 96%, #00000020 0 32%, #000000d8 88%);
+          linear-gradient(180deg, #000 0 57%, #00000096 72%, #00000022 100%),
+          radial-gradient(ellipse at 50% 94%, color-mix(in srgb, var(--stage-accent, #b9874d) 15%, #0000) 0, #000000d8 88%);
       }
       body.restored-next-order-focus .active-greenhouse-stage::after,
       body.restored-greenhouse-handoff .active-greenhouse-stage::after,
@@ -5500,26 +5776,53 @@
       .active-greenhouse-badge {
         display: none;
       }
+      body.restored-next-order-focus .active-greenhouse-depth,
+      body.restored-greenhouse-handoff .active-greenhouse-depth,
+      body.round-one-active .active-greenhouse-depth {
+        opacity: 0.36;
+      }
+      body.restored-next-order-focus .active-greenhouse-depth .greenhouse-rib,
+      body.restored-greenhouse-handoff .active-greenhouse-depth .greenhouse-rib,
+      body.round-one-active .active-greenhouse-depth .greenhouse-rib {
+        top: auto;
+        bottom: 14px;
+        height: 190px;
+      }
+      body.restored-next-order-focus .active-greenhouse-depth .greenhouse-lamp,
+      body.restored-greenhouse-handoff .active-greenhouse-depth .greenhouse-lamp,
+      body.round-one-active .active-greenhouse-depth .greenhouse-lamp {
+        top: auto;
+        bottom: 102px;
+        transform: scale(0.44);
+      }
+      body.restored-next-order-focus .active-greenhouse-depth .greenhouse-mist,
+      body.restored-greenhouse-handoff .active-greenhouse-depth .greenhouse-mist,
+      body.round-one-active .active-greenhouse-depth .greenhouse-mist {
+        bottom: 0;
+        height: 148px;
+      }
       body.restored-next-order-focus .restored-greenhouse-status { padding:6px 8px; }
       .restored-greenhouse-kicker { font-size:9px; }
       .restored-greenhouse-copy { font-size:11px; }
       body.restored-next-order-focus .ritual-log,
       body.restored-greenhouse-handoff .ritual-log,
       body.round-one-active .ritual-log { margin:7px 7px 0; padding:7px 9px; min-height:0; font-size:12px; line-height:1.25; }
-      body.round-one-active:not(.round-one-complete) .main::after,
-      body.restored-next-order-focus:not(.restored-greenhouse-handoff) .main::after {
-        content:attr(data-stage-label);
+      body.round-one-active:not(.round-one-complete) .mobile-greenhouse-plinth,
+      body.restored-next-order-focus:not(.restored-greenhouse-handoff) .mobile-greenhouse-plinth {
+        position:relative;
         display:grid;
         align-items:end;
         justify-items:center;
         width:calc(100% - 18px);
-        height:196px;
+        height:162px;
         margin:8px auto 0;
         padding:0 12px 11px;
-        border:1px solid color-mix(in srgb,var(--stage-accent,#b9874d) 38%,#241812);
+        border:1px solid color-mix(in srgb,var(--stage-accent,#b9874d) 52%,#241812);
         background:
-          radial-gradient(circle at 50% 34%,color-mix(in srgb,var(--stage-accent,#b9874d) 28%,#0000) 0,#0000 44%),
-          linear-gradient(180deg,#0000008f,#00000010 46%,#0000008f),
+          radial-gradient(circle at 50% 34%,color-mix(in srgb,var(--stage-secondary,#d1a15e) 30%,#0000) 0,#0000 36%),
+          radial-gradient(ellipse at 50% 88%,color-mix(in srgb,var(--stage-accent,#b9874d) 26%,#0000) 0,#0000 62%),
+          repeating-linear-gradient(90deg,#0000 0 36px,color-mix(in srgb,var(--stage-secondary,#d1a15e) 22%,#0000) 37px 38px),
+          linear-gradient(180deg,#00000066,#00000004 46%,#00000092),
           var(--active-greenhouse-image, url("../assets/greenhouse/first_greenhouse_withered.jpg")) center bottom / cover no-repeat;
         clip-path:polygon(6% 100%,10% 32%,50% 0,90% 32%,94% 100%);
         opacity:.96;
@@ -5530,9 +5833,19 @@
         text-transform:uppercase;
         text-shadow:0 2px 4px #000,0 0 10px #000,0 0 12px var(--stage-accent,#b9874d);
         pointer-events:none;
-        filter:drop-shadow(0 0 18px #000) saturate(1.1) contrast(1.12);
+        filter:drop-shadow(0 0 18px #000) saturate(var(--stage-art-saturation,1.1)) contrast(1.14) brightness(1.04);
+        box-shadow:
+          inset 0 0 26px #000,
+          inset 0 0 42px color-mix(in srgb,var(--stage-accent,#b9874d) 22%,#0000),
+          0 0 22px color-mix(in srgb,var(--stage-accent,#b9874d) 20%,#0000);
       }
-      body.round-one-active.round-one-complete .main::after { display:none; }
+      body.round-one-active:not(.round-one-complete) .mobile-greenhouse-plinth::after,
+      body.restored-next-order-focus:not(.restored-greenhouse-handoff) .mobile-greenhouse-plinth::after {
+        content:attr(data-stage-label);
+        position:relative;
+        z-index:1;
+      }
+      body.round-one-active.round-one-complete .mobile-greenhouse-plinth { display:none; }
       body.round-one-active .controls { width:calc(100vw - 14px); margin:7px auto 0; gap:6px; }
       body.round-one-active .controls .btn { min-width:0; width:min(216px,calc(100vw - 18px)); padding:7px 13px; gap:7px; font-size:12px; line-height:1.08; min-height:38px; }
       body.round-one-active .controls .btn-icon { width:25px; height:25px; }
@@ -5557,7 +5870,19 @@
 <body>
   <main class="game">
     <aside class="left" aria-label="Tycoon progress">
-      <div class="hero frame" aria-hidden="true"></div>
+      <div class="hero frame" aria-hidden="true">
+        <span class="hero-greenhouse-depth" aria-hidden="true">
+          <span class="greenhouse-rib rib-left"></span>
+          <span class="greenhouse-rib rib-center"></span>
+          <span class="greenhouse-rib rib-right"></span>
+          <span class="greenhouse-vine vine-left"></span>
+          <span class="greenhouse-vine vine-right"></span>
+          <span class="greenhouse-lamp lamp-left"></span>
+          <span class="greenhouse-lamp lamp-right"></span>
+          <span class="greenhouse-bed"></span>
+          <span class="greenhouse-mist"></span>
+        </span>
+      </div>
 
       <!-- Left panel progression placeholders stay separate from the chest system. -->
       <div class="side-card greenhouse-card">
@@ -5613,6 +5938,17 @@
     <section class="main" aria-label="Match board">
       <div class="active-greenhouse-stage" id="activeGreenhouseStage" aria-hidden="true" data-stage-key="withered">
         <img id="activeGreenhouseStageArt" src="../assets/greenhouse/first_greenhouse_withered.jpg" width="1672" height="941" alt="" decoding="async" loading="eager">
+        <span class="active-greenhouse-depth" aria-hidden="true">
+          <span class="greenhouse-rib rib-left"></span>
+          <span class="greenhouse-rib rib-center"></span>
+          <span class="greenhouse-rib rib-right"></span>
+          <span class="greenhouse-vine vine-left"></span>
+          <span class="greenhouse-vine vine-right"></span>
+          <span class="greenhouse-lamp lamp-left"></span>
+          <span class="greenhouse-lamp lamp-right"></span>
+          <span class="greenhouse-bed"></span>
+          <span class="greenhouse-mist"></span>
+        </span>
         <span class="active-greenhouse-badge">
           <b id="activeGreenhouseStageLabel">Withered Greenhouse</b>
           <span id="activeGreenhouseStageCopy">The abandoned glass waits around the altar.</span>
@@ -5702,6 +6038,7 @@
         <span class="restored-greenhouse-meter" aria-hidden="true"><span id="restoredGreenhouseStatusFill"></span></span>
       </div>
       <div class="board" id="board"></div>
+      <div class="mobile-greenhouse-plinth" id="mobileGreenhousePlinth" aria-hidden="true"></div>
       <div class="controls">
         <button class="btn" id="shuffleBtn" type="button">
           <img class="btn-icon" src="../assets/tiles/96/bone_white_thorn_star.png" alt="">
@@ -11375,6 +11712,7 @@
       const stageCopy = $("activeGreenhouseStageCopy");
       const hero = document.querySelector(".hero");
       const main = document.querySelector(".main");
+      const mobilePlinth = $("mobileGreenhousePlinth");
       document.body.dataset.activeGreenhouseStage = stageKey;
       document.body.style.setProperty("--active-greenhouse-image", `url("${stage.src}")`);
       document.body.style.setProperty("--stage-accent", stage.accent);
@@ -11400,6 +11738,10 @@
       }
       if (main) {
         main.dataset.stageLabel = stage.shortLabel;
+      }
+      if (mobilePlinth) {
+        mobilePlinth.dataset.stageLabel = stage.shortLabel;
+        mobilePlinth.setAttribute("aria-label", stage.label);
       }
     }
 

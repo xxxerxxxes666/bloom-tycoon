@@ -1,5 +1,20 @@
 # Codex Build Notes
 
+## 2026-07-13 Living greenhouse environment pass
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible milestone: active play now reads more clearly as an occult greenhouse rather than a dark companion panel. The existing repo-local greenhouse art is still the source, but Withered, Moonlit, and Bloodroot active stages now add stage-specific greenhouse ribs, lamps, vines, growing beds, haze, brighter art treatment, board-surround lighting, and restrained ambient motion. Mobile gets a first-viewport greenhouse plinth immediately after the board so stage art remains visible while preserving the board as hero. Reduced-motion disables the new ambient lamp/mist animation.
+- Visual evidence inspected: baseline desktop/mobile screenshots plus final desktop, final mobile fresh, desktop Moonlit, desktop Bloodroot, mobile Moonlit, mobile Bloodroot, mobile final payoff, and reduced-motion desktop screenshots.
+- Browser verification: local static server `127.0.0.1:4173`; Chromium/Playwright. Fresh desktop 1280x720 had 64 tiles, 8 complete rows, 0 overflow, 0 broken images, no console/page/request errors, and the mobile plinth hidden. Fresh 390x844 had 64 tiles, 8 complete rows, 0 overflow, 0 broken images, and the Withered plinth visible from 585px to 747px.
+- Interaction verification: desktop real clicks exercised invalid swap, two instructed Round 1 swaps, bouquet completion, +coin reward, Restore Greenhouse before/after, save/reload, Next Order, Round 2 Cursed Thorn teaching, follow-up, unguided play, Round 2 completion, Next Order, Round 3 active Bloodroot play, final payoff, replay, forced failed Round 2 state, real `Retry Bouquet`, and transient cleanup. Final 390x844 rerun exercised the same path after the mobile plinth change; active play kept 64 tiles, at least 8 complete rows, no overflow, and no broken images.
+- Browser console/network status: final desktop and mobile browser runs reported 0 console messages, 0 page errors, and 0 failed requests.
+- Verification commands: `python3 scripts/verify_project.py`, `git diff --check`, extracted playable JavaScript `node --check`, and the pinned Godot 4.2.2 headless smoke test passed.
+- Review hooks: focused desktop probe verified reduced-motion animation shutdown, real `B` Supreme Bloom trigger and cleanup back to 64 tiles, and real `M` Shape Bloom/L-T-cross review hook preserving 64 tiles, 0 overflow, and 0 broken images.
+- Vercel deployment URL/identifier checked: not redeployed or checked in this local pass before push.
+- GitHub Pages preview status: not checked in this local pass before push.
+- Known issues: none found in the focused first-three-order route. The failed Round 2 retry state was forced through existing internal state to avoid spending the full move budget; `Retry Bouquet` itself was clicked and verified in the browser.
+- Security/secret-scan status: precise changed-file scan passed for private-key headers, environment files, known provider token prefixes, JWTs, credential assignments, trackers, machine-local paths, and broad permissions. No secrets, trackers, telemetry, backend, accounts, ads/IAP, new dependencies, or broad permissions were added.
+
 ## 2026-07-13 Selected harvest preview and tactile tile wells
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
