@@ -432,6 +432,9 @@
       overflow: hidden;
       pointer-events: none;
       opacity: 0.92;
+      --greenhouse-revival-pct: 0%;
+      --greenhouse-revival-alpha: 0;
+      --greenhouse-revival-vine-alpha: 0;
       background:
         radial-gradient(circle at 50% 44%, #0000 0 18%, #05040478 48%, #020101 100%),
         radial-gradient(circle at 50% 74%, color-mix(in srgb, var(--stage-accent, #b9874d) 24%, #0000) 0, #0000 34%),
@@ -500,6 +503,53 @@
       margin-top: 3px;
       color: #cbb894;
       font: 700 12px/1.15 Georgia, serif;
+    }
+
+    .greenhouse-revival-light,
+    .greenhouse-revival-vines,
+    .greenhouse-revival-sigil {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .greenhouse-revival-light {
+      opacity: var(--greenhouse-revival-alpha, 0);
+      background:
+        radial-gradient(circle at 50% 45%, #fff2b255 0 6%, color-mix(in srgb, var(--stage-secondary, #d1a15e) 42%, #0000) 18%, #0000 46%),
+        radial-gradient(ellipse at 50% 77%, color-mix(in srgb, var(--stage-accent, #b9874d) 46%, #0000) 0, #0000 54%);
+      mix-blend-mode: screen;
+      filter: blur(8px);
+      transition: opacity 520ms ease, filter 520ms ease;
+    }
+
+    .greenhouse-revival-vines {
+      opacity: var(--greenhouse-revival-vine-alpha, 0);
+      clip-path: inset(calc(100% - var(--greenhouse-revival-pct, 0%)) 0 0 0);
+      background:
+        radial-gradient(10px 34px at 20% 84%, color-mix(in srgb, var(--stage-secondary, #d1a15e) 70%, #0000) 0 42%, #0000 44%),
+        radial-gradient(8px 28px at 78% 78%, color-mix(in srgb, var(--stage-secondary, #d1a15e) 68%, #0000) 0 42%, #0000 44%),
+        repeating-linear-gradient(78deg, #0000 0 26px, color-mix(in srgb, var(--stage-accent, #b9874d) 42%, #0000) 27px 29px, #0000 30px 58px),
+        repeating-linear-gradient(103deg, #0000 0 34px, color-mix(in srgb, var(--stage-secondary, #d1a15e) 35%, #0000) 35px 36px, #0000 37px 76px);
+      mix-blend-mode: screen;
+      filter: drop-shadow(0 0 8px color-mix(in srgb, var(--stage-accent, #b9874d) 54%, #0000));
+      transition: clip-path 620ms cubic-bezier(.16,.8,.22,1), opacity 520ms ease;
+    }
+
+    .greenhouse-revival-sigil {
+      inset: auto 21% 13%;
+      height: 20%;
+      opacity: var(--greenhouse-revival-sigil-alpha, 0);
+      background:
+        radial-gradient(ellipse at 50% 52%, color-mix(in srgb, var(--stage-accent, #b9874d) 40%, #0000) 0 18%, #0000 42%),
+        linear-gradient(90deg, #0000, color-mix(in srgb, var(--stage-secondary, #d1a15e) 46%, #0000) 28% 31%, #0000 33% 67%, color-mix(in srgb, var(--stage-secondary, #d1a15e) 46%, #0000) 69% 72%, #0000),
+        linear-gradient(0deg, #0000 0 47%, color-mix(in srgb, var(--stage-accent, #b9874d) 42%, #0000) 48% 52%, #0000 53%);
+      border-radius: 50%;
+      mix-blend-mode: screen;
+      filter: blur(0.5px);
+      transform: scaleX(calc(0.74 + var(--greenhouse-revival-scale, 0)));
+      transition: opacity 520ms ease, transform 620ms ease;
     }
 
     body[data-active-greenhouse-stage="withered"] {
@@ -615,11 +665,27 @@
       right: 10%;
       bottom: 7%;
       height: 14%;
+      overflow: hidden;
       border-top: 1px solid color-mix(in srgb, var(--stage-secondary, #d1a15e) 48%, #0000);
       background:
         repeating-linear-gradient(92deg, #0000 0 24px, color-mix(in srgb, var(--stage-accent, #b9874d) 34%, #0000) 25px 26px),
         radial-gradient(ellipse at 50% 100%, color-mix(in srgb, var(--stage-accent, #b9874d) 24%, #0000) 0, #0000 68%);
       opacity: 0.7;
+    }
+
+    .greenhouse-bed::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: var(--greenhouse-revival-pct, 0%);
+      height: 100%;
+      opacity: var(--greenhouse-revival-vine-alpha, 0);
+      background:
+        repeating-linear-gradient(86deg, #0000 0 14px, color-mix(in srgb, var(--stage-secondary, #d1a15e) 56%, #0000) 15px 16px, #0000 17px 34px),
+        radial-gradient(ellipse at 50% 78%, color-mix(in srgb, var(--stage-accent, #b9874d) 48%, #0000) 0, #0000 68%);
+      box-shadow: 0 0 18px color-mix(in srgb, var(--stage-accent, #b9874d) 32%, #0000);
+      transition: width 620ms cubic-bezier(.16,.8,.22,1), opacity 520ms ease;
     }
 
     body[data-active-greenhouse-stage="moonlit"] .greenhouse-vine {
@@ -4990,6 +5056,23 @@
       opacity: 0.9;
     }
 
+    body.round-one-active .hero-greenhouse-depth::after,
+    body.restored-next-order-focus .hero-greenhouse-depth::after {
+      content: "";
+      position: absolute;
+      left: 7%;
+      right: 7%;
+      bottom: 8%;
+      height: 32%;
+      opacity: var(--greenhouse-revival-alpha, 0);
+      background:
+        radial-gradient(ellipse at 50% 78%, color-mix(in srgb, var(--stage-accent, #b9874d) 52%, #0000) 0, #0000 62%),
+        repeating-linear-gradient(90deg, #0000 0 28px, color-mix(in srgb, var(--stage-secondary, #d1a15e) 34%, #0000) 29px 30px);
+      clip-path: inset(calc(100% - var(--greenhouse-revival-pct, 0%)) 0 0 0);
+      filter: blur(1px);
+      transition: clip-path 620ms cubic-bezier(.16,.8,.22,1), opacity 520ms ease;
+    }
+
     body.round-one-active .hero-greenhouse-depth .greenhouse-rib,
     body.restored-next-order-focus .hero-greenhouse-depth .greenhouse-rib {
       top: 5%;
@@ -5083,6 +5166,24 @@
     body.restored-next-order-focus .active-greenhouse-depth .greenhouse-mist {
       bottom: 8%;
       height: 28%;
+    }
+
+    body[data-greenhouse-revival-tier="1"] .greenhouse-lamp {
+      opacity: 0.86;
+    }
+
+    body[data-greenhouse-revival-tier="2"] .greenhouse-vine,
+    body[data-greenhouse-revival-tier="3"] .greenhouse-vine {
+      opacity: 0.68;
+    }
+
+    body[data-greenhouse-revival-tier="2"] .greenhouse-bed,
+    body[data-greenhouse-revival-tier="3"] .greenhouse-bed {
+      opacity: 0.84;
+    }
+
+    body[data-greenhouse-revival-tier="3"] .greenhouse-rib {
+      filter: drop-shadow(0 0 12px color-mix(in srgb, var(--stage-accent, #b9874d) 38%, #0000));
     }
 
     @media (min-width: 761px) and (max-height: 820px) {
@@ -5664,6 +5765,16 @@
       28% { transform:scale(1.012); filter:brightness(1.28) saturate(1.36); }
       100% { transform:scale(1); filter:brightness(1); }
     }
+    @keyframes greenhouse-intake-pulse {
+      0% { opacity:var(--greenhouse-revival-alpha, 0); filter:blur(11px) brightness(.86); transform:scale(.94); }
+      36% { opacity:.92; filter:blur(6px) brightness(1.42); transform:scale(1.04); }
+      100% { opacity:var(--greenhouse-revival-alpha, 0); filter:blur(8px) brightness(1); transform:scale(1); }
+    }
+    @keyframes greenhouse-intake-sigil {
+      0% { opacity:0; transform:translateY(8px) scale(.86); }
+      30% { opacity:.85; transform:translateY(0) scale(1.05); }
+      100% { opacity:var(--greenhouse-revival-sigil-alpha, 0); transform:translateY(0) scale(1); }
+    }
     @keyframes petal-pop {
       0% { opacity:0; transform:translate(-50%,-50%) scale(.35) rotate(0deg); }
       18% { opacity:1; }
@@ -5687,12 +5798,24 @@
       body.restored-next-order-focus .greenhouse-lamp {
         animation:greenhouse-lamp-breathe 3.2s ease-in-out infinite alternate;
       }
+      body.greenhouse-intake .greenhouse-revival-light {
+        animation:greenhouse-intake-pulse 780ms ease-out both;
+      }
+      body.greenhouse-intake .greenhouse-revival-sigil {
+        animation:greenhouse-intake-sigil 780ms ease-out both;
+      }
+      body.greenhouse-intake .mobile-greenhouse-plinth {
+        animation:greenhouse-intake-pulse 780ms ease-out both;
+      }
     }
     @media (prefers-reduced-motion: reduce) {
       body.round-one-active .greenhouse-mist,
       body.restored-next-order-focus .greenhouse-mist,
       body.round-one-active .greenhouse-lamp,
-      body.restored-next-order-focus .greenhouse-lamp {
+      body.restored-next-order-focus .greenhouse-lamp,
+      body.greenhouse-intake .greenhouse-revival-light,
+      body.greenhouse-intake .greenhouse-revival-sigil,
+      body.greenhouse-intake .mobile-greenhouse-plinth {
         animation:none !important;
       }
     }
@@ -5839,6 +5962,20 @@
           inset 0 0 42px color-mix(in srgb,var(--stage-accent,#b9874d) 22%,#0000),
           0 0 22px color-mix(in srgb,var(--stage-accent,#b9874d) 20%,#0000);
       }
+      body.round-one-active:not(.round-one-complete) .mobile-greenhouse-plinth::before,
+      body.restored-next-order-focus:not(.restored-greenhouse-handoff) .mobile-greenhouse-plinth::before {
+        content:"";
+        position:absolute;
+        inset:0;
+        background:
+          radial-gradient(circle at 50% 38%, #fff1b955 0 9%, color-mix(in srgb,var(--stage-secondary,#d1a15e) 38%,#0000) 23%, #0000 54%),
+          repeating-linear-gradient(82deg, #0000 0 24px, color-mix(in srgb,var(--stage-accent,#b9874d) 40%,#0000) 25px 27px, #0000 28px 62px),
+          radial-gradient(ellipse at 50% 88%, color-mix(in srgb,var(--stage-accent,#b9874d) 54%,#0000) 0, #0000 64%);
+        clip-path:inset(calc(100% - var(--greenhouse-revival-pct, 0%)) 0 0 0);
+        opacity:var(--greenhouse-revival-alpha,0);
+        mix-blend-mode:screen;
+        transition:clip-path 620ms cubic-bezier(.16,.8,.22,1), opacity 520ms ease;
+      }
       body.round-one-active:not(.round-one-complete) .mobile-greenhouse-plinth::after,
       body.restored-next-order-focus:not(.restored-greenhouse-handoff) .mobile-greenhouse-plinth::after {
         content:attr(data-stage-label);
@@ -5949,6 +6086,9 @@
           <span class="greenhouse-bed"></span>
           <span class="greenhouse-mist"></span>
         </span>
+        <span class="greenhouse-revival-light" aria-hidden="true"></span>
+        <span class="greenhouse-revival-vines" aria-hidden="true"></span>
+        <span class="greenhouse-revival-sigil" aria-hidden="true"></span>
         <span class="active-greenhouse-badge">
           <b id="activeGreenhouseStageLabel">Withered Greenhouse</b>
           <span id="activeGreenhouseStageCopy">The abandoned glass waits around the altar.</span>
@@ -6827,6 +6967,7 @@
     let roundOneRestored = false;
     let restoredGreenhouseHandoff = false;
     let restoredGreenhouseHandoffTimer = null;
+    let greenhouseRevivalPulseTimer = null;
     let bloomAudioContext = null;
     let bloomAudioMaster = null;
     let bloomAudioCompressor = null;
@@ -11745,17 +11886,72 @@
       }
     }
 
+    function greenhouseRevivalTier(pct) {
+      if (pct >= 99) {
+        return 3;
+      }
+      if (pct >= 56) {
+        return 2;
+      }
+      if (pct > 0) {
+        return 1;
+      }
+      return 0;
+    }
+
+    function applyActiveGreenhouseRevival(progress = roundProgress(activeRoundPlan())) {
+      const pct = Math.max(0, Math.min(100, Number(progress.pct) || 0));
+      const tier = greenhouseRevivalTier(roundComplete ? 100 : pct);
+      const livePct = roundComplete ? 100 : pct;
+      const activeGlow = livePct > 0 ? Math.min(0.86, 0.1 + livePct / 118) : 0;
+      const vineGlow = livePct > 0 ? Math.min(0.82, 0.08 + livePct / 130) : 0;
+      const sigilGlow = Math.min(0.72, activeGlow * 0.82);
+      const scale = (livePct / 100 * 0.44).toFixed(3);
+      const pctValue = `${livePct.toFixed(2)}%`;
+      const targetNodes = [
+        document.body,
+        $("activeGreenhouseStage"),
+        document.querySelector(".hero"),
+        document.querySelector(".hero-greenhouse-depth"),
+        $("mobileGreenhousePlinth")
+      ].filter(Boolean);
+      document.body.dataset.greenhouseRevivalTier = String(tier);
+      document.body.dataset.greenhouseRevivalPct = String(Math.round(livePct));
+      targetNodes.forEach((node) => {
+        node.style.setProperty("--greenhouse-revival-pct", pctValue);
+        node.style.setProperty("--greenhouse-revival-alpha", activeGlow.toFixed(3));
+        node.style.setProperty("--greenhouse-revival-vine-alpha", vineGlow.toFixed(3));
+        node.style.setProperty("--greenhouse-revival-sigil-alpha", sigilGlow.toFixed(3));
+        node.style.setProperty("--greenhouse-revival-scale", scale);
+        node.dataset.greenhouseRevivalTier = String(tier);
+        node.dataset.greenhouseRevivalPct = String(Math.round(livePct));
+      });
+    }
+
+    function pulseActiveGreenhouseIntake() {
+      if (greenhouseRevivalPulseTimer && window.clearTimeout) {
+        window.clearTimeout(greenhouseRevivalPulseTimer);
+      }
+      document.body.classList.add("greenhouse-intake");
+      greenhouseRevivalPulseTimer = window.setTimeout(() => {
+        document.body.classList.remove("greenhouse-intake");
+        greenhouseRevivalPulseTimer = null;
+      }, 820);
+    }
+
     function render() {
       const roundOneActive = currentRound === 1;
       const roundTwoUpgradeComplete = currentRound === 2 && roundComplete && roundOneRestored;
       const roundThreeFinalComplete = currentRound === 3 && roundComplete;
       const activePlan = activeRoundPlan();
+      const progress = roundProgress(activePlan);
       const failedFocusedRestoredOrder = roundOneRestored
         && activePlan.round >= 2
         && activePlan.round <= 3
         && isBouquetFailed(activePlan);
       applyGreenhouseArtwork(roundThreeFinalComplete ? "bloodroot" : roundTwoUpgradeComplete ? "moonlit" : "first");
       applyActiveGreenhouseStage(activeGreenhouseStageKey());
+      applyActiveGreenhouseRevival(progress);
       updateBloomSoundscapeStage(activeGreenhouseStageKey());
       document.body.classList.toggle("round-one-active", roundOneActive);
       document.body.classList.toggle("round-one-complete", roundOneActive && roundComplete);
@@ -11956,8 +12152,7 @@
         boardEl.appendChild(effect);
       });
 
-      const plan = activeRoundPlan();
-      const progress = roundProgress(plan);
+      const plan = activePlan;
       const failed = isBouquetFailed(plan);
       const objectiveVerb = plan.thornGoal ? "Goals" : "Collect";
       $("objective").innerHTML = `
@@ -13108,6 +13303,7 @@
         thornClearedCells.add(key);
         thornPulseCells.add(key);
       });
+      pulseActiveGreenhouseIntake();
     }
 
     function clearWaveCells(wave) {
@@ -14041,6 +14237,7 @@
         }
       });
       if (orderPulseTargets.size) {
+        pulseActiveGreenhouseIntake();
         launchObjectiveFlights(gained, gainedCells);
         scheduleOrderPulseClear();
       }

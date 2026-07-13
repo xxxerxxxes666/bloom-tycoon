@@ -1,5 +1,21 @@
 # Codex Build Notes
 
+## 2026-07-13 Bouquet-progress greenhouse revival
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible milestone: the active greenhouse companion now revives during ordinary bouquet progress before the ceremony. Existing objective counts drive durable 0/partial/full revival tiers on the desktop greenhouse, behind-board environment, and 390px mobile plinth; real target matches and Cursed Thorn progress add a restrained intake pulse, living bed fill, light, vines, and sigil energy. The state resets on Retry, Next Order, and replay, persists from saved objective counts on reload, and still culminates in the existing restoration/final payoff ceremonies.
+- Visual/runtime evidence inspected: `/tmp/bloom-desktop-fresh-before.png`, `/tmp/bloom-desktop-after-first-match-intermediate.png`, `/tmp/bloom-desktop-round1-complete-before-restore.png`, `/tmp/bloom-desktop-after-restore.png`, `/tmp/bloom-desktop-round2-thorn-progress.png`, `/tmp/bloom-desktop-final-payoff-after.png`, `/tmp/bloom-mobile390-fresh-before.png`, `/tmp/bloom-mobile390-after-first-match-intermediate.png`, `/tmp/bloom-mobile390-round2-thorn-progress.png`, `/tmp/bloom-mobile390-final-payoff-after.png`, and visible failed retry screenshots for both desktop and mobile.
+- Browser verification: local static server `127.0.0.1:4173`; agent-browser loaded the playable and saw 64 tile buttons. Playwright/Chromium exercised real desktop 1280x720 and 390x844 interaction: fresh load, invalid swap, first guided swap, second Black Candle swap, bouquet/coin payoff, Restore Greenhouse before/after, save/reload, Next Order, Round 2 guided thorn, follow-up, unguided completion, Round 2 payoff, Round 3 reset/completion, final payoff/reload/replay, hidden `B` Supreme Bloom, forced visible failed Round 2, and real `Retry Bouquet`.
+- Greenhouse revival checks: fresh rounds reported 0%/tier 0; first Round 1 match reported 60%/tier 2 with intake; Round 2 thorn progress reported 26%/tier 1; Round 1, Round 2, and Round 3 completions reported 100%/tier 3; Next Order/replay/retry reset to 0%. Mobile kept 8 complete active rows in the sampled active states, no horizontal overflow, and the greenhouse plinth visible.
+- Browser console/network status: final scripted desktop and mobile journeys reported 0 console messages, 0 page errors, 0 failed browser requests, 0 broken images, 0 horizontal overflow, and transient FX cleanup back to 0.
+- Verification commands: `python3 scripts/verify_project.py`, `git diff --check`, extracted playable JavaScript syntax check via `new Function(...)`, and `/opt/data/tools/godot/Godot_v4.2.2-stable_linux.x86_64 --headless --path . --script res://tests/godot_smoke_test.gd` passed.
+- Vercel deployment URL/identifier checked: not redeployed or checked in this local pass before push.
+- GitHub Pages preview status: not checked in this local pass before push.
+- Known issues: none found in the verified first-three-order route. The failed Round 2 state was forced through saved state to reach the visible retry surface quickly; the `Retry Bouquet` click itself was exercised in the browser on desktop and mobile.
+- How to trigger and verify L/T/cross matches without console: after Round 3/replay or outside the focused first-three active composition, press `M` or use `Shape Bloom` where visible; this pass did not change that review path.
+- How to trigger and verify Supreme Bloom without console: focus the playable and press `B`; this pass verified the hidden review hook shows `SUPREME BLOOM!`, then cleans up particles and preserves 64 tiles.
+- Security/secret-scan status: precise changed-file scan passed for private-key headers, `.env`, known provider token prefixes/JWTs, suspicious credential assignments, trackers, machine-local paths, and broad permissions. No secrets, trackers, telemetry, backend, accounts, ads/IAP, new dependencies, broad permissions, or cron jobs were added.
+
 ## 2026-07-13 Living greenhouse environment pass
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
