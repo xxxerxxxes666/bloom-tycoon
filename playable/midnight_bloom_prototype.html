@@ -777,6 +777,19 @@
       color: #6b4a2f;
     }
 
+    .objective-goal-joiner {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      clip-path: inset(50%);
+      white-space: nowrap;
+      border: 0;
+    }
+
     .objective-target {
       display: inline-flex;
       align-items: center;
@@ -7293,7 +7306,7 @@
         goals.push(thornGoalMarkup(plan));
       }
       return goals.map((goal, index) => {
-        const joiner = index ? "<span>and</span>" : "";
+        const joiner = index ? '<span class="objective-goal-joiner">and</span>' : "";
         return `${joiner}${goal}`;
       }).join("");
     }

@@ -20,6 +20,15 @@
 - Security/secret-scan status: changed files were scanned for private key headers, environment-file additions, provider credential prefixes, JWTs, suspicious credential assignments, trackers/analytics SDKs, broad permissions, machine-local paths, and cron-like additions. No findings after tightening false-positive patterns.
 - Foreman visual QA: independent desktop and 390x844 review accepted the substantial trophy but found its first draft repeated coin, greenhouse, item, and thorn rewards already shown by the transaction row. Those duplicate trophy tokens were removed so the ceremony now reads as one bouquet visual, one transaction, one transformation, and one next action.
 
+## 2026-07-13 Compact bouquet-goal scan
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible milestone: bouquet targets now read as a compact set of goal chips instead of a sentence broken up by repeated visible `and` connectors. The connectors remain in the DOM as visually hidden text for assistive technology, so no target or semantic relationship was removed.
+- Mobile first-viewport result: at 390x844, active Round 2 objective height fell from 171px to 135px and the board moved 36px upward. All 64 tiles and eight complete rows remained visible with no horizontal overflow.
+- Real-browser interaction verification: Chromium/Playwright used real mouse clicks for both authored Round 1 swaps, bouquet completion, greenhouse restoration, saved-state reload, and Next Order on 1280x720 and 390x844. Round 2 retained three accessible goal joiners, zero visibly rendered joiners, 64 altar tiles, eight complete rows, zero broken images, and no console, page, or request errors. A real `Retry Bouquet` click restored Round 2 to 17 moves.
+- Verification: `python3 scripts/verify_project.py` passed, including static regression markers for the accessible joiner treatment.
+- Next highest-impact audit item: assess whether the Cursed Thorn teaching highlight is immediately distinguishable from normal flower harvest previews on first contact.
+
 ## 2026-07-13 Occult altar tile-art readability pass
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/generate_occult_tile_art.py`, `scripts/verify_html_match_shapes.py`, `assets/tiles/altar/*.svg`, and `docs/codex_build_notes.md`.

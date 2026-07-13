@@ -216,6 +216,8 @@ def verify_source_hooks():
         "bouquet-bind-seal",
         "objective-target-fill",
         "objective-target-seal",
+        "objective-goal-joiner",
+        "clip-path: inset(50%);",
         "order-fill",
         "style=\"--target-pct:${pct}%\"",
         "style=\"--order-pct:${pct}%\"",
