@@ -226,6 +226,11 @@
       align-items: center;
       gap: 8px;
       margin-top: 6px;
+      position: relative;
+      overflow: hidden;
+      padding: 4px 5px;
+      border: 1px solid #0000;
+      background: #05040366;
     }
 
     .order-icon {
@@ -234,6 +239,8 @@
       object-fit: contain;
       flex: 0 0 auto;
       filter: drop-shadow(0 0 5px #000);
+      position: relative;
+      z-index: 1;
     }
 
     .thorn-order-glyph {
@@ -250,14 +257,39 @@
 
     .order-copy {
       line-height: 1.15;
+      position: relative;
+      z-index: 1;
+    }
+
+    .order-fill {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: var(--order-pct, 0%);
+      min-width: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, #5f833833, #d7b16d2f 72%, #0000);
+      box-shadow: inset 0 0 10px #000;
+      transition: width 360ms ease;
     }
 
     .order-line.complete .order-copy {
-      color: #d0b27a;
+      color: #f0d99c;
     }
 
     .order-line.complete .order-icon {
       filter: drop-shadow(0 0 7px #5f8338) drop-shadow(0 0 5px #000);
+    }
+
+    .order-line.complete {
+      border-color: #6f944d77;
+      background: linear-gradient(90deg, #14200f99, #08060466);
+      box-shadow: inset 0 0 12px #000, 0 0 10px #5f83382e;
+    }
+
+    .order-line.complete .order-fill {
+      width: 100%;
+      background: linear-gradient(90deg, #5f83385c, #d7b16d35 74%, #0000);
     }
 
     .order-line.complete .order-copy::after {
@@ -552,6 +584,7 @@
       position: relative;
       overflow: hidden;
       white-space: nowrap;
+      isolation: isolate;
     }
 
     .objective-target.order-pulse {
@@ -570,6 +603,55 @@
       opacity: 0;
       transform: translateX(-58%) rotate(-10deg) scale(0.82);
       animation: objective-sip 900ms ease-out both;
+    }
+
+    .objective-target-fill {
+      position: absolute;
+      inset: 0 auto 0 0;
+      z-index: 0;
+      width: var(--target-pct, 0%);
+      min-width: 0;
+      background:
+        linear-gradient(90deg, #5f833847, #d7b16d30 72%, #0000);
+      box-shadow: inset 0 0 10px #000;
+      transition: width 360ms ease;
+    }
+
+    .objective-target-name,
+    .objective-target-count,
+    .objective-target-seal,
+    .objective-target .icon-wrap {
+      position: relative;
+      z-index: 1;
+    }
+
+    .objective-target-count {
+      color: #fff0b4;
+      font-weight: 900;
+    }
+
+    .objective-target.complete {
+      color: #f4dda0;
+      border-color: #6f944d !important;
+      box-shadow: inset 0 0 10px #000, 0 0 14px #5f833845;
+    }
+
+    .objective-target.complete .objective-target-fill {
+      width: 100%;
+      background:
+        linear-gradient(90deg, #5f833866, #d7b16d3d 74%, #0000);
+    }
+
+    .objective-target-seal {
+      margin-left: 2px;
+      padding: 2px 5px;
+      color: #dff5b8;
+      border: 1px solid #6f944d88;
+      background: #0b1308d9;
+      font: 900 9px/1 system-ui, sans-serif;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      box-shadow: inset 0 0 7px #000, 0 0 8px #5f833838;
     }
 
     .objective-boon {
@@ -2057,6 +2139,69 @@
       pointer-events: none;
       filter: drop-shadow(0 0 8px #e7bd67);
       will-change: transform, opacity;
+    }
+
+    .bouquet-bind-seal {
+      position: fixed;
+      z-index: 1001;
+      width: 132px;
+      min-height: 62px;
+      margin: -31px 0 0 -66px;
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 9px;
+      pointer-events: none;
+      color: #fff0b4;
+      border: 1px solid #d7b16d99;
+      background:
+        radial-gradient(circle at 22% 48%, #d7b16d55 0, #0000 34%),
+        linear-gradient(180deg, #190c08f2, #060403ef);
+      box-shadow:
+        inset 0 0 14px #000,
+        0 0 20px #d7b16d55,
+        0 0 30px #5f833833;
+      text-shadow: 0 2px 4px #000;
+      animation: bouquet-bind-seal 1180ms cubic-bezier(.12,.82,.18,1) forwards;
+      will-change: transform, opacity, filter;
+    }
+
+    .bouquet-bind-seal::before {
+      content: "";
+      position: absolute;
+      inset: -13px;
+      border: 1px solid #d7b16d66;
+      clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+      opacity: .76;
+      animation: bouquet-bind-ring 1180ms ease-out forwards;
+    }
+
+    .bouquet-bind-seal img {
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 8px #000) drop-shadow(0 0 7px #d7b16d);
+    }
+
+    .bouquet-bind-seal b,
+    .bouquet-bind-seal span {
+      position: relative;
+      z-index: 1;
+      display: block;
+    }
+
+    .bouquet-bind-seal b {
+      font: 900 16px/1 Georgia, serif;
+      color: #fff2bf;
+    }
+
+    .bouquet-bind-seal span {
+      margin-top: 3px;
+      color: #c9e6a6;
+      font: 900 9px/1 system-ui, sans-serif;
+      letter-spacing: .12em;
+      text-transform: uppercase;
     }
 
     .tile.legal-target {
@@ -4226,6 +4371,43 @@
       }
     }
 
+    @keyframes bouquet-bind-seal {
+      0% {
+        opacity: 0;
+        transform: translateY(10px) scale(.72) rotate(-2deg);
+        filter: brightness(.8);
+      }
+      24% {
+        opacity: 1;
+        transform: translateY(0) scale(1.04) rotate(0deg);
+        filter: brightness(1.28);
+      }
+      68% {
+        opacity: 1;
+        transform: translateY(-5px) scale(1);
+        filter: brightness(1.06);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(-20px) scale(.9);
+        filter: brightness(.92);
+      }
+    }
+
+    @keyframes bouquet-bind-ring {
+      0% {
+        opacity: 0;
+        transform: scale(.56) rotate(0deg);
+      }
+      25% {
+        opacity: .9;
+      }
+      100% {
+        opacity: 0;
+        transform: scale(1.55) rotate(32deg);
+      }
+    }
+
     @keyframes super-tile-throb {
       0% {
         transform: scale(0.96);
@@ -4980,7 +5162,9 @@
     .round-one-restoration.restored .restore-btn { display:none; }
     .round-one-restoration.restored .next-order-btn { display:block; }
     body.round-two-upgrade-complete .round-one-restoration { position:relative; overflow:hidden; display:grid; width:min(760px,calc(100% - 16px)); margin:12px auto 0; padding:16px; gap:12px; border:1px solid #8a4f5e; background:radial-gradient(circle at 50% 0,#2c0f20,#0d0a0d 72%); box-shadow:0 0 40px #7d49b245,inset 0 0 30px #000,0 18px 45px #000b; text-align:center; }
-    body.focused-slice-failed #renewBtn.visible { position:fixed; left:50%; bottom:14px; z-index:40; display:block; min-width:190px; transform:translateX(-50%); box-shadow:0 0 22px #9b1d2266,0 10px 24px #000c; }
+    body.focused-slice-failed .bottom { display:none!important; }
+    body.focused-slice-failed #shuffleBtn { display:none!important; }
+    body.focused-slice-failed #renewBtn.visible { position:fixed; left:50%; bottom:14px; z-index:1000; display:block!important; min-width:190px; transform:translateX(-50%); box-shadow:0 0 22px #9b1d2266,0 10px 24px #000c; }
     .round-one-restoration.second-greenhouse-upgrade .restoration-scene { border-color:#7d49b2; box-shadow:inset 0 0 30px #7d49b255,0 0 28px #9b1d2245; }
     .round-one-restoration.second-greenhouse-upgrade .restoration-scene::before { background:radial-gradient(circle at 50% 30%,#7d49b244 0 14%,#0000 42%),radial-gradient(circle at 50% 42%,#0000 0 48%,#0008 88%),linear-gradient(180deg,#0008,#2c092055 34%,#0004 76%,#000a); }
     .round-one-restoration.second-greenhouse-upgrade .greenhouse-art-restored { filter:brightness(1.08) saturate(1.14) contrast(1.04); }
@@ -5142,9 +5326,16 @@
       body.restored-next-order-focus .objective-target,
       body.restored-greenhouse-handoff .objective-target,
       body.round-one-active .objective-target { min-height:29px; padding:2px 6px 2px 3px; border:1px solid #594126; border-radius:4px; background:#0b0807cc; box-shadow:inset 0 0 8px #000; font-weight:700; }
+      body.restored-next-order-focus .objective-target-seal,
+      body.restored-greenhouse-handoff .objective-target-seal,
+      body.round-one-active .objective-target-seal { padding:2px 4px; font-size:8px; letter-spacing:.05em; }
       body.restored-next-order-focus .objective-target .objective-icon,
       body.restored-greenhouse-handoff .objective-target .objective-icon,
       body.round-one-active .objective-target .objective-icon { width:25px; height:25px; }
+      .bouquet-bind-seal { width:108px; min-height:52px; grid-template-columns:27px 1fr; gap:5px; margin:-26px 0 0 -54px; padding:6px 7px; }
+      .bouquet-bind-seal img { width:26px; height:26px; }
+      .bouquet-bind-seal b { font-size:13px; }
+      .bouquet-bind-seal span { margin-top:2px; font-size:8px; letter-spacing:.09em; }
       body.restored-next-order-focus .moves-counter,
       body.restored-greenhouse-handoff .moves-counter,
       body.round-one-active .moves-counter { min-height:29px; display:inline-flex; align-items:center; padding:2px 8px; border:1px solid #70502d; border-radius:4px; color:#f2d896; background:#1b110bcc; font-weight:800; white-space:nowrap; }
@@ -5217,8 +5408,10 @@
         filter:drop-shadow(0 0 18px #000) saturate(1.1) contrast(1.12);
       }
       body.round-one-active.round-one-complete .main::after { display:none; }
-      body.round-one-active .controls { margin:7px auto 0; }
-      body.round-one-active .controls .btn { min-width:0; padding:7px 11px; font-size:12px; min-height:36px; }
+      body.round-one-active .controls { width:calc(100vw - 14px); margin:7px auto 0; gap:6px; }
+      body.round-one-active .controls .btn { min-width:0; width:min(216px,calc(100vw - 18px)); padding:7px 13px; gap:7px; font-size:12px; line-height:1.08; min-height:38px; }
+      body.round-one-active .controls .btn-icon { width:25px; height:25px; }
+      body.round-one-active .controls .btn span { white-space:normal; text-align:left; }
       body.round-one-active.round-one-complete .board, body.round-one-active.round-one-complete .controls, body.round-one-active.round-one-complete .ritual-log { display:none; }
       body.round-one-active.round-one-complete .round-one-restoration { margin-top:8px; padding:11px; gap:8px; }
       body.round-three-final-complete .round-one-restoration { margin-top:8px; padding:11px; gap:8px; }
@@ -6310,10 +6503,15 @@
       const flower = flowers[flowerId];
       const displayCount = Math.min(current, needed);
       const pulseClass = orderPulseTargets.has(flowerId) ? "order-pulse" : "";
+      const completeClass = displayCount >= needed ? "complete" : "";
+      const pct = needed ? Math.min(100, (displayCount / needed) * 100) : 0;
       return `
-        <span class="objective-target ${pulseClass}" data-flower-id="${flowerId}">
+        <span class="objective-target ${pulseClass} ${completeClass}" data-flower-id="${flowerId}" style="--target-pct:${pct}%">
+          <span class="objective-target-fill" aria-hidden="true"></span>
           ${iconMarkup(flowerId, "objective-icon", flower[0])}
-          ${flower[0]} ${displayCount}/${needed}
+          <span class="objective-target-name">${flower[0]}</span>
+          <span class="objective-target-count">${displayCount}/${needed}</span>
+          ${completeClass ? '<span class="objective-target-seal">Sealed</span>' : ""}
         </span>
       `;
     }
@@ -12828,8 +13026,10 @@
         const progress = targetProgress(target);
         const complete = progress >= target.needed;
         const pulse = orderPulseTargets.has(target.flowerId);
+        const pct = target.needed ? Math.min(100, (progress / target.needed) * 100) : 0;
         return `
-          <div class="small order-line ${complete ? "complete" : ""} ${pulse ? "order-pulse" : ""}">
+          <div class="small order-line ${complete ? "complete" : ""} ${pulse ? "order-pulse" : ""}" style="--order-pct:${pct}%">
+            <span class="order-fill" aria-hidden="true"></span>
             <img class="order-icon" src="${flower[1]}" alt="${flower[0]}">
             <span class="order-copy">${target.order}: ${progress}/${target.needed} ${flower[0]}</span>
           </div>
@@ -12840,8 +13040,10 @@
         const needed = thornGoalNeeded(plan);
         const complete = progress >= needed;
         const pulse = thornPulseCells.size || thornClearedCells.size;
+        const pct = needed ? Math.min(100, (progress / needed) * 100) : 0;
         lines.push(`
-          <div class="small order-line ${complete ? "complete" : ""} ${pulse ? "order-pulse" : ""}">
+          <div class="small order-line ${complete ? "complete" : ""} ${pulse ? "order-pulse" : ""}" style="--order-pct:${pct}%">
+            <span class="order-fill" aria-hidden="true"></span>
             <span class="order-icon thorn-order-glyph" aria-hidden="true">✕</span>
             <span class="order-copy">${plan.thornGoal.order}: ${progress}/${needed} cleared</span>
           </div>
@@ -13176,26 +13378,56 @@
         if (!destination) return;
         const targetRect = destination.getBoundingClientRect();
         const origins = gainedCells[target.flowerId] || [];
-        const origin = origins[Math.min(index, origins.length - 1)] || [BOARD_SIZE / 2 - 0.5, BOARD_SIZE / 2 - 0.5];
-        const originX = boardRect.left + ((origin[0] + 0.5) / BOARD_SIZE) * boardRect.width;
-        const originY = boardRect.top + ((origin[1] + 0.5) / BOARD_SIZE) * boardRect.height;
-        const flight = document.createElement("img");
-        flight.className = "objective-flight";
-        flight.alt = "";
-        flight.setAttribute("aria-hidden", "true");
-        flight.src = flowers[target.flowerId][1];
-        flight.style.left = `${originX - 15}px`;
-        flight.style.top = `${originY - 15}px`;
-        document.body.appendChild(flight);
-        const dx = targetRect.left + targetRect.width / 2 - originX;
-        const dy = targetRect.top + targetRect.height / 2 - originY;
-        const animation = flight.animate([
-          { transform: `translate(${index * 8 - 4}px, 0) scale(.65)`, opacity: 0 },
-          { transform: `translate(${dx * .45}px, ${dy * .35 - 24}px) scale(1.15)`, opacity: 1, offset: .42 },
-          { transform: `translate(${dx}px, ${dy}px) scale(.45)`, opacity: .25 }
-        ], { duration: 620, easing: "cubic-bezier(.2,.75,.25,1)", fill: "forwards" });
-        animation.finished.finally(() => flight.remove());
+        const flightOrigins = origins.length
+          ? origins.slice(0, Math.min(3, origins.length))
+          : [[BOARD_SIZE / 2 - 0.5, BOARD_SIZE / 2 - 0.5]];
+        flightOrigins.forEach((origin, flightIndex) => {
+          const originX = boardRect.left + ((origin[0] + 0.5) / BOARD_SIZE) * boardRect.width;
+          const originY = boardRect.top + ((origin[1] + 0.5) / BOARD_SIZE) * boardRect.height;
+          const flight = document.createElement("img");
+          flight.className = "objective-flight";
+          flight.alt = "";
+          flight.setAttribute("aria-hidden", "true");
+          flight.src = flowers[target.flowerId][1];
+          flight.style.left = `${originX - 15}px`;
+          flight.style.top = `${originY - 15}px`;
+          document.body.appendChild(flight);
+          const dx = targetRect.left + targetRect.width / 2 - originX;
+          const dy = targetRect.top + targetRect.height / 2 - originY;
+          const arc = (flightIndex - (flightOrigins.length - 1) / 2) * 22;
+          const animation = flight.animate([
+            { transform: `translate(${index * 8 - 4}px, 0) scale(.62) rotate(-8deg)`, opacity: 0 },
+            { transform: `translate(${dx * .45 + arc}px, ${dy * .34 - 34}px) scale(1.16) rotate(7deg)`, opacity: 1, offset: .42 },
+            { transform: `translate(${dx}px, ${dy}px) scale(.4) rotate(0deg)`, opacity: .22 }
+          ], {
+            duration: 680 + flightIndex * 45,
+            delay: flightIndex * 45,
+            easing: "cubic-bezier(.2,.75,.25,1)",
+            fill: "forwards"
+          });
+          animation.finished.catch(() => {}).finally(() => flight.remove());
+        });
+        window.setTimeout(() => queueBouquetBindingSeal(target, gained[target.flowerId], targetRect), 430);
       });
+    }
+
+    function queueBouquetBindingSeal(target, gainedAmount, targetRect) {
+      if (!(gainedAmount > 0) || !targetRect) {
+        return;
+      }
+      const flower = flowers[target.flowerId];
+      const seal = document.createElement("span");
+      seal.className = "bouquet-bind-seal";
+      seal.setAttribute("aria-hidden", "true");
+      seal.style.left = `${targetRect.left + targetRect.width / 2}px`;
+      seal.style.top = `${targetRect.top + targetRect.height / 2}px`;
+      seal.innerHTML = `
+        <img src="${flower[1]}" alt="">
+        <span><b>+${gainedAmount}</b><span>${target.order}</span></span>
+      `;
+      document.body.appendChild(seal);
+      seal.addEventListener("animationend", () => seal.remove(), { once: true });
+      window.setTimeout(() => seal.remove(), 1400);
     }
 
     function scheduleOrderPulseClear() {

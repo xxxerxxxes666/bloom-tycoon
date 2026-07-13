@@ -1,5 +1,22 @@
 # Codex Build Notes
 
+## 2026-07-13 Bouquet binding feedback
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible milestone: matching flowers now visibly binds progress into the bouquet. Objective chips and Active Orders rows fill with progress, completed objectives get a stronger sealed state, and real gained flowers launch multiple target flights into a short-lived `+N` bouquet seal near the objective. No new rounds, assets, systems, currencies, controls, dependencies, backend, trackers, ads/IAP, accounts, secrets, permissions, or cron jobs were added.
+- Implementation notes: reused the existing `pulseOrderCounts()` / `launchObjectiveFlights()` path, added `queueBouquetBindingSeal()`, progress-fill markup for objective targets and active orders, and fixed the focused failed state so `Retry Bouquet` is visible/clickable while Shuffle and the bottom strip do not intercept it.
+- Visual evidence inspected: `/tmp/desktop-seal-finalcheck.png`, `/tmp/mobile-postswap-finalcheck.png`, `/tmp/mobile-payoff-finalcheck.png`, `/tmp/bloom-fail-retry-fixed2.png`, `/tmp/bloom-round2-complete.png`, `/tmp/bloom-round3-complete.png`, and `/tmp/bloom-supreme-key.png`.
+- Browser verification: local static server `127.0.0.1:8765`; Chromium/Playwright with `NODE_PATH=/opt/data/home/.npm/_npx/705bc6b22212b352/node_modules`. Fresh desktop and 390x844 mobile had 64 tiles, 8 complete rows, 0 broken images, 0 visible future sections, no horizontal overflow, and no console/page/request errors.
+- Interaction verification: real tile clicks on desktop and mobile sampled the new transient bouquet seal after the first match, preserved 64 tiles, and showed filled/sealed objective targets. Mobile active play kept 8 complete rows; the visible Shuffle control now fits without text overflow. Real Round 1 clicks completed bouquet payoff, save/reload preserved the payoff, Restore Greenhouse changed to only `Next Order`, and `Next Order` reached Round 2 with 64 tiles.
+- Retry/first-three-order verification: visible Shuffle exhaustion produced `Bouquet Withered`; `Retry Bouquet` was visible/clickable, preserved 64 tiles, and restored Round 1 to 12 moves. The existing `N` review key completed Round 2 and Round 3 after the real Round 1 restore/Next Order path; Moonlit Wreath and Bloodroot Compact payoff surfaces, final replay, and 64-tile state all passed.
+- Supreme Bloom / L-T-cross status: real focused `B` key showed `SUPREME BLOOM!` and cleaned up with 64 tiles. L/T/cross remains triggered without console by pressing `M` or clicking `Shape Bloom` where visible; this pass did not change that path.
+- Browser console/runtime status: all final Playwright runs reported 0 console messages, 0 page errors, and 0 failed browser requests.
+- Verification commands: `python3 scripts/verify_project.py` passed. `git diff --check` passed. Godot smoke test was not run because no `godot` or `godot4` binary was available on PATH in this environment.
+- Vercel deployment URL/identifier checked: not redeployed or checked in this local pass before push.
+- GitHub Pages preview status: not checked in this local pass before push.
+- Known issues: none found in the focused changed path. The bouquet seal is transient and may overlap the objective briefly during the final match, which is intentional payoff feedback.
+- Security/secret-scan status: precise changed-file scan passed for private-key headers, provider token prefixes, JWTs, and suspicious credential assignments.
+
 ## 2026-07-13 Active greenhouse surround
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
