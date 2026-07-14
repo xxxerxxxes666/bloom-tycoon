@@ -14245,6 +14245,12 @@
       }
       if (wave.lineRelics.length) {
         queueLineRelicBurst(wave.lineRelics, cascadeIndex);
+        const taughtBlackCandle = currentRound === 1
+          && wave.lineRelics.find((relic) => relic.name === "Black Candle Vine");
+        if (taughtBlackCandle) {
+          const lane = taughtBlackCandle.direction === "vertical" ? "Column" : "Row";
+          $("firstSwapCue").textContent = `Black Candle Vine! ${lane} cleared.`;
+        }
       }
       if (wave.rareSeedRunes.length) {
         queueRareSeedRuneBurst(wave.rareSeedRunes, cascadeIndex);

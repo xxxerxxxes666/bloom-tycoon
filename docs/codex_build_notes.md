@@ -1,5 +1,15 @@
 # Codex Build Notes
 
+## 2026-07-14 Black Candle lesson success acknowledgement
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible milestone: the authored Round 1 four-match now replaces its stale instruction at impact with `Black Candle Vine! Row cleared.` or the corresponding column message. The lesson immediately acknowledges success while the existing lane sweep is visible; no new UI, control, reward, round, economy, save data, or system was added.
+- Browser verification: local Chromium used real guided tile clicks at 1280x720 and exact 390x844. Both completed the Thorn Rose opening, triggered the taught Bone Star four-match, showed the new success copy during the sweep, preserved 64 tiles and all eight visible rows, kept tutorial `Wild Chain` at 0, reached the bouquet payoff and visible `Restore Greenhouse`, had no horizontal overflow or broken images, and emitted no console, page, or request errors.
+- Required checks: `python3 scripts/verify_project.py` and `git diff --check` passed. Changed files were scanned for credential-shaped strings, private-key headers, environment files, trackers, analytics, backend/account/payment/ad hooks, machine-local paths, and broad permissions with no findings.
+- Vercel/GitHub Pages status: not redeployed or checked in this local pass before commit/push.
+- Known issues: none found in the changed first-minute route.
+- L/T/cross review remains available after the focused opening through the existing `Shape Bloom` review path or focused `M` key hook; Supreme Bloom remains available through focused `B` and remains absent from the normal tutorial path.
+
 ## 2026-07-14 Wild Chain cascade payoff pass
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.

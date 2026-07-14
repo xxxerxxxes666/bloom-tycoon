@@ -177,6 +177,7 @@ def verify_source_hooks():
         "swap-arrow-pulse",
         "round-one-black-candle-cue",
         "Make 4 Bone Stars - Black Candle Vine burns a row.",
+        "Black Candle Vine! ${lane} cleared.",
         "round-one-followup-cue",
         "Keep matching - swap the glowing pair.",
         "round-one-refused",
