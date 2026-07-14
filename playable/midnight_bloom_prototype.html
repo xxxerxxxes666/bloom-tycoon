@@ -2475,6 +2475,18 @@
       animation: invalid-swap 720ms ease-out both;
     }
 
+    .tile.invalid-swap::after {
+      z-index: 4;
+      opacity: 1;
+      background:
+        linear-gradient(45deg, #0000 0 43%, #ffb08fcc 45% 48%, #b51d2fee 49% 53%, #0000 55%),
+        linear-gradient(-45deg, #0000 0 43%, #ffb08fcc 45% 48%, #b51d2fee 49% 53%, #0000 55%),
+        radial-gradient(circle, #b51d2f33 0, #5b07104d 58%, #0000 72%);
+      box-shadow: inset 0 0 0 2px #d94a42cc, inset 0 0 18px #7d1518;
+      animation: invalid-swap-mark 720ms ease-out both;
+      pointer-events: none;
+    }
+
     .tile.valid-swap {
       outline: 2px solid #f0c477;
       box-shadow:
@@ -4805,6 +4817,17 @@
       }
     }
 
+    @keyframes invalid-swap-mark {
+      0%, 100% {
+        opacity: 0;
+        filter: brightness(.8);
+      }
+      18%, 72% {
+        opacity: 1;
+        filter: brightness(1.18);
+      }
+    }
+
     @keyframes element-pulse {
       0% {
         transform: scale(1);
@@ -6543,6 +6566,7 @@
       .tile.thorn-teach,
       .tile.thorn-teach-blocker,
       .tile.invalid-swap,
+      .tile.invalid-swap::after,
       .tile.swap-snap,
       .tile.swap-glide,
       .tile.fall-in,

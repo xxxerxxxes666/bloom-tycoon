@@ -1,5 +1,14 @@
 # Codex Build Notes
 
+## 2026-07-14 Invalid-swap rejection clarity
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible milestone: an illegal adjacent swap now places a brief crimson crossed seal over both refused tiles. This makes the existing shake, haptic, sound, and `No bloom - follow the glowing pair` cue unmistakable against the richer occult socket art without changing the board, moves, tutorial, saves, controls, or balance.
+- Browser verification: local Chromium at 1280x720 and exact 390x844 performed a real illegal two-tile swap, confirmed two crossed rejection marks, waited for their cleanup, then completed the restored guided opening swap. Both viewports retained 64 tiles, all eight visible rows, zero horizontal overflow, zero broken images, and no console, page, or request errors. Reduced-motion mobile retained the static crossed seal while disabling its animation.
+- Required checks: `python3 scripts/verify_project.py` and `git diff --check` passed. The source verifier now protects the rejection overlay and animation markers.
+- Vercel/GitHub Pages status: not redeployed or checked after editing in this pre-commit note. Known issues: none found in the changed first-minute interaction.
+- Security status: no services, trackers, analytics, accounts, backend hooks, ads, payments, secrets, permissions, assets, or progression surfaces were added; changed files receive the required credential-shaped scan before commit.
+
 ## 2026-07-14 Round 1 restoration cost clarity
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.

@@ -271,6 +271,8 @@ def verify_source_hooks():
         "function playBloomSound(kind, detail = {})",
         "playBloomSound(\"swap\")",
         "playBloomSound(\"invalid\")",
+        ".tile.invalid-swap::after",
+        "@keyframes invalid-swap-mark",
         "playBloomSound(\"match\", {",
         "cleared: wave.clearCells.length",
         "shape: Boolean(wave.strongestShape)",
