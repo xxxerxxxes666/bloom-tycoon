@@ -268,6 +268,9 @@ def verify_source_hooks():
         "restoration-coin-into-glass",
         "Spend 100 coins from the bouquet reward",
         "Next Order → Moonlit Wreath",
+        "greenhouse-upgrade-ladder",
+        "function renderGreenhouseUpgradeLadders()",
+        "Bloodroot Conservatory",
         "objective-goal-joiner",
         "clip-path: inset(50%);",
         "order-fill",
@@ -1450,6 +1453,7 @@ def verify_source_hooks():
         "restoration-rays-open",
         "restoration-state-pop",
         "greenhouse-xp-confirm",
+        "greenhouse-ladder-confirm",
     )
     restoration_keyframes = re.findall(
         r"@keyframes ([a-z-]+) \{(.*?)\n    \}",
