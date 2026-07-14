@@ -14,6 +14,7 @@ ALTAR_TILE_ASSETS = [
     "assets/tiles/altar/bloodroot_altar.svg",
     "assets/tiles/altar/amber_seed_altar.svg",
     "assets/tiles/altar/thorn_rose_altar.svg",
+    "assets/tiles/altar/cursed_thorn_seal.svg",
 ]
 
 
@@ -192,6 +193,11 @@ def verify_source_hooks():
         "function firstSwapCueText(a, b)",
         "function primeFocusedFirstMoveHint",
         "Crack the marked thorns",
+        "cursed_thorn_seal.svg",
+        "function thornSealMarkup",
+        "cursed-thorn-art",
+        "thorn-root",
+        "thorn-art-shatter",
         "thorn-lesson-active",
         "function focusedRoundTwoHarvestSummary(result)",
         "isFirstValidMove && currentRound === 1",

@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Cursed Thorn seal">
+  <title>Cursed Thorn seal</title>
+  <defs>
+    <radialGradient id="sealCore" cx="50%" cy="46%" r="54%">
+      <stop offset="0" stop-color="#5a1514"/>
+      <stop offset=".44" stop-color="#210606"/>
+      <stop offset=".78" stop-color="#090303"/>
+      <stop offset="1" stop-color="#000"/>
+    </radialGradient>
+    <linearGradient id="goldEdge" x1="12" x2="84" y1="16" y2="80" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f2c86f"/>
+      <stop offset=".42" stop-color="#8b4a2a"/>
+      <stop offset="1" stop-color="#d7a850"/>
+    </linearGradient>
+    <linearGradient id="bloodThorn" x1="20" x2="78" y1="17" y2="82" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ff6b4c"/>
+      <stop offset=".5" stop-color="#9a141c"/>
+      <stop offset="1" stop-color="#2d0508"/>
+    </linearGradient>
+    <filter id="smokeGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2.1" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.82 0 0 0 0 0.18 0 0 0 0 0.1 0 0 0 .85 0" result="glow"/>
+      <feMerge>
+        <feMergeNode in="glow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <circle cx="48" cy="48" r="42" fill="#030101"/>
+  <path d="M48 4 86 48 48 92 10 48Z" fill="url(#sealCore)" stroke="url(#goldEdge)" stroke-width="3.4"/>
+  <path d="M48 12 78 48 48 84 18 48Z" fill="none" stroke="#4d120e" stroke-width="5" opacity=".82"/>
+  <path d="M48 17 73 48 48 79 23 48Z" fill="none" stroke="#d5a156" stroke-width="1.6" opacity=".74"/>
+  <path d="M25 53c8-2 13-7 18-14 5-8 9-16 17-22-4 12-4 21 2 30 4 7 9 12 9 20-10-7-18-13-28-12-6 1-12 4-18-2Z" fill="#120404" opacity=".9"/>
+  <g filter="url(#smokeGlow)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 75c17-20 30-37 54-54" stroke="url(#bloodThorn)" stroke-width="8"/>
+    <path d="M20 21c18 18 36 35 57 55" stroke="url(#bloodThorn)" stroke-width="8"/>
+    <path d="M21 75c17-20 30-37 54-54" stroke="#f2c86f" stroke-width="2.2" opacity=".72"/>
+    <path d="M20 21c18 18 36 35 57 55" stroke="#f2c86f" stroke-width="2.2" opacity=".72"/>
+  </g>
+  <g fill="#f3c66b" opacity=".92">
+    <path d="M34 57 20 61l9-12Z"/>
+    <path d="M49 42 35 46l9-13Z"/>
+    <path d="M63 28 50 31l8-11Z"/>
+    <path d="M35 36 22 31l13-5Z"/>
+    <path d="M52 52 41 47l13-5Z"/>
+    <path d="M67 67 55 61l13-4Z"/>
+  </g>
+  <g fill="#7b1218" opacity=".86">
+    <circle cx="48" cy="48" r="7"/>
+    <circle cx="28" cy="68" r="3"/>
+    <circle cx="68" cy="28" r="3"/>
+    <circle cx="28" cy="28" r="3"/>
+    <circle cx="68" cy="68" r="3"/>
+  </g>
+  <path d="M48 8c13 9 23 22 30 40-7 18-17 31-30 40-13-9-23-22-30-40C25 30 35 17 48 8Z" fill="none" stroke="#f1d094" stroke-width=".9" opacity=".38"/>
+</svg>

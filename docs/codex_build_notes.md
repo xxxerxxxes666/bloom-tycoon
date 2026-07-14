@@ -1,5 +1,15 @@
 # Codex Build Notes
 
+## 2026-07-14 Cursed Thorn seal art pass
+
+- Files changed: `assets/tiles/altar/cursed_thorn_seal.svg`, `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible milestone: Cursed Thorn blockers now use original repo-owned occult seal art instead of the flat X treatment. The seal renders on active thorn blockers, guided thorn blockers, objective chips, the greenhouse dial, active order rows, and the Round 2 bouquet assembly payoff; hit/clear states now crack and shatter the seal while keeping the same adjacent-match, Pruning Shears, save, retry, and 64-tile behavior.
+- Verification: `python3 scripts/verify_project.py`; `git diff --check`; inline playable JavaScript parse; local Chromium regression at 1280x720 and exact 390x844. The browser pass exercised fresh load, real first swap, Round 1 bouquet payoff, +120 coins, before/after greenhouse restoration, save/reload, `Next Order`, Round 2 Cursed Thorn start/hit/clear with the new art, Round 2 payoff with thorn seal bouquet ingredient, `Next Order`, Round 3 Bloodroot start/final payoff, fail -> visible `Retry Bouquet`, review `M` L/T/cross hook, review `B` Supreme Bloom hook, transient cleanup samples, 64 tiles, no overflow, and mobile 8 visible rows.
+- Browser console/network status: final local Chromium pass observed 0 console warnings/errors, 0 page errors, 0 failed requests, and 0 broken images. Screenshots inspected include `/tmp/bloom-final-desktop-r2-start.png`, `/tmp/bloom-final-desktop-r2-hit.png`, `/tmp/bloom-final-desktop-r2-payoff.png`, `/tmp/bloom-final-desktop-failed.png`, and `/tmp/bloom-final-mobile-r2-start.png`.
+- Vercel/GitHub Pages: not redeployed or checked in this local pass. `agent-browser` remains unavailable in this shell, so verification used temporary Playwright under `/tmp/bloom-pw`.
+- Review hooks: L/T/cross can still be verified after focusing the playable and pressing `M`; Supreme Bloom can still be verified without console by focusing the playable and pressing `B`.
+- Security/scope scan: changed files, changed additions, and the new SVG were scanned for private keys, `.env`, provider token prefixes, JWT-like strings, credential assignments, trackers/analytics, backend/account/payment/ad hooks, broad permissions, machine-local paths, and scheduler/cron additions. No findings; no rounds, currencies, boosters, blockers, services, dependencies, accounts, ads/IAP, analytics, or cron jobs were added.
+
 ## 2026-07-14 Round-transition collection seal cleanup
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.

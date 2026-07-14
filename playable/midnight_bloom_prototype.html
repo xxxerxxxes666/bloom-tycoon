@@ -247,12 +247,21 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      color: #d7b16d;
       border: 1px solid #7d151866;
       background: radial-gradient(circle, #1d0707 0, #050404 70%);
       box-shadow: inset 0 0 10px #000, 0 0 8px #7d151866;
-      font-size: 18px;
-      text-shadow: 0 0 8px #9b1d22, 0 0 6px #d7b16d;
+      overflow: hidden;
+    }
+
+    .thorn-seal-icon {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      filter:
+        drop-shadow(0 0 7px #000)
+        drop-shadow(0 0 7px #9b1d22)
+        drop-shadow(0 0 5px #d7b16d88);
     }
 
     .order-copy {
@@ -829,15 +838,8 @@
     }
 
     .objective.compact-objective .thorn-goal-glyph {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      color: #f1d090;
-      border: 1px solid #7d151866;
-      background: radial-gradient(circle, #1d0707 0, #050404 70%);
-      box-shadow: inset 0 0 10px #000, 0 0 8px #7d151866;
-      font-size: 17px;
-      text-shadow: 0 0 8px #9b1d22, 0 0 6px #d7b16d;
+      display: block;
+      object-fit: contain;
     }
 
     .objective-target.order-pulse {
@@ -2246,8 +2248,7 @@
     .objective-target .thorn-goal-glyph {
       width: 28px;
       height: 28px;
-      font-size: 18px;
-      color: #d7b16d;
+      object-fit: contain;
     }
 
     .fallback-glyph {
@@ -2409,6 +2410,14 @@
         0 0 12px #d7b16d66;
     }
 
+    .tile.thorn-teach-blocker .cursed-thorn-art {
+      transform: scale(1.08);
+      filter:
+        drop-shadow(0 0 7px #000)
+        drop-shadow(0 0 14px #c51f28)
+        drop-shadow(0 0 8px #f0c477);
+    }
+
     .thorn-teach-marker.blocker {
       color: #ffe8b0;
       border-color: #ff7b65;
@@ -2436,11 +2445,13 @@
 
     .cursed-thorn-overlay {
       position: absolute;
-      inset: 5px;
+      inset: 4px;
       z-index: 3;
       border: 1px solid #d35b38c8;
+      display: grid;
+      place-items: center;
       background:
-        radial-gradient(circle at 50% 45%, #37100bcc 0, #0a0303d9 59%, #00000086 100%),
+        radial-gradient(circle at 50% 45%, #37100bcc 0, #0a0303b8 54%, #0000005c 100%),
         repeating-conic-gradient(from 12deg, #0000 0 13deg, #a51b2288 14deg 17deg, #0000 18deg 36deg);
       box-shadow:
         inset 0 0 14px #000,
@@ -2449,14 +2460,41 @@
       pointer-events: none;
     }
 
+    .cursed-thorn-art {
+      position: relative;
+      z-index: 2;
+      width: 94%;
+      height: 94%;
+      object-fit: contain;
+      opacity: .98;
+      transform: scale(1);
+      filter:
+        drop-shadow(0 0 6px #000)
+        drop-shadow(0 0 10px #9b1d22)
+        drop-shadow(0 0 4px #d7b16d99);
+    }
+
+    .cursed-thorn-overlay .thorn-root {
+      position: absolute;
+      inset: 12% 6%;
+      z-index: 1;
+      opacity: .76;
+      background:
+        radial-gradient(circle at 50% 50%, #0000 0 37%, #d7b16d33 38% 40%, #0000 42%),
+        repeating-conic-gradient(from 18deg at 50% 50%, #0000 0 19deg, #7d1518 20deg 22deg, #0000 23deg 45deg);
+      clip-path: polygon(50% 0, 63% 31%, 100% 50%, 63% 69%, 50% 100%, 37% 69%, 0 50%, 37% 31%);
+    }
+
     .cursed-thorn-overlay::before,
     .cursed-thorn-overlay::after {
       content: "";
       position: absolute;
-      inset: 48% 8% auto;
-      height: 2px;
-      background: linear-gradient(90deg, #0000, #f4cf87, #d35b38, #0000);
-      box-shadow: 0 0 9px #d7b16d;
+      inset: 49% 9% auto;
+      z-index: 3;
+      height: 3px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #0000, #f4cf87, #b51d2f, #0000);
+      box-shadow: 0 0 8px #d7b16d, 0 0 13px #9b1d22;
       transform: rotate(35deg);
     }
 
@@ -2469,6 +2507,14 @@
       background:
         radial-gradient(circle, #f0c47755 0, #9b1d222e 44%, #0000 72%),
         repeating-conic-gradient(from 18deg, #0000 0 15deg, #f0c47777 16deg 18deg, #0000 19deg 34deg);
+    }
+
+    .tile.thorn-hit .cursed-thorn-art {
+      animation: thorn-art-hit 620ms ease-out both;
+    }
+
+    .tile.thorn-cleared .cursed-thorn-art {
+      animation: thorn-art-shatter 760ms cubic-bezier(0.14, 0.82, 0.2, 1) both;
     }
 
     .tile.invalid-swap {
@@ -4806,6 +4852,19 @@
       50% { filter: brightness(1.2); }
     }
 
+    @keyframes thorn-art-hit {
+      0% { transform: scale(1) rotate(0deg); opacity: .98; }
+      32% { transform: scale(1.13) rotate(-4deg); opacity: 1; }
+      62% { transform: scale(.96) rotate(3deg); opacity: .94; }
+      100% { transform: scale(1) rotate(0deg); opacity: .98; }
+    }
+
+    @keyframes thorn-art-shatter {
+      0% { transform: scale(1) rotate(0deg); opacity: 1; }
+      34% { transform: scale(1.18) rotate(8deg); opacity: .96; }
+      100% { transform: scale(.46) rotate(-24deg); opacity: 0; }
+    }
+
     @keyframes harvest-ready-throb {
       0% {
         filter: brightness(1.02) saturate(1.08);
@@ -6328,7 +6387,8 @@
     .bouquet-ingredient .icon-wrap { width:38px; height:38px; }
     .bouquet-ingredient img { width:38px; height:38px; object-fit:contain; filter:drop-shadow(0 0 7px #000) drop-shadow(0 0 7px currentColor); }
     .bouquet-ingredient-count { position:absolute; right:-5px; bottom:-5px; min-width:20px; padding:2px 3px; border:1px solid #d7b16d; background:#060403; color:#f4dfaa; font:900 9px/1 system-ui,sans-serif; box-shadow:0 0 8px #000; }
-    .bouquet-thorn-seal { color:#f0c46e; border:1px solid #8a332a; background:radial-gradient(circle,#240707,#050302 72%); box-shadow:inset 0 0 10px #000,0 0 9px #9b1d2255; font:900 20px/1 Georgia,serif; text-shadow:0 0 8px #9b1d22; }
+    .bouquet-thorn-seal { border:1px solid #8a332a; background:radial-gradient(circle,#240707,#050302 72%); box-shadow:inset 0 0 10px #000,0 0 9px #9b1d2255; overflow:visible; }
+    .bouquet-thorn-seal .thorn-seal-icon { width:38px; height:38px; }
     .bouquet-stems { min-height:92px; display:flex; align-items:center; justify-content:center; gap:0; margin:3px auto; }
     .bouquet-stem { width:58px; height:86px; margin:0 -9px; position:relative; display:grid; place-items:start center; transform:rotate(var(--stem-rot,0deg)) translateY(var(--stem-y,0)); filter:drop-shadow(0 5px 8px #000); }
     .bouquet-stem::before { content:""; position:absolute; left:50%; top:42px; width:2px; height:50px; background:linear-gradient(#d7b16d,#4f762c 58%,#25170d); transform:translateX(-50%); box-shadow:0 0 8px #000; }
@@ -6700,6 +6760,8 @@
       body.greenhouse-intake .greenhouse-restoration-dial,
       .tile.thorn-teach,
       .tile.thorn-teach-blocker,
+      .tile.thorn-hit .cursed-thorn-art,
+      .tile.thorn-cleared .cursed-thorn-art,
       .tile.invalid-swap,
       .tile.invalid-swap::after,
       .tile.swap-snap,
@@ -7403,6 +7465,7 @@
       ["Amber Seed", "../assets/tiles/altar/amber_seed_altar.svg", "Ancient resin holds essence.", "◆", "#d08335"],
       ["Thorn Rose", "../assets/tiles/altar/thorn_rose_altar.svg", "Love that blooms in darkness.", "✧", "#c0185e"]
     ];
+    const cursedThornSealSrc = "../assets/tiles/altar/cursed_thorn_seal.svg";
     const greenhouseArtwork = {
       first: {
         withered: "../assets/greenhouse/first_greenhouse_withered.jpg",
@@ -8095,6 +8158,10 @@
       `;
     }
 
+    function thornSealMarkup(className = "", alt = "") {
+      return `<img class="${className} thorn-seal-icon" src="${cursedThornSealSrc}" alt="${alt}">`;
+    }
+
     function applyImageFallbacks(root = document) {
       if (!root || !root.querySelectorAll) {
         return;
@@ -8247,7 +8314,7 @@
       const pulseClass = thornPulseCells.size || thornClearedCells.size ? "order-pulse" : "";
       return `
         <span class="objective-target ${pulseClass}" data-thorn-objective="true">
-          <span class="static-fallback-glyph thorn-goal-glyph" aria-hidden="true">✕</span>
+          ${thornSealMarkup("thorn-goal-glyph", "Cursed Thorn")}
           <span class="objective-target-name" data-compact-label="Thorn">Cursed Thorn</span>
           <span class="objective-target-count">${progress}/${needed}</span>
         </span>
@@ -13288,7 +13355,7 @@
       const complete = progress >= needed;
       return `
         <span class="restoration-goal-seal ${complete ? "complete" : ""}" data-restoration-goal="thorn">
-          <span class="static-fallback-glyph restoration-goal-thorn" aria-hidden="true">✕</span>
+          ${thornSealMarkup("restoration-goal-thorn", "Cursed Thorn")}
           <span class="restoration-goal-count">${progress}/${needed}</span>
         </span>
       `;
@@ -13511,7 +13578,7 @@
             ${iconMarkup(value, "", flowers[value][0], "tile-icon-wrap")}
             ${graveSoilReadyClass ? '<span class="grave-soil-sigil" aria-hidden="true"></span>' : ""}
             ${thornTeachingActive && thorn ? '<span class="thorn-teach-marker blocker" aria-hidden="true">×</span>' : ""}
-            ${thorn || thornClearedClass ? '<span class="cursed-thorn-overlay" aria-hidden="true"></span>' : ""}
+            ${thorn || thornClearedClass ? `<span class="cursed-thorn-overlay" aria-hidden="true"><span class="thorn-root"></span>${thornSealMarkup("cursed-thorn-art", "")}</span>` : ""}
           `;
           if (activeBooster === "moonwaterFlask") {
             tile.addEventListener("mouseenter", () => previewMoonwaterPatch(x, y));
@@ -15554,7 +15621,7 @@
         lines.push(`
           <div class="small order-line ${complete ? "complete" : ""} ${pulse ? "order-pulse" : ""}" style="--order-pct:${pct}%">
             <span class="order-fill" aria-hidden="true"></span>
-            <span class="order-icon thorn-order-glyph" aria-hidden="true">✕</span>
+            <span class="order-icon thorn-order-glyph" aria-hidden="true">${thornSealMarkup("", "")}</span>
             <span class="order-copy">${plan.thornGoal.order}: ${progress}/${needed} cleared</span>
           </div>
         `);
@@ -15811,7 +15878,7 @@
         if (ingredient.type === "thorn") {
           return `
             <span class="bouquet-ingredient bouquet-thorn-seal" style="--ingredient-angle:${angle}deg;--ingredient-counter-angle:${-angle}deg;--ingredient-delay:${delay}ms;" title="${ingredient.label}">
-              ✕
+              ${thornSealMarkup("", "")}
               <span class="bouquet-ingredient-count">x${ingredient.count}</span>
             </span>
           `;
