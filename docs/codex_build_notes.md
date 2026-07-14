@@ -1,5 +1,18 @@
 # Codex Build Notes
 
+## 2026-07-14 Pass 3 visual polish and feedback discipline
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `scripts/verify_pass3_feedback.spec.js`, and `docs/codex_build_notes.md`.
+- Player-visible milestone: tile sockets are darker and quieter while original repo-owned tile art is larger/brighter for clearer silhouettes; cascade waves now present one central hit sigil/ring plus one strongest-run vein with sampled resource/coin/intake motion instead of per-cell glitter; Cursed Thorn damage now stamps readable `CRACK`/`BREAK` tile events with a single shock marker and capped splinters; Round 3 active mobile now suppresses Path/Ledger and legacy chrome so all eight board rows fit at exact 390x844.
+- Browser verification: local Chromium on `http://127.0.0.1:4173/playable/midnight_bloom_prototype.html` ran the new Pass 3 regression at 1280x720 and exact 390x844. It exercised fresh active play, real guided Round 1 swap, one hit event per sampled wave, full Round 1 payoff/reload/restore/Next Order, real Round 2 Cursed Thorn lesson with non-overlapping damage labels, retry, Round 2 payoff/reload/upgrade/Next Order, Round 3 active mobile eight-row layout, Round 3 payoff/reload/raise/Play Again, and Supreme Bloom via focused lowercase `b`.
+- Ceremony preservation: `scripts/verify_payoff_ceremony_contract.spec.js` still passes on desktop and exact 390x844, preserving the unified one-trophy/one-greenhouse/one-action payoff ceremonies.
+- Browser status: Pass 3 and ceremony regressions captured 0 console messages, 0 page errors, 0 failed requests, 0 visible broken images, and 0 horizontal overflow.
+- Required checks run: `python3 scripts/verify_project.py`, inline playable JavaScript `node --check` from `work/inline-syntax.js`, `git diff --check`, `scripts/verify_pass3_feedback.spec.js`, `scripts/verify_payoff_ceremony_contract.spec.js`, and changed-file credential/tracker scans.
+- Deployment status: verified locally before commit; no Vercel redeploy checked and GitHub Pages was not checked in this pass before push.
+- Known issues: no player-facing issue found in the verified first-three-order route. Browser verification uses the existing focused `n` review hook after real tile interaction to bound bouquet completion time.
+- Supreme Bloom trigger: absent from normal tutorial play in the Pass 3 journey before review input; remains rare through 6+ straight-line matches or explicit sacrifice/review paths. Verify without console by focusing the playable and pressing lowercase `b`.
+- Security/secret-scan status: changed files were scanned for private-key headers, provider token prefixes, JWT-like strings, suspicious credential assignments, analytics/tracker/backend/payment/ad/cron hooks, and broad service additions. No findings.
+
 ## 2026-07-14 Pass 2 audit correction
 
 - Files changed: `playable/midnight_bloom_prototype.html` and `docs/codex_build_notes.md`.
