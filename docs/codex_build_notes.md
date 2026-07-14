@@ -1,5 +1,14 @@
 # Codex Build Notes
 
+## 2026-07-14 Black Candle impact status alignment
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible milestone: the existing lower ritual status now acknowledges the taught Black Candle Vine sweep at its impact frame instead of retaining the stale tile-selection instruction. The success line lasts only until the richer bouquet summary is ready, so the active mobile viewport presents one coherent state without adding UI or changing mechanics.
+- Browser verification: local Chromium used real guided tile clicks at 1280x720 and exact 390x844. A 100ms mobile timing trace verified the success banner and ritual status appear with the first line-relic particles, then hand off to the completion summary. Both viewports retained 64 tiles, all eight visible rows, tutorial `Wild Chain` at 0, zero overflow, zero broken images, and no console, page, or request errors; the bouquet payoff and visible `Restore Greenhouse` remained intact.
+- Required checks: `python3 scripts/verify_project.py` and `git diff --check` passed. Changed files were scanned for credential-shaped strings, private-key headers, environment files, trackers, analytics, backend/account/payment/ad hooks, machine-local paths, and broad permissions with no findings.
+- Vercel/GitHub Pages status: not redeployed or checked in this local pass before commit/push. Known issues: none found in the changed first-minute route.
+- L/T/cross review remains available after the focused opening through the existing `Shape Bloom` path or focused `M` key hook; Supreme Bloom remains available through focused `B` and absent from the normal tutorial path.
+
 ## 2026-07-14 Black Candle lesson success acknowledgement
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
