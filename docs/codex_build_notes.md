@@ -1,5 +1,20 @@
 # Codex Build Notes
 
+## 2026-07-14 Greenhouse restoration dial pass
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible milestone: the active greenhouse now has a stage-aware restoration dial embedded in the existing greenhouse art. It shows current greenhouse stage, real bouquet/restoration percent, and compact target seals driven by existing objective/thorn progress, so the first-three-order heartbeat visibly connects matches -> bouquet progress -> greenhouse restoration/upgrades without adding controls, currencies, saves, rounds, or systems.
+- Scope constraints preserved: no Round 58 work, no new rounds/economies/boosters/blockers/backend/accounts/analytics/ads/IAP/trackers/SDKs/secrets/cron/permissions, no copied Diablo assets, no save-shape changes, no ordinary visible debug controls, and active Round 1 still has 64 tiles, zero non-tile buttons on first load, compact objective/moves, retry, Next Order, and first instructed swap.
+- Live-host pre-edit status: Vercel production `https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html` returned HTTP 200 with `x-vercel-id: iad1::zt4bl-1783986446213-9b5cb9665afe`; desktop and exact 390x844 live/local baselines matched, with 64 tiles, no broken images, no console/page/request errors, and no horizontal overflow. GitHub Pages was not checked.
+- Browser verification: local static server `http://127.0.0.1:4173/playable/midnight_bloom_prototype.html`; Chromium/Playwright real mouse coordinate clicks on desktop 1280x720 and exact 390x844 mobile. The guided route exercised fresh load, first instructed swap, bouquet completion, coin reward, Restore Greenhouse before/after, save/reload, Next Order, Round 2 ordinary unguided play, forced visible failure followed by real `Retry Bouquet`, Round 2 completion, Round 3 completion, and final payoff.
+- Browser status: desktop and mobile guided routes reported 0 console messages, 0 page errors, 0 failed requests, 0 broken images, and 0 horizontal overflow. Active mobile states kept at least 6 complete rows; sampled fresh/mobile states kept all 8 rows.
+- Visual screenshots inspected: `/tmp/bloom_desktop_guided_after_first.png`, `/tmp/bloom_desktop_guided_r2_unguided.png`, `/tmp/bloom_mobile_guided_after_first.png`, `/tmp/bloom_mobile_guided_r2_unguided.png`, `/tmp/bloom_desktop_guided_final.png`, and `/tmp/bloom_mobile_guided_final.png`. First dial draft was rejected for clutter and mobile clipping; final dial is compact and legible.
+- Verification commands: `python3 scripts/verify_project.py`, `git diff --check`, inline playable JavaScript syntax check with `new Function(...)`, desktop/mobile guided Playwright routes, and changed-file credential/tracker/path/permission/cron scan passed.
+- Known issues: none found in the focused first-three-order route. The failure state was forced after real Round 2 play to reach `Retry Bouquet` quickly; the retry click itself was real.
+- How to trigger and verify L/T/cross matches without console: after the focused opening, use the existing `Shape Bloom` review path where visible or focus the playable and press `M`; demos cycle through `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom` while preserving 64 tiles.
+- How to trigger and verify Supreme Bloom without console: focus the playable and press `B`; the existing hook should show `SUPREME BLOOM!` and return to a 64-tile board.
+- Security/secret-scan status: changed files were scanned for private-key headers, `.env`, provider token prefixes, JWTs, suspicious credential assignments, trackers/analytics SDKs, broad permissions, machine-local paths, and cron-like additions. No findings.
+
 ## 2026-07-13 Swap/cascade game-feel pass
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
