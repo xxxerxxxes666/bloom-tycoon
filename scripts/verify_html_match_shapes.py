@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -1419,6 +1420,43 @@ def verify_source_hooks():
     if present_forbidden:
         raise SystemExit(
             f"Forbidden HTML match-shape hooks returned: {present_forbidden}"
+        )
+    compositor_safe_restoration_keyframes = (
+        "bouquet-trophy-awaken",
+        "withered-glass-fall",
+        "restored-glass-reveal",
+        "restoration-light-bloom",
+        "restoration-root-rise",
+        "restoration-rays-open",
+        "restoration-state-pop",
+        "greenhouse-xp-confirm",
+    )
+    restoration_keyframes = re.findall(
+        r"@keyframes ([a-z-]+) \{(.*?)\n    \}",
+        html,
+        re.DOTALL,
+    )
+    unsafe_restoration_filters = [
+        name
+        for name, body in restoration_keyframes
+        if name in compositor_safe_restoration_keyframes and "filter:" in body
+    ]
+    if unsafe_restoration_filters:
+        raise SystemExit(
+            "Restoration keyframes must remain compositor-safe: "
+            f"{unsafe_restoration_filters}"
+        )
+    unsafe_restoration_transitions = [
+        "transition:opacity 760ms ease,filter 760ms ease",
+        "transition:opacity 760ms ease,filter 760ms ease,transform",
+    ]
+    present_unsafe_transitions = [
+        needle for needle in unsafe_restoration_transitions if needle in html
+    ]
+    if present_unsafe_transitions:
+        raise SystemExit(
+            "Restoration reveal must not animate CSS filters: "
+            f"{present_unsafe_transitions}"
         )
     missing_assets = [asset for asset in ALTAR_TILE_ASSETS if not (ROOT / asset).exists()]
     if missing_assets:

@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-07-14 Restoration ceremony compositor guard
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible correction: Hermes' greenhouse veil, cracks, roots, glass rays, coin stream, and before/after transformation remain intact, but the reveal now uses opacity, clipping, scale, rise, and rotation instead of animating CSS filters. Real Chromium captures showed the prior filter layers leaving opaque black compositor rectangles across the completed-order header and neighboring greenhouse art after the awakening class cleared on both desktop and exact 390x844 mobile.
+- Regression guard: the HTML verifier now rejects `filter` properties and filter transitions across the complete greenhouse restoration keyframe set so this cross-layer rendering defect cannot quietly return.
+- Browser verification: local Chromium used real authored swaps to complete Round 1, captured before/mid/settled restoration states at 1280x720 and 390x844, reloaded the saved restored state, and entered Round 2 through `Next Order`. Both sizes retained 64 tiles in eight rows, board-first hierarchy, one visible ceremony command, 0 broken images, 0 horizontal overflow, and 0 console, page, or failed-request errors; the settled captures were visually inspected and contained no black compositor blocks.
+- Security and scope: changed files and changed lines were scanned for credential/private-key signatures and new network, tracking, account, payment, ad, backend, permission, or scheduler hooks. No findings; no new round or progression surface was added.
+
 ## 2026-07-14 Greenhouse restoration ceremony pass
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
