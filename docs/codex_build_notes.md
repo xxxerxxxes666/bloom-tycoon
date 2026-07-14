@@ -1,5 +1,14 @@
 # Codex Build Notes
 
+## 2026-07-14 Invalid-swap guide recovery
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible correction: a refused opening swap now keeps the correct instructed pair glowing while the two rejected tiles shake and show their red X marks. The cue `No bloom — follow the glowing pair` therefore points to a visible target throughout the 880ms refusal window instead of hiding the glow until the animation ends. The normal authored cue returns afterward.
+- Regression guard: the HTML verifier requires the cue-preserving refusal path and its immediate guided-pair restoration.
+- Browser verification: local Chromium at 1280x720 and exact 390x844 made an adjacent non-matching opening swap, sampled the refusal at 140ms, and sampled recovery after the animation. Both sizes showed 2 rejected tiles plus 2 correct glowing tiles during refusal, retained `Moves 12`, kept `hasMadeValidMove` false and selection clear, then restored the authored cue with 2 glowing tiles and 0 invalid tiles. A complete Round 1 -> reward -> restoration -> immediate `Next Order` -> both guided Moonlit moves -> ordinary move pass also verified Hermes' new Cursed Thorn seal art and bounded onboarding behavior with 64 enabled tiles in eight rows, board above the fold, 0 broken images, 0 horizontal overflow, 0 console/page errors, and complete transient cleanup.
+- Security status: the synchronized Hermes commits and this pass's changed files/additions were scanned for credential/private-key signatures and new network, analytics, tracking, account, payment, ad, backend, permission, or scheduler hooks. No findings.
+- Scope: no moves are spent, and no board, match, objective, reward, progression, save, control, or asset behavior changed.
+
 ## 2026-07-14 Bounded onboarding handoff pass
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.

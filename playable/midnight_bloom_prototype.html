@@ -12649,7 +12649,7 @@
       }, hintDelay);
     }
 
-    function restoreFirstSwapCueAfterRefusal() {
+    function restoreFirstSwapCueAfterRefusal({ preserveCue = false } = {}) {
       const plan = activeRoundPlan();
       const targetIndex = plan.targets.findIndex((target) => targetProgress(target) < target.needed);
       const target = plan.targets[targetIndex];
@@ -12660,6 +12660,9 @@
         return;
       }
       idleHintCells = new Set([`${a.x},${a.y}`, `${b.x},${b.y}`]);
+      if (preserveCue) {
+        return;
+      }
       if (plan.round === 1 && hasMadeValidMove && targetIndex === 1) {
         $("firstSwapCue").textContent = "Make 4 Bone Stars - Black Candle Vine burns a row.";
         return;
@@ -13055,6 +13058,7 @@
       if (focusedCueActive) {
         cue.textContent = "No bloom — follow the glowing pair.";
         cue.classList.add("swap-refused");
+        restoreFirstSwapCueAfterRefusal({ preserveCue: true });
       }
       invalidSwapCells = new Set([`${a.x},${a.y}`, `${b.x},${b.y}`]);
       render();
