@@ -1,5 +1,15 @@
 # Codex Build Notes
 
+## 2026-07-14 Pass 2 payoff ceremony unification
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `scripts/verify_payoff_ceremony_contract.spec.js`, and `docs/codex_build_notes.md`.
+- Player-visible Pass 2 milestone: Round 1 restoration, Round 2 greenhouse upgrade, and Round 3 conservatory raise now use one shared ceremony renderer. Each focused payoff hides the board, objective, active greenhouse layer, controls, left rail, Path/Ledger, Chest, Flowerpedia, Chapter, XP preview, payoff ladder, reward-choice, and old reward ledger surfaces; it shows one bouquet trophy, one repo-owned before/after greenhouse scene, one compact coin transaction line, and one visible primary action.
+- Browser verification: local server `http://127.0.0.1:4173/playable/midnight_bloom_prototype.html`; `agent-browser` was unavailable, so Chromium Playwright was used. The focused regression exercised desktop 1280x720 and exact 390x844 journeys through Round 1 -> restore -> Next Order, Round 2 retry -> completion -> upgrade -> Next Order, Round 3 completion -> raise -> Play Again, plus save/reload preservation for every pending and completed ceremony state. Both viewports retained 64 tiles during active play and had 0 visible broken images, 0 horizontal overflow, 0 console messages, 0 page errors, and 0 failed requests.
+- Screenshots inspected: `work/pass2-desktop-round1-pending.png`, `work/pass2-desktop-round3-pending.png`, `work/pass2-mobile390-round1-pending.png`, `work/pass2-mobile390-round2-pending.png`, and `work/pass2-mobile390-round3-pending.png`. The first inspection caught and fixed a transient bouquet badge/title overlap and Round 1 left-rail leakage before the final passing run.
+- Required checks run: `python3 scripts/verify_project.py`, inline playable JavaScript `node --check`, `git diff --check`, `BLOOM_TEST_URL=http://127.0.0.1:4173/playable/midnight_bloom_prototype.html npx --yes -p @playwright/test -c 'NODE_PATH=${PATH%%/node_modules/.bin:*}/node_modules playwright test scripts/verify_payoff_ceremony_contract.spec.js --browser=chromium --reporter=line'`, and precise changed-file secret scan for private-key headers, provider token prefixes, JWTs, and suspicious secret assignments.
+- Deployment status: local-only verification before commit; no Vercel redeploy checked and GitHub Pages was not checked. Temporary HTTP server was stopped after verification.
+- Known issues: no player-facing issue found in the verified first-three-order payoff route. The focused regression uses the existing keyboard review hook after real page interaction to bound bouquet completion time; visible debug/review controls remain hidden from the ceremonies.
+
 ## 2026-07-14 Pass 1 Round 2 board-first continuity
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
