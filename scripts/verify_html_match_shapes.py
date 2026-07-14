@@ -273,6 +273,7 @@ def verify_source_hooks():
         "function renderGreenhouseUpgradeLadders()",
         "Bloodroot Conservatory",
         "body.restored-next-order-focus .greenhouse-order-ladder { display:none; }",
+        "body.restored-next-order-focus:not(.restored-greenhouse-handoff) .restored-greenhouse-status { display:none; }",
         "calc(100vh - 262px)",
         "objective-goal-joiner",
         "clip-path: inset(50%);",

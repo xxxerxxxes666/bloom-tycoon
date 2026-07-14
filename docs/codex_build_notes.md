@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-07-14 Moonlit lesson hierarchy pass
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible correction: the restored-greenhouse status strip no longer repeats beneath the objective and Cursed Thorn cue during active Moonlit matching. The restoration handoff keeps its greenhouse context, while desktop and mobile active play gain a quieter first viewport and more direct board hierarchy without changing the objective, guide, moves, saves, rewards, or progression.
+- Regression guard: the HTML verifier now requires the active-play-only status suppression rule.
+- Browser verification: local Chromium exercised the real instructed Round 1 swap, Black Candle Vine lesson, bouquet completion, 100-coin greenhouse restoration, `Next Order`, and guided Round 2 Cursed Thorn swap at 1280x720, 1440x900, 1440x1000, and exact 390x844. Every viewport retained 64 tiles in eight rows, 0 broken images, 0 horizontal overflow, 0 console/page errors, and no more than one visible non-tile control during active play. The active Round 2 board moved from 257px to 220px on desktop and from 280px to 246px on mobile; all rows stayed inside the first viewport, and the compact mobile greenhouse ladder remained visible.
+- Required checks: `python3 scripts/verify_project.py`, extracted inline JavaScript syntax check, `git diff --check`, changed-line secret scan, and changed-line integration/scope scan all passed. No new assets, mechanics, objectives, rounds, controls, services, permissions, trackers, credentials, or dependencies were introduced.
+
 ## 2026-07-14 Board impact cascade-juice pass
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
