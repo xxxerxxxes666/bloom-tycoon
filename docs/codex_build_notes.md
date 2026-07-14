@@ -15,6 +15,14 @@
 - Review hooks preserved: L/T/cross remains verifiable after the focused opening through the existing `Shape Bloom` path or focused `M`; Supreme Bloom remains absent from normal tutorial play and verifiable without console by focusing the playable and pressing `B`.
 - Security/secret-scan status: changed files and additions were scanned for private-key headers, provider token prefixes, JWT-shaped strings, suspicious credential assignments, `.env` additions, trackers/analytics SDKs, backend/account/payment/ad hooks, broad permissions, machine-local paths, and cron/scheduler additions. No findings.
 
+## 2026-07-14 Desktop board-first ladder correction
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible correction: the new three-step greenhouse ladder remains in the restoration/payoff ceremony, but no longer occupies active desktop matching space. The existing compact desktop composition now applies at every desktop height, and the focused Round 2/3 board uses a height-aware cap that keeps all eight rows in the first viewport. Mobile keeps the compact three-chip active ladder because its full board already fits.
+- Regression guard: the HTML verifier requires both the active-desktop ladder suppression and the restored-order board height budget.
+- Browser verification: local Chromium exercised the real Round 1 opening, authored Black Candle Vine swap, bouquet completion, 100-coin greenhouse restoration, and `Next Order` at 1280x720, 1440x900, 1440x1000, and exact 390x844. Desktop and mobile retained 64 tiles in eight rows, 0 broken images, 0 horizontal overflow, and no console/page errors; the active board remained fully inside every tested first viewport.
+- Security and scope: changed additions were scanned for credential/private-key patterns and new network, analytics, tracking, account, payment, ad, backend, permission, or scheduler hooks. No findings; no mechanic, objective, move, reward, progression, save, asset, control, service, dependency, or mobile layout was changed.
+
 ## 2026-07-14 Black Candle payoff legibility
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
