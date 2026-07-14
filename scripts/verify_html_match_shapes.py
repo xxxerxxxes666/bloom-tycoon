@@ -508,7 +508,7 @@ def verify_source_hooks():
         "function startRestoredGreenhouseHandoff",
         "function focusRestoredNextOrderViewport",
         "window.scrollTo({ top: 0, behavior: \"auto\" })",
-        "<strong>Restored Greenhouse:</strong> Round ${plan.round}: ${plan.name} begins in the relit glass.",
+        "<strong>Moonlit Wreath:</strong> Match beside the glowing Cursed Thorns.",
         "Bouquet Streak",
         "bouquetStreak",
         "bouquetStreakBadge",

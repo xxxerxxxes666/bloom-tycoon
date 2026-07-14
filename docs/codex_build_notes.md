@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-07-14 Focused Round 2 handoff copy
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible improvement: the one-tap `Next Order` handoff now opens Moonlit Wreath with one short instruction, `Match beside the glowing Cursed Thorns`, instead of concatenating the round intro, all four goals, two Thorn explanations, pattern-discovery copy, and reward text beneath the mobile board. Objectives, moves, glowing tutorial tiles, match feedback, retry behavior, and progression are unchanged.
+- Regression guard: the HTML verifier requires the concise focused-handoff instruction and no longer accepts the removed paragraph-style Round 2 intro marker.
+- Browser verification: local Chromium at 1280x720 and exact 390x844 used real authored swaps to complete Round 1, restored the greenhouse, reloaded the saved restored state, and clicked `Next Order`. Round 2 rendered the new instruction at 29px desktop and 31px mobile, retained 64 tiles in eight rows, kept the board above the fold, and showed 0 broken images, horizontal overflow, console errors, page errors, or failed requests. Settled desktop/mobile screenshots were visually inspected; mobile kept every board row visible and removed the prior seven-line text block.
+- Security and scope: changed files and additions were scanned for private-key/token signatures and new network, analytics, tracking, account, payment, ad, backend, permission, or scheduler hooks. No findings; no round, mechanic, currency, control, or progression surface was added.
+
 ## 2026-07-14 Restoration ceremony compositor guard
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.

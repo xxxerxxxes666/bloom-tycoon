@@ -16238,12 +16238,12 @@
         : "";
       const introCopy = retryingFailedBouquet
         ? `<strong>Retry Bouquet:</strong> Round ${plan.round}: ${plan.name} is restored. `
-        : restoredGreenhouseNextOrder
-          ? `<strong>Restored Greenhouse:</strong> Round ${plan.round}: ${plan.name} begins in the relit glass. `
         : secondUpgradeNextOrder
           ? `<strong>Final Order:</strong> Round ${plan.round}: ${plan.name} blooms under the moonlit greenhouse upgrade. `
         : `<strong>Round ${plan.round}: ${plan.name}</strong> begins. `;
-      ritualMessage = `${introCopy}${goalCopy(plan)}${thornObjectiveHintCopy(plan)}${thornTeachingCopy(plan)}${patternDiscoveryCopy()}${boonCopy}${defaultChoiceMessage}`;
+      ritualMessage = restoredGreenhouseNextOrder
+        ? "<strong>Moonlit Wreath:</strong> Match beside the glowing Cursed Thorns."
+        : `${introCopy}${goalCopy(plan)}${thornObjectiveHintCopy(plan)}${thornTeachingCopy(plan)}${patternDiscoveryCopy()}${boonCopy}${defaultChoiceMessage}`;
       resetCursedThorns(plan);
       build();
       startThornTeachingCue(plan);
