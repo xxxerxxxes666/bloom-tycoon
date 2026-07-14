@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-labelledby="title desc">
+  <title id="title">Occult altar tile socket</title>
+  <desc id="desc">Original Bloom Tycoon stone-and-brass board socket for floral match tiles.</desc>
+  <defs>
+    <radialGradient id="soil" cx="50%" cy="46%" r="55%">
+      <stop offset="0" stop-color="#27120d"/>
+      <stop offset="0.52" stop-color="#090504"/>
+      <stop offset="1" stop-color="#020101"/>
+    </radialGradient>
+    <linearGradient id="brass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d3a35f"/>
+      <stop offset="0.34" stop-color="#694426"/>
+      <stop offset="0.7" stop-color="#20120c"/>
+      <stop offset="1" stop-color="#9a6b3d"/>
+    </linearGradient>
+    <filter id="innerShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.85"/>
+    </filter>
+  </defs>
+  <rect width="120" height="120" fill="#050303"/>
+  <path d="M13 3h94l10 10v94l-10 10H13L3 107V13Z" fill="#0b0705" stroke="#2e1a10" stroke-width="4"/>
+  <path d="M20 9h80l11 11v80l-11 11H20L9 100V20Z" fill="#130b07" stroke="url(#brass)" stroke-width="3"/>
+  <path d="M27 17h66l10 10v66l-10 10H27L17 93V27Z" fill="url(#soil)" stroke="#7b5633" stroke-width="2" filter="url(#innerShadow)"/>
+  <path d="M32 24h56l8 8v56l-8 8H32l-8-8V32Z" fill="none" stroke="#d2a15b" stroke-opacity="0.32" stroke-width="1.5"/>
+  <path d="M60 20v16M60 84v16M20 60h16M84 60h16" stroke="#d2a15b" stroke-opacity="0.42" stroke-width="2" stroke-linecap="round"/>
+  <path d="M25 25h20M25 25v20M95 25H75M95 25v20M25 95h20M25 95V75M95 95H75M95 95V75" fill="none" stroke="#b68044" stroke-width="3" stroke-linecap="round"/>
+  <path d="M36 66c10-9 18-12 28-9 8 2 15 1 22-6M42 40c9 8 13 17 12 31M72 35c-4 10-1 20 11 30" fill="none" stroke="#2f4b25" stroke-width="3" stroke-linecap="round" stroke-opacity="0.55"/>
+  <path d="M38 78c12 9 31 12 47 0" fill="none" stroke="#8c643c" stroke-width="2" stroke-linecap="round" stroke-opacity="0.46"/>
+  <circle cx="60" cy="60" r="26" fill="none" stroke="#d2a15b" stroke-opacity="0.16" stroke-width="2"/>
+  <circle cx="60" cy="60" r="4" fill="#d2a15b" fill-opacity="0.36"/>
+</svg>

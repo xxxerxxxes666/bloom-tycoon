@@ -2027,6 +2027,8 @@
     }
 
     .board {
+      --board-stage-glow: #d7b16d;
+      --board-stage-shadow: #3b130d;
       display: grid;
       grid-template-columns: repeat(8, 1fr);
       gap: 6px;
@@ -2035,17 +2037,30 @@
       padding: 10px;
       border: 2px solid #33261f;
       background:
+        radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--board-stage-glow) 15%, #0000) 0 18%, #0000 42%),
         radial-gradient(circle at 50% 48%, #24100d 0, #0b0605 52%, #030202 78%),
-        repeating-linear-gradient(0deg, #0000 0 52px, #805c3520 53px 54px),
-        repeating-linear-gradient(90deg, #0000 0 52px, #805c3520 53px 54px),
+        repeating-linear-gradient(0deg, #0000 0 52px, color-mix(in srgb, var(--board-stage-glow) 20%, #0000) 53px 54px),
+        repeating-linear-gradient(90deg, #0000 0 52px, color-mix(in srgb, var(--board-stage-glow) 20%, #0000) 53px 54px),
+        repeating-conic-gradient(from 45deg at 50% 50%, #0000 0 8deg, color-mix(in srgb, var(--board-stage-shadow) 28%, #0000) 9deg 10deg, #0000 11deg 18deg),
         linear-gradient(180deg, #21160f, #050404);
       box-shadow:
         inset 0 0 42px #000,
+        inset 0 0 70px color-mix(in srgb, var(--board-stage-shadow) 38%, #0000),
         inset 0 0 0 5px #080504,
         0 0 0 1px #000,
-        0 0 28px #000,
+        0 0 28px color-mix(in srgb, var(--board-stage-glow) 14%, #000),
         0 18px 42px #000b;
       position: relative;
+    }
+
+    body[data-active-greenhouse-stage="moonlit"] .board {
+      --board-stage-glow: #9dbed0;
+      --board-stage-shadow: #23394a;
+    }
+
+    body[data-active-greenhouse-stage="bloodroot"] .board {
+      --board-stage-glow: #d35b38;
+      --board-stage-shadow: #5b0710;
     }
 
     .board::before {
@@ -2070,7 +2085,8 @@
         linear-gradient(225deg, #d2a15b 0 13px, #0000 13px) right top / 54px 54px no-repeat,
         linear-gradient(45deg, #d2a15b 0 13px, #0000 13px) left bottom / 54px 54px no-repeat,
         linear-gradient(315deg, #d2a15b 0 13px, #0000 13px) right bottom / 54px 54px no-repeat,
-        radial-gradient(circle at 50% 50%, #0000 52%, #000a 100%);
+        radial-gradient(circle at 50% 50%, #0000 46%, color-mix(in srgb, var(--board-stage-shadow) 28%, #0008) 70%, #000b 100%),
+        repeating-conic-gradient(from 0deg at 50% 50%, #0000 0 11deg, color-mix(in srgb, var(--board-stage-glow) 16%, #0000) 12deg 13deg, #0000 14deg 28deg);
       opacity: 0.82;
     }
 
@@ -2081,7 +2097,9 @@
       align-items: center;
       justify-content: center;
       background:
-        radial-gradient(circle at 50% 43%, color-mix(in srgb, var(--tile-color) 22%, #fff4b4) 0 10%, #0000 47%),
+        radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--tile-color) 28%, #fff4b4) 0 10%, #0000 45%),
+        radial-gradient(circle at 50% 55%, color-mix(in srgb, var(--tile-color) 22%, #0000) 0 23%, #0000 62%),
+        url("../assets/board/occult_altar_socket.svg") center / 100% 100% no-repeat,
         radial-gradient(circle at 50% 52%, color-mix(in srgb, var(--tile-color) 18%, #17100b) 0, #070403 66%, #020101 100%),
         linear-gradient(145deg, #5b3922 0 5%, #0d0806 7% 93%, #3f2618 95%),
         linear-gradient(180deg, #201711, #050303);
@@ -2092,25 +2110,27 @@
       overflow: hidden;
       box-shadow:
         inset 0 0 14px #000,
+        inset 0 0 18px color-mix(in srgb, var(--tile-color) 18%, #0000),
         inset 0 0 0 2px #23140d,
         inset 0 0 0 4px #0006,
         inset 0 0 0 1px #000,
-        0 0 0 1px #3a2415,
-        0 3px 9px #0009;
+        0 0 0 1px #50341e,
+        0 3px 10px #000b;
     }
 
     .tile::before {
       content: "";
       position: absolute;
-      inset: 4px;
-      border: 1px solid #a5764268;
+      inset: 7px;
+      border: 1px solid color-mix(in srgb, var(--tile-color) 34%, #a57642);
+      clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
       background:
-        linear-gradient(135deg, #d7b16d40 0 1px, #0000 1px 100%),
-        linear-gradient(225deg, #d7b16d24 0 1px, #0000 1px 100%),
-        radial-gradient(circle at 50% 48%, #0000 0 57%, #0008 88%);
+        radial-gradient(circle at 50% 48%, #0000 0 46%, color-mix(in srgb, var(--tile-color) 14%, #0008) 74%, #000b 100%),
+        repeating-conic-gradient(from 45deg, #0000 0 20deg, color-mix(in srgb, var(--tile-color) 18%, #d7b16d) 21deg 22deg, #0000 23deg 45deg);
       box-shadow:
         inset 0 0 10px #000,
-        inset 0 0 0 1px #0007;
+        inset 0 0 0 1px #0007,
+        0 0 8px color-mix(in srgb, var(--tile-color) 18%, #0000);
       pointer-events: none;
     }
 
@@ -2119,8 +2139,9 @@
       position: absolute;
       inset: 0;
       background:
-        radial-gradient(circle, #ffffff22 0, #0000 50%),
-        linear-gradient(135deg, #0000 0 46%, #d49b563f 49%, #0000 53%);
+        radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--tile-color) 30%, #ffffff22) 0, #0000 47%),
+        linear-gradient(135deg, #0000 0 46%, #d49b563f 49%, #0000 53%),
+        linear-gradient(45deg, #0000 0 47%, color-mix(in srgb, var(--tile-color) 24%, #d49b56) 50%, #0000 54%);
       opacity: 0;
       transition: opacity 120ms ease;
     }
@@ -2131,8 +2152,8 @@
     }
 
     .tile img {
-      width: 94%;
-      height: 94%;
+      width: 88%;
+      height: 88%;
       object-fit: contain;
       filter:
         drop-shadow(0 4px 5px #000)
@@ -2163,13 +2184,13 @@
     .tile .tile-icon-wrap::before {
       content: "";
       position: absolute;
-      inset: 1%;
+      inset: 4%;
       z-index: 0;
       border-radius: 50%;
       background:
-        radial-gradient(circle at 50% 43%, color-mix(in srgb, var(--tile-color) 42%, #fff2bd) 0 8%, #0000 48%),
-        radial-gradient(circle at 50% 55%, color-mix(in srgb, var(--tile-color) 30%, #000) 0, #0000 70%);
-      opacity: .72;
+        radial-gradient(circle at 50% 43%, color-mix(in srgb, var(--tile-color) 48%, #fff2bd) 0 8%, #0000 44%),
+        radial-gradient(circle at 50% 55%, color-mix(in srgb, var(--tile-color) 36%, #000) 0, #0000 68%);
+      opacity: .86;
       filter: blur(.2px);
       box-shadow:
         inset 0 0 10px #000,
@@ -2180,11 +2201,11 @@
     .tile .tile-icon-wrap::after {
       content: "";
       position: absolute;
-      inset: 12%;
+      inset: 13%;
       z-index: 0;
       border: 1px solid color-mix(in srgb, var(--tile-color) 38%, #0000);
       transform: rotate(45deg);
-      opacity: .34;
+      opacity: .46;
       box-shadow: inset 0 0 8px #000;
       pointer-events: none;
     }

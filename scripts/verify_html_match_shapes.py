@@ -322,6 +322,10 @@ def verify_source_hooks():
         "coins total",
         "bonus coins included",
         "data-flower-id",
+        "occult_altar_socket.svg",
+        "--board-stage-glow",
+        "body[data-active-greenhouse-stage=\"moonlit\"] .board",
+        "body[data-active-greenhouse-stage=\"bloodroot\"] .board",
         "roundOneRestoration",
         "coin-payoff",
         "coin-payoff-flight",
@@ -1386,6 +1390,12 @@ def verify_source_hooks():
     missing_assets = [asset for asset in ALTAR_TILE_ASSETS if not (ROOT / asset).exists()]
     if missing_assets:
         raise SystemExit(f"Missing altar tile assets: {missing_assets}")
+    board_socket = ROOT / "assets/board/occult_altar_socket.svg"
+    if not board_socket.exists():
+        raise SystemExit("Missing board socket art asset")
+    socket_text = board_socket.read_text(encoding="utf-8")
+    if "<svg" not in socket_text or "<title" not in socket_text or "Occult altar tile socket" not in socket_text:
+        raise SystemExit("Board socket art asset lacks expected SVG/title markup")
     for asset in ALTAR_TILE_ASSETS:
         text = (ROOT / asset).read_text(encoding="utf-8")
         if "<svg" not in text or "<title" not in text:

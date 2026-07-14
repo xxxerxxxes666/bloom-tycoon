@@ -27,7 +27,22 @@
 - Vercel/GitHub Pages status: not redeployed or checked in this local pass before commit/push.
 - Known issues: none found in the changed first-minute route.
 - L/T/cross review remains available after the focused opening through the existing `Shape Bloom` review path or focused `M` key hook; Supreme Bloom remains available through focused `B` and remains absent from the normal tutorial path.
+## 2026-07-14 Occult altar socket art pass
 
+- Files changed: `assets/board/occult_altar_socket.svg`, `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible milestone: every match board tile now sits in an original repo-local stone/brass occult altar socket, with richer board substrate lighting and stage-aware withered/moonlit/bloodroot tinting. This replaces the flatter token-bed treatment while preserving the heartbeat, saves, retry, next-order flow, 64-tile board, and all existing mechanics. No new economy, external service, monetization, scheduler, access-scope, or copied-asset surface was added.
+- Live/local pre-edit status: Vercel production and local static previews were visually inspected at 1280x720 and exact 390x844 before editing. All four loads had 64 tiles, 8 visible board rows, no horizontal overflow, 0 broken images, and no console/page/network errors.
+- Local host status: temporary static server `http://127.0.0.1:4173/playable/midnight_bloom_prototype.html`; cleaned up after verification.
+- Browser evidence: Chromium/Playwright real clicks on desktop 1280x720 exercised first load, invalid swap refusal, taught opening, Round 1 bouquet payoff, Restore Greenhouse, save reload, Next Order, Round 2 Cursed Thorn taught move, unguided ordinary Round 2 play, Round 2 payoff, Next Order, Bloodroot Round 3 start, and Round 3 payoff. Exact 390x844 mobile exercised first load, taught opening, Round 1 bouquet/restoration/reload/Next Order, Round 2 taught move, and unguided ordinary play. The changed socket CSS was present in active states, with moonlit and bloodroot board tint verified.
+- Active-state metrics: desktop active states preserved 64 tiles, no overflow, 0 broken images, and up to 8 visible rows; Round 2 start had 7 rows at 1280x720 due to the handoff banner while unguided play returned to 8. Exact 390x844 mobile active states preserved 64 tiles, at least 8 visible rows, no overflow, 0 broken images, and the new socket asset loaded in tile CSS.
+- Retry/save path: after real Round 2 play, a diagnostic withered state was rendered to expose `Retry Bouquet` without relying on hidden focused-slice controls; the visible Retry click was real on desktop and exact 390x844 mobile, restoring Round 2 to 17 moves, 64 tiles, no overflow, no broken images, and moonlit socket tint.
+- Review-hook verification: focused real `M` keypress verified the L/T/cross/shape-demo path with 64 tiles, no overflow, no broken images, and no console/network errors. Focused real `B` keypress verified `SUPREME BLOOM!` with 64 tiles, no overflow, no broken images, and no console/network errors.
+- Browser console/network status: final local desktop, mobile, diagnostic retry, and review-hook runs reported 0 console messages, 0 page errors, and 0 failed browser requests.
+- Verification commands: `python3 scripts/verify_project.py`, `git diff --check`, extracted inline playable `node --check`, pinned Godot 4.2.2 smoke test, focused Chromium regression across desktop and exact 390x844 mobile, review-hook keypress checks, and changed-line security scan passed.
+- Vercel deployment URL/identifier checked: production baseline only before editing, `https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html`; no redeploy happened in this local pass before commit/push.
+- GitHub Pages preview status: not checked in this local pass.
+- Known issues: no player-facing issues found in the verified route. The retry test used a diagnostic withered state after real Round 2 play because focused first-three active composition intentionally hides Shuffle, making random real-move failure unreliable before accidental completion.
+- Security/secret-scan status: changed lines and the new SVG asset were scanned for credential material, local machine paths, telemetry/service/auth/payment/ad surfaces, access-scope changes, and scheduler additions. No findings.
 ## 2026-07-14 Wild Chain cascade payoff pass
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
