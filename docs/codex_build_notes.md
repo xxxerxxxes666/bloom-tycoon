@@ -1,5 +1,14 @@
 # Codex Build Notes
 
+## 2026-07-14 Pass 2 audit correction
+
+- Files changed: `playable/midnight_bloom_prototype.html` and `docs/codex_build_notes.md`.
+- Player-visible correction: exact 390x844 Round 2/3 payoff trophies now reserve enough vertical space for ingredient badges below the trophy copy, removing the mobile badge/text overlap found during screenshot inspection. Round 2/3 payoff ceremonies also explicitly hide stale `.bouquet-bind-seal` effects that can survive the real guided-play path.
+- Browser verification: local Chromium on `http://127.0.0.1:4173/playable/midnight_bloom_prototype.html` reran `scripts/verify_payoff_ceremony_contract.spec.js` at 1280x720 and exact 390x844, then an independent full journey with real guided Round 1 Black Candle Vine swaps, real Round 2 Cursed Thorn swap, diagnostic retry, Round 1 -> Round 2 -> Round 3 next-order flow, Supreme Bloom via focused lowercase `b`, save/reload preservation for every pending/completed ceremony state, image/overflow/console/network checks, and final `Play Again`.
+- Screenshots inspected: updated `work/pass2-mobile390-round2-pending.png`, `work/pass2-mobile390-round3-pending.png`, plus desktop Round 1/2/3 pending captures. The final mobile captures show one trophy, one greenhouse before/after, one transaction line, one dominant action, no visible board/active controls, no old ledgers, and no badge/text overlap.
+- Required checks run after the correction: `python3 scripts/verify_project.py`, inline playable JavaScript `node --check` using a real `.cjs` temp file, `git diff --check`, focused Playwright ceremony contract, independent browser journey, and changed-file secret scan. No secrets, trackers, services, dependencies, rounds, currencies, costs, or third-party assets were added.
+- Deployment status: verified locally before commit; GitHub Pages verification follows push.
+
 ## 2026-07-14 Pass 2 payoff ceremony unification
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `scripts/verify_payoff_ceremony_contract.spec.js`, and `docs/codex_build_notes.md`.

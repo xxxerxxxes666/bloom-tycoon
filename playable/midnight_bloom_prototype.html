@@ -6367,6 +6367,10 @@
     body.round-two-upgrade-complete .ritual-log,
     body.round-three-final-pending .ritual-log,
     body.round-three-final-complete .ritual-log,
+    body.round-two-upgrade-pending .bouquet-bind-seal,
+    body.round-two-upgrade-complete .bouquet-bind-seal,
+    body.round-three-final-pending .bouquet-bind-seal,
+    body.round-three-final-complete .bouquet-bind-seal,
     body.round-two-upgrade-pending .sacrifice-panel,
     body.round-two-upgrade-complete .sacrifice-panel,
     body.round-three-final-pending .sacrifice-panel,
@@ -6701,11 +6705,12 @@
       .greenhouse-ladder-step::before { left:4px; width:15px; height:15px; font-size:9px; }
       .greenhouse-ladder-kicker { font-size:7px; letter-spacing:.08em; }
       .greenhouse-ladder-name { font-size:10px; }
-      .bouquet-trophy { min-height:168px; }
-      .bouquet-assembly { min-height:92px; width:min(210px,100%); }
-      .bouquet-assembly-ring { width:112px; height:112px; }
-      .bouquet-ingredient { width:36px; height:36px; transform:translate(-50%,-50%) rotate(var(--ingredient-angle,0deg)) translateY(-45px) rotate(var(--ingredient-counter-angle,0deg)); }
-      .bouquet-ingredient .icon-wrap,.bouquet-ingredient img { width:34px; height:34px; }
+      .bouquet-trophy { min-height:216px; grid-template-rows:auto auto 1fr; align-items:start; }
+      .bouquet-assembly { min-height:98px; width:min(210px,100%); margin-top:32px; }
+      .bouquet-assembly-ring { width:102px; height:102px; }
+      .bouquet-ingredient { width:32px; height:32px; transform:translate(-50%,-50%) rotate(var(--ingredient-angle,0deg)) translateY(-36px) rotate(var(--ingredient-counter-angle,0deg)); }
+      .bouquet-ingredient .icon-wrap,.bouquet-ingredient img { width:30px; height:30px; }
+      .bouquet-ingredient-count { right:-6px; bottom:-6px; min-width:18px; font-size:8px; }
       .bouquet-stems { min-height:78px; }
       .bouquet-stem { width:50px; height:72px; margin:0 -8px; }
       .bouquet-stem .icon-wrap,.bouquet-stem img { width:48px; height:48px; }
@@ -7345,7 +7350,7 @@
       body.round-three-final-pending .restoration-scene,
       body.round-three-final-complete .restoration-scene { height:166px; }
       body.round-two-upgrade-pending .bouquet-trophy,
-      body.round-two-upgrade-complete .bouquet-trophy { min-height:138px; }
+      body.round-two-upgrade-complete .bouquet-trophy { min-height:216px; }
       body.round-two-upgrade-pending .restoration-scene,
       body.round-two-upgrade-complete .restoration-scene { height:132px; }
       body.round-two-upgrade-pending .restoration-xp-preview,
