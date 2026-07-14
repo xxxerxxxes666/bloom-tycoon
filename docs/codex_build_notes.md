@@ -1,5 +1,21 @@
 # Codex Build Notes
 
+## 2026-07-14 Bouquet assembly payoff pass
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible milestone: completed focused bouquets now visibly assemble inside the existing payoff trophy from that order's actual target flowers, with a binding ring, target-count ingredient seals, thorn seal for Moonlit Wreath, stage-colored vine wrap, and a stable bound state after reload. This strengthens match flowers -> bouquet -> coins -> greenhouse restoration -> next order without adding controls, economies, rounds, assets, saves, or systems.
+- Live-host pre-edit status: Vercel production `https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html?baseline-check=codex-20260714` returned HTTP 200 on desktop and exact 390x844 mobile, with 64 tiles, 8 visible rows, no overflow, 0 broken images, and no console/page/network errors.
+- Local host status: temporary static server `http://127.0.0.1:4173/playable/midnight_bloom_prototype.html`; cleaned up after verification.
+- Browser evidence: Chromium/Playwright real coordinate clicks on desktop 1280x720 and exact 390x844 mobile exercised fresh load, real instructed swaps, Round 1 bouquet assembly payoff, Restore Greenhouse before/after, save/reload, Next Order, Round 2 ordinary legal play, forced Round 2 failure -> real `Retry Bouquet`, Round 2 completion/payoff with Nightshade/Amber/Thorn/Cursed Thorn assembly, Round 3 continuation/final Bloodroot assembly, 64 active tiles, at least 8 visible active rows, no horizontal overflow, 0 broken images, 0 console/page/request errors, and transient cleanup back to 0 in stable payoff/final states.
+- Screenshots inspected: `/tmp/bloom_desktop_full_r1_payoff.png`, `/tmp/bloom_desktop_full_r2_payoff.png`, `/tmp/bloom_desktop_full_r3_final.png`, `/tmp/bloom_mobile_full_r1_payoff.png`, `/tmp/bloom_mobile_full_r2_payoff.png`, `/tmp/bloom_mobile_full_r3_final.png`, plus live baseline screenshots under `/tmp/bloom_live_*_baseline.png`. The first mobile title layer let coin burst cross the title; final CSS raises the title layer and tightens mobile line height.
+- Verification commands: `python3 scripts/verify_project.py`, `git diff --check`, inline playable JavaScript syntax check with `new Function(...)`, local desktop/mobile Playwright first-three-order regressions, live Vercel desktop/mobile baseline checks, and changed-file credential/tracker/path/permission/cron scan passed.
+- Browser console/network status: no local or live Playwright console messages, page errors, or failed requests were observed in the checked flows.
+- Known issues: Round 2 failure was forced after a real Round 2 move to expose `Retry Bouquet` quickly; the retry click and resumed completion were real. Mobile payoff panels can extend below the first viewport, but active play remains board-first with all 8 rows visible and no horizontal overflow.
+- How to trigger and verify L/T/cross matches without console: after the focused opening, use the existing `Shape Bloom` review path where visible or focus the playable and press `M`; demos cycle through `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom` while preserving 64 tiles.
+- How to trigger and verify Supreme Bloom without console: focus the playable and press `B`; the existing hook should show `SUPREME BLOOM!` and return to a 64-tile board.
+- Security/secret-scan status: changed files were scanned for private-key headers, provider token prefixes, JWTs, suspicious credential assignments, trackers/analytics SDKs, machine-local paths, broad permissions, and cron additions. No findings.
+- Foreman visual QA: independent desktop and 390x844 review accepted the substantial assembly, then removed duplicated target-count badges from the bouquet stems. The radial ingredient seals are now the sole count labels inside the trophy; verifier coverage prevents the duplicate labels from returning.
+
 ## 2026-07-14 Greenhouse restoration dial pass
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.

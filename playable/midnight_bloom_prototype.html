@@ -5977,24 +5977,38 @@
     .bouquet-trophy[data-bouquet-payoff-state="restored"] { border-color:#8aa657; background:radial-gradient(circle at 50% 18%,#253815 0,#0b1008 52%,#030202 100%); }
     .bouquet-trophy[data-bouquet-payoff-state="moonlit"] { border-color:#7d49b2; background:radial-gradient(circle at 50% 18%,#24133a 0,#0b0711 52%,#030202 100%); }
     .bouquet-trophy[data-bouquet-payoff-state="bloodroot"] { border-color:#b51d2f; background:radial-gradient(circle at 50% 18%,#3b0d12 0,#0c0506 54%,#030202 100%); }
-    .bouquet-trophy-kicker,.bouquet-trophy-name,.bouquet-trophy-copy,.bouquet-trophy-bonus,.bouquet-stems { position:relative; z-index:1; }
+    .bouquet-trophy-kicker,.bouquet-trophy-name,.bouquet-trophy-copy,.bouquet-trophy-bonus,.bouquet-assembly,.bouquet-stems { position:relative; z-index:1; }
     .bouquet-trophy-kicker { color:#d7b16d; font:900 10px/1 system-ui,sans-serif; letter-spacing:.14em; text-transform:uppercase; }
     .bouquet-trophy-name { display:block; color:#fff2bf; font:900 21px/1.05 Georgia,serif; text-shadow:0 2px 4px #000,0 0 14px var(--bouquet-aura,#d7b16d55); }
     .bouquet-trophy-copy { display:block; color:#c9b48f; font:700 12px/1.25 system-ui,sans-serif; max-width:25ch; margin:2px auto 0; }
+    .bouquet-assembly { min-height:116px; width:min(230px,100%); display:grid; place-items:center; margin:2px auto 0; }
+    .bouquet-assembly-ring { position:absolute; width:136px; height:136px; border:1px solid color-mix(in srgb,var(--bouquet-aura,#d7b16d55) 74%,#d7b16d); border-radius:50%; opacity:.64; box-shadow:inset 0 0 18px #000,0 0 18px var(--bouquet-aura,#d7b16d55); }
+    .bouquet-assembly-ring::before,.bouquet-assembly-ring::after { content:""; position:absolute; inset:13px; border:1px solid color-mix(in srgb,var(--bouquet-aura,#d7b16d55) 52%,#0000); transform:rotate(45deg); box-shadow:inset 0 0 14px #000; }
+    .bouquet-assembly-ring::after { inset:28px; border-radius:50%; transform:none; opacity:.72; }
+    .bouquet-ingredient { position:absolute; left:50%; top:50%; width:42px; height:42px; display:grid; place-items:center; transform:translate(-50%,-50%) rotate(var(--ingredient-angle,0deg)) translateY(-55px) rotate(var(--ingredient-counter-angle,0deg)); filter:drop-shadow(0 5px 8px #000); }
+    .bouquet-ingredient .icon-wrap { width:38px; height:38px; }
+    .bouquet-ingredient img { width:38px; height:38px; object-fit:contain; filter:drop-shadow(0 0 7px #000) drop-shadow(0 0 7px currentColor); }
+    .bouquet-ingredient-count { position:absolute; right:-5px; bottom:-5px; min-width:20px; padding:2px 3px; border:1px solid #d7b16d; background:#060403; color:#f4dfaa; font:900 9px/1 system-ui,sans-serif; box-shadow:0 0 8px #000; }
+    .bouquet-thorn-seal { color:#f0c46e; border:1px solid #8a332a; background:radial-gradient(circle,#240707,#050302 72%); box-shadow:inset 0 0 10px #000,0 0 9px #9b1d2255; font:900 20px/1 Georgia,serif; text-shadow:0 0 8px #9b1d22; }
     .bouquet-stems { min-height:92px; display:flex; align-items:center; justify-content:center; gap:0; margin:3px auto; }
     .bouquet-stem { width:58px; height:86px; margin:0 -9px; position:relative; display:grid; place-items:start center; transform:rotate(var(--stem-rot,0deg)) translateY(var(--stem-y,0)); filter:drop-shadow(0 5px 8px #000); }
     .bouquet-stem::before { content:""; position:absolute; left:50%; top:42px; width:2px; height:50px; background:linear-gradient(#d7b16d,#4f762c 58%,#25170d); transform:translateX(-50%); box-shadow:0 0 8px #000; }
     .bouquet-stem .icon-wrap { width:54px; height:54px; }
     .bouquet-stem img { width:54px; height:54px; object-fit:contain; filter:drop-shadow(0 0 8px #000) drop-shadow(0 0 8px currentColor); }
-    .bouquet-stem-count { position:absolute; right:0; top:37px; z-index:2; min-width:22px; padding:2px 4px; border:1px solid #d7b16d; background:#080504; color:#f4dfaa; font:900 10px/1 system-ui,sans-serif; box-shadow:0 0 9px #000; }
+
     .bouquet-ribbon { position:absolute; left:50%; bottom:17px; z-index:2; width:96px; height:24px; transform:translateX(-50%); background:linear-gradient(90deg,#4c1a16,#b8823f,#4c1a16); border:1px solid #d7b16d; box-shadow:inset 0 0 9px #000,0 0 12px #000; }
     .bouquet-ribbon::before,.bouquet-ribbon::after { content:""; position:absolute; top:4px; width:28px; height:18px; background:linear-gradient(90deg,#37100f,#8f5d2b); border:1px solid #6f4a29; z-index:-1; }
     .bouquet-ribbon::before { left:-23px; transform:skewY(18deg); }
     .bouquet-ribbon::after { right:-23px; transform:skewY(-18deg); }
+    .bouquet-binding-vine { position:absolute; left:50%; bottom:18px; z-index:3; width:122px; height:34px; transform:translateX(-50%); pointer-events:none; background:repeating-linear-gradient(104deg,#0000 0 13px,#6f944d 14px 16px,#0000 17px 31px); filter:drop-shadow(0 0 6px #000) drop-shadow(0 0 7px #6f944d55); clip-path:polygon(0 38%,18% 8%,50% 35%,82% 8%,100% 38%,88% 64%,50% 48%,12% 64%); opacity:.82; }
+    .bouquet-assembly-state { position:absolute; left:50%; bottom:0; z-index:4; transform:translateX(-50%); padding:3px 7px; border:1px solid #6f944d; background:#050403e8; color:#e8ffc5; font:900 9px/1 system-ui,sans-serif; letter-spacing:.12em; text-transform:uppercase; white-space:nowrap; box-shadow:0 0 10px #000; }
     .bouquet-trophy-bonus { display:flex; justify-content:center; gap:5px; flex-wrap:wrap; }
     .bouquet-payoff-token { max-width:100%; padding:4px 7px; border:1px solid #5a452a; background:#080606d9; color:#ead9a9; font:900 11px/1 system-ui,sans-serif; text-transform:uppercase; letter-spacing:.055em; overflow-wrap:anywhere; }
     .round-one-restoration.restoration-awakening .bouquet-trophy { animation:bouquet-trophy-awaken 1180ms ease-out both; }
     .round-one-restoration.restoration-awakening .bouquet-stem { animation:bouquet-stem-settle 980ms cubic-bezier(.12,.82,.18,1) both; animation-delay:var(--stem-delay,0ms); }
+    .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .bouquet-ingredient { animation:bouquet-ingredient-bind 920ms cubic-bezier(.12,.82,.18,1) both; animation-delay:var(--ingredient-delay,0ms); }
+    .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .bouquet-assembly-ring { animation:bouquet-ring-bind 1120ms ease-out both; }
+    .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .bouquet-binding-vine { animation:bouquet-vine-bind 980ms ease-out 180ms both; }
     .restoration-scene { height:clamp(184px,21vw,270px); border:1px solid #56432f; position:relative; overflow:hidden; background:#030302; isolation:isolate; box-shadow:inset 0 0 34px #000,0 0 18px #000; transition:border-color 700ms ease,box-shadow 700ms ease; }
     .restoration-scene::before { content:""; position:absolute; inset:0; z-index:3; pointer-events:none; background:radial-gradient(circle at 50% 42%,#0000 0 48%,#0008 88%),linear-gradient(180deg,#0007,#0000 28%,#0003 76%,#000a); box-shadow:inset 0 0 34px #000; }
     .restoration-scene::after { content:""; position:absolute; inset:-35% -20%; pointer-events:none; opacity:0; transform:translateX(-65%) rotate(-12deg); background:linear-gradient(90deg,transparent 30%,#fff4b8dd 50%,transparent 70%); z-index:5; }
@@ -6020,7 +6034,7 @@
     .round-one-restoration.restoration-awakening .restoration-spark-field span { animation:restoration-spark-rise 1200ms ease-out var(--spark-delay,0ms) both; }
     .round-one-restoration.restoration-awakening .restoration-state { animation:restoration-state-pop 900ms ease-out both; }
     .restoration-state { position:absolute; inset:auto 0 8px; z-index:6; color:#ead9a9; font-weight:800; letter-spacing:.12em; text-shadow:0 2px 4px #000,0 0 10px #000; }
-    .restoration-title { color:#f3dfaa; font:700 21px Georgia,serif; }
+    .restoration-title { position:relative; z-index:4; color:#f3dfaa; font:700 21px/1.15 Georgia,serif; }
     .coin-payoff { position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:2; }
     .coin-payoff span { position:absolute; left:50%; top:15px; width:16px; height:16px; margin:-8px 0 0 -8px; border:1px solid #ffe2a4; border-radius:50%; background:radial-gradient(circle at 34% 32%,#fff7c7 0 18%,#e9b652 42%,#7a421c 78%); box-shadow:0 0 12px #e9b652aa; opacity:0; transform:translate(0,0) scale(.62); animation:coin-payoff-flight 1450ms ease-out var(--coin-delay,0ms) both; }
     .coin-payoff span::after { content:""; position:absolute; inset:4px; border-radius:50%; border:1px solid #7b4a20; opacity:.75; }
@@ -6071,6 +6085,10 @@
     @media (max-width:760px) {
       .payoff-stage { grid-template-columns:1fr; }
       .bouquet-trophy { min-height:168px; }
+      .bouquet-assembly { min-height:92px; width:min(210px,100%); }
+      .bouquet-assembly-ring { width:112px; height:112px; }
+      .bouquet-ingredient { width:36px; height:36px; transform:translate(-50%,-50%) rotate(var(--ingredient-angle,0deg)) translateY(-45px) rotate(var(--ingredient-counter-angle,0deg)); }
+      .bouquet-ingredient .icon-wrap,.bouquet-ingredient img { width:34px; height:34px; }
       .bouquet-stems { min-height:78px; }
       .bouquet-stem { width:50px; height:72px; margin:0 -8px; }
       .bouquet-stem .icon-wrap,.bouquet-stem img { width:48px; height:48px; }
@@ -6092,6 +6110,22 @@
       0% { opacity:.2; transform:rotate(var(--stem-rot,0deg)) translateY(18px) scale(.82); }
       48% { opacity:1; transform:rotate(var(--stem-rot,0deg)) translateY(-3px) scale(1.08); }
       100% { opacity:1; transform:rotate(var(--stem-rot,0deg)) translateY(var(--stem-y,0)) scale(1); }
+    }
+    @keyframes bouquet-ingredient-bind {
+      0% { opacity:0; transform:translate(-50%,-50%) rotate(var(--ingredient-angle,0deg)) translateY(-98px) rotate(var(--ingredient-counter-angle,0deg)) scale(.54); filter:brightness(.7); }
+      34% { opacity:1; filter:brightness(1.32) saturate(1.22); }
+      72% { transform:translate(-50%,-50%) rotate(var(--ingredient-angle,0deg)) translateY(-52px) rotate(var(--ingredient-counter-angle,0deg)) scale(1.08); }
+      100% { opacity:1; transform:translate(-50%,-50%) rotate(var(--ingredient-angle,0deg)) translateY(-55px) rotate(var(--ingredient-counter-angle,0deg)) scale(1); filter:brightness(1); }
+    }
+    @keyframes bouquet-ring-bind {
+      0% { opacity:0; transform:scale(.7) rotate(-14deg); filter:brightness(.72); }
+      42% { opacity:.94; transform:scale(1.08) rotate(6deg); filter:brightness(1.45); }
+      100% { opacity:.64; transform:scale(1) rotate(0); filter:brightness(1); }
+    }
+    @keyframes bouquet-vine-bind {
+      0% { opacity:0; clip-path:polygon(48% 38%,50% 8%,52% 35%,52% 8%,54% 38%,54% 64%,50% 48%,46% 64%); filter:brightness(.76); }
+      48% { opacity:1; filter:brightness(1.32); }
+      100% { opacity:.82; clip-path:polygon(0 38%,18% 8%,50% 35%,82% 8%,100% 38%,88% 64%,50% 48%,12% 64%); filter:brightness(1); }
     }
     @keyframes restoration-panel-awaken {
       0% { box-shadow:0 0 28px #b8793035,inset 0 0 28px #000,0 18px 45px #000b; }
@@ -6298,6 +6332,9 @@
       .board-particle.order-seal,
       .round-one-restoration.bouquet-sealed .bouquet-trophy,
       .round-one-restoration.bouquet-sealed .restoration-step:first-child,
+      .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .bouquet-ingredient,
+      .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .bouquet-assembly-ring,
+      .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .bouquet-binding-vine,
       .round-one-restoration.next-order-ready .next-order-btn {
         animation:none !important;
       }
@@ -6525,8 +6562,8 @@
       body.round-three-final-complete .restoration-scene { height:166px; }
       body.round-two-upgrade-complete .second-greenhouse-upgrade .restoration-state { left:2%; right:2%; bottom:7px; padding:4px 2px; font-size:9px; letter-spacing:.055em; white-space:nowrap; }
       body.round-three-final-complete .third-greenhouse-finale .restoration-state { left:2%; right:2%; padding:4px 2px; font-size:9px; letter-spacing:.055em; white-space:nowrap; }
-      body.round-one-active .restoration-title { font-size:18px; }
-      body.round-three-final-complete .restoration-title { font-size:18px; }
+      body.round-one-active .restoration-title { font-size:17px; line-height:1.18; }
+      body.round-three-final-complete .restoration-title { font-size:17px; line-height:1.18; }
       body.round-one-active .restoration-ledger { grid-template-columns:1fr; }
       body.round-three-final-complete .restoration-ledger { grid-template-columns:1fr; }
       body.round-one-active .restoration-step { min-height:34px; }
@@ -14819,6 +14856,7 @@
       const stemAngles = [-17, -7, 7, 17];
       const stemOffsets = [2, -4, -2, 3];
       trophy.dataset.bouquetPayoffState = payoffState;
+      trophy.dataset.assemblyState = bouquetSealPulseActive ? "forming" : "assembled";
       trophy.style.setProperty("--bouquet-aura", `${accent}55`);
       trophy.style.setProperty("--bouquet-ray", `${accent}2c`);
       const stemMarkup = plan.targets.map((target, index) => {
@@ -14828,10 +14866,10 @@
         return `
           <span class="bouquet-stem" style="--stem-rot:${angle}deg;--stem-y:${y}px;--stem-delay:${index * 80}ms;">
             ${iconMarkup(target.flowerId, "bouquet-stem-icon", flower[0], "bouquet-stem-wrap")}
-            <span class="bouquet-stem-count">x${target.needed}</span>
           </span>
         `;
       }).join("");
+      const assemblyMarkup = bouquetAssemblyMarkup(plan);
       const copy = plan.round === 1
         ? payoffState === "restored"
           ? "Coins spent; the sealed bouquet wakes repaired glass."
@@ -14845,12 +14883,53 @@
           <span class="bouquet-trophy-name">${plan.name}</span>
           <span class="bouquet-trophy-copy">${copy}</span>
         </span>
-        <span class="bouquet-stems" aria-hidden="true">
-          ${stemMarkup}
-          <span class="bouquet-ribbon"></span>
+        <span class="bouquet-assembly" aria-hidden="true">
+          <span class="bouquet-assembly-ring"></span>
+          ${assemblyMarkup}
+          <span class="bouquet-stems">
+            ${stemMarkup}
+            <span class="bouquet-ribbon"></span>
+            <span class="bouquet-binding-vine"></span>
+            <span class="bouquet-assembly-state">${bouquetSealPulseActive ? "Binding" : "Bound"}</span>
+          </span>
         </span>
       `;
       applyImageFallbacks(trophy);
+    }
+
+    function bouquetAssemblyMarkup(plan = activeRoundPlan()) {
+      const ingredients = plan.targets.map((target) => ({
+        type: "flower",
+        flowerId: target.flowerId,
+        label: flowers[target.flowerId][0],
+        count: target.needed
+      }));
+      if (plan.thornGoal) {
+        ingredients.push({
+          type: "thorn",
+          label: plan.thornGoal.order,
+          count: thornGoalNeeded(plan)
+        });
+      }
+      const total = Math.max(1, ingredients.length);
+      return ingredients.map((ingredient, index) => {
+        const angle = -58 + (116 / Math.max(1, total - 1)) * index;
+        const delay = 70 + index * 110;
+        if (ingredient.type === "thorn") {
+          return `
+            <span class="bouquet-ingredient bouquet-thorn-seal" style="--ingredient-angle:${angle}deg;--ingredient-counter-angle:${-angle}deg;--ingredient-delay:${delay}ms;" title="${ingredient.label}">
+              ✕
+              <span class="bouquet-ingredient-count">x${ingredient.count}</span>
+            </span>
+          `;
+        }
+        return `
+          <span class="bouquet-ingredient" style="--ingredient-angle:${angle}deg;--ingredient-counter-angle:${-angle}deg;--ingredient-delay:${delay}ms;" title="${ingredient.label}">
+            ${iconMarkup(ingredient.flowerId, "bouquet-ingredient-icon", ingredient.label, "bouquet-ingredient-wrap")}
+            <span class="bouquet-ingredient-count">x${ingredient.count}</span>
+          </span>
+        `;
+      }).join("");
     }
 
     function restoreRoundOneGreenhouse() {

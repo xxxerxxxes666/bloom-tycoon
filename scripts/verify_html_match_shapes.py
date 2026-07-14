@@ -218,6 +218,11 @@ def verify_source_hooks():
         "function queueBouquetBindingSeal",
         "bouquet-bind-seal",
         "objective-target-fill",
+        "function bouquetAssemblyMarkup",
+        "bouquet-assembly-ring",
+        "bouquet-ingredient-bind",
+        "trophy.dataset.assemblyState = bouquetSealPulseActive ? \"forming\" : \"assembled\";",
+        "bouquet-binding-vine",
         "objective-target-seal",
         "objective-goal-joiner",
         "clip-path: inset(50%);",
@@ -1349,6 +1354,14 @@ def verify_source_hooks():
     missing = [needle for needle in required if needle not in html]
     if missing:
         raise SystemExit(f"Missing HTML match-shape hooks: {missing}")
+    forbidden = [
+        'class="bouquet-stem-count"',
+    ]
+    present_forbidden = [needle for needle in forbidden if needle in html]
+    if present_forbidden:
+        raise SystemExit(
+            f"Duplicated bouquet payoff labels returned: {present_forbidden}"
+        )
     missing_assets = [asset for asset in ALTAR_TILE_ASSETS if not (ROOT / asset).exists()]
     if missing_assets:
         raise SystemExit(f"Missing altar tile assets: {missing_assets}")
