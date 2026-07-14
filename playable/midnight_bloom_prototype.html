@@ -7911,6 +7911,8 @@
     let bloomSoundscape = null;
     let bloomAudioStageKey = "withered";
     let bloomAudioEventCount = 0;
+    let bloomAudioVoiceCount = 0;
+    let bloomAudioEvents = [];
     let currentCascadeWave = 0;
     let lastSettledCascadeCount = 0;
     let bouquetSealPulseActive = false;
@@ -12510,12 +12512,57 @@
 
     function soundscapeSettings(stageKey = bloomAudioStageKey) {
       if (stageKey === "moonlit") {
-        return { root: 73.42, fifth: 110, shimmer: 220, filter: 620, gain: 0.035 };
+        return { root: 73.42, fifth: 110, shimmer: 220, filter: 620, gain: 0.035, scale: [73.42, 87.31, 110, 146.83, 174.61, 220, 293.66, 349.23] };
       }
       if (stageKey === "bloodroot") {
-        return { root: 61.74, fifth: 123.47, shimmer: 185, filter: 520, gain: 0.042 };
+        return { root: 61.74, fifth: 123.47, shimmer: 185, filter: 520, gain: 0.042, scale: [61.74, 82.41, 123.47, 164.81, 185, 246.94, 329.63, 369.99] };
       }
-      return { root: 55, fifth: 82.41, shimmer: 164.81, filter: 430, gain: 0.028 };
+      return { root: 55, fifth: 82.41, shimmer: 164.81, filter: 430, gain: 0.028, scale: [55, 73.42, 82.41, 110, 146.83, 164.81, 220, 246.94] };
+    }
+
+    function recordBloomAudioEvent(kind, detail = {}) {
+      bloomAudioEventCount += 1;
+      bloomAudioEvents.push({
+        kind,
+        stage: activeGreenhouseStageKey(),
+        voices: bloomAudioVoiceCount,
+        at: Math.round(performance.now()),
+        cascade: Number(detail.cascade) || 0,
+        lineRelic: Boolean(detail.lineRelic),
+        shape: Boolean(detail.shape)
+      });
+      if (bloomAudioEvents.length > 32) {
+        bloomAudioEvents = bloomAudioEvents.slice(-32);
+      }
+    }
+
+    function bloomStageScale(stageKey = activeGreenhouseStageKey()) {
+      return soundscapeSettings(stageKey).scale;
+    }
+
+    function bloomScaleTone(index, octave = 1, stageKey = activeGreenhouseStageKey()) {
+      const scale = bloomStageScale(stageKey);
+      const safeIndex = Math.max(0, Math.floor(Number(index) || 0));
+      const base = scale[safeIndex % scale.length] || scale[0] || 110;
+      const octaveShift = Math.pow(2, Math.floor(safeIndex / scale.length) + Math.max(0, octave - 1));
+      return base * octaveShift;
+    }
+
+    function duckBloomSoundscape(depth = 0.45, duration = 0.75) {
+      if (!bloomSoundscape || !bloomAudioContext) {
+        return;
+      }
+      const ctx = bloomAudioContext;
+      const now = ctx.currentTime;
+      const settings = soundscapeSettings(activeGreenhouseStageKey());
+      const safeDepth = Math.max(0.08, Math.min(0.9, Number(depth) || 0.45));
+      const safeDuration = Math.max(0.2, Number(duration) || 0.75);
+      bloomSoundscape.droneGain.gain.cancelScheduledValues(now);
+      bloomSoundscape.shimmerGain.gain.cancelScheduledValues(now);
+      bloomSoundscape.droneGain.gain.setTargetAtTime(settings.gain * safeDepth, now, 0.025);
+      bloomSoundscape.shimmerGain.gain.setTargetAtTime(settings.gain * 0.08, now, 0.035);
+      bloomSoundscape.droneGain.gain.setTargetAtTime(settings.gain, now + safeDuration, 0.5);
+      bloomSoundscape.shimmerGain.gain.setTargetAtTime(settings.gain * 0.18, now + safeDuration, 0.65);
     }
 
     function ensureBloomSoundscape() {
@@ -12585,7 +12632,7 @@
       bloomSoundscape.shimmerGain.gain.setTargetAtTime(settings.gain * 0.18, now, 0.9);
     }
 
-    function playBloomTone(frequency, startOffset, duration, gain = 0.028, type = "sine") {
+    function playBloomTone(frequency, startOffset, duration, gain = 0.028, type = "sine", options = {}) {
       const ctx = bloomAudioCtx();
       const output = bloomAudioOutput();
       if (!ctx || !output) {
@@ -12595,18 +12642,35 @@
       const stopAt = startAt + Math.max(0.03, duration || 0.1);
       const osc = ctx.createOscillator();
       const amp = ctx.createGain();
+      const attack = Math.max(0.006, Number(options.attack) || 0.018);
+      const release = Math.max(0.008, Number(options.release) || 0.02);
+      const safeGain = Math.max(0.0001, Number(gain) || 0.018);
       osc.type = type;
-      osc.frequency.setValueAtTime(frequency, startAt);
+      osc.frequency.setValueAtTime(Math.max(20, Number(frequency) || 220), startAt);
+      if (options.endFrequency) {
+        osc.frequency.exponentialRampToValueAtTime(Math.max(20, Number(options.endFrequency) || frequency), Math.max(startAt + attack, stopAt - release));
+      }
+      if (options.detune) {
+        osc.detune.setValueAtTime(Number(options.detune) || 0, startAt);
+      }
       amp.gain.setValueAtTime(0.0001, startAt);
-      amp.gain.exponentialRampToValueAtTime(gain, startAt + 0.018);
+      amp.gain.exponentialRampToValueAtTime(safeGain, startAt + attack);
       amp.gain.exponentialRampToValueAtTime(0.0001, stopAt);
       osc.connect(amp);
-      amp.connect(output);
+      if (ctx.createStereoPanner && Number.isFinite(Number(options.pan))) {
+        const pan = ctx.createStereoPanner();
+        pan.pan.setValueAtTime(Math.max(-0.85, Math.min(0.85, Number(options.pan))), startAt);
+        amp.connect(pan);
+        pan.connect(output);
+      } else {
+        amp.connect(output);
+      }
+      bloomAudioVoiceCount += 1;
       osc.start(startAt);
       osc.stop(stopAt + 0.02);
     }
 
-    function playBloomNoise(startOffset, duration, gain = 0.014, filterFrequency = 360) {
+    function playBloomNoise(startOffset, duration, gain = 0.014, filterFrequency = 360, options = {}) {
       const ctx = bloomAudioCtx();
       const output = bloomAudioOutput();
       if (!ctx || !output) {
@@ -12626,87 +12690,130 @@
       source.buffer = buffer;
       filter.type = "lowpass";
       filter.frequency.setValueAtTime(filterFrequency, startAt);
+      if (options.endFilterFrequency) {
+        filter.frequency.exponentialRampToValueAtTime(Math.max(60, Number(options.endFilterFrequency) || filterFrequency), startAt + safeDuration);
+      }
       amp.gain.setValueAtTime(0.0001, startAt);
       amp.gain.exponentialRampToValueAtTime(gain, startAt + 0.012);
       amp.gain.exponentialRampToValueAtTime(0.0001, startAt + safeDuration);
       source.connect(filter);
       filter.connect(amp);
       amp.connect(output);
+      bloomAudioVoiceCount += 1;
       source.start(startAt);
       source.stop(startAt + safeDuration + 0.02);
+    }
+
+    function playBloomChord(frequencies, startOffset, duration, gain = 0.018, type = "sine", options = {}) {
+      frequencies.forEach((frequency, index) => {
+        playBloomTone(
+          frequency,
+          (startOffset || 0) + index * (options.stagger ?? 0.018),
+          duration + index * (options.tail ?? 0.012),
+          gain * (options.fade ? Math.max(0.42, 1 - index * 0.12) : 1),
+          type,
+          { pan: (index - (frequencies.length - 1) / 2) * 0.18, attack: options.attack, release: options.release, detune: options.detune }
+        );
+      });
+    }
+
+    function playBloomRitualPulse(startOffset, strength = 1, stageKey = activeGreenhouseStageKey()) {
+      const settings = soundscapeSettings(stageKey);
+      const safeStrength = Math.max(0.5, Math.min(1.8, Number(strength) || 1));
+      playBloomTone(settings.root * 0.5, startOffset, 0.16, 0.013 * safeStrength, "sawtooth", {
+        endFrequency: settings.root * 0.38,
+        attack: 0.011,
+        release: 0.04
+      });
+      playBloomNoise(startOffset + 0.01, 0.09, 0.006 * safeStrength, settings.filter * 0.55, {
+        endFilterFrequency: settings.filter * 0.26
+      });
     }
 
     function playBloomSound(kind, detail = {}) {
       try {
         ensureBloomSoundscape();
-        bloomAudioEventCount += 1;
+        recordBloomAudioEvent(kind, detail);
+        const stageKey = activeGreenhouseStageKey();
+        const settings = soundscapeSettings(stageKey);
         if (kind === "swap") {
-          playBloomTone(185, 0, 0.055, 0.014, "triangle");
-          playBloomTone(247, 0.034, 0.075, 0.012, "sine");
+          playBloomTone(bloomScaleTone(2, 2, stageKey), 0, 0.052, 0.012, "triangle", { pan: -0.18, attack: 0.01 });
+          playBloomTone(bloomScaleTone(4, 2, stageKey), 0.036, 0.08, 0.012, "sine", { pan: 0.18, attack: 0.012 });
           return;
         }
         if (kind === "invalid") {
-          playBloomTone(154, 0, 0.09, 0.022, "triangle");
-          playBloomTone(106, 0.055, 0.11, 0.018, "sawtooth");
-          playBloomNoise(0, 0.12, 0.018, 210);
+          duckBloomSoundscape(0.3, 0.35);
+          playBloomTone(bloomScaleTone(5, 1, stageKey), 0, 0.09, 0.021, "triangle", { endFrequency: bloomScaleTone(3, 1, stageKey), pan: -0.12 });
+          playBloomTone(bloomScaleTone(1, 1, stageKey), 0.052, 0.12, 0.018, "sawtooth", { endFrequency: settings.root * 0.72, pan: 0.14 });
+          playBloomNoise(0, 0.13, 0.017, 210, { endFilterFrequency: 120 });
           return;
         }
         if (kind === "match") {
           const cascade = Math.min(4, Math.max(0, detail.cascade || 0));
           const cleared = Math.min(12, Math.max(3, Number(detail.cleared) || 3));
-          const root = detail.lineRelic ? 294 : detail.shape ? 262 : 247;
-          const chainLift = cascade * 22;
-          const flowerTone = [196, 220, 247, 174.61, 261.63, 293.66][detail.flowerId] || root;
-          playBloomNoise(0, 0.075 + cascade * 0.018, 0.009 + cascade * 0.002, 260 + cascade * 90);
-          playBloomTone(82 + cascade * 14, 0, 0.08, 0.012 + cascade * 0.002, "sawtooth");
-          playBloomTone(flowerTone + chainLift, 0.018, 0.1 + cleared * 0.004, 0.022 + cascade * 0.002, "sine");
-          playBloomTone(root * 1.5 + chainLift, 0.07, 0.13 + cascade * 0.018, 0.018 + cascade * 0.002, "triangle");
+          const lift = cascade + (detail.shape ? 1 : 0) + (detail.lineRelic ? 2 : 0);
+          const flowerIndex = Number.isInteger(detail.flowerId) ? detail.flowerId : 2;
+          const flowerTone = bloomScaleTone((flowerIndex + lift) % 8, 2, stageKey);
+          duckBloomSoundscape(0.58 - cascade * 0.06, 0.28 + cascade * 0.1);
+          playBloomRitualPulse(0, 1 + cascade * 0.18, stageKey);
+          playBloomNoise(0, 0.085 + cascade * 0.02, 0.008 + cascade * 0.002, 260 + cascade * 110, { endFilterFrequency: 540 + cascade * 140 });
+          playBloomTone(flowerTone, 0.018, 0.11 + cleared * 0.004, 0.022 + cascade * 0.003, "sine", { pan: -0.22 + cascade * 0.1 });
+          playBloomTone(bloomScaleTone(4 + lift, 2, stageKey), 0.07, 0.15 + cascade * 0.018, 0.018 + cascade * 0.002, "triangle", { pan: 0.24 });
           if (cascade > 0) {
-            playBloomTone(392 + cascade * 42, 0.12, 0.1, 0.014, "sine");
+            playBloomTone(bloomScaleTone(6 + cascade, 2, stageKey), 0.12, 0.12, 0.014 + cascade * 0.002, "sine", { pan: 0.38 });
           }
           if (detail.lineRelic) {
-            playBloomTone(92, 0.02, 0.28, 0.018, "sawtooth");
-            playBloomNoise(0.03, 0.24, 0.021, 520);
+            playBloomTone(settings.root * 0.78, 0.02, 0.32, 0.018, "sawtooth", { endFrequency: settings.root * 0.48, pan: -0.35 });
+            playBloomTone(bloomScaleTone(7, 2, stageKey), 0.11, 0.18, 0.017, "triangle", { pan: 0.35 });
+            playBloomNoise(0.03, 0.25, 0.022, 520, { endFilterFrequency: 1180 });
           }
           return;
         }
         if (kind === "settle") {
           const cascade = Math.min(4, Math.max(0, detail.cascade || 0));
           const drops = Math.min(14, Math.max(1, Number(detail.drops) || 1));
-          playBloomTone(174.61 + cascade * 16, 0, 0.055, 0.008, "triangle");
-          playBloomTone(220 + Math.min(7, drops) * 5 + cascade * 18, 0.045, 0.07, 0.006, "sine");
+          playBloomTone(settings.root * (2 + cascade * 0.08), 0, 0.06, 0.008, "triangle", { endFrequency: settings.root * 1.5, pan: -0.12 });
+          playBloomTone(bloomScaleTone(Math.min(7, drops) + cascade, 1, stageKey), 0.045, 0.075, 0.006, "sine", { pan: 0.12 });
           if (cascade > 0) {
-            playBloomNoise(0.018, 0.07, 0.004, 520 + cascade * 110);
+            playBloomNoise(0.018, 0.075, 0.004, 520 + cascade * 110, { endFilterFrequency: 760 + cascade * 120 });
           }
           return;
         }
         if (kind === "complete") {
-          [196, 247, 294, 330, 392, 494].forEach((frequency, index) => {
-            playBloomTone(frequency, index * 0.065, 0.18, 0.024, index % 2 ? "sine" : "triangle");
+          duckBloomSoundscape(0.26, 1.45);
+          playBloomRitualPulse(0, 1.35, stageKey);
+          playBloomChord([bloomScaleTone(0, 2, stageKey), bloomScaleTone(2, 2, stageKey), bloomScaleTone(4, 2, stageKey)], 0.04, 0.32, 0.025, "triangle", { stagger: 0.052, fade: true });
+          [3, 5, 6, 7, 10, 12].forEach((scaleIndex, index) => {
+            playBloomTone(bloomScaleTone(scaleIndex, 2, stageKey), 0.2 + index * 0.055, 0.18, 0.018, index % 2 ? "sine" : "triangle", { pan: (index - 2.5) * 0.13 });
           });
-          playBloomNoise(0.12, 0.34, 0.014, 760);
+          playBloomNoise(0.12, 0.34, 0.014, 760, { endFilterFrequency: 1420 });
           return;
         }
         if (kind === "handoff") {
-          [146.83, 196, 247, 293.66].forEach((frequency, index) => {
-            playBloomTone(frequency, index * 0.055, 0.14, 0.017, "triangle");
+          duckBloomSoundscape(0.42, 0.9);
+          [0, 2, 4, 7].forEach((scaleIndex, index) => {
+            playBloomTone(bloomScaleTone(scaleIndex, 2, stageKey), index * 0.058, 0.16, 0.017, "triangle", { pan: -0.24 + index * 0.16 });
           });
-          playBloomNoise(0.02, 0.16, 0.007, 420);
+          playBloomNoise(0.02, 0.16, 0.007, 420, { endFilterFrequency: 900 });
           return;
         }
         if (kind === "retry") {
-          [123.47, 164.81, 220].forEach((frequency, index) => {
-            playBloomTone(frequency, index * 0.06, 0.15, 0.016, index ? "sine" : "triangle");
+          duckBloomSoundscape(0.36, 0.65);
+          [4, 2, 0].forEach((scaleIndex, index) => {
+            playBloomTone(bloomScaleTone(scaleIndex, 1, stageKey), index * 0.06, 0.16, 0.016, index ? "sine" : "triangle", { endFrequency: bloomScaleTone(Math.max(0, scaleIndex - 1), 1, stageKey), pan: 0.2 - index * 0.2 });
           });
-          playBloomNoise(0, 0.18, 0.01, 300);
+          playBloomNoise(0, 0.18, 0.01, 300, { endFilterFrequency: 140 });
           return;
         }
         if (kind === "restore") {
           updateBloomSoundscapeStage(activeGreenhouseStageKey(), { immediate: false });
-          [130.81, 196, 247, 330, 392, 494].forEach((frequency, index) => {
-            playBloomTone(frequency, index * 0.08, 0.26, 0.024, "sine");
+          duckBloomSoundscape(0.18, 1.8);
+          playBloomRitualPulse(0, 1.55, stageKey);
+          playBloomChord([settings.root, settings.fifth, bloomScaleTone(4, 2, stageKey), bloomScaleTone(7, 2, stageKey)], 0.06, 0.42, 0.024, "sine", { stagger: 0.08, fade: true });
+          [7, 9, 11, 12, 14].forEach((scaleIndex, index) => {
+            playBloomTone(bloomScaleTone(scaleIndex, 2, stageKey), 0.34 + index * 0.075, 0.28, 0.021, "triangle", { pan: -0.28 + index * 0.14 });
           });
-          playBloomNoise(0.08, 0.48, 0.016, 900);
+          playBloomNoise(0.08, 0.52, 0.017, 900, { endFilterFrequency: 1800 });
         }
       } catch (error) {
         // Browser audio startup can be denied; keep the playable silent instead of noisy.
@@ -17463,6 +17570,13 @@
       }
     });
 
+    window.__bloomAudioProbe = () => ({
+      eventCount: bloomAudioEventCount,
+      voiceCount: bloomAudioVoiceCount,
+      stage: bloomAudioStageKey,
+      soundscapeActive: Boolean(bloomSoundscape?.started),
+      events: bloomAudioEvents.slice()
+    });
     window.triggerSupremeBloom = showSupreme;
     refreshShapeAuditData();
 

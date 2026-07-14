@@ -1,5 +1,21 @@
 # Codex Build Notes
 
+## 2026-07-14 Procedural ritual audio arc
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible milestone: the existing WebAudio layer now has a cohesive stage-aware ritual mix for swap, invalid swap, match, settle, Black Candle Vine, bouquet completion, greenhouse restoration, retry, and next-order handoff. It adds withered/moonlit/bloodroot scales, soundscape ducking, ritual pulses, arpeggiated bouquet/restoration motifs, and read-only audio telemetry for verification. No controls, assets, rounds, economies, saves, services, trackers, accounts, payments, ads, permissions, or scheduled jobs were added.
+- Live pre-edit inspection: Vercel production `https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html` was checked at 1280x720 and exact 390x844 before editing. Both had 64 tiles, 8 complete visible rows, 0 horizontal overflow, 0 broken images, and no console/page/network errors. Screenshots inspected: `/tmp/bloom_audio_live_desktop_before.png` and `/tmp/bloom_audio_live_mobile390_before.png`.
+- Local host status: temporary static server `http://127.0.0.1:4173/playable/midnight_bloom_prototype.html`; cleaned up after verification.
+- Browser evidence: local Chromium/Playwright real clicks on desktop 1280x720 exercised fresh load, first guided swap, taught Black Candle swap, Round 1 bouquet payoff, +120 coin reward, `Restore Greenhouse` spending 100 coins, visible before/after restored greenhouse state, save/reload preserving the restored state, `Next Order`, Round 2 guided Cursed Thorn action, ordinary unguided Round 2 play, diagnostic failed state, and real visible `Retry Bouquet`. Exact 390x844 mobile exercised fresh load, first guided swap, bouquet payoff, restore, `Next Order`, and Round 2 guided play.
+- Audio evidence: desktop gesture instrumentation recorded real `AudioContext`, oscillator, gain, oscillator `start`, and buffer-source `start` activity. The audio probe recorded `complete`, `restore`, `handoff`, and `retry` motifs on the player path; mobile recorded `complete`, `restore`, `handoff`, match, and settle motifs. A no-`AudioContext` mobile probe stayed silent-safe with 64 tiles, 0 overflow, 0 broken images, 0 console/page/network errors, and zero scheduled voices.
+- Active-state metrics: desktop and mobile preserved 64 tiles, zero horizontal overflow, zero broken images, and no console/page/request errors. Exact 390x844 mobile kept 8 complete active board rows in the sampled fresh, post-guided, Round 2 start, and Round 2 guided states.
+- Verification commands: `python3 scripts/verify_project.py`, `git diff --check`, extracted inline playable `node --check`, pinned Godot 4.2.2 smoke test, focused Chromium desktop/mobile interaction regression with audio instrumentation, and no-AudioContext silent-safe probe passed.
+- Vercel deployment URL/identifier checked: production baseline only before editing, `https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html`; no redeploy happened in this local pass before commit/push.
+- GitHub Pages preview status: not checked in this local pass.
+- Known issues: no player-facing issues found in the verified first-three-order route. The `Retry Bouquet` surface was exposed through a diagnostic failed Round 2 state after real Round 2 play; the retry click itself was real.
+- Review-hook preservation: existing L/T/cross `Shape Bloom`/focused `M`, Supreme Bloom/focused `B`, and prototype completion hook markers were preserved; Supreme Bloom remains absent from normal tutorial play.
+- Security/secret-scan status: changed files were scanned for private-key headers, `.env` additions, provider token prefixes, JWTs, suspicious credential assignments, trackers/analytics SDKs, backend/account/payment/ad hooks, machine-local paths, broad permissions, and scheduler additions. No findings.
+
 ## 2026-07-14 Invalid-swap rejection clarity
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
