@@ -2526,6 +2526,39 @@
       will-change: transform, opacity;
     }
 
+    .greenhouse-intake-flight {
+      position: fixed;
+      z-index: 999;
+      width: 18px;
+      height: 18px;
+      margin: -9px 0 0 -9px;
+      border: 1px solid color-mix(in srgb, var(--intake-color, #d7b16d) 74%, #fff0b4);
+      border-radius: 50%;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 50% 45%, #fff5bf 0 13%, var(--intake-color, #d7b16d) 34%, #0000 72%);
+      box-shadow:
+        0 0 12px color-mix(in srgb, var(--intake-color, #d7b16d) 72%, #0000),
+        0 0 22px #d7b16d66,
+        inset 0 0 7px #000;
+      will-change: transform, opacity, filter;
+    }
+
+    .greenhouse-intake-flight::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 2px;
+      height: 46px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #fff0b4, var(--intake-color, #d7b16d), #0000);
+      box-shadow: 0 0 10px var(--intake-color, #d7b16d);
+      opacity: .72;
+      transform: translate(-50%, -88%) rotate(var(--intake-tilt, 0deg));
+      transform-origin: 50% 100%;
+    }
+
     .bouquet-bind-seal {
       position: fixed;
       z-index: 1001;
@@ -2833,9 +2866,71 @@
       animation-delay: var(--fall-delay, 0ms);
     }
 
+    .tile.refill-born {
+      z-index: 2;
+      animation:
+        tile-fall 460ms cubic-bezier(0.12, 0.78, 0.18, 1) both,
+        refill-born-glow 720ms cubic-bezier(.12,.82,.18,1) both;
+      animation-delay: var(--fall-delay, 0ms), calc(var(--fall-delay, 0ms) + 90ms);
+    }
+
+    .tile.refill-born::after {
+      opacity: 1;
+      background:
+        radial-gradient(circle at 50% 44%, color-mix(in srgb, var(--tile-color) 36%, #fff0b4) 0, #0000 58%),
+        repeating-conic-gradient(from 12deg, #0000 0 16deg, #d7b16d66 17deg 19deg, #0000 20deg 38deg);
+    }
+
     .tile.settle-pop {
       animation: tile-settle-pop 360ms cubic-bezier(.12,.82,.18,1) both;
       animation-delay: calc(var(--fall-delay, 0ms) + 110ms);
+    }
+
+    .tile.refill-born.settle-pop {
+      animation:
+        tile-fall 460ms cubic-bezier(0.12, 0.78, 0.18, 1) both,
+        refill-born-glow 720ms cubic-bezier(.12,.82,.18,1) both,
+        tile-settle-pop 360ms cubic-bezier(.12,.82,.18,1) both;
+      animation-delay:
+        var(--fall-delay, 0ms),
+        calc(var(--fall-delay, 0ms) + 90ms),
+        calc(var(--fall-delay, 0ms) + 170ms);
+    }
+
+    .refill-channel {
+      position: absolute;
+      top: -4.5%;
+      left: calc((var(--column, 0) + .5) * 12.5%);
+      z-index: 1;
+      width: calc(12.5% - 6px);
+      height: calc((var(--rows, 1) + 1.2) * 12.5%);
+      min-height: 21%;
+      border: 1px solid #d7b16d4f;
+      border-radius: 999px;
+      pointer-events: none;
+      background:
+        linear-gradient(180deg, #fff0b466 0, color-mix(in srgb, var(--stage-accent, #b9874d) 54%, #0000) 36%, #0000 100%),
+        repeating-linear-gradient(180deg, #0000 0 11px, #d7b16d2e 12px 13px, #0000 14px 23px);
+      box-shadow:
+        0 0 17px color-mix(in srgb, var(--stage-accent, #b9874d) 48%, #0000),
+        inset 0 0 12px #000;
+      opacity: 0;
+      transform: translateX(-50%) translateY(-11%);
+      animation: refill-channel-fall 620ms cubic-bezier(.12,.82,.18,1) forwards;
+      animation-delay: var(--delay, 0ms);
+    }
+
+    .refill-channel::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 0;
+      width: 16px;
+      height: 16px;
+      border: 1px solid #f0c477aa;
+      background: radial-gradient(circle, #fff1ba 0, #d7b16d 40%, #0000 72%);
+      box-shadow: 0 0 12px #d7b16d, 0 0 22px color-mix(in srgb, var(--stage-accent, #b9874d) 46%, #0000);
+      transform: translate(-50%, -50%) rotate(45deg);
     }
 
     .harvest-mote {
@@ -4460,6 +4555,37 @@
         opacity: 1;
         transform: translateY(0) scale(1);
         filter: brightness(1);
+      }
+    }
+
+    @keyframes refill-born-glow {
+      0% {
+        filter: brightness(1.32) saturate(1.24) drop-shadow(0 0 10px var(--tile-color));
+      }
+      60% {
+        filter: brightness(1.1) saturate(1.12) drop-shadow(0 0 8px #d7b16d);
+      }
+      100% {
+        filter: brightness(1) saturate(1);
+      }
+    }
+
+    @keyframes refill-channel-fall {
+      0% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-18%) scaleY(.55);
+        filter: blur(2px);
+      }
+      22%,
+      68% {
+        opacity: .92;
+        transform: translateX(-50%) translateY(0) scaleY(1);
+        filter: blur(0);
+      }
+      100% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(9%) scaleY(.82);
+        filter: blur(1px);
       }
     }
 
@@ -7845,6 +7971,8 @@
     let transmuteFlashCell = "";
     let fallAnimations = new Map();
     let settledCells = new Set();
+    let refillBornCells = new Set();
+    let refillColumns = new Map();
     let boardParticles = [];
     let lastWildChain = null;
     let fallClearTimer = null;
@@ -12851,6 +12979,8 @@
         return false;
       }
       fallAnimations.clear();
+      refillBornCells.clear();
+      refillColumns.clear();
       build();
       return true;
     }
@@ -13237,6 +13367,7 @@
       boardEl.dataset.lastCascadeCount = String(lastSettledCascadeCount);
       boardEl.dataset.lastWildChainBonus = String(lastWildChain?.bonusCoins || 0);
       boardEl.dataset.lastWildChainCascades = String(lastWildChain?.cascades || 0);
+      boardEl.dataset.refillColumns = String(refillColumns.size);
       boardEl.classList.toggle("supreme-charge", supremeChargeActive);
       boardEl.classList.toggle("cascade-wave", currentCascadeWave > 0);
       boardEl.classList.toggle("swap-accepted", validSwapCells.size > 0);
@@ -13290,11 +13421,12 @@
           const fallKey = `${x},${y}`;
           const fallRows = fallAnimations.get(fallKey) || 0;
           const fallClass = fallRows ? "fall-in" : "";
+          const refillBornClass = refillBornCells.has(fallKey) ? "refill-born" : "";
           const settleClass = settledCells.has(fallKey) ? "settle-pop" : "";
           const previewClass = harvestPreview.cells.has(fallKey) ? "match-preview" : "";
           const previewAnchorClass = harvestPreview.anchors.has(fallKey) ? "match-preview-anchor" : "";
           const relicPreviewClass = harvestPreview.relicCells.has(fallKey) ? "relic-preview" : "";
-          tile.className = `tile ${selectedClass} ${legalClass} ${previewClass} ${previewAnchorClass} ${relicPreviewClass} ${sacrificeClass} ${profitableClass} ${shearsClass} ${moonwaterTargetClass} ${moonwaterAreaClass} ${moonwaterCenterClass} ${blackCandleLineClass} ${graveSoilTargetClass} ${graveSoilReadyClass} ${harvestClass} ${superClass} ${invalidClass} ${validSwapClass} ${swapClass} ${swapGlideClass} ${idleHintClass} ${thornTeachClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass} ${settleClass}`;
+          tile.className = `tile ${selectedClass} ${legalClass} ${previewClass} ${previewAnchorClass} ${relicPreviewClass} ${sacrificeClass} ${profitableClass} ${shearsClass} ${moonwaterTargetClass} ${moonwaterAreaClass} ${moonwaterCenterClass} ${blackCandleLineClass} ${graveSoilTargetClass} ${graveSoilReadyClass} ${harvestClass} ${superClass} ${invalidClass} ${validSwapClass} ${swapClass} ${swapGlideClass} ${idleHintClass} ${thornTeachClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass} ${refillBornClass} ${settleClass}`;
           tile.disabled = isResolving || roundComplete || isBouquetFailed();
           tile.style.setProperty("--tile-color", flowers[value][4]);
           if (swapGlide) {
@@ -13352,6 +13484,16 @@
       }
       renderFirstSwapArrow(boardEl);
       applyImageFallbacks(boardEl);
+
+      refillColumns.forEach((detail, column) => {
+        const channel = document.createElement("span");
+        channel.className = "refill-channel";
+        channel.setAttribute("aria-hidden", "true");
+        channel.style.setProperty("--column", String(column));
+        channel.style.setProperty("--rows", String(Math.max(1, detail.rows || detail.newTiles || 1)));
+        channel.style.setProperty("--delay", `${Math.min(130, column * 12)}ms`);
+        boardEl.appendChild(channel);
+      });
 
       if (currentCascadeWave > 1) {
         const chainLabel = document.createElement("span");
@@ -14444,6 +14586,7 @@
       const coinsEarned = Math.round(cleared * (isRareWave ? 12 : 2) * (wave.coinMultiplier || 1));
       coins += coinsEarned;
       queueCoinBurst(wave.clearCells, coinsEarned, cascadeIndex);
+      queueGreenhouseIntakeFlights(wave.clearCells, cascadeIndex, wave.strongestShape);
       if (wave.strongestShape) {
         queueShapeBurst(wave.shapeCells, wave.strongestShape, cascadeIndex);
       }
@@ -14647,6 +14790,8 @@
       nextOrderPulseTimer = null;
       validSwapCells.clear();
       settledCells.clear();
+      refillBornCells.clear();
+      refillColumns.clear();
       lastWildChain = null;
       bouquetSealPulseActive = false;
       nextOrderPulseActive = false;
@@ -14668,6 +14813,8 @@
       currentCascadeWave = 0;
       lastWildChain = null;
       settledCells.clear();
+      refillBornCells.clear();
+      refillColumns.clear();
       clearSwapGlide();
     }
 
@@ -14680,6 +14827,8 @@
       thornPulseCells.clear();
       thornClearedCells.clear();
       settledCells.clear();
+      refillBornCells.clear();
+      refillColumns.clear();
       clearThornTeachingCue(false);
       currentCascadeWave = 0;
       lastSettledCascadeCount = 0;
@@ -14714,6 +14863,8 @@
       thornPulseCells.clear();
       thornClearedCells.clear();
       settledCells.clear();
+      refillBornCells.clear();
+      refillColumns.clear();
       clearThornTeachingCue(false);
       currentCascadeWave = 0;
       lastSettledCascadeCount = 0;
@@ -14730,6 +14881,8 @@
         harvestFlashCells.clear();
         superBloomCells.clear();
         settledCells.clear();
+        refillBornCells.clear();
+        refillColumns.clear();
 
         const forcedRareCells = result.cascades === 0 ? (options.forceSupremeCells || []) : [];
         const effectRareCells = dedupeCells([...wave.rareCells, ...forcedRareCells]);
@@ -14768,6 +14921,8 @@
       superBloomCells.clear();
       fallAnimations.clear();
       settledCells.clear();
+      refillBornCells.clear();
+      refillColumns.clear();
       clearAltarDriftRefill();
       currentCascadeWave = 0;
       lastSettledCascadeCount = result.cascades;
@@ -14776,8 +14931,12 @@
 
     function collapseColumns() {
       const nextGraveSoilCells = new Set();
+      refillBornCells.clear();
+      refillColumns.clear();
       for (let x = 0; x < BOARD_SIZE; x += 1) {
         const remaining = [];
+        let columnDropRows = 0;
+        let columnNewTiles = 0;
         for (let y = BOARD_SIZE - 1; y >= 0; y -= 1) {
           if (board[y][x] !== null) {
             remaining.push({ value: board[y][x], fromY: y, graveSoil: isGraveSoilReadyCell(x, y) });
@@ -14788,13 +14947,20 @@
             const tile = remaining.shift();
             board[y][x] = tile.value;
             recordFall(x, y, y - tile.fromY);
+            columnDropRows = Math.max(columnDropRows, y - tile.fromY);
             if (tile.graveSoil) {
               nextGraveSoilCells.add(graveSoilKey(x, y));
             }
           } else {
             board[y][x] = altarDriftRefillTile(x, y);
             recordFall(x, y, y + 1);
+            refillBornCells.add(`${x},${y}`);
+            columnDropRows = Math.max(columnDropRows, y + 1);
+            columnNewTiles += 1;
           }
+        }
+        if (columnDropRows > 0) {
+          refillColumns.set(x, { rows: Math.max(columnDropRows, columnNewTiles), newTiles: columnNewTiles });
         }
       }
       graveSoilCells = nextGraveSoilCells;
@@ -15148,6 +15314,8 @@
         }
         fallAnimations.clear();
         settledCells.clear();
+        refillBornCells.clear();
+        refillColumns.clear();
         if (!harvestFlashCells.size && !boardParticles.length && !transmuteFlashCell) {
           render();
         }
@@ -15165,6 +15333,8 @@
         boardParticles = [];
         fallAnimations.clear();
         settledCells.clear();
+        refillBornCells.clear();
+        refillColumns.clear();
         harvestFlashCells.clear();
         superBloomCells.clear();
         invalidSwapCells.clear();
@@ -15815,6 +15985,57 @@
       });
     }
 
+    function queueGreenhouseIntakeFlights(cells, cascadeIndex = 0, shape = null) {
+      const boardEl = $("board");
+      const targetEl = document.querySelector(".greenhouse-restoration-dial")
+        || $("activeGreenhouseStage")
+        || $("mobileGreenhousePlinth");
+      if (!boardEl || !targetEl || !cells?.length) {
+        return;
+      }
+      const boardRect = boardEl.getBoundingClientRect();
+      const targetRect = targetEl.getBoundingClientRect();
+      if (!boardRect.width || !targetRect.width) {
+        return;
+      }
+      const destinationX = targetRect.left + targetRect.width * 0.5;
+      const destinationY = targetRect.top + targetRect.height * 0.48;
+      const sample = dedupeCells(cells)
+        .slice()
+        .sort((a, b) => (a[1] - b[1]) || (a[0] - b[0]))
+        .slice(0, shape ? 6 : 4);
+      sample.forEach(([x, y], index) => {
+        const flowerId = board[y]?.[x];
+        const flower = flowers[flowerId] || flowers[0];
+        const originX = boardRect.left + ((x + 0.5) / BOARD_SIZE) * boardRect.width;
+        const originY = boardRect.top + ((y + 0.5) / BOARD_SIZE) * boardRect.height;
+        const mote = document.createElement("span");
+        mote.className = "greenhouse-intake-flight";
+        mote.setAttribute("aria-hidden", "true");
+        mote.style.left = `${originX}px`;
+        mote.style.top = `${originY}px`;
+        mote.style.setProperty("--intake-color", flower[4]);
+        mote.style.setProperty("--intake-tilt", `${-16 + index * 7}deg`);
+        document.body.appendChild(mote);
+        const dx = destinationX - originX;
+        const dy = destinationY - originY;
+        const arc = (index - (sample.length - 1) / 2) * 18;
+        const animation = mote.animate([
+          { opacity: 0, transform: "translate(0, 0) scale(.55)", filter: "blur(2px) brightness(1.35)" },
+          { opacity: .96, transform: `translate(${dx * .32 + arc}px, ${dy * .2 - 36}px) scale(1.1)`, filter: "blur(0) brightness(1.25)", offset: .36 },
+          { opacity: .88, transform: `translate(${dx * .72 - arc * .35}px, ${dy * .66 - 16}px) scale(.82)`, filter: "blur(0) brightness(1.1)", offset: .74 },
+          { opacity: 0, transform: `translate(${dx}px, ${dy}px) scale(.32)`, filter: "blur(1px) brightness(1.6)" }
+        ], {
+          duration: 760 + cascadeIndex * 75 + index * 28,
+          delay: cascadeIndex * 105 + index * 42,
+          easing: "cubic-bezier(.16,.82,.2,1)",
+          fill: "forwards"
+        });
+        animation.finished.catch(() => {}).finally(() => mote.remove());
+        window.setTimeout(() => mote.remove(), 1400 + cascadeIndex * 120 + index * 60);
+      });
+    }
+
     function queueBouquetBindingSeal(target, gainedAmount, targetRect) {
       if (!(gainedAmount > 0) || !targetRect) {
         return;
@@ -15883,6 +16104,8 @@
       }
       harvestFlashCells.clear();
       fallAnimations.clear();
+      refillBornCells.clear();
+      refillColumns.clear();
       clearTransientGameFeel();
       superBloomCells.clear();
       thornPulseCells.clear();
@@ -15918,6 +16141,8 @@
       blackCandlePreview = null;
       harvestFlashCells.clear();
       fallAnimations.clear();
+      refillBornCells.clear();
+      refillColumns.clear();
       superBloomCells.clear();
       boardParticles = [];
       transmuteFlashCell = "";
@@ -15983,6 +16208,8 @@
       blackCandlePreview = null;
       harvestFlashCells.clear();
       fallAnimations.clear();
+      refillBornCells.clear();
+      refillColumns.clear();
       superBloomCells.clear();
       boardParticles = [];
       transmuteFlashCell = "";
@@ -16564,7 +16791,11 @@
 
     function collapseColumnsPreservingAnchors(anchorKeys = new Set()) {
       const nextGraveSoilCells = new Set();
+      refillBornCells.clear();
+      refillColumns.clear();
       for (let x = 0; x < BOARD_SIZE; x += 1) {
+        let columnDropRows = 0;
+        let columnNewTiles = 0;
         let segmentEnd = BOARD_SIZE - 1;
         while (segmentEnd >= 0) {
           if (anchorKeys.has(thornKey(x, segmentEnd))) {
@@ -16589,15 +16820,22 @@
               const tile = remaining.shift();
               board[y][x] = tile.value;
               recordFall(x, y, y - tile.fromY);
+              columnDropRows = Math.max(columnDropRows, y - tile.fromY);
               if (tile.graveSoil) {
                 nextGraveSoilCells.add(graveSoilKey(x, y));
               }
             } else {
               board[y][x] = rand();
               recordFall(x, y, y - segmentStart);
+              refillBornCells.add(`${x},${y}`);
+              columnDropRows = Math.max(columnDropRows, y - segmentStart);
+              columnNewTiles += 1;
             }
           }
           segmentEnd = segmentStart - 1;
+        }
+        if (columnDropRows > 0) {
+          refillColumns.set(x, { rows: Math.max(columnDropRows, columnNewTiles), newTiles: columnNewTiles });
         }
       }
       graveSoilCells = nextGraveSoilCells;
@@ -16608,6 +16846,8 @@
         restoreBoard(originalBoard);
         restoreGraveSoilCells(originalGraveSoilCells);
         fallAnimations.clear();
+        refillBornCells.clear();
+        refillColumns.clear();
         burnedCells.forEach(([cellX, cellY]) => {
           board[cellY][cellX] = null;
         });
@@ -16620,6 +16860,8 @@
       restoreBoard(originalBoard);
       restoreGraveSoilCells(originalGraveSoilCells);
       fallAnimations.clear();
+      refillBornCells.clear();
+      refillColumns.clear();
       burnedCells.forEach(([cellX, cellY]) => {
         board[cellY][cellX] = null;
       });
@@ -17120,6 +17362,8 @@
       graveSoilCells.clear();
       harvestFlashCells.clear();
       fallAnimations.clear();
+      refillBornCells.clear();
+      refillColumns.clear();
       superBloomCells.clear();
       boardParticles = [];
       const demoNames = {
