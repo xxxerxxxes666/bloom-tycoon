@@ -3024,6 +3024,40 @@
       animation: cascade-ring 680ms cubic-bezier(.12,.82,.18,1) forwards;
     }
 
+    .board-particle.impact-sigil {
+      z-index: 8;
+      display: inline-grid;
+      place-items: center;
+      width: var(--size, 42px);
+      height: var(--size, 42px);
+      border: 1px solid #f0c477b0;
+      color: #fff2bf;
+      background:
+        radial-gradient(circle, #fff0b436 0 12%, #9b1d2230 42%, #0000 70%);
+      box-shadow:
+        inset 0 0 12px #000,
+        0 0 16px #d7b16d88,
+        0 0 28px #9b1d225c;
+      clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+      font: 900 var(--font-size, 18px)/1 Georgia, serif;
+      text-shadow: 0 2px 5px #000, 0 0 12px #d7b16d;
+      animation: impact-sigil-bloom 720ms cubic-bezier(.12,.82,.18,1) forwards;
+    }
+
+    .board-particle.cascade-vein {
+      z-index: 5;
+      width: var(--length, 25%);
+      height: 5px;
+      border-radius: 999px;
+      background:
+        linear-gradient(90deg, #0000, color-mix(in srgb, var(--particle-color, #d7b16d) 74%, #fff0b4) 36%, #9b1d22 56%, #0000);
+      box-shadow:
+        0 0 10px color-mix(in srgb, var(--particle-color, #d7b16d) 72%, #0000),
+        0 0 18px #9b1d225c;
+      transform-origin: center;
+      animation: cascade-vein-strike 540ms cubic-bezier(.12,.82,.18,1) forwards;
+    }
+
     .board-particle.settle-spark {
       z-index: 4;
       border-radius: 50%;
@@ -4663,6 +4697,39 @@
       100% {
         opacity: 0;
         transform: translate(-50%, -50%) scale(var(--scale, 1.7));
+      }
+    }
+
+    @keyframes impact-sigil-bloom {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(.34) rotate(-24deg);
+        filter: brightness(.82);
+      }
+      28% {
+        opacity: .96;
+        transform: translate(-50%, -50%) scale(1.08) rotate(0deg);
+        filter: brightness(1.32);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1.42) rotate(18deg);
+        filter: brightness(1);
+      }
+    }
+
+    @keyframes cascade-vein-strike {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) rotate(var(--angle, 0deg)) scaleX(.12);
+      }
+      24% {
+        opacity: .98;
+        transform: translate(-50%, -50%) rotate(var(--angle, 0deg)) scaleX(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) rotate(var(--angle, 0deg)) scaleX(1.18);
       }
     }
 
@@ -6799,6 +6866,8 @@
       .board.swap-accepted,
       .board.chain-payoff,
       .board-particle.settle-spark,
+      .board-particle.impact-sigil,
+      .board-particle.cascade-vein,
       .board-particle.order-seal,
       .board-particle.wild-chain-banner,
       .board-particle.chain-bonus,
@@ -13688,6 +13757,12 @@
         effect.style.setProperty("--spin", `${particle.spin || 0}deg`);
         effect.style.setProperty("--scale", `${particle.scale || 1.2}`);
         effect.style.setProperty("--delay", `${particle.delay || 0}ms`);
+        if (particle.length) {
+          effect.style.setProperty("--length", typeof particle.length === "number" ? `${particle.length}px` : particle.length);
+        }
+        if (particle.angle) {
+          effect.style.setProperty("--angle", `${particle.angle}deg`);
+        }
         if (particle.color) {
           effect.style.setProperty("--particle-color", particle.color);
         }
@@ -14654,6 +14729,7 @@
       const rareSeedRunes = [];
       const rareSeedRuneCells = new Map();
       const shapeBonuses = [];
+      const matchRuns = [];
       let rareWave = false;
 
       // Match collection loop: unique matched cells feed orders and future crafting systems.
@@ -14677,6 +14753,17 @@
           shapeBonuses.push(shape);
           match.cells.forEach((cell) => waveShapeCells.add(cell.join(",")));
         }
+        (match.runs || []).forEach((run) => {
+          if (!run || !Array.isArray(run.cells) || !run.cells.length) {
+            return;
+          }
+          matchRuns.push({
+            direction: run.direction === "vertical" ? "vertical" : "horizontal",
+            len: run.len || run.cells.length,
+            cells: run.cells.map((cell) => cell.slice()),
+            shapeKind: shape.kind
+          });
+        });
         match.cells.forEach((cell) => {
           clear[cell.join(",")] = cell;
         });
@@ -14697,6 +14784,7 @@
         strongestShape,
         shapeCells: [...waveShapeCells].map((cell) => cell.split(",").map(Number)),
         shapeKeys: waveShapeCells,
+        matchRuns,
         lineRelics,
         lineRelicCells: [...lineRelicClearCells.values()],
         lineRelicKeys: new Set(lineRelicClearCells.keys()),
@@ -15205,6 +15293,33 @@
         size: 76 + Math.min(44, wave.clearCells.length * 4),
         scale: 1.35 + Math.min(0.75, cascadeIndex * 0.18),
         delay: 0
+      });
+      boardParticles.push({
+        type: "impact-sigil",
+        text: cascadeIndex > 0 ? `x${cascadeIndex + 1}` : "✦",
+        x,
+        y,
+        size: wave.strongestShape ? 54 : wave.lineRelics.length ? 50 : 42,
+        fontSize: cascadeIndex > 0 ? 15 : 20,
+        delay: 28
+      });
+      (wave.matchRuns || []).slice(0, 5).forEach((run, index) => {
+        const runCenter = run.cells.reduce((acc, [cellX, cellY]) => {
+          acc.x += cellX;
+          acc.y += cellY;
+          return acc;
+        }, { x: 0, y: 0 });
+        const runX = runCenter.x / run.cells.length;
+        const runY = runCenter.y / run.cells.length;
+        boardParticles.push({
+          type: "cascade-vein",
+          x: runX,
+          y: runY,
+          length: `${Math.min(86, Math.max(30, (run.len || run.cells.length) * 10.5))}%`,
+          angle: run.direction === "vertical" ? 90 : 0,
+          color: wave.strongestShape ? "#f0c477" : wave.lineRelics.length ? "#d35b38" : "#d7b16d",
+          delay: 36 + index * 24
+        });
       });
     }
 
