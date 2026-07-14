@@ -1,5 +1,14 @@
 # Codex Build Notes
 
+## 2026-07-14 Pass 1 Round 2 board-first continuity
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible Pass 1 milestone: completing the two authored Moonlit teaching swaps no longer drops Round 2 back into the legacy prototype page. The compact objective, altar board, greenhouse companion, hidden review controls, and restrained active-order hierarchy now persist for the full live Round 2 order; only the strong guide cue and arrow end after two moves. Retry remains free to suppress the completed guide while ordinary delayed tile hints continue.
+- Regression guard: the HTML verifier now distinguishes the full active Round 2 board-first shell from the bounded `restored-next-order-guide` cue state.
+- Browser verification: local Chromium exercised the real Round 1 opening, Black Candle Vine lesson, bouquet completion, 100-coin restoration, `Next Order`, both authored Round 2 teaching swaps, post-guide ordinary play, diagnostic fail -> visible `Retry Bouquet`, retry, deterministic Round 2 completion after real play, Hermes' new 120-coin Moonlit greenhouse upgrade gate, save/reload, and `Next Order -> Bloodroot Compact` at 1280x720 and exact 390x844. Before this correction, the post-guide board began at 478px desktop / 596px mobile, page height reached 2,034px / 3,664px, and nine legacy controls plus Path/Ledger returned. After correction, the board begins at 182px / 192px, page height is 738px / 844px, and active post-guide/retry play exposes zero non-tile controls, no Path/Ledger, and no strong guide state. Both viewports retained 64 tiles in eight rows, 0 broken images, 0 overflow, and 0 console/page errors.
+- Synced Hermes verification: commit `7483452` correctly withholds `Next Order` until `Upgrade Greenhouse · 120 coins` is used, deducts exactly 120 coins, persists the Moonlit upgrade through reload, and opens Round 3 with 64 tiles. Pending and complete desktop/mobile ceremonies were visually inspected.
+- Required checks: `python3 scripts/verify_project.py`, extracted inline JavaScript syntax check, `git diff --check`, changed-line secret scan, and changed-line integration/scope scan passed. No assets, rounds, currencies, blockers, boosters, services, trackers, permissions, credentials, or dependencies were introduced.
+
 ## 2026-07-14 Moonlit greenhouse upgrade gate
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
