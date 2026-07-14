@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-07-14 Mobile greenhouse intake visibility guard
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible milestone: Hermes' new harvest-to-greenhouse intake motes now select the first actually rendered greenhouse target. Desktop still feeds the hero restoration dial; 390px mobile now feeds the visible restored-greenhouse status instead of silently targeting a hidden desktop dial. Mobile bouquet collection seals were reduced to objective-card width so simultaneous gains no longer mask neighboring goals.
+- Mobile rendering guard: animated blur/brightness was removed from the fixed intake motes after real Chromium captures showed transient black compositor bands cutting through the title at 390px. The motes retain their color, glow, arc, and motion through opacity, transforms, and shadows; the verifier rejects the offending filter signature.
+- Verification: fresh Chromium runs at 1280x720 and 390x844 completed Round 1, greenhouse restoration, Next Order, both guided Round 2 swaps, and an ordinary move. The mobile guided move showed three intake motes targeting `restoredGreenhouseStatus`; desktop targeted `heroRestorationDial`. Both guided moves stayed at one cascade. Both runs retained 64 tiles in eight rows, kept the board above the fold, showed no broken images or horizontal overflow, logged no console or JavaScript errors, and cleared every transient effect after payoff. Save/reload and retry logic were not changed; Next Order was exercised end to end.
+- Security and scope: no new round, progression surface, control, asset, service, network call, tracker, account, payment, ad, permission, secret, or scheduler was added. L/T/cross remain available through `Shape Bloom` or focused `M`; Supreme Bloom remains available through focused `B` and absent from the normal tutorial path.
+
 ## 2026-07-14 Cascade/refill choreography and greenhouse intake
 
 - Files changed: `playable/midnight_bloom_prototype.html` and `docs/codex_build_notes.md`.

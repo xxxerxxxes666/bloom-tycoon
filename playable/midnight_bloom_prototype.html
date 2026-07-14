@@ -2541,7 +2541,7 @@
         0 0 12px color-mix(in srgb, var(--intake-color, #d7b16d) 72%, #0000),
         0 0 22px #d7b16d66,
         inset 0 0 7px #000;
-      will-change: transform, opacity, filter;
+      will-change: transform, opacity;
     }
 
     .greenhouse-intake-flight::after {
@@ -6822,10 +6822,11 @@
         padding: 2px 7px;
         font-size: 11px;
       }
-      .bouquet-bind-seal { width:108px; min-height:52px; grid-template-columns:27px 1fr; gap:5px; margin:-26px 0 0 -54px; padding:6px 7px; }
-      .bouquet-bind-seal img { width:26px; height:26px; }
-      .bouquet-bind-seal b { font-size:13px; }
-      .bouquet-bind-seal span { margin-top:2px; font-size:8px; letter-spacing:.09em; }
+      .bouquet-bind-seal { width:84px; min-height:36px; grid-template-columns:21px 1fr; gap:3px; margin:-18px 0 0 -42px; padding:4px 5px; }
+      .bouquet-bind-seal::before { inset:-5px; }
+      .bouquet-bind-seal img { width:20px; height:20px; }
+      .bouquet-bind-seal b { font-size:12px; }
+      .bouquet-bind-seal span { margin-top:1px; font-size:7px; letter-spacing:.05em; }
       body.restored-next-order-focus .moves-counter,
       body.restored-greenhouse-handoff .moves-counter,
       body.round-one-active .moves-counter { min-height:29px; display:inline-flex; align-items:center; padding:2px 8px; border:1px solid #70502d; border-radius:4px; color:#f2d896; background:#1b110bcc; font-weight:800; white-space:nowrap; }
@@ -15985,11 +15986,30 @@
       });
     }
 
+    function visibleGreenhouseIntakeTarget() {
+      return [
+        $("heroRestorationDial"),
+        $("restoredGreenhouseStatus"),
+        $("mobileRestorationDial"),
+        $("mobileGreenhousePlinth"),
+        $("activeGreenhouseStage")
+      ].find((element) => {
+        if (!element) {
+          return false;
+        }
+        const rect = element.getBoundingClientRect();
+        const style = window.getComputedStyle(element);
+        return rect.width > 0
+          && rect.height > 0
+          && style.display !== "none"
+          && style.visibility !== "hidden"
+          && Number(style.opacity || 1) > 0;
+      }) || null;
+    }
+
     function queueGreenhouseIntakeFlights(cells, cascadeIndex = 0, shape = null) {
       const boardEl = $("board");
-      const targetEl = document.querySelector(".greenhouse-restoration-dial")
-        || $("activeGreenhouseStage")
-        || $("mobileGreenhousePlinth");
+      const targetEl = visibleGreenhouseIntakeTarget();
       if (!boardEl || !targetEl || !cells?.length) {
         return;
       }
@@ -16021,10 +16041,10 @@
         const dy = destinationY - originY;
         const arc = (index - (sample.length - 1) / 2) * 18;
         const animation = mote.animate([
-          { opacity: 0, transform: "translate(0, 0) scale(.55)", filter: "blur(2px) brightness(1.35)" },
-          { opacity: .96, transform: `translate(${dx * .32 + arc}px, ${dy * .2 - 36}px) scale(1.1)`, filter: "blur(0) brightness(1.25)", offset: .36 },
-          { opacity: .88, transform: `translate(${dx * .72 - arc * .35}px, ${dy * .66 - 16}px) scale(.82)`, filter: "blur(0) brightness(1.1)", offset: .74 },
-          { opacity: 0, transform: `translate(${dx}px, ${dy}px) scale(.32)`, filter: "blur(1px) brightness(1.6)" }
+          { opacity: 0, transform: "translate(0, 0) scale(.55)" },
+          { opacity: .96, transform: `translate(${dx * .32 + arc}px, ${dy * .2 - 36}px) scale(1.1)`, offset: .36 },
+          { opacity: .88, transform: `translate(${dx * .72 - arc * .35}px, ${dy * .66 - 16}px) scale(.82)`, offset: .74 },
+          { opacity: 0, transform: `translate(${dx}px, ${dy}px) scale(.32)` }
         ], {
           duration: 760 + cascadeIndex * 75 + index * 28,
           delay: cascadeIndex * 105 + index * 42,

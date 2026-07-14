@@ -223,8 +223,14 @@ def verify_source_hooks():
         "options.suppressAltarDrift",
         "function finishResolve(result, options = {})",
         "function launchObjectiveFlights(gained, gainedCells = [])",
+        "function visibleGreenhouseIntakeTarget()",
+        "$(\"restoredGreenhouseStatus\")",
+        "$(\"mobileRestorationDial\")",
+        "const targetEl = visibleGreenhouseIntakeTarget();",
+        "will-change: transform, opacity;",
         "function queueBouquetBindingSeal",
         "bouquet-bind-seal",
+        ".bouquet-bind-seal { width:84px; min-height:36px;",
         "objective-target-fill",
         "function bouquetAssemblyMarkup",
         "bouquet-assembly-ring",
@@ -1397,11 +1403,12 @@ def verify_source_hooks():
         raise SystemExit(f"Missing HTML match-shape hooks: {missing}")
     forbidden = [
         'class="bouquet-stem-count"',
+        'filter: "blur(2px) brightness(1.35)"',
     ]
     present_forbidden = [needle for needle in forbidden if needle in html]
     if present_forbidden:
         raise SystemExit(
-            f"Duplicated bouquet payoff labels returned: {present_forbidden}"
+            f"Forbidden HTML match-shape hooks returned: {present_forbidden}"
         )
     missing_assets = [asset for asset in ALTAR_TILE_ASSETS if not (ROOT / asset).exists()]
     if missing_assets:
