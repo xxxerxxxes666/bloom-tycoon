@@ -1,5 +1,22 @@
 # Codex Build Notes
 
+## 2026-07-14 Compact multi-goal objective pass
+
+- Files changed: `playable/midnight_bloom_prototype.html` and `docs/codex_build_notes.md`.
+- Player-visible milestone: Round 2+ multi-goal objectives now use a compact order grid with real target counts, dense mobile labels, normalized Cursed Thorn markup, and no extra controls. This improves ordinary restored-greenhouse play by keeping the board higher while preserving the match -> bouquet -> coins -> greenhouse -> next order heartbeat.
+- Live-host pre-edit status: Vercel production `https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html?codex-before=20260714` returned HTTP 200 on desktop and exact 390x844 mobile, with 64 tiles, 8 complete visible rows, no overflow, 0 broken images, and no console/page/network errors. Screenshots inspected: `/tmp/bloom-live-desktop-before.png`, `/tmp/bloom-live-mobile390-before.png`.
+- Local host status: temporary static server `http://127.0.0.1:4173/playable/midnight_bloom_prototype.html`; cleaned up after verification.
+- Browser evidence: Chromium/Playwright real clicks on desktop 1440x1000 and exact 390x844 mobile exercised fresh load, invalid swap refusal, two instructed Round 1 swaps, bouquet completion, Restore Greenhouse, save/reload, Next Order, Round 2 guided thorn move, one unguided Round 2 legal swap, visible failed bouquet, and real `Retry Bouquet`.
+- Active-play verification: 64 tiles throughout; exact 390x844 active states kept 8 complete board rows; zero horizontal overflow; zero broken images; zero console messages; zero page errors; zero failed browser requests. Stable payoff/restored states preserve 64 tiles while intentionally focusing the restoration surface rather than the full board.
+- Screenshots inspected: `/tmp/bloom-mobile390-round2-start.png`, `/tmp/bloom-mobile390-round2-unguided.png`, `/tmp/bloom-desktop1440-round2-start.png`, `/tmp/bloom-mobile390-failed-retry-visible.png`, plus local before/after compact objective screenshots under `/tmp/bloom-*-compact-*.png`.
+- Verification commands: `python3 scripts/verify_project.py`, `git diff --check`, inline playable JavaScript syntax check with `new Function(...)`, desktop/mobile Playwright regression described above, and precise changed-file credential/tracker/backend/account/permission/path scan passed.
+- Vercel deployment URL/identifier checked: production baseline only before editing, `https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html`; no redeploy during this local pass before commit/push.
+- GitHub Pages preview status: not checked in this local pass.
+- Known issues: none found in the verified focused route. The retry test reached failure by making a real Round 1 match and then using real Shuffle clicks to exhaust moves; the `Retry Bouquet` click itself was real.
+- How to trigger and verify L/T/cross matches without console: after the focused opening, use the existing `Shape Bloom` review path where visible or focus the playable and press `M`; demos cycle through `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom` while preserving 64 tiles.
+- How to trigger and verify Supreme Bloom without console: focus the playable and press `B`; the existing hook should show `SUPREME BLOOM!` and return to a 64-tile board.
+- Security/secret-scan status: changed files were scanned for private-key headers, known token prefixes, JWTs, credential assignments, `.env`, trackers/analytics SDKs, backend/account/payment/ad hooks, broad permissions, and machine-local paths. No findings.
+
 ## 2026-07-14 Cursed Thorn action/target clarity pass
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.

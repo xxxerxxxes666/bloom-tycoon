@@ -801,6 +801,45 @@
       isolation: isolate;
     }
 
+    .objective.compact-objective {
+      gap: 7px;
+      padding: 10px 14px;
+      font-size: 16px;
+    }
+
+    .objective.compact-objective .objective-target {
+      min-height: 40px;
+      padding: 4px 7px 4px 4px;
+      border: 1px solid #594126;
+      border-radius: 4px;
+      background: #0b0807cc;
+      box-shadow: inset 0 0 8px #000;
+      font-weight: 800;
+    }
+
+    .objective.compact-objective .objective-target-name {
+      max-width: none;
+    }
+
+    .objective.compact-objective .objective-icon,
+    .objective.compact-objective .thorn-goal-glyph {
+      width: 27px;
+      height: 27px;
+      flex: 0 0 auto;
+    }
+
+    .objective.compact-objective .thorn-goal-glyph {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #f1d090;
+      border: 1px solid #7d151866;
+      background: radial-gradient(circle, #1d0707 0, #050404 70%);
+      box-shadow: inset 0 0 10px #000, 0 0 8px #7d151866;
+      font-size: 17px;
+      text-shadow: 0 0 8px #9b1d22, 0 0 6px #d7b16d;
+    }
+
     .objective-target.order-pulse {
       border-radius: 4px;
       box-shadow: inset 0 0 10px #000, 0 0 16px #d7b16d44;
@@ -6421,6 +6460,107 @@
       body.restored-next-order-focus .objective-target .objective-icon,
       body.restored-greenhouse-handoff .objective-target .objective-icon,
       body.round-one-active .objective-target .objective-icon { width:25px; height:25px; }
+      body.restored-next-order-focus .objective.compact-objective,
+      body.restored-greenhouse-handoff .objective.compact-objective,
+      body.round-one-active .objective.compact-objective {
+        gap: 4px;
+        padding: 5px 6px;
+      }
+      body.restored-next-order-focus .objective.compact-objective::before,
+      body.restored-next-order-focus .objective.compact-objective::after,
+      body.restored-greenhouse-handoff .objective.compact-objective::before,
+      body.restored-greenhouse-handoff .objective.compact-objective::after,
+      body.round-one-active .objective.compact-objective::before,
+      body.round-one-active .objective.compact-objective::after {
+        display: none;
+      }
+      body.restored-next-order-focus .objective.compact-objective .objective-text,
+      body.restored-greenhouse-handoff .objective.compact-objective .objective-text,
+      body.round-one-active .objective.compact-objective .objective-text {
+        margin-bottom: 1px;
+        font-size: 10px;
+      }
+      body.restored-next-order-focus .objective.compact-objective .objective-target,
+      body.restored-greenhouse-handoff .objective.compact-objective .objective-target,
+      body.round-one-active .objective.compact-objective .objective-target {
+        flex: 1 1 calc(25% - 4px);
+        display: grid;
+        grid-template-columns: 22px minmax(0, 1fr);
+        grid-template-rows: 1fr 1fr;
+        min-width: 0;
+        max-width: none;
+        min-height: 42px;
+        padding: 3px 4px 3px 3px;
+        gap: 0 4px;
+        text-align: left;
+      }
+      body.restored-next-order-focus .objective.compact-objective .objective-target .icon-wrap,
+      body.restored-greenhouse-handoff .objective.compact-objective .objective-target .icon-wrap,
+      body.round-one-active .objective.compact-objective .objective-target .icon-wrap,
+      body.restored-next-order-focus .objective.compact-objective .thorn-goal-glyph,
+      body.restored-greenhouse-handoff .objective.compact-objective .thorn-goal-glyph,
+      body.round-one-active .objective.compact-objective .thorn-goal-glyph {
+        grid-row: 1 / 3;
+        align-self: center;
+        width: 22px;
+        height: 22px;
+      }
+      body.restored-next-order-focus .objective.compact-objective .objective-icon,
+      body.restored-greenhouse-handoff .objective.compact-objective .objective-icon,
+      body.round-one-active .objective.compact-objective .objective-icon {
+        width: 22px;
+        height: 22px;
+      }
+      body.restored-next-order-focus .objective.compact-objective .objective-target-name,
+      body.restored-greenhouse-handoff .objective.compact-objective .objective-target-name,
+      body.round-one-active .objective.compact-objective .objective-target-name {
+        align-self: end;
+        max-width: 100%;
+        font-size: 9px;
+        line-height: 1.05;
+      }
+      body.restored-next-order-focus .objective.compact-objective .objective-target-name[data-compact-label],
+      body.restored-greenhouse-handoff .objective.compact-objective .objective-target-name[data-compact-label],
+      body.round-one-active .objective.compact-objective .objective-target-name[data-compact-label] {
+        font-size: 0;
+      }
+      body.restored-next-order-focus .objective.compact-objective .objective-target-name[data-compact-label]::after,
+      body.restored-greenhouse-handoff .objective.compact-objective .objective-target-name[data-compact-label]::after,
+      body.round-one-active .objective.compact-objective .objective-target-name[data-compact-label]::after {
+        content: attr(data-compact-label);
+        font-size: 9px;
+        line-height: 1.05;
+      }
+      body.restored-next-order-focus .objective.compact-objective .objective-target-count,
+      body.restored-greenhouse-handoff .objective.compact-objective .objective-target-count,
+      body.round-one-active .objective.compact-objective .objective-target-count {
+        align-self: start;
+        font-size: 11px;
+        line-height: 1;
+      }
+      body.restored-next-order-focus .objective.compact-objective .objective-target-seal,
+      body.restored-greenhouse-handoff .objective.compact-objective .objective-target-seal,
+      body.round-one-active .objective.compact-objective .objective-target-seal {
+        position: absolute;
+        right: 2px;
+        top: 2px;
+        padding: 1px 3px;
+        font-size: 7px;
+      }
+      body.restored-next-order-focus .objective.compact-objective .objective-boon,
+      body.restored-greenhouse-handoff .objective.compact-objective .objective-boon,
+      body.round-one-active .objective.compact-objective .objective-boon {
+        min-height: 24px;
+        padding: 2px 6px;
+        font-size: 10px;
+      }
+      body.restored-next-order-focus .objective.compact-objective .moves-counter,
+      body.restored-greenhouse-handoff .objective.compact-objective .moves-counter,
+      body.round-one-active .objective.compact-objective .moves-counter {
+        min-height: 24px;
+        padding: 2px 7px;
+        font-size: 11px;
+      }
       .bouquet-bind-seal { width:108px; min-height:52px; grid-template-columns:27px 1fr; gap:5px; margin:-26px 0 0 -54px; padding:6px 7px; }
       .bouquet-bind-seal img { width:26px; height:26px; }
       .bouquet-bind-seal b { font-size:13px; }
@@ -7747,11 +7887,21 @@
         <span class="objective-target ${pulseClass} ${completeClass}" data-flower-id="${flowerId}" style="--target-pct:${pct}%">
           <span class="objective-target-fill" aria-hidden="true"></span>
           ${iconMarkup(flowerId, "objective-icon", flower[0])}
-          <span class="objective-target-name">${flower[0]}</span>
+          <span class="objective-target-name" data-compact-label="${compactFlowerLabel(flowerId)}">${flower[0]}</span>
           <span class="objective-target-count">${displayCount}/${needed}</span>
           ${completeClass ? '<span class="objective-target-seal">Sealed</span>' : ""}
         </span>
       `;
+    }
+
+    function compactFlowerLabel(flowerId) {
+      const name = flowers[flowerId]?.[0] || "";
+      return {
+        "Amber Seed": "Amber",
+        "Thorn Rose": "Rose",
+        "Bone Star": "Bone",
+        "Sol Rot": "Sol Rot"
+      }[name] || name;
     }
 
     function goalMarkup(plan = activeRoundPlan()) {
@@ -7770,9 +7920,10 @@
       const progress = thornGoalProgress(plan);
       const pulseClass = thornPulseCells.size || thornClearedCells.size ? "order-pulse" : "";
       return `
-        <span class="objective-target ${pulseClass}">
+        <span class="objective-target ${pulseClass}" data-thorn-objective="true">
           <span class="static-fallback-glyph thorn-goal-glyph" aria-hidden="true">✕</span>
-          Cursed Thorn ${progress}/${needed}
+          <span class="objective-target-name" data-compact-label="Thorn">Cursed Thorn</span>
+          <span class="objective-target-count">${progress}/${needed}</span>
         </span>
       `;
     }
@@ -12913,7 +13064,9 @@
       const plan = activePlan;
       const failed = isBouquetFailed(plan);
       const objectiveVerb = plan.thornGoal ? "Goals" : "Collect";
-      $("objective").innerHTML = `
+      const objectiveGoalCount = plan.targets.length + (plan.thornGoal ? 1 : 0);
+      const objectiveEl = $("objective");
+      objectiveEl.innerHTML = `
         <span class="objective-text">Round ${plan.round} · ${roundComplete ? "Bouquet Complete" : failed ? "Bouquet Withered" : objectiveVerb}</span>
         ${goalMarkup(plan)}
         ${thornObjectiveHintMarkup(plan)}
@@ -12924,9 +13077,11 @@
         <span class="objective-separator">·</span>
         <span class="moves-counter">Moves ${moves}</span>
       `;
-      $("objective").classList.toggle("complete", roundComplete);
-      $("objective").classList.toggle("failed", failed);
-      $("objective").classList.toggle("low-moves", moves <= 3);
+      objectiveEl.classList.toggle("compact-objective", objectiveGoalCount >= 3);
+      objectiveEl.dataset.objectiveGoals = String(objectiveGoalCount);
+      objectiveEl.classList.toggle("complete", roundComplete);
+      objectiveEl.classList.toggle("failed", failed);
+      objectiveEl.classList.toggle("low-moves", moves <= 3);
       $("firstSessionPlaque").textContent = roundPlaqueCopy(plan);
       renderBouquetPath();
       renderRoundThreeFocus();
