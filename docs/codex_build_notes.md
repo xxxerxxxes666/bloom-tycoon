@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-07-14 Focused Cursed Thorn result copy
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible improvement: the first guided Moonlit Wreath swap now resolves to one compact dynamic result line (`Thorns shattered · +flower · +coins`) followed by `<target> next. Follow the glow.` The unrelated Round 1 `First bloom` sentence no longer leaks into Round 2, and the prior repeated order/tutorial paragraph is gone. Thorn damage, objective gains, coins, guidance tiles, cascades, and control timing are unchanged.
+- Regression guard: the HTML verifier requires Round 1-only first-bloom copy, dynamic focused gain tokens, and the short follow-the-glow cue.
+- Browser verification: after rebasing onto Hermes' photographic Moonlit/Bloodroot greenhouse art, local Chromium at 1280x720 and exact 390x844 completed Round 1, restored the greenhouse, entered Round 2, played both guided Thorn swaps, and played an ordinary follow-up cascade. The new Moonlit JPG rendered in the active stage and board backdrop; the first result rendered as one 29px desktop line and a two-line 46px mobile message. Both guided swaps stayed at one cascade, all transient effects cleared, and both sizes retained 64 tiles in eight rows with the board above the fold, 0 broken images, 0 horizontal overflow, and 0 console/page errors.
+- Security and scope: changed files and additions were scanned for private-key/token signatures and new network, analytics, tracking, account, payment, ad, backend, permission, or scheduler hooks. No findings; no new mechanic, round, control, currency, or progression surface was added.
+
 ## 2026-07-14 Moonlit/Bloodroot greenhouse art pass
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `assets/greenhouse/moonlit_wreath_greenhouse.jpg`, `assets/greenhouse/bloodroot_compact_greenhouse.jpg`, removed `assets/greenhouse/moonlit_wreath_greenhouse.svg`, removed `assets/greenhouse/bloodroot_compact_greenhouse.svg`, and `docs/codex_build_notes.md`.

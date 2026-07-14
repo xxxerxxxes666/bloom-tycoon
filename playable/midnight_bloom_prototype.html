@@ -12472,6 +12472,9 @@
       if (plan.round === 1 && remainingTargetIndex === 1) {
         $("firstSwapCue").textContent = "Make 4 Bone Stars - Black Candle Vine burns a row.";
       }
+      if (isRestoredNextOrderFocus()) {
+        return ` <strong>${flowers[remainingTarget.flowerId][0]} next.</strong> Follow the glow.`;
+      }
       return ` <strong>${flowers[remainingTarget.flowerId][0]} remains.</strong> Swap the glowing tiles to feed ${remainingTarget.order}.`;
     }
 
@@ -14237,7 +14240,7 @@
           : guidedRoundTwoLesson
             ? { maxCascades: 1, quietReseed: true, suppressAltarDrift: true }
             : {});
-        const firstMoveCopy = isFirstValidMove
+        const firstMoveCopy = isFirstValidMove && currentRound === 1
           ? "<strong>First bloom!</strong> Your bouquet is already taking shape. "
           : "";
         const rareDropMessage = awardRareBloomDrop(result);
@@ -15419,17 +15422,22 @@
     }
 
     function focusedRoundTwoHarvestSummary(result) {
-      const orderText = orderGainMessage(result.gained);
       const thornText = result.thornsCleared
-        ? `<strong>${result.thornsCleared} Cursed Thorn${result.thornsCleared === 1 ? "" : "s"} shattered.</strong> `
+        ? `${result.thornsCleared} Thorn${result.thornsCleared === 1 ? "" : "s"} shattered`
         : result.thornsDamaged
-          ? `<strong>${result.thornsDamaged} Cursed Thorn${result.thornsDamaged === 1 ? "" : "s"} cracked.</strong> `
+          ? `${result.thornsDamaged} Thorn${result.thornsDamaged === 1 ? "" : "s"} cracked`
           : "";
-      const matchText = orderText || `${result.cleared} flowers matched.`;
+      const gainText = activeRoundPlan().targets
+        .filter((target) => result.gained[target.flowerId] > 0)
+        .map((target) => `+${result.gained[target.flowerId]} ${flowers[target.flowerId][0]}`)
+        .join(" · ");
       const coinText = result.wildChain
         ? `+${result.coinsEarned} coins total`
         : `+${result.coinsEarned} coins`;
-      return `${thornText}<strong>${matchText}</strong> ${coinText}.${wildChainMessage(result)}`;
+      const resultText = [thornText, gainText || `${result.cleared} flowers`, coinText]
+        .filter(Boolean)
+        .join(" · ");
+      return `<strong>${resultText}.</strong>${wildChainMessage(result)}`;
     }
 
     function wildChainMessage(result) {
