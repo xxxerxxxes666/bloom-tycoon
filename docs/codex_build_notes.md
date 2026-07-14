@@ -1,5 +1,12 @@
 # Codex Build Notes
 
+## 2026-07-14 Cursed Thorn action/target clarity pass
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible milestone: Round 2 now distinguishes the Cursed Thorn lesson's three roles at a glance. Blockers use red cross seals, the future three-flower lane uses a restrained shared glow, and the two actionable swap tiles keep the bright gold pulse and directional arrow. The adjacent-match rule, authored teaching swap, objectives, moves, progression, and controls are unchanged.
+- Scope constraints preserved: no new rounds, currencies, blockers, boosters, controls, saves, backend, accounts, analytics, ads, trackers, SDKs, secrets, permissions, or copied assets.
+- Verification: `python3 scripts/verify_project.py`, `git diff --check`, and the changed-line credential scan passed. Real-browser checks at 1280x720 and exact 390x844 exercised the Round 1 payoff/restoration/Next Order handoff and the changed Round 2 swap end to end: 3 blocker seals, 2 lane cells, 2 swap tiles, 64 tiles, 8 rows, 0 broken images, 0 overflow, 0 console errors, and Cursed Thorn progress reaching 3/3 after one move. Reduced-motion disables the new blocker pulse.
+
 ## 2026-07-14 Bouquet assembly payoff pass
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.

@@ -2279,6 +2279,21 @@
       border-bottom: 7px solid transparent;
     }
 
+    .tile.thorn-teach-lane {
+      box-shadow:
+        inset 0 0 16px #000,
+        inset 0 0 0 1px #d7b16d66,
+        0 0 0 1px #160f0c,
+        0 0 10px #9b1d2266;
+    }
+
+    .tile.thorn-teach-lane::after {
+      opacity: 0.58;
+      background:
+        radial-gradient(circle, #9b1d2229 0, #f0c47719 46%, #0000 70%),
+        linear-gradient(0deg, #0000 0 42%, #f0c47755 48%, #0000 55%);
+    }
+
     .tile.thorn-teach {
       outline: 2px solid #ffb35a;
       box-shadow:
@@ -2314,6 +2329,32 @@
       font-size: 12px;
       font-weight: 900;
       pointer-events: none;
+    }
+
+    .tile.thorn-teach-blocker {
+      outline: 2px solid #e0473f;
+      box-shadow:
+        inset 0 0 18px #000,
+        0 0 0 1px #160f0c,
+        0 0 18px #a51b22,
+        0 0 28px #5b0710;
+      animation: thorn-target-pulse 1.05s ease-in-out infinite;
+    }
+
+    .tile.thorn-teach-blocker .cursed-thorn-overlay {
+      border-color: #ff6a55;
+      box-shadow:
+        inset 0 0 14px #000,
+        0 0 17px #c51f28,
+        0 0 12px #d7b16d66;
+    }
+
+    .thorn-teach-marker.blocker {
+      color: #ffe8b0;
+      border-color: #ff7b65;
+      background: #5b0710;
+      box-shadow: 0 0 10px #000, 0 0 13px #c51f28;
+      font-size: 14px;
     }
 
     .tile.cursed-thorn {
@@ -4526,6 +4567,11 @@
       }
     }
 
+    @keyframes thorn-target-pulse {
+      0%, 100% { filter: brightness(0.92); }
+      50% { filter: brightness(1.2); }
+    }
+
     @keyframes harvest-ready-throb {
       0% {
         filter: brightness(1.02) saturate(1.08);
@@ -6322,6 +6368,8 @@
       body.greenhouse-intake .greenhouse-revival-sigil,
       body.greenhouse-intake .mobile-greenhouse-plinth,
       body.greenhouse-intake .greenhouse-restoration-dial,
+      .tile.thorn-teach,
+      .tile.thorn-teach-blocker,
       .tile.invalid-swap,
       .tile.swap-snap,
       .tile.swap-glide,
@@ -12745,9 +12793,17 @@
           const swapGlide = swapGlideCells.get(`${x},${y}`);
           const swapGlideClass = swapGlide ? "swap-glide" : "";
           const idleHintClass = idleHintCells.has(`${x},${y}`) ? "idle-hint" : "";
-          const thornTeachClass = thornTeachingCells.has(`${x},${y}`) ? "thorn-teach" : "";
+          const thornTeachingActive = thornTeachingCells.has(`${x},${y}`);
+          const thornTeachingSwapCell = thornTeachingActive && roundTwoThornTeachingSwap().some((cell) => cell.x === x && cell.y === y);
           const transmuteClass = transmuteFlashCell === `${x},${y}` ? "transmute-flash" : "";
           const thorn = thornAt(x, y);
+          const thornTeachClass = !thornTeachingActive
+            ? ""
+            : thorn
+              ? "thorn-teach-blocker"
+              : thornTeachingSwapCell
+                ? "thorn-teach"
+                : "thorn-teach-lane";
           const thornKeyValue = thornKey(x, y);
           const thornClass = thorn ? "cursed-thorn" : "";
           const thornHitClass = thornPulseCells.has(thornKeyValue) ? "thorn-hit" : "";
@@ -12776,14 +12832,20 @@
           const moonwaterLabel = moonwaterTargetClass ? " Moonwater Flask 3x3 center" : moonwaterAreaClass ? " inside Moonwater Flask 3x3 patch" : "";
           const blackCandleLabel = blackCandleLineClass ? ` Black Candle ${blackCandleAxis} burn target` : "";
           const graveSoilLabel = graveSoilReadyClass ? " Grave Soil relic-ready tile" : graveSoilTargetClass ? " Grave Soil upgrade target" : "";
-          const thornTeachLabel = thornTeachClass ? " Cursed Thorn teaching cue" : "";
+          const thornTeachLabel = thornTeachingActive
+            ? thorn
+              ? " marked Cursed Thorn target"
+              : thornTeachingSwapCell
+                ? " guided Cursed Thorn swap tile"
+                : " Cursed Thorn match lane"
+            : "";
           const thornLabel = thorn ? " with Cursed Thorn blocker" : thornClearedClass ? " where a Cursed Thorn cracked" : "";
           const previewLabel = previewClass ? " in selected harvest preview" : relicPreviewClass ? " in Black Candle Vine lane preview" : "";
           tile.setAttribute("aria-label", `${flowers[value][0]} tile${profitLabel}${legalLabel}${previewLabel}${shearsLabel}${moonwaterLabel}${blackCandleLabel}${graveSoilLabel}${thornTeachLabel}${thornLabel}`);
           tile.innerHTML = `
             ${iconMarkup(value, "", flowers[value][0], "tile-icon-wrap")}
             ${graveSoilReadyClass ? '<span class="grave-soil-sigil" aria-hidden="true"></span>' : ""}
-            ${thornTeachClass ? '<span class="thorn-teach-marker" aria-hidden="true">!</span>' : ""}
+            ${thornTeachingActive && thorn ? '<span class="thorn-teach-marker blocker" aria-hidden="true">×</span>' : ""}
             ${thorn || thornClearedClass ? '<span class="cursed-thorn-overlay" aria-hidden="true"></span>' : ""}
           `;
           if (activeBooster === "moonwaterFlask") {
