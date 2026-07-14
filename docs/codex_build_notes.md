@@ -1,5 +1,22 @@
 # Codex Build Notes
 
+## 2026-07-14 Wild Chain cascade payoff pass
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible milestone: ordinary unguided shaped/line/cascade clears now earn a capped `Wild Chain` coin bonus using the existing coin heartbeat, with an in-board occult banner, chain lash particles, board glow, and ritual-log explanation. Reduced-motion mode keeps the static payoff but suppresses its board/lash motion. No new rounds, currencies, boosters, blockers, controls, economies, saves, backend, accounts, analytics, ads/IAP, trackers, SDKs, assets, cron jobs, or permissions were added.
+- Live-host pre-edit status: Vercel production `https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html` was checked at 1280x720 and exact 390x844 before editing. Both had 64 tiles, 8 visible board rows, no horizontal overflow, 0 broken images, and no console/page/network errors. Desktop and mobile screenshots were inspected.
+- Local host status: temporary static server `http://127.0.0.1:8010/playable/midnight_bloom_prototype.html`; cleaned up after verification.
+- Browser evidence: Chromium/Playwright desktop 1280x720 used real tile clicks to complete Round 1, verified bouquet reward, clicked `Restore Greenhouse`, clicked `Next Order`, reloaded to prove save persistence, clicked an ordinary Round 2 4-match board state to trigger `Wild Chain +10`, induced visible fail state, clicked visible `Retry Bouquet`, and pressed real `B` for Supreme Bloom. Exact 390x844 mobile loaded locally, clicked the instructed first swap, preserved 64 tiles, and kept 8 visible rows.
+- Wild Chain evidence: local desktop board data reported `lastWildChainBonus=10`, the in-board banner read `Wild Chain +10`, 64 tiles remained, and the screenshot was inspected. The final ritual copy distinguishes total coins from the included Wild Chain bonus to avoid double-count ambiguity.
+- Required checks run: `python3 scripts/verify_project.py`; `git diff --check`; inline playable JavaScript syntax via `node --check /tmp/bloom-inline.js`; focused browser regression for desktop and exact 390x844 mobile; 64-tile checks; no horizontal overflow; zero broken images; no console/page/network errors; save/reload; visible fail -> `Retry Bouquet`; bouquet reward -> greenhouse restoration -> `Next Order`; and the changed unguided Wild Chain behavior.
+- Browser console/runtime status: no console messages, page errors, or failed requests in live pre-edit checks or local desktop/mobile regression.
+- Vercel deployment URL/identifier checked: production baseline only before editing, `https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html`; no redeploy happened in this local pass before commit/push.
+- GitHub Pages preview status: not checked in this local pass.
+- Known issues: none found in the verified route. The Wild Chain board was arranged in-browser after the normal Round 1 -> restored Round 2 handoff so the bonus was deterministic; the triggering action was still an ordinary tile swap, not a debug control.
+- How to trigger and verify L/T/cross matches without console: after the focused opening, use the existing `Shape Bloom` review path where visible or focus the playable and press `M`; demos cycle through `Witch's Cross`, `Night Garden L-Bloom`, and `Twin Stem Bloom` while preserving 64 tiles.
+- How to trigger and verify Supreme Bloom without console: focus the playable and press `B`; the ritual log should show `SUPREME BLOOM! Review hook complete. The board is ready.` and return to a 64-tile board.
+- Security/secret-scan status: changed files were scanned for private-key headers, `.env`, provider token prefixes, JWTs, suspicious credential assignments, trackers/analytics SDKs, backend/account/payment/ad hooks, broad permissions, and cron-like additions. No findings.
+
 ## 2026-07-14 Compact multi-goal objective pass
 
 - Files changed: `playable/midnight_bloom_prototype.html` and `docs/codex_build_notes.md`.

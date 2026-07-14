@@ -4489,6 +4489,70 @@
       }
     }
 
+    @keyframes wild-chain-board {
+      0%,
+      100% {
+        filter: none;
+      }
+      22% {
+        filter: brightness(1.16) saturate(1.16);
+        box-shadow:
+          inset 0 0 48px #000,
+          inset 0 0 0 5px #080504,
+          0 0 0 1px #d7b16d,
+          0 0 34px #d7b16d55,
+          0 0 52px #9b1d224a;
+      }
+    }
+
+    @keyframes wild-chain-banner {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -30%) scale(.72);
+        filter: blur(2px);
+      }
+      18%,
+      72% {
+        opacity: 1;
+        transform: translate(-50%, -62%) scale(1);
+        filter: blur(0);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -106%) scale(.94);
+      }
+    }
+
+    @keyframes chain-bonus-rise {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -30%) scale(.56);
+      }
+      22%,
+      66% {
+        opacity: 1;
+        transform: translate(-50%, -80%) scale(1.08);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -142%) scale(.92);
+      }
+    }
+
+    @keyframes chain-lash {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) rotate(var(--spin, 0deg)) scaleX(.18);
+      }
+      20% {
+        opacity: .95;
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) rotate(var(--spin, 0deg)) scaleX(var(--scale, 1.2));
+      }
+    }
+
     @keyframes resource-pop {
       0% {
         opacity: 0;
@@ -6042,8 +6106,56 @@
     .board.bloom-hit { animation:board-bloom-hit 520ms cubic-bezier(.12,.82,.18,1) both; }
     .board.line-relic-hit { animation:board-line-relic-hit 880ms cubic-bezier(.12,.82,.18,1) both; }
     .board.cascade-wave { animation:cascade-wave-hit 420ms cubic-bezier(.12,.82,.18,1) both; }
+    .board.chain-payoff { animation:wild-chain-board 980ms cubic-bezier(.12,.82,.18,1) both; }
     .board.swap-accepted { animation:swap-accepted-board 260ms cubic-bezier(.12,.82,.18,1) both; }
     .cascade-wave-label { position:absolute; left:50%; top:10px; z-index:9; padding:3px 9px; border:1px solid #b98b42; background:linear-gradient(90deg,#160b08e8,#3a180fe8,#160b08e8); box-shadow:0 0 16px #9b1d2248,inset 0 0 9px #000; color:#fff0b4; font:900 10px/1 system-ui,sans-serif; letter-spacing:.16em; text-transform:uppercase; pointer-events:none; transform:translate(-50%,-8px); animation:cascade-label-rise 640ms ease-out both; }
+    .board-particle.wild-chain-banner {
+      z-index: 11;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: min(235px, 62%);
+      height: auto;
+      min-height: 48px;
+      padding: 8px 12px;
+      border: 1px solid #d7b16dcc;
+      background:
+        radial-gradient(circle at 50% 0, #d7b16d45 0, #0000 58%),
+        linear-gradient(90deg, #160807ef, #42130fde 50%, #160807ef);
+      box-shadow:
+        inset 0 0 16px #000,
+        0 0 18px #d7b16d66,
+        0 0 36px #9b1d2255;
+      color: #fff2bf;
+      clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0 50%);
+      font: 900 var(--font-size, 18px)/1.05 Georgia, serif;
+      letter-spacing: .08em;
+      text-align: center;
+      text-shadow: 0 2px 5px #000, 0 0 12px #d7b16d, 0 0 18px #9b1d22;
+      text-transform: uppercase;
+      animation: wild-chain-banner 1320ms cubic-bezier(.12,.82,.18,1) forwards;
+    }
+    .board-particle.chain-bonus {
+      z-index: 10;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffe6a2;
+      font: 900 var(--font-size, 16px)/1 Georgia, serif;
+      letter-spacing: .05em;
+      text-shadow: 0 2px 5px #000, 0 0 12px #d7b16d, 0 0 18px #9b1d22;
+      animation: chain-bonus-rise 1120ms cubic-bezier(.12,.82,.18,1) forwards;
+    }
+    .board-particle.chain-lash {
+      z-index: 6;
+      width: var(--size, 96px);
+      height: 5px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #0000, #f0c477, #9b1d22, #0000);
+      box-shadow: 0 0 12px #d7b16d, 0 0 20px #9b1d2255;
+      transform-origin: center;
+      animation: chain-lash 720ms cubic-bezier(.12,.82,.18,1) forwards;
+    }
     .board-particle.petal-pop {
       z-index: 5;
       border-radius: 66% 34% 62% 38%;
@@ -6415,8 +6527,11 @@
       .tile.fall-in,
       .tile.settle-pop,
       .board.swap-accepted,
+      .board.chain-payoff,
       .board-particle.settle-spark,
       .board-particle.order-seal,
+      .board-particle.wild-chain-banner,
+      .board-particle.chain-bonus,
       .round-one-restoration.bouquet-sealed .bouquet-trophy,
       .round-one-restoration.bouquet-sealed .restoration-step:first-child,
       .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .bouquet-ingredient,
@@ -6424,6 +6539,9 @@
       .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .bouquet-binding-vine,
       .round-one-restoration.next-order-ready .next-order-btn {
         animation:none !important;
+      }
+      .board-particle.chain-lash {
+        display:none !important;
       }
     }
     @media (max-width:760px) {
@@ -7675,6 +7793,11 @@
     const STREAK_COIN_BONUS_STEP = 5;
     const STREAK_COIN_BONUS_CAP = 25;
     const RESTORED_ROUND_TWO_GUIDE_LIMIT = 2;
+    const WILD_CHAIN_CASCADE_BONUS = 8;
+    const WILD_CHAIN_SHAPE_BONUS = 12;
+    const WILD_CHAIN_RELIC_BONUS = 10;
+    const WILD_CHAIN_RARE_BONUS = 18;
+    const WILD_CHAIN_BONUS_CAP = 80;
 
     let board = [];
     let selected = null;
@@ -7704,6 +7827,7 @@
     let fallAnimations = new Map();
     let settledCells = new Set();
     let boardParticles = [];
+    let lastWildChain = null;
     let fallClearTimer = null;
     let boardParticleClearTimer = null;
     let supremeChargeTimer = null;
@@ -12910,11 +13034,14 @@
       boardEl.innerHTML = "";
       boardEl.dataset.cascadeWave = String(currentCascadeWave);
       boardEl.dataset.lastCascadeCount = String(lastSettledCascadeCount);
+      boardEl.dataset.lastWildChainBonus = String(lastWildChain?.bonusCoins || 0);
+      boardEl.dataset.lastWildChainCascades = String(lastWildChain?.cascades || 0);
       boardEl.classList.toggle("supreme-charge", supremeChargeActive);
       boardEl.classList.toggle("cascade-wave", currentCascadeWave > 0);
       boardEl.classList.toggle("swap-accepted", validSwapCells.size > 0);
       boardEl.classList.toggle("bloom-hit", harvestFlashCells.size > 0 || boardParticles.some((particle) => particle.type === "petal-pop" || particle.type === "coin-pop"));
       boardEl.classList.toggle("line-relic-hit", boardParticles.some((particle) => particle.type === "line-relic"));
+      boardEl.classList.toggle("chain-payoff", boardParticles.some((particle) => particle.type === "wild-chain-banner" || particle.type === "chain-bonus"));
       const harvestPreview = selectedHarvestPreviewFor(selected);
 
       for (let y = 0; y < BOARD_SIZE; y += 1) {
@@ -13951,6 +14078,7 @@
         thornsDamaged: 0,
         thornsCleared: 0,
         thornCells: [],
+        wildChain: null,
         flowerpediaUnlocks: [],
         chapterRewards: [],
         reshuffled: false
@@ -14237,7 +14365,41 @@
       result.lineRelicCells = dedupeCells(result.lineRelicCells);
       result.rareSeedRuneCells = dedupeCells(result.rareSeedRuneCells);
       result.thornCells = dedupeCells(result.thornCells);
+      applyWildChainBonus(result, options);
       return result;
+    }
+
+    function applyWildChainBonus(result, options = {}) {
+      const suppressWildChain = options.suppressWildChain || Number(options.maxCascades) === 1;
+      if (suppressWildChain || !result.matched) {
+        lastWildChain = null;
+        return;
+      }
+      const shape = bestShape(result.shapeBonuses || []);
+      const cascadeBonus = Math.max(0, result.cascades - 1) * WILD_CHAIN_CASCADE_BONUS;
+      const shapeBonus = shape ? WILD_CHAIN_SHAPE_BONUS * Math.max(1, shape.rank || 1) : 0;
+      const relicBonus = (result.lineRelics?.length || 0) * WILD_CHAIN_RELIC_BONUS;
+      const runeBonus = (result.rareSeedRunes?.length || 0) * WILD_CHAIN_RELIC_BONUS;
+      const rareBonus = result.rare ? WILD_CHAIN_RARE_BONUS : 0;
+      const rawBonus = cascadeBonus + shapeBonus + relicBonus + runeBonus + rareBonus;
+      if (rawBonus <= 0) {
+        lastWildChain = null;
+        return;
+      }
+      const bonusCoins = Math.min(WILD_CHAIN_BONUS_CAP, rawBonus);
+      const chain = {
+        cascades: result.cascades,
+        bonusCoins,
+        shapeLabel: shape?.label || "",
+        relics: result.lineRelics?.length || 0,
+        runes: result.rareSeedRunes?.length || 0,
+        rare: result.rare
+      };
+      coins += bonusCoins;
+      result.coinsEarned += bonusCoins;
+      result.wildChain = chain;
+      lastWildChain = chain;
+      queueWildChainPayoff(result);
     }
 
     function dedupeCells(cells) {
@@ -14273,6 +14435,7 @@
       nextOrderPulseTimer = null;
       validSwapCells.clear();
       settledCells.clear();
+      lastWildChain = null;
       bouquetSealPulseActive = false;
       nextOrderPulseActive = false;
     }
@@ -14291,6 +14454,7 @@
       boardParticleClearTimer = null;
       supremeChargeTimer = null;
       currentCascadeWave = 0;
+      lastWildChain = null;
       settledCells.clear();
       clearSwapGlide();
     }
@@ -14459,6 +14623,60 @@
           size: 78,
           fontSize: 14 + Math.min(4, cascadeIndex),
           delay: 40
+        });
+      }
+    }
+
+    function queueWildChainPayoff(result) {
+      if (!result?.wildChain || !result.cleared) {
+        return;
+      }
+      const cells = dedupeCells([
+        ...(result.shapeCells || []),
+        ...(result.lineRelicCells || []),
+        ...(result.rareSeedRuneCells || []),
+        ...(result.rareCells || [])
+      ]);
+      const sourceCells = cells.length ? cells : [[BOARD_SIZE / 2 - 0.5, BOARD_SIZE / 2 - 0.5]];
+      const center = sourceCells.reduce((acc, [x, y]) => {
+        acc.x += x;
+        acc.y += y;
+        return acc;
+      }, { x: 0, y: 0 });
+      const x = center.x / sourceCells.length;
+      const y = center.y / sourceCells.length;
+      const chainText = result.wildChain.cascades > 1
+        ? `Wild Chain x${result.wildChain.cascades}`
+        : result.wildChain.shapeLabel || "Wild Chain";
+      boardParticles.push({
+        type: "wild-chain-banner",
+        text: `${chainText} +${result.wildChain.bonusCoins}`,
+        x,
+        y: Math.max(0.65, y - 0.1),
+        size: 170,
+        fontSize: result.wildChain.cascades > 2 ? 19 : 17,
+        delay: 140
+      });
+      boardParticles.push({
+        type: "chain-bonus",
+        text: `+${result.wildChain.bonusCoins} coins`,
+        x,
+        y: Math.min(7.25, y + 0.45),
+        size: 96,
+        fontSize: 17,
+        delay: 360
+      });
+      const lashCount = Math.min(7, 3 + result.wildChain.cascades + result.wildChain.relics + result.wildChain.runes);
+      for (let index = 0; index < lashCount; index += 1) {
+        const angle = (360 / lashCount) * index + (Math.random() * 18 - 9);
+        boardParticles.push({
+          type: "chain-lash",
+          x,
+          y,
+          size: 76 + Math.random() * 46,
+          spin: angle,
+          scale: 1.05 + Math.random() * 0.58,
+          delay: 210 + index * 34
         });
       }
     }
@@ -14764,12 +14982,16 @@
       const thornText = thornDamageMessage(result);
       const flowerpediaText = flowerpediaUnlockMessage(result);
       const chapterText = chapterRewardMessage(result);
+      const chainText = wildChainMessage(result);
+      const coinText = result.wildChain
+        ? `+${result.coinsEarned} coins total`
+        : `+${result.coinsEarned} coins`;
       const bonusText = [shapeText, lineRelicText, seedRuneText].filter(Boolean).join(" ");
       const shapePrefix = bonusText ? `<strong>${bonusText}</strong> ` : "";
       if (orderText) {
-        return `${shapePrefix}<strong>${orderText}</strong>${thornText}${flowerpediaText}${chapterText} +${result.coinsEarned} coins${cascadeText}.${gainMarkup(result.gained)}${reshuffleText}`;
+        return `${shapePrefix}<strong>${orderText}</strong>${thornText}${flowerpediaText}${chapterText} ${coinText}${cascadeText}.${chainText}${gainMarkup(result.gained)}${reshuffleText}`;
       }
-      return `${shapePrefix}<strong>${result.cleared}</strong> tiles harvested${cascadeText}.${thornText}${flowerpediaText}${chapterText} +${result.coinsEarned} coins.${gainMarkup(result.gained)}${reshuffleText}`;
+      return `${shapePrefix}<strong>${result.cleared}</strong> tiles harvested${cascadeText}.${thornText}${flowerpediaText}${chapterText} ${coinText}.${chainText}${gainMarkup(result.gained)}${reshuffleText}`;
     }
 
     function focusedRoundTwoHarvestSummary(result) {
@@ -14780,7 +15002,26 @@
           ? `<strong>${result.thornsDamaged} Cursed Thorn${result.thornsDamaged === 1 ? "" : "s"} cracked.</strong> `
           : "";
       const matchText = orderText || `${result.cleared} flowers matched.`;
-      return `${thornText}<strong>${matchText}</strong> +${result.coinsEarned} coins.`;
+      const coinText = result.wildChain
+        ? `+${result.coinsEarned} coins total`
+        : `+${result.coinsEarned} coins`;
+      return `${thornText}<strong>${matchText}</strong> ${coinText}.${wildChainMessage(result)}`;
+    }
+
+    function wildChainMessage(result) {
+      if (!result?.wildChain?.bonusCoins) {
+        return "";
+      }
+      const chain = result.wildChain;
+      const label = chain.cascades > 1
+        ? `Wild Chain x${chain.cascades}`
+        : chain.shapeLabel || "Wild Chain";
+      const extras = [
+        chain.relics ? `${chain.relics} vine sweep${chain.relics === 1 ? "" : "s"}` : "",
+        chain.runes ? `${chain.runes} seed rune${chain.runes === 1 ? "" : "s"}` : "",
+        chain.rare ? "Supreme Bloom heat" : ""
+      ].filter(Boolean).join(", ");
+      return ` <strong>${label}:</strong> ${chain.bonusCoins} bonus coins included${extras ? ` (${extras})` : ""}.`;
     }
 
     function shapeBonusMessage(result) {
