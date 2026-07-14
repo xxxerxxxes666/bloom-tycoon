@@ -1,5 +1,17 @@
 # Codex Build Notes
 
+## 2026-07-14 Bounded onboarding handoff pass
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible milestone: the restored greenhouse tutorial now ends cleanly after the two taught Moonlit Wreath moves. `restored-next-order-focus` is limited to the active authored Round 2 guidance window; once the guide counter reaches its cap, the strong cue bubble, `NEXT BLOOM` follow-up state, and swap arrow are removed, normal board controls/layout return, and only restrained tile-level idle hints can reappear after the normal delay. The guide counter persists through reloads with a backward-compatible Round 2 migration path, while Round 3 no longer opens with a fresh strong arrow/cue tutorial.
+- Verification run: `python3 scripts/verify_project.py` -> `Bloom Tycoon project verification passed.` and `HTML match-shape regression checks passed.`; `git diff --check` -> no output; focused Playwright Chromium regression with temporary runner -> `3 passed (39.7s)`.
+- Browser coverage: live Vercel first viewport at 1280x720 loaded with 64 tiles, no horizontal overflow, no broken images, one opening arrow/cue, and no console/page/network failures. Local 1280x720 exercised fresh load, Round 1 taught moves, win/reward/restoration/`Next Order`, both taught Round 2 moves, transition to unguided play, delayed tile hints after 7.3s, save/reload preserving unguided state, and delayed hints after reload. Local exact 390x844 exercised fresh layout, failed bouquet -> `Retry Bouquet`, retry restoring 64 tiles and 12 moves, completion, restoration, `Next Order`, 64 tiles, no overflow, no broken images, and no console/page/network failures.
+- Final render status: temporary local screenshots were captured and visually inspected at 1280x720 and exact 390x844, then removed with the rest of the test artifacts; desktop remains board-first with the greenhouse companion, and mobile keeps the compact board hierarchy with no horizontal overflow.
+- Deployment status: no redeploy was performed in this pass. Vercel production was checked only as the live baseline/current production URL: `https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html?verify=onboarding-handoff-live`. GitHub Pages was not checked.
+- Known issues: standalone `agent-browser` is still unavailable in this shell, so browser verification used temporary Playwright tooling under `.tmp/pw` and then removed it. No player-facing issue found in the verified first-session route.
+- Review-hook preservation: L/T/cross can still be verified without console by focusing the playable and using the existing `Shape Bloom` path or `M`; Supreme Bloom remains absent from normal tutorial play and can still be verified without console by focusing the playable and pressing `B`.
+- Security/secret-scan status: changed files were scanned for private-key headers, `.env` references, token/provider prefixes, JWT-like strings, credential assignments, suspicious long secret-like values, analytics/trackers, backend/account/payment/ad hooks, broad permissions, machine-local paths, and scheduler additions. No findings.
+
 ## 2026-07-14 Cursed Thorn seal art pass
 
 - Files changed: `assets/tiles/altar/cursed_thorn_seal.svg`, `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.

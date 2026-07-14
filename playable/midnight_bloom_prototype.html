@@ -12622,9 +12622,8 @@
 
     function scheduleIdleHint() {
       clearIdleHint();
-      const restoredFocusIdleHint = isRestoredNextOrderFocus()
-        && restoredRoundTwoGuideMoves >= RESTORED_ROUND_TWO_GUIDE_LIMIT;
-      if ((hasMadeValidMove && !restoredFocusIdleHint) || roundComplete || isBouquetFailed() || isResolving || sacrificeState.active || activeBooster) {
+      const postOnboardingIdleHint = isPostOnboardingIdleHintActive();
+      if ((hasMadeValidMove && !postOnboardingIdleHint) || roundComplete || isBouquetFailed() || isResolving || sacrificeState.active || activeBooster) {
         return;
       }
       const hintDelay = currentRound === 1
@@ -12633,9 +12632,8 @@
           ? 650
           : 7000;
       idleHintTimer = window.setTimeout(() => {
-        const restoredFocusIdleHintAfterDelay = isRestoredNextOrderFocus()
-          && restoredRoundTwoGuideMoves >= RESTORED_ROUND_TWO_GUIDE_LIMIT;
-        if ((hasMadeValidMove && !restoredFocusIdleHintAfterDelay) || roundComplete || isBouquetFailed() || isResolving || sacrificeState.active || activeBooster) {
+        const postOnboardingIdleHintAfterDelay = isPostOnboardingIdleHintActive();
+        if ((hasMadeValidMove && !postOnboardingIdleHintAfterDelay) || roundComplete || isBouquetFailed() || isResolving || sacrificeState.active || activeBooster) {
           return;
         }
         const plan = activeRoundPlan();
@@ -12683,7 +12681,7 @@
         && hintCells.size === 2
         && hintCells.has(`${cell.x},${cell.y}`)
         && !roundComplete
-        && ((currentRound === 1 && !hasMadeValidMove) || isRestoredNextOrderFocus());
+        && ((currentRound === 1 && !hasMadeValidMove) || isRestoredNextOrderFocus() || isPostOnboardingIdleHintActive());
     }
 
     function notePlayerInteraction() {
@@ -13179,14 +13177,22 @@
       return true;
     }
 
+    function isRestoredRoundTwoWindow() {
+      return roundOneRestored && currentRound === 2 && !roundComplete && !isBouquetFailed();
+    }
+
     function isRestoredNextOrderFocus() {
-      return roundOneRestored && currentRound >= 2 && currentRound <= 3 && !roundComplete && !isBouquetFailed();
+      return isRestoredRoundTwoWindow()
+        && restoredRoundTwoGuideMoves < RESTORED_ROUND_TWO_GUIDE_LIMIT;
     }
 
     function isRestoredRoundTwoGuideActive() {
-      return isRestoredNextOrderFocus()
-        && currentRound === 2
-        && restoredRoundTwoGuideMoves < RESTORED_ROUND_TWO_GUIDE_LIMIT;
+      return isRestoredNextOrderFocus();
+    }
+
+    function isPostOnboardingIdleHintActive() {
+      return isRestoredRoundTwoWindow()
+        && restoredRoundTwoGuideMoves >= RESTORED_ROUND_TWO_GUIDE_LIMIT;
     }
 
     function applyGreenhouseArtwork(stageKey) {
@@ -13821,7 +13827,7 @@
     }
 
     function renderFirstSwapArrow(boardEl) {
-      if ((currentRound !== 1 && !isRestoredRoundTwoGuideActive() && !(currentRound === 3 && isRestoredNextOrderFocus() && !hasMadeValidMove)) || roundComplete || idleHintCells.size !== 2) {
+      if ((currentRound !== 1 && !isRestoredRoundTwoGuideActive()) || roundComplete || idleHintCells.size !== 2) {
         return;
       }
       const cells = [...idleHintCells].map((cell) => {
@@ -14311,7 +14317,9 @@
           ? "<strong>First bloom!</strong> Your bouquet is already taking shape. "
           : "";
         const rareDropMessage = awardRareBloomDrop(result);
-        const harvestMessage = firstMoveCopy + (isRestoredNextOrderFocus()
+        const reachedRestoredGuideLimit = guidedRoundTwoLesson
+          && restoredRoundTwoGuideMoves >= RESTORED_ROUND_TWO_GUIDE_LIMIT;
+        const harvestMessage = firstMoveCopy + (guidedRoundTwoLesson
           ? focusedRoundTwoHarvestSummary(result)
           : harvestSummary(result) + rareDropMessage);
         pulseOrderCounts(result.gained, result.gainedCells);
@@ -14321,7 +14329,9 @@
         ritualMessage = isBouquetFailed()
           ? `${harvestMessage} ${failedBouquetRitualMessage()}`
           : harvestMessage;
-        if (!isBouquetFailed()) {
+        if (!isBouquetFailed() && reachedRestoredGuideLimit) {
+          schedulePostResolveIdleHint = true;
+        } else if (!isBouquetFailed()) {
           const targetHintCopy = nextTargetMoveHint();
           ritualMessage += targetHintCopy;
           if (!targetHintCopy) {
@@ -16331,16 +16341,12 @@
       resetCursedThorns(plan);
       build();
       startThornTeachingCue(plan);
-      const focusedFirstMoveCue = secondUpgradeNextOrder ? primeFocusedFirstMoveHint(plan) : "";
       if (restoredGreenhouseNextOrder) {
         startRestoredGreenhouseHandoff();
       } else {
         restoredGreenhouseHandoff = false;
       }
       render();
-      if (focusedFirstMoveCue) {
-        $("firstSwapCue").textContent = focusedFirstMoveCue;
-      }
       if (restoredGreenhouseNextOrder || secondUpgradeNextOrder) {
         focusRestoredNextOrderViewport();
       }
@@ -17791,10 +17797,10 @@
           RESTORED_ROUND_TWO_GUIDE_LIMIT,
           Math.floor(Number(state.restoredRoundTwoGuideMoves) || 0)
         ));
-        if (!Number.isFinite(Number(state.restoredRoundTwoGuideMoves)) && isRestoredNextOrderFocus() && hasMadeValidMove) {
+        if (!Number.isFinite(Number(state.restoredRoundTwoGuideMoves)) && isRestoredRoundTwoWindow() && hasMadeValidMove) {
           restoredRoundTwoGuideMoves = Math.min(RESTORED_ROUND_TWO_GUIDE_LIMIT, clearedCursedThorns > 0 ? 1 : 0);
         }
-        if (!isRestoredNextOrderFocus()) {
+        if (!isRestoredRoundTwoWindow()) {
           restoredRoundTwoGuideMoves = 0;
         }
         pendingRuneTendedSoil = Boolean(state.pendingRuneTendedSoil);
