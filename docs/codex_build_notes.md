@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-07-14 Guided Cursed Thorn cascade guard
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible milestone: Altar Drift now waits until the two focused Round 2 guidance moves are finished, and both teaching moves stay deliberately single-wave. The first Cursed Thorn lesson remains one clean adjacent-match result instead of forcing a four-wave, roughly 2.3-second chain that collected most of two bouquet goals before control returned. Ordinary unguided Round 2+ play keeps one target-aware follow-up cascade instead of two forced baits, preserving chain spectacle without nearly completing the order in one move. Per-wave chain labels now update in one fixed board position rather than leaving overlapping labels across the mobile grid; the final Wild Chain reward remains the single payoff banner.
+- Regression protection: the source verifier now protects the Altar Drift setup/seeding hooks and the explicit guided-lesson suppression path. Round 1's authored opening and Black Candle cap remain unchanged.
+- Verification: the project verifier and whitespace check pass. Fresh Chromium runs at 1280x720 and 390x844 completed Round 1, restored the greenhouse, entered Round 2, played both guided swaps, and then played an ordinary swap. Each guided move stayed at one cascade; ordinary play produced a two-wave Wild Chain on both viewports. Both runs retained 64 enabled tiles in eight rows, kept the board above the fold, showed no broken images or horizontal overflow, logged no console or JavaScript errors, and cleared all transient particles after the payoff.
+- Scope preserved: no new round, progression surface, control, blocker, booster, economy, save field, asset, service, tracker, account, payment, ad, permission, or scheduler was added.
+
 ## 2026-07-14 Altar drift cascade pass
 
 - Files changed: `playable/midnight_bloom_prototype.html` and `docs/codex_build_notes.md`.

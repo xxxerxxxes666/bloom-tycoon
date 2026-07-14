@@ -2883,18 +2883,6 @@
       animation: cascade-ring 680ms cubic-bezier(.12,.82,.18,1) forwards;
     }
 
-    .board-particle.cascade-mark {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 8;
-      color: #fff0b4;
-      font: 900 var(--font-size, 16px)/1 Georgia, serif;
-      letter-spacing: .08em;
-      text-shadow: 0 2px 4px #000, 0 0 12px #9b1d22, 0 0 18px #d7b16d;
-      animation: cascade-mark 780ms cubic-bezier(.12,.82,.18,1) forwards;
-    }
-
     .board-particle.settle-spark {
       z-index: 4;
       border-radius: 50%;
@@ -4503,22 +4491,6 @@
       100% {
         opacity: 0;
         transform: translate(-50%, -50%) scale(var(--scale, 1.7));
-      }
-    }
-
-    @keyframes cascade-mark {
-      0% {
-        opacity: 0;
-        transform: translate(-50%, -30%) scale(.72);
-      }
-      24%,
-      68% {
-        opacity: 1;
-        transform: translate(-50%, -72%) scale(1);
-      }
-      100% {
-        opacity: 0;
-        transform: translate(-50%, -118%) scale(.92);
       }
     }
 
@@ -7843,7 +7815,7 @@
     const WILD_CHAIN_RELIC_BONUS = 10;
     const WILD_CHAIN_RARE_BONUS = 18;
     const WILD_CHAIN_BONUS_CAP = 80;
-    const ALTAR_DRIFT_FOCUSED_BAITS = 2;
+    const ALTAR_DRIFT_FOCUSED_BAITS = 1;
     const ALTAR_DRIFT_STANDARD_BAITS = 1;
 
     let board = [];
@@ -12886,7 +12858,7 @@
     function prepareAltarDriftRefill(options = {}) {
       altarDriftRefillBudget = 0;
       altarDriftTargetIds = [];
-      if (Number(options.maxCascades) === 1 || roundComplete || isBouquetFailed()) {
+      if (Number(options.maxCascades) === 1 || options.suppressAltarDrift || roundComplete || isBouquetFailed()) {
         return;
       }
       const plan = activeRoundPlan();
@@ -14043,6 +14015,7 @@
 
       clearIdleHint();
       const isFirstValidMove = !hasMadeValidMove;
+      const guidedRoundTwoLesson = isRestoredRoundTwoGuideActive();
       hasMadeValidMove = true;
       if (isRestoredNextOrderFocus()) {
         restoredRoundTwoGuideMoves = Math.min(
@@ -14068,7 +14041,9 @@
         );
         result = await resolveAnimated(authoredRoundOneLesson
           ? { maxCascades: 1, quietReseed: true }
-          : {});
+          : guidedRoundTwoLesson
+            ? { maxCascades: 1, quietReseed: true, suppressAltarDrift: true }
+            : {});
         const firstMoveCopy = isFirstValidMove
           ? "<strong>First bloom!</strong> Your bouquet is already taking shape. "
           : "";
@@ -14845,7 +14820,6 @@
       }, { x: 0, y: 0 });
       const x = center.x / wave.clearCells.length;
       const y = center.y / wave.clearCells.length;
-      const chain = cascadeIndex + 1;
       boardParticles.push({
         type: "cascade-ring",
         x,
@@ -14854,17 +14828,6 @@
         scale: 1.35 + Math.min(0.75, cascadeIndex * 0.18),
         delay: 0
       });
-      if (cascadeIndex > 0) {
-        boardParticles.push({
-          type: "cascade-mark",
-          text: `CHAIN ${chain}`,
-          x,
-          y: Math.max(0.4, y - 0.18),
-          size: 78,
-          fontSize: 14 + Math.min(4, cascadeIndex),
-          delay: 40
-        });
-      }
     }
 
     function queueWildChainPayoff(result) {
