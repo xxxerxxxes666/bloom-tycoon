@@ -191,6 +191,7 @@ def verify_source_hooks():
         "first-swap-cue::before",
         "GLYPH GUIDE",
         "BLACK CANDLE",
+        "body.round-one-active.round-one-black-candle-cue .first-swap-cue { position:relative; z-index:12; }",
         "moves-counter",
         "body.round-one-active .objective-target",
         "function firstSwapCueText(a, b)",

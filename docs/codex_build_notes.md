@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-07-14 Black Candle payoff legibility
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible correction: the compact Black Candle lesson/result strip now remains above its row-clearing relic sweep. The existing gold-red impact can no longer wash across `Black Candle Vine! Row cleared.` on desktop or mobile; the authored swap, eight-cell lane clear, timing, objectives, moves, and bouquet completion are unchanged.
+- Regression guard: the HTML verifier requires the Black Candle cue to keep its explicit top-layer stacking rule.
+- Browser verification: local Chromium at 1280x720 and exact 390x844 exercised the real opening swap, waited for the authored Black Candle cue, selected the first guided Bone Star to inspect the match/eight-cell lane preview, completed the second guided swap, sampled the live sweep, and waited for settlement. Both sizes retained 64 tiles in eight rows, 0 broken images, 0 horizontal overflow, and no console/page errors.
+- Security and scope: changed additions were scanned for credential/private-key patterns and new network, analytics, tracking, account, payment, ad, backend, permission, or scheduler hooks. No findings; no asset, round, mechanic, control, reward, progression, save, service, or dependency was added.
+
 ## 2026-07-14 Invalid-swap guide recovery
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
