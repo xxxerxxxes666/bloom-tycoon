@@ -14849,6 +14849,9 @@
       lastWildChain = null;
       bouquetSealPulseActive = false;
       nextOrderPulseActive = false;
+      document.querySelectorAll(
+        ".objective-flight, .bouquet-bind-seal, .greenhouse-intake-flight"
+      ).forEach((effect) => effect.remove());
     }
 
     function cancelFxTimers() {
@@ -16005,6 +16008,7 @@
 
     function launchObjectiveFlights(gained, gainedCells = []) {
       const boardRect = $("board").getBoundingClientRect();
+      const launchRound = currentRound;
       activeRoundPlan().targets.forEach((target, index) => {
         if (!(gained[target.flowerId] > 0)) return;
         const destination = document.querySelector(`.objective-target[data-flower-id="${target.flowerId}"]`);
@@ -16040,7 +16044,12 @@
           });
           animation.finished.catch(() => {}).finally(() => flight.remove());
         });
-        window.setTimeout(() => queueBouquetBindingSeal(target, gained[target.flowerId], targetRect), 430);
+        window.setTimeout(() => {
+          if (currentRound !== launchRound) {
+            return;
+          }
+          queueBouquetBindingSeal(target, gained[target.flowerId], targetRect);
+        }, 430);
       });
     }
 

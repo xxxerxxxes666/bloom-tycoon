@@ -1,5 +1,14 @@
 # Codex Build Notes
 
+## 2026-07-14 Round-transition collection seal cleanup
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible correction: objective flights, greenhouse intake motes, and bouquet binding seals are now removed when a bouquet transitions, retries, or shuffles. A delayed seal also verifies that it still belongs to the round that launched it before rendering. Rapidly taking `Next Order` can no longer leave Round 1's `Saint's Offering` seal floating over the compact Round 2 objective row.
+- Regression guard: the HTML verifier requires both the transition cleanup selector and the round-generation guard around delayed binding seals.
+- Browser verification: local Chromium at 1280x720 and exact 390x844 completed Round 1, restored the greenhouse, immediately took `Next Order`, paused inside the former stale-effect window, played both guided Round 2 swaps, and played an ordinary follow-up cascade. Before the first Round 2 move, both viewports had 0 objective flights, 0 greenhouse intake flights, and 0 binding seals; after the guided Nightshade match, both showed exactly one current `+3 MOONLIT WREATH` seal and no `Saint's Offering` copy. Both sizes retained 64 enabled tiles in eight rows, the board above the fold, 0 broken images, 0 horizontal overflow, 0 console/page errors, and full transient cleanup after payoff.
+- Security status: changed files and additions were scanned for credential/private-key signatures and new network, analytics, tracking, account, payment, ad, backend, permission, or scheduler hooks. No findings.
+- Scope: no match logic, objective values, economy, progression, controls, assets, services, or save fields changed.
+
 ## 2026-07-14 Focused Cursed Thorn result copy
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
