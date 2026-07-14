@@ -34,6 +34,16 @@ Implement and refine only the **First 60 Seconds / Board-First Vertical Slice** 
 9. Keep Supreme Bloom rare and absent from the normal tutorial path.
 10. Preserve saves, retry, 64-tile integrity where applicable, no broken images, no console errors, and no mobile overflow.
 
+## Current visual roadmap — authoritative order
+
+Read `docs/diablo_visual_simplification_audit.md` before every visual implementation pass. Complete these milestones in order; do not skip ahead or split them into micro-commits:
+
+1. **Pass 1 — Board-First Stripback and HUD Authority:** During active Round 1 and focused Round 2 show only title, objective/moves, one cue, the board, and at most two contextual actions. Desktop may show Greenhouse + Active Orders only. Hide Path/Ledger, future previews, Chest, Flowerpedia, Chapter, boosters, Sacrifice, Black Market, faction/apothecary meters, debug/review controls, and paragraph copy. Mobile must show all eight rows at 390×844 without scrolling for core play.
+2. **Pass 2 — Payoff Ceremony Unification:** One bouquet trophy, one greenhouse before/after, one dominant action. Reuse the ceremony pattern for the first three levels without reward ledgers or explanatory paragraphs.
+3. **Pass 3 — Visual Polish and Feedback Discipline:** Improve tile/socket contrast and legibility; use one readable hit event per cascade wave; make Cursed Thorn damage unmistakable; keep Supreme Bloom rare; eliminate overlapping labels.
+
+A pass counts only when its entire acceptance result is visibly demonstrated and browser-verified. Tiny hint, copy, pulse, marker, or documentation-only commits do not count.
+
 ## Execution authorization
 
 Xerxes authorizes non-interactive Codex operation for Bloom Tycoon. Future automated Codex passes should use `--dangerously-bypass-approvals-and-sandbox` with `/opt/data/bloom-tycoon-live` as the explicit working root so routine edits, tests, local servers, browser automation, commits, and deployment commands do not pause for approval. This authorization is project-scoped: it does not authorize exposing credentials, modifying unrelated repositories or profiles, purchasing services, weakening security controls, adding trackers/backends/accounts, or destructive operations outside the Bloom Tycoon workflow.
