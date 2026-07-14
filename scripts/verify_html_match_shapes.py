@@ -434,6 +434,7 @@ def verify_source_hooks():
         "greenhouse-payoff-fill",
         "Next Order: Moonlit Wreath is ready.",
         "Restore Greenhouse · 100 coins",
+        '$("restorationSpentLabel").textContent = "Restore cost";',
         "function restoreRoundOneGreenhouse",
         "nextOrderBtn",
         "Next Order →",

@@ -1,5 +1,14 @@
 # Codex Build Notes
 
+## 2026-07-14 Round 1 restoration cost clarity
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible milestone: the Round 1 payoff ledger now labels its `-100` coin transaction as `Restore cost` instead of the ambiguous `Greenhouse`. After restoration it reads `-100 spent / Restore cost`; later-round `Greenhouse XP` labels are unchanged. No mechanics, balance, controls, UI surfaces, saves, or progression systems changed.
+- Browser verification: local Chromium used real guided swaps at 1280x720 and exact 390x844, completed the First Bouquet, verified `+120 Bouquet coins / -100 Restore cost / Next Moonlit Wreath`, clicked the visible `Restore Greenhouse · 100 coins`, inspected the withered-to-restored artwork, clicked `Next Order`, and reached the Round 2 Cursed Thorn lesson. Both viewports preserved 64 tiles, at least eight visible rows in active play, zero overflow, zero broken images, and no console, page, or request errors.
+- Required checks: `python3 scripts/verify_project.py` and `git diff --check` passed. Changed files were scanned for credential-shaped strings, private-key headers, environment files, trackers, analytics, backend/account/payment/ad hooks, machine-local paths, and broad permissions with no findings.
+- Vercel/GitHub Pages status: not redeployed or checked in this local pass before commit/push. Known issues: none found in the changed first-minute route.
+- L/T/cross review remains available after the focused opening through the existing `Shape Bloom` path or focused `M` key hook; Supreme Bloom remains available through focused `B` and absent from the normal tutorial path.
+
 ## 2026-07-14 Black Candle impact status alignment
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
