@@ -7843,6 +7843,8 @@
     const WILD_CHAIN_RELIC_BONUS = 10;
     const WILD_CHAIN_RARE_BONUS = 18;
     const WILD_CHAIN_BONUS_CAP = 80;
+    const ALTAR_DRIFT_FOCUSED_BAITS = 2;
+    const ALTAR_DRIFT_STANDARD_BAITS = 1;
 
     let board = [];
     let selected = null;
@@ -7913,6 +7915,8 @@
     let bloomAudioEventCount = 0;
     let bloomAudioVoiceCount = 0;
     let bloomAudioEvents = [];
+    let altarDriftRefillBudget = 0;
+    let altarDriftTargetIds = [];
     let currentCascadeWave = 0;
     let lastSettledCascadeCount = 0;
     let bouquetSealPulseActive = false;
@@ -12879,6 +12883,79 @@
       return true;
     }
 
+    function prepareAltarDriftRefill(options = {}) {
+      altarDriftRefillBudget = 0;
+      altarDriftTargetIds = [];
+      if (Number(options.maxCascades) === 1 || roundComplete || isBouquetFailed()) {
+        return;
+      }
+      const plan = activeRoundPlan();
+      altarDriftTargetIds = plan.targets
+        .filter((target) => targetProgress(target) < target.needed)
+        .map((target) => target.flowerId);
+      if (!altarDriftTargetIds.length) {
+        return;
+      }
+      altarDriftRefillBudget = focusedSliceRound(plan)
+        ? ALTAR_DRIFT_FOCUSED_BAITS
+        : ALTAR_DRIFT_STANDARD_BAITS;
+    }
+
+    function clearAltarDriftRefill() {
+      altarDriftRefillBudget = 0;
+      altarDriftTargetIds = [];
+    }
+
+    function refillCompletesMatch(x, y, flowerId) {
+      const previous = board[y][x];
+      board[y][x] = flowerId;
+      const completesMatch = matches().some((match) =>
+        match.val === flowerId && match.cells.some(([mx, my]) => mx === x && my === y)
+      );
+      board[y][x] = previous;
+      return completesMatch;
+    }
+
+    function altarDriftRefillTile(x, y) {
+      if (altarDriftRefillBudget <= 0 || !altarDriftTargetIds.length) {
+        return rand();
+      }
+      const targetCandidate = altarDriftTargetIds.find((flowerId) => refillCompletesMatch(x, y, flowerId));
+      if (targetCandidate !== undefined) {
+        altarDriftRefillBudget -= 1;
+        return targetCandidate;
+      }
+      const fallbackCandidate = flowers
+        .map((_, flowerId) => flowerId)
+        .find((flowerId) => refillCompletesMatch(x, y, flowerId));
+      if (fallbackCandidate !== undefined) {
+        altarDriftRefillBudget -= 1;
+        return fallbackCandidate;
+      }
+      return rand();
+    }
+
+    function seedAltarDriftCascade() {
+      if (altarDriftRefillBudget <= 0 || !altarDriftTargetIds.length || matches().length) {
+        return false;
+      }
+      const flowerId = altarDriftTargetIds[0];
+      const fillerA = (flowerId + 1) % flowers.length;
+      const fillerB = (flowerId + 2) % flowers.length;
+      const fillerC = (flowerId + 3) % flowers.length;
+      board[0][0] = flowerId;
+      board[0][1] = flowerId;
+      board[0][2] = flowerId;
+      board[0][3] = fillerA;
+      board[1][0] = fillerA;
+      board[1][1] = fillerB;
+      board[1][2] = fillerC;
+      [0, 1, 2, 3].forEach((x) => graveSoilCells.delete(graveSoilKey(x, 0)));
+      [0, 1, 2].forEach((x) => graveSoilCells.delete(graveSoilKey(x, 1)));
+      altarDriftRefillBudget -= 1;
+      return true;
+    }
+
     function isRestoredNextOrderFocus() {
       return roundOneRestored && currentRound >= 2 && currentRound <= 3 && !roundComplete && !isBouquetFailed();
     }
@@ -14511,6 +14588,7 @@
         board[y][x] = null;
       });
       collapseColumns();
+      seedAltarDriftCascade();
     }
 
     function finishResolve(result, options = {}) {
@@ -14620,6 +14698,7 @@
 
     function resolve() {
       cancelFxTimers();
+      clearAltarDriftRefill();
       fallAnimations.clear();
       boardParticles = [];
       superBloomCells.clear();
@@ -14652,6 +14731,7 @@
 
     async function resolveAnimated(options = {}) {
       cancelFxTimers();
+      prepareAltarDriftRefill(options);
       fallAnimations.clear();
       boardParticles = [];
       harvestFlashCells.clear();
@@ -14713,6 +14793,7 @@
       superBloomCells.clear();
       fallAnimations.clear();
       settledCells.clear();
+      clearAltarDriftRefill();
       currentCascadeWave = 0;
       lastSettledCascadeCount = result.cascades;
       return finishResolve(result, options);
@@ -14736,7 +14817,7 @@
               nextGraveSoilCells.add(graveSoilKey(x, y));
             }
           } else {
-            board[y][x] = rand();
+            board[y][x] = altarDriftRefillTile(x, y);
             recordFall(x, y, y + 1);
           }
         }

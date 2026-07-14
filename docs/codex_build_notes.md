@@ -1,5 +1,21 @@
 # Codex Build Notes
 
+## 2026-07-14 Altar drift cascade pass
+
+- Files changed: `playable/midnight_bloom_prototype.html` and `docs/codex_build_notes.md`.
+- Player-visible milestone: ordinary post-onboarding clears now get a capped order-aware `Altar Drift` refill assist. After a normal animated clear, refill tiles first try to complete current bouquet targets; if no natural chain appears, the altar seeds one visible current-order three-match for the next cascade wave. The authored Round 1 opening and Black Candle lesson remain capped with `maxCascades: 1`, so the tutorial path is preserved while Round 2+ unguided play reliably produces satisfying chain feedback.
+- Live pre-edit inspection: Vercel production `https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html` was visually checked before editing at desktop 1365x900 and exact 390x844. Screenshots inspected: `/tmp/bloom-live-desktop.png` and `/tmp/bloom-live-mobile-390x844.png`. Both showed 64 tiles, 8 complete mobile rows, no visible future diary sections, and no broken first viewport.
+- Local host status: temporary static server `http://127.0.0.1:8765/playable/midnight_bloom_prototype.html`; stopped after verification.
+- Browser evidence: local Playwright/Chromium used real clicks on desktop 1365x900 for fresh load, first guided swap, taught Black Candle swap, bouquet reward, greenhouse before/after restoration, save/reload, `Next Order`, Round 2, unguided Round 2 normal play through the changed cascade path, diagnostic fail state, visible `Retry Bouquet`, 64-tile checks, transient cleanup, broken-image checks, console/page/network error capture, and screenshots. Exact 390x844 mobile verified fresh hierarchy, 64 tiles, all 8 rows visible, no horizontal overflow, no broken images, no visible `Complete Bouquet`/`Shape Bloom`, and no visible future diary sections.
+- Screenshot evidence inspected: `/tmp/bloom-local-desktop-fresh.png`, `/tmp/bloom-local-mobile-390x844-fresh.png`, `/tmp/bloom-local-before-restore.png`, and `/tmp/bloom-local-after-restore.png`.
+- Required checks run: `python3 scripts/verify_project.py`; `git diff --check`; focused Playwright regression from `/tmp/bloom-qa.spec.js` with 2 passing tests; changed-file scan for private-key headers, `.env`, provider token prefixes, JWTs, credential assignments, trackers/backends/accounts/payments/ads, broad permissions, machine-local paths, and scheduler additions.
+- Browser console/runtime status: local Playwright regression captured 0 console errors, 0 page errors, and 0 failed HTTP requests.
+- Vercel deployment URL/identifier checked: production baseline only before editing, `https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html`; no redeploy happened in this local pass before commit/push.
+- GitHub Pages preview status: not checked in this local pass.
+- Known issues: standalone `agent-browser` was unavailable in this shell, so browser verification used Playwright. The retry test used a diagnostic failed Round 2 state after real Round 2 play to expose the visible `Retry Bouquet` button reliably.
+- Review-hook preservation: existing L/T/cross `Shape Bloom`/focused `M` and Supreme Bloom/focused `B` paths were preserved; Supreme Bloom remains absent from normal tutorial play.
+- Security/secret-scan status: no secrets, environment files, trackers, analytics, backend/account/payment/ad hooks, broad permissions, machine-local paths, or scheduler additions were found in changed files.
+
 ## 2026-07-14 Procedural ritual audio arc
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
