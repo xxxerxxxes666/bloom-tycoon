@@ -5457,6 +5457,7 @@
       display: block;
     }
 
+    body.round-three-final-pending .game,
     body.round-three-final-complete .game {
       width: min(980px, calc(100vw - 16px));
       min-height: calc(100vh - 16px);
@@ -5467,6 +5468,7 @@
         linear-gradient(90deg, #060504, #120706 52%, #050404);
     }
 
+    body.round-three-final-pending .main,
     body.round-three-final-complete .main {
       display: grid;
       justify-items: center;
@@ -6112,6 +6114,7 @@
     @media (min-width: 761px) and (max-height: 820px) {
       body.round-two-upgrade-pending .game,
       body.round-two-upgrade-complete .game,
+      body.round-three-final-pending .game,
       body.round-three-final-complete .game {
         width: min(1080px, calc(100vw - 16px));
         min-height: calc(100vh - 16px);
@@ -6122,6 +6125,7 @@
 
       body.round-two-upgrade-pending .main,
       body.round-two-upgrade-complete .main,
+      body.round-three-final-pending .main,
       body.round-three-final-complete .main {
         grid-column: 1;
         padding: 0 8px;
@@ -6129,6 +6133,7 @@
 
       body.round-two-upgrade-pending .sigil,
       body.round-two-upgrade-complete .sigil,
+      body.round-three-final-pending .sigil,
       body.round-three-final-complete .sigil {
         margin-top: 0;
         font-size: 11px;
@@ -6137,6 +6142,7 @@
 
       body.round-two-upgrade-pending .title,
       body.round-two-upgrade-complete .title,
+      body.round-three-final-pending .title,
       body.round-three-final-complete .title {
         margin: 6px 0 8px;
         font-size: 52px;
@@ -6144,6 +6150,7 @@
 
       body.round-two-upgrade-pending .objective,
       body.round-two-upgrade-complete .objective,
+      body.round-three-final-pending .objective,
       body.round-three-final-complete .objective {
         width: min(900px, 100%);
         margin: 0 auto;
@@ -6155,6 +6162,7 @@
 
       body.round-two-upgrade-pending .objective-icon,
       body.round-two-upgrade-complete .objective-icon,
+      body.round-three-final-pending .objective-icon,
       body.round-three-final-complete .objective-icon {
         width: 28px;
         height: 28px;
@@ -6169,6 +6177,7 @@
 
       body.round-two-upgrade-pending .round-one-restoration,
       body.round-two-upgrade-complete .round-one-restoration,
+      body.round-three-final-pending .round-one-restoration,
       body.round-three-final-complete .round-one-restoration {
         margin-top: 8px;
         padding: 12px;
@@ -6177,18 +6186,21 @@
 
       body.round-two-upgrade-pending .restoration-title,
       body.round-two-upgrade-complete .restoration-title,
+      body.round-three-final-pending .restoration-title,
       body.round-three-final-complete .restoration-title {
         font-size: 20px;
       }
 
       body.round-two-upgrade-pending .bouquet-trophy,
       body.round-two-upgrade-complete .bouquet-trophy,
+      body.round-three-final-pending .bouquet-trophy,
       body.round-three-final-complete .bouquet-trophy {
         min-height: 220px;
       }
 
       body.round-two-upgrade-pending .restoration-scene,
       body.round-two-upgrade-complete .restoration-scene,
+      body.round-three-final-pending .restoration-scene,
       body.round-three-final-complete .restoration-scene {
         height: 220px;
       }
@@ -6291,44 +6303,59 @@
     }
     body.round-two-upgrade-pending .left,
     body.round-two-upgrade-complete .left,
+    body.round-three-final-pending .left,
     body.round-three-final-complete .left,
     body.round-two-upgrade-pending .objective,
     body.round-two-upgrade-complete .objective,
+    body.round-three-final-pending .objective,
+    body.round-three-final-complete .objective,
     body.round-two-upgrade-pending .bottom,
     body.round-two-upgrade-complete .bottom,
+    body.round-three-final-pending .bottom,
     body.round-three-final-complete .bottom,
     body.round-two-upgrade-pending .bouquet-path,
     body.round-two-upgrade-complete .bouquet-path,
+    body.round-three-final-pending .bouquet-path,
     body.round-three-final-complete .bouquet-path,
     body.round-two-upgrade-pending .path-ledger-drawer,
     body.round-two-upgrade-complete .path-ledger-drawer,
+    body.round-three-final-pending .path-ledger-drawer,
     body.round-three-final-complete .path-ledger-drawer,
     body.round-two-upgrade-pending .first-session-plaque,
     body.round-two-upgrade-complete .first-session-plaque,
+    body.round-three-final-pending .first-session-plaque,
     body.round-three-final-complete .first-session-plaque,
     body.round-two-upgrade-pending .progress,
     body.round-two-upgrade-complete .progress,
+    body.round-three-final-pending .progress,
     body.round-three-final-complete .progress,
     body.round-two-upgrade-pending .board,
     body.round-two-upgrade-complete .board,
+    body.round-three-final-pending .board,
     body.round-three-final-complete .board,
     body.round-two-upgrade-pending .controls,
     body.round-two-upgrade-complete .controls,
+    body.round-three-final-pending .controls,
     body.round-three-final-complete .controls,
     body.round-two-upgrade-pending .ritual-log,
     body.round-two-upgrade-complete .ritual-log,
+    body.round-three-final-pending .ritual-log,
     body.round-three-final-complete .ritual-log,
     body.round-two-upgrade-pending .sacrifice-panel,
     body.round-two-upgrade-complete .sacrifice-panel,
+    body.round-three-final-pending .sacrifice-panel,
     body.round-three-final-complete .sacrifice-panel,
     body.round-two-upgrade-pending .booster-panel,
     body.round-two-upgrade-complete .booster-panel,
+    body.round-three-final-pending .booster-panel,
     body.round-three-final-complete .booster-panel,
     body.round-two-upgrade-pending #roundCeremony,
     body.round-two-upgrade-complete #roundCeremony,
+    body.round-three-final-pending #roundCeremony,
     body.round-three-final-complete #roundCeremony,
     body.round-two-upgrade-pending #renewBtn,
     body.round-two-upgrade-complete #renewBtn,
+    body.round-three-final-pending #renewBtn,
     body.round-three-final-complete #renewBtn {
       display: none !important;
     }
@@ -6339,8 +6366,11 @@
     body.round-two-upgrade-complete #bouquetStreakBadge,
     body.round-two-upgrade-pending #nextStreakTargetBadge,
     body.round-two-upgrade-complete #nextStreakTargetBadge,
+    body.round-three-final-pending #bouquetStreakBadge,
     body.round-three-final-complete #bouquetStreakBadge,
+    body.round-three-final-pending #nextStreakTargetBadge,
     body.round-three-final-complete #nextStreakTargetBadge,
+    body.round-three-final-pending .restoration-xp-preview,
     body.round-three-final-complete .restoration-xp-preview {
       display: none !important;
     }
@@ -6613,6 +6643,7 @@
     body.round-two-upgrade-pending .round-one-restoration.second-greenhouse-upgrade .restoration-before-label { opacity:.8; }
     body.round-two-upgrade-pending .round-one-restoration.second-greenhouse-upgrade .restoration-root-web { opacity:.44; }
     body.round-two-upgrade-complete .round-one-restoration.second-greenhouse-upgrade .next-order-btn { display:block; border-color:#9b1d22; background:linear-gradient(#7d2431,#35131c); }
+    body.round-three-final-pending .round-one-restoration,
     body.round-three-final-complete .round-one-restoration { position:relative; overflow:hidden; display:grid; width:min(840px,calc(100% - 16px)); margin:12px auto 0; padding:16px; gap:12px; border:1px solid #b51d2f; background:radial-gradient(circle at 50% 0,#3a1014,#0b0707 72%); box-shadow:0 0 44px #9b1d2260,inset 0 0 32px #000,0 18px 45px #000c; text-align:center; }
     .round-one-restoration.third-greenhouse-finale .restoration-scene { border-color:#b51d2f; box-shadow:inset 0 0 34px #9b1d2266,0 0 34px #d7b16d42; }
     .round-one-restoration.third-greenhouse-finale .restoration-scene::before { background:radial-gradient(circle at 50% 34%,#b51d2f52 0 16%,#0000 40%),radial-gradient(circle at 50% 42%,#0000 0 48%,#0009 88%),linear-gradient(180deg,#0008,#3a090f66 34%,#0005 76%,#000b); }
@@ -6621,7 +6652,13 @@
     .round-one-restoration.third-greenhouse-finale .restoration-state { left:5%; right:5%; bottom:7px; z-index:10; padding:5px 8px; border-top:1px solid #d7b16d88; background:linear-gradient(90deg,#08030300,#080303e8 14%,#080303e8 86%,#08030300); font-size:12px; line-height:1.1; letter-spacing:.1em; }
     .round-one-restoration.third-greenhouse-finale .restoration-step.spend { border-color:#d7b16d; color:#fff1bd; box-shadow:0 0 16px #d7b16d38; }
     .round-one-restoration.third-greenhouse-finale .restoration-step.next { border-color:#b51d2f; color:#ffd0d5; box-shadow:0 0 16px #b51d2f44; }
-    .round-one-restoration.third-greenhouse-finale .next-order-btn { display:block; border-color:#d7b16d; background:linear-gradient(#9b1d22,#451017); }
+    .round-one-restoration.third-greenhouse-finale .restore-btn { border-color:#d7b16d; background:linear-gradient(#9b1d22,#451017); box-shadow:0 0 18px #b51d2f45,inset 0 0 12px #000; }
+    body.round-three-final-pending .round-one-restoration.third-greenhouse-finale .greenhouse-art-withered { opacity:1; filter:brightness(.92) contrast(1.1) saturate(1.08); transform:scale(1.02); }
+    body.round-three-final-pending .round-one-restoration.third-greenhouse-finale .greenhouse-art-restored { opacity:.16; filter:brightness(.7) saturate(.92); transform:scale(1.055); }
+    body.round-three-final-pending .round-one-restoration.third-greenhouse-finale .restoration-after-label { opacity:.72; border-color:#b51d2f; color:#ffd0d5; }
+    body.round-three-final-pending .round-one-restoration.third-greenhouse-finale .restoration-before-label { opacity:.84; }
+    body.round-three-final-pending .round-one-restoration.third-greenhouse-finale .restoration-root-web { opacity:.46; background:repeating-linear-gradient(77deg,#0000 0 18px,#9b1d22 19px 21px,#0000 22px 42px),repeating-linear-gradient(104deg,#0000 0 24px,#d7b16d99 25px 26px,#0000 27px 54px),radial-gradient(ellipse at 50% 86%,#9b1d2270 0,#0000 62%); }
+    body.round-three-final-complete .round-one-restoration.third-greenhouse-finale .next-order-btn { display:block; border-color:#d7b16d; background:linear-gradient(#9b1d22,#451017); }
     .first-swap-cue.swap-refused {
       color:#f0b0a5;
       text-shadow:0 0 12px #9b1d22;
@@ -8231,6 +8268,7 @@
     const STREAK_COIN_BONUS_STEP = 5;
     const STREAK_COIN_BONUS_CAP = 25;
     const MOONLIT_GREENHOUSE_UPGRADE_COST = 120;
+    const BLOODROOT_CONSERVATORY_COST = 180;
     const RESTORED_ROUND_TWO_GUIDE_LIMIT = 2;
     const WILD_CHAIN_CASCADE_BONUS = 8;
     const WILD_CHAIN_SHAPE_BONUS = 12;
@@ -8301,6 +8339,7 @@
     let roundComplete = false;
     let roundOneRestored = false;
     let roundTwoGreenhouseUpgraded = false;
+    let roundThreeConservatoryRaised = false;
     let restoredGreenhouseHandoff = false;
     let restoredGreenhouseHandoffTimer = null;
     let greenhouseRevivalPulseTimer = null;
@@ -13592,14 +13631,16 @@
       const roundOneActive = currentRound === 1;
       const roundTwoUpgradePending = currentRound === 2 && roundComplete && roundOneRestored && !roundTwoGreenhouseUpgraded;
       const roundTwoUpgradeComplete = currentRound === 2 && roundComplete && roundOneRestored && roundTwoGreenhouseUpgraded;
-      const roundThreeFinalComplete = currentRound === 3 && roundComplete;
+      const roundThreeFinalPending = currentRound === 3 && roundComplete && !roundThreeConservatoryRaised;
+      const roundThreeFinalComplete = currentRound === 3 && roundComplete && roundThreeConservatoryRaised;
+      const roundThreeFinalPayoff = roundThreeFinalPending || roundThreeFinalComplete;
       const activePlan = activeRoundPlan();
       const progress = roundProgress(activePlan);
       const failedFocusedRestoredOrder = roundOneRestored
         && activePlan.round >= 2
         && activePlan.round <= 3
         && isBouquetFailed(activePlan);
-      applyGreenhouseArtwork(roundThreeFinalComplete ? "bloodroot" : (roundTwoUpgradePending || roundTwoUpgradeComplete) ? "moonlit" : "first");
+      applyGreenhouseArtwork(roundThreeFinalPayoff ? "bloodroot" : (roundTwoUpgradePending || roundTwoUpgradeComplete) ? "moonlit" : "first");
       applyActiveGreenhouseStage(activeGreenhouseStageKey());
       applyActiveGreenhouseRevival(progress);
       renderGreenhouseRestorationDial(activePlan, progress);
@@ -13611,6 +13652,7 @@
       document.body.classList.toggle("restored-next-order-guide", isRestoredNextOrderFocus());
       document.body.classList.toggle("round-two-upgrade-pending", roundTwoUpgradePending);
       document.body.classList.toggle("round-two-upgrade-complete", roundTwoUpgradeComplete);
+      document.body.classList.toggle("round-three-final-pending", roundThreeFinalPending);
       document.body.classList.toggle("round-three-final-complete", roundThreeFinalComplete);
       document.body.classList.toggle("round-three-focus-active", currentRound === 3 && isRestoredNextOrderFocus());
       document.body.classList.toggle("focused-slice-failed", activePlan.round <= 3 && isBouquetFailed(activePlan));
@@ -13624,21 +13666,26 @@
       document.body.classList.toggle("round-one-refused", roundOneActive && !roundComplete && $("firstSwapCue").classList.contains("swap-refused"));
       $("roundOneRestoration").classList.toggle("restored", (roundOneActive && roundOneRestored) || roundTwoUpgradeComplete || roundThreeFinalComplete);
       $("roundOneRestoration").classList.toggle("second-greenhouse-upgrade", roundTwoUpgradePending || roundTwoUpgradeComplete);
-      $("roundOneRestoration").classList.toggle("third-greenhouse-finale", roundThreeFinalComplete);
+      $("roundOneRestoration").classList.toggle("third-greenhouse-finale", roundThreeFinalPayoff);
       $("roundOneRestoration").classList.toggle("bouquet-sealed", bouquetSealPulseActive && roundComplete);
       $("roundOneRestoration").classList.toggle("next-order-ready", nextOrderPulseActive && roundComplete);
       const roundTwoPlan = buildRoundPlan(2);
       const roundThreePlan = buildRoundPlan(3);
-      if (roundThreeFinalComplete) {
+      if (roundThreeFinalPayoff) {
         $("restorationTitle").textContent = `Bloodroot Compact Sealed · +${roundThreePlan.reward.coins} coin reward`;
-        $("restorationState").textContent = "BLOODROOT CONSERVATORY COMPLETE";
+        $("restorationState").textContent = roundThreeFinalComplete ? "BLOODROOT CONSERVATORY COMPLETE" : "BLOODROOT CONSERVATORY READY";
         $("restorationEarned").textContent = `+${roundThreePlan.reward.coins}`;
         $("restorationEarnedLabel").textContent = "Bouquet coins";
-        $("restorationSpent").textContent = `+${roundThreePlan.reward.greenhouse} XP`;
-        $("restorationSpentLabel").textContent = "Greenhouse";
-        $("restorationNext").textContent = "Replay";
+        $("restorationSpent").textContent = roundThreeFinalComplete ? `-${BLOODROOT_CONSERVATORY_COST} spent` : `-${BLOODROOT_CONSERVATORY_COST}`;
+        $("restorationSpentLabel").textContent = "Raise cost";
+        $("restorationNext").textContent = roundThreeFinalComplete ? "Replay" : "Locked";
         $("restorationNextLabel").textContent = "First Bouquet";
-        $("restorationCopy").textContent = "Three orders sealed the glasshouse: restored panes, nightshade lanterns, and a Bloodroot conservatory ready for another run.";
+        $("restorationCopy").textContent = roundThreeFinalComplete
+          ? "Three orders sealed the glasshouse: restored panes, nightshade lanterns, and a Bloodroot conservatory ready for another run."
+          : "Spend the Bloodroot payout to raise the crimson conservatory before replaying the first order.";
+        $("restoreGreenhouseBtn").textContent = coins >= BLOODROOT_CONSERVATORY_COST
+          ? `Raise Conservatory · ${BLOODROOT_CONSERVATORY_COST} coins`
+          : `Need ${BLOODROOT_CONSERVATORY_COST} coins`;
         $("nextOrderBtn").textContent = "Play Again → First Bouquet";
       } else if (roundTwoUpgradePending || roundTwoUpgradeComplete) {
         $("restorationTitle").textContent = `Moonlit Wreath Sealed · +${roundTwoPlan.reward.coins} coin reward`;
@@ -13674,9 +13721,10 @@
         $("nextOrderBtn").textContent = "Next Order → Moonlit Wreath";
       }
       $("restoreGreenhouseBtn").disabled = (currentRound === 1 && (!roundComplete || roundOneRestored || coins < 100))
-        || (currentRound === 2 && roundComplete && (!roundOneRestored || roundTwoGreenhouseUpgraded || coins < MOONLIT_GREENHOUSE_UPGRADE_COST));
-      const payoffPlan = roundThreeFinalComplete ? roundThreePlan : (roundTwoUpgradePending || roundTwoUpgradeComplete) ? roundTwoPlan : buildRoundPlan(1);
-      const bouquetPayoffState = roundThreeFinalComplete
+        || (currentRound === 2 && roundComplete && (!roundOneRestored || roundTwoGreenhouseUpgraded || coins < MOONLIT_GREENHOUSE_UPGRADE_COST))
+        || (currentRound === 3 && roundComplete && (roundThreeConservatoryRaised || coins < BLOODROOT_CONSERVATORY_COST));
+      const payoffPlan = roundThreeFinalPayoff ? roundThreePlan : (roundTwoUpgradePending || roundTwoUpgradeComplete) ? roundTwoPlan : buildRoundPlan(1);
+      const bouquetPayoffState = roundThreeFinalPayoff
         ? "bloodroot"
         : (roundTwoUpgradePending || roundTwoUpgradeComplete)
           ? roundTwoUpgradeComplete ? "moonlit" : "sealed"
@@ -14036,7 +14084,7 @@
     function greenhouseLadderSteps() {
       const firstComplete = roundOneRestored || currentRound > 1;
       const secondComplete = currentRound > 2 || (currentRound === 2 && roundComplete && roundTwoGreenhouseUpgraded);
-      const thirdComplete = currentRound > 3 || (currentRound === 3 && roundComplete);
+      const thirdComplete = currentRound > 3 || (currentRound === 3 && roundComplete && roundThreeConservatoryRaised);
       return [
         {
           label: "Restore",
@@ -14053,8 +14101,8 @@
         {
           label: "Finish",
           name: "Bloodroot Conservatory",
-          state: thirdComplete ? "complete" : currentRound === 3 && !roundComplete ? "current" : secondComplete ? "ready" : "locked",
-          status: thirdComplete ? "Complete" : currentRound === 3 && !roundComplete ? "Active" : secondComplete ? "Ready" : "Locked"
+          state: thirdComplete ? "complete" : currentRound === 3 && roundComplete ? "ready" : currentRound === 3 ? "current" : secondComplete ? "ready" : "locked",
+          status: thirdComplete ? "Complete" : currentRound === 3 && roundComplete ? `Raise ${BLOODROOT_CONSERVATORY_COST}` : currentRound === 3 ? "Active" : secondComplete ? "Ready" : "Locked"
         }
       ];
     }
@@ -16058,6 +16106,7 @@
       if (plan.round === 1) {
         roundOneRestored = false;
         roundTwoGreenhouseUpgraded = false;
+        roundThreeConservatoryRaised = false;
       }
       bouquetStreak += 1;
       const streakPayout = completionCoinPayout(plan);
@@ -16238,7 +16287,36 @@
       saveProgress();
     }
 
+    function raiseRoundThreeConservatory() {
+      if (
+        currentRound !== 3
+        || !roundComplete
+        || roundThreeConservatoryRaised
+        || coins < BLOODROOT_CONSERVATORY_COST
+      ) {
+        return;
+      }
+      coins -= BLOODROOT_CONSERVATORY_COST;
+      roundThreeConservatoryRaised = true;
+      ritualMessage = "<strong>Bloodroot conservatory raised.</strong> Crimson glass seals the first three orders into one complete run.";
+      pulseNextOrderReady();
+      render();
+      playBloomSound("restore");
+      const panel = $("roundOneRestoration");
+      panel.classList.add("spend-pulse");
+      panel.classList.remove("restoration-awakening");
+      void panel.offsetWidth;
+      panel.classList.add("restoration-awakening");
+      window.setTimeout(() => panel.classList.remove("spend-pulse"), 820);
+      window.setTimeout(() => panel.classList.remove("restoration-awakening"), 1600);
+      saveProgress();
+    }
+
     function advanceGreenhouseUpgrade() {
+      if (currentRound === 3 && roundComplete) {
+        raiseRoundThreeConservatory();
+        return;
+      }
       if (currentRound === 2 && roundComplete) {
         upgradeRoundTwoGreenhouse();
         return;
@@ -16722,6 +16800,7 @@
       activeRuneTendedSoil = false;
       roundOneRestored = false;
       roundTwoGreenhouseUpgraded = false;
+      roundThreeConservatoryRaised = false;
       hasMadeValidMove = false;
       roundComplete = false;
       const plan = buildRoundPlan(1);
@@ -16744,7 +16823,12 @@
     }
 
     function advanceGreenhousePayoffAction() {
-      if (currentRound === 3 && roundComplete) {
+      if (currentRound === 3 && roundComplete && !roundThreeConservatoryRaised) {
+        ritualMessage = `<strong>Bloodroot conservatory ready.</strong> Spend ${BLOODROOT_CONSERVATORY_COST} coins to raise the crimson glass before replay.`;
+        render();
+        return;
+      }
+      if (currentRound === 3 && roundComplete && roundThreeConservatoryRaised) {
         replayFocusedSlice();
         return;
       }
@@ -18081,6 +18165,7 @@
         roundComplete,
         roundOneRestored,
         roundTwoGreenhouseUpgraded,
+        roundThreeConservatoryRaised,
         hasMadeValidMove,
         restoredRoundTwoGuideMoves,
         pendingRuneTendedSoil,
@@ -18132,6 +18217,7 @@
         roundComplete = Boolean(state.roundComplete || state.firstBouquetComplete);
         roundOneRestored = Boolean(state.roundOneRestored);
         roundTwoGreenhouseUpgraded = Boolean(state.roundTwoGreenhouseUpgraded || currentRound > 2);
+        roundThreeConservatoryRaised = Boolean(state.roundThreeConservatoryRaised || currentRound > 3);
         hasMadeValidMove = Boolean(state.hasMadeValidMove)
           || counts.some((count) => count > 0)
           || clearedCursedThorns > 0;
