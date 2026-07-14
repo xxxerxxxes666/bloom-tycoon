@@ -1,5 +1,18 @@
 # Codex Build Notes
 
+## 2026-07-14 Greenhouse restoration ceremony pass
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible milestone: Round 1 payoff now has an unmistakable bouquet-to-greenhouse restoration ceremony. The before state adds a dark veil, crack mask, and muted `Before/After` labels; spending 100 coins removes the veil, fades the cracks, reveals restored glass, opens rays and root growth, animates coin motes into the greenhouse, marks `-100 spent`, and changes the one-tap button to `Next Order -> Moonlit Wreath`. No new rounds, currencies, controls, assets, services, trackers, accounts, ads, payments, permissions, or schedulers were added.
+- Live baseline inspected before final verification: Vercel desktop `https://bloom-tycoon.vercel.app/playable/midnight_bloom_prototype.html?verify=live-baseline` and GitHub Pages mobile `https://xxxerxxxes666.github.io/bloom-tycoon/playable/midnight_bloom_prototype.html?verify=live-baseline`; screenshots showed the current board-first 64-tile fresh state with no broken first viewport.
+- Local browser verification: temporary static server `http://127.0.0.1:4319/playable/midnight_bloom_prototype.html?verify=ceremony-local`. A Chromium pass used real tile clicks for the fresh instructed swap, ordinary legal target-feeding play after the opening, Round 1 bouquet completion, before-restore screenshot, restore transaction, after-restore screenshot, save/reload, `Next Order`, Round 2 start, guided Round 2 play, failure -> `Retry Bouquet`, and exact 390x844 fresh mobile. It verified 64 tiles, the `-100` coin spend, restored-state CSS, no broken images, no horizontal overflow, no console/page/request errors, and transient cleanup by route completion.
+- Screenshot evidence inspected: `work/baseline-desktop.png`, `work/baseline-mobile.png`, `work/live-vercel-baseline.png`, `work/live-pages-mobile-baseline.png`, `work/ceremony-before-desktop.png`, `work/ceremony-after-desktop.png`, and `work/ceremony-mobile.png`.
+- Required checks run: `python3 scripts/verify_project.py`; `git diff --check`; inline playable JavaScript syntax extraction with `vm.Script`; focused local Chromium ceremony verifier using cached npx Playwright.
+- Browser console/network status: local verifier captured 0 console errors, 0 page errors, and 0 failed requests. Live baseline screenshots loaded successfully.
+- Known issues: standalone `agent-browser` was unavailable, so browser verification used Playwright. The Round 2 retry state was exposed with the existing failure path after real Round 2 play; the visible Retry click itself was exercised.
+- Review-hook verification guidance: L/T/cross remains available after Round 1 via the existing `Shape Bloom` review button or focused `M`; Supreme Bloom remains absent from normal tutorial play and can still be verified without console by focusing the playable and pressing `B`.
+- Security/secret-scan status: changed files and changed lines were scanned for private-key headers, `.env`, provider token prefixes, JWT-like strings, credential assignments, trackers/analytics, backend/account/payment/ad hooks, machine-local paths, broad permissions, and scheduler additions. No findings.
+
 ## 2026-07-14 Mobile greenhouse intake visibility guard
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
