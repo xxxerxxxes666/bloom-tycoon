@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-07-14 Guided objective consolidation
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+- Player-visible correction: the authored mobile Round 2 guide now keeps its round label and move count together above one four-goal row, and no longer repeats `Match beside Cursed Thorns` immediately above the glowing `Crack the marked thorns` cue. The normal thorn reminder returns after the two-move authored guide ends if thorns remain.
+- Regression guard: the HTML verifier requires both the four-column guided objective layout and the guide-aware thorn reminder suppression.
+- Browser verification: local Chromium exercised the real Round 1 opening, Black Candle Vine lesson, bouquet completion, 100-coin greenhouse restoration, `Next Order`, and both authored Round 2 Cursed Thorn swaps at 1280x720 and exact 390x844. Mobile rendered the four goals on one row, reduced the objective from 97px to 82px, and moved the board from 246px to 230px while preserving all eight rows. Desktop retained its established layout. Both viewports kept 64 tiles, no more than one visible non-tile control during active play, 0 broken images, 0 overflow, and 0 console/page errors; ordinary play resumed after the two taught moves with all thorns complete.
+- Required checks: `python3 scripts/verify_project.py`, extracted inline JavaScript syntax check, `git diff --check`, changed-line secret scan, and changed-line integration/scope scan all passed. No assets, mechanics, objectives, moves, rewards, saves, progression, services, trackers, permissions, credentials, or dependencies changed.
+
 ## 2026-07-14 Moonlit lesson hierarchy pass
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.

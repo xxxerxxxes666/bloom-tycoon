@@ -6928,6 +6928,25 @@
         gap: 4px;
         padding: 5px 6px;
       }
+      body.restored-next-order-focus .objective.compact-objective {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+      body.restored-next-order-focus .objective.compact-objective .objective-text {
+        grid-column: 1 / 4;
+        grid-row: 1;
+        margin: 0;
+        align-self: center;
+        text-align: left;
+      }
+      body.restored-next-order-focus .objective.compact-objective .moves-counter {
+        grid-column: 4;
+        grid-row: 1;
+        justify-self: end;
+      }
+      body.restored-next-order-focus .objective.compact-objective .objective-target {
+        grid-row: 2;
+      }
       body.restored-next-order-focus .objective.compact-objective::before,
       body.restored-next-order-focus .objective.compact-objective::after,
       body.restored-greenhouse-handoff .objective.compact-objective::before,
@@ -14032,7 +14051,7 @@
     }
 
     function thornObjectiveHintMarkup(plan = activeRoundPlan()) {
-      if (!plan.thornGoal || roundComplete || thornGoalComplete(plan)) {
+      if (!plan.thornGoal || roundComplete || thornGoalComplete(plan) || isRestoredRoundTwoGuideActive()) {
         return "";
       }
       return '<span class="objective-boon thorn" id="thornObjectiveHint">Match beside Cursed Thorns</span>';

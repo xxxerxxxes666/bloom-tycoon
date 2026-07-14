@@ -274,6 +274,8 @@ def verify_source_hooks():
         "Bloodroot Conservatory",
         "body.restored-next-order-focus .greenhouse-order-ladder { display:none; }",
         "body.restored-next-order-focus:not(.restored-greenhouse-handoff) .restored-greenhouse-status { display:none; }",
+        "display: grid;\n        grid-template-columns: repeat(4, minmax(0, 1fr));",
+        "thornGoalComplete(plan) || isRestoredRoundTwoGuideActive()",
         "calc(100vh - 262px)",
         "objective-goal-joiner",
         "clip-path: inset(50%);",
