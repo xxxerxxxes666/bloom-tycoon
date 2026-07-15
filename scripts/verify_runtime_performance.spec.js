@@ -43,6 +43,12 @@ async function runtimeReport(page) {
         className: node.className,
         label: node.closest("[aria-label]")?.getAttribute("aria-label") || node.textContent.trim()
       }));
+    const greenhouseIntakeTarget = [
+      document.querySelector("#heroRestorationDial"),
+      document.querySelector("#mobileRestorationDial"),
+      document.querySelector("#mobileGreenhousePlinth"),
+      document.querySelector("#activeGreenhouseStage")
+    ].find(visible);
     return {
       nodes: all.length,
       images: document.images.length,
@@ -57,6 +63,9 @@ async function runtimeReport(page) {
       prototypeScaffoldNodes: document.querySelectorAll(
         "#sacrificeBtn, #pruningShearsBtn, #moonwaterFlaskBtn, #blackCandleBtn, #graveSoilBtn, #sacrificePanel, #boosterPanel, #chestTrigger, #chestModal"
       ).length,
+      mobileGreenhousePlinthVisible: visible(document.querySelector("#mobileGreenhousePlinth")),
+      ritualLogVisible: visible(document.querySelector("#ritualLog")),
+      greenhouseIntakeTargetId: greenhouseIntakeTarget?.id || "",
       meaningfulBars,
       bouquetProgressText: document.querySelector("#bouquetProgressLabel")?.textContent.trim() || "",
       greenhouseNextText: document.querySelector(".restoration-dial-phase")?.textContent.trim() || "",
@@ -132,7 +141,16 @@ for (const config of [
     expect(report.filteredElements, "focused filter budget").toBeLessThanOrEqual(60);
     expect(report.shadowedElements, "focused shadow budget").toBeLessThanOrEqual(95);
     expect(report.animatedElements, "focused idle animation budget").toBeLessThanOrEqual(4);
-    expect(report.meaningfulBars, "one bouquet bar plus one greenhouse bar").toHaveLength(2);
+    expect(report.meaningfulBars, config.mobile
+      ? "mobile active play keeps only the bouquet bar"
+      : "desktop keeps one bouquet bar plus one greenhouse bar").toHaveLength(config.mobile ? 1 : 2);
+    expect(report.mobileGreenhousePlinthVisible, "mobile greenhouse plinth stays out of active play").toBe(false);
+    if (config.mobile) {
+      expect(report.ritualLogVisible, "ritual log stays out of mobile active play").toBe(false);
+    }
+    expect(report.greenhouseIntakeTargetId, "intake feedback retains a visible destination").toBe(config.mobile
+      ? "activeGreenhouseStage"
+      : "heroRestorationDial");
     expect(report.bouquetProgressText).toMatch(/Bouquet .* -> \+\d+ coins/);
     expect(report.greenhouseNextText).toMatch(/Restore|Unlock|Raise|Replay/);
     expect(report.visibleProgressText).not.toMatch(/\b(?:SAP|MANA|BLOOD)\b|\d[\d,]*\s*\/\s*\d[\d,]*\s*XP|Greenhouse \+\d+ XP|Apothecary \+\d+ XP/);
