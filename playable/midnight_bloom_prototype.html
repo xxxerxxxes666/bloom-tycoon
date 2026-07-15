@@ -6375,7 +6375,7 @@
       },
       {
         name: "Bloodroot Compact",
-        moves: 12,
+        moves: 14,
         targets: [
           { flowerId: 3, needed: 14, order: "Bloodroot Compact" },
           { flowerId: 0, needed: 13, order: "Solar Ash" }
@@ -8719,6 +8719,12 @@
         }
         if (currentRound === 2 && !roundTwoGreenhouseUpgraded) {
           return "Upgrade to unlock Bloodroot.";
+        }
+        if (currentRound === 3 && !roundThreeConservatoryRaised) {
+          return "Raise Conservatory.";
+        }
+        if (currentRound === 3 && roundThreeConservatoryRaised) {
+          return "Play again.";
         }
         return "Tap Next Order.";
       }

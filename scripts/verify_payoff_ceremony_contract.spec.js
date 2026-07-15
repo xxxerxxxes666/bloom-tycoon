@@ -179,13 +179,14 @@ async function runJourney(page, label, includeRetry) {
   await assertReloadKeeps(page, "Next Order", `work/pass2-${label}-round2-upgraded-reload.png`);
   await clickPrimary(page);
   await expectActiveBoard(page);
+  await expect(page.locator(".moves-counter")).toContainText("Moves 14");
 
   await completeRoundWithReviewKey(page);
-  await expectCeremony(page, "Raise Conservatory", `work/pass2-${label}-round3-pending.png`);
-  await assertReloadKeeps(page, "Raise Conservatory", `work/pass2-${label}-round3-pending-reload.png`);
+  await expectCeremony(page, "Raise Conservatory", `work/pass2-${label}-round3-pending.png`, "Raise Conservatory.");
+  await assertReloadKeeps(page, "Raise Conservatory", `work/pass2-${label}-round3-pending-reload.png`, "Raise Conservatory.");
   await clickPrimary(page);
-  await expectCeremony(page, "Play Again", `work/pass2-${label}-round3-raised.png`);
-  await assertReloadKeeps(page, "Play Again", `work/pass2-${label}-round3-raised-reload.png`);
+  await expectCeremony(page, "Play Again", `work/pass2-${label}-round3-raised.png`, "Play again.");
+  await assertReloadKeeps(page, "Play Again", `work/pass2-${label}-round3-raised-reload.png`, "Play again.");
   await clickPrimary(page);
   await expectActiveBoard(page);
 }
