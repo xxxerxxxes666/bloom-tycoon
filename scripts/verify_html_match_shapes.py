@@ -8,12 +8,18 @@ BOARD_SIZE = 8
 SHAPE_VALUE = 2
 BASE_VALUES = [0, 1, 3, 4, 5]
 ALTAR_TILE_ASSETS = [
-    "assets/tiles/altar/sol_rot_altar.svg",
-    "assets/tiles/altar/bone_star_altar.svg",
-    "assets/tiles/altar/nightshade_altar.svg",
-    "assets/tiles/altar/bloodroot_altar.svg",
-    "assets/tiles/altar/amber_seed_altar.svg",
-    "assets/tiles/altar/thorn_rose_altar.svg",
+    "assets/tiles/96/withered_sun_medallion.png",
+    "assets/tiles/96/bone_white_thorn_star.png",
+    "assets/tiles/96/purple_nightshade_bloom.png",
+    "assets/tiles/96/bloodroot_ruby_shard.png",
+    "assets/tiles/96/amber_resin_seed.png",
+    "assets/tiles/96/crimson_rose_rune.png",
+    "assets/tiles/48/withered_sun_medallion.png",
+    "assets/tiles/48/bone_white_thorn_star.png",
+    "assets/tiles/48/purple_nightshade_bloom.png",
+    "assets/tiles/48/bloodroot_ruby_shard.png",
+    "assets/tiles/48/amber_resin_seed.png",
+    "assets/tiles/48/crimson_rose_rune.png",
     "assets/tiles/altar/cursed_thorn_seal.svg",
 ]
 
@@ -26,6 +32,13 @@ def make_board(shape_cells):
     for x, y in shape_cells:
         board[y][x] = SHAPE_VALUE
     return board
+
+
+def png_dimensions(path):
+    data = path.read_bytes()
+    if data[:8] != b"\x89PNG\r\n\x1a\n":
+        raise SystemExit(f"Tile asset is not a PNG: {path}")
+    return int.from_bytes(data[16:20], "big"), int.from_bytes(data[20:24], "big")
 
 
 def find_run_segments(board):
@@ -1485,13 +1498,15 @@ def verify_source_hooks():
         "roundCeremony",
         "factionXpFill",
         "apothecary-fill",
-        "assets/tiles/altar/sol_rot_altar.svg",
-        "assets/tiles/altar/bone_star_altar.svg",
-        "assets/tiles/altar/nightshade_altar.svg",
-        "assets/tiles/altar/bloodroot_altar.svg",
-        "assets/tiles/altar/amber_seed_altar.svg",
-        "assets/tiles/altar/thorn_rose_altar.svg",
-        "generate_occult_tile_art.py",
+        "assets/tiles/96/withered_sun_medallion.png",
+        "assets/tiles/96/bone_white_thorn_star.png",
+        "assets/tiles/96/purple_nightshade_bloom.png",
+        "assets/tiles/96/bloodroot_ruby_shard.png",
+        "assets/tiles/96/amber_resin_seed.png",
+        "assets/tiles/96/crimson_rose_rune.png",
+        "const flowerIcon48",
+        "const flowerIconSrcset",
+        "prepare_reference_flower_tiles.js",
     ]
     retired_required_patterns = [
         r'restoredGreenhouseStatus',
@@ -1659,9 +1674,16 @@ def verify_source_hooks():
     if "<svg" not in socket_text or "<title" not in socket_text or "Occult altar tile socket" not in socket_text:
         raise SystemExit("Board socket art asset lacks expected SVG/title markup")
     for asset in ALTAR_TILE_ASSETS:
-        text = (ROOT / asset).read_text(encoding="utf-8")
-        if "<svg" not in text or "<title" not in text:
-            raise SystemExit(f"Tile asset lacks SVG/title markup: {asset}")
+        path = ROOT / asset
+        if asset.endswith(".svg"):
+            text = path.read_text(encoding="utf-8")
+            if "<svg" not in text or "<title" not in text:
+                raise SystemExit(f"Tile asset lacks SVG/title markup: {asset}")
+            continue
+        expected_size = 48 if "/48/" in asset else 96
+        width, height = png_dimensions(path)
+        if (width, height) != (expected_size, expected_size):
+            raise SystemExit(f"Tile asset has wrong dimensions: {asset} is {width}x{height}")
 
 
 verify_source_hooks()
