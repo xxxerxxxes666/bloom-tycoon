@@ -44,6 +44,18 @@ Read `docs/diablo_visual_simplification_audit.md` before every visual implementa
 
 **Current orchestration status:** all three ordered visual milestones are complete. Do not resume numbered-round expansion or invent a Pass 4. Preserve this vertical slice and await Xerxes's next product direction; scheduled checks should report only material regressions or deployment drift and must honor the three-empty-run pause rule.
 
+## Hermes live regression task — `6a30d3f` (2026-07-15)
+
+Fix one surgical Round 1 mobile tutorial-replay hierarchy regression. At exact `390×844`, after the first valid swap, tapping `HELP` currently places the tutorial panel partly above the viewport (`top: -5px`) and exposes three non-tile controls at once: `SKIP`, `HELP`, and `Shuffle (-1 move)`. Keep the replayed tutorial fully inside the first viewport and restore the active-play cap of no more than two visible non-tile buttons. Do not change order tuning, keyboard board controls, payoff focus handoffs, gameplay systems, or progression scope.
+
+Acceptance checks:
+
+- On exact `390×844`, replay `HELP` both before and after the first valid Round 1 swap; the tutorial panel rect stays fully inside the viewport (`top >= 0`, `bottom <= 844`).
+- While the tutorial panel is open, no more than two visible non-tile buttons exist. Preserve `SKIP` and at most one contextual action; do not leave `SKIP`, `HELP`, and `Shuffle` visible together.
+- The authored keyboard swap still advances Round 1, leaves one roving board tab stop, and preserves 64 tiles.
+- Round 1 → Round 2 → Round 3 retains the tuned goals/moves and focus handoffs: board → greenhouse action → Next Order → board, then conservatory action → Play Again → authored Round 1 pair.
+- Desktop `1280×720` and mobile `390×844` keep eight complete board rows where applicable, no horizontal overflow, no broken images, and no console or JavaScript errors.
+
 A pass counts only when its entire acceptance result is visibly demonstrated and browser-verified. Tiny hint, copy, pulse, marker, or documentation-only commits do not count.
 
 ## Execution authorization
