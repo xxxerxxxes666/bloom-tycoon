@@ -148,6 +148,7 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
     brokenImages: []
   });
   expect(report.bars, "exactly bouquet and greenhouse bars").toHaveLength(2);
+  expect(report.visibleButtons, "fresh tutorial button cap").toEqual(["Skip"]);
   expect(report.visibleProgressText).not.toMatch(/\b(?:SAP|MANA|BLOOD)\b|\d[\d,]*\s*\/\s*\d[\d,]*\s*XP|Greenhouse \+\d+ XP|Apothecary \+\d+ XP/);
 
   await page.locator("#tutorialSkipBtn").click();
@@ -159,9 +160,23 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
   await page.locator("#tutorialHelpBtn").click();
   await expect(page.locator("#tutorialPanel")).toBeVisible();
   await expect(page.locator("#tutorialCopy")).toHaveText("Swap the glowing flowers.");
+  report = await visibleReport(page);
+  expect(report.tutorialInViewport, "fresh replay tutorial panel stays in viewport").toBe(true);
+  expect(report.visibleButtons, "fresh replay button cap").toEqual(["Skip"]);
   await clickGuidedSwap(page);
   await expect(page.locator("#bouquetProgressLabel")).toContainText(/Bouquet [1-9]/);
   await expect(page.locator("#tutorialCopy")).toContainText(/Match 3 fills|Match 4 makes/);
+  report = await visibleReport(page);
+  expect(report.tutorialInViewport, "post-swap tutorial panel stays in viewport").toBe(true);
+  expect(report.visibleButtons, "post-swap tutorial button cap").toEqual(["Skip", "Shuffle (-1 move)"]);
+  await page.locator("#tutorialSkipBtn").click();
+  await expect(page.locator("#tutorialPanel")).toBeHidden();
+  await page.locator("#tutorialHelpBtn").click();
+  await expect(page.locator("#tutorialPanel")).toBeVisible();
+  await expect(page.locator("#tutorialCopy")).toContainText(/Match 3 fills|Match 4 makes/);
+  report = await visibleReport(page);
+  expect(report.tutorialInViewport, "post-swap replay panel stays in viewport").toBe(true);
+  expect(report.visibleButtons, "post-swap replay button cap").toEqual(["Skip", "Shuffle (-1 move)"]);
 
   await completeRoundWithReviewKey(page);
   await expect(page.locator("#tutorialCopy")).toHaveText("Coins restore the greenhouse.");
@@ -174,7 +189,11 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
   await expect(page.locator("#nextOrderBtn")).toBeVisible({ timeout: 5000 });
   await page.locator("#nextOrderBtn").click();
   await expect(page.locator(".tile")).toHaveCount(64);
-  await page.locator("#tutorialHelpBtn").click();
+  if (await page.locator("#tutorialHelpBtn").isVisible()) {
+    await page.locator("#tutorialHelpBtn").click();
+  } else {
+    await expect(page.locator("#tutorialPanel")).toBeVisible();
+  }
   await expect(page.locator("#tutorialCopy")).toHaveText("Match beside thorns.");
   report = await visibleReport(page);
   expect(report.round).toBe(2);
