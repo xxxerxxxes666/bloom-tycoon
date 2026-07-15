@@ -1302,11 +1302,6 @@
       margin: 0 auto;
     }
 
-    .sacrifice-icon-wrap {
-      width: 46px;
-      height: 46px;
-      margin: 0 auto 4px;
-    }
 
     .slot-icon-wrap {
       width: 42px;
@@ -1839,155 +1834,6 @@
         linear-gradient(90deg, #0000 0 46%, #ff8a4875 49%, #0000 54%);
     }
 
-    .tile.shears-target {
-      outline: 2px solid #d7b16d;
-      box-shadow:
-        inset 0 0 16px #000,
-        0 0 0 1px #160f0c,
-        0 0 18px #d7b16d,
-        0 0 28px #5f833866;
-    }
-
-    .tile.shears-target::after {
-      opacity: 1;
-      background:
-        radial-gradient(circle, #f0c47724 0, #0000 58%),
-        linear-gradient(135deg, #0000 0 42%, #f0c47788 48%, #0000 54%),
-        linear-gradient(45deg, #0000 0 44%, #5f833888 50%, #0000 56%);
-    }
-
-    .tile.moonwater-target {
-      outline: 2px solid #7fb2c9;
-      box-shadow:
-        inset 0 0 16px #000,
-        0 0 0 1px #160f0c,
-        0 0 18px #5bb6d0,
-        0 0 26px #d7b16d55;
-    }
-
-    .tile.moonwater-area {
-      outline: 2px solid #c8d9a5;
-      box-shadow:
-        inset 0 0 16px #000,
-        0 0 0 1px #160f0c,
-        0 0 16px #7fb2c9,
-        0 0 24px #5f833866;
-    }
-
-    .tile.moonwater-center::before {
-      border-color: #d7b16daa;
-      box-shadow: inset 0 0 12px #31566b, 0 0 18px #7fb2c9;
-    }
-
-    .tile.moonwater-target::after,
-    .tile.moonwater-area::after {
-      opacity: 1;
-      background:
-        radial-gradient(circle, #7fb2c932 0, #0000 58%),
-        repeating-conic-gradient(from 18deg, #0000 0 12deg, #d7b16d55 13deg 15deg, #0000 16deg 32deg);
-    }
-
-    .tile.black-candle-line {
-      outline: 2px solid #ff8a48;
-      box-shadow:
-        inset 0 0 18px #000,
-        0 0 0 1px #160f0c,
-        0 0 20px #9b1d22,
-        0 0 30px #d7b16d66;
-    }
-
-    .tile.black-candle-line::before {
-      border-color: #d7b16daa;
-      box-shadow: inset 0 0 14px #641111, 0 0 20px #9b1d22;
-    }
-
-    .tile.black-candle-line::after {
-      opacity: 1;
-      background:
-        radial-gradient(circle, #ff8a4830 0, #0000 58%),
-        linear-gradient(90deg, #0000 0 42%, #ff8a48aa 48%, #0000 55%),
-        linear-gradient(0deg, #0000 0 44%, #9b1d2288 50%, #0000 56%);
-    }
-
-    .tile.grave-soil-target {
-      outline: 2px solid #9f8350;
-      box-shadow:
-        inset 0 0 16px #000,
-        0 0 0 1px #160f0c,
-        0 0 18px #8d6b3f,
-        0 0 26px #5f833866;
-    }
-
-    .tile.grave-soil-target::after {
-      opacity: 1;
-      background:
-        radial-gradient(circle, #d7b16d28 0, #0000 58%),
-        repeating-conic-gradient(from 12deg, #0000 0 13deg, #9f835066 14deg 16deg, #0000 17deg 32deg);
-    }
-
-    .tile.grave-soil-ready {
-      outline: 2px solid #c8a96d;
-      box-shadow:
-        inset 0 0 16px #000,
-        0 0 0 1px #160f0c,
-        0 0 20px #d7b16d,
-        0 0 28px #314b25;
-    }
-
-    .tile.grave-soil-ready::before {
-      border-color: #d7b16daa;
-      box-shadow: inset 0 0 16px #243519, 0 0 18px #8d6b3f;
-    }
-
-    .grave-soil-sigil {
-      position: absolute;
-      right: 6px;
-      bottom: 5px;
-      z-index: 4;
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      border: 1px solid #d7b16dcc;
-      background:
-        radial-gradient(circle at 50% 42%, #f0c477 0, #8d6b3f 42%, #182312 74%);
-      box-shadow:
-        0 0 10px #d7b16d,
-        0 0 16px #5f8338,
-        inset 0 0 6px #000;
-      pointer-events: none;
-    }
-
-    .tile.sacrifice-target {
-      outline: 2px solid #9b1d22;
-      box-shadow:
-        inset 0 0 14px #000,
-        0 0 0 1px #160f0c,
-        0 0 18px #7a1010;
-    }
-
-    .tile.sacrifice-profitable {
-      outline-color: #d7b16d;
-      box-shadow:
-        inset 0 0 14px #000,
-        0 0 0 1px #160f0c,
-        0 0 24px #d7b16d,
-        0 0 18px #9b1d22,
-        0 0 32px #3a0505;
-      animation: profitable-pulse 1.2s ease-in-out infinite;
-    }
-
-    .tile.sacrifice-profitable::before {
-      border-color: #d7b16d88;
-      box-shadow: inset 0 0 12px #8f1414;
-    }
-
-    .tile.sacrifice-profitable::after {
-      opacity: 1;
-      background:
-        radial-gradient(circle, #d7b16d22 0, #0000 58%),
-        linear-gradient(135deg, #0000 0 43%, #ff2d1d66 49%, #0000 55%);
-    }
-
     .tile.harvest-flash {
       animation: harvest-flash 540ms ease-out;
     }
@@ -2273,48 +2119,6 @@
       animation: seed-rune-awaken 1080ms cubic-bezier(0.12, 0.82, 0.18, 1) forwards;
     }
 
-    .board-particle.moonwater-drop {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 7;
-      color: #d7e9ec;
-      font-size: var(--font-size, 18px);
-      text-shadow:
-        0 0 8px #000,
-        0 0 14px #5bb6d0,
-        0 0 20px #d7b16d;
-      animation: resource-pop 980ms cubic-bezier(0.14, 0.82, 0.2, 1) forwards;
-    }
-
-    .board-particle.black-candle-flame {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 7;
-      color: #ffd08a;
-      font-size: var(--font-size, 20px);
-      text-shadow:
-        0 0 8px #000,
-        0 0 14px #9b1d22,
-        0 0 22px #d7b16d;
-      animation: resource-pop 1050ms cubic-bezier(0.14, 0.82, 0.2, 1) forwards;
-    }
-
-    .board-particle.grave-soil-spark {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 7;
-      color: #f0d58b;
-      font-size: var(--font-size, 18px);
-      text-shadow:
-        0 0 8px #000,
-        0 0 14px #5f8338,
-        0 0 20px #d7b16d;
-      animation: resource-pop 980ms cubic-bezier(0.14, 0.82, 0.2, 1) forwards;
-    }
-
     .board-particle.blood-pop,
     .board-particle.blood-aura,
     .board-particle.shard-pop,
@@ -2417,8 +2221,6 @@
 
     .btn:hover,
     .chest-access:hover,
-    .sacrifice-option:hover,
-    .sacrifice-cancel:hover,
     .renew-btn:hover,
     .modal-close:hover {
       border-color: #8a633e;
@@ -2430,208 +2232,6 @@
         linear-gradient(180deg, #310908, #0a0303),
         radial-gradient(circle at 50% 0, #9b1d2260 0, #0000 50%);
       border-color: #6b2723;
-    }
-
-    .btn.booster {
-      background:
-        linear-gradient(180deg, #1f2f18, #070a05),
-        radial-gradient(circle at 50% 0, #d7b16d55 0, #0000 50%);
-      border-color: #7b6339;
-      min-width: 250px;
-    }
-
-    .btn.armed {
-      border-color: #c96a5a;
-      box-shadow: inset 0 0 20px #000, 0 0 18px #7d1717;
-    }
-
-    .btn:disabled {
-      cursor: not-allowed;
-      opacity: 0.45;
-      filter: grayscale(0.6);
-    }
-
-    .sacrifice-panel {
-      display: none;
-      max-width: 650px;
-      margin: 0 auto 14px;
-      padding: 14px 16px;
-      border: 1px solid #5d2b25;
-      background:
-        radial-gradient(circle at 50% 0, #3a0909 0, #0a0505 58%),
-        linear-gradient(180deg, #120807, #050404);
-      box-shadow: inset 0 0 22px #000, 0 0 18px #000;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .sacrifice-panel::before {
-      content: "";
-      position: absolute;
-      inset: 5px;
-      border: 1px solid #8a332a55;
-      pointer-events: none;
-    }
-
-    .sacrifice-panel.open {
-      display: block;
-    }
-
-    .booster-panel {
-      display: none;
-      max-width: 650px;
-      margin: 0 auto 14px;
-      padding: 12px 16px;
-      border: 1px solid #6f5a34;
-      background:
-        radial-gradient(circle at 50% 0, #273319 0, #0b0d06 58%),
-        linear-gradient(180deg, #12170c, #050604);
-      box-shadow: inset 0 0 22px #000, 0 0 18px #000;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .booster-panel::before {
-      content: "";
-      position: absolute;
-      inset: 5px;
-      border: 1px solid #d7b16d44;
-      pointer-events: none;
-    }
-
-    .booster-panel.open {
-      display: block;
-    }
-
-    .booster-copy {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      color: #d8c7aa;
-      font-size: 14px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .booster-status {
-      color: #d0b27a;
-    }
-
-    .booster-modes {
-      display: none;
-      gap: 7px;
-      align-items: center;
-      justify-content: center;
-      margin-top: 10px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .booster-modes.open {
-      display: flex;
-    }
-
-    .booster-mode {
-      min-width: 92px;
-      min-height: 34px;
-      padding: 6px 12px;
-      color: #b9a17d;
-      cursor: pointer;
-      border: 1px solid #3d3026;
-      background: #080606;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-    }
-
-    .booster-mode.selected {
-      color: #f0d6a6;
-      border-color: #c96a5a;
-      box-shadow: inset 0 0 14px #000, 0 0 12px #7d1717;
-    }
-
-    .sacrifice-copy {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 12px;
-      color: #d8c7aa;
-      font-size: 14px;
-    }
-
-    .sacrifice-status {
-      color: #c96a5a;
-    }
-
-    .sacrifice-options {
-      display: grid;
-      grid-template-columns: repeat(6, minmax(0, 1fr));
-      gap: 8px;
-    }
-
-    .sacrifice-option {
-      min-width: 0;
-      min-height: 88px;
-      color: #d8c7aa;
-      cursor: pointer;
-      border: 1px solid #3d3026;
-      background: radial-gradient(circle at 50% 30%, #1a0b09 0, #050404 68%);
-      box-shadow: inset 0 0 14px #000;
-      padding: 7px 5px;
-      text-align: center;
-      position: relative;
-    }
-
-    .sacrifice-option img {
-      width: 42px;
-      height: 42px;
-      object-fit: contain;
-      display: block;
-      margin: 0 auto 4px;
-      filter: drop-shadow(0 0 7px #000);
-    }
-
-    .sacrifice-option span {
-      display: block;
-      font-size: 11px;
-      line-height: 1.05;
-      color: #d0b27a;
-      text-transform: uppercase;
-    }
-
-    .sacrifice-hits {
-      margin-top: 5px;
-      color: #775f48 !important;
-      font-size: 10px !important;
-      letter-spacing: 0.5px;
-    }
-
-    .sacrifice-option.selected {
-      border-color: #c96a5a;
-      box-shadow: inset 0 0 14px #000, 0 0 14px #7d1717, 0 0 8px #d7b16d55;
-    }
-
-    .sacrifice-option.profitable .sacrifice-hits {
-      color: #d7b16d !important;
-      text-shadow: 0 0 8px #7d1717;
-    }
-
-    .sacrifice-cancel {
-      color: #b9a17d;
-      cursor: pointer;
-      border: 1px solid #3d3026;
-      background: #080606;
-      padding: 6px 10px;
-      min-width: 78px;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-    }
-
-    .sacrifice-cancel:focus-visible,
-    .sacrifice-cancel:hover {
-      color: #f0d6a6;
-      border-color: #c96a5a;
     }
 
     .ritual-log {
@@ -4076,10 +3676,6 @@
         grid-template-columns: repeat(3, 1fr);
       }
 
-      .sacrifice-options {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-      }
-
       .slot-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
@@ -4975,10 +4571,7 @@
     body.round-one-active .chest-access,
     body.restored-next-order-focus .bottom,
     body.round-one-active .first-session-plaque,
-    body.round-one-active .sacrifice-panel,
-    body.round-one-active .booster-panel,
     body.round-one-active .controls .red,
-    body.round-one-active .controls .booster,
     body.round-one-active #renewBtn,
     body.round-one-active:not(.first-move-made) #shuffleBtn,
     body.round-one-active #roundCeremony {
@@ -5053,14 +4646,6 @@
     body.round-two-upgrade-complete .bouquet-bind-seal,
     body.round-three-final-pending .bouquet-bind-seal,
     body.round-three-final-complete .bouquet-bind-seal,
-    body.round-two-upgrade-pending .sacrifice-panel,
-    body.round-two-upgrade-complete .sacrifice-panel,
-    body.round-three-final-pending .sacrifice-panel,
-    body.round-three-final-complete .sacrifice-panel,
-    body.round-two-upgrade-pending .booster-panel,
-    body.round-two-upgrade-complete .booster-panel,
-    body.round-three-final-pending .booster-panel,
-    body.round-three-final-complete .booster-panel,
     body.round-two-upgrade-pending #roundCeremony,
     body.round-two-upgrade-complete #roundCeremony,
     body.round-three-final-pending #roundCeremony,
@@ -5085,19 +4670,15 @@
     }
     body.restored-greenhouse-handoff .left, body.restored-greenhouse-handoff .bottom,
     body.restored-greenhouse-handoff .first-session-plaque,
-    body.restored-greenhouse-handoff .sacrifice-panel, body.restored-greenhouse-handoff .booster-panel,
     body.restored-greenhouse-handoff .controls, body.restored-greenhouse-handoff #roundCeremony { display:none!important; }
     @media (min-width:761px) {
       body.restored-greenhouse-handoff .left { display:block!important; }
     }
     body.restored-next-order-focus .bottom,
     body.restored-next-order-focus .first-session-plaque,
-    body.restored-next-order-focus .sacrifice-panel, body.restored-next-order-focus .booster-panel,
     body.restored-next-order-focus .controls, body.restored-next-order-focus #roundCeremony { display:none!important; }
     body.round-three-focus-active .bottom,
     body.round-three-focus-active .first-session-plaque,
-    body.round-three-focus-active .sacrifice-panel,
-    body.round-three-focus-active .booster-panel,
     body.round-three-focus-active .controls,
     body.round-three-focus-active #roundCeremony { display:none!important; }
     body.restored-greenhouse-handoff .next-order-cue { display:flex; width:max-content; max-width:calc(100% - 20px); min-height:30px; margin:7px auto 0; padding:5px 11px; align-items:center; justify-content:center; border:1px solid #77944f; color:#e8ffc5; background:linear-gradient(90deg,#10170d,#25381c,#10170d); box-shadow:0 0 18px #7fcf6536,inset 0 0 10px #000; font:800 13px Georgia,serif; letter-spacing:.07em; text-align:center; text-transform:uppercase; animation:handoff-cue-rise 1.9s ease-out both; }
@@ -6367,14 +5948,7 @@
     let counts = [0, 0, 0, 0, 0, 0];
     let cursedThorns = [];
     let clearedCursedThorns = 0;
-    let sacrificeState = { active: false, choice: null };
-    let boosters = { pruningShears: 1, moonwaterFlask: 1, blackCandle: 1, graveSoil: 1 };
     let bouquetStreak = 0;
-    let activeBooster = "";
-    let moonwaterPreviewCenter = null;
-    let blackCandleAxis = "row";
-    let blackCandlePreview = { axis: "row", index: 3 };
-    let graveSoilCells = new Set();
     let ritualMessage = "Match botanical elements to feed the First Bouquet.";
     let harvestFlashCells = new Set();
     let transmuteFlashCell = "";
@@ -6680,10 +6254,6 @@
         return false;
       }
       selected = null;
-      sacrificeState = { active: false, choice: null };
-      activeBooster = "";
-      moonwaterPreviewCenter = null;
-      blackCandlePreview = null;
       clearIdleHint();
       ritualMessage = failedBouquetRitualMessage(plan);
       return true;
@@ -6771,7 +6341,6 @@
       // but at least one adjacent swap must create a harvest.
       const plan = activeRoundPlan();
       const needsThornTeachingMove = shouldSeedThornTeachingMove(plan);
-      graveSoilCells.clear();
       for (let attempts = 0; attempts < MAX_BOARD_BUILD_ATTEMPTS; attempts += 1) {
         buildOpeningBoard();
         seedCurrentTargetMoves();
@@ -7096,7 +6665,7 @@
 
     function selectedHarvestPreviewFor(cell) {
       const preview = { cells: new Set(), anchors: new Set(), relicCells: new Set() };
-      if (!cell || isResolving || roundComplete || isBouquetFailed() || sacrificeState.active || activeBooster) {
+      if (!cell || isResolving || roundComplete || isBouquetFailed()) {
         return preview;
       }
       const neighbors = [
@@ -7320,7 +6889,7 @@
     function scheduleIdleHint() {
       clearIdleHint();
       const postOnboardingIdleHint = isPostOnboardingIdleHintActive();
-      if ((hasMadeValidMove && !postOnboardingIdleHint) || roundComplete || isBouquetFailed() || isResolving || sacrificeState.active || activeBooster) {
+      if ((hasMadeValidMove && !postOnboardingIdleHint) || roundComplete || isBouquetFailed() || isResolving) {
         return;
       }
       const hintDelay = currentRound === 1
@@ -7330,7 +6899,7 @@
           : 7000;
       idleHintTimer = window.setTimeout(() => {
         const postOnboardingIdleHintAfterDelay = isPostOnboardingIdleHintActive();
-        if ((hasMadeValidMove && !postOnboardingIdleHintAfterDelay) || roundComplete || isBouquetFailed() || isResolving || sacrificeState.active || activeBooster) {
+        if ((hasMadeValidMove && !postOnboardingIdleHintAfterDelay) || roundComplete || isBouquetFailed() || isResolving) {
           return;
         }
         const plan = activeRoundPlan();
@@ -7771,7 +7340,7 @@
     }
 
     function finishTileSwipe(start, event, x, y) {
-      if (!start || start.pointerId !== event.pointerId || isResolving || sacrificeState.active || activeBooster) {
+      if (!start || start.pointerId !== event.pointerId || isResolving) {
         return;
       }
       const dx = event.clientX - start.clientX;
@@ -8001,18 +7570,6 @@
       tap(cell.x, cell.y);
     }
 
-    function previewActiveBoosterCell(event) {
-      const cell = boardTileFromEvent(event);
-      if (!cell) {
-        return;
-      }
-      if (activeBooster === "moonwaterFlask") {
-        previewMoonwaterPatch(cell.x, cell.y);
-      } else if (activeBooster === "blackCandle") {
-        previewBlackCandleLine(cell.x, cell.y);
-      }
-    }
-
     function ensurePlayableBoardAfterCascade() {
       if (!matches().length && hasLegalMoves()) {
         return false;
@@ -8091,8 +7648,6 @@
       board[1][0] = fillerA;
       board[1][1] = fillerB;
       board[1][2] = fillerC;
-      [0, 1, 2, 3].forEach((x) => graveSoilCells.delete(graveSoilKey(x, 0)));
-      [0, 1, 2].forEach((x) => graveSoilCells.delete(graveSoilKey(x, 1)));
       altarDriftRefillBudget -= 1;
       return true;
     }
@@ -8482,16 +8037,7 @@
           tile.setAttribute("aria-rowindex", String(y + 1));
           tile.setAttribute("aria-colindex", String(x + 1));
           const selectedClass = selected && selected.x === x && selected.y === y ? "sel" : "";
-          const legalClass = selected && !sacrificeState.active && isLegalSwap(selected, { x, y }) ? "legal-target" : "";
-          const sacrificeClass = sacrificeState.active && sacrificeState.choice !== null ? "sacrifice-target" : "";
-          const profitableClass = sacrificeState.active && wouldSacrificeHarvest(x, y) ? "sacrifice-profitable" : "";
-          const shearsClass = activeBooster === "pruningShears" ? "shears-target" : "";
-          const moonwaterTargetClass = activeBooster === "moonwaterFlask" && isMoonwaterCenter(x, y) ? "moonwater-target" : "";
-          const moonwaterAreaClass = activeBooster === "moonwaterFlask" && moonwaterPreviewCenter && inMoonwaterPatch(x, y, moonwaterPreviewCenter.x, moonwaterPreviewCenter.y) ? "moonwater-area" : "";
-          const moonwaterCenterClass = activeBooster === "moonwaterFlask" && moonwaterPreviewCenter && moonwaterPreviewCenter.x === x && moonwaterPreviewCenter.y === y ? "moonwater-center" : "";
-          const blackCandleLineClass = activeBooster === "blackCandle" && isBlackCandlePreviewCell(x, y) ? "black-candle-line" : "";
-          const graveSoilTargetClass = activeBooster === "graveSoil" && isGraveSoilEligible(x, y) ? "grave-soil-target" : "";
-          const graveSoilReadyClass = isGraveSoilReadyCell(x, y) ? "grave-soil-ready" : "";
+          const legalClass = selected && isLegalSwap(selected, { x, y }) ? "legal-target" : "";
           const harvestClass = harvestFlashCells.has(`${x},${y}`) ? "harvest-flash" : "";
           const superClass = superBloomCells.has(`${x},${y}`) ? "super-bloom-hot" : "";
           const invalidClass = invalidSwapCells.has(`${x},${y}`) ? "invalid-swap" : "";
@@ -8523,7 +8069,7 @@
           const previewClass = harvestPreview.cells.has(fallKey) ? "match-preview" : "";
           const previewAnchorClass = harvestPreview.anchors.has(fallKey) ? "match-preview-anchor" : "";
           const relicPreviewClass = harvestPreview.relicCells.has(fallKey) ? "relic-preview" : "";
-          tile.className = `tile ${selectedClass} ${legalClass} ${previewClass} ${previewAnchorClass} ${relicPreviewClass} ${sacrificeClass} ${profitableClass} ${shearsClass} ${moonwaterTargetClass} ${moonwaterAreaClass} ${moonwaterCenterClass} ${blackCandleLineClass} ${graveSoilTargetClass} ${graveSoilReadyClass} ${harvestClass} ${superClass} ${invalidClass} ${validSwapClass} ${swapClass} ${swapGlideClass} ${idleHintClass} ${thornTeachClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass} ${refillBornClass} ${settleClass}`;
+          tile.className = `tile ${selectedClass} ${legalClass} ${previewClass} ${previewAnchorClass} ${relicPreviewClass} ${harvestClass} ${superClass} ${invalidClass} ${validSwapClass} ${swapClass} ${swapGlideClass} ${idleHintClass} ${thornTeachClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass} ${refillBornClass} ${settleClass}`;
           tile.disabled = isResolving || roundComplete || isBouquetFailed();
           tile.tabIndex = !tile.disabled && boardFocusCell.x === x && boardFocusCell.y === y ? 0 : -1;
           tile.style.setProperty("--tile-color", flowers[value][4]);
@@ -8535,12 +8081,7 @@
             tile.style.setProperty("--fall-y", `${-fallRows * 112}%`);
             tile.style.setProperty("--fall-delay", `${Math.min(130, y * 12)}ms`);
           }
-          const profitLabel = profitableClass ? " profitable sacrifice target" : "";
           const legalLabel = legalClass ? " legal match swap target" : "";
-          const shearsLabel = shearsClass ? " Pruning Shears target" : "";
-          const moonwaterLabel = moonwaterTargetClass ? " Moonwater Flask 3x3 center" : moonwaterAreaClass ? " inside Moonwater Flask 3x3 patch" : "";
-          const blackCandleLabel = blackCandleLineClass ? ` Black Candle ${blackCandleAxis} burn target` : "";
-          const graveSoilLabel = graveSoilReadyClass ? " Grave Soil relic-ready tile" : graveSoilTargetClass ? " Grave Soil upgrade target" : "";
           const thornTeachLabel = thornTeachingActive
             ? thorn
               ? " marked Cursed Thorn target"
@@ -8550,10 +8091,9 @@
             : "";
           const thornLabel = thorn ? " with Cursed Thorn blocker" : thornClearedClass ? " where a Cursed Thorn cracked" : "";
           const previewLabel = previewClass ? " in selected harvest preview" : relicPreviewClass ? " in Black Candle Vine lane preview" : "";
-          tile.setAttribute("aria-label", `${flowers[value][0]} tile${profitLabel}${legalLabel}${previewLabel}${shearsLabel}${moonwaterLabel}${blackCandleLabel}${graveSoilLabel}${thornTeachLabel}${thornLabel}`);
+          tile.setAttribute("aria-label", `${flowers[value][0]} tile${legalLabel}${previewLabel}${thornTeachLabel}${thornLabel}`);
           tile.innerHTML = `
             ${iconMarkup(value, "", flowers[value][0], "tile-icon-wrap")}
-            ${graveSoilReadyClass ? '<span class="grave-soil-sigil" aria-hidden="true"></span>' : ""}
             ${thornTeachingActive && thorn ? '<span class="thorn-teach-marker blocker" aria-hidden="true">×</span>' : ""}
             ${thorn || thornClearedClass ? `<span class="cursed-thorn-overlay" aria-hidden="true"><span class="thorn-root"></span>${thornSealMarkup("cursed-thorn-art", "")}${thornHitClass ? `<span class="thorn-event">${thornClearedClass ? "BREAK" : "CRACK"}</span>` : ""}</span>` : ""}
           `;
@@ -8905,31 +8445,6 @@
       }
       const selectedHintPair = new Set(idleHintCells);
       notePlayerInteraction();
-      if (activeBooster === "pruningShears") {
-        usePruningShears(x, y);
-        return;
-      }
-      if (activeBooster === "moonwaterFlask") {
-        useMoonwaterFlask(x, y);
-        return;
-      }
-      if (activeBooster === "blackCandle") {
-        useBlackCandle(x, y);
-        return;
-      }
-      if (activeBooster === "graveSoil") {
-        useGraveSoil(x, y);
-        return;
-      }
-      if (sacrificeState.active) {
-        if (sacrificeState.choice === null) {
-          setScaffoldText("sacrificeStatus", "Choose the replacement element first.");
-          return;
-        }
-        performSacrifice(x, y);
-        return;
-      }
-
       if (moves <= 0) {
         selected = null;
         ritualMessage = failedBouquetRitualMessage();
@@ -9212,24 +8727,6 @@
       return segments;
     }
 
-    function wouldSacrificeHarvest(x, y) {
-      if (!sacrificeState.active || sacrificeState.choice === null) {
-        return false;
-      }
-      return wouldSacrificeHarvestAs(x, y, sacrificeState.choice);
-    }
-
-    function wouldSacrificeHarvestAs(x, y, flowerId) {
-      if (flowerId === null || board[y][x] === flowerId) {
-        return false;
-      }
-      const original = board[y][x];
-      board[y][x] = flowerId;
-      const createsMatch = matches().some((match) => match.cells.some(([mx, my]) => mx === x && my === y));
-      board[y][x] = original;
-      return createsMatch;
-    }
-
     function createResolveResult() {
       return {
         matched: false,
@@ -9336,10 +8833,6 @@
     }
 
     function lineRelicForMatch(match, shape) {
-      const graveRelic = graveSoilRelicForMatch(match, shape);
-      if (graveRelic) {
-        return graveRelic;
-      }
       if (!shape || shape.kind !== "line" || match.len !== 4 || !Array.isArray(match.runs) || match.runs.length !== 1) {
         return null;
       }
@@ -9358,29 +8851,6 @@
         fixed,
         cells,
         matchCells: run.cells
-      };
-    }
-
-    function graveSoilRelicForMatch(match, shape) {
-      if (!shape || shape.kind !== "line" || match.len !== 3 || !Array.isArray(match.runs) || match.runs.length !== 1) {
-        return null;
-      }
-      const run = match.runs[0];
-      if (!run || run.len !== 3 || !run.cells.some(([x, y]) => isGraveSoilReadyCell(x, y))) {
-        return null;
-      }
-      const direction = run.direction === "vertical" ? "vertical" : "horizontal";
-      const fixed = direction === "vertical" ? run.cells[0][0] : run.cells[0][1];
-      const cells = Array.from({ length: BOARD_SIZE }, (_, index) => (
-        direction === "vertical" ? [fixed, index] : [index, fixed]
-      ));
-      return {
-        name: "Grave Soil Relic",
-        direction,
-        fixed,
-        cells,
-        matchCells: run.cells,
-        source: "grave-soil"
       };
     }
 
@@ -9766,7 +9236,6 @@
     }
 
     function collapseColumns() {
-      const nextGraveSoilCells = new Set();
       refillBornCells.clear();
       refillColumns.clear();
       for (let x = 0; x < BOARD_SIZE; x += 1) {
@@ -9775,7 +9244,7 @@
         let columnNewTiles = 0;
         for (let y = BOARD_SIZE - 1; y >= 0; y -= 1) {
           if (board[y][x] !== null) {
-            remaining.push({ value: board[y][x], fromY: y, graveSoil: isGraveSoilReadyCell(x, y) });
+            remaining.push({ value: board[y][x], fromY: y });
           }
         }
         for (let y = BOARD_SIZE - 1; y >= 0; y -= 1) {
@@ -9784,9 +9253,6 @@
             board[y][x] = tile.value;
             recordFall(x, y, y - tile.fromY);
             columnDropRows = Math.max(columnDropRows, y - tile.fromY);
-            if (tile.graveSoil) {
-              nextGraveSoilCells.add(graveSoilKey(x, y));
-            }
           } else {
             board[y][x] = altarDriftRefillTile(x, y);
             recordFall(x, y, y + 1);
@@ -9799,7 +9265,6 @@
           refillColumns.set(x, { rows: Math.max(columnDropRows, columnNewTiles), newTiles: columnNewTiles });
         }
       }
-      graveSoilCells = nextGraveSoilCells;
     }
 
     function recordFall(x, y, rows) {
@@ -10147,7 +9612,7 @@
     }
 
     function queueSuperBloomBoardEffects(cells, cascadeIndex = 0) {
-      // Super Bloom FX is reserved for 6+ straight lines and forced review/sacrifice paths.
+      // Super Bloom FX is reserved for 6+ straight lines and local review paths.
       const baseDelay = cascadeIndex * 120;
       cells.slice(0, 6).forEach(([x, y], cellIndex) => {
         boardParticles.push({
@@ -10926,8 +10391,6 @@
         return;
       }
       notePlayerInteraction();
-      cancelSacrifice(false);
-      cancelActiveBooster(false);
       if (!spendMoves(1, "Shuffle")) {
         return;
       }
@@ -10974,10 +10437,6 @@
       clearIdleHint();
       selected = null;
       clearTransientGameFeel();
-      sacrificeState = { active: false, choice: null };
-      activeBooster = "";
-      moonwaterPreviewCenter = null;
-      blackCandlePreview = null;
       harvestFlashCells.clear();
       fallAnimations.clear();
       refillBornCells.clear();
@@ -10988,7 +10447,6 @@
       thornPulseCells.clear();
       thornClearedCells.clear();
       clearThornTeachingCue(false);
-      graveSoilCells.clear();
       currentRound = nextRound;
       if (currentRound === 2 && !roundComplete) {
         roundTwoGreenhouseUpgraded = false;
@@ -11049,10 +10507,6 @@
       clearIdleHint();
       selected = null;
       clearTransientGameFeel();
-      sacrificeState = { active: false, choice: null };
-      activeBooster = "";
-      moonwaterPreviewCenter = null;
-      blackCandlePreview = null;
       harvestFlashCells.clear();
       fallAnimations.clear();
       refillBornCells.clear();
@@ -11063,7 +10517,6 @@
       thornPulseCells.clear();
       thornClearedCells.clear();
       clearThornTeachingCue(false);
-      graveSoilCells.clear();
       currentRound = 1;
       restoredRoundTwoGuideMoves = 0;
       pendingRuneTendedSoil = false;
@@ -11125,994 +10578,11 @@
         thornPulseCells.clear();
         thornClearedCells.clear();
       }
-      cancelActiveBooster(false);
       notePlayerInteraction();
       maybeCompleteRound();
       render();
       scheduleOrderPulseClear();
       scheduleElementPulseClear();
-    }
-
-    function pruningShearsCount() {
-      return Math.max(0, Math.floor(Number(boosters.pruningShears) || 0));
-    }
-
-    function moonwaterFlaskCount() {
-      return Math.max(0, Math.floor(Number(boosters.moonwaterFlask) || 0));
-    }
-
-    function blackCandleCount() {
-      return Math.max(0, Math.floor(Number(boosters.blackCandle) || 0));
-    }
-
-    function graveSoilCount() {
-      return Math.max(0, Math.floor(Number(boosters.graveSoil) || 0));
-    }
-
-    function renderBoosterPanel() {
-      const panel = $("boosterPanel");
-      const status = $("boosterStatus");
-      const modes = $("blackCandleModes");
-      const rowMode = $("blackCandleRowMode");
-      const columnMode = $("blackCandleColumnMode");
-      if (!panel || !status || !modes || !rowMode || !columnMode) {
-        return;
-      }
-      const armed = activeBooster === "pruningShears" || activeBooster === "moonwaterFlask" || activeBooster === "blackCandle" || activeBooster === "graveSoil";
-      panel.classList.toggle("open", armed);
-      modes.classList.toggle("open", activeBooster === "blackCandle");
-      rowMode.classList.toggle("selected", blackCandleAxis === "row");
-      rowMode.setAttribute("aria-pressed", blackCandleAxis === "row" ? "true" : "false");
-      columnMode.classList.toggle("selected", blackCandleAxis === "column");
-      columnMode.setAttribute("aria-pressed", blackCandleAxis === "column" ? "true" : "false");
-      if (activeBooster === "pruningShears") {
-        status.textContent = "Apothecary Level 2 Pruning Shears are armed. Choose one tile or Cursed Thorn to cut. Cancel spends nothing.";
-      } else if (activeBooster === "moonwaterFlask") {
-        status.textContent = "Apothecary field kit Moonwater Flask is armed. Choose the center of a 3x3 patch. Cursed Thorns stay rooted. Cancel spends nothing.";
-      } else if (activeBooster === "blackCandle") {
-        const lane = blackCandleAxis === "column" ? "column" : "row";
-        status.textContent = `Black Market Black Candle is armed. Choose Row or Column, preview a ${lane}, then click to burn it. Cursed Thorns stay rooted. Cancel spends nothing.`;
-      } else if (activeBooster === "graveSoil") {
-        status.textContent = "Greenhouse Grave Soil is armed. Choose one glowing normal tile to make it relic-ready. Cursed Thorns reject the soil. Cancel spends nothing.";
-      }
-    }
-
-    function cancelActiveBooster(refocus = true) {
-      if (activeBooster === "pruningShears") {
-        cancelPruningShears(refocus);
-        return;
-      }
-      if (activeBooster === "moonwaterFlask") {
-        cancelMoonwaterFlask(refocus);
-        return;
-      }
-      if (activeBooster === "blackCandle") {
-        cancelBlackCandle(refocus);
-        return;
-      }
-      if (activeBooster === "graveSoil") {
-        cancelGraveSoil(refocus);
-      }
-    }
-
-    function togglePruningShears() {
-      if (isResolving) {
-        return;
-      }
-      if (roundComplete) {
-        ritualMessage = "The bouquet is sealed. Press Next Bouquet to continue.";
-        render();
-        return;
-      }
-      if (activeBooster === "pruningShears") {
-        cancelPruningShears();
-        return;
-      }
-      if (pruningShearsCount() < 1) {
-        ritualMessage = "The Apothecary has no Pruning Shears ready.";
-        render();
-        return;
-      }
-      clearIdleHint();
-      cancelSacrifice(false);
-      selected = null;
-      activeBooster = "pruningShears";
-      moonwaterPreviewCenter = null;
-      blackCandlePreview = null;
-      ritualMessage = "<strong>Pruning Shears armed:</strong> Apothecary Level 2 grant ready. Choose one tile or Cursed Thorn to cut. Cancel spends nothing.";
-      render();
-    }
-
-    function cancelPruningShears(refocus = true) {
-      if (activeBooster !== "pruningShears") {
-        return;
-      }
-      activeBooster = "";
-      moonwaterPreviewCenter = null;
-      blackCandlePreview = null;
-      selected = null;
-      ritualMessage = "Pruning Shears lowered. No booster spent.";
-      render();
-      if (refocus) {
-        $("pruningShearsBtn")?.focus();
-      }
-    }
-
-    function spendPruningShears() {
-      if (pruningShearsCount() < 1) {
-        ritualMessage = "The Apothecary has no Pruning Shears ready.";
-        render();
-        return false;
-      }
-      boosters.pruningShears = pruningShearsCount() - 1;
-      return true;
-    }
-
-    function queuePruningShearBurst(x, y, cutThorn = false) {
-      boardParticles.push({
-        type: "slash-pop",
-        x,
-        y,
-        dx: 0,
-        dy: 0,
-        size: cutThorn ? 17 : 14,
-        spin: -32,
-        scale: cutThorn ? 1.5 : 1.25
-      });
-      boardParticles.push({
-        type: "slash-pop",
-        x,
-        y,
-        dx: 0,
-        dy: 0,
-        size: cutThorn ? 16 : 13,
-        spin: 34,
-        scale: cutThorn ? 1.42 : 1.18,
-        delay: 45
-      });
-      if (cutThorn) {
-        queueThornBurst(x, y, true);
-      }
-    }
-
-    function usePruningShears(x, y) {
-      if (isResolving || roundComplete) {
-        return;
-      }
-      if (!spendPruningShears()) {
-        activeBooster = "";
-        return;
-      }
-      activeBooster = "";
-      selected = null;
-      clearIdleHint();
-
-      const thorn = thornAt(x, y);
-      if (thorn) {
-        const key = thornKey(x, y);
-        cursedThorns = cursedThorns.filter((candidate) => thornKey(candidate.x, candidate.y) !== key);
-        clearedCursedThorns += 1;
-        thornPulseCells.add(key);
-        thornClearedCells.add(key);
-        queuePruningShearBurst(x, y, true);
-        ritualMessage = `<strong>Pruning Shears:</strong> clipped a Cursed Thorn. Cursed Thorn ${thornGoalProgress()}/${thornGoalNeeded()} cleared.`;
-        maybeCompleteRound(ritualMessage);
-        render();
-        scheduleBoardParticleClear();
-        scheduleIdleHint();
-        return;
-      }
-
-      const removedName = flowers[board[y][x]][0];
-      board[y][x] = null;
-      harvestFlashCells = new Set([`${x},${y}`]);
-      queuePruningShearBurst(x, y, false);
-      collapseColumns();
-      const reshuffled = ensurePlayableBoardAfterCascade();
-      ritualMessage = `<strong>Pruning Shears:</strong> cut away ${removedName}. The board refilled${reshuffled ? " and re-seeded a legal move" : ""}.`;
-      render();
-      scheduleFallAnimationClear();
-      scheduleHarvestFlashClear();
-      scheduleBoardParticleClear();
-      scheduleIdleHint();
-    }
-
-    function isMoonwaterCenter(x, y) {
-      return x > 0 && x < BOARD_SIZE - 1 && y > 0 && y < BOARD_SIZE - 1;
-    }
-
-    function inMoonwaterPatch(x, y, centerX, centerY) {
-      return Math.abs(x - centerX) <= 1 && Math.abs(y - centerY) <= 1;
-    }
-
-    function moonwaterPatchCells(centerX, centerY) {
-      const cells = [];
-      for (let dy = -1; dy <= 1; dy += 1) {
-        for (let dx = -1; dx <= 1; dx += 1) {
-          const x = centerX + dx;
-          const y = centerY + dy;
-          if (x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE) {
-            cells.push([x, y]);
-          }
-        }
-      }
-      return cells;
-    }
-
-    function previewMoonwaterPatch(x, y) {
-      if (activeBooster !== "moonwaterFlask") {
-        return;
-      }
-      if (!isMoonwaterCenter(x, y)) {
-        if (moonwaterPreviewCenter) {
-          moonwaterPreviewCenter = null;
-          render();
-        }
-        return;
-      }
-      if (moonwaterPreviewCenter && moonwaterPreviewCenter.x === x && moonwaterPreviewCenter.y === y) {
-        return;
-      }
-      moonwaterPreviewCenter = { x, y };
-      render();
-    }
-
-    function toggleMoonwaterFlask() {
-      if (isResolving) {
-        return;
-      }
-      if (roundComplete) {
-        ritualMessage = "The bouquet is sealed. Press Next Bouquet to continue.";
-        render();
-        return;
-      }
-      if (activeBooster === "moonwaterFlask") {
-        cancelMoonwaterFlask();
-        return;
-      }
-      if (moonwaterFlaskCount() < 1) {
-        ritualMessage = "The Apothecary has no Moonwater Flask ready.";
-        render();
-        return;
-      }
-      clearIdleHint();
-      cancelSacrifice(false);
-      cancelActiveBooster(false);
-      selected = null;
-      activeBooster = "moonwaterFlask";
-      moonwaterPreviewCenter = { x: 3, y: 3 };
-      blackCandlePreview = null;
-      ritualMessage = "<strong>Moonwater Flask armed:</strong> choose the center of a 3x3 patch to reshuffle only those loose tiles. Cursed Thorns stay rooted.";
-      render();
-    }
-
-    function cancelMoonwaterFlask(refocus = true) {
-      if (activeBooster !== "moonwaterFlask") {
-        return;
-      }
-      activeBooster = "";
-      moonwaterPreviewCenter = null;
-      blackCandlePreview = null;
-      selected = null;
-      ritualMessage = "Moonwater Flask corked. No booster spent.";
-      render();
-      if (refocus) {
-        $("moonwaterFlaskBtn")?.focus();
-      }
-    }
-
-    function spendMoonwaterFlask() {
-      if (moonwaterFlaskCount() < 1) {
-        ritualMessage = "The Apothecary has no Moonwater Flask ready.";
-        render();
-        return false;
-      }
-      boosters.moonwaterFlask = moonwaterFlaskCount() - 1;
-      return true;
-    }
-
-    function shuffledValues(values) {
-      const shuffled = values.slice();
-      for (let index = shuffled.length - 1; index > 0; index -= 1) {
-        const swapIndex = Math.floor(Math.random() * (index + 1));
-        [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
-      }
-      if (shuffled.length > 1 && shuffled.every((value, index) => value === values[index])) {
-        shuffled.push(shuffled.shift());
-      }
-      return shuffled;
-    }
-
-    function applyMoonwaterValues(cells, values) {
-      cells.forEach(([x, y], index) => {
-        board[y][x] = values[index];
-      });
-    }
-
-    function shuffleMoonwaterPatch(centerX, centerY) {
-      const patchCells = moonwaterPatchCells(centerX, centerY);
-      const mutableCells = patchCells.filter(([x, y]) => !thornAt(x, y));
-      if (mutableCells.length < 2) {
-        return { ok: false, patchCells, mutableCells };
-      }
-
-      const originalBoard = boardSnapshot();
-      const originalValues = mutableCells.map(([x, y]) => board[y][x]);
-      for (let attempt = 0; attempt < 80; attempt += 1) {
-        const nextValues = shuffledValues(originalValues);
-        applyMoonwaterValues(mutableCells, nextValues);
-        if (!matches().length && hasLegalMoves()) {
-          return { ok: true, patchCells, mutableCells };
-        }
-      }
-      restoreBoard(originalBoard);
-      return { ok: false, patchCells, mutableCells };
-    }
-
-    function queueMoonwaterBurst(cells, centerX, centerY) {
-      cells.forEach(([x, y], index) => {
-        boardParticles.push({
-          type: "moonwater-drop",
-          text: index % 2 ? "☾" : "✦",
-          x,
-          y,
-          dx: (x - centerX) * 18 + (Math.random() - 0.5) * 18,
-          dy: (y - centerY) * 18 - 34 - Math.random() * 24,
-          size: 22,
-          fontSize: index % 2 ? 20 : 17,
-          spin: (Math.random() - 0.5) * 110,
-          delay: index * 22
-        });
-      });
-    }
-
-    function useMoonwaterFlask(x, y) {
-      if (isResolving || roundComplete) {
-        return;
-      }
-      if (!isMoonwaterCenter(x, y)) {
-        moonwaterPreviewCenter = null;
-        ritualMessage = "Moonwater needs a full 3x3 garden patch. Choose one of the glowing inner tiles.";
-        render();
-        return;
-      }
-      if (moonwaterFlaskCount() < 1) {
-        activeBooster = "";
-        moonwaterPreviewCenter = null;
-        ritualMessage = "The Apothecary has no Moonwater Flask ready.";
-        render();
-        return;
-      }
-      const result = shuffleMoonwaterPatch(x, y);
-      if (!result.ok) {
-        moonwaterPreviewCenter = { x, y };
-        ritualMessage = "Moonwater found no safe stir there. Choose another glowing 3x3 center.";
-        render();
-        return;
-      }
-      if (!spendMoonwaterFlask()) {
-        activeBooster = "";
-        moonwaterPreviewCenter = null;
-        return;
-      }
-      activeBooster = "";
-      selected = null;
-      moonwaterPreviewCenter = null;
-      clearIdleHint();
-      harvestFlashCells = new Set(result.patchCells.map((cell) => cell.join(",")));
-      queueMoonwaterBurst(result.mutableCells, x, y);
-      const thornCount = result.patchCells.length - result.mutableCells.length;
-      ritualMessage = `<strong>Moonwater Flask:</strong> stirred a 3x3 patch and left ${thornCount ? `${thornCount} Cursed Thorn${thornCount === 1 ? "" : "s"} rooted` : "all blockers untouched"}.`;
-      render();
-      scheduleHarvestFlashClear();
-      scheduleBoardParticleClear();
-      scheduleIdleHint();
-    }
-
-    function blackCandleLineCells(axis, index) {
-      const safeAxis = axis === "column" ? "column" : "row";
-      const safeIndex = Math.max(0, Math.min(BOARD_SIZE - 1, Number(index) || 0));
-      return Array.from({ length: BOARD_SIZE }, (_, cellIndex) => (
-        safeAxis === "column" ? [safeIndex, cellIndex] : [cellIndex, safeIndex]
-      ));
-    }
-
-    function isBlackCandlePreviewCell(x, y) {
-      if (activeBooster !== "blackCandle" || !blackCandlePreview) {
-        return false;
-      }
-      return blackCandlePreview.axis === "column"
-        ? x === blackCandlePreview.index
-        : y === blackCandlePreview.index;
-    }
-
-    function previewBlackCandleLine(x, y) {
-      if (activeBooster !== "blackCandle") {
-        return;
-      }
-      const axis = blackCandleAxis === "column" ? "column" : "row";
-      const index = axis === "column" ? x : y;
-      if (blackCandlePreview && blackCandlePreview.axis === axis && blackCandlePreview.index === index) {
-        return;
-      }
-      blackCandlePreview = { axis, index };
-      render();
-    }
-
-    function setBlackCandleAxis(axis) {
-      if (axis !== "row" && axis !== "column") {
-        return;
-      }
-      blackCandleAxis = axis;
-      blackCandlePreview = { axis, index: Math.floor(BOARD_SIZE / 2) - 1 };
-      if (activeBooster === "blackCandle") {
-        const lane = axis === "column" ? "column" : "row";
-        ritualMessage = `<strong>Black Candle armed:</strong> ${lane} targeting selected. Hover or focus a tile to preview the line, then click to burn.`;
-        render();
-      }
-    }
-
-    function toggleBlackCandle() {
-      if (isResolving) {
-        return;
-      }
-      if (roundComplete) {
-        ritualMessage = "The bouquet is sealed. Press Next Bouquet to continue.";
-        render();
-        return;
-      }
-      if (activeBooster === "blackCandle") {
-        cancelBlackCandle();
-        return;
-      }
-      if (blackCandleCount() < 1) {
-        ritualMessage = "The Black Market has no Black Candle ready.";
-        render();
-        return;
-      }
-      clearIdleHint();
-      cancelSacrifice(false);
-      cancelActiveBooster(false);
-      selected = null;
-      activeBooster = "blackCandle";
-      moonwaterPreviewCenter = null;
-      blackCandleAxis = blackCandleAxis === "column" ? "column" : "row";
-      blackCandlePreview = { axis: blackCandleAxis, index: Math.floor(BOARD_SIZE / 2) - 1 };
-      ritualMessage = "<strong>Black Candle armed:</strong> Black Market contraband ready. Choose Row or Column, preview a line, then click to burn it. Cursed Thorns stay rooted.";
-      render();
-    }
-
-    function cancelBlackCandle(refocus = true) {
-      if (activeBooster !== "blackCandle") {
-        return;
-      }
-      activeBooster = "";
-      blackCandlePreview = null;
-      selected = null;
-      ritualMessage = "Black Candle snuffed. No booster spent.";
-      render();
-      if (refocus) {
-        $("blackCandleBtn")?.focus();
-      }
-    }
-
-    function spendBlackCandle() {
-      if (blackCandleCount() < 1) {
-        ritualMessage = "The Black Market has no Black Candle ready.";
-        render();
-        return false;
-      }
-      boosters.blackCandle = blackCandleCount() - 1;
-      return true;
-    }
-
-    function queueBlackCandleBurst(cells, axis, index) {
-      const center = axis === "column"
-        ? [index, (BOARD_SIZE - 1) / 2]
-        : [(BOARD_SIZE - 1) / 2, index];
-      boardParticles.push({
-        type: "line-relic",
-        x: center[0],
-        y: center[1],
-        dx: 0,
-        dy: 0,
-        size: axis === "column" ? 13 : 24,
-        spin: axis === "column" ? 90 : 0,
-        scale: 7.4
-      });
-      boardParticles.push({
-        type: "line-relic",
-        x: center[0],
-        y: center[1],
-        dx: 0,
-        dy: 0,
-        size: axis === "column" ? 7 : 12,
-        spin: axis === "column" ? 90 : 0,
-        scale: 8.3,
-        delay: 90
-      });
-      cells.forEach(([cellX, cellY], cellIndex) => {
-        boardParticles.push({
-          type: "black-candle-flame",
-          text: cellIndex % 2 ? "✦" : "☽",
-          x: cellX,
-          y: cellY,
-          dx: (Math.random() - 0.5) * 54,
-          dy: -48 - Math.random() * 44,
-          size: 26,
-          fontSize: 20,
-          spin: (Math.random() - 0.5) * 100,
-          delay: cellIndex * 18
-        });
-      });
-    }
-
-    function collapseColumnsPreservingAnchors(anchorKeys = new Set()) {
-      const nextGraveSoilCells = new Set();
-      refillBornCells.clear();
-      refillColumns.clear();
-      for (let x = 0; x < BOARD_SIZE; x += 1) {
-        let columnDropRows = 0;
-        let columnNewTiles = 0;
-        let segmentEnd = BOARD_SIZE - 1;
-        while (segmentEnd >= 0) {
-          if (anchorKeys.has(thornKey(x, segmentEnd))) {
-            if (isGraveSoilReadyCell(x, segmentEnd)) {
-              nextGraveSoilCells.add(graveSoilKey(x, segmentEnd));
-            }
-            segmentEnd -= 1;
-            continue;
-          }
-          let segmentStart = segmentEnd;
-          while (segmentStart >= 0 && !anchorKeys.has(thornKey(x, segmentStart))) {
-            segmentStart -= 1;
-          }
-          const remaining = [];
-          for (let y = segmentEnd; y > segmentStart; y -= 1) {
-            if (board[y][x] !== null) {
-              remaining.push({ value: board[y][x], fromY: y, graveSoil: isGraveSoilReadyCell(x, y) });
-            }
-          }
-          for (let y = segmentEnd; y > segmentStart; y -= 1) {
-            if (remaining.length) {
-              const tile = remaining.shift();
-              board[y][x] = tile.value;
-              recordFall(x, y, y - tile.fromY);
-              columnDropRows = Math.max(columnDropRows, y - tile.fromY);
-              if (tile.graveSoil) {
-                nextGraveSoilCells.add(graveSoilKey(x, y));
-              }
-            } else {
-              board[y][x] = rand();
-              recordFall(x, y, y - segmentStart);
-              refillBornCells.add(`${x},${y}`);
-              columnDropRows = Math.max(columnDropRows, y - segmentStart);
-              columnNewTiles += 1;
-            }
-          }
-          segmentEnd = segmentStart - 1;
-        }
-        if (columnDropRows > 0) {
-          refillColumns.set(x, { rows: Math.max(columnDropRows, columnNewTiles), newTiles: columnNewTiles });
-        }
-      }
-      graveSoilCells = nextGraveSoilCells;
-    }
-
-    function refillBlackCandleLine(originalBoard, burnedCells, anchorKeys, originalGraveSoilCells = graveSoilSnapshot()) {
-      for (let attempt = 0; attempt < 80; attempt += 1) {
-        restoreBoard(originalBoard);
-        restoreGraveSoilCells(originalGraveSoilCells);
-        fallAnimations.clear();
-        refillBornCells.clear();
-        refillColumns.clear();
-        burnedCells.forEach(([cellX, cellY]) => {
-          board[cellY][cellX] = null;
-        });
-        collapseColumnsPreservingAnchors(anchorKeys);
-        if (!matches().length && hasLegalMoves()) {
-          return { reshuffled: false };
-        }
-      }
-
-      restoreBoard(originalBoard);
-      restoreGraveSoilCells(originalGraveSoilCells);
-      fallAnimations.clear();
-      refillBornCells.clear();
-      refillColumns.clear();
-      burnedCells.forEach(([cellX, cellY]) => {
-        board[cellY][cellX] = null;
-      });
-      collapseColumnsPreservingAnchors(anchorKeys);
-      return { reshuffled: ensurePlayableBoardAfterCascade() };
-    }
-
-    function useBlackCandle(x, y) {
-      if (isResolving || roundComplete) {
-        return;
-      }
-      const axis = blackCandleAxis === "column" ? "column" : "row";
-      const index = axis === "column" ? x : y;
-      const lineCells = blackCandleLineCells(axis, index);
-      const burnedCells = lineCells.filter(([cellX, cellY]) => !thornAt(cellX, cellY));
-      const thornCells = lineCells.filter(([cellX, cellY]) => thornAt(cellX, cellY));
-      if (!burnedCells.length) {
-        blackCandlePreview = { axis, index };
-        ritualMessage = "Black Candle found only rooted thorns there. Choose another row or column.";
-        render();
-        return;
-      }
-      if (!spendBlackCandle()) {
-        activeBooster = "";
-        blackCandlePreview = null;
-        return;
-      }
-
-      activeBooster = "";
-      selected = null;
-      moonwaterPreviewCenter = null;
-      blackCandlePreview = null;
-      clearIdleHint();
-      const originalBoard = boardSnapshot();
-      const originalGraveSoilCells = graveSoilSnapshot();
-      const gained = Array(flowers.length).fill(0);
-      const gainedCells = flowers.map(() => []);
-      burnedCells.forEach(([cellX, cellY]) => {
-        const flowerId = board[cellY][cellX];
-        counts[flowerId] += 1;
-        gained[flowerId] += 1;
-        gainedCells[flowerId].push([cellX, cellY]);
-        elementPulseTargets.add(flowerId);
-        queueResourceBurst(cellX, cellY, flowerId);
-      });
-      const coinsEarned = burnedCells.length * 3;
-      coins += coinsEarned;
-      harvestFlashCells = new Set(lineCells.map((cell) => cell.join(",")));
-      queueCoinBurst(burnedCells, coinsEarned);
-      queueBlackCandleBurst(lineCells, axis, index);
-      const anchorKeys = new Set(cursedThorns.map((thorn) => thornKey(thorn.x, thorn.y)));
-      const { reshuffled } = refillBlackCandleLine(originalBoard, burnedCells, anchorKeys, originalGraveSoilCells);
-      pulseOrderCounts(gained, gainedCells);
-      if (elementPulseTargets.size) {
-        scheduleElementPulseClear();
-      }
-      const lane = axis === "column" ? `column ${index + 1}` : `row ${index + 1}`;
-      const orderText = orderGainMessage(gained);
-      const thornText = thornCells.length
-        ? ` ${thornCells.length} Cursed Thorn${thornCells.length === 1 ? "" : "s"} stayed rooted.`
-        : " No Cursed Thorns were touched.";
-      ritualMessage = `<strong>Black Candle:</strong> burned ${lane} for ${burnedCells.length} tile${burnedCells.length === 1 ? "" : "s"}.${thornText} ${orderText ? `<strong>${orderText}</strong> ` : ""}+${coinsEarned} coins.${gainMarkup(gained)}${reshuffled ? " The board re-seeded itself with a legal move." : ""}`;
-      maybeCompleteRound(ritualMessage);
-      render();
-      scheduleFallAnimationClear();
-      scheduleHarvestFlashClear();
-      scheduleBoardParticleClear();
-      scheduleIdleHint();
-    }
-
-    function graveSoilKey(x, y) {
-      return `${x},${y}`;
-    }
-
-    function graveSoilSnapshot() {
-      return new Set(graveSoilCells);
-    }
-
-    function restoreGraveSoilCells(snapshot) {
-      graveSoilCells = new Set(snapshot || []);
-    }
-
-    function isGraveSoilReadyCell(x, y) {
-      return graveSoilCells.has(graveSoilKey(x, y));
-    }
-
-    function isGraveSoilEligible(x, y) {
-      return isValidThornCell(x, y)
-        && Number.isInteger(board?.[y]?.[x])
-        && !thornAt(x, y)
-        && !isGraveSoilReadyCell(x, y);
-    }
-
-    function toggleGraveSoil() {
-      if (isResolving) {
-        return;
-      }
-      if (roundComplete) {
-        ritualMessage = "The bouquet is sealed. Press Next Bouquet to continue.";
-        render();
-        return;
-      }
-      if (activeBooster === "graveSoil") {
-        cancelGraveSoil();
-        return;
-      }
-      if (graveSoilCount() < 1) {
-        ritualMessage = "The Greenhouse has no Grave Soil ready.";
-        render();
-        return;
-      }
-      clearIdleHint();
-      cancelSacrifice(false);
-      cancelActiveBooster(false);
-      selected = null;
-      activeBooster = "graveSoil";
-      moonwaterPreviewCenter = null;
-      blackCandlePreview = null;
-      ritualMessage = "<strong>Grave Soil armed:</strong> Greenhouse blend ready. Choose one glowing normal tile to make it relic-ready. Cursed Thorns reject the soil.";
-      render();
-    }
-
-    function cancelGraveSoil(refocus = true) {
-      if (activeBooster !== "graveSoil") {
-        return;
-      }
-      activeBooster = "";
-      selected = null;
-      moonwaterPreviewCenter = null;
-      blackCandlePreview = null;
-      ritualMessage = "Grave Soil returned to the sack. No booster spent.";
-      render();
-      if (refocus) {
-        $("graveSoilBtn")?.focus();
-      }
-    }
-
-    function spendGraveSoil() {
-      if (graveSoilCount() < 1) {
-        ritualMessage = "The Greenhouse has no Grave Soil ready.";
-        render();
-        return false;
-      }
-      boosters.graveSoil = graveSoilCount() - 1;
-      return true;
-    }
-
-    function queueGraveSoilBurst(x, y) {
-      const motes = ["✦", "☿", "✧", "✦", "☽"];
-      motes.forEach((text, index) => {
-        boardParticles.push({
-          type: "grave-soil-spark",
-          text,
-          x,
-          y,
-          dx: (Math.random() - 0.5) * 58,
-          dy: -34 - Math.random() * 46,
-          size: 24,
-          fontSize: index === 1 ? 20 : 18,
-          spin: (Math.random() - 0.5) * 130,
-          delay: index * 26
-        });
-      });
-    }
-
-    function useGraveSoil(x, y) {
-      if (isResolving || roundComplete) {
-        return;
-      }
-      if (thornAt(x, y)) {
-        ritualMessage = "<strong>Grave Soil refused:</strong> Cursed Thorns are rooted blockers. Clear them with adjacent matches or Pruning Shears.";
-        render();
-        return;
-      }
-      if (isGraveSoilReadyCell(x, y)) {
-        ritualMessage = "That tile is already relic-ready. Choose another glowing normal tile or Cancel.";
-        render();
-        return;
-      }
-      if (!isGraveSoilEligible(x, y)) {
-        ritualMessage = "Grave Soil needs a normal loose tile. Choose one of the glowing targets.";
-        render();
-        return;
-      }
-      if (!spendGraveSoil()) {
-        activeBooster = "";
-        return;
-      }
-      activeBooster = "";
-      selected = null;
-      moonwaterPreviewCenter = null;
-      blackCandlePreview = null;
-      clearIdleHint();
-      graveSoilCells.add(graveSoilKey(x, y));
-      harvestFlashCells = new Set([graveSoilKey(x, y)]);
-      queueGraveSoilBurst(x, y);
-      const flowerName = flowers[board[y][x]][0];
-      ritualMessage = `<strong>Grave Soil:</strong> ${flowerName} is relic-ready without spending a move. Match it in a normal 3-line to awaken a Grave Soil Relic line sweep.`;
-      render();
-      scheduleHarvestFlashClear();
-      scheduleBoardParticleClear();
-      scheduleIdleHint();
-    }
-
-    function sacrifice() {
-      // Sacrifice transmutation: choose one element, delete one tile, and replace it at a cost.
-      if (isResolving) {
-        return;
-      }
-      if (roundComplete) {
-        ritualMessage = "The bouquet is sealed. Press Next Bouquet to continue.";
-        render();
-        return;
-      }
-      clearIdleHint();
-      if (sacrificeState.active) {
-        cancelSacrifice();
-        scheduleIdleHint();
-        return;
-      }
-      if (!canSpendMoves(3)) {
-        ritualMessage = "Sacrifice requires 3 moves. The altar refuses an empty hand.";
-        render();
-        return;
-      }
-      cancelActiveBooster(false);
-      selected = null;
-      sacrificeState = { active: true, choice: null };
-      ritualMessage = "Sacrifice armed. Choose an offering element, then replace one glowing tile. Costs 3 moves. Strong offerings may trigger Supreme Bloom.";
-      render();
-      setScaffoldText("sacrificeStatus", "Choose an offering element, then replace one glowing tile. Costs 3 moves. Strong offerings may trigger Supreme Bloom.");
-    }
-
-    function renderSacrificeOptions() {
-      const panel = $("sacrificePanel");
-      const options = $("sacrificeOptions");
-      if (!panel || !options) {
-        return;
-      }
-      panel.classList.toggle("open", sacrificeState.active);
-      if (!sacrificeState.active) {
-        options.innerHTML = "";
-        return;
-      }
-
-      const profitableByFlower = flowers.map((_, index) => countProfitableSacrificeTargets(index));
-      options.innerHTML = flowers.map((flower, index) => {
-        const profitableTargets = profitableByFlower[index];
-        const optionClasses = [
-          "sacrifice-option",
-          sacrificeState.choice === index ? "selected" : "",
-          profitableTargets ? "profitable" : ""
-        ].filter(Boolean).join(" ");
-        const targetCopy = profitableTargets
-          ? `${profitableTargets} glow${profitableTargets === 1 ? "" : "s"}`
-          : "No glow";
-        return `
-          <button class="${optionClasses}" type="button" data-flower-id="${index}" aria-pressed="${sacrificeState.choice === index ? "true" : "false"}">
-            ${iconMarkup(index, "", flower[0], "sacrifice-icon-wrap")}
-            <span>${flower[0]}</span>
-            <span class="sacrifice-hits">${targetCopy}</span>
-          </button>
-        `;
-      }).join("");
-
-      options.querySelectorAll(".sacrifice-option").forEach((button) => {
-        button.addEventListener("click", () => chooseSacrifice(Number(button.dataset.flowerId)));
-      });
-      applyImageFallbacks(options);
-    }
-
-    function chooseSacrifice(flowerId) {
-      sacrificeState.choice = flowerId;
-      const profitableTargets = countProfitableSacrificeTargets();
-      const targetCopy = profitableTargets
-        ? `${profitableTargets} harvest vessel${profitableTargets === 1 ? "" : "s"} glow.`
-        : "No glowing vessels for this offering. Choose another element.";
-      ritualMessage = `<strong>${flowers[flowerId][0]}</strong> selected for sacrifice. ${targetCopy} Replace a glowing tile to spend 3 moves. Strong offerings may trigger Supreme Bloom.`;
-      setScaffoldText("sacrificeStatus", `${flowers[flowerId][0]} chosen · ${targetCopy}`);
-      render();
-    }
-
-    function countProfitableSacrificeTargets(flowerId = sacrificeState.choice) {
-      if (flowerId === null) {
-        return 0;
-      }
-      let total = 0;
-      for (let y = 0; y < BOARD_SIZE; y += 1) {
-        for (let x = 0; x < BOARD_SIZE; x += 1) {
-          if (wouldSacrificeHarvestAs(x, y, flowerId)) {
-            total += 1;
-          }
-        }
-      }
-      return total;
-    }
-
-    function sacrificeBloomCells(x, y) {
-      const cells = new Map();
-      const addCell = (cx, cy) => {
-        if (cx >= 0 && cx < BOARD_SIZE && cy >= 0 && cy < BOARD_SIZE) {
-          cells.set(`${cx},${cy}`, [cx, cy]);
-        }
-      };
-      const targetMatch = matches().find((match) => match.cells.some(([mx, my]) => mx === x && my === y));
-      if (targetMatch) {
-        targetMatch.cells.forEach(([mx, my]) => addCell(mx, my));
-      }
-      [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [2, 0], [-2, 0], [0, 2], [0, -2]].forEach(([dx, dy]) => {
-        if (cells.size < 5) {
-          addCell(x + dx, y + dy);
-        }
-      });
-      return [...cells.values()];
-    }
-
-    function cancelSacrifice(refocus = true) {
-      if (!sacrificeState.active) {
-        return;
-      }
-      sacrificeState = { active: false, choice: null };
-      ritualMessage = "Sacrifice cancelled. No moves spent.";
-      render();
-      if (refocus) {
-        $("sacrificeBtn")?.focus();
-      }
-    }
-
-    async function performSacrifice(x, y) {
-      if (isResolving) {
-        return;
-      }
-      const original = board[y][x];
-      if (original === sacrificeState.choice) {
-        ritualMessage = `Already ${flowers[original][0]}. Choose another vessel.`;
-        setScaffoldText("sacrificeStatus", ritualMessage);
-        render();
-        return;
-      }
-      if (!wouldSacrificeHarvestAs(x, y, sacrificeState.choice)) {
-        const replacementName = flowers[sacrificeState.choice][0];
-        ritualMessage = `<strong>Ritual warning:</strong> ${replacementName} will not bloom there. Choose one of the glowing vessels.`;
-        setScaffoldText("sacrificeStatus", `${replacementName} will not bloom there · choose a glowing tile.`);
-        render();
-        return;
-      }
-      if (!spendMoves(3, "Sacrifice")) {
-        return;
-      }
-      board[y][x] = sacrificeState.choice;
-      transmuteFlashCell = `${x},${y}`;
-      const replacementName = flowers[sacrificeState.choice][0];
-      const forcedSupremeCells = sacrificeBloomCells(x, y);
-      sacrificeState = { active: false, choice: null };
-      selected = null;
-      isResolving = true;
-      render();
-      let result = null;
-      try {
-        await delay(180);
-        result = await resolveAnimated({ forceSupremeCells: forcedSupremeCells });
-        ritualMessage = result.matched
-          ? `<strong>Sacrifice complete:</strong> ${replacementName} claimed the tile. ${harvestSummary(result)}${awardRareBloomDrop(result)}`
-          : `<strong>Sacrifice complete:</strong> ${replacementName} replaced the tile. No harvest yet.`;
-        if (result.matched) {
-          pulseOrderCounts(result.gained, result.gainedCells);
-          maybeCompleteRound(ritualMessage);
-        }
-        if (!roundComplete && isBouquetFailed()) {
-          ritualMessage = result.matched
-            ? `${ritualMessage} ${failedBouquetRitualMessage()}`
-            : failedBouquetRitualMessage();
-        }
-      } finally {
-        isResolving = false;
-        render();
-        scheduleTransmuteFlashClear();
-        if (result && result.matched) {
-          scheduleBoardParticleClear();
-        }
-      }
-    }
-
-    function scheduleTransmuteFlashClear() {
-      window.setTimeout(() => {
-        if (!transmuteFlashCell) {
-          return;
-        }
-        transmuteFlashCell = "";
-        if (!fallAnimations.size && !harvestFlashCells.size && !boardParticles.length) {
-          render();
-        }
-      }, 560);
     }
 
     function canSpendMoves(cost) {
@@ -12162,8 +10632,6 @@
       if (isResolving) {
         return;
       }
-      cancelSacrifice(false);
-      cancelActiveBooster(false);
       clearIdleHint();
       const [a, b] = legalMoves()[0] || [{ x: 3, y: 3 }, { x: 4, y: 3 }];
       const originCells = dedupeCells([
@@ -12215,12 +10683,9 @@
         ? forcedKind
         : demoKinds[shapeDemoIndex % demoKinds.length];
       shapeDemoIndex += 1;
-      cancelSacrifice(false);
-      cancelActiveBooster(false);
       clearIdleHint();
       selected = null;
       board = makeShapeDemoBoard(kind);
-      graveSoilCells.clear();
       harvestFlashCells.clear();
       fallAnimations.clear();
       refillBornCells.clear();
@@ -12258,7 +10723,7 @@
     }
 
     function showSupreme(originCells = []) {
-      // Supreme Bloom is intentionally rare: 6+ HTML matches or the forced Sacrifice/review paths.
+      // Supreme Bloom is intentionally rare: 6+ HTML matches or the forced review paths.
       const supreme = $("supreme");
       const particleLayer = $("supremeParticles");
       particleLayer.innerHTML = "";
@@ -12451,9 +10916,7 @@
         tutorialActive,
         pendingRuneTendedSoil,
         activeRuneTendedSoil,
-        boosters,
         bouquetStreak,
-        graveSoilCells: [...graveSoilCells],
         chestItems: chestState.items
       };
       try {
@@ -12530,9 +10993,7 @@
         }
         pendingRuneTendedSoil = Boolean(state.pendingRuneTendedSoil);
         activeRuneTendedSoil = Boolean(state.activeRuneTendedSoil);
-        boosters = validBoosterState(state.boosters, boosters);
         bouquetStreak = validBouquetStreak(state.bouquetStreak);
-        graveSoilCells = validGraveSoilCells(state.graveSoilCells);
         if (Array.isArray(state.chestItems)) {
           chestState.items = state.chestItems
             .slice(0, chestState.capacity)
@@ -12556,37 +11017,8 @@
           && row.every((tile) => Number.isInteger(tile) && tile >= 0 && tile < flowers.length));
     }
 
-    function validBoosterState(candidate, fallback) {
-      if (!candidate || typeof candidate !== "object") {
-        return fallback;
-      }
-      const safeCount = (value, fallbackValue) => Math.max(0, Math.floor(Number(value ?? fallbackValue) || 0));
-      return {
-        pruningShears: safeCount(candidate.pruningShears, fallback.pruningShears),
-        moonwaterFlask: safeCount(candidate.moonwaterFlask, fallback.moonwaterFlask),
-        blackCandle: safeCount(candidate.blackCandle, fallback.blackCandle),
-        graveSoil: safeCount(candidate.graveSoil, fallback.graveSoil)
-      };
-    }
-
     function validBouquetStreak(candidate) {
       return Math.max(0, Math.floor(Number(candidate) || 0));
-    }
-
-    function validGraveSoilCells(candidate) {
-      const validCells = new Set();
-      if (!Array.isArray(candidate) || !isValidBoard(board)) {
-        return validCells;
-      }
-      candidate.forEach((entry) => {
-        const parts = Array.isArray(entry) ? entry : String(entry).split(",");
-        const x = Number(parts[0]);
-        const y = Number(parts[1]);
-        if (Number.isInteger(x) && Number.isInteger(y) && isValidThornCell(x, y) && Number.isInteger(board[y][x]) && !thornAt(x, y)) {
-          validCells.add(graveSoilKey(x, y));
-        }
-      });
-      return validCells;
     }
 
     function analyzeBoardSnapshot(candidateBoard) {
@@ -12633,8 +11065,6 @@
       if (!$("chestModal") || !$("chestTrigger")) {
         return;
       }
-      cancelSacrifice(false);
-      cancelActiveBooster(false);
       renderChest();
       $("chestModal").classList.add("open");
       $("chestModal").setAttribute("aria-hidden", "false");
