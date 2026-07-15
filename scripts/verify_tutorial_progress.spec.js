@@ -44,6 +44,11 @@ async function visibleReport(page) {
         tutorialPanel
       ].filter(visible).length,
       tutorialText: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
+      tutorialPrompt: document.body.dataset.tutorialPrompt || "",
+      retryVisible: visible(document.querySelector("#renewBtn.visible")),
+      tutorialSpotlights: document.querySelectorAll(
+        ".tile.idle-hint, .tile.thorn-teach, .tile.thorn-teach-blocker"
+      ).length,
       bouquetText: document.querySelector("#bouquetProgressLabel")?.textContent.trim() || "",
       bouquetNext: document.querySelector("#bouquetProgressNext")?.textContent.trim() || "",
       greenhouseText: document.querySelector(".restoration-dial-phase")?.textContent.trim() || "",
@@ -67,6 +72,19 @@ async function completeRoundWithReviewKey(page) {
   await page.waitForFunction(() => !document.querySelector("#demoCompleteBtn")?.disabled, null, { timeout: 7000 });
   await page.evaluate(() => document.querySelector("#demoCompleteBtn").click());
   await expect(page.locator("#roundOneRestoration")).toBeVisible({ timeout: 5000 });
+}
+
+async function forceActiveBouquetFailure(page) {
+  await page.evaluate((key) => {
+    const state = JSON.parse(localStorage.getItem(key));
+    state.roundComplete = false;
+    state.moves = 0;
+    state.tutorialSkipped = false;
+    localStorage.setItem(key, JSON.stringify(state));
+  }, SAVE_KEY);
+  await page.reload({ waitUntil: "networkidle" });
+  await expect(page.locator(".tile")).toHaveCount(64);
+  await expect(page.locator("#renewBtn.visible")).toHaveText("Retry Bouquet");
 }
 
 test("fresh tutorial is skippable, replayable, and tied to concrete progress", async ({ page }) => {
@@ -124,7 +142,24 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
   report = await visibleReport(page);
   expect(report.round).toBe(2);
   expect(report.greenhouseText).toBe("Unlock Bloodroot Compact");
+  expect(report.tutorialPrompt).toBe("Match beside thorns.");
+  expect(report.tutorialSpotlights).toBeGreaterThanOrEqual(3);
   expect(report.bars, "Round 2 still has one bouquet bar and one greenhouse bar").toHaveLength(2);
+
+  await forceActiveBouquetFailure(page);
+  await page.locator("#tutorialHelpBtn").click();
+  await expect(page.locator("#tutorialCopy")).toHaveText("Moves ended. Retry the bouquet.");
+  report = await visibleReport(page);
+  expect(report.retryVisible).toBe(true);
+  expect(report.tutorialPrompt).toBe("Moves ended. Retry the bouquet.");
+  await page.locator("#renewBtn.visible").click();
+  await expect(page.locator("#tutorialPanel")).toBeVisible();
+  await expect(page.locator("#tutorialCopy")).toHaveText("Match beside thorns.");
+  await expect(page.locator(".tile.thorn-teach")).toHaveCount(2, { timeout: 5000 });
+  await expect(page.locator(".tile.thorn-teach-blocker")).not.toHaveCount(0);
+  report = await visibleReport(page);
+  expect(report.tiles).toBe(64);
+  expect(report.tutorialSpotlights).toBeGreaterThanOrEqual(3);
   expect(report.overflowX).toBe(false);
   expect(report.brokenImages).toEqual([]);
   expect(consoleErrors).toEqual([]);

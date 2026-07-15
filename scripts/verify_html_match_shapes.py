@@ -1575,6 +1575,8 @@ def verify_source_hooks():
         "Match beside thorns.",
         "Moves ended. Retry the bouquet.",
         "Coins restore the greenhouse.",
+        "body.tutorial-active.focused-slice-failed #renewBtn.visible",
+        "document.body.dataset.tutorialPrompt = tutorialActive ? tutorialCopy() : \"\"",
         "const MAX_BOARD_PARTICLES = 56",
         "@media (prefers-reduced-motion: reduce)",
     ])

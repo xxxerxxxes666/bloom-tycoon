@@ -1110,6 +1110,28 @@
       outline-offset: -3px;
     }
 
+    body.tutorial-active .tile.idle-hint,
+    body.tutorial-active .tile.thorn-teach,
+    body.tutorial-active .tile.thorn-teach-blocker {
+      z-index: 7;
+      box-shadow:
+        inset 0 0 14px #000,
+        0 0 0 2px #120906,
+        0 0 18px #d7b16d99;
+    }
+
+    body.tutorial-active .tile.thorn-teach-lane {
+      outline: 1px solid #d7b16d88;
+      outline-offset: -5px;
+    }
+
+    body.tutorial-active.focused-slice-failed #renewBtn.visible {
+      box-shadow:
+        0 0 0 2px #120906,
+        0 0 24px #d7b16d99,
+        0 10px 24px #000c;
+    }
+
 
     body.round-one-active .tile img,
     body.restored-next-order-focus .tile img,
@@ -7173,12 +7195,11 @@
     }
 
     function failedBouquetCopy(plan = activeRoundPlan()) {
-      const remaining = remainingObjectiveRows(plan).map((row) => row.copy).join("; ");
-      return `Remaining goals: ${remaining || "none"}. Retry resets only Round ${plan.round}'s board, moves, objectives, and Cursed Thorns; coins, XP, Flowerpedia, Chapter rewards, Chest Storage, and boosters stay saved.`;
+      return `Retry Bouquet resets Round ${plan.round}. Coins and greenhouse progress stay saved.`;
     }
 
     function failedBouquetRitualMessage(plan = activeRoundPlan()) {
-      return `<strong>The Bouquet Withered.</strong> ${failedBouquetCopy(plan)} Press Retry Bouquet to try this round again.`;
+      return `<strong>The Bouquet Withered.</strong> ${failedBouquetCopy(plan)}`;
     }
 
     function markBouquetFailed(plan = activeRoundPlan()) {
@@ -8743,6 +8764,7 @@
       document.body.classList.toggle("round-one-followup-cue", roundOneFollowupCue);
       document.body.classList.toggle("round-one-refused", roundOneActive && !roundComplete && $("firstSwapCue").classList.contains("swap-refused"));
       document.body.classList.toggle("tutorial-active", tutorialActive);
+      document.body.dataset.tutorialPrompt = tutorialActive ? tutorialCopy() : "";
       $("roundOneRestoration").classList.toggle("restored", (roundOneActive && roundOneRestored) || roundTwoUpgradeComplete || roundThreeFinalComplete);
       $("roundOneRestoration").classList.toggle("second-greenhouse-upgrade", roundTwoUpgradePending || roundTwoUpgradeComplete);
       $("roundOneRestoration").classList.toggle("third-greenhouse-finale", roundThreeFinalPayoff);
