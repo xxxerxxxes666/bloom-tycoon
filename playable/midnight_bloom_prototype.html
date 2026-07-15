@@ -6500,6 +6500,18 @@
         return false;
       }
     })();
+    const PROTOTYPE_SCAFFOLD_ENABLED = QA_REVIEW_HOOKS_ENABLED;
+    const prototypeScaffoldIds = [
+      "sacrificeBtn",
+      "pruningShearsBtn",
+      "moonwaterFlaskBtn",
+      "blackCandleBtn",
+      "graveSoilBtn",
+      "sacrificePanel",
+      "boosterPanel",
+      "chestTrigger",
+      "chestModal"
+    ];
     const flowerIcon48 = (src) => src.replace("/96/", "/48/");
     const flowerIconSrcset = (src) => `${flowerIcon48(src)} 48w, ${src} 96w`;
     const rand = () => {
@@ -6515,6 +6527,24 @@
           <img class="${className}" src="${flower[1]}" srcset="${flowerIconSrcset(flower[1])}" sizes="96px" alt="${alt}" data-fallback-img>
         </span>
       `;
+    }
+
+    function removePrototypeScaffoldForNormalRuntime() {
+      if (PROTOTYPE_SCAFFOLD_ENABLED) {
+        return;
+      }
+      prototypeScaffoldIds.forEach((id) => $(id)?.remove());
+      sacrificeState = { active: false, choice: null };
+      activeBooster = "";
+      moonwaterPreviewCenter = null;
+      blackCandlePreview = null;
+    }
+
+    function setScaffoldText(id, text) {
+      const element = $(id);
+      if (element) {
+        element.textContent = text;
+      }
     }
 
     function thornSealMarkup(className = "", alt = "") {
@@ -8631,25 +8661,40 @@
       updateBouquetProgress(activePlan, progress);
       $("coins").textContent = coins;
       $("shuffleBtn").disabled = isResolving || roundComplete || moves < 1;
-      $("sacrificeBtn").disabled = isResolving || roundComplete || moves < 3;
-      $("pruningShearsCount").textContent = pruningShearsCount();
-      $("pruningShearsBtn").disabled = isResolving || roundComplete || failed || pruningShearsCount() < 1;
-      $("pruningShearsBtn").classList.toggle("armed", activeBooster === "pruningShears");
-      $("pruningShearsBtn").setAttribute("aria-pressed", activeBooster === "pruningShears" ? "true" : "false");
-      $("moonwaterFlaskCount").textContent = moonwaterFlaskCount();
-      $("moonwaterFlaskBtn").disabled = isResolving || roundComplete || failed || moonwaterFlaskCount() < 1;
-      $("moonwaterFlaskBtn").classList.toggle("armed", activeBooster === "moonwaterFlask");
-      $("moonwaterFlaskBtn").setAttribute("aria-pressed", activeBooster === "moonwaterFlask" ? "true" : "false");
-      $("blackCandleCount").textContent = blackCandleCount();
-      $("blackCandleBtn").disabled = isResolving || roundComplete || failed || blackCandleCount() < 1;
-      $("blackCandleBtn").classList.toggle("armed", activeBooster === "blackCandle");
-      $("blackCandleBtn").setAttribute("aria-pressed", activeBooster === "blackCandle" ? "true" : "false");
-      $("graveSoilCount").textContent = graveSoilCount();
-      $("graveSoilBtn").disabled = isResolving || roundComplete || failed || graveSoilCount() < 1;
-      $("graveSoilBtn").classList.toggle("armed", activeBooster === "graveSoil");
-      $("graveSoilBtn").setAttribute("aria-pressed", activeBooster === "graveSoil" ? "true" : "false");
-      $("sacrificeBtn").classList.toggle("armed", sacrificeState.active);
-      $("sacrificeBtn").setAttribute("aria-pressed", sacrificeState.active ? "true" : "false");
+      const sacrificeBtn = $("sacrificeBtn");
+      if (sacrificeBtn) {
+        sacrificeBtn.disabled = isResolving || roundComplete || moves < 3;
+        sacrificeBtn.classList.toggle("armed", sacrificeState.active);
+        sacrificeBtn.setAttribute("aria-pressed", sacrificeState.active ? "true" : "false");
+      }
+      const pruningShearsBtn = $("pruningShearsBtn");
+      if (pruningShearsBtn) {
+        $("pruningShearsCount").textContent = pruningShearsCount();
+        pruningShearsBtn.disabled = isResolving || roundComplete || failed || pruningShearsCount() < 1;
+        pruningShearsBtn.classList.toggle("armed", activeBooster === "pruningShears");
+        pruningShearsBtn.setAttribute("aria-pressed", activeBooster === "pruningShears" ? "true" : "false");
+      }
+      const moonwaterFlaskBtn = $("moonwaterFlaskBtn");
+      if (moonwaterFlaskBtn) {
+        $("moonwaterFlaskCount").textContent = moonwaterFlaskCount();
+        moonwaterFlaskBtn.disabled = isResolving || roundComplete || failed || moonwaterFlaskCount() < 1;
+        moonwaterFlaskBtn.classList.toggle("armed", activeBooster === "moonwaterFlask");
+        moonwaterFlaskBtn.setAttribute("aria-pressed", activeBooster === "moonwaterFlask" ? "true" : "false");
+      }
+      const blackCandleBtn = $("blackCandleBtn");
+      if (blackCandleBtn) {
+        $("blackCandleCount").textContent = blackCandleCount();
+        blackCandleBtn.disabled = isResolving || roundComplete || failed || blackCandleCount() < 1;
+        blackCandleBtn.classList.toggle("armed", activeBooster === "blackCandle");
+        blackCandleBtn.setAttribute("aria-pressed", activeBooster === "blackCandle" ? "true" : "false");
+      }
+      const graveSoilBtn = $("graveSoilBtn");
+      if (graveSoilBtn) {
+        $("graveSoilCount").textContent = graveSoilCount();
+        graveSoilBtn.disabled = isResolving || roundComplete || failed || graveSoilCount() < 1;
+        graveSoilBtn.classList.toggle("armed", activeBooster === "graveSoil");
+        graveSoilBtn.setAttribute("aria-pressed", activeBooster === "graveSoil" ? "true" : "false");
+      }
       $("ritualLog").innerHTML = ritualMessage;
       $("renewBtn").textContent = roundComplete ? "Next Bouquet" : failed ? "Retry Bouquet" : "Renew Bouquet";
       $("renewBtn").classList.toggle("visible", failed || roundComplete);
@@ -8933,7 +8978,7 @@
       }
       if (sacrificeState.active) {
         if (sacrificeState.choice === null) {
-          $("sacrificeStatus").textContent = "Choose the replacement element first.";
+          setScaffoldText("sacrificeStatus", "Choose the replacement element first.");
           return;
         }
         performSacrifice(x, y);
@@ -11165,6 +11210,9 @@
       const modes = $("blackCandleModes");
       const rowMode = $("blackCandleRowMode");
       const columnMode = $("blackCandleColumnMode");
+      if (!panel || !status || !modes || !rowMode || !columnMode) {
+        return;
+      }
       const armed = activeBooster === "pruningShears" || activeBooster === "moonwaterFlask" || activeBooster === "blackCandle" || activeBooster === "graveSoil";
       panel.classList.toggle("open", armed);
       modes.classList.toggle("open", activeBooster === "blackCandle");
@@ -11241,7 +11289,7 @@
       ritualMessage = "Pruning Shears lowered. No booster spent.";
       render();
       if (refocus) {
-        $("pruningShearsBtn").focus();
+        $("pruningShearsBtn")?.focus();
       }
     }
 
@@ -11404,7 +11452,7 @@
       ritualMessage = "Moonwater Flask corked. No booster spent.";
       render();
       if (refocus) {
-        $("moonwaterFlaskBtn").focus();
+        $("moonwaterFlaskBtn")?.focus();
       }
     }
 
@@ -11599,7 +11647,7 @@
       ritualMessage = "Black Candle snuffed. No booster spent.";
       render();
       if (refocus) {
-        $("blackCandleBtn").focus();
+        $("blackCandleBtn")?.focus();
       }
     }
 
@@ -11860,7 +11908,7 @@
       ritualMessage = "Grave Soil returned to the sack. No booster spent.";
       render();
       if (refocus) {
-        $("graveSoilBtn").focus();
+        $("graveSoilBtn")?.focus();
       }
     }
 
@@ -11957,12 +12005,15 @@
       sacrificeState = { active: true, choice: null };
       ritualMessage = "Sacrifice armed. Choose an offering element, then replace one glowing tile. Costs 3 moves. Strong offerings may trigger Supreme Bloom.";
       render();
-      $("sacrificeStatus").textContent = "Choose an offering element, then replace one glowing tile. Costs 3 moves. Strong offerings may trigger Supreme Bloom.";
+      setScaffoldText("sacrificeStatus", "Choose an offering element, then replace one glowing tile. Costs 3 moves. Strong offerings may trigger Supreme Bloom.");
     }
 
     function renderSacrificeOptions() {
       const panel = $("sacrificePanel");
       const options = $("sacrificeOptions");
+      if (!panel || !options) {
+        return;
+      }
       panel.classList.toggle("open", sacrificeState.active);
       if (!sacrificeState.active) {
         options.innerHTML = "";
@@ -12002,7 +12053,7 @@
         ? `${profitableTargets} harvest vessel${profitableTargets === 1 ? "" : "s"} glow.`
         : "No glowing vessels for this offering. Choose another element.";
       ritualMessage = `<strong>${flowers[flowerId][0]}</strong> selected for sacrifice. ${targetCopy} Replace a glowing tile to spend 3 moves. Strong offerings may trigger Supreme Bloom.`;
-      $("sacrificeStatus").textContent = `${flowers[flowerId][0]} chosen · ${targetCopy}`;
+      setScaffoldText("sacrificeStatus", `${flowers[flowerId][0]} chosen · ${targetCopy}`);
       render();
     }
 
@@ -12048,7 +12099,7 @@
       ritualMessage = "Sacrifice cancelled. No moves spent.";
       render();
       if (refocus) {
-        $("sacrificeBtn").focus();
+        $("sacrificeBtn")?.focus();
       }
     }
 
@@ -12059,14 +12110,14 @@
       const original = board[y][x];
       if (original === sacrificeState.choice) {
         ritualMessage = `Already ${flowers[original][0]}. Choose another vessel.`;
-        $("sacrificeStatus").textContent = ritualMessage;
+        setScaffoldText("sacrificeStatus", ritualMessage);
         render();
         return;
       }
       if (!wouldSacrificeHarvestAs(x, y, sacrificeState.choice)) {
         const replacementName = flowers[sacrificeState.choice][0];
         ritualMessage = `<strong>Ritual warning:</strong> ${replacementName} will not bloom there. Choose one of the glowing vessels.`;
-        $("sacrificeStatus").textContent = `${replacementName} will not bloom there · choose a glowing tile.`;
+        setScaffoldText("sacrificeStatus", `${replacementName} will not bloom there · choose a glowing tile.`);
         render();
         return;
       }
@@ -12302,6 +12353,10 @@
 
     function renderChest() {
       updateChestSummary();
+      const slotGrid = $("slotGrid");
+      if (!slotGrid) {
+        return;
+      }
 
       // Chest storage is structured now so later systems can collect, combine, upgrade, or consume items.
       const slots = chestState.items.map((item, index) => normalizeChestItem(item, index)).filter(Boolean);
@@ -12309,7 +12364,7 @@
         slots.push(null);
       }
 
-      $("slotGrid").innerHTML = slots.map((item, index) => {
+      slotGrid.innerHTML = slots.map((item, index) => {
         if (!item) {
           return `<div class="slot empty"><span>Empty</span><span class="slot-meta">Slot ${index + 1}</span></div>`;
         }
@@ -12335,17 +12390,17 @@
           </div>
         `;
       }).join("");
-      $("slotGrid").querySelectorAll('[data-action="plant-eclipse-seed-rune"]').forEach((button) => {
+      slotGrid.querySelectorAll('[data-action="plant-eclipse-seed-rune"]').forEach((button) => {
         button.addEventListener("click", plantEclipseSeedRune);
       });
-      applyImageFallbacks($("slotGrid"));
+      applyImageFallbacks(slotGrid);
     }
 
     function updateChestSummary() {
       const used = chestState.items.length;
       const summary = `${used} / ${chestState.capacity} Slots`;
-      $("chestSummary").textContent = summary;
-      $("chestModalSummary").textContent = summary;
+      setScaffoldText("chestSummary", summary);
+      setScaffoldText("chestModalSummary", summary);
     }
 
     function addChestItem(item) {
@@ -12630,40 +12685,55 @@
     }
 
     function openChest() {
+      if (!$("chestModal") || !$("chestTrigger")) {
+        return;
+      }
       cancelSacrifice(false);
       cancelActiveBooster(false);
       renderChest();
       $("chestModal").classList.add("open");
       $("chestModal").setAttribute("aria-hidden", "false");
       $("chestTrigger").setAttribute("aria-expanded", "true");
-      $("closeChest").focus();
+      $("closeChest")?.focus();
     }
 
     function closeChest() {
+      if (!$("chestModal") || !$("chestTrigger")) {
+        return;
+      }
       $("chestModal").classList.remove("open");
       $("chestModal").setAttribute("aria-hidden", "true");
       $("chestTrigger").setAttribute("aria-expanded", "false");
-      $("chestTrigger").focus();
+      $("chestTrigger")?.focus();
     }
 
+    function bindIfPresent(id, eventName, handler) {
+      const element = $(id);
+      if (element) {
+        element.addEventListener(eventName, handler);
+      }
+    }
+
+    removePrototypeScaffoldForNormalRuntime();
+
     $("shuffleBtn").addEventListener("click", shuffleBoard);
-    $("sacrificeBtn").addEventListener("click", sacrifice);
-    $("pruningShearsBtn").addEventListener("click", togglePruningShears);
-    $("moonwaterFlaskBtn").addEventListener("click", toggleMoonwaterFlask);
-    $("blackCandleBtn").addEventListener("click", toggleBlackCandle);
-    $("graveSoilBtn").addEventListener("click", toggleGraveSoil);
-    $("blackCandleRowMode").addEventListener("click", () => setBlackCandleAxis("row"));
-    $("blackCandleColumnMode").addEventListener("click", () => setBlackCandleAxis("column"));
-    $("sacrificeCancel").addEventListener("click", () => cancelSacrifice());
-    $("boosterCancel").addEventListener("click", () => cancelActiveBooster());
+    bindIfPresent("sacrificeBtn", "click", sacrifice);
+    bindIfPresent("pruningShearsBtn", "click", togglePruningShears);
+    bindIfPresent("moonwaterFlaskBtn", "click", toggleMoonwaterFlask);
+    bindIfPresent("blackCandleBtn", "click", toggleBlackCandle);
+    bindIfPresent("graveSoilBtn", "click", toggleGraveSoil);
+    bindIfPresent("blackCandleRowMode", "click", () => setBlackCandleAxis("row"));
+    bindIfPresent("blackCandleColumnMode", "click", () => setBlackCandleAxis("column"));
+    bindIfPresent("sacrificeCancel", "click", () => cancelSacrifice());
+    bindIfPresent("boosterCancel", "click", () => cancelActiveBooster());
     $("renewBtn").addEventListener("click", renewBouquet);
     $("restoreGreenhouseBtn").addEventListener("click", advanceGreenhouseUpgrade);
     $("nextOrderBtn").addEventListener("click", advanceGreenhousePayoffAction);
     $("tutorialSkipBtn").addEventListener("click", skipTutorial);
     $("tutorialHelpBtn").addEventListener("click", () => startTutorial({ replay: true }));
-    $("chestTrigger").addEventListener("click", openChest);
-    $("closeChest").addEventListener("click", closeChest);
-    $("chestModal").addEventListener("click", (event) => {
+    bindIfPresent("chestTrigger", "click", openChest);
+    bindIfPresent("closeChest", "click", closeChest);
+    bindIfPresent("chestModal", "click", (event) => {
       if (event.target === $("chestModal")) {
         closeChest();
       }
@@ -12676,7 +12746,7 @@
     $("board").addEventListener("focusin", previewActiveBoosterCell);
     $("board").addEventListener("keydown", handleBoardKeyDown);
     document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape" && $("chestModal").classList.contains("open")) {
+      if (event.key === "Escape" && $("chestModal")?.classList.contains("open")) {
         closeChest();
       } else if (event.key === "Escape" && activeBooster) {
         cancelActiveBooster();

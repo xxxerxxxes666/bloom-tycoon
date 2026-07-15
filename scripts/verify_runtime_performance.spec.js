@@ -54,6 +54,9 @@ async function runtimeReport(page) {
       dormantPreviewNodes: document.querySelectorAll(
         "#bouquetPath, #pathLedgerDrawer, #roundThreeFocus, [id^='round'][id$='Preview']"
       ).length,
+      prototypeScaffoldNodes: document.querySelectorAll(
+        "#sacrificeBtn, #pruningShearsBtn, #moonwaterFlaskBtn, #blackCandleBtn, #graveSoilBtn, #sacrificePanel, #boosterPanel, #chestTrigger, #chestModal"
+      ).length,
       meaningfulBars,
       bouquetProgressText: document.querySelector("#bouquetProgressLabel")?.textContent.trim() || "",
       greenhouseNextText: document.querySelector(".restoration-dial-phase")?.textContent.trim() || "",
@@ -91,6 +94,7 @@ for (const config of [
 
     expect(report.tiles).toBe(64);
     expect(report.dormantPreviewNodes, "future preview DOM is absent").toBe(0);
+    expect(report.prototypeScaffoldNodes, "legacy support scaffold is absent from normal runtime").toBe(0);
     expect(report.nodes, "focused runtime DOM budget").toBeLessThanOrEqual(700);
     expect(report.images, "focused runtime image budget").toBeLessThanOrEqual(90);
     expect(report.filteredElements, "focused filter budget").toBeLessThanOrEqual(60);
