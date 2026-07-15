@@ -149,6 +149,27 @@ async function expectCleanReplayBoard(page) {
   });
   expect(buttons.length, "clean active board keeps the non-board action cap").toBeLessThanOrEqual(2);
   expect(buttons).toContain("Help");
+  const mobileFooter = await page.evaluate(() => {
+    const visible = (node) => {
+      if (!node) return false;
+      const style = window.getComputedStyle(node);
+      const rect = node.getBoundingClientRect();
+      return style.display !== "none"
+        && style.visibility !== "hidden"
+        && Number(style.opacity || 1) !== 0
+        && rect.width > 0
+        && rect.height > 0;
+    };
+    return {
+      isMobile: window.innerWidth <= 760,
+      plinth: visible(document.querySelector("#mobileGreenhousePlinth")),
+      log: visible(document.querySelector("#ritualLog"))
+    };
+  });
+  if (mobileFooter.isMobile) {
+    expect(mobileFooter.plinth, "mobile active play has no greenhouse footer").toBe(false);
+    expect(mobileFooter.log, "mobile active play has no ritual log footer").toBe(false);
+  }
 }
 
 async function clickPrimary(page) {

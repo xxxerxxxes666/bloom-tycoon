@@ -65,6 +65,8 @@ async function runtimeReport(page) {
         .filter((node) => visible(node) && !node.closest(".board"))
         .map((node) => node.textContent.trim())
         .filter(Boolean),
+      mobilePlinthVisible: visible(document.querySelector("#mobileGreenhousePlinth")),
+      ritualLogVisible: visible(document.querySelector("#ritualLog")),
       reviewHooksEnabled: window.__bloomReviewHooksEnabled === true,
       qaButtonCount: document.querySelectorAll("#demoCompleteBtn, #shapeBloomBtn").length,
       brokenImages: Array.from(document.images)
@@ -135,6 +137,10 @@ for (const config of [
     expect(report.greenhouseNextText).toMatch(/Restore|Unlock|Raise|Replay/);
     expect(report.visibleProgressText).not.toMatch(/\b(?:SAP|MANA|BLOOD)\b|\d[\d,]*\s*\/\s*\d[\d,]*\s*XP|Greenhouse \+\d+ XP|Apothecary \+\d+ XP/);
     expect(report.visibleButtons.length, "Round 1 non-tile controls").toBeLessThanOrEqual(2);
+    if (config.mobile) {
+      expect(report.mobilePlinthVisible, "active mobile greenhouse footer stays out of play").toBe(false);
+      expect(report.ritualLogVisible, "active mobile ritual log stays out of play").toBe(false);
+    }
     expect(report.reviewHooksEnabled, "QA review hooks stay off in normal runtime").toBe(false);
     expect(report.qaButtonCount, "visible prototype shortcut buttons are removed").toBe(0);
     expect(report.brokenImages).toEqual([]);

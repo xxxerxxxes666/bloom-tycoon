@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Bloom Tycoon</title>
   <link rel="icon" href="data:,">
-  <link rel="preload" as="image" href="../assets/greenhouse/moonlit_wreath_greenhouse.jpg">
-  <link rel="preload" as="image" href="../assets/greenhouse/bloodroot_compact_greenhouse.jpg">
+  <link rel="prefetch" as="image" href="../assets/greenhouse/moonlit_wreath_greenhouse.jpg">
+  <link rel="prefetch" as="image" href="../assets/greenhouse/bloodroot_compact_greenhouse.jpg">
   <style>
     :root {
       --ink: #d8c7aa;
@@ -617,6 +617,10 @@
     }
 
     .mobile-greenhouse-plinth {
+      display: none;
+    }
+
+    .mobile-greenhouse-progress {
       display: none;
     }
 
@@ -4823,6 +4827,11 @@
       38% { filter:brightness(1.28) saturate(1.18); transform:translateX(-50%) scale(1.02); }
       100% { filter:brightness(1); transform:translateX(-50%) scale(1); }
     }
+    @keyframes mobile-greenhouse-dial-intake {
+      0% { filter: brightness(.92); transform: scale(.985); }
+      38% { filter: brightness(1.22) saturate(1.14); transform: scale(1.012); }
+      100% { filter: brightness(1); transform: scale(1); }
+    }
     @keyframes petal-pop {
       0% { opacity:0; transform:translate(-50%,-50%) scale(.35) rotate(0deg); }
       18% { opacity:1; }
@@ -5161,6 +5170,72 @@
       body.restored-greenhouse-handoff .board,
       body.round-three-focus-active .board,
       body.round-one-active .board { width:calc(100vw - 12px); max-width:378px; gap:3px; padding:5px; margin:7px auto 0; }
+      body.round-one-active:not(.focused-payoff-active) .mobile-greenhouse-progress,
+      body.restored-next-order-focus:not(.focused-payoff-active) .mobile-greenhouse-progress,
+      body.round-three-focus-active:not(.focused-payoff-active) .mobile-greenhouse-progress {
+        display: block;
+        width: calc(100vw - 14px);
+        max-width: 378px;
+        margin: 5px auto 0;
+        pointer-events: none;
+      }
+      .mobile-greenhouse-progress .greenhouse-restoration-dial {
+        position: relative;
+        left: auto;
+        bottom: auto;
+        width: 100%;
+        min-height: 34px;
+        padding: 4px 7px 5px;
+        transform: none;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        grid-template-rows: auto auto;
+        align-items: center;
+        gap: 3px 7px;
+        border-color: color-mix(in srgb, var(--stage-accent, #b9874d) 42%, #21150e);
+        background: linear-gradient(90deg, #070403d9, #120907e6, #070403d9);
+        box-shadow: inset 0 0 10px #000;
+        text-align: left;
+      }
+      body.greenhouse-intake .mobile-greenhouse-progress .greenhouse-restoration-dial {
+        animation: mobile-greenhouse-dial-intake 540ms ease-out both;
+      }
+      .mobile-greenhouse-progress .greenhouse-restoration-dial::before,
+      .mobile-greenhouse-progress .greenhouse-restoration-dial::after,
+      .mobile-greenhouse-progress .restoration-dial-goals {
+        display: none;
+      }
+      .mobile-greenhouse-progress .restoration-dial-topline {
+        grid-column: 1;
+        grid-row: 1;
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+        white-space: nowrap;
+      }
+      .mobile-greenhouse-progress .restoration-dial-stage {
+        font-size: 8px;
+        letter-spacing: 0.1em;
+      }
+      .mobile-greenhouse-progress .restoration-dial-percent {
+        font-size: 11px;
+      }
+      .mobile-greenhouse-progress .restoration-dial-track {
+        grid-column: 1 / 3;
+        grid-row: 2;
+        height: 7px;
+        min-width: 0;
+      }
+      .mobile-greenhouse-progress .restoration-dial-phase {
+        grid-column: 2;
+        grid-row: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 10px;
+        text-align: right;
+      }
       body.restored-next-order-focus .active-greenhouse-stage,
       body.restored-greenhouse-handoff .active-greenhouse-stage,
       body.round-three-focus-active .active-greenhouse-stage,
@@ -5324,6 +5399,14 @@
       .mobile-greenhouse-plinth .restoration-goal-count {
         font-size: 7px;
       }
+      body.round-one-active:not(.focused-payoff-active) .mobile-greenhouse-plinth,
+      body.restored-next-order-focus:not(.focused-payoff-active) .mobile-greenhouse-plinth,
+      body.round-three-focus-active:not(.focused-payoff-active) .mobile-greenhouse-plinth,
+      body.round-one-active:not(.focused-payoff-active) .ritual-log,
+      body.restored-next-order-focus:not(.focused-payoff-active) .ritual-log,
+      body.round-three-focus-active:not(.focused-payoff-active) .ritual-log {
+        display: none !important;
+      }
       body.round-one-active.round-one-complete .mobile-greenhouse-plinth { display:none; }
       body.round-one-active .controls { width:calc(100vw - 14px); margin:7px auto 0; gap:6px; }
       body.round-one-active .controls .btn { min-width:0; width:min(216px,calc(100vw - 18px)); padding:7px 13px; gap:7px; font-size:12px; line-height:1.08; min-height:38px; }
@@ -5431,6 +5514,9 @@
         <span class="progress-meter" aria-hidden="true"><span class="bar" id="bar"></span></span>
         <span class="progress-next" id="bouquetProgressNext">Complete the order to restore the greenhouse.</span>
       </div>
+      <div class="mobile-greenhouse-progress" id="mobileGreenhouseProgress" aria-hidden="true">
+        <span class="greenhouse-restoration-dial" id="mobileRestorationDial" aria-hidden="true"></span>
+      </div>
       <div class="first-swap-cue" id="firstSwapCue" aria-live="polite">Glowing pair incoming…</div>
       <div class="tutorial-panel" id="tutorialPanel" hidden aria-live="polite">
         <span class="tutorial-icon" aria-hidden="true">✦</span>
@@ -5440,7 +5526,6 @@
       <div class="next-order-cue" id="nextOrderCue" aria-live="polite">Restored Greenhouse - Moonlit Wreath begins</div>
       <div class="board" id="board" role="grid" aria-label="Bloom Tycoon match board" aria-rowcount="8" aria-colcount="8"></div>
       <div class="mobile-greenhouse-plinth" id="mobileGreenhousePlinth" aria-hidden="true">
-        <span class="greenhouse-restoration-dial" id="mobileRestorationDial" aria-hidden="true"></span>
       </div>
       <button class="tutorial-help" id="tutorialHelpBtn" type="button">Help</button>
       <div class="controls">
@@ -8857,6 +8942,7 @@
         const forcedRareCells = result.cascades === 0 ? (options.forceSupremeCells || []) : [];
         const effectRareCells = dedupeCells([...wave.rareCells, ...forcedRareCells]);
         const cascadeIndex = result.cascades;
+        const fastCascade = cascadeIndex >= 2;
         collectWaveRewards(wave, result, result.cascades, forcedRareCells);
         currentCascadeWave = cascadeIndex + 1;
         queueCascadeImpact(wave, cascadeIndex);
@@ -8879,12 +8965,12 @@
           chargeSupreme(effectRareCells);
         }
 
-        await delay(wave.rare ? 145 : Math.max(55, 88 - cascadeIndex * 18));
+        await delay(fastCascade ? 8 : (wave.rare ? 80 : Math.max(30, 54 - cascadeIndex * 12)));
         clearWaveCells(wave);
         queueSettleSparks(cascadeIndex);
         playBloomSound("settle", { cascade: cascadeIndex, drops: settledCells.size });
         render();
-        await delay(Math.min(155, 102 + cascadeIndex * 8));
+        await delay(fastCascade ? 12 : Math.min(74, 56 + cascadeIndex * 4));
       }
 
       harvestFlashCells.clear();
@@ -9336,7 +9422,7 @@
         thornClearedCells.clear();
         transmuteFlashCell = "";
         render();
-      }, 760 + Math.min(4, Math.max(0, Number(cascadeCount) || 0)) * 70);
+      }, 560 + Math.min(4, Math.max(0, Number(cascadeCount) || 0)) * 52);
     }
 
     function harvestSummary(result) {
@@ -9930,13 +10016,13 @@
           { opacity: .88, transform: `translate(${dx * .72 - arc * .35}px, ${dy * .66 - 16}px) scale(.82)`, offset: .74 },
           { opacity: 0, transform: `translate(${dx}px, ${dy}px) scale(.32)` }
         ], {
-          duration: 620 + cascadeIndex * 55 + index * 24,
-          delay: cascadeIndex * 80 + index * 34,
+          duration: 540 + cascadeIndex * 42 + index * 18,
+          delay: cascadeIndex * 62 + index * 26,
           easing: "cubic-bezier(.16,.82,.2,1)",
           fill: "forwards"
         });
         animation.finished.catch(() => {}).finally(() => mote.remove());
-        window.setTimeout(() => mote.remove(), 1120 + cascadeIndex * 95 + index * 50);
+        window.setTimeout(() => mote.remove(), 920 + cascadeIndex * 72 + index * 38);
       });
     }
 
@@ -9956,7 +10042,7 @@
       `;
       document.body.appendChild(seal);
       seal.addEventListener("animationend", () => seal.remove(), { once: true });
-      window.setTimeout(() => seal.remove(), 1400);
+      window.setTimeout(() => seal.remove(), 860);
     }
 
     function scheduleOrderPulseClear() {

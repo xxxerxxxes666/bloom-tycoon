@@ -49,6 +49,9 @@ async function visibleReport(page) {
         .filter((node) => visible(node) && !node.closest("#board"))
         .map((node) => node.textContent.trim())
         .filter(Boolean),
+      mobilePlinthVisible: visible(document.querySelector("#mobileGreenhousePlinth")),
+      ritualLogVisible: visible(document.querySelector("#ritualLog")),
+      ritualLogText: document.querySelector("#ritualLog")?.textContent.trim() || "",
       retryVisible: visible(document.querySelector("#renewBtn.visible")),
       tutorialSpotlights: document.querySelectorAll(
         ".tile.idle-hint, .tile.thorn-teach, .tile.thorn-teach-blocker"
@@ -251,6 +254,8 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
     overflowX: false,
     brokenImages: []
   });
+  expect(report.mobilePlinthVisible, "fresh mobile active play has no greenhouse footer").toBe(false);
+  expect(report.ritualLogVisible, "fresh mobile active play has no ritual log footer").toBe(false);
   expect(report.bars, "exactly bouquet and greenhouse bars").toHaveLength(2);
   expect(report.visibleButtons, "fresh tutorial button cap").toEqual(["Skip"]);
   expect(report.visibleProgressText).not.toMatch(/\b(?:SAP|MANA|BLOOD)\b|\d[\d,]*\s*\/\s*\d[\d,]*\s*XP|Greenhouse \+\d+ XP|Apothecary \+\d+ XP/);
@@ -316,6 +321,9 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
   expect(report.round).toBe(2);
   expect(report.greenhouseText).toBe("Unlock Bloodroot Compact");
   expect(report.tutorialPrompt).toBe("Match beside thorns.");
+  expect(report.mobilePlinthVisible, "Round 2 mobile active play has no greenhouse footer").toBe(false);
+  expect(report.ritualLogVisible, "Round 2 mobile active play has no ritual log footer").toBe(false);
+  expect(report.visibleProgressText).not.toContain("First Bouquet:");
   expect(report.tutorialSpotlights).toBeGreaterThanOrEqual(3);
   expect(report.bars, "Round 2 still has one bouquet bar and one greenhouse bar").toHaveLength(2);
   expect(report.visibleProgressText).not.toMatch(/\b(?:SAP|MANA|BLOOD)\b|\d[\d,]*\s*\/\s*\d[\d,]*\s*XP|Greenhouse \+\d+ XP|Apothecary \+\d+ XP/);
