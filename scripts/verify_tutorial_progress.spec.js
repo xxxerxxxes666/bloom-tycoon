@@ -68,6 +68,31 @@ async function clickGuidedSwap(page) {
   await expect(page.locator(".tile")).toHaveCount(64);
 }
 
+async function keyboardGuidedSwap(page) {
+  const pair = await page.locator(".tile.idle-hint").evaluateAll((tiles) => tiles.map((tile) => ({
+    x: Number(tile.dataset.x),
+    y: Number(tile.dataset.y)
+  })));
+  expect(pair).toHaveLength(2);
+  const [first, second] = pair;
+  const key = second.x > first.x
+    ? "ArrowRight"
+    : second.x < first.x
+      ? "ArrowLeft"
+      : second.y > first.y
+        ? "ArrowDown"
+        : "ArrowUp";
+  const firstTile = page.locator(`.tile[data-x="${first.x}"][data-y="${first.y}"]`);
+  await expect(firstTile).toHaveAttribute("tabindex", "0");
+  await firstTile.focus();
+  await page.keyboard.press("Enter");
+  await expect(firstTile).toHaveClass(/sel/);
+  await expect(firstTile).toBeFocused();
+  await page.keyboard.press(key);
+  await expect(page.locator(".tile")).toHaveCount(64);
+  await page.waitForFunction(() => !document.querySelector(".tile.sel"));
+}
+
 async function completeRoundWithReviewKey(page) {
   await page.waitForFunction(() => !document.querySelector("#demoCompleteBtn")?.disabled, null, { timeout: 7000 });
   await page.evaluate(() => document.querySelector("#demoCompleteBtn").click());
@@ -160,6 +185,44 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
   report = await visibleReport(page);
   expect(report.tiles).toBe(64);
   expect(report.tutorialSpotlights).toBeGreaterThanOrEqual(3);
+  expect(report.overflowX).toBe(false);
+  expect(report.brokenImages).toEqual([]);
+  expect(consoleErrors).toEqual([]);
+  expect(pageErrors).toEqual([]);
+  expect(failedRequests).toEqual([]);
+});
+
+test("keyboard play follows the board and payoff focus", async ({ page }) => {
+  const consoleErrors = [];
+  const pageErrors = [];
+  const failedRequests = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") consoleErrors.push(message.text());
+  });
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("requestfailed", (request) => failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`));
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await openFresh(page, "keyboard");
+  await expect(page.locator("#board")).toHaveAttribute("role", "grid");
+  await expect(page.locator(".tile[tabindex='0']")).toHaveCount(1);
+  await keyboardGuidedSwap(page);
+  await expect(page.locator("#bouquetProgressLabel")).toContainText(/Bouquet [1-9]/);
+  await expect(page.locator(".tile[tabindex='0']")).toHaveCount(1);
+
+  await completeRoundWithReviewKey(page);
+  await expect(page.locator("#restoreGreenhouseBtn")).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#nextOrderBtn")).toBeVisible({ timeout: 5000 });
+  await expect(page.locator("#nextOrderBtn")).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page.locator(".tile")).toHaveCount(64);
+  await expect(page.locator(".tile[tabindex='0']")).toHaveCount(1);
+  await expect(page.locator(".tile[tabindex='0']")).toBeFocused();
+
+  const report = await visibleReport(page);
+  expect(report.round).toBe(2);
+  expect(report.tiles).toBe(64);
   expect(report.overflowX).toBe(false);
   expect(report.brokenImages).toEqual([]);
   expect(consoleErrors).toEqual([]);

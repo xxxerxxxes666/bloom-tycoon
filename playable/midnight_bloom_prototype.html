@@ -48,6 +48,16 @@
       outline-offset: 3px;
     }
 
+    .tile:focus-visible {
+      outline: 2px solid #f0c477;
+      outline-offset: -3px;
+      box-shadow:
+        inset 0 0 18px #000,
+        inset 0 0 0 2px #2b180d,
+        0 0 0 1px #160f0c,
+        0 0 20px #d7b16d99;
+    }
+
     .game {
       width: min(1024px, calc(100vw - 16px));
       min-height: 1510px;
@@ -6561,7 +6571,7 @@
         <button class="tutorial-skip" id="tutorialSkipBtn" type="button">Skip</button>
       </div>
       <div class="next-order-cue" id="nextOrderCue" aria-live="polite">Restored Greenhouse - Moonlit Wreath begins</div>
-      <div class="board" id="board"></div>
+      <div class="board" id="board" role="grid" aria-label="Bloom Tycoon match board" aria-rowcount="8" aria-colcount="8"></div>
       <div class="mobile-greenhouse-plinth" id="mobileGreenhousePlinth" aria-hidden="true">
         <span class="greenhouse-restoration-dial" id="mobileRestorationDial" aria-hidden="true"></span>
       </div>
@@ -6897,6 +6907,8 @@
 
     let board = [];
     let selected = null;
+    let boardFocusCell = { x: 0, y: 0 };
+    let postRenderFocusTarget = "";
     let moves = roundTemplates[0].moves;
     let coins = 0;
     let counts = [0, 0, 0, 0, 0, 0];
@@ -8337,6 +8349,102 @@
       return { tile, x, y };
     }
 
+    function boardTileFromElement(element) {
+      const tile = element?.closest ? element.closest(".tile") : null;
+      const boardEl = $("board");
+      if (!tile || !boardEl || !boardEl.contains(tile)) {
+        return null;
+      }
+      const x = Number(tile.dataset.x);
+      const y = Number(tile.dataset.y);
+      return Number.isInteger(x) && Number.isInteger(y) ? { tile, x, y } : null;
+    }
+
+    function clampBoardFocusCell(cell = boardFocusCell) {
+      const x = Math.min(BOARD_SIZE - 1, Math.max(0, Math.floor(Number(cell?.x) || 0)));
+      const y = Math.min(BOARD_SIZE - 1, Math.max(0, Math.floor(Number(cell?.y) || 0)));
+      return { x, y };
+    }
+
+    function cellFromKey(key) {
+      const [x, y] = String(key || "").split(",").map(Number);
+      return Number.isInteger(x) && Number.isInteger(y) ? clampBoardFocusCell({ x, y }) : null;
+    }
+
+    function firstHintFocusCell() {
+      const firstHint = idleHintCells.values().next().value;
+      return cellFromKey(firstHint);
+    }
+
+    function updateBoardRovingTabIndex() {
+      const focusCell = clampBoardFocusCell();
+      boardFocusCell = focusCell;
+      document.querySelectorAll("#board .tile").forEach((tile) => {
+        const isFocusedCell = Number(tile.dataset.x) === focusCell.x && Number(tile.dataset.y) === focusCell.y;
+        tile.tabIndex = !tile.disabled && isFocusedCell ? 0 : -1;
+      });
+    }
+
+    function focusBoardCell(x = boardFocusCell.x, y = boardFocusCell.y) {
+      boardFocusCell = clampBoardFocusCell({ x, y });
+      updateBoardRovingTabIndex();
+      const tile = document.querySelector(`#board .tile[data-x="${boardFocusCell.x}"][data-y="${boardFocusCell.y}"]`);
+      if (tile && !tile.disabled) {
+        tile.focus({ preventScroll: true });
+      }
+    }
+
+    function queuePostRenderFocus(id) {
+      postRenderFocusTarget = id;
+    }
+
+    function applyQueuedPostRenderFocus() {
+      if (!postRenderFocusTarget) {
+        return;
+      }
+      const targetId = postRenderFocusTarget;
+      postRenderFocusTarget = "";
+      const target = $(targetId);
+      if (!target || target.hidden || target.disabled) {
+        return;
+      }
+      const style = window.getComputedStyle(target);
+      const rect = target.getBoundingClientRect();
+      if (style.display === "none" || style.visibility === "hidden" || rect.width <= 0 || rect.height <= 0) {
+        return;
+      }
+      target.focus({ preventScroll: true });
+    }
+
+    function handleBoardKeyDown(event) {
+      const keyToDelta = {
+        ArrowLeft: { x: -1, y: 0 },
+        ArrowRight: { x: 1, y: 0 },
+        ArrowUp: { x: 0, y: -1 },
+        ArrowDown: { x: 0, y: 1 }
+      };
+      const cell = boardTileFromEvent(event) || { ...clampBoardFocusCell(), tile: null };
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        boardFocusCell = clampBoardFocusCell(cell);
+        tap(boardFocusCell.x, boardFocusCell.y);
+        return;
+      }
+      const delta = keyToDelta[event.key];
+      if (!delta) {
+        return;
+      }
+      event.preventDefault();
+      const target = clampBoardFocusCell({ x: cell.x + delta.x, y: cell.y + delta.y });
+      if (selected && selected.x === cell.x && selected.y === cell.y) {
+        boardFocusCell = target;
+        tap(target.x, target.y);
+        return;
+      }
+      boardFocusCell = target;
+      focusBoardCell(target.x, target.y);
+    }
+
     function handleBoardPointerDown(event) {
       if (!event.isPrimary) {
         return;
@@ -8345,6 +8453,7 @@
       if (!cell) {
         return;
       }
+      boardFocusCell = { x: cell.x, y: cell.y };
       tileSwipeStart = {
         pointerId: event.pointerId,
         clientX: event.clientX,
@@ -8374,6 +8483,7 @@
       if (!cell) {
         return;
       }
+      boardFocusCell = { x: cell.x, y: cell.y };
       tap(cell.x, cell.y);
     }
 
@@ -8823,6 +8933,14 @@
       renderFocusedPayoffCeremony(payoffCeremony);
       renderTutorialPanel();
       const boardEl = $("board");
+      const focusedTileBeforeRender = boardTileFromElement(document.activeElement);
+      if (focusedTileBeforeRender) {
+        boardFocusCell = clampBoardFocusCell(focusedTileBeforeRender);
+      }
+      boardFocusCell = clampBoardFocusCell();
+      boardEl.setAttribute("aria-label", `${activePlan.name} match board, Round ${activePlan.round}`);
+      boardEl.setAttribute("aria-rowcount", String(BOARD_SIZE));
+      boardEl.setAttribute("aria-colcount", String(BOARD_SIZE));
       boardEl.innerHTML = "";
       boardEl.dataset.cascadeWave = String(currentCascadeWave);
       boardEl.dataset.lastCascadeCount = String(lastSettledCascadeCount);
@@ -8845,6 +8963,9 @@
           tile.dataset.x = x;
           tile.dataset.y = y;
           tile.dataset.flowerId = value;
+          tile.id = `tile-${x}-${y}`;
+          tile.setAttribute("aria-rowindex", String(y + 1));
+          tile.setAttribute("aria-colindex", String(x + 1));
           const selectedClass = selected && selected.x === x && selected.y === y ? "sel" : "";
           const legalClass = selected && !sacrificeState.active && isLegalSwap(selected, { x, y }) ? "legal-target" : "";
           const sacrificeClass = sacrificeState.active && sacrificeState.choice !== null ? "sacrifice-target" : "";
@@ -8889,6 +9010,7 @@
           const relicPreviewClass = harvestPreview.relicCells.has(fallKey) ? "relic-preview" : "";
           tile.className = `tile ${selectedClass} ${legalClass} ${previewClass} ${previewAnchorClass} ${relicPreviewClass} ${sacrificeClass} ${profitableClass} ${shearsClass} ${moonwaterTargetClass} ${moonwaterAreaClass} ${moonwaterCenterClass} ${blackCandleLineClass} ${graveSoilTargetClass} ${graveSoilReadyClass} ${harvestClass} ${superClass} ${invalidClass} ${validSwapClass} ${swapClass} ${swapGlideClass} ${idleHintClass} ${thornTeachClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass} ${refillBornClass} ${settleClass}`;
           tile.disabled = isResolving || roundComplete || isBouquetFailed();
+          tile.tabIndex = !tile.disabled && boardFocusCell.x === x && boardFocusCell.y === y ? 0 : -1;
           tile.style.setProperty("--tile-color", flowers[value][4]);
           if (swapGlide) {
             tile.style.setProperty("--swap-dx", String(swapGlide.dx));
@@ -9045,6 +9167,11 @@
       renderSacrificeOptions();
       applyImageFallbacks($("elements"));
       applyImageFallbacks($("objective"));
+      updateBoardRovingTabIndex();
+      if (focusedTileBeforeRender && !postRenderFocusTarget && !roundComplete && !failed) {
+        queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
+      }
+      applyQueuedPostRenderFocus();
       saveProgress();
     }
 
@@ -9541,6 +9668,7 @@
       if (isResolving) {
         return;
       }
+      boardFocusCell = clampBoardFocusCell({ x, y });
       if (roundComplete) {
         ritualMessage = "The bouquet is sealed. Press Next Bouquet to continue.";
         render();
@@ -9591,6 +9719,7 @@
           idleHintCells = selectedHintPair;
         }
         ritualMessage = "<strong>Selected.</strong> Tap a glowing adjacent flower to swap.";
+        queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
         render();
         return;
       }
@@ -9599,6 +9728,7 @@
       const dy = Math.abs(selected.y - y);
       if (dx + dy !== 1) {
         selected = { x, y };
+        queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
         render();
         return;
       }
@@ -9608,6 +9738,8 @@
         const source = selected;
         selected = null;
         ritualMessage = "The garden refuses that graft.";
+        boardFocusCell = source;
+        queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
         markInvalidSwap(source, target);
         return;
       }
@@ -9623,6 +9755,7 @@
         );
       }
       swapBoardCells(selected, target);
+      boardFocusCell = clampBoardFocusCell(target);
       pulseHaptic(18);
       playBloomSound("swap");
       markSwapGlide(selected, target);
@@ -9670,6 +9803,13 @@
         }
       } finally {
         isResolving = false;
+        const hintedFocus = firstHintFocusCell();
+        if (hintedFocus && !roundComplete && !isBouquetFailed()) {
+          boardFocusCell = hintedFocus;
+        }
+        if (!roundComplete && !isBouquetFailed()) {
+          queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
+        }
         render();
         if (schedulePostResolveIdleHint) {
           scheduleIdleHint();
@@ -11199,6 +11339,7 @@
         pulseNextOrderReady();
       }
       playBloomSound("complete");
+      queuePostRenderFocus(plan.round <= 3 ? "restoreGreenhouseBtn" : "renewBtn");
       return true;
     }
 
@@ -11313,6 +11454,7 @@
       roundOneRestored = true;
       ritualMessage = "<strong>Greenhouse restored.</strong> The dead glass burns gold and the first vines wake.";
       pulseNextOrderReady();
+      queuePostRenderFocus("nextOrderBtn");
       render();
       playBloomSound("restore");
       const panel = $("roundOneRestoration");
@@ -11339,6 +11481,7 @@
       roundTwoGreenhouseUpgraded = true;
       ritualMessage = "<strong>Moonlit greenhouse upgraded.</strong> Night glass opens the Bloodroot Compact.";
       pulseNextOrderReady();
+      queuePostRenderFocus("nextOrderBtn");
       render();
       playBloomSound("restore");
       const panel = $("roundOneRestoration");
@@ -11364,6 +11507,7 @@
       roundThreeConservatoryRaised = true;
       ritualMessage = "<strong>Bloodroot conservatory raised.</strong> Crimson glass seals the first three orders into one complete run.";
       pulseNextOrderReady();
+      queuePostRenderFocus("nextOrderBtn");
       render();
       playBloomSound("restore");
       const panel = $("roundOneRestoration");
@@ -11827,6 +11971,11 @@
       resetCursedThorns(plan);
       build();
       startThornTeachingCue(plan);
+      const nextFocusCell = currentRound === 2 && roundTwoThornTeachingSwap().length
+        ? roundTwoThornTeachingSwap()[0]
+        : (legalMoves()[0] || [boardFocusCell])[0];
+      boardFocusCell = clampBoardFocusCell(nextFocusCell);
+      queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
       if (restoredGreenhouseNextOrder) {
         startRestoredGreenhouseHandoff();
       } else {
@@ -11883,6 +12032,8 @@
       const firstMove = legalMoves()[0];
       if (firstMove) {
         idleHintCells = new Set(firstMove.map((cell) => `${cell.x},${cell.y}`));
+        boardFocusCell = clampBoardFocusCell(firstMove[0]);
+        queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
         $("firstSwapCue").textContent = firstSwapCueText(firstMove[0], firstMove[1]);
         render();
       }
@@ -13521,6 +13672,7 @@
     $("board").addEventListener("click", handleBoardClick);
     $("board").addEventListener("pointerover", previewActiveBoosterCell);
     $("board").addEventListener("focusin", previewActiveBoosterCell);
+    $("board").addEventListener("keydown", handleBoardKeyDown);
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape" && $("chestModal").classList.contains("open")) {
         closeChest();
@@ -13560,7 +13712,10 @@
     ensureCursedThornsForPlan(activeRoundPlan());
     if (currentRound === 1 && !roundComplete && !hasMadeValidMove) {
       const firstMove = legalMoves()[0];
-      if (firstMove) idleHintCells = new Set(firstMove.map((cell) => `${cell.x},${cell.y}`));
+      if (firstMove) {
+        idleHintCells = new Set(firstMove.map((cell) => `${cell.x},${cell.y}`));
+        boardFocusCell = clampBoardFocusCell(firstMove[0]);
+      }
     }
     render();
     renderChest();
