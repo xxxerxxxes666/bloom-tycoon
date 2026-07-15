@@ -1,5 +1,17 @@
 # Codex Build Notes
 
+## 2026-07-14 focused runtime performance milestone
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `scripts/verify_runtime_performance.spec.js`, and `docs/codex_build_notes.md`.
+- Player-visible milestone: active Round 1/2/3 no longer creates or rerenders the retired Bouquet Path, Path/Ledger, Round 3 focus card, or Round 4-57 preview nodes. Eight hidden prototype-control icons were also removed from the initial document. The approved board-first layout, original tile art, objectives, tutorial cues, greenhouse payoff, saves, and match engine remain unchanged while the first-minute screen carries less DOM, image, style, and repeated-render work.
+- Measured runtime result: fresh desktop 1280x720 and exact mobile 390x844 each fell from the audited baseline of roughly 1,031 DOM nodes to 781 nodes, from 106 images to 98, and from 55 dormant preview placeholders to 0. Both retained 64 tiles, eight complete board rows, no horizontal overflow, no broken images, and no visible non-tile buttons during the fresh Round 1 sample.
+- Regression guard: the source verifier now forbids dormant future-preview markup and calls from returning to the active render path. The new runtime browser contract caps the focused DOM at 850 nodes and images at 100 while requiring zero future-preview nodes, 64 tiles, the authored two-tile opening cue, mobile eight-row integrity, no overflow, no broken images, and no browser errors.
+- Browser verification: local Chromium on `http://127.0.0.1:4173/playable/midnight_bloom_prototype.html` passed six tests across desktop and exact 390x844 mobile: the runtime budget contract, complete Pass 3 Round 1 -> Round 2 -> Round 3 journeys, Cursed Thorn feedback/retry, save/reload, all three greenhouse transactions, Next Order/Play Again, and the unified ceremony contract. Final screenshots were visually inspected and preserve the approved hierarchy.
+- Required checks: `python3 scripts/verify_project.py`, `python3 scripts/verify_html_match_shapes.py`, extracted inline JavaScript `node --check`, `git diff --check`, the six-test Chromium suite, and changed-file credential/tracker scans.
+- Deployment status: verified locally before commit; Vercel and GitHub Pages checks follow push.
+- Known issues: the document still contains historical Round 4-57 source definitions for verifier/save compatibility, but none are mounted or called by the active first-three-level runtime. No player-facing regression was found.
+- Security/secret-scan status: no secrets, `.env` files, tokens, credentials, analytics, trackers, ads, payments, accounts, backend services, permissions, dependencies, or external assets were added.
+
 ## 2026-07-14 Pass 3 visual polish and feedback discipline
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `scripts/verify_pass3_feedback.spec.js`, and `docs/codex_build_notes.md`.

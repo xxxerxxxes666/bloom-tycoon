@@ -669,9 +669,6 @@ def verify_source_hooks():
         "function bouquetPathRoundNumbers",
         "function bouquetPathNodeMarkup",
         "function bouquetPathState",
-        "pathLedgerDrawer",
-        "Path / Ledger",
-        "Future rewards hidden",
         "Round 3 Focus",
         "roundThreeFocus",
         "Bloodroot Compact payoff",
@@ -1499,6 +1496,25 @@ def verify_source_hooks():
     missing = [needle for needle in required if needle not in html]
     if missing:
         raise SystemExit(f"Missing HTML match-shape hooks: {missing}")
+    dormant_runtime_patterns = [
+        r'id="bouquetPath"',
+        r'id="pathLedgerDrawer"',
+        r'id="roundThreeFocus"',
+        r'id="round[A-Z][A-Za-z]+Preview"',
+        r'^\s+renderBouquetPath\(\);$',
+        r'^\s+renderRoundThreeFocus\(\);$',
+        r'^\s+renderRound[A-Z][A-Za-z]+Preview\(\);$',
+    ]
+    dormant_runtime_hits = [
+        pattern
+        for pattern in dormant_runtime_patterns
+        if re.search(pattern, html, re.MULTILINE)
+    ]
+    if dormant_runtime_hits:
+        raise SystemExit(
+            "Dormant future UI returned to the active runtime: "
+            f"{dormant_runtime_hits}"
+        )
     forbidden = [
         'class="bouquet-stem-count"',
         'filter: "blur(2px) brightness(1.35)"',
