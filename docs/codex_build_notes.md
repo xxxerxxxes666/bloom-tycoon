@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-07-15 first bouquet dominant payoff
+
+- Selected weakness: following the Round 1 tutorial through bouquet completion left Skip beside Restore, then beside Next Order. The taught Black Candle row could also clear only four of six required Bone Stars, making the authored fourth swap inconsistently stop at `Bouquet 12/14`.
+- Player-visible result: the natural guided route now deterministically completes Thorn Rose 8/8 and Bone Star 6/6 on the fourth taught swap. At `Bouquet 14/14`, `Coins restore the greenhouse.` remains visible while `Restore Greenhouse · 100 coins` is the only non-tile action. After restoration, `Tap Next Order.` remains visible while `Next Order → Moonlit Wreath` is the only action. Focus stays on each payoff action, and Round 2 starts with its authored goals, 14 moves, 64 tiles, and one roving board tab stop.
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_tutorial_progress.spec.js`, and this note.
+- Browser verification: the natural four-swap exact-mobile route passed three consecutive fresh runs, then the complete local Chromium suite passed 10/10 on desktop 1280x720 and mobile 390x844. Coverage includes tutorial skip/replay, the natural Black Candle lesson, payoff focus, Round 1 -> 2 -> 3, retry, save/reload ceremonies, reduced motion, 64-tile integrity, all eight mobile rows, no broken images, no console/page/request errors, and no horizontal overflow.
+- Security scope: no assets, dependencies, external services, trackers, analytics, accounts, backend hooks, credentials, broad permissions, or protected third-party expression were added. Changed-code secret, tracker, and network-call scans remain part of the commit gate.
+
 ## 2026-07-15 mobile tutorial replay hierarchy
 
 - Selected weakness: on exact 390x844 mobile, replaying Help after the first valid swap could leave the tutorial panel partly above the viewport while Skip, Help, and Shuffle were all visible. This was the highest-impact remaining first-minute issue because the teaching prompt and board compete directly for attention at the moment the player asks for guidance.

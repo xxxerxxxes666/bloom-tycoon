@@ -973,6 +973,10 @@
       display: none !important;
     }
 
+    .tutorial-skip[hidden] {
+      display: none !important;
+    }
+
     body.tutorial-active .tutorial-panel {
       display: flex;
       scroll-margin-top: 4px;
@@ -7138,6 +7142,24 @@
         return;
       }
       writeTargetLegalMovePatch(4, 0, target.flowerId, 4);
+      const fillerA = (target.flowerId + 1) % flowers.length;
+      const fillerB = (target.flowerId + 2) % flowers.length;
+      const fillerC = (target.flowerId + 3) % flowers.length;
+      const fillerD = (target.flowerId + 4) % flowers.length;
+      // The taught row always carries six Bone Stars so its Black Candle burn
+      // seals the bouquet on the authored fourth swap.
+      board[0][0] = target.flowerId;
+      board[0][1] = fillerA;
+      board[0][2] = target.flowerId;
+      board[0][3] = fillerB;
+      board[1][0] = fillerA;
+      board[1][1] = fillerB;
+      board[1][2] = fillerC;
+      board[1][3] = fillerD;
+      board[2][0] = fillerB;
+      board[2][1] = fillerC;
+      board[2][2] = fillerD;
+      board[2][3] = fillerA;
     }
 
     function nextTargetMoveHint() {
@@ -8644,8 +8666,12 @@
     function renderTutorialPanel() {
       const panel = $("tutorialPanel");
       const copy = $("tutorialCopy");
+      const skip = $("tutorialSkipBtn");
       if (!panel || !copy) {
         return;
+      }
+      if (skip) {
+        skip.hidden = roundComplete;
       }
       if (!tutorialActive) {
         panel.hidden = true;
