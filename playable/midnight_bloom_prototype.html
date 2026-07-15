@@ -6777,18 +6777,18 @@
         name: "First Bouquet",
         moves: 12,
         targets: [
-          { flowerId: 5, needed: 3, order: "Velvet Funeral" },
-          { flowerId: 1, needed: 2, order: "Saint's Offering" }
+          { flowerId: 5, needed: 8, order: "Velvet Funeral" },
+          { flowerId: 1, needed: 6, order: "Saint's Offering" }
         ],
         reward: { coins: 120, greenhouse: 180, apothecary: 60, faction: 35, item: "First Bouquet Coffer", flowerId: 5 }
       },
       {
         name: "Moonlit Wreath",
-        moves: 17,
+        moves: 14,
         targets: [
-          { flowerId: 2, needed: 8, order: "Moonlit Wreath" },
-          { flowerId: 4, needed: 7, order: "Amber Keepsake" },
-          { flowerId: 5, needed: 5, order: "Velvet Thread" }
+          { flowerId: 2, needed: 10, order: "Moonlit Wreath" },
+          { flowerId: 4, needed: 9, order: "Amber Keepsake" },
+          { flowerId: 5, needed: 7, order: "Velvet Thread" }
         ],
         thornGoal: { needed: 3, order: "Cursed Thorn" },
         thornPlacements: [
@@ -6800,10 +6800,10 @@
       },
       {
         name: "Bloodroot Compact",
-        moves: 15,
+        moves: 12,
         targets: [
-          { flowerId: 3, needed: 9, order: "Bloodroot Compact" },
-          { flowerId: 0, needed: 8, order: "Solar Ash" }
+          { flowerId: 3, needed: 14, order: "Bloodroot Compact" },
+          { flowerId: 0, needed: 13, order: "Solar Ash" }
         ],
         reward: { coins: 180, greenhouse: 210, apothecary: 90, faction: 60, item: "Bloodroot Compact", flowerId: 3 }
       }
@@ -7076,7 +7076,9 @@
     function roundTilePool(plan) {
       const targetIds = (plan?.targets || []).map((target) => target.flowerId);
       return flowers.flatMap((_, index) => {
-        const weight = targetIds.includes(index) ? 3 : 1;
+        const weight = targetIds.includes(index)
+          ? plan?.round === 1 ? 3 : 2
+          : 1;
         return Array(weight).fill(index);
       });
     }
@@ -7305,7 +7307,12 @@
         if (needsThornTeachingMove) {
           seedRoundTwoThornTeachingMove(plan);
         }
-        if (!matches().length && hasLegalMoves() && (!needsThornTeachingMove || hasRoundTwoThornTeachingMove())) {
+        if (
+          !matches().length
+          && hasLegalMoves()
+          && roundOpeningPacingOk(plan)
+          && (!needsThornTeachingMove || hasRoundTwoThornTeachingMove())
+        ) {
           return;
         }
       }
@@ -7315,7 +7322,12 @@
       if (needsThornTeachingMove) {
         seedRoundTwoThornTeachingMove(plan);
       }
-      if (!matches().length && hasLegalMoves() && (!needsThornTeachingMove || hasRoundTwoThornTeachingMove())) {
+      if (
+        !matches().length
+        && hasLegalMoves()
+        && roundOpeningPacingOk(plan)
+        && (!needsThornTeachingMove || hasRoundTwoThornTeachingMove())
+      ) {
         return;
       }
       if (!seedGuaranteedLegalMove()) {
@@ -7354,6 +7366,44 @@
       if (targetIds[1] !== undefined) {
         writeTargetLegalMovePatch(4, 0, targetIds[1], 4);
       }
+    }
+
+    function roundOpeningPacingOk(plan = activeRoundPlan()) {
+      if (plan.round !== 1 || hasMadeValidMove || roundComplete || roundProgress(plan).earned > 0) {
+        return true;
+      }
+      const openingTarget = plan.targets[0];
+      if (!openingTarget) {
+        return true;
+      }
+      const openingMove = findTargetLegalMove(openingTarget.flowerId, 0);
+      if (!openingMove) {
+        return false;
+      }
+      const totalNeeded = roundProgress(plan).needed;
+      return legalMoves().every((move) => estimatedMoveProgress(move, plan).earned < totalNeeded);
+    }
+
+    function estimatedMoveProgress(move, plan = activeRoundPlan()) {
+      if (!move || !move[0] || !move[1]) {
+        return { earned: 0, thorns: 0 };
+      }
+      const [a, b] = move;
+      swapBoardCells(a, b);
+      const found = matches();
+      const earned = found.reduce((sum, match) => {
+        const target = plan.targets.find((candidate) => candidate.flowerId === match.val);
+        if (!target) {
+          return sum;
+        }
+        const shape = analyzeMatchShape(match);
+        return sum + match.cells.length * (shape.resourceMultiplier || 1);
+      }, 0);
+      const thorns = plan.thornGoal
+        ? found.filter((match) => cellsTouchCursedThorn(match.cells)).length
+        : 0;
+      swapBoardCells(a, b);
+      return { earned, thorns };
     }
 
     function shouldSeedThornTeachingMove(plan = activeRoundPlan()) {
@@ -10341,12 +10391,12 @@
           chargeSupreme(effectRareCells);
         }
 
-        await delay(wave.rare ? 300 : 190);
+        await delay(wave.rare ? 260 : Math.max(145, 185 - cascadeIndex * 12));
         clearWaveCells(wave);
         queueSettleSparks(cascadeIndex);
         playBloomSound("settle", { cascade: cascadeIndex, drops: settledCells.size });
         render();
-        await delay(Math.min(430, 280 + cascadeIndex * 35));
+        await delay(Math.min(360, 245 + cascadeIndex * 26));
       }
 
       harvestFlashCells.clear();

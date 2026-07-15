@@ -110,7 +110,7 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
     tutorialVisible: true,
     tutorialInViewport: true,
     visibleInstructionCues: 1,
-    bouquetText: "Bouquet 0/5 -> +120 coins",
+    bouquetText: "Bouquet 0/14 -> +120 coins",
     greenhouseText: "Restore First Bouquet Glass",
     overflowX: false,
     brokenImages: []
