@@ -258,7 +258,7 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
     overflowX: false,
     brokenImages: []
   });
-  expect(report.bars, "mobile active play keeps only the bouquet bar").toHaveLength(1);
+  expect(report.bars, "mobile active play keeps one bouquet bar plus one greenhouse bar").toHaveLength(2);
   expect(report.visibleButtons, "fresh tutorial button cap").toEqual(["Skip"]);
   expect(report.visibleProgressText).not.toMatch(/\b(?:SAP|MANA|BLOOD)\b|\d[\d,]*\s*\/\s*\d[\d,]*\s*XP|Greenhouse \+\d+ XP|Apothecary \+\d+ XP/);
 
@@ -327,7 +327,7 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
   expect(report.ritualLogVisible, "Round 2 mobile active play has no ritual log footer").toBe(false);
   expect(report.visibleProgressText).not.toContain("First Bouquet:");
   expect(report.tutorialSpotlights).toBeGreaterThanOrEqual(3);
-  expect(report.bars, "Round 2 mobile active play keeps only the bouquet bar").toHaveLength(1);
+  expect(report.bars, "Round 2 mobile active play keeps one bouquet bar plus one greenhouse bar").toHaveLength(2);
   expect(report.mobileGreenhousePlinthVisible).toBe(false);
   expect(report.ritualLogVisible).toBe(false);
   expect(report.visibleProgressText).not.toMatch(/\b(?:SAP|MANA|BLOOD)\b|\d[\d,]*\s*\/\s*\d[\d,]*\s*XP|Greenhouse \+\d+ XP|Apothecary \+\d+ XP/);

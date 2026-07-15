@@ -142,14 +142,14 @@ for (const config of [
     expect(report.shadowedElements, "focused shadow budget").toBeLessThanOrEqual(95);
     expect(report.animatedElements, "focused idle animation budget").toBeLessThanOrEqual(4);
     expect(report.meaningfulBars, config.mobile
-      ? "mobile active play keeps only the bouquet bar"
-      : "desktop keeps one bouquet bar plus one greenhouse bar").toHaveLength(config.mobile ? 1 : 2);
+      ? "mobile active play keeps one bouquet bar plus one greenhouse bar"
+      : "desktop keeps one bouquet bar plus one greenhouse bar").toHaveLength(2);
     expect(report.mobileGreenhousePlinthVisible, "mobile greenhouse plinth stays out of active play").toBe(false);
     if (config.mobile) {
       expect(report.ritualLogVisible, "ritual log stays out of mobile active play").toBe(false);
     }
     expect(report.greenhouseIntakeTargetId, "intake feedback retains a visible destination").toBe(config.mobile
-      ? "activeGreenhouseStage"
+      ? "mobileRestorationDial"
       : "heroRestorationDial");
     expect(report.bouquetProgressText).toMatch(/Bouquet .* -> \+\d+ coins/);
     expect(report.greenhouseNextText).toMatch(/Restore|Unlock|Raise|Replay/);

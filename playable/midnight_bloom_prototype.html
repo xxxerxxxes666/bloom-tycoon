@@ -5180,9 +5180,6 @@
         margin: 5px auto 0;
         pointer-events: none;
       }
-      body.focused-active-play .mobile-greenhouse-progress {
-        display: none !important;
-      }
       .mobile-greenhouse-progress .greenhouse-restoration-dial {
         position: relative;
         left: auto;
@@ -5517,8 +5514,8 @@
         <span class="progress-meter" aria-hidden="true"><span class="bar" id="bar"></span></span>
         <span class="progress-next" id="bouquetProgressNext">Complete the order to restore the greenhouse.</span>
       </div>
-      <div class="mobile-greenhouse-progress" id="mobileGreenhouseProgress" aria-hidden="true">
-        <span class="greenhouse-restoration-dial" id="mobileRestorationDial" aria-hidden="true"></span>
+      <div class="mobile-greenhouse-progress" id="mobileGreenhouseProgress" aria-label="Greenhouse progress">
+        <span class="greenhouse-restoration-dial" id="mobileRestorationDial"></span>
       </div>
       <div class="first-swap-cue" id="firstSwapCue" aria-live="polite">Glowing pair incoming…</div>
       <div class="tutorial-panel" id="tutorialPanel" hidden aria-live="polite">

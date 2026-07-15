@@ -95,7 +95,7 @@ async function assertMobileBoardRows(page) {
   expect(report.boardBottom, "mobile board remains in first viewport").toBeLessThanOrEqual(844);
   expect(report.mobileGreenhousePlinthVisible, "mobile greenhouse plinth is absent during active play").toBe(false);
   expect(report.ritualLogVisible, "ritual log is absent during active play").toBe(false);
-  expect(report.greenhouseIntakeTargetId, "greenhouse intake targets the visible active stage").toBe("activeGreenhouseStage");
+  expect(report.greenhouseIntakeTargetId, "greenhouse intake targets the visible mobile greenhouse bar").toBe("mobileRestorationDial");
 }
 
 async function clickGuidedSwap(page) {

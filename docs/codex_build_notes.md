@@ -1,5 +1,22 @@
 # Codex Build Notes
 
+## 2026-07-15 mobile Greenhouse progress bar restoration
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_runtime_performance.spec.js`, `scripts/verify_tutorial_progress.spec.js`, `scripts/verify_pass3_feedback.spec.js`, and this note.
+- Player-visible result: exact mobile active play now keeps the mandated two meaningful progress surfaces: `Bouquet 0/14 -> +120 coins` plus a compact `Greenhouse progress` bar naming the next visible unlock (`Restore First Bouquet Glass`, then `Unlock Bloodroot Compact` / `Raise Bloodroot Conservatory`). The old mobile greenhouse plinth and ritual log remain absent during active play.
+- Implementation: restored the already-rendered compact `#mobileGreenhouseProgress` dial during focused active play, exposed it with `aria-label="Greenhouse progress"`, and updated focused verifiers so greenhouse intake feedback now lands on visible `#mobileRestorationDial` instead of the hidden footer/plinth path.
+- Verification commands/results: `python3 scripts/verify_project.py` passed; `git diff --check` passed; `node --check` passed for all four Playwright specs; local Chromium passed 11/11 against `http://127.0.0.1:4250/playable/midnight_bloom_prototype.html` using cached `@playwright/test 1.61.1`.
+- Browser coverage: desktop `1280x720`, exact mobile `390x844`, touch/click guided swaps, keyboard board play, tutorial skip/replay, full Round 1 -> 2 -> 3, Cursed Thorn fail/retry, save/reload payoff states, reduced motion, local-QA Supreme Bloom review hook, 64-tile/eight-row integrity, no horizontal overflow, no visible broken images, and no console/page/request failures.
+- Runtime metrics: desktop stayed at `465` nodes, `80` images, `26` filtered, `36` shadowed, `3` animated, 64 tiles, 8 rows, 2 meaningful bars. Exact mobile stayed at `465` nodes, `80` images, `27` filtered, `39` shadowed, `3` animated, 64 tiles, 8 rows, 2 meaningful bars, hidden `#mobileGreenhousePlinth`, hidden `#ritualLog`, and `mobileRestorationDial` as the visible intake target. Reduced motion held `25` filtered / `37` shadowed / `3` animated.
+- Latency metrics: exact mobile guided swaps returned control in `451ms` and `625ms` in the full suite, with particle buildup at `31` after the second swap, 64 tiles, no disabled active tiles, no overflow, and no broken images.
+- Screenshot evidence inspected: `work/mobile-greenhouse-progress/mobile390-fresh.png` and `work/mobile-greenhouse-progress/desktop-fresh.png`. Visual judgment: the mobile Greenhouse bar is compact, the board remains dominant (`top=230`, `bottom=608` at `390x844`), and the screen still reads as one board-first gothic game surface.
+- Browser console/runtime status: final local Chromium suite and screenshot probe observed 0 console errors/warnings, 0 page errors, 0 failed requests, 0 visible broken images, and no horizontal overflow.
+- Commit/push/live status: pending commit at note time. Public GitHub Pages/Vercel were not yet rechecked for this checkpoint.
+- Known issues: local `main` is still ahead of `origin/main` before push. No new player-facing issue found locally.
+- How to trigger and verify L/T/cross matches without console: on a local QA URL with `bloomReview=1`, focus the playable and press `M` until `Witch's Cross!`, `Night Garden L-Bloom!`, or `Twin Stem Bloom!` appears. Normal player URLs leave this shortcut disabled; real L/T/cross resolution remains covered by the focused feedback suite.
+- How to trigger and verify Supreme Bloom without console: on a local QA URL with `bloomReview=1`, focus the playable and press `B`; `SUPREME BLOOM!` appears and returns to 64 tiles after the charge. Normal player URLs leave this shortcut disabled, preserving Supreme Bloom rarity.
+- Security/IP scan status: changed files were scanned for private keys, provider tokens, JWT-like strings, credential assignments, `.env`, external URLs, trackers/analytics/payment/ad/backend/account hooks, dependency or permission changes, and copied protected-source references. Only expected local test URL references and the existing repo reference-image filename matched; no findings. This pass added no secrets, dependencies, SDKs, trackers, analytics, backend, accounts, payments, ads, broad permissions, or copied protected expression.
+
 ## 2026-07-15 six-flower inventory art integration
 
 - Files changed: `assets/tiles/generated/diablo_gothic_botanical_spritesheet.png`, all six `assets/tiles/96/*.png`, all six `assets/tiles/48/*.png`, `playable/midnight_bloom_prototype.html`, and this note.
