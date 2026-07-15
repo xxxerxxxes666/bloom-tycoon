@@ -44,17 +44,19 @@ Read `docs/diablo_visual_simplification_audit.md` before every visual implementa
 
 **Current orchestration status:** all three ordered visual milestones are complete. Do not resume numbered-round expansion or invent a Pass 4. Preserve this vertical slice and await Xerxes's next product direction; scheduled checks should report only material regressions or deployment drift and must honor the three-empty-run pause rule.
 
-## Hermes first-minute handoff — `6b92cf9` (2026-07-15)
+## Hermes first-minute handoff — `e2f98cc` (2026-07-15)
 
-The natural first-minute route is healthy live: the authored fourth swap deterministically creates `Black Candle Vine`, seals `Bouquet 14/14`, leaves one focused payoff action, and Round 2's first guided swap clearly breaks all three Cursed Thorns in about one second. Invalid swaps also return control without spending a move. The next surgical weakness is payoff continuity after save/reload. Reloading completed Round 1 currently hides `Coins restore the greenhouse.`, loses action focus, and exposes `HELP` beside `Restore Greenhouse · 100 coins`; reloading after restoration similarly hides `Tap Next Order.`, loses focus, and exposes `HELP` beside `Next Order → Moonlit Wreath`. Restore the same one-action payoff hierarchy from saved state. Do not change match logic, rewards, order tuning, tutorial copy, restoration art, or progression scope.
+Saved payoff continuity is healthy after `37c6ddb`: both completed Round 1 reload states preserve the correct one-action guidance and focus, and Next Order still opens the authored Cursed Thorn lesson. The next materially different weakness is the persistent mobile greenhouse footer during active play. At exact `390×844`, active Round 2 renders the full 64-tile board at `top=211.5` / `bottom=589.5`, then spends another 162 pixels on `#mobileGreenhousePlinth` and another 31 pixels on `#ritualLog`. The log can also retain stale First Bouquet copy under the Round 2 board. This directly conflicts with `docs/diablo_visual_simplification_audit.md`: mobile restoration should be a completion ceremony, not a persistent plinth under active play. Remove the mobile plinth and ritual log from active Round 1, Round 2, and Round 3 play while preserving the existing greenhouse ceremonies. Do not change match logic, objectives, rewards, order tuning, tile art, desktop composition, or progression scope.
 
 Acceptance checks:
 
-- Complete Round 1 without skipping, then reload before restoration: `Bouquet 14/14` and 64 tiles persist, `Coins restore the greenhouse.` is visible in the first viewport, and the only visible non-tile action is the focused `Restore Greenhouse · 100 coins` button.
-- Restore the greenhouse, then reload before Next Order: `Tap Next Order.` is visible in the first viewport, and the only visible non-tile action is the focused `Next Order → Moonlit Wreath` button.
-- Neither reload state exposes `SKIP`, `HELP`, `Shuffle`, or stale `Swap the glowing flowers.` copy beside the payoff action.
-- Activating Next Order after reload starts Round 2 with 64 tiles, the authored Nightshade/Amber Seed/Thorn Rose/Cursed Thorn goals, 14 moves, one roving board tab stop, and the `Crack the marked thorns` cue.
-- Recheck desktop `1280×720` and exact mobile `390×844`: no horizontal overflow, no broken images, and no console or JavaScript errors.
+- On fresh active Round 1 and active Round 2/3 at exact `390×844`, `#mobileGreenhousePlinth` and `#ritualLog` are not visible; no stale `First Bouquet` sentence or duplicate objective copy appears below the board.
+- Mobile active play keeps the compact title/objective/moves, one contextual cue, all 64 tiles in eight complete rows, and no more than two visible non-tile buttons. The board remains the dominant first-viewport surface with no horizontal overflow.
+- The Round 1 greenhouse before/after and the Round 2/3 upgrade ceremonies remain conspicuous completion payoffs with one focused primary action. The plinth removal must not weaken, duplicate, or bypass those ceremonies.
+- Bouquet collection flights, greenhouse intake feedback, cascades, Cursed Thorn CRACK/BREAK feedback, and keyboard/touch control return still target visible surfaces and produce no detached or off-screen animation errors.
+- Round 1 completes naturally at `Bouquet 14/14`; save/reload before restoration and before Next Order preserves the focused action; Next Order opens Round 2 with 64 tiles, authored goals, 14 moves, one roving tab stop, and `Crack the marked thorns`; retry and Round 2 -> Round 3 remain healthy.
+- Desktop `1280×720` remains unchanged in hierarchy: all eight board rows fit the first viewport, the mobile plinth stays absent, and no active-play copy overlaps the board.
+- Recheck local, Vercel, and GitHub Pages with no broken images, request failures, console/JavaScript errors, or horizontal overflow. Vercel and GitHub Pages playable HTML must both match the committed `origin/main` build; at audit time GitHub Pages matched `e2f98cc` while Vercel still served the pre-merge `c9dabd2` playable.
 
 A pass counts only when its entire acceptance result is visibly demonstrated and browser-verified. Tiny hint, copy, pulse, marker, or documentation-only commits do not count.
 
