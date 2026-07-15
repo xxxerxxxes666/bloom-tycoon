@@ -35,6 +35,14 @@ async function runtimeReport(page) {
       const style = getComputedStyle(node);
       return style.animationName !== "none" && style.animationDuration !== "0s";
     }).length;
+    const meaningfulBars = Array.from(document.querySelectorAll(
+      ".progress-meter, .restoration-dial-track, .vial-meter, .restored-greenhouse-meter, .greenhouse-payoff-fill, .greenhouse-upgrade-ladder"
+    ))
+      .filter(visible)
+      .map((node) => ({
+        className: node.className,
+        label: node.closest("[aria-label]")?.getAttribute("aria-label") || node.textContent.trim()
+      }));
     return {
       nodes: all.length,
       images: document.images.length,
@@ -46,6 +54,9 @@ async function runtimeReport(page) {
       dormantPreviewNodes: document.querySelectorAll(
         "#bouquetPath, #pathLedgerDrawer, #roundThreeFocus, [id^='round'][id$='Preview']"
       ).length,
+      meaningfulBars,
+      bouquetProgressText: document.querySelector("#bouquetProgressLabel")?.textContent.trim() || "",
+      greenhouseNextText: document.querySelector(".restoration-dial-phase")?.textContent.trim() || "",
       visibleButtons: Array.from(document.querySelectorAll("button"))
         .filter((node) => visible(node) && !node.closest(".board"))
         .map((node) => node.textContent.trim())
@@ -77,8 +88,14 @@ for (const config of [
 
     expect(report.tiles).toBe(64);
     expect(report.dormantPreviewNodes, "future preview DOM is absent").toBe(0);
-    expect(report.nodes, "focused runtime DOM budget").toBeLessThanOrEqual(850);
-    expect(report.images, "focused runtime image budget").toBeLessThanOrEqual(100);
+    expect(report.nodes, "focused runtime DOM budget").toBeLessThanOrEqual(700);
+    expect(report.images, "focused runtime image budget").toBeLessThanOrEqual(90);
+    expect(report.filteredElements, "focused filter budget").toBeLessThanOrEqual(160);
+    expect(report.shadowedElements, "focused shadow budget").toBeLessThanOrEqual(180);
+    expect(report.animatedElements, "focused idle animation budget").toBeLessThanOrEqual(4);
+    expect(report.meaningfulBars, "one bouquet bar plus one greenhouse bar").toHaveLength(2);
+    expect(report.bouquetProgressText).toMatch(/Bouquet .* -> \+\d+ coins/);
+    expect(report.greenhouseNextText).toMatch(/Restore|Unlock|Raise|Replay/);
     expect(report.visibleButtons.length, "Round 1 non-tile controls").toBeLessThanOrEqual(2);
     expect(report.brokenImages).toEqual([]);
     expect(report.overflowX).toBe(false);
@@ -94,3 +111,16 @@ for (const config of [
     await expect(page.locator(".tile")).toHaveCount(64);
   });
 }
+
+test("focused runtime respects reduced motion", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openFresh(page, "reduced_motion");
+  const report = await runtimeReport(page);
+  console.log(`reduced motion runtime: ${JSON.stringify(report)}`);
+  expect(report.tiles).toBe(64);
+  expect(report.completeRows).toBe(8);
+  expect(report.animatedElements, "reduced motion idle animations").toBeLessThanOrEqual(3);
+  expect(report.brokenImages).toEqual([]);
+  expect(report.overflowX).toBe(false);
+});

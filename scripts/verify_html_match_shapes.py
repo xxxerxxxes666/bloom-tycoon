@@ -1493,6 +1493,70 @@ def verify_source_hooks():
         "assets/tiles/altar/thorn_rose_altar.svg",
         "generate_occult_tile_art.py",
     ]
+    retired_required_patterns = [
+        r'restoredGreenhouseStatus',
+        r'restored-greenhouse',
+        r'restoration-xp-preview',
+        r'restorationGreenhouseXpPreview',
+        r'greenhouse-payoff',
+        r'greenhouse-upgrade-ladder',
+        r'greenhouse-order-ladder',
+        r'renderGreenhouseUpgradeLadders',
+        r'renderRestoredGreenhouseStatus',
+        r'Greenhouse \+\d+ XP',
+        r'Moonlit order under glass',
+        r'Bloodroot under crimson glass',
+        r'data-reward-choice=',
+        r'Bouquet Path',
+        r'BouquetPath',
+        r'bouquetPath',
+        r'bouquet-path-',
+        r'data-bouquet-state=',
+        r'renderBouquetPath',
+        r'roundThreeFocus',
+        r'Round 3 Focus',
+        r'Bloodroot Compact payoff',
+        r'round[A-Z][A-Za-z]+Preview',
+        r'Round (?:[4-9]|[1-5][0-9])\b',
+        r'data-round-(?:three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty)',
+        r'function renderRound[A-Z][A-Za-z]+',
+        r'function round[A-Z][A-Za-z]+(?:Preview|Payoff|Focus)',
+        r'Moonlit Wreath (?:[2-9]|1[0-2])',
+        r'First Bouquet (?:[2-9]|1[0-2])',
+        r'Bloodroot Compact (?:[2-9]|1[0-1])',
+        r"Saint's Night Ledger",
+        r'Sub Rosa Grand Bouquet',
+    ]
+    required = [
+        needle for needle in required
+        if not any(re.search(pattern, needle) for pattern in retired_required_patterns)
+    ]
+    required.extend([
+        "id=\"bouquetProgress\"",
+        "id=\"bouquetProgressLabel\"",
+        "id=\"bouquetProgressNext\"",
+        "function updateBouquetProgress",
+        "Bouquet ${progress.earned}/${progress.needed} -> +${plan.reward.coins} coins",
+        "function greenhouseNextUnlockLabel",
+        "Restore First Bouquet Glass",
+        "Unlock Bloodroot Compact",
+        "Raise Bloodroot Conservatory",
+        "id=\"tutorialPanel\"",
+        "id=\"tutorialHelpBtn\"",
+        "id=\"tutorialSkipBtn\"",
+        "let tutorialSkipped = false",
+        "function startTutorial({ replay = false } = {})",
+        "function skipTutorial",
+        "function scheduleFreshTutorial",
+        "Swap the glowing flowers.",
+        "Match 3 fills the bouquet.",
+        "Match 4 makes Black Candle Vine.",
+        "Match beside thorns.",
+        "Moves ended. Retry the bouquet.",
+        "Coins restore the greenhouse.",
+        "const MAX_BOARD_PARTICLES = 56",
+        "@media (prefers-reduced-motion: reduce)",
+    ])
     missing = [needle for needle in required if needle not in html]
     if missing:
         raise SystemExit(f"Missing HTML match-shape hooks: {missing}")
@@ -1504,6 +1568,13 @@ def verify_source_hooks():
         r'^\s+renderBouquetPath\(\);$',
         r'^\s+renderRoundThreeFocus\(\);$',
         r'^\s+renderRound[A-Z][A-Za-z]+Preview\(\);$',
+        r'function\s+renderBouquetPath\b',
+        r'function\s+renderRoundThreeFocus\b',
+        r'function\s+renderRound[A-Z][A-Za-z]+Preview\b',
+        r'roundFourAuditMarkers',
+        r'roundFiftySevenAuditMarkers',
+        r'roundFiftySevenPreview',
+        r'Moonlit Wreath 12',
     ]
     dormant_runtime_hits = [
         pattern
@@ -1527,6 +1598,13 @@ def verify_source_hooks():
         "Moonlit Wreath Sealed · +${roundTwoPlan.reward.coins} coin reward",
         "Bloodroot Compact Sealed · +${roundThreePlan.reward.coins} coin reward",
         "Retry Bouquet preserves coins, XP, Flowerpedia, Chapter rewards, Chest Storage, and boosters.",
+        'id="restoredGreenhouseStatus"',
+        'id="greenhouseOrderLadder"',
+        'id="greenhousePayoffLadder"',
+        'id="restorationXpPreview"',
+        'data-vial="MANA"',
+        'data-vial="BLOOD"',
+        "Greenhouse +180 XP",
     ]
     present_forbidden = [needle for needle in forbidden if needle in html]
     if present_forbidden:
