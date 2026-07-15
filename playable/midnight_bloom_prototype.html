@@ -4973,7 +4973,8 @@
       body.restored-next-order-focus .progress,
       body.restored-greenhouse-handoff .progress,
       body.round-three-focus-active .progress,
-      body.round-one-active .progress {
+      body.round-one-active .progress,
+      body.focused-payoff-active .progress {
         width: calc(100vw - 26px);
         grid-template-columns: auto minmax(82px, 1fr);
         min-height: 22px;
@@ -4985,13 +4986,15 @@
       body.restored-next-order-focus .progress-next,
       body.restored-greenhouse-handoff .progress-next,
       body.round-three-focus-active .progress-next,
-      body.round-one-active .progress-next {
+      body.round-one-active .progress-next,
+      body.focused-payoff-active .progress-next {
         display: none;
       }
       body.restored-next-order-focus .progress-meter,
       body.restored-greenhouse-handoff .progress-meter,
       body.round-three-focus-active .progress-meter,
-      body.round-one-active .progress-meter {
+      body.round-one-active .progress-meter,
+      body.focused-payoff-active .progress-meter {
         height: 8px;
       }
       body.restored-next-order-focus .objective .objective-text,
@@ -5677,7 +5680,7 @@
       },
       {
         name: "Moonlit Wreath",
-        moves: 14,
+        moves: 10,
         targets: [
           { flowerId: 2, needed: 10, order: "Moonlit Wreath" },
           { flowerId: 4, needed: 9, order: "Amber Keepsake" },
@@ -5693,7 +5696,7 @@
       },
       {
         name: "Bloodroot Compact",
-        moves: 14,
+        moves: 10,
         targets: [
           { flowerId: 3, needed: 14, order: "Bloodroot Compact" },
           { flowerId: 0, needed: 13, order: "Solar Ash" }

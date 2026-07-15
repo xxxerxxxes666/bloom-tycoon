@@ -1,5 +1,22 @@
 # Codex Build Notes
 
+## 2026-07-15 first-three move-budget tuning
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_tutorial_progress.spec.js`, `scripts/verify_payoff_ceremony_contract.spec.js`, and this note.
+- Player-visible result: Moonlit Wreath and Bloodroot Compact now start with `Moves 10` instead of `Moves 14`, keeping the first-three-order journey approachable while making the moves counter more meaningful. Targets, coins, Cursed Thorn teaching, greenhouse restoration costs, and ceremony structure are unchanged.
+- Mobile polish found during screenshot inspection: focused payoff ceremonies now use the same compact progress layout as active mobile play, so the top bouquet bar no longer clips the secondary next-step label on exact `390x844`.
+- Real playtest result: a no-review exact `390x844` Chromium playthrough completed Round 1 in 3 moves, Round 2 in 6 moves with 4 moves left, and Round 3 in 5 moves with 5 moves left, then reached the single `Raise Conservatory · 180 coins` action. The run observed 64 tiles, no horizontal overflow, no broken images, no console/page errors, and no failed requests.
+- Runtime metrics after tuning: desktop `467` nodes, `80` images, `26` filtered, `36` shadowed, `3` animated, 64 tiles, 8 visible board rows, 0 dormant preview nodes, 0 prototype scaffold nodes. Exact mobile `467` nodes, `80` images, `27` filtered, `39` shadowed, `3` animated, 64 tiles, 8 visible board rows, 0 dormant preview nodes, 0 prototype scaffold nodes. Reduced motion held `25` filtered / `37` shadowed / `3` animated.
+- Verification commands/results: `python3 scripts/verify_project.py` passed; `git diff --check` passed; `node --check` passed for all four Playwright specs; local Chromium passed 11/11 against `http://127.0.0.1:4244/playable/midnight_bloom_prototype.html`: `scripts/verify_runtime_performance.spec.js`, `scripts/verify_tutorial_progress.spec.js`, `scripts/verify_payoff_ceremony_contract.spec.js`, and `scripts/verify_pass3_feedback.spec.js`.
+- Coverage: desktop `1280x720`, exact `390x844`, touch/click guided swaps, keyboard board play, tutorial skip/replay, full Round 1 -> 2 -> 3, Cursed Thorn fail/retry, save/reload payoff states, reduced motion, local-QA Supreme Bloom review hook, 64-tile/eight-row integrity, no horizontal overflow, no visible broken images, and no console/page/request failures.
+- Screenshot evidence inspected: `work/pass3-mobile390-round3-pending.png` after the fix. Visual judgment: the Bloodroot ceremony keeps one trophy, one greenhouse scene, one concise coin transaction, one dominant action, and a clean unclipped mobile progress bar.
+- Browser console/runtime status: final local Chromium suite and the no-review playtest observed 0 console errors/warnings, 0 page errors, 0 failed requests, 0 visible broken images, and no horizontal overflow.
+- Commit/push/live status: pending commit at note time. Public GitHub Pages/Vercel were not rechecked before commit because previous push attempts in this environment failed for missing GitHub credentials and public URLs remain expected to be stale until `origin/main` can be updated.
+- Known issues: public live may remain stale until push authentication is available. No new local player-facing issue found.
+- How to trigger and verify L/T/cross matches without console: on a local QA URL with `bloomReview=1`, focus the playable and press `M` until `Witch's Cross!`, `Night Garden L-Bloom!`, or `Twin Stem Bloom!` appears. Normal player URLs leave this shortcut disabled; real L/T/cross resolution remains covered by the focused feedback suite.
+- How to trigger and verify Supreme Bloom without console: on a local QA URL with `bloomReview=1`, focus the playable and press `B`; `SUPREME BLOOM!` appears and returns to 64 tiles after the charge. Normal player URLs leave this shortcut disabled, preserving Supreme Bloom rarity.
+- Security/IP scan status: final changed-file scan passed with no findings. This pass added no assets, dependencies, broad permissions, external services, or copied protected expression.
+
 ## 2026-07-15 mobile active-play greenhouse hierarchy and cascade cleanup
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_runtime_performance.spec.js`, `scripts/verify_tutorial_progress.spec.js`, `scripts/verify_payoff_ceremony_contract.spec.js`, and this note.

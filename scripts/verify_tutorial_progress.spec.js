@@ -211,7 +211,7 @@ test("guided Round 1 payoff keeps one dominant action", async ({ page }) => {
   await expect(page.locator("#objective")).toContainText("Amber Seed");
   await expect(page.locator("#objective")).toContainText("Thorn Rose");
   await expect(page.locator("#objective")).toContainText("Cursed Thorn");
-  await expect(page.locator("#objective .moves-counter")).toHaveText("Moves 14");
+  await expect(page.locator("#objective .moves-counter")).toHaveText("Moves 10");
   await expect(page.locator("#firstSwapCue")).toContainText("Crack the marked thorns");
   await expect(page.locator(".tile[tabindex='0']")).toHaveCount(1);
   await expect(page.locator(".tile[tabindex='0']")).toBeFocused();

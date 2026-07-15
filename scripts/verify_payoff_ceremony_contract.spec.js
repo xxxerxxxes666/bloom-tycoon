@@ -224,7 +224,7 @@ async function runJourney(page, label, includeRetry) {
   await assertReloadKeeps(page, "Next Order", `work/pass2-${label}-round2-upgraded-reload.png`);
   await clickPrimary(page);
   await expectCleanReplayBoard(page);
-  await expect(page.locator(".moves-counter")).toContainText("Moves 14");
+  await expect(page.locator(".moves-counter")).toContainText("Moves 10");
   await expect(page.locator("#firstSwapCue")).toHaveText("Match Bloodroot and Sol Rot.");
   await expect(page.locator("#firstSwapCue")).not.toContainText("Nightshade");
   await expect(page.locator("#ritualLog")).toContainText("Final Order: Match Bloodroot and Sol Rot.");
