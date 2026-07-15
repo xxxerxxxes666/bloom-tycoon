@@ -106,8 +106,7 @@
     .bottom-card,
     .tile,
     .btn,
-    .modal-panel,
-    .chest-access {
+    .modal-panel {
       border: 1px solid #3d3026;
       background:
         linear-gradient(180deg, #12100e, #070605 58%, #030303),
@@ -154,7 +153,6 @@
 
     .side-card::before,
     .bottom-card::before,
-    .chest-access::before,
     .modal-panel::before {
       content: "";
       position: absolute;
@@ -164,8 +162,7 @@
     }
 
     .side-card::after,
-    .bottom-card::after,
-    .chest-access::after {
+    .bottom-card::after {
       content: "✦";
       position: absolute;
       right: 12px;
@@ -177,8 +174,7 @@
     }
 
     .side-card h3,
-    .bottom-card h3,
-    .chest-access h3 {
+    .bottom-card h3 {
       margin: 0;
       color: #d0b27a;
       text-transform: uppercase;
@@ -2220,7 +2216,6 @@
     }
 
     .btn:hover,
-    .chest-access:hover,
     .renew-btn:hover,
     .modal-close:hover {
       border-color: #8a633e;
@@ -2508,92 +2503,6 @@
       background: linear-gradient(90deg, #0000, #090807, #0000);
       box-shadow: inset 0 0 14px #000;
       text-shadow: 0 2px 0 #000;
-    }
-
-    .chest-access {
-      appearance: none;
-      width: 100%;
-      min-width: 0;
-      min-height: 100%;
-      color: var(--ink);
-      padding: 22px 14px 16px;
-      text-align: center;
-      cursor: pointer;
-      position: relative;
-      overflow: hidden;
-      z-index: 2;
-      pointer-events: auto;
-      touch-action: manipulation;
-    }
-
-    .chest-access:focus-visible,
-    .chest-access:hover {
-      color: #f0d6a6;
-      transform: translateY(-1px);
-    }
-
-    .chest-kicker {
-      display: block;
-      margin-top: 4px;
-      color: #b9a17d;
-    }
-
-    .chest-access > .small {
-      display: block;
-    }
-
-    .chest {
-      display: block;
-      width: 145px;
-      height: 90px;
-      margin: 22px auto 14px;
-      background:
-        radial-gradient(circle at 50% 22%, #6a211d55 0, #0000 34%),
-        linear-gradient(180deg, #2b120f, #100606);
-      border: 2px solid #8a633e;
-      border-radius: 8px;
-      position: relative;
-      box-shadow: inset 0 0 24px #000, 0 0 20px #000, 0 0 14px #4f1111;
-    }
-
-    .chest::before {
-      content: "";
-      position: absolute;
-      left: 38px;
-      right: 38px;
-      top: -24px;
-      height: 32px;
-      border: 6px solid #6b4a2f;
-      border-bottom: 0;
-      border-radius: 24px 24px 0 0;
-    }
-
-    .chest span {
-      position: absolute;
-      left: 24px;
-      right: 24px;
-      top: 24px;
-      background: linear-gradient(90deg, #5a3821, #d2a25a, #5a3821);
-      height: 10px;
-    }
-
-    .chest::after {
-      content: "✦";
-      position: absolute;
-      left: 58px;
-      top: 39px;
-      width: 28px;
-      height: 28px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #d2a25a;
-      font-size: 15px;
-      border-radius: 50%;
-      background: radial-gradient(circle at 50% 38%, #8f1818 0, #3b0606 68%);
-      border: 1px solid #d2a25a;
-      text-shadow: 0 0 12px #000;
-      box-shadow: inset 0 0 8px #000, 0 0 14px #4f1111;
     }
 
     .supreme {
@@ -4568,7 +4477,6 @@
       font-size: 24px;
     }
 
-    body.round-one-active .chest-access,
     body.restored-next-order-focus .bottom,
     body.round-one-active .first-session-plaque,
     body.round-one-active .controls .red,
@@ -5798,13 +5706,6 @@
       </div>
     </section>
 
-    <section class="bottom" aria-label="Resources and storage">
-      <div class="bottom-card">
-        <div class="elements-heading">ELEMENTS</div>
-        <div class="elements" id="elements"></div>
-        <div class="coins">✪ <span id="coins">2450</span> <span class="small">+18% bonus</span></div>
-      </div>
-    </section>
   </main>
 
   <script>
@@ -5911,19 +5812,6 @@
         reward: { coins: 180, item: "Bloodroot Compact", flowerId: 3 }
       }
     ];
-    const chestState = {
-      capacity: 16,
-      items: [
-        { id: "velvet-reliquary", name: "Velvet Reliquary", qty: 1, rarity: "Rare", source: "Order reward", flowerId: 5, tags: ["order", "container"] },
-        { id: "bloodroot-cutting", name: "Bloodroot Cutting", qty: 2, rarity: "Uncommon", source: "Match drop", flowerId: 3, tags: ["botanical", "bloodroot"] },
-        { id: "ambered-bulb", name: "Ambered Bulb", qty: 1, rarity: "Rare", source: "Black Market", flowerId: 4, tags: ["bulb", "amber"] },
-        { id: "bone-star-thread", name: "Bone Star Thread", qty: 3, rarity: "Common", source: "Saint's Offering", flowerId: 1, tags: ["botanical", "bone-star"] },
-        { id: "nightshade-vial", name: "Nightshade Vial", qty: 1, rarity: "Uncommon", source: "Apothecary", flowerId: 2, tags: ["vial", "nightshade"] },
-        { id: "thorn-rose-wax", name: "Thorn Rose Wax", qty: 2, rarity: "Common", source: "Velvet Funeral", flowerId: 5, tags: ["botanical", "thorn-rose"] },
-        { id: "sub-rosa-seal", name: "Sub Rosa Seal", qty: 1, rarity: "Faction", source: "Client favor", flowerId: 0, tags: ["faction", "key"] },
-        { id: "black-market-scrip", name: "Black Market Scrip", qty: 4, rarity: "Contraband", source: "Market", flowerId: 4, tags: ["currency", "contraband"] }
-      ]
-    };
     const STREAK_COIN_BONUS_STEP = 5;
     const STREAK_COIN_BONUS_CAP = 25;
     const MOONLIT_GREENHOUSE_UPGRADE_COST = 120;
@@ -6011,8 +5899,6 @@
     let lastSettledCascadeCount = 0;
     let bouquetSealPulseActive = false;
     let nextOrderPulseActive = false;
-    let pendingRuneTendedSoil = false;
-    let activeRuneTendedSoil = false;
     let shapeDemoIndex = 0;
     const $ = (id) => document.getElementById(id);
     const QA_REVIEW_HOOKS_ENABLED = (() => {
@@ -6038,13 +5924,6 @@
           <img class="${className}" src="${flower[1]}" srcset="${flowerIconSrcset(flower[1])}" sizes="96px" alt="${alt}" data-fallback-img>
         </span>
       `;
-    }
-
-    function setScaffoldText(id, text) {
-      const element = $(id);
-      if (element) {
-        element.textContent = text;
-      }
     }
 
     function thornSealMarkup(className = "", alt = "") {
@@ -8165,7 +8044,6 @@
         ${goalMarkup(plan)}
         ${thornObjectiveHintMarkup(plan)}
         ${shapeDiscoveryHintMarkup()}
-        ${runeBoonMarkup()}
         ${bouquetStreakMarkup()}
         ${nextStreakTargetMarkup()}
         <span class="objective-separator">·</span>
@@ -8180,21 +8058,26 @@
       renderActiveOrders(plan);
       renderRoundCeremony(plan);
       updateBouquetProgress(activePlan, progress);
-      $("coins").textContent = coins;
+      const coinsEl = $("coins");
+      if (coinsEl) {
+        coinsEl.textContent = coins;
+      }
       $("shuffleBtn").disabled = isResolving || roundComplete || moves < 1;
       $("ritualLog").innerHTML = ritualMessage;
       $("renewBtn").textContent = roundComplete ? "Next Bouquet" : failed ? "Retry Bouquet" : "Renew Bouquet";
       $("renewBtn").classList.toggle("visible", failed || roundComplete);
-      updateChestSummary();
-      $("elements").innerHTML = focusedSliceRound(activePlan) ? "" : flowers.map((flower, index) => `
-        <div class="element">
-          ${iconMarkup(index, "", flower[0], "element-icon-wrap")}
-          <b>${flower[0]}</b>
-          <span class="small">${flower[2]}</span><br>
-          <span class="element-count ${elementPulseTargets.has(index) ? "element-pulse" : ""}">x${baseElementCounts[index] + counts[index]}</span>
-        </div>
-      `).join("");
-      applyImageFallbacks($("elements"));
+      const elementsEl = $("elements");
+      if (elementsEl) {
+        elementsEl.innerHTML = focusedSliceRound(activePlan) ? "" : flowers.map((flower, index) => `
+          <div class="element">
+            ${iconMarkup(index, "", flower[0], "element-icon-wrap")}
+            <b>${flower[0]}</b>
+            <span class="small">${flower[2]}</span><br>
+            <span class="element-count ${elementPulseTargets.has(index) ? "element-pulse" : ""}">x${baseElementCounts[index] + counts[index]}</span>
+          </div>
+        `).join("");
+        applyImageFallbacks(elementsEl);
+      }
       applyImageFallbacks($("objective"));
       updateBoardRovingTabIndex();
       if (focusedTileBeforeRender && !postRenderFocusTarget && !roundComplete && !failed) {
@@ -8348,16 +8231,6 @@
       boardEl.appendChild(arrow);
     }
 
-    function runeBoonMarkup() {
-      if (activeRuneTendedSoil) {
-        return '<span class="objective-boon">Rune-Tended Soil +1 move</span>';
-      }
-      if (pendingRuneTendedSoil) {
-        return '<span class="objective-boon pending">Rune-Tended Soil queued</span>';
-      }
-      return "";
-    }
-
     function bouquetStreakMarkup() {
       if (!bouquetStreak || focusedSliceRound() || isRestoredNextOrderFocus()) {
         return "";
@@ -8411,21 +8284,11 @@
     }
 
     function roundPlaqueCopy(plan = activeRoundPlan()) {
-      const baseCopy = runeBoonPlaqueCopy(goalCopy(plan));
+      const baseCopy = goalCopy(plan);
       const thornCopy = `${thornObjectiveHintCopy(plan)}${thornTeachingCopy(plan)}`;
       const patternCopy = bouquetStreak > 0 || plan.round >= 2 ? patternDiscoveryCopy() : "";
       const nextTargetCopy = roundComplete ? nextBouquetStreakTargetCopy() : "";
       return `${baseCopy}${thornCopy}${patternCopy}${nextTargetCopy}`;
-    }
-
-    function runeBoonPlaqueCopy(baseCopy) {
-      if (activeRuneTendedSoil) {
-        return `${baseCopy} Rune-Tended Soil is active: a planted Eclipse Seed Rune gave this bouquet +1 starting move.`;
-      }
-      if (pendingRuneTendedSoil) {
-        return `${baseCopy} Rune-Tended Soil is queued for the next bouquet.`;
-      }
-      return baseCopy;
     }
 
     async function tap(x, y) {
@@ -8501,6 +8364,7 @@
       moves -= 1;
       selected = null;
       isResolving = true;
+      ritualMessage = "<strong>Swapping.</strong> Flowers trade places.";
       render();
       await delay(185);
       clearSwapGlide();
@@ -8913,7 +8777,7 @@
       }
       if (wave.rareSeedRunes.length) {
         queueRareSeedRuneBurst(wave.rareSeedRunes, cascadeIndex);
-        storeRareSeedRunes(wave.rareSeedRunes, result);
+        recordRareSeedRunes(wave.rareSeedRunes, result);
       }
       if (isRareWave) {
         queueSuperBloomBoardEffects(effectRareCells, cascadeIndex);
@@ -8937,18 +8801,9 @@
       });
     }
 
-    function storeRareSeedRunes(runes, result) {
+    function recordRareSeedRunes(runes, result) {
       runes.forEach((rune) => {
-        const stored = addChestItem({
-          id: "eclipse-seed-rune",
-          name: "Eclipse Seed Rune",
-          qty: 1,
-          rarity: "Rare",
-          source: "Five-line harvest",
-          flowerId: rune.flowerId,
-          tags: ["rare", "seed-rune", "line5"]
-        });
-        result.rareSeedRunes.push({ ...rune, stored });
+        result.rareSeedRunes.push({ ...rune });
         result.rareSeedRuneCells.push(...rune.cells);
       });
     }
@@ -9767,8 +9622,7 @@
       }
       const labels = result.rareSeedRunes.map((rune) => {
         const lane = rune.direction === "vertical" ? `column ${rune.fixed + 1}` : `row ${rune.fixed + 1}`;
-        const storage = rune.stored ? "sealed in Chest Storage" : "could not fit in Chest Storage";
-        return `${rune.name} awakened from a five-line ${lane} and ${storage}`;
+        return `${rune.name} awakened from a five-line ${lane}`;
       });
       return `${labels.join("; ")}.`;
     }
@@ -9887,7 +9741,7 @@
       ceremony.hidden = false;
       ceremony.innerHTML = `
         <span class="ceremony-title">${plan.name} fulfilled</span>
-        <span class="ceremony-copy">The client pays. The greenhouse deepens. A sealed reward enters Chest Storage.${streakCopy}${nextTargetCopy}</span>
+        <span class="ceremony-copy">The client pays. The greenhouse deepens.${streakCopy}${nextTargetCopy}</span>
         <span class="ceremony-rewards">
           <span class="reward-token">✪ +${streakPayout.total}</span>
           ${streakRewardToken}
@@ -9912,18 +9766,9 @@
       bouquetStreak += 1;
       const streakPayout = completionCoinPayout(plan);
       coins += streakPayout.total;
-      addChestItem({
-        id: `round-${plan.round}-${plan.reward.item.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
-        name: plan.reward.item,
-        qty: 1,
-        rarity: "Order",
-        source: plan.name,
-        flowerId: plan.reward.flowerId,
-        tags: ["order", "reward"]
-      });
       const completionMessage = focusedSliceRound(plan)
         ? focusedSliceCompletionMessage(plan, streakPayout)
-        : `<strong>${plan.name} fulfilled.</strong> <strong>Bouquet Streak ${bouquetStreak}:</strong> +${streakPayout.total} coins (${plan.reward.coins} base + ${streakPayout.bonus} streak bonus at ${streakPayout.percent}%), and ${plan.reward.item} placed in Chest Storage.${nextBouquetStreakTargetCopy()}`;
+        : `<strong>${plan.name} fulfilled.</strong> <strong>Bouquet Streak ${bouquetStreak}:</strong> +${streakPayout.total} coins (${plan.reward.coins} base + ${streakPayout.bonus} streak bonus at ${streakPayout.percent}%).${nextBouquetStreakTargetCopy()}`;
       ritualMessage = carryMessage ? `${carryMessage} ${completionMessage}` : completionMessage;
       if (focusedSliceRound(plan)) {
         tutorialActive = true;
@@ -10454,20 +10299,10 @@
       if (!preserveCompletedRoundTwoGuide) {
         restoredRoundTwoGuideMoves = 0;
       }
-      const runeBoonApplied = retryingFailedBouquet
-        ? activeRuneTendedSoil
-        : pendingRuneTendedSoil;
-      if (!retryingFailedBouquet) {
-        pendingRuneTendedSoil = false;
-      }
-      activeRuneTendedSoil = runeBoonApplied;
-      moves = plan.moves + (runeBoonApplied ? 1 : 0);
+      moves = plan.moves;
       counts = [0, 0, 0, 0, 0, 0];
       hasMadeValidMove = false;
       roundComplete = false;
-      const boonCopy = runeBoonApplied
-        ? " <strong>Rune-Tended Soil</strong> wakes from the planted Eclipse Seed Rune: +1 starting move this bouquet."
-        : "";
       const introCopy = retryingFailedBouquet
         ? `<strong>Retry Bouquet:</strong> Round ${plan.round}: ${plan.name} is restored. `
         : secondUpgradeNextOrder
@@ -10475,7 +10310,7 @@
         : `<strong>Round ${plan.round}: ${plan.name}</strong> begins. `;
       ritualMessage = restoredGreenhouseNextOrder
         ? "<strong>Moonlit Wreath:</strong> Match beside the glowing Cursed Thorns."
-        : `${introCopy}${goalCopy(plan)}${thornObjectiveHintCopy(plan)}${thornTeachingCopy(plan)}${patternDiscoveryCopy()}${boonCopy}`;
+        : `${introCopy}${goalCopy(plan)}${thornObjectiveHintCopy(plan)}${thornTeachingCopy(plan)}${patternDiscoveryCopy()}`;
       resetCursedThorns(plan);
       build();
       startThornTeachingCue(plan);
@@ -10519,8 +10354,6 @@
       clearThornTeachingCue(false);
       currentRound = 1;
       restoredRoundTwoGuideMoves = 0;
-      pendingRuneTendedSoil = false;
-      activeRuneTendedSoil = false;
       roundOneRestored = false;
       roundTwoGreenhouseUpgraded = false;
       roundThreeConservatoryRaised = false;
@@ -10761,137 +10594,11 @@
       }, 2200);
     }
 
-    function renderChest() {
-      updateChestSummary();
-      const slotGrid = $("slotGrid");
-      if (!slotGrid) {
-        return;
-      }
-
-      // Chest storage is structured now so later systems can collect, combine, upgrade, or consume items.
-      const slots = chestState.items.map((item, index) => normalizeChestItem(item, index)).filter(Boolean);
-      while (slots.length < chestState.capacity) {
-        slots.push(null);
-      }
-
-      slotGrid.innerHTML = slots.map((item, index) => {
-        if (!item) {
-          return `<div class="slot empty"><span>Empty</span><span class="slot-meta">Slot ${index + 1}</span></div>`;
-        }
-        const flower = flowers[item.flowerId] || flowers[0];
-        const rarityKey = item.rarity.toLowerCase().replace(/\s+/g, "-");
-        const tags = item.tags.length ? item.tags.join(" / ") : "stored";
-        const runeAction = item.id === "eclipse-seed-rune"
-          ? '<button class="slot-action" type="button" data-action="plant-eclipse-seed-rune">Plant Rune</button>'
-          : "";
-        return `
-          <div class="slot" data-rarity="${rarityKey}">
-            <div class="slot-item-top">
-              ${iconMarkup(item.flowerId, "slot-icon", flower[0], "slot-icon-wrap")}
-              <div>
-                <div class="slot-rarity">${item.rarity}</div>
-                <div class="slot-name">${item.name}</div>
-                <div class="slot-meta">${item.source}</div>
-                <div class="slot-tags">${tags}</div>
-              </div>
-            </div>
-            <div class="slot-qty">x${item.qty}</div>
-            ${runeAction}
-          </div>
-        `;
-      }).join("");
-      slotGrid.querySelectorAll('[data-action="plant-eclipse-seed-rune"]').forEach((button) => {
-        button.addEventListener("click", plantEclipseSeedRune);
-      });
-      applyImageFallbacks(slotGrid);
-    }
-
-    function updateChestSummary() {
-      const used = chestState.items.length;
-      const summary = `${used} / ${chestState.capacity} Slots`;
-      setScaffoldText("chestSummary", summary);
-      setScaffoldText("chestModalSummary", summary);
-    }
-
-    function addChestItem(item) {
-      const normalizedItem = normalizeChestItem(item, chestState.items.length);
-      if (!normalizedItem) {
-        return false;
-      }
-      const existing = chestState.items.find((stored) => stored.id === normalizedItem.id);
-      if (existing) {
-        existing.qty += normalizedItem.qty;
-        return true;
-      }
-      if (chestState.items.length >= chestState.capacity) {
-        ritualMessage = "Chest Storage is full. The reward waits in the shadows.";
-        return false;
-      }
-      chestState.items.push(normalizedItem);
-      return true;
-    }
-
-    function plantEclipseSeedRune() {
-      const rune = chestState.items.find((item) => item.id === "eclipse-seed-rune" && item.qty > 0);
-      if (!rune) {
-        ritualMessage = "No Eclipse Seed Rune waits in Chest Storage.";
-        render();
-        renderChest();
-        return;
-      }
-      if (pendingRuneTendedSoil) {
-        ritualMessage = "<strong>Rune-Tended Soil</strong> is already queued for the next bouquet.";
-        render();
-        renderChest();
-        return;
-      }
-      rune.qty -= 1;
-      if (rune.qty <= 0) {
-        chestState.items = chestState.items.filter((item) => item.id !== "eclipse-seed-rune");
-      }
-      pendingRuneTendedSoil = true;
-      ritualMessage = "<strong>Eclipse Seed Rune planted.</strong> <strong>Rune-Tended Soil</strong> is queued: the next bouquet starts with +1 move.";
-      render();
-      renderChest();
-    }
-
     function awardRareBloomDrop(result) {
       if (!result.rare) {
         return "";
       }
-      const stored = addChestItem({
-        id: "supreme-bloom-shard",
-        name: "Supreme Bloom Shard",
-        qty: 1,
-        rarity: "Rare",
-        source: "Supreme Bloom",
-        flowerId: 3,
-        tags: ["rare", "jackpot", "crafting"]
-      });
-      return stored
-        ? " <strong>Supreme Bloom Shard</strong> sealed in Chest Storage."
-        : " <strong>Supreme Bloom Shard</strong> could not be stored.";
-    }
-
-    function normalizeChestItem(item, index = 0) {
-      if (!item || typeof item !== "object") {
-        return null;
-      }
-      const safeFlowerId = Number.isInteger(item.flowerId) && item.flowerId >= 0 && item.flowerId < flowers.length
-        ? item.flowerId
-        : 0;
-      const tags = Array.isArray(item.tags)
-        ? item.tags.map((tag) => String(tag)).filter(Boolean).slice(0, 4)
-        : ["stored"];
-      return {
-        id: String(item.id || `stored-item-${index}`),
-        name: String(item.name || "Sealed Parcel"),
-        qty: Math.max(1, Number(item.qty) || 1),
-        rarity: String(item.rarity || "Common"),
-        source: String(item.source || "Chest"),
-        flowerId: safeFlowerId,
-        tags
-      };
+      return " <strong>Supreme Bloom!</strong> Rare petals erupted across the altar.";
     }
 
     function saveProgress() {
@@ -10914,10 +10621,7 @@
         restoredRoundTwoGuideMoves,
         tutorialSkipped,
         tutorialActive,
-        pendingRuneTendedSoil,
-        activeRuneTendedSoil,
-        bouquetStreak,
-        chestItems: chestState.items
+        bouquetStreak
       };
       try {
         localStorage.setItem(SAVE_KEY, JSON.stringify(state));
@@ -10991,15 +10695,7 @@
         if (!isRestoredRoundTwoWindow()) {
           restoredRoundTwoGuideMoves = 0;
         }
-        pendingRuneTendedSoil = Boolean(state.pendingRuneTendedSoil);
-        activeRuneTendedSoil = Boolean(state.activeRuneTendedSoil);
         bouquetStreak = validBouquetStreak(state.bouquetStreak);
-        if (Array.isArray(state.chestItems)) {
-          chestState.items = state.chestItems
-            .slice(0, chestState.capacity)
-            .map((item, index) => normalizeChestItem(item, index))
-            .filter(Boolean);
-        }
         if (shouldSaveMigratedProgress) {
           saveProgress();
         }
@@ -11061,27 +10757,6 @@
       auditEl.textContent = JSON.stringify(results);
     }
 
-    function openChest() {
-      if (!$("chestModal") || !$("chestTrigger")) {
-        return;
-      }
-      renderChest();
-      $("chestModal").classList.add("open");
-      $("chestModal").setAttribute("aria-hidden", "false");
-      $("chestTrigger").setAttribute("aria-expanded", "true");
-      $("closeChest")?.focus();
-    }
-
-    function closeChest() {
-      if (!$("chestModal") || !$("chestTrigger")) {
-        return;
-      }
-      $("chestModal").classList.remove("open");
-      $("chestModal").setAttribute("aria-hidden", "true");
-      $("chestTrigger").setAttribute("aria-expanded", "false");
-      $("chestTrigger")?.focus();
-    }
-
     $("shuffleBtn").addEventListener("click", shuffleBoard);
     $("renewBtn").addEventListener("click", renewBouquet);
     $("restoreGreenhouseBtn").addEventListener("click", advanceGreenhouseUpgrade);
@@ -11136,7 +10811,6 @@
       }
     }
     render();
-    renderChest();
     applyImageFallbacks(document);
     scheduleIdleHint();
     scheduleFreshTutorial();
