@@ -12638,6 +12638,10 @@
     if (!board.length || matches().length || !hasLegalMoves()) {
       build();
     }
+    if (currentRound === 1 && roundComplete && !tutorialSkipped) {
+      tutorialActive = true;
+      queuePostRenderFocus(roundOneRestored ? "nextOrderBtn" : "restoreGreenhouseBtn");
+    }
     ensureCursedThornsForPlan(activeRoundPlan());
     if (currentRound === 1 && !roundComplete && !hasMadeValidMove) {
       const firstMove = legalMoves()[0];

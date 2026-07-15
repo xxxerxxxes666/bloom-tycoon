@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-07-15 saved payoff hierarchy continuity
+
+- Selected weakness: reloading completed Round 1 discarded the active payoff guidance and focus, exposing Help beside Restore or Next Order. This broke the one-action first-minute hierarchy precisely when a returning player needed the saved next step.
+- Player-visible result: an unskipped completed Round 1 now restores its existing tutorial payoff state from the saved completion flags. Reload before restoration shows `Coins restore the greenhouse.` with only the focused `Restore Greenhouse · 100 coins`; reload after restoration shows `Tap Next Order.` with only the focused `Next Order → Moonlit Wreath`. Next Order still opens the authored Round 2 Cursed Thorn lesson with 64 tiles, 14 moves, one roving tab stop, and the `Crack the marked thorns` cue.
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_tutorial_progress.spec.js`, and this note.
+- Browser verification: focused tutorial/reload coverage passed 3/3, then the full local Chromium suite passed 10/10 on desktop 1280x720 and exact mobile 390x844. Coverage includes both Round 1 payoff reload boundaries, natural four-swap completion, keyboard focus, tutorial skip/replay, Round 1 -> 2 -> 3, retry, save/reload ceremonies, reduced motion, 64-tile integrity, all eight mobile rows, no broken images, no console/page/request errors, and no horizontal overflow.
+- Security scope: no assets, dependencies, external services, trackers, analytics, accounts, backend hooks, credentials, broad permissions, or protected third-party expression were added. Changed-code secret, tracker, and network-call scans remain part of the commit gate.
+
 ## 2026-07-15 first bouquet dominant payoff
 
 - Selected weakness: following the Round 1 tutorial through bouquet completion left Skip beside Restore, then beside Next Order. The taught Black Candle row could also clear only four of six required Bone Stars, making the authored fourth swap inconsistently stop at `Bouquet 12/14`.

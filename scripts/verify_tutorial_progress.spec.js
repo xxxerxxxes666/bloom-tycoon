@@ -166,6 +166,15 @@ test("guided Round 1 payoff keeps one dominant action", async ({ page }) => {
   });
   expect(report.visibleNonTileButtons).toEqual(["Restore Greenhouse · 100 coins"]);
 
+  await page.reload({ waitUntil: "networkidle" });
+  await expect(page.locator(".tile")).toHaveCount(64);
+  await expect(page.locator("#tutorialCopy")).toHaveText("Coins restore the greenhouse.");
+  await expect(page.locator("#restoreGreenhouseBtn")).toBeFocused();
+  report = await visibleReport(page);
+  expect(report.tutorialInViewport).toBe(true);
+  expect(report.visibleNonTileButtons).toEqual(["Restore Greenhouse · 100 coins"]);
+  expect(report.visibleProgressText).not.toContain("Swap the glowing flowers.");
+
   await page.locator("#restoreGreenhouseBtn").click();
   await expect(page.locator("#tutorialCopy")).toHaveText("Tap Next Order.");
   await expect(page.locator("#nextOrderBtn")).toHaveText("Next Order → Moonlit Wreath");
@@ -174,6 +183,15 @@ test("guided Round 1 payoff keeps one dominant action", async ({ page }) => {
   expect(report.visibleNonTileButtons).toEqual(["Next Order → Moonlit Wreath"]);
   expect(report.tutorialInViewport).toBe(true);
 
+  await page.reload({ waitUntil: "networkidle" });
+  await expect(page.locator(".tile")).toHaveCount(64);
+  await expect(page.locator("#tutorialCopy")).toHaveText("Tap Next Order.");
+  await expect(page.locator("#nextOrderBtn")).toBeFocused();
+  report = await visibleReport(page);
+  expect(report.tutorialInViewport).toBe(true);
+  expect(report.visibleNonTileButtons).toEqual(["Next Order → Moonlit Wreath"]);
+  expect(report.visibleProgressText).not.toContain("Swap the glowing flowers.");
+
   await page.locator("#nextOrderBtn").click();
   await expect(page.locator(".tile")).toHaveCount(64);
   await expect(page.locator("#objective")).toContainText("Nightshade");
@@ -181,6 +199,7 @@ test("guided Round 1 payoff keeps one dominant action", async ({ page }) => {
   await expect(page.locator("#objective")).toContainText("Thorn Rose");
   await expect(page.locator("#objective")).toContainText("Cursed Thorn");
   await expect(page.locator("#objective .moves-counter")).toHaveText("Moves 14");
+  await expect(page.locator("#firstSwapCue")).toContainText("Crack the marked thorns");
   await expect(page.locator(".tile[tabindex='0']")).toHaveCount(1);
   await expect(page.locator(".tile[tabindex='0']")).toBeFocused();
   report = await visibleReport(page);
@@ -312,8 +331,18 @@ test("keyboard play follows the board and payoff focus", async ({ page }) => {
   await expect(page.locator("#restoreGreenhouseBtn")).toBeFocused();
   let report = await visibleReport(page);
   expect(report.visibleNonTileButtons).toEqual(["Restore Greenhouse · 100 coins"]);
+  await page.reload({ waitUntil: "networkidle" });
+  await expect(page.locator("#tutorialCopy")).toHaveText("Coins restore the greenhouse.");
+  await expect(page.locator("#restoreGreenhouseBtn")).toBeFocused();
+  report = await visibleReport(page);
+  expect(report.visibleNonTileButtons).toEqual(["Restore Greenhouse · 100 coins"]);
   await page.keyboard.press("Enter");
   await expect(page.locator("#nextOrderBtn")).toBeVisible({ timeout: 5000 });
+  await expect(page.locator("#tutorialCopy")).toHaveText("Tap Next Order.");
+  await expect(page.locator("#nextOrderBtn")).toBeFocused();
+  report = await visibleReport(page);
+  expect(report.visibleNonTileButtons).toEqual(["Next Order → Moonlit Wreath"]);
+  await page.reload({ waitUntil: "networkidle" });
   await expect(page.locator("#tutorialCopy")).toHaveText("Tap Next Order.");
   await expect(page.locator("#nextOrderBtn")).toBeFocused();
   report = await visibleReport(page);
