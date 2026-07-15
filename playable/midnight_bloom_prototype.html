@@ -1050,10 +1050,17 @@
         0 10px 24px #000c;
     }
 
-    body.focused-payoff-active .tutorial-panel,
     body.focused-payoff-active .tutorial-help,
     body.focused-payoff-active .first-swap-cue {
       display: none !important;
+    }
+
+    body.focused-payoff-active .tutorial-skip {
+      display: none !important;
+    }
+
+    body.tutorial-active.focused-payoff-active .tutorial-panel {
+      padding: 7px 12px;
     }
 
     body.tutorial-active.focused-payoff-active .restore-btn:not([hidden]),
@@ -12399,6 +12406,7 @@
         hasMadeValidMove,
         restoredRoundTwoGuideMoves,
         tutorialSkipped,
+        tutorialActive,
         pendingRuneTendedSoil,
         activeRuneTendedSoil,
         boosters,
@@ -12464,7 +12472,7 @@
           || counts.some((count) => count > 0)
           || clearedCursedThorns > 0;
         tutorialSkipped = Boolean(state.tutorialSkipped);
-        tutorialActive = false;
+        tutorialActive = !tutorialSkipped && Boolean(state.tutorialActive);
         restoredRoundTwoGuideMoves = Math.max(0, Math.min(
           RESTORED_ROUND_TWO_GUIDE_LIMIT,
           Math.floor(Number(state.restoredRoundTwoGuideMoves) || 0)

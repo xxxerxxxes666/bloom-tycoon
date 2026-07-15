@@ -76,6 +76,8 @@ async function visibleContract(page) {
       board: visible(".board").length,
       controls: visible(".controls").length,
       objective: visible(".objective").length,
+      tutorialVisible: visible("#tutorialPanel").length === 1,
+      tutorialCopy: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
       buttons: visibleButtons,
       nonBoardButtons: visibleNonBoardButtons,
       retired: visibleRetired,
@@ -86,7 +88,7 @@ async function visibleContract(page) {
   });
 }
 
-async function expectCeremony(page, expectedButton, screenshotPath) {
+async function expectCeremony(page, expectedButton, screenshotPath, expectedGuide = "") {
   await page.waitForTimeout(250);
   const contract = await visibleContract(page);
   expect(contract.trophies, "one visible bouquet trophy").toBe(1);
@@ -96,6 +98,10 @@ async function expectCeremony(page, expectedButton, screenshotPath) {
   expect(contract.buttons[0]).toContain(expectedButton);
   expect(contract.nonBoardButtons, "one visible non-board action during ceremony").toHaveLength(1);
   expect(contract.nonBoardButtons[0]).toContain(expectedButton);
+  if (expectedGuide) {
+    expect(contract.tutorialVisible, "terse payoff guidance remains visible").toBe(true);
+    expect(contract.tutorialCopy).toBe(expectedGuide);
+  }
   expect(contract.board, "board hidden during ceremony").toBe(0);
   expect(contract.controls, "controls hidden during ceremony").toBe(0);
   expect(contract.objective, "objective hidden during ceremony").toBe(0);
@@ -126,9 +132,9 @@ async function clickPrimary(page) {
   await page.waitForTimeout(450);
 }
 
-async function assertReloadKeeps(page, expectedButton, screenshotPath) {
+async function assertReloadKeeps(page, expectedButton, screenshotPath, expectedGuide = "") {
   await page.reload({ waitUntil: "networkidle" });
-  await expectCeremony(page, expectedButton, screenshotPath);
+  await expectCeremony(page, expectedButton, screenshotPath, expectedGuide);
 }
 
 async function forceRoundTwoFailure(page) {
@@ -153,11 +159,11 @@ async function runJourney(page, label, includeRetry) {
   await resetPage(page, `pass2_${label}`);
   await clickGuidedSwap(page);
   await completeRoundWithReviewKey(page);
-  await expectCeremony(page, "Restore Greenhouse", `work/pass2-${label}-round1-pending.png`);
-  await assertReloadKeeps(page, "Restore Greenhouse", `work/pass2-${label}-round1-pending-reload.png`);
+  await expectCeremony(page, "Restore Greenhouse", `work/pass2-${label}-round1-pending.png`, "Coins restore the greenhouse.");
+  await assertReloadKeeps(page, "Restore Greenhouse", `work/pass2-${label}-round1-pending-reload.png`, "Coins restore the greenhouse.");
   await clickPrimary(page);
-  await expectCeremony(page, "Next Order", `work/pass2-${label}-round1-restored.png`);
-  await assertReloadKeeps(page, "Next Order", `work/pass2-${label}-round1-restored-reload.png`);
+  await expectCeremony(page, "Next Order", `work/pass2-${label}-round1-restored.png`, "Tap Next Order.");
+  await assertReloadKeeps(page, "Next Order", `work/pass2-${label}-round1-restored-reload.png`, "Tap Next Order.");
   await clickPrimary(page);
   await expectActiveBoard(page);
 

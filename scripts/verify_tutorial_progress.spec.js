@@ -181,13 +181,19 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
 
   await completeRoundWithReviewKey(page);
   await expect(page.locator("#tutorialCopy")).toHaveText("Coins restore the greenhouse.");
-  await expect(page.locator("#tutorialPanel")).toBeHidden();
+  await expect(page.locator("#tutorialPanel")).toBeVisible();
+  await expect(page.locator("#tutorialSkipBtn")).toBeHidden();
   await expect(page.locator("#tutorialHelpBtn")).toBeHidden();
   report = await visibleReport(page);
   expect(report.visibleButtons).toEqual(["Restore Greenhouse · 100 coins"]);
   await expect(page.locator("#bouquetProgressNext")).toContainText("Coins ready -> Restore First Bouquet Glass");
   await page.locator("#restoreGreenhouseBtn").click();
   await expect(page.locator("#nextOrderBtn")).toBeVisible({ timeout: 5000 });
+  await expect(page.locator("#tutorialCopy")).toHaveText("Tap Next Order.");
+  await expect(page.locator("#tutorialPanel")).toBeVisible();
+  await expect(page.locator("#tutorialSkipBtn")).toBeHidden();
+  report = await visibleReport(page);
+  expect(report.visibleButtons).toEqual(["Next Order → Moonlit Wreath"]);
   await page.locator("#nextOrderBtn").click();
   await expect(page.locator(".tile")).toHaveCount(64);
   if (await page.locator("#tutorialHelpBtn").isVisible()) {
@@ -205,7 +211,11 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
   expect(report.visibleProgressText).not.toMatch(/\b(?:SAP|MANA|BLOOD)\b|\d[\d,]*\s*\/\s*\d[\d,]*\s*XP|Greenhouse \+\d+ XP|Apothecary \+\d+ XP/);
 
   await forceActiveBouquetFailure(page);
-  await page.locator("#tutorialHelpBtn").click();
+  if (await page.locator("#tutorialHelpBtn").isVisible()) {
+    await page.locator("#tutorialHelpBtn").click();
+  } else {
+    await expect(page.locator("#tutorialPanel")).toBeVisible();
+  }
   await expect(page.locator("#tutorialCopy")).toHaveText("Moves ended. Retry the bouquet.");
   report = await visibleReport(page);
   expect(report.retryVisible).toBe(true);
