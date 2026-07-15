@@ -44,17 +44,17 @@ Read `docs/diablo_visual_simplification_audit.md` before every visual implementa
 
 **Current orchestration status:** all three ordered visual milestones are complete. Do not resume numbered-round expansion or invent a Pass 4. Preserve this vertical slice and await Xerxes's next product direction; scheduled checks should report only material regressions or deployment drift and must honor the three-empty-run pause rule.
 
-## Hermes live regression task — `6a30d3f` (2026-07-15)
+## Hermes first-minute handoff — `6b92cf9` (2026-07-15)
 
-Fix one surgical Round 1 mobile tutorial-replay hierarchy regression. At exact `390×844`, after the first valid swap, tapping `HELP` currently places the tutorial panel partly above the viewport (`top: -5px`) and exposes three non-tile controls at once: `SKIP`, `HELP`, and `Shuffle (-1 move)`. Keep the replayed tutorial fully inside the first viewport and restore the active-play cap of no more than two visible non-tile buttons. Do not change order tuning, keyboard board controls, payoff focus handoffs, gameplay systems, or progression scope.
+The natural first-minute route is healthy live: the authored fourth swap deterministically creates `Black Candle Vine`, seals `Bouquet 14/14`, leaves one focused payoff action, and Round 2's first guided swap clearly breaks all three Cursed Thorns in about one second. Invalid swaps also return control without spending a move. The next surgical weakness is payoff continuity after save/reload. Reloading completed Round 1 currently hides `Coins restore the greenhouse.`, loses action focus, and exposes `HELP` beside `Restore Greenhouse · 100 coins`; reloading after restoration similarly hides `Tap Next Order.`, loses focus, and exposes `HELP` beside `Next Order → Moonlit Wreath`. Restore the same one-action payoff hierarchy from saved state. Do not change match logic, rewards, order tuning, tutorial copy, restoration art, or progression scope.
 
 Acceptance checks:
 
-- On exact `390×844`, replay `HELP` both before and after the first valid Round 1 swap; the tutorial panel rect stays fully inside the viewport (`top >= 0`, `bottom <= 844`).
-- While the tutorial panel is open, no more than two visible non-tile buttons exist. Preserve `SKIP` and at most one contextual action; do not leave `SKIP`, `HELP`, and `Shuffle` visible together.
-- The authored keyboard swap still advances Round 1, leaves one roving board tab stop, and preserves 64 tiles.
-- Round 1 → Round 2 → Round 3 retains the tuned goals/moves and focus handoffs: board → greenhouse action → Next Order → board, then conservatory action → Play Again → authored Round 1 pair.
-- Desktop `1280×720` and mobile `390×844` keep eight complete board rows where applicable, no horizontal overflow, no broken images, and no console or JavaScript errors.
+- Complete Round 1 without skipping, then reload before restoration: `Bouquet 14/14` and 64 tiles persist, `Coins restore the greenhouse.` is visible in the first viewport, and the only visible non-tile action is the focused `Restore Greenhouse · 100 coins` button.
+- Restore the greenhouse, then reload before Next Order: `Tap Next Order.` is visible in the first viewport, and the only visible non-tile action is the focused `Next Order → Moonlit Wreath` button.
+- Neither reload state exposes `SKIP`, `HELP`, `Shuffle`, or stale `Swap the glowing flowers.` copy beside the payoff action.
+- Activating Next Order after reload starts Round 2 with 64 tiles, the authored Nightshade/Amber Seed/Thorn Rose/Cursed Thorn goals, 14 moves, one roving board tab stop, and the `Crack the marked thorns` cue.
+- Recheck desktop `1280×720` and exact mobile `390×844`: no horizontal overflow, no broken images, and no console or JavaScript errors.
 
 A pass counts only when its entire acceptance result is visibly demonstrated and browser-verified. Tiny hint, copy, pulse, marker, or documentation-only commits do not count.
 

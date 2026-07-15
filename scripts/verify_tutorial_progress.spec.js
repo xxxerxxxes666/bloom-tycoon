@@ -45,6 +45,10 @@ async function visibleReport(page) {
       ].filter(visible).length,
       tutorialText: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
       tutorialPrompt: document.body.dataset.tutorialPrompt || "",
+      visibleNonTileButtons: Array.from(document.querySelectorAll("button"))
+        .filter((node) => visible(node) && !node.closest("#board"))
+        .map((node) => node.textContent.trim())
+        .filter(Boolean),
       retryVisible: visible(document.querySelector("#renewBtn.visible")),
       tutorialSpotlights: document.querySelectorAll(
         ".tile.idle-hint, .tile.thorn-teach, .tile.thorn-teach-blocker"
@@ -68,9 +72,28 @@ async function visibleReport(page) {
 async function clickGuidedSwap(page) {
   const hints = page.locator(".tile.idle-hint");
   await expect(hints).toHaveCount(2, { timeout: 5000 });
-  await hints.nth(0).click({ force: true });
-  await hints.nth(1).click({ force: true });
+  const pair = await hints.evaluateAll((tiles) => tiles.map((tile) => ({
+    x: tile.dataset.x,
+    y: tile.dataset.y
+  })));
+  await page.locator(`.tile[data-x="${pair[0].x}"][data-y="${pair[0].y}"]`).click({ force: true });
+  await page.locator(`.tile[data-x="${pair[1].x}"][data-y="${pair[1].y}"]`).click({ force: true });
   await expect(page.locator(".tile")).toHaveCount(64);
+  await page.waitForFunction(() => {
+    const payoff = document.querySelector("#roundOneRestoration");
+    const payoffVisible = payoff && getComputedStyle(payoff).display !== "none";
+    return payoffVisible || document.querySelectorAll(".tile.idle-hint").length === 2;
+  }, null, { timeout: 7000 });
+}
+
+async function completeGuidedRoundOne(page) {
+  for (let swap = 0; swap < 4; swap += 1) {
+    await clickGuidedSwap(page);
+    if (await page.locator("#roundOneRestoration").isVisible()) {
+      break;
+    }
+  }
+  await expect(page.locator("#roundOneRestoration")).toBeVisible({ timeout: 5000 });
 }
 
 async function keyboardGuidedSwap(page) {
@@ -120,6 +143,86 @@ async function forceActiveBouquetFailure(page) {
   await expect(page.locator("#renewBtn.visible")).toHaveText("Retry Bouquet");
 }
 
+test("guided Round 1 payoff keeps one dominant action", async ({ page }) => {
+  const consoleErrors = [];
+  const pageErrors = [];
+  const failedRequests = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") consoleErrors.push(message.text());
+  });
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("requestfailed", (request) => failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`));
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openFresh(page, "guided-payoff-mobile390");
+  await expect(page.locator("#tutorialPanel")).toBeVisible({ timeout: 3000 });
+  await completeGuidedRoundOne(page);
+
+  await expect(page.locator("#bouquetProgressLabel")).toHaveText("Bouquet 14/14 -> +120 coins");
+  await expect(page.locator("#tutorialCopy")).toHaveText("Coins restore the greenhouse.");
+  await expect(page.locator("#restoreGreenhouseBtn")).toBeFocused();
+  let report = await visibleReport(page);
+  expect(report).toMatchObject({
+    tiles: 64,
+    tutorialVisible: true,
+    tutorialInViewport: true,
+    overflowX: false,
+    brokenImages: []
+  });
+  expect(report.visibleNonTileButtons).toEqual(["Restore Greenhouse · 100 coins"]);
+
+  await page.reload({ waitUntil: "networkidle" });
+  await expect(page.locator(".tile")).toHaveCount(64);
+  await expect(page.locator("#tutorialCopy")).toHaveText("Coins restore the greenhouse.");
+  await expect(page.locator("#restoreGreenhouseBtn")).toBeFocused();
+  report = await visibleReport(page);
+  expect(report.tutorialInViewport).toBe(true);
+  expect(report.visibleNonTileButtons).toEqual(["Restore Greenhouse · 100 coins"]);
+  expect(report.visibleProgressText).not.toContain("Swap the glowing flowers.");
+
+  await page.locator("#restoreGreenhouseBtn").click();
+  await expect(page.locator("#tutorialCopy")).toHaveText("Tap Next Order.");
+  await expect(page.locator("#nextOrderBtn")).toHaveText("Next Order → Moonlit Wreath");
+  await expect(page.locator("#nextOrderBtn")).toBeFocused();
+  report = await visibleReport(page);
+  expect(report.visibleNonTileButtons).toEqual(["Next Order → Moonlit Wreath"]);
+  expect(report.tutorialInViewport).toBe(true);
+  await page.waitForFunction(() => {
+    const artwork = document.querySelector(".greenhouse-art-restored");
+    return artwork?.complete && artwork.naturalWidth > 0;
+  }, null, { timeout: 5000 });
+  await page.waitForTimeout(800);
+
+  await page.reload({ waitUntil: "networkidle" });
+  await expect(page.locator(".tile")).toHaveCount(64);
+  await expect(page.locator("#tutorialCopy")).toHaveText("Tap Next Order.");
+  await expect(page.locator("#nextOrderBtn")).toBeFocused();
+  report = await visibleReport(page);
+  expect(report.tutorialInViewport).toBe(true);
+  expect(report.visibleNonTileButtons).toEqual(["Next Order → Moonlit Wreath"]);
+  expect(report.visibleProgressText).not.toContain("Swap the glowing flowers.");
+
+  await page.locator("#nextOrderBtn").click();
+  await expect(page.locator(".tile")).toHaveCount(64);
+  await expect(page.locator("#objective")).toContainText("Nightshade");
+  await expect(page.locator("#objective")).toContainText("Amber Seed");
+  await expect(page.locator("#objective")).toContainText("Thorn Rose");
+  await expect(page.locator("#objective")).toContainText("Cursed Thorn");
+  await expect(page.locator("#objective .moves-counter")).toHaveText("Moves 14");
+  await expect(page.locator("#firstSwapCue")).toContainText("Crack the marked thorns");
+  await expect(page.locator(".tile[tabindex='0']")).toHaveCount(1);
+  await expect(page.locator(".tile[tabindex='0']")).toBeFocused();
+  report = await visibleReport(page);
+  expect(report.round).toBe(2);
+  expect(report.tiles).toBe(64);
+  expect(report.overflowX).toBe(false);
+  expect(report.brokenImages).toEqual([]);
+  await page.waitForTimeout(800);
+  expect(consoleErrors).toEqual([]);
+  expect(pageErrors).toEqual([]);
+  expect(failedRequests).toEqual([]);
+});
+
 test("fresh tutorial is skippable, replayable, and tied to concrete progress", async ({ page }) => {
   const consoleErrors = [];
   const pageErrors = [];
@@ -164,20 +267,24 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
   report = await visibleReport(page);
   expect(report.tutorialInViewport, "fresh replay tutorial panel stays in viewport").toBe(true);
   expect(report.visibleButtons, "fresh replay button cap").toEqual(["Skip"]);
+  expect(report.visibleNonTileButtons).toEqual(["Skip"]);
   await clickGuidedSwap(page);
   await expect(page.locator("#bouquetProgressLabel")).toContainText(/Bouquet [1-9]/);
   await expect(page.locator("#tutorialCopy")).toContainText(/Match 3 fills|Match 4 makes/);
   report = await visibleReport(page);
   expect(report.tutorialInViewport, "post-swap tutorial panel stays in viewport").toBe(true);
   expect(report.visibleButtons, "post-swap tutorial button cap").toEqual(["Skip", "Shuffle (-1 move)"]);
+  expect(report.visibleNonTileButtons).toEqual(["Skip", "Shuffle (-1 move)"]);
   await page.locator("#tutorialSkipBtn").click();
   await expect(page.locator("#tutorialPanel")).toBeHidden();
+  await expect(page.locator("#tutorialHelpBtn")).toBeVisible();
   await page.locator("#tutorialHelpBtn").click();
   await expect(page.locator("#tutorialPanel")).toBeVisible();
   await expect(page.locator("#tutorialCopy")).toContainText(/Match 3 fills|Match 4 makes/);
   report = await visibleReport(page);
   expect(report.tutorialInViewport, "post-swap replay panel stays in viewport").toBe(true);
   expect(report.visibleButtons, "post-swap replay button cap").toEqual(["Skip", "Shuffle (-1 move)"]);
+  expect(report.visibleNonTileButtons).toEqual(["Skip", "Shuffle (-1 move)"]);
 
   await completeRoundWithReviewKey(page);
   await expect(page.locator("#tutorialCopy")).toHaveText("Coins restore the greenhouse.");
@@ -187,6 +294,8 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
   report = await visibleReport(page);
   expect(report.visibleButtons).toEqual(["Restore Greenhouse · 100 coins"]);
   await expect(page.locator("#bouquetProgressNext")).toContainText("Coins ready -> Restore First Bouquet Glass");
+  report = await visibleReport(page);
+  expect(report.visibleNonTileButtons).toEqual(["Restore Greenhouse · 100 coins"]);
   await page.locator("#restoreGreenhouseBtn").click();
   await expect(page.locator("#nextOrderBtn")).toBeVisible({ timeout: 5000 });
   await expect(page.locator("#tutorialCopy")).toHaveText("Tap Next Order.");
@@ -194,6 +303,7 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
   await expect(page.locator("#tutorialSkipBtn")).toBeHidden();
   report = await visibleReport(page);
   expect(report.visibleButtons).toEqual(["Next Order → Moonlit Wreath"]);
+  expect(report.visibleNonTileButtons).toEqual(["Next Order → Moonlit Wreath"]);
   await page.locator("#nextOrderBtn").click();
   await expect(page.locator(".tile")).toHaveCount(64);
   if (await page.locator("#tutorialHelpBtn").isVisible()) {
@@ -254,16 +364,32 @@ test("keyboard play follows the board and payoff focus", async ({ page }) => {
   await expect(page.locator(".tile[tabindex='0']")).toHaveCount(1);
 
   await completeRoundWithReviewKey(page);
+  await expect(page.locator("#tutorialCopy")).toHaveText("Coins restore the greenhouse.");
   await expect(page.locator("#restoreGreenhouseBtn")).toBeFocused();
+  let report = await visibleReport(page);
+  expect(report.visibleNonTileButtons).toEqual(["Restore Greenhouse · 100 coins"]);
+  await page.reload({ waitUntil: "networkidle" });
+  await expect(page.locator("#tutorialCopy")).toHaveText("Coins restore the greenhouse.");
+  await expect(page.locator("#restoreGreenhouseBtn")).toBeFocused();
+  report = await visibleReport(page);
+  expect(report.visibleNonTileButtons).toEqual(["Restore Greenhouse · 100 coins"]);
   await page.keyboard.press("Enter");
   await expect(page.locator("#nextOrderBtn")).toBeVisible({ timeout: 5000 });
+  await expect(page.locator("#tutorialCopy")).toHaveText("Tap Next Order.");
   await expect(page.locator("#nextOrderBtn")).toBeFocused();
+  report = await visibleReport(page);
+  expect(report.visibleNonTileButtons).toEqual(["Next Order → Moonlit Wreath"]);
+  await page.reload({ waitUntil: "networkidle" });
+  await expect(page.locator("#tutorialCopy")).toHaveText("Tap Next Order.");
+  await expect(page.locator("#nextOrderBtn")).toBeFocused();
+  report = await visibleReport(page);
+  expect(report.visibleNonTileButtons).toEqual(["Next Order → Moonlit Wreath"]);
   await page.keyboard.press("Enter");
   await expect(page.locator(".tile")).toHaveCount(64);
   await expect(page.locator(".tile[tabindex='0']")).toHaveCount(1);
   await expect(page.locator(".tile[tabindex='0']")).toBeFocused();
 
-  const report = await visibleReport(page);
+  report = await visibleReport(page);
   expect(report.round).toBe(2);
   expect(report.tiles).toBe(64);
   expect(report.overflowX).toBe(false);
