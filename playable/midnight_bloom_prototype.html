@@ -103,7 +103,6 @@
 
     .frame,
     .side-card,
-    .bottom-card,
     .tile,
     .btn,
     .modal-panel {
@@ -152,7 +151,6 @@
     }
 
     .side-card::before,
-    .bottom-card::before,
     .modal-panel::before {
       content: "";
       position: absolute;
@@ -161,8 +159,7 @@
       pointer-events: none;
     }
 
-    .side-card::after,
-    .bottom-card::after {
+    .side-card::after {
       content: "✦";
       position: absolute;
       right: 12px;
@@ -173,8 +170,7 @@
       pointer-events: none;
     }
 
-    .side-card h3,
-    .bottom-card h3 {
+    .side-card h3 {
       margin: 0;
       color: #d0b27a;
       text-transform: uppercase;
@@ -2418,80 +2414,6 @@
       display: block;
     }
 
-    .bottom {
-      grid-column: 1 / 3;
-      display: grid;
-      grid-template-columns: 1fr 280px;
-      gap: 12px;
-      align-items: stretch;
-      position: relative;
-      z-index: 1;
-    }
-
-    .bottom-card {
-      padding: 18px 18px 14px;
-      min-width: 0;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .elements-heading {
-      text-align: center;
-      letter-spacing: 13px;
-      color: var(--gold);
-      margin-bottom: 12px;
-      text-shadow: 0 0 10px #000;
-      text-transform: uppercase;
-    }
-
-    .elements {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 10px;
-      text-align: center;
-    }
-
-    .element {
-      min-width: 0;
-      padding: 0 6px 2px;
-      border-right: 1px solid #3d302666;
-    }
-
-    .element:last-child {
-      border-right: 0;
-    }
-
-    .element img {
-      width: 58px;
-      height: 58px;
-      object-fit: contain;
-      filter: drop-shadow(0 0 8px #000);
-    }
-
-    .element b {
-      display: block;
-      color: #d0b27a;
-      font-size: 14px;
-      text-transform: uppercase;
-      text-shadow: 0 0 8px #000;
-    }
-
-    .element-count {
-      color: #b24a4a;
-      font-size: 19px;
-      text-shadow: 0 0 8px #300;
-    }
-
-    .element-count.element-pulse {
-      animation: element-pulse 900ms ease-out both;
-    }
-
-    .element .small {
-      display: none;
-      min-height: 0;
-      line-height: 1.15;
-    }
-
     .coins {
       text-align: center;
       font-size: 34px;
@@ -3352,22 +3274,6 @@
       }
     }
 
-    @keyframes element-pulse {
-      0% {
-        transform: scale(1);
-        color: #b24a4a;
-      }
-      34% {
-        transform: scale(1.18);
-        color: #f1cf8f;
-        text-shadow: 0 0 12px #9b1d22, 0 0 10px #d7b16d;
-      }
-      100% {
-        transform: scale(1);
-        color: #b24a4a;
-      }
-    }
-
     @keyframes supreme-charge {
       0% {
         filter: brightness(1);
@@ -3543,12 +3449,6 @@
         padding: 4px 0 0;
       }
 
-      .bottom {
-        grid-column: 1;
-        grid-template-columns: 1fr;
-        order: 2;
-      }
-
       .title {
         font-size: 42px;
         margin: 12px 0 14px;
@@ -3579,10 +3479,6 @@
         min-width: min(250px, 100%);
         padding: 12px 18px;
         font-size: 17px;
-      }
-
-      .elements {
-        grid-template-columns: repeat(3, 1fr);
       }
 
       .slot-grid {
@@ -4207,37 +4103,6 @@
         margin: 6px auto 8px;
       }
 
-      body.round-one-active .bottom {
-        margin-top: 0;
-      }
-
-      body.round-one-active .bottom-card {
-        padding: 8px 12px;
-      }
-
-      body.round-one-active .elements-heading {
-        margin-bottom: 4px;
-        font-size: 9px;
-        letter-spacing: 8px;
-      }
-
-      body.round-one-active .elements {
-        gap: 5px;
-      }
-
-      body.round-one-active .element-icon-wrap {
-        width: 38px;
-        height: 38px;
-      }
-
-      body.round-one-active .element b {
-        font-size: 10px;
-      }
-
-      body.round-one-active .element-count {
-        font-size: 13px;
-      }
-
       body.round-one-active .ritual-log,
       body.restored-next-order-focus .ritual-log {
         max-width: min(650px, calc(100vh - 186px), calc(100vw - 470px));
@@ -4442,42 +4307,12 @@
       display: none !important;
     }
 
-    body.round-one-active .bottom { display: none !important; }
-
-    body.round-one-active .bottom-card {
-      padding: 11px 14px 12px;
-    }
-
-    body.round-one-active .elements-heading {
-      margin-bottom: 7px;
-      font-size: 11px;
-      letter-spacing: 10px;
-    }
-
-    body.round-one-active .elements {
-      gap: 7px;
-    }
-
-    body.round-one-active .element-icon-wrap {
-      width: 46px;
-      height: 46px;
-    }
-
-    body.round-one-active .element b {
-      font-size: 11px;
-    }
-
-    body.round-one-active .element-count {
-      font-size: 15px;
-    }
-
     body.round-one-active .coins {
       margin-top: 8px;
       padding: 5px 12px;
       font-size: 24px;
     }
 
-    body.restored-next-order-focus .bottom,
     body.round-one-active .first-session-plaque,
     body.round-one-active .controls .red,
     body.round-one-active #renewBtn,
@@ -4498,25 +4333,18 @@
     body.round-one-active.round-one-complete .active-greenhouse-stage,
     body.round-one-active.round-one-complete .ritual-log { display:none; }
     body.round-one-active.round-one-complete .board,
-    body.round-one-active.round-one-complete .controls,
-    body.round-one-active.round-one-complete .bottom {
+    body.round-one-active.round-one-complete .controls {
       display: none !important;
     }
     body.round-one-active:not(.round-one-complete) #roundOneRestoration,
     body.restored-next-order-focus:not(.round-two-upgrade-pending):not(.round-two-upgrade-complete) #roundOneRestoration,
-    body.round-three-focus-active:not(.round-three-final-pending):not(.round-three-final-complete) #roundOneRestoration,
-    body.round-one-active .bottom,
-    body.restored-next-order-focus .bottom,
-    body.round-three-focus-active .bottom {
+    body.round-three-focus-active:not(.round-three-final-pending):not(.round-three-final-complete) #roundOneRestoration {
       content-visibility: hidden;
       contain: layout style paint;
     }
     body.round-one-active:not(.round-one-complete) #roundOneRestoration *,
     body.restored-next-order-focus:not(.round-two-upgrade-pending):not(.round-two-upgrade-complete) #roundOneRestoration *,
-    body.round-three-focus-active:not(.round-three-final-pending):not(.round-three-final-complete) #roundOneRestoration *,
-    body.round-one-active .bottom *,
-    body.restored-next-order-focus .bottom *,
-    body.round-three-focus-active .bottom * {
+    body.round-three-focus-active:not(.round-three-final-pending):not(.round-three-final-complete) #roundOneRestoration * {
       animation: none !important;
       filter: none !important;
       box-shadow: none !important;
@@ -4530,10 +4358,6 @@
     body.round-two-upgrade-complete .objective,
     body.round-three-final-pending .objective,
     body.round-three-final-complete .objective,
-    body.round-two-upgrade-pending .bottom,
-    body.round-two-upgrade-complete .bottom,
-    body.round-three-final-pending .bottom,
-    body.round-three-final-complete .bottom,
     body.round-two-upgrade-pending .first-session-plaque,
     body.round-two-upgrade-complete .first-session-plaque,
     body.round-three-final-pending .first-session-plaque,
@@ -4576,16 +4400,14 @@
     body.round-three-final-complete #nextStreakTargetBadge {
       display: none !important;
     }
-    body.restored-greenhouse-handoff .left, body.restored-greenhouse-handoff .bottom,
+    body.restored-greenhouse-handoff .left,
     body.restored-greenhouse-handoff .first-session-plaque,
     body.restored-greenhouse-handoff .controls, body.restored-greenhouse-handoff #roundCeremony { display:none!important; }
     @media (min-width:761px) {
       body.restored-greenhouse-handoff .left { display:block!important; }
     }
-    body.restored-next-order-focus .bottom,
     body.restored-next-order-focus .first-session-plaque,
     body.restored-next-order-focus .controls, body.restored-next-order-focus #roundCeremony { display:none!important; }
-    body.round-three-focus-active .bottom,
     body.round-three-focus-active .first-session-plaque,
     body.round-three-focus-active .controls,
     body.round-three-focus-active #roundCeremony { display:none!important; }
@@ -4799,7 +4621,6 @@
     .round-one-restoration.next-order-ready .next-order-btn { animation:next-order-ready 940ms cubic-bezier(.12,.82,.18,1) both; }
     body.round-two-upgrade-pending .round-one-restoration,
     body.round-two-upgrade-complete .round-one-restoration { position:relative; overflow:hidden; display:grid; width:min(820px,calc(100% - 16px)); margin:12px auto 0; padding:16px; gap:12px; border:1px solid #8a4f5e; background:radial-gradient(circle at 50% 0,#2c0f20,#0d0a0d 72%); box-shadow:0 0 40px #7d49b245,inset 0 0 30px #000,0 18px 45px #000b; text-align:center; }
-    body.focused-slice-failed .bottom { display:none!important; }
     body.focused-slice-failed #shuffleBtn { display:none!important; }
     body.focused-slice-failed #renewBtn.visible { position:fixed; left:50%; bottom:14px; z-index:1000; display:block!important; min-width:190px; transform:translateX(-50%); box-shadow:0 0 22px #9b1d2266,0 10px 24px #000c; }
     .round-one-restoration.second-greenhouse-upgrade .restoration-scene { border-color:#7d49b2; box-shadow:inset 0 0 30px #7d49b255,0 0 28px #9b1d2245; }
@@ -5137,8 +4958,7 @@
       body.restored-next-order-focus .left,
       body.restored-greenhouse-handoff .left,
       body.round-three-focus-active .left,
-      body.round-one-active .left,
-      body.round-one-active .bottom { display:none!important; }
+      body.round-one-active .left { display:none!important; }
       body.restored-next-order-focus .main,
       body.restored-greenhouse-handoff .main,
       body.round-one-active .main,
@@ -5869,7 +5689,6 @@
     let thornTeachingCells = new Set();
     let thornTeachingTimer = null;
     let orderPulseTargets = new Set();
-    let elementPulseTargets = new Set();
     let isResolving = false;
     let supremeChargeActive = false;
     let hasMadeValidMove = false;
@@ -8066,18 +7885,6 @@
       $("ritualLog").innerHTML = ritualMessage;
       $("renewBtn").textContent = roundComplete ? "Next Bouquet" : failed ? "Retry Bouquet" : "Renew Bouquet";
       $("renewBtn").classList.toggle("visible", failed || roundComplete);
-      const elementsEl = $("elements");
-      if (elementsEl) {
-        elementsEl.innerHTML = focusedSliceRound(activePlan) ? "" : flowers.map((flower, index) => `
-          <div class="element">
-            ${iconMarkup(index, "", flower[0], "element-icon-wrap")}
-            <b>${flower[0]}</b>
-            <span class="small">${flower[2]}</span><br>
-            <span class="element-count ${elementPulseTargets.has(index) ? "element-pulse" : ""}">x${baseElementCounts[index] + counts[index]}</span>
-          </div>
-        `).join("");
-        applyImageFallbacks(elementsEl);
-      }
       applyImageFallbacks($("objective"));
       updateBoardRovingTabIndex();
       if (focusedTileBeforeRender && !postRenderFocusTarget && !roundComplete && !failed) {
@@ -8749,7 +8556,6 @@
         if (result.gainedCells[flowerId]) {
           result.gainedCells[flowerId].push([x, y]);
         }
-        elementPulseTargets.add(flowerId);
         if (visibleResourceCells.has(`${x},${y}`)) {
           queueResourceBurst(x, y, flowerId, cascadeIndex);
         }
@@ -8783,10 +8589,6 @@
         queueSuperBloomBoardEffects(effectRareCells, cascadeIndex);
       }
       damageAdjacentThorns(wave, result, cascadeIndex);
-      if (elementPulseTargets.size) {
-        scheduleElementPulseClear();
-      }
-
       result.matched = true;
       result.rare = result.rare || isRareWave;
       result.cleared += cleared;
@@ -10204,16 +10006,6 @@
       }, 950);
     }
 
-    function scheduleElementPulseClear() {
-      window.setTimeout(() => {
-        if (!elementPulseTargets.size) {
-          return;
-        }
-        elementPulseTargets.clear();
-        render();
-      }, 950);
-    }
-
     function scheduleHarvestFlashClear() {
       window.setTimeout(() => {
         if (!harvestFlashCells.size) {
@@ -10403,7 +10195,6 @@
       plan.targets.forEach((target) => {
         counts[target.flowerId] = Math.max(counts[target.flowerId], target.needed);
         orderPulseTargets.add(target.flowerId);
-        elementPulseTargets.add(target.flowerId);
       });
       if (plan.thornGoal) {
         clearedCursedThorns = Math.max(clearedCursedThorns, thornGoalNeeded(plan));
@@ -10415,7 +10206,6 @@
       maybeCompleteRound();
       render();
       scheduleOrderPulseClear();
-      scheduleElementPulseClear();
     }
 
     function canSpendMoves(cost) {
