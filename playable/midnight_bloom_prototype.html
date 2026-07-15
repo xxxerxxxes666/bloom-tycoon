@@ -6784,26 +6784,6 @@
           { flowerId: 0, needed: 8, order: "Solar Ash" }
         ],
         reward: { coins: 180, greenhouse: 210, apothecary: 90, faction: 60, item: "Bloodroot Compact", flowerId: 3 }
-      },
-      {
-        name: "Saint's Night Ledger",
-        moves: 14,
-        targets: [
-          { flowerId: 1, needed: 10, order: "Saint's Ledger" },
-          { flowerId: 2, needed: 9, order: "Nightshade Ink" },
-          { flowerId: 0, needed: 7, order: "Sol Rot Seal" }
-        ],
-        reward: { coins: 215, greenhouse: 190, apothecary: 160, faction: 75, item: "Saint's Night Ledger", flowerId: 1 }
-      },
-      {
-        name: "Sub Rosa Grand Bouquet",
-        moves: 13,
-        targets: [
-          { flowerId: 5, needed: 11, order: "Grand Velvet Funeral" },
-          { flowerId: 3, needed: 10, order: "Ruby Root Tithe" },
-          { flowerId: 0, needed: 8, order: "Sol Rot Candle" }
-        ],
-        reward: { coins: 260, greenhouse: 240, apothecary: 170, faction: 95, item: "Sub Rosa Grand Cache", flowerId: 0 }
       }
     ];
     const chestState = {
@@ -6883,6 +6863,7 @@
     const MOONLIT_GREENHOUSE_UPGRADE_COST = 120;
     const BLOODROOT_CONSERVATORY_COST = 180;
     const RESTORED_ROUND_TWO_GUIDE_LIMIT = 2;
+    const FOCUSED_LEVEL_COUNT = 3;
     const WILD_CHAIN_CASCADE_BONUS = 8;
     const WILD_CHAIN_SHAPE_BONUS = 12;
     const WILD_CHAIN_RELIC_BONUS = 10;
@@ -7049,31 +7030,24 @@
     }
 
     function buildRoundPlan(roundNumber) {
-      const safeRound = Math.max(1, Number(roundNumber) || 1);
-      const template = roundTemplates[(safeRound - 1) % roundTemplates.length];
-      const cycle = Math.floor((safeRound - 1) / roundTemplates.length);
+      const safeRound = Math.min(FOCUSED_LEVEL_COUNT, Math.max(1, Number(roundNumber) || 1));
+      const template = roundTemplates[safeRound - 1] || roundTemplates[0];
       return {
         round: safeRound,
-        name: cycle ? `${template.name} ${cycle + 1}` : template.name,
-        moves: Math.max(11, template.moves - Math.min(2, cycle)),
+        name: template.name,
+        moves: template.moves,
         targets: template.targets.map((target) => ({
           ...target,
-          needed: target.needed + cycle * 2
+          needed: target.needed
         })),
         thornGoal: template.thornGoal
           ? {
               ...template.thornGoal,
-              needed: template.thornGoal.needed + Math.min(2, cycle)
+              needed: template.thornGoal.needed
             }
           : null,
         thornPlacements: (template.thornPlacements || []).map((thorn) => ({ ...thorn })),
-        reward: {
-          ...template.reward,
-          coins: template.reward.coins + cycle * 55,
-          greenhouse: template.reward.greenhouse + cycle * 35,
-          apothecary: template.reward.apothecary + cycle * 30,
-          faction: template.reward.faction + cycle * 20
-        }
+        reward: { ...template.reward }
       };
     }
 
@@ -8278,6 +8252,72 @@
       tap(target.x, target.y);
     }
 
+    function boardTileFromEvent(event) {
+      const tile = event.target?.closest ? event.target.closest(".tile") : null;
+      const boardEl = $("board");
+      if (!tile || !boardEl || !boardEl.contains(tile)) {
+        return null;
+      }
+      const x = Number(tile.dataset.x);
+      const y = Number(tile.dataset.y);
+      if (!Number.isInteger(x) || !Number.isInteger(y)) {
+        return null;
+      }
+      return { tile, x, y };
+    }
+
+    function handleBoardPointerDown(event) {
+      if (!event.isPrimary) {
+        return;
+      }
+      const cell = boardTileFromEvent(event);
+      if (!cell) {
+        return;
+      }
+      tileSwipeStart = {
+        pointerId: event.pointerId,
+        clientX: event.clientX,
+        clientY: event.clientY,
+        x: cell.x,
+        y: cell.y
+      };
+      if (event.isTrusted && cell.tile.setPointerCapture) {
+        cell.tile.setPointerCapture(event.pointerId);
+      }
+    }
+
+    function handleBoardPointerUp(event) {
+      const start = tileSwipeStart;
+      if (!start) {
+        return;
+      }
+      finishTileSwipe(event, start.x, start.y);
+    }
+
+    function handleBoardPointerCancel() {
+      tileSwipeStart = null;
+    }
+
+    function handleBoardClick(event) {
+      const cell = boardTileFromEvent(event);
+      if (!cell) {
+        return;
+      }
+      tap(cell.x, cell.y);
+    }
+
+    function previewActiveBoosterCell(event) {
+      const cell = boardTileFromEvent(event);
+      if (!cell) {
+        return;
+      }
+      if (activeBooster === "moonwaterFlask") {
+        previewMoonwaterPatch(cell.x, cell.y);
+      } else if (activeBooster === "blackCandle") {
+        previewBlackCandleLine(cell.x, cell.y);
+      }
+    }
+
     function ensurePlayableBoardAfterCascade() {
       if (!matches().length && hasLegalMoves()) {
         return false;
@@ -8808,26 +8848,6 @@
             ${thornTeachingActive && thorn ? '<span class="thorn-teach-marker blocker" aria-hidden="true">×</span>' : ""}
             ${thorn || thornClearedClass ? `<span class="cursed-thorn-overlay" aria-hidden="true"><span class="thorn-root"></span>${thornSealMarkup("cursed-thorn-art", "")}${thornHitClass ? `<span class="thorn-event">${thornClearedClass ? "BREAK" : "CRACK"}</span>` : ""}</span>` : ""}
           `;
-          if (activeBooster === "moonwaterFlask") {
-            tile.addEventListener("mouseenter", () => previewMoonwaterPatch(x, y));
-            tile.addEventListener("focus", () => previewMoonwaterPatch(x, y));
-          }
-          if (activeBooster === "blackCandle") {
-            tile.addEventListener("mouseenter", () => previewBlackCandleLine(x, y));
-            tile.addEventListener("focus", () => previewBlackCandleLine(x, y));
-          }
-          tile.addEventListener("pointerdown", (event) => {
-            if (!event.isPrimary) {
-              return;
-            }
-            tileSwipeStart = { pointerId: event.pointerId, clientX: event.clientX, clientY: event.clientY };
-            if (event.isTrusted) {
-              tile.setPointerCapture(event.pointerId);
-            }
-          });
-          tile.addEventListener("pointerup", (event) => finishTileSwipe(event, x, y));
-          tile.addEventListener("pointercancel", () => { tileSwipeStart = null; });
-          tile.addEventListener("click", () => tap(x, y));
           boardEl.appendChild(tile);
         }
       }
@@ -8953,7 +8973,6 @@
       renderSacrificeOptions();
       applyImageFallbacks($("elements"));
       applyImageFallbacks($("objective"));
-      applyImageFallbacks(document);
       saveProgress();
     }
 
@@ -11667,13 +11686,17 @@
       if (isResolving) {
         return;
       }
+      if (currentRound >= FOCUSED_LEVEL_COUNT && roundComplete) {
+        replayFocusedSlice();
+        return;
+      }
       if (currentRound === 2 && roundComplete && roundOneRestored && !roundTwoGreenhouseUpgraded) {
         ritualMessage = `<strong>Moonlit upgrade ready.</strong> Spend ${MOONLIT_GREENHOUSE_UPGRADE_COST} coins to raise the night glass before Bloodroot Compact.`;
         render();
         return;
       }
       const retryingFailedBouquet = isBouquetFailed();
-      const nextRound = roundComplete ? currentRound + 1 : currentRound;
+      const nextRound = roundComplete ? Math.min(FOCUSED_LEVEL_COUNT, currentRound + 1) : currentRound;
       const preserveCompletedRoundTwoGuide = retryingFailedBouquet
         && nextRound === 2
         && restoredRoundTwoGuideMoves >= RESTORED_ROUND_TWO_GUIDE_LIMIT;
@@ -13193,6 +13216,23 @@
         roundOneRestored = Boolean(state.roundOneRestored);
         roundTwoGreenhouseUpgraded = Boolean(state.roundTwoGreenhouseUpgraded || currentRound > 2);
         roundThreeConservatoryRaised = Boolean(state.roundThreeConservatoryRaised || currentRound > 3);
+        if (currentRound > FOCUSED_LEVEL_COUNT) {
+          currentRound = FOCUSED_LEVEL_COUNT;
+          const migratedPlan = buildRoundPlan(currentRound);
+          counts = counts.map((count, index) => {
+            const target = migratedPlan.targets.find((candidate) => candidate.flowerId === index);
+            return target ? target.needed : count;
+          });
+          moves = migratedPlan.moves;
+          clearedCursedThorns = thornGoalNeeded(migratedPlan);
+          cursedThorns = [];
+          roundComplete = true;
+          roundOneRestored = true;
+          roundTwoGreenhouseUpgraded = true;
+          roundThreeConservatoryRaised = true;
+          ritualMessage = "<strong>First three orders complete.</strong> Replay First Bouquet to start another polished greenhouse run.";
+          shouldSaveMigratedProgress = true;
+        }
         hasMadeValidMove = Boolean(state.hasMadeValidMove)
           || counts.some((count) => count > 0)
           || clearedCursedThorns > 0;
@@ -13403,6 +13443,12 @@
         closeChest();
       }
     });
+    $("board").addEventListener("pointerdown", handleBoardPointerDown);
+    $("board").addEventListener("pointerup", handleBoardPointerUp);
+    $("board").addEventListener("pointercancel", handleBoardPointerCancel);
+    $("board").addEventListener("click", handleBoardClick);
+    $("board").addEventListener("pointerover", previewActiveBoosterCell);
+    $("board").addEventListener("focusin", previewActiveBoosterCell);
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape" && $("chestModal").classList.contains("open")) {
         closeChest();
@@ -13446,6 +13492,7 @@
     }
     render();
     renderChest();
+    applyImageFallbacks(document);
     scheduleIdleHint();
     scheduleFreshTutorial();
   </script>
