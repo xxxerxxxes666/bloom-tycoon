@@ -5322,6 +5322,13 @@
       .mobile-greenhouse-plinth .restoration-goal-count {
         font-size: 7px;
       }
+      body.focused-active-play .mobile-greenhouse-plinth,
+      body.focused-active-play .ritual-log {
+        display:none !important;
+      }
+      body.focused-active-play.round-three-focus-active .active-greenhouse-stage {
+        display:block;
+      }
       body.round-one-active.round-one-complete .mobile-greenhouse-plinth { display:none; }
       body.round-one-active .controls { width:calc(100vw - 14px); margin:7px auto 0; gap:6px; }
       body.round-one-active .controls .btn { min-width:0; width:min(216px,calc(100vw - 18px)); padding:7px 13px; gap:7px; font-size:12px; line-height:1.08; min-height:38px; }
@@ -7677,6 +7684,7 @@
       document.body.classList.toggle("round-three-final-pending", roundThreeFinalPending);
       document.body.classList.toggle("round-three-final-complete", roundThreeFinalComplete);
       document.body.classList.toggle("round-three-focus-active", currentRound === 3 && !roundComplete && roundOneRestored && roundTwoGreenhouseUpgraded);
+      document.body.classList.toggle("focused-active-play", focusedSliceRound(activePlan) && !roundComplete);
       document.body.classList.toggle("focused-slice-failed", activePlan.round <= 3 && isBouquetFailed(activePlan));
       document.body.classList.toggle("focused-payoff-active", focusedSliceRound(activePlan) && roundComplete);
       document.body.classList.toggle("thorn-lesson-active", activePlan.round === 2 && Boolean(activePlan.thornGoal) && thornGoalProgress(activePlan) === 0 && !roundComplete);

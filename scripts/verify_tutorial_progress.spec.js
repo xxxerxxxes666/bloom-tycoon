@@ -56,6 +56,8 @@ async function visibleReport(page) {
       bouquetText: document.querySelector("#bouquetProgressLabel")?.textContent.trim() || "",
       bouquetNext: document.querySelector("#bouquetProgressNext")?.textContent.trim() || "",
       greenhouseText: document.querySelector(".restoration-dial-phase")?.textContent.trim() || "",
+      mobileGreenhousePlinthVisible: visible(document.querySelector("#mobileGreenhousePlinth")),
+      ritualLogVisible: visible(document.querySelector("#ritualLog")),
       visibleProgressText: document.body.innerText,
       bars: bars.map((node) => node.className),
       visibleButtons: Array.from(document.querySelectorAll("button"))
@@ -248,10 +250,12 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
     visibleInstructionCues: 1,
     bouquetText: "Bouquet 0/14 -> +120 coins",
     greenhouseText: "Restore First Bouquet Glass",
+    mobileGreenhousePlinthVisible: false,
+    ritualLogVisible: false,
     overflowX: false,
     brokenImages: []
   });
-  expect(report.bars, "exactly bouquet and greenhouse bars").toHaveLength(2);
+  expect(report.bars, "mobile active play keeps only the bouquet bar").toHaveLength(1);
   expect(report.visibleButtons, "fresh tutorial button cap").toEqual(["Skip"]);
   expect(report.visibleProgressText).not.toMatch(/\b(?:SAP|MANA|BLOOD)\b|\d[\d,]*\s*\/\s*\d[\d,]*\s*XP|Greenhouse \+\d+ XP|Apothecary \+\d+ XP/);
 
@@ -317,7 +321,9 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
   expect(report.greenhouseText).toBe("Unlock Bloodroot Compact");
   expect(report.tutorialPrompt).toBe("Match beside thorns.");
   expect(report.tutorialSpotlights).toBeGreaterThanOrEqual(3);
-  expect(report.bars, "Round 2 still has one bouquet bar and one greenhouse bar").toHaveLength(2);
+  expect(report.bars, "Round 2 mobile active play keeps only the bouquet bar").toHaveLength(1);
+  expect(report.mobileGreenhousePlinthVisible).toBe(false);
+  expect(report.ritualLogVisible).toBe(false);
   expect(report.visibleProgressText).not.toMatch(/\b(?:SAP|MANA|BLOOD)\b|\d[\d,]*\s*\/\s*\d[\d,]*\s*XP|Greenhouse \+\d+ XP|Apothecary \+\d+ XP/);
 
   await forceActiveBouquetFailure(page);

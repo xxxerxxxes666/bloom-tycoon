@@ -58,11 +58,20 @@ async function assertNoPageBreakage(page, requireActiveBoard = true) {
     const completeRows = [...new Set(tileRects
       .filter((rect) => rect.top >= -1 && rect.bottom <= window.innerHeight + 1)
       .map((rect) => Math.round(rect.top)))].length;
+    const greenhouseIntakeTarget = [
+      document.querySelector("#heroRestorationDial"),
+      document.querySelector("#mobileRestorationDial"),
+      document.querySelector("#mobileGreenhousePlinth"),
+      document.querySelector("#activeGreenhouseStage")
+    ].find(visible);
     return {
       tiles: document.querySelectorAll(".tile").length,
       activeBoard: Boolean(board && visible(board)),
       boardBottom: boardRect ? boardRect.bottom : 0,
       completeRows,
+      mobileGreenhousePlinthVisible: visible(document.querySelector("#mobileGreenhousePlinth")),
+      ritualLogVisible: visible(document.querySelector("#ritualLog")),
+      greenhouseIntakeTargetId: greenhouseIntakeTarget?.id || "",
       overflowX: document.documentElement.scrollWidth > window.innerWidth + 1,
       brokenImages,
       overlaps,
@@ -84,6 +93,9 @@ async function assertMobileBoardRows(page) {
   const report = await assertNoPageBreakage(page, true);
   expect(report.completeRows, "exact mobile complete board rows").toBe(8);
   expect(report.boardBottom, "mobile board remains in first viewport").toBeLessThanOrEqual(844);
+  expect(report.mobileGreenhousePlinthVisible, "mobile greenhouse plinth is absent during active play").toBe(false);
+  expect(report.ritualLogVisible, "ritual log is absent during active play").toBe(false);
+  expect(report.greenhouseIntakeTargetId, "greenhouse intake targets the visible active stage").toBe("activeGreenhouseStage");
 }
 
 async function clickGuidedSwap(page) {
@@ -264,6 +276,7 @@ async function runFullJourney(page, label, mobile = false) {
   } else {
     await assertNoPageBreakage(page, true);
   }
+  await page.screenshot({ path: `work/pass3-${label}-round3-active.png`, fullPage: true });
 
   await completeRoundWithReviewKey(page);
   await assertCeremony(page, "Raise Conservatory", `work/pass3-${label}-round3-pending.png`);

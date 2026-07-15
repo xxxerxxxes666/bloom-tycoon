@@ -1,5 +1,17 @@
 # Codex Build Notes
 
+## 2026-07-15 mobile active-play footer removal
+
+- Hermes task: remove the persistent greenhouse plinth and stale ritual log from exact `390x844` active Rounds 1-3 while preserving the focused bouquet and greenhouse ceremonies.
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_runtime_performance.spec.js`, `scripts/verify_tutorial_progress.spec.js`, `scripts/verify_pass3_feedback.spec.js`, and this note.
+- Player-visible result: mobile active play now stops after the board and focused controls. The 162px greenhouse plinth, duplicate greenhouse meter, and ritual-log copy no longer compete with the title, objectives, moves, bouquet bar, cue, or 64-tile board. Desktop remains unchanged.
+- Runtime repair: added one semantic `focused-active-play` body state for incomplete Rounds 1-3. Mobile-only CSS hides the plinth/log in that state and restores the previously missing Round 3 active greenhouse backdrop, keeping greenhouse intake effects attached to a visible surface without reintroducing a footer.
+- Regression coverage: runtime, tutorial, and full-journey Playwright checks now require the mobile plinth/log to be absent, the active mobile surface to retain a visible intake destination, and active mobile play to expose only the bouquet progress bar. The Round 1 -> 2 -> 3 journey also saves a Round 3 active screenshot for direct visual review.
+- Verification: `python3 scripts/verify_project.py` passed; HTML match-shape checks passed; extracted playable JavaScript and all changed Playwright specs passed `node --check`; `git diff --check` passed. Local Chromium passed the complete 10-test desktop/exact-`390x844` suite, followed by a focused 2/2 full-journey rerun after adding the retained Round 3 screenshot.
+- Browser QA: desktop and exact mobile each rendered 64 tiles and 8 complete rows with no horizontal overflow, visible broken images, console errors, page errors, or failed requests. Exact mobile reported one visible progress bar, no active plinth/log, and `activeGreenhouseStage` as the intake destination. Save/reload ceremonies, Round 2 retry, Next Order, Round 2 -> Round 3, one-action payoffs, reduced motion, keyboard play, and the local Supreme Bloom review path passed.
+- Visual QA: inspected `work/pass3-mobile390-round1-hit.png`, `work/pass3-mobile390-thorn-damage.png`, `work/pass3-mobile390-round3-active.png`, and `work/pass3-desktop-round3-active.png`. Mobile first-viewport hierarchy is board-first with no duplicate below-board objective; desktop composition is unchanged.
+- Security: the changed-line scan found no private-key headers, provider token prefixes, JWT-like values, or suspicious credential assignments. No dependencies, assets, external services, trackers, accounts, payments, permissions, or progression systems were added.
+
 ## 2026-07-15 local review hook source isolation
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, and this note.
