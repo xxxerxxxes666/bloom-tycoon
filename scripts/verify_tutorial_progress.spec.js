@@ -45,6 +45,10 @@ async function visibleReport(page) {
       ].filter(visible).length,
       tutorialText: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
       tutorialPrompt: document.body.dataset.tutorialPrompt || "",
+      visibleNonTileButtons: Array.from(document.querySelectorAll("button"))
+        .filter((node) => visible(node) && !node.closest("#board"))
+        .map((node) => node.textContent.trim())
+        .filter(Boolean),
       retryVisible: visible(document.querySelector("#renewBtn.visible")),
       tutorialSpotlights: document.querySelectorAll(
         ".tile.idle-hint, .tile.thorn-teach, .tile.thorn-teach-blocker"
@@ -155,13 +159,25 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
   await page.locator("#tutorialHelpBtn").click();
   await expect(page.locator("#tutorialPanel")).toBeVisible();
   await expect(page.locator("#tutorialCopy")).toHaveText("Swap the glowing flowers.");
+  report = await visibleReport(page);
+  expect(report.tutorialInViewport).toBe(true);
+  expect(report.visibleNonTileButtons).toEqual(["Skip"]);
   await clickGuidedSwap(page);
   await expect(page.locator("#bouquetProgressLabel")).toContainText(/Bouquet [1-9]/);
   await expect(page.locator("#tutorialCopy")).toContainText(/Match 3 fills|Match 4 makes/);
+  await page.locator("#tutorialSkipBtn").click();
+  await expect(page.locator("#tutorialHelpBtn")).toBeVisible();
+  await page.locator("#tutorialHelpBtn").click();
+  await expect(page.locator("#tutorialPanel")).toBeVisible();
+  report = await visibleReport(page);
+  expect(report.tutorialInViewport).toBe(true);
+  expect(report.visibleNonTileButtons).toEqual(["Skip", "Shuffle (-1 move)"]);
 
   await completeRoundWithReviewKey(page);
   await expect(page.locator("#tutorialCopy")).toHaveText("Coins restore the greenhouse.");
   await expect(page.locator("#bouquetProgressNext")).toContainText("Coins ready -> Restore First Bouquet Glass");
+  await page.locator("#tutorialSkipBtn").click();
+  await expect(page.locator("#tutorialPanel")).toBeHidden();
   await page.locator("#restoreGreenhouseBtn").click();
   await expect(page.locator("#nextOrderBtn")).toBeVisible({ timeout: 5000 });
   await page.locator("#nextOrderBtn").click();

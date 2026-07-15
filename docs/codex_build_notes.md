@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-07-15 mobile tutorial replay hierarchy
+
+- Selected weakness: on exact 390x844 mobile, replaying Help after the first valid swap could leave the tutorial panel partly above the viewport while Skip, Help, and Shuffle were all visible. This was the highest-impact remaining first-minute issue because the teaching prompt and board compete directly for attention at the moment the player asks for guidance.
+- Player-visible result: Help now scrolls a replayed tutorial panel fully into view, and Help hides while the tutorial is open. Before the opening swap the only non-tile control is Skip; after the first swap the controls are exactly Skip and Shuffle. Keyboard behavior, tutorial focus handoffs, authored opening swap, Black Candle Vine lesson, and the Round 1 -> 2 -> 3 journey are unchanged.
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_tutorial_progress.spec.js`, and this note.
+- Verification: the focused tutorial regression passed 2/2 and the full local Chromium suite passed 9/9 across `scripts/verify_tutorial_progress.spec.js`, `scripts/verify_payoff_ceremony_contract.spec.js`, `scripts/verify_pass3_feedback.spec.js`, and `scripts/verify_runtime_performance.spec.js`. Desktop and exact 390x844 mobile retained 64 tiles, all eight mobile rows, no broken images, no console/page/request errors, and no horizontal overflow.
+- Security scope: no assets, dependencies, external services, trackers, analytics, accounts, backend hooks, credentials, permissions, or protected third-party expression were added. Changed-line secret and tracker scans are part of the commit gate.
+
 ## 2026-07-15 milestone 4 meaningful progress UI cleanup
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `scripts/verify_runtime_performance.spec.js`, `scripts/verify_tutorial_progress.spec.js`, and this note.

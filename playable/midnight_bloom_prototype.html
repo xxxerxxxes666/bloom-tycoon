@@ -975,6 +975,11 @@
 
     body.tutorial-active .tutorial-panel {
       display: flex;
+      scroll-margin-top: 4px;
+    }
+
+    body.tutorial-active .tutorial-help {
+      display: none;
     }
 
     body.tutorial-active .first-swap-cue {
@@ -8650,6 +8655,17 @@
       panel.hidden = false;
     }
 
+    function keepTutorialPanelInViewport() {
+      const panel = $("tutorialPanel");
+      if (!tutorialActive || !panel || panel.hidden) {
+        return;
+      }
+      const rect = panel.getBoundingClientRect();
+      if (rect.top < 0 || rect.bottom > window.innerHeight) {
+        panel.scrollIntoView({ block: "start", inline: "nearest", behavior: "auto" });
+      }
+    }
+
     function startTutorial({ replay = false } = {}) {
       if (tutorialStartTimer && window.clearTimeout) {
         window.clearTimeout(tutorialStartTimer);
@@ -8661,6 +8677,13 @@
       tutorialSkipped = false;
       tutorialActive = true;
       render();
+      if (replay) {
+        if (window.requestAnimationFrame) {
+          window.requestAnimationFrame(keepTutorialPanelInViewport);
+        } else {
+          keepTutorialPanelInViewport();
+        }
+      }
       saveProgress();
     }
 
