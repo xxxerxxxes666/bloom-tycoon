@@ -182,6 +182,11 @@ test("guided Round 1 payoff keeps one dominant action", async ({ page }) => {
   report = await visibleReport(page);
   expect(report.visibleNonTileButtons).toEqual(["Next Order → Moonlit Wreath"]);
   expect(report.tutorialInViewport).toBe(true);
+  await page.waitForFunction(() => {
+    const artwork = document.querySelector(".greenhouse-art-restored");
+    return artwork?.complete && artwork.naturalWidth > 0;
+  }, null, { timeout: 5000 });
+  await page.waitForTimeout(800);
 
   await page.reload({ waitUntil: "networkidle" });
   await expect(page.locator(".tile")).toHaveCount(64);
@@ -207,6 +212,7 @@ test("guided Round 1 payoff keeps one dominant action", async ({ page }) => {
   expect(report.tiles).toBe(64);
   expect(report.overflowX).toBe(false);
   expect(report.brokenImages).toEqual([]);
+  await page.waitForTimeout(800);
   expect(consoleErrors).toEqual([]);
   expect(pageErrors).toEqual([]);
   expect(failedRequests).toEqual([]);
