@@ -320,6 +320,9 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
   expect(report.bars, "Round 2 still has one bouquet bar and one greenhouse bar").toHaveLength(2);
   expect(report.visibleProgressText).not.toMatch(/\b(?:SAP|MANA|BLOOD)\b|\d[\d,]*\s*\/\s*\d[\d,]*\s*XP|Greenhouse \+\d+ XP|Apothecary \+\d+ XP/);
 
+  await clickGuidedSwap(page);
+  await expect(page.locator("#tutorialCopy")).toHaveText("Finish the Moonlit Wreath.");
+
   await forceActiveBouquetFailure(page);
   if (await page.locator("#tutorialHelpBtn").isVisible()) {
     await page.locator("#tutorialHelpBtn").click();
@@ -388,6 +391,7 @@ test("keyboard play follows the board and payoff focus", async ({ page }) => {
   await expect(page.locator(".tile")).toHaveCount(64);
   await expect(page.locator(".tile[tabindex='0']")).toHaveCount(1);
   await expect(page.locator(".tile[tabindex='0']")).toBeFocused();
+  await page.waitForFunction(() => Array.from(document.images).every((image) => image.complete), null, { timeout: 5000 });
 
   report = await visibleReport(page);
   expect(report.round).toBe(2);

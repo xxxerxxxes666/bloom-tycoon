@@ -204,6 +204,10 @@ async function runJourney(page, label, includeRetry) {
   await clickPrimary(page);
   await expectCleanReplayBoard(page);
   await expect(page.locator(".moves-counter")).toContainText("Moves 14");
+  await expect(page.locator("#firstSwapCue")).toHaveText("Match Bloodroot and Sol Rot.");
+  await expect(page.locator("#firstSwapCue")).not.toContainText("Nightshade");
+  await expect(page.locator("#ritualLog")).toContainText("Final Order: Match Bloodroot and Sol Rot.");
+  await expect(page.locator("#ritualLog")).not.toContainText("blooms under the moonlit greenhouse upgrade");
 
   await completeRoundWithReviewKey(page);
   await expectCeremony(page, "Raise Conservatory", `work/pass2-${label}-round3-pending.png`, "Raise Conservatory.");

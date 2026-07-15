@@ -6580,6 +6580,26 @@
       return `Swap the glowing pair ${direction}`;
     }
 
+    function targetCueText(target, a = null, b = null) {
+      if (!target) {
+        return "Choose the next useful match.";
+      }
+      const direction = a && b ? (a.x === b.x ? "↑↓" : "↔") : "";
+      return `${flowers[target.flowerId][0]} next${direction ? ` ${direction}` : ""}`;
+    }
+
+    function roundStartCueText(plan = activeRoundPlan(), openingMove = []) {
+      const [a, b] = openingMove;
+      if (plan.round === 2 && plan.thornGoal && thornGoalProgress(plan) === 0) {
+        return firstSwapCueText(a, b);
+      }
+      if (plan.round === 3) {
+        return "Match Bloodroot and Sol Rot.";
+      }
+      const target = plan.targets.find((candidate) => targetProgress(candidate) < candidate.needed);
+      return targetCueText(target, a, b);
+    }
+
     function scheduleIdleHint() {
       clearIdleHint();
       const postOnboardingIdleHint = isPostOnboardingIdleHintActive();
@@ -6604,7 +6624,9 @@
           return;
         }
         idleHintCells = new Set([`${a.x},${a.y}`, `${b.x},${b.y}`]);
-        $("firstSwapCue").textContent = firstSwapCueText(a, b);
+        $("firstSwapCue").textContent = plan.round >= 3 && target
+          ? targetCueText(target, a, b)
+          : firstSwapCueText(a, b);
         render();
       }, hintDelay);
     }
@@ -7943,6 +7965,12 @@
       }
       if (plan.round === 2 && plan.thornGoal && thornGoalProgress(plan) === 0) {
         return "Match beside thorns.";
+      }
+      if (plan.round === 2 && hasMadeValidMove) {
+        return "Finish the Moonlit Wreath.";
+      }
+      if (plan.round === 3 && !roundComplete) {
+        return "Complete Bloodroot Compact.";
       }
       if (plan.round === 1 && hasMadeValidMove && $("firstSwapCue").textContent.includes("Black Candle Vine")) {
         return "Match 4 makes Black Candle Vine.";
@@ -10038,19 +10066,21 @@
       roundComplete = false;
       const introCopy = retryingFailedBouquet
         ? `<strong>Retry Bouquet:</strong> Round ${plan.round}: ${plan.name} is restored. `
-        : secondUpgradeNextOrder
-          ? `<strong>Final Order:</strong> Round ${plan.round}: ${plan.name} blooms under the moonlit greenhouse upgrade. `
         : `<strong>Round ${plan.round}: ${plan.name}</strong> begins. `;
       ritualMessage = restoredGreenhouseNextOrder
         ? "<strong>Moonlit Wreath:</strong> Match beside the glowing Cursed Thorns."
+        : secondUpgradeNextOrder
+          ? "<strong>Final Order:</strong> Match Bloodroot and Sol Rot."
         : `${introCopy}${goalCopy(plan)}${thornObjectiveHintCopy(plan)}${thornTeachingCopy(plan)}`;
       resetCursedThorns(plan);
       build();
       startThornTeachingCue(plan);
-      const nextFocusCell = currentRound === 2 && roundTwoThornTeachingSwap().length
-        ? roundTwoThornTeachingSwap()[0]
-        : (legalMoves()[0] || [boardFocusCell])[0];
+      const openingMove = currentRound === 2 && roundTwoThornTeachingSwap().length
+        ? roundTwoThornTeachingSwap()
+        : legalMoves()[0];
+      const nextFocusCell = (openingMove || [boardFocusCell])[0];
       boardFocusCell = clampBoardFocusCell(nextFocusCell);
+      $("firstSwapCue").textContent = roundStartCueText(plan, openingMove || []);
       queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
       if (restoredGreenhouseNextOrder) {
         startRestoredGreenhouseHandoff();
