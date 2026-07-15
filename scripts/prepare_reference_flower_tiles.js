@@ -10,12 +10,12 @@ const OUT_48 = path.join(ROOT, "assets/tiles/48");
 const EVIDENCE = path.join(ROOT, "work/art-pass-six-flower");
 
 const TILES = [
-  { name: "Sol Rot", file: "withered_sun_medallion.png" },
-  { name: "Bone Star", file: "bone_white_thorn_star.png" },
-  { name: "Nightshade", file: "purple_nightshade_bloom.png" },
-  { name: "Bloodroot", file: "bloodroot_ruby_shard.png" },
-  { name: "Amber Seed", file: "amber_resin_seed.png" },
-  { name: "Thorn Rose", file: "crimson_rose_rune.png" },
+  { name: "Sol Rot", file: "withered_sun_medallion.png", fill: 0.9, lift: 1.02 },
+  { name: "Bone Star", file: "bone_white_thorn_star.png", fill: 0.92, lift: 1.05 },
+  { name: "Nightshade", file: "purple_nightshade_bloom.png", fill: 0.94, lift: 1.09 },
+  { name: "Bloodroot", file: "bloodroot_ruby_shard.png", fill: 0.94, lift: 1.08 },
+  { name: "Amber Seed", file: "amber_resin_seed.png", fill: 0.9, lift: 1.03 },
+  { name: "Thorn Rose", file: "crimson_rose_rune.png", fill: 0.91, lift: 1.04 },
 ];
 
 function readPng(file) {
@@ -91,6 +91,36 @@ function cropCell(src, index) {
   return { cell, box: { minX, minY, maxX, maxY } };
 }
 
+function alphaAt(src, x, y) {
+  return sample(src, x, y)[3];
+}
+
+function neighborAlpha(src, x, y, radius) {
+  let strongest = 0;
+  for (let oy = -radius; oy <= radius; oy += 1) {
+    for (let ox = -radius; ox <= radius; ox += 1) {
+      if (ox === 0 && oy === 0) continue;
+      strongest = Math.max(strongest, alphaAt(src, x + ox, y + oy));
+    }
+  }
+  return strongest;
+}
+
+function pruneAlphaNoise(png) {
+  const src = PNG.sync.read(PNG.sync.write(png, { colorType: 6 }));
+  for (let y = 0; y < png.height; y += 1) {
+    for (let x = 0; x < png.width; x += 1) {
+      const [r, g, b, a] = sample(src, x, y);
+      const n = neighborAlpha(src, x, y, 1);
+      if (a < 26 && n < 38) {
+        setPixel(png, x, y, [r, g, b, 0]);
+      } else if (a > 0 && a < 52 && n > 120) {
+        setPixel(png, x, y, [r, g, b, Math.min(74, a + 16)]);
+      }
+    }
+  }
+}
+
 function bilinear(src, fx, fy) {
   const x0 = Math.floor(fx);
   const y0 = Math.floor(fy);
@@ -111,11 +141,11 @@ function bilinear(src, fx, fy) {
   return out;
 }
 
-function resizeIcon(src, box, size) {
+function resizeIcon(src, box, size, tile) {
   const dst = new PNG({ width: size, height: size });
   const boxW = box.maxX - box.minX + 1;
   const boxH = box.maxY - box.minY + 1;
-  const target = Math.round(size * 0.86);
+  const target = Math.round(size * tile.fill);
   const scale = Math.min(target / boxW, target / boxH);
   const drawW = Math.max(1, Math.round(boxW * scale));
   const drawH = Math.max(1, Math.round(boxH * scale));
@@ -132,14 +162,42 @@ function resizeIcon(src, box, size) {
       const sy = box.minY + (y + 0.5) / scale - 0.5;
       const [r, g, b, a] = bilinear(src, sx, sy);
       if (a < 4) continue;
-      const lift = size === 48 ? 1.07 : 1.03;
-      const contrast = size === 48 ? 1.1 : 1.05;
-      const grade = (v) => Math.max(0, Math.min(255, Math.round((v - 20) * contrast * lift + 20)));
-      setPixel(dst, left + x, top + y, [grade(r), grade(g), grade(b), a]);
+      const nx = drawW <= 1 ? 0.5 : x / (drawW - 1);
+      const ny = drawH <= 1 ? 0.5 : y / (drawH - 1);
+      const candle = Math.max(0, 1 - Math.hypot(nx - 0.22, ny - 0.16) / 0.92);
+      const underburn = Math.max(0, (nx + ny - 1.02) * 0.42);
+      const lift = (size === 48 ? 1.08 : 1.035) * tile.lift;
+      const contrast = size === 48 ? 1.13 : 1.07;
+      const grade = (v, warmth = 0) => {
+        const lit = (v + candle * warmth - underburn * 34 - 18) * contrast * lift + 18;
+        return Math.max(0, Math.min(255, Math.round(lit)));
+      };
+      setPixel(dst, left + x, top + y, [
+        grade(r, 14),
+        grade(g, 8),
+        grade(b, 2),
+        a,
+      ]);
     }
   }
 
+  pruneAlphaNoise(dst);
+  addSocketShadow(dst, size);
   return { png: dst, drawW, drawH, scale };
+}
+
+function addSocketShadow(png, size) {
+  const src = PNG.sync.read(PNG.sync.write(png, { colorType: 6 }));
+  for (let y = 0; y < png.height; y += 1) {
+    for (let x = 0; x < png.width; x += 1) {
+      if (x === 0 || y === 0 || x === png.width - 1 || y === png.height - 1) continue;
+      if (alphaAt(src, x, y) > 0) continue;
+      const near = neighborAlpha(src, x - Math.round(size * 0.025), y - Math.round(size * 0.025), size === 48 ? 1 : 2);
+      if (near < 42) continue;
+      const a = Math.min(size === 48 ? 46 : 38, Math.round(near * 0.16));
+      setPixel(png, x, y, [5, 3, 3, a]);
+    }
+  }
 }
 
 function paste(dst, src, ox, oy, matte = [5, 4, 4]) {
@@ -202,6 +260,29 @@ function beforeAfterSheet(beforeImages, afterImages, file) {
   ].join("\n") + "\n", "utf8");
 }
 
+function grayscale(src) {
+  const dst = new PNG({ width: src.width, height: src.height });
+  for (let y = 0; y < src.height; y += 1) {
+    for (let x = 0; x < src.width; x += 1) {
+      const [r, g, b, a] = sample(src, x, y);
+      const luma = Math.round(r * 0.2126 + g * 0.7152 + b * 0.0722);
+      setPixel(dst, x, y, [luma, luma, luma, a]);
+    }
+  }
+  return dst;
+}
+
+function silhouette(src) {
+  const dst = new PNG({ width: src.width, height: src.height });
+  for (let y = 0; y < src.height; y += 1) {
+    for (let x = 0; x < src.width; x += 1) {
+      const a = sample(src, x, y)[3];
+      setPixel(dst, x, y, [228, 218, 192, a > 18 ? 255 : 0]);
+    }
+  }
+  return dst;
+}
+
 function main() {
   const src = readPng(SOURCE);
   if (src.width % 2 || src.height % 3) {
@@ -220,8 +301,8 @@ function main() {
 
   TILES.forEach((tile, index) => {
     const { cell, box } = cropCell(src, index);
-    const large = resizeIcon(cell, box, 96);
-    const small = resizeIcon(cell, box, 48);
+    const large = resizeIcon(cell, box, 96, tile);
+    const small = resizeIcon(cell, box, 48, tile);
     writePng(path.join(OUT_96, tile.file), large.png);
     writePng(path.join(OUT_48, tile.file), small.png);
     after96.push(large.png);
@@ -236,6 +317,8 @@ function main() {
 
   contactSheet(old96, TILES.map((tile) => `before: ${tile.name}`), path.join(EVIDENCE, "six-flowers-before-96.png"));
   contactSheet(after96, TILES.map((tile) => `after: ${tile.name}`), path.join(EVIDENCE, "six-flowers-after-96.png"));
+  contactSheet(after96.map(grayscale), TILES.map((tile) => `grayscale: ${tile.name}`), path.join(EVIDENCE, "six-flowers-grayscale-96.png"));
+  contactSheet(after96.map(silhouette), TILES.map((tile) => `silhouette: ${tile.name}`), path.join(EVIDENCE, "six-flowers-silhouette-96.png"));
   beforeAfterSheet(old96, after96, path.join(EVIDENCE, "six-flowers-before-after-96.png"));
   fs.writeFileSync(path.join(EVIDENCE, "crop-metrics.json"), JSON.stringify({ source: SOURCE, beforeRef: beforeRef || null, sourceSize: `${src.width}x${src.height}`, metrics }, null, 2) + "\n");
   console.log(JSON.stringify({ source: SOURCE, beforeRef: beforeRef || null, sourceSize: `${src.width}x${src.height}`, metrics }, null, 2));
