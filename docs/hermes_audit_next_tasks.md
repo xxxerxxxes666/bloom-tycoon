@@ -44,17 +44,17 @@ Read `docs/diablo_visual_simplification_audit.md` before every visual implementa
 
 **Current orchestration status:** all three ordered visual milestones are complete. Do not resume numbered-round expansion or invent a Pass 4. Preserve this vertical slice and await Xerxes's next product direction; scheduled checks should report only material regressions or deployment drift and must honor the three-empty-run pause rule.
 
-## Hermes first-minute handoff — `9d4345d` (2026-07-15)
+## Hermes first-minute handoff — `6b92cf9` (2026-07-15)
 
-The prior mobile Help replay regression is fixed live: the panel stays fully in the exact `390×844` viewport, with only `SKIP` before the opening swap and exactly `SKIP` plus `Shuffle (-1 move)` afterward. The next surgical weakness is the Round 1 payoff hierarchy. A player who follows the tutorial without skipping reaches `Bouquet 14/14` with `SKIP` still visible beside the focused `Restore Greenhouse · 100 coins` action; after restoration, `SKIP` remains beside `Next Order → Moonlit Wreath`. Keep the terse payoff guidance, but remove the tutorial escape control once the bouquet is complete so each payoff state presents one dominant action. Do not change the authored four-swap lesson, order tuning, rewards, keyboard controls, restoration art, or progression scope.
+The natural first-minute route is healthy live: the authored fourth swap deterministically creates `Black Candle Vine`, seals `Bouquet 14/14`, leaves one focused payoff action, and Round 2's first guided swap clearly breaks all three Cursed Thorns in about one second. Invalid swaps also return control without spending a move. The next surgical weakness is payoff continuity after save/reload. Reloading completed Round 1 currently hides `Coins restore the greenhouse.`, loses action focus, and exposes `HELP` beside `Restore Greenhouse · 100 coins`; reloading after restoration similarly hides `Tap Next Order.`, loses focus, and exposes `HELP` beside `Next Order → Moonlit Wreath`. Restore the same one-action payoff hierarchy from saved state. Do not change match logic, rewards, order tuning, tutorial copy, restoration art, or progression scope.
 
 Acceptance checks:
 
-- Complete the natural guided Round 1 route without pressing `SKIP`: three guided matches lead to the `Black Candle Vine` four-match, `Bouquet 14/14`, 64 tiles, and the focused greenhouse restoration action.
-- At completed Round 1, retain the terse `Coins restore the greenhouse.` guidance but show exactly one visible non-tile action: `Restore Greenhouse · 100 coins`. `SKIP`, `HELP`, and `Shuffle` must not compete with it.
-- After restoration, retain the terse `Tap Next Order.` guidance but show exactly one visible non-tile action: `Next Order → Moonlit Wreath`. Focus remains on that action.
-- Activating Next Order still starts Round 2 with 64 tiles, the tuned Nightshade/Amber Seed/Thorn Rose/Cursed Thorn goals, 14 moves, and one roving board tab stop.
-- Recheck desktop `1280×720` and exact mobile `390×844`: tutorial copy remains fully visible, no horizontal overflow, no broken images, and no console or JavaScript errors.
+- Complete Round 1 without skipping, then reload before restoration: `Bouquet 14/14` and 64 tiles persist, `Coins restore the greenhouse.` is visible in the first viewport, and the only visible non-tile action is the focused `Restore Greenhouse · 100 coins` button.
+- Restore the greenhouse, then reload before Next Order: `Tap Next Order.` is visible in the first viewport, and the only visible non-tile action is the focused `Next Order → Moonlit Wreath` button.
+- Neither reload state exposes `SKIP`, `HELP`, `Shuffle`, or stale `Swap the glowing flowers.` copy beside the payoff action.
+- Activating Next Order after reload starts Round 2 with 64 tiles, the authored Nightshade/Amber Seed/Thorn Rose/Cursed Thorn goals, 14 moves, one roving board tab stop, and the `Crack the marked thorns` cue.
+- Recheck desktop `1280×720` and exact mobile `390×844`: no horizontal overflow, no broken images, and no console or JavaScript errors.
 
 A pass counts only when its entire acceptance result is visibly demonstrated and browser-verified. Tiny hint, copy, pulse, marker, or documentation-only commits do not count.
 
