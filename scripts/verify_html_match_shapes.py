@@ -837,7 +837,7 @@ def verify_source_hooks():
         "Coins restore the greenhouse.",
         "body.tutorial-active.focused-slice-failed #renewBtn.visible",
         "document.body.dataset.tutorialPrompt = tutorialActive ? tutorialCopy() : \"\"",
-        "const MAX_BOARD_PARTICLES = 36",
+        "const MAX_BOARD_PARTICLES = 24",
         "@media (prefers-reduced-motion: reduce)",
     ])
     missing = [needle for needle in required if needle not in html]

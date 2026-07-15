@@ -75,6 +75,36 @@ async function runtimeReport(page) {
   });
 }
 
+async function timedGuidedSwap(page) {
+  const hints = page.locator(".tile.idle-hint");
+  await expect(hints).toHaveCount(2, { timeout: 5000 });
+  const pair = await hints.evaluateAll((tiles) => tiles.map((tile) => ({
+    x: tile.dataset.x,
+    y: tile.dataset.y
+  })));
+  const started = Date.now();
+  await page.locator(`.tile[data-x="${pair[0].x}"][data-y="${pair[0].y}"]`).click({ force: true });
+  await page.locator(`.tile[data-x="${pair[1].x}"][data-y="${pair[1].y}"]`).click({ force: true });
+  await page.waitForFunction(() => (
+    Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled)
+    || document.body.classList.contains("focused-payoff-active")
+  ), null, { timeout: 7000 });
+  const controlMs = Date.now() - started;
+  const report = await page.evaluate(() => ({
+    tiles: document.querySelectorAll(".tile").length,
+    disabledTiles: Array.from(document.querySelectorAll(".tile")).filter((tile) => tile.disabled).length,
+    particles: document.querySelectorAll(
+      ".board-particle, .harvest-mote, .refill-channel, .greenhouse-intake-flight, .objective-flight, .bouquet-bind-seal"
+    ).length,
+    bouquet: document.querySelector("#bouquetProgressLabel")?.textContent.trim() || "",
+    overflowX: document.documentElement.scrollWidth > innerWidth + 1,
+    brokenImages: Array.from(document.images)
+      .filter((image) => image.complete && image.naturalWidth === 0)
+      .map((image) => image.getAttribute("src"))
+  }));
+  return { controlMs, report };
+}
+
 for (const config of [
   { label: "desktop", viewport: { width: 1280, height: 720 }, mobile: false },
   { label: "mobile390", viewport: { width: 390, height: 844 }, mobile: true }
@@ -133,4 +163,43 @@ test("focused runtime respects reduced motion", async ({ page }) => {
   expect(report.animatedElements, "reduced motion idle animations").toBeLessThanOrEqual(3);
   expect(report.brokenImages).toEqual([]);
   expect(report.overflowX).toBe(false);
+});
+
+test("mobile guided swaps return control without particle buildup", async ({ page }) => {
+  const consoleErrors = [];
+  const pageErrors = [];
+  const failedRequests = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") consoleErrors.push(message.text());
+  });
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("requestfailed", (request) => failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`));
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openFresh(page, "mobile_swap_latency");
+
+  const first = await timedGuidedSwap(page);
+  const second = await timedGuidedSwap(page);
+  console.log(`mobile swap latency: ${JSON.stringify({ first, second })}`);
+
+  expect(first.controlMs, "first guided swap control return").toBeLessThanOrEqual(850);
+  const reachedPayoff = second.report.disabledTiles === 64 && second.report.bouquet.includes("14/14");
+  if (reachedPayoff) {
+    expect(second.controlMs, "guided completion ceremony appears").toBeLessThanOrEqual(3200);
+    await expect(page.locator("#restoreGreenhouseBtn")).toBeVisible({ timeout: 1000 });
+  } else {
+    expect(second.controlMs, "second guided swap control return").toBeLessThanOrEqual(1050);
+    expect(second.report.disabledTiles).toBe(0);
+    expect(second.report.particles, "active particle buildup after second swap").toBeLessThanOrEqual(32);
+  }
+  expect(second.report.tiles).toBe(64);
+  expect(second.report.overflowX).toBe(false);
+  expect(second.report.brokenImages).toEqual([]);
+
+  await expect.poll(async () => page.evaluate(() => document.querySelectorAll(
+    ".board-particle, .harvest-mote, .refill-channel, .greenhouse-intake-flight, .objective-flight, .bouquet-bind-seal"
+  ).length), { timeout: 1800 }).toBeLessThanOrEqual(2);
+  expect(consoleErrors).toEqual([]);
+  expect(pageErrors).toEqual([]);
+  expect(failedRequests).toEqual([]);
 });
