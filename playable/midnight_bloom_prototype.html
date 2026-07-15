@@ -1200,8 +1200,8 @@
       align-items: center;
       justify-content: center;
       background:
-        radial-gradient(circle at 50% 43%, color-mix(in srgb, var(--tile-color) 36%, #fff4b4) 0 11%, #0000 35%),
-        radial-gradient(circle at 50% 52%, color-mix(in srgb, var(--tile-color) 18%, #0000) 0 28%, #0000 59%),
+        radial-gradient(circle at 50% 43%, color-mix(in srgb, var(--tile-color) 18%, #fff4b4) 0 9%, #0000 33%),
+        radial-gradient(circle at 50% 52%, color-mix(in srgb, var(--tile-color) 9%, #0000) 0 27%, #0000 60%),
         linear-gradient(#000b, #000b),
         url("../assets/board/occult_altar_socket.svg") center / 100% 100% no-repeat,
         radial-gradient(circle at 50% 52%, #100906 0, #050303 68%, #010101 100%),
@@ -1257,16 +1257,16 @@
     }
 
     .tile img {
-      width: 93%;
-      height: 93%;
+      width: 95%;
+      height: 95%;
       object-fit: contain;
       filter:
         drop-shadow(0 5px 5px #000)
-        drop-shadow(0 0 7px color-mix(in srgb, var(--tile-color) 58%, #000))
+        drop-shadow(0 0 5px color-mix(in srgb, var(--tile-color) 42%, #000))
         drop-shadow(0 0 2px #000)
-        saturate(1.34)
-        contrast(1.22)
-        brightness(1.08);
+        saturate(1.16)
+        contrast(1.12)
+        brightness(1.04);
       position: relative;
       z-index: 1;
     }
@@ -1294,9 +1294,9 @@
       z-index: 0;
       border-radius: 50%;
       background:
-        radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--tile-color) 60%, #fff2bd) 0 10%, #0000 39%),
-        radial-gradient(circle at 50% 55%, color-mix(in srgb, var(--tile-color) 42%, #000) 0, #0000 64%);
-      opacity: .58;
+        radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--tile-color) 36%, #fff2bd) 0 9%, #0000 38%),
+        radial-gradient(circle at 50% 55%, color-mix(in srgb, var(--tile-color) 24%, #000) 0, #0000 64%);
+      opacity: .34;
       filter: blur(.2px);
       box-shadow:
         inset 0 0 10px #000,
