@@ -1063,6 +1063,10 @@
       display: flex;
     }
 
+    body.tutorial-active .first-swap-cue {
+      display: none !important;
+    }
+
     .tutorial-icon {
       color: #d7b16d;
       filter: none;
@@ -6529,15 +6533,15 @@
         <span class="progress-next" id="bouquetProgressNext">Complete the order to restore the greenhouse.</span>
       </div>
       <div class="first-swap-cue" id="firstSwapCue" aria-live="polite">Glowing pair incoming…</div>
-      <div class="next-order-cue" id="nextOrderCue" aria-live="polite">Restored Greenhouse - Moonlit Wreath begins</div>
-      <div class="board" id="board"></div>
-      <div class="mobile-greenhouse-plinth" id="mobileGreenhousePlinth" aria-hidden="true">
-        <span class="greenhouse-restoration-dial" id="mobileRestorationDial" aria-hidden="true"></span>
-      </div>
       <div class="tutorial-panel" id="tutorialPanel" hidden aria-live="polite">
         <span class="tutorial-icon" aria-hidden="true">✦</span>
         <span class="tutorial-copy" id="tutorialCopy">Swap the glowing flowers.</span>
         <button class="tutorial-skip" id="tutorialSkipBtn" type="button">Skip</button>
+      </div>
+      <div class="next-order-cue" id="nextOrderCue" aria-live="polite">Restored Greenhouse - Moonlit Wreath begins</div>
+      <div class="board" id="board"></div>
+      <div class="mobile-greenhouse-plinth" id="mobileGreenhousePlinth" aria-hidden="true">
+        <span class="greenhouse-restoration-dial" id="mobileRestorationDial" aria-hidden="true"></span>
       </div>
       <button class="tutorial-help" id="tutorialHelpBtn" type="button">Help</button>
       <div class="controls">

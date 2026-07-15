@@ -1,5 +1,11 @@
 # Codex Build Notes
 
+## 2026-07-15 tutorial first-viewport hierarchy follow-up
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_tutorial_progress.spec.js`, and `docs/codex_build_notes.md`.
+- Player-visible fix: the fresh tutorial now replaces the existing board cue in the same above-board position instead of duplicating it below the board. Exact 390x844 mobile shows one instruction, the highlighted swap, and one-tap Skip in the first viewport while preserving all eight board rows.
+- Verification: project/source checks, JavaScript syntax checks, diff/secret scans, and real-browser desktop/mobile tutorial checks cover 64 tiles, one visible instruction, Skip persistence, Help replay, the guided swap, two meaningful progress bars, no dormant previews, no broken images, no console errors, and no horizontal overflow.
+
 ## 2026-07-15 reference-faithful six-flower art pass
 
 - Files changed: generated six-flower source sheet under `assets/tiles/generated/`, `assets/tiles/96/*.png`, `assets/tiles/48/*.png`, `playable/midnight_bloom_prototype.html`, `scripts/prepare_reference_flower_tiles.js`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.

@@ -27,6 +27,8 @@ async function visibleReport(page) {
     const bars = Array.from(document.querySelectorAll(
       ".progress-meter, .restoration-dial-track, .vial-meter, .restored-greenhouse-meter, .greenhouse-payoff-fill, .greenhouse-upgrade-ladder"
     )).filter(visible);
+    const tutorialPanel = document.querySelector("#tutorialPanel");
+    const tutorialRect = tutorialPanel?.getBoundingClientRect();
     const brokenImages = Array.from(document.images)
       .filter((image) => visible(image) && image.complete && image.naturalWidth === 0)
       .map((image) => image.getAttribute("src"));
@@ -34,6 +36,13 @@ async function visibleReport(page) {
       tiles: document.querySelectorAll(".tile").length,
       idleHints: document.querySelectorAll(".tile.idle-hint").length,
       tutorialVisible: visible(document.querySelector("#tutorialPanel")),
+      tutorialInViewport: visible(tutorialPanel)
+        && tutorialRect.top >= 0
+        && tutorialRect.bottom <= innerHeight,
+      visibleInstructionCues: [
+        document.querySelector("#firstSwapCue"),
+        tutorialPanel
+      ].filter(visible).length,
       tutorialText: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
       bouquetText: document.querySelector("#bouquetProgressLabel")?.textContent.trim() || "",
       bouquetNext: document.querySelector("#bouquetProgressNext")?.textContent.trim() || "",
@@ -81,6 +90,8 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
     tiles: 64,
     idleHints: 2,
     tutorialVisible: true,
+    tutorialInViewport: true,
+    visibleInstructionCues: 1,
     bouquetText: "Bouquet 0/5 -> +120 coins",
     greenhouseText: "Restore First Bouquet Glass",
     overflowX: false,
