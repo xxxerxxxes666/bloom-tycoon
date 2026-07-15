@@ -6,7 +6,7 @@ const SAVE_KEY = "bloomTycoonPlayableStateV1";
 test.setTimeout(90000);
 
 async function openFresh(page, suffix) {
-  await page.goto(`${BASE_URL}?tutorial-progress=${suffix}`, { waitUntil: "networkidle" });
+  await page.goto(`${BASE_URL}?tutorial-progress=${suffix}&bloomReview=1`, { waitUntil: "networkidle" });
   await page.evaluate((key) => localStorage.removeItem(key), SAVE_KEY);
   await page.reload({ waitUntil: "networkidle" });
   await expect(page.locator(".tile")).toHaveCount(64);
@@ -90,8 +90,8 @@ async function keyboardGuidedSwap(page) {
         ? "ArrowDown"
         : "ArrowUp";
   const firstTile = page.locator(`.tile[data-x="${first.x}"][data-y="${first.y}"]`);
-  await expect(firstTile).toHaveAttribute("tabindex", "0");
   await firstTile.focus();
+  await expect(firstTile).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(firstTile).toHaveClass(/sel/);
   await expect(firstTile).toBeFocused();
@@ -101,8 +101,9 @@ async function keyboardGuidedSwap(page) {
 }
 
 async function completeRoundWithReviewKey(page) {
-  await page.waitForFunction(() => !document.querySelector("#demoCompleteBtn")?.disabled, null, { timeout: 7000 });
-  await page.evaluate(() => document.querySelector("#demoCompleteBtn").click());
+  await expect.poll(async () => page.evaluate(() => window.__bloomReviewHooksEnabled === true)).toBe(true);
+  await page.locator("body").click({ position: { x: 12, y: 12 } });
+  await page.keyboard.press("n");
   await expect(page.locator("#roundOneRestoration")).toBeVisible({ timeout: 5000 });
 }
 

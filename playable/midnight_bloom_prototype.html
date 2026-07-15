@@ -2433,14 +2433,6 @@
       min-width: 250px;
     }
 
-    .btn.demo {
-      background:
-        linear-gradient(180deg, #243516, #080c05),
-        radial-gradient(circle at 50% 0, #a5c85466 0, #0000 50%);
-      border-color: #64783d;
-      min-width: 220px;
-    }
-
     .btn.armed {
       border-color: #c96a5a;
       box-shadow: inset 0 0 20px #000, 0 0 18px #7d1717;
@@ -4980,7 +4972,6 @@
     body.round-one-active .booster-panel,
     body.round-one-active .controls .red,
     body.round-one-active .controls .booster,
-    body.round-one-active .controls .demo,
     body.round-one-active #renewBtn,
     body.round-one-active:not(.first-move-made) #shuffleBtn,
     body.round-one-active #roundCeremony {
@@ -6152,12 +6143,6 @@
         <button class="btn booster" id="graveSoilBtn" type="button" aria-pressed="false">
           <span>Grave Soil (x<span id="graveSoilCount">1</span>)</span>
         </button>
-        <button class="btn demo" id="demoCompleteBtn" type="button">
-          <span>Complete Bouquet</span>
-        </button>
-        <button class="btn demo" id="shapeBloomBtn" type="button">
-          <span>Shape Bloom</span>
-        </button>
       </div>
       <div class="sacrifice-panel" id="sacrificePanel" aria-live="polite">
         <div class="sacrifice-copy">
@@ -6480,6 +6465,14 @@
     let activeRuneTendedSoil = false;
     let shapeDemoIndex = 0;
     const $ = (id) => document.getElementById(id);
+    const QA_REVIEW_HOOKS_ENABLED = (() => {
+      try {
+        const localHost = ["localhost", "127.0.0.1", ""].includes(window.location.hostname);
+        return localHost && new URLSearchParams(window.location.search).get("bloomReview") === "1";
+      } catch (error) {
+        return false;
+      }
+    })();
     const flowerIcon48 = (src) => src.replace("/96/", "/48/");
     const flowerIconSrcset = (src) => `${flowerIcon48(src)} 48w, ${src} 96w`;
     const rand = () => {
@@ -8628,8 +8621,6 @@
       $("graveSoilBtn").disabled = isResolving || roundComplete || failed || graveSoilCount() < 1;
       $("graveSoilBtn").classList.toggle("armed", activeBooster === "graveSoil");
       $("graveSoilBtn").setAttribute("aria-pressed", activeBooster === "graveSoil" ? "true" : "false");
-      $("demoCompleteBtn").disabled = isResolving || roundComplete;
-      $("shapeBloomBtn").disabled = isResolving || roundComplete;
       $("sacrificeBtn").classList.toggle("armed", sacrificeState.active);
       $("sacrificeBtn").setAttribute("aria-pressed", sacrificeState.active ? "true" : "false");
       $("ritualLog").innerHTML = ritualMessage;
@@ -11079,7 +11070,7 @@
     }
 
     function demoCompleteBouquet() {
-      // Prototype review hook; remove or gate before production.
+      // Local QA shortcut; normal players must complete the bouquet on the board.
       if (isResolving || roundComplete) {
         return;
       }
@@ -12139,7 +12130,7 @@
       ]);
       isResolving = true;
       coins += 12;
-      ritualMessage = "<strong>Prototype review hook:</strong> Supreme Bloom gathers. +12 ✪";
+      ritualMessage = "<strong>QA review hook:</strong> Supreme Bloom gathers. +12 ✪";
       chargeSupreme(originCells);
       window.setTimeout(() => {
         isResolving = false;
@@ -12198,7 +12189,7 @@
         l: "Night Garden L-Bloom",
         t: "Twin Stem Bloom"
       };
-      ritualMessage = `<strong>Prototype match-shape review:</strong> ${demoNames[kind]} resolving. Press M again for another shape.`;
+      ritualMessage = `<strong>QA match-shape review:</strong> ${demoNames[kind]} resolving. Press M again for another shape.`;
       isResolving = true;
       render();
       window.setTimeout(async () => {
@@ -12610,8 +12601,6 @@
     $("graveSoilBtn").addEventListener("click", toggleGraveSoil);
     $("blackCandleRowMode").addEventListener("click", () => setBlackCandleAxis("row"));
     $("blackCandleColumnMode").addEventListener("click", () => setBlackCandleAxis("column"));
-    $("demoCompleteBtn").addEventListener("click", demoCompleteBouquet);
-    $("shapeBloomBtn").addEventListener("click", () => demoMatchShape());
     $("sacrificeCancel").addEventListener("click", () => cancelSacrifice());
     $("boosterCancel").addEventListener("click", () => cancelActiveBooster());
     $("renewBtn").addEventListener("click", renewBouquet);
@@ -12640,16 +12629,16 @@
         cancelActiveBooster();
       } else if (event.key === "Escape" && sacrificeState.active) {
         cancelSacrifice();
-      } else if (event.key.toLowerCase() === "m" && !event.metaKey && !event.ctrlKey && !event.altKey) {
-        // Prototype match-shape review hook; remove or gate before production.
+      } else if (QA_REVIEW_HOOKS_ENABLED && event.key.toLowerCase() === "m" && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        // Local QA shortcut for shape reward coverage.
         event.preventDefault();
         demoMatchShape();
-      } else if (event.key.toLowerCase() === "b" && !event.metaKey && !event.ctrlKey && !event.altKey) {
-        // Prototype review hook; remove or gate before production.
+      } else if (QA_REVIEW_HOOKS_ENABLED && event.key.toLowerCase() === "b" && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        // Local QA shortcut for Supreme Bloom coverage.
         event.preventDefault();
         demoSupremeBloom();
-      } else if (event.key.toLowerCase() === "n" && !event.metaKey && !event.ctrlKey && !event.altKey) {
-        // Prototype review hook; remove or gate before production.
+      } else if (QA_REVIEW_HOOKS_ENABLED && event.key.toLowerCase() === "n" && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        // Local QA shortcut for first-three-order ceremony coverage.
         event.preventDefault();
         demoCompleteBouquet();
       }
@@ -12662,6 +12651,7 @@
       soundscapeActive: Boolean(bloomSoundscape?.started),
       events: bloomAudioEvents.slice()
     });
+    window.__bloomReviewHooksEnabled = QA_REVIEW_HOOKS_ENABLED;
     window.triggerSupremeBloom = showSupreme;
     refreshShapeAuditData();
 

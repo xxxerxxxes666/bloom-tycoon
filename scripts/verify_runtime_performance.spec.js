@@ -62,6 +62,8 @@ async function runtimeReport(page) {
         .filter((node) => visible(node) && !node.closest(".board"))
         .map((node) => node.textContent.trim())
         .filter(Boolean),
+      reviewHooksEnabled: window.__bloomReviewHooksEnabled === true,
+      qaButtonCount: document.querySelectorAll("#demoCompleteBtn, #shapeBloomBtn").length,
       brokenImages: Array.from(document.images)
         .filter((image) => visible(image) && image.complete && image.naturalWidth === 0)
         .map((image) => image.getAttribute("src")),
@@ -99,6 +101,8 @@ for (const config of [
     expect(report.greenhouseNextText).toMatch(/Restore|Unlock|Raise|Replay/);
     expect(report.visibleProgressText).not.toMatch(/\b(?:SAP|MANA|BLOOD)\b|\d[\d,]*\s*\/\s*\d[\d,]*\s*XP|Greenhouse \+\d+ XP|Apothecary \+\d+ XP/);
     expect(report.visibleButtons.length, "Round 1 non-tile controls").toBeLessThanOrEqual(2);
+    expect(report.reviewHooksEnabled, "QA review hooks stay off in normal runtime").toBe(false);
+    expect(report.qaButtonCount, "visible prototype shortcut buttons are removed").toBe(0);
     expect(report.brokenImages).toEqual([]);
     expect(report.overflowX).toBe(false);
     expect(report.completeRows, `${config.label} visible board rows`).toBe(8);

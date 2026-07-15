@@ -16,7 +16,7 @@ function wireRuntimeGuards(page) {
 }
 
 async function resetPage(page, suffix) {
-  await page.goto(`${BASE_URL}?${suffix}`, { waitUntil: "networkidle" });
+  await page.goto(`${BASE_URL}?${suffix}&bloomReview=1`, { waitUntil: "networkidle" });
   await page.evaluate((key) => localStorage.removeItem(key), SAVE_KEY);
   await page.reload({ waitUntil: "networkidle" });
   await expect(page.locator(".tile")).toHaveCount(64);
@@ -117,6 +117,7 @@ async function assertSingleWaveHit(page) {
 }
 
 async function completeRoundWithReviewKey(page) {
+  await expect.poll(async () => page.evaluate(() => window.__bloomReviewHooksEnabled === true)).toBe(true);
   await page.locator("body").click({ position: { x: 12, y: 12 } });
   await page.keyboard.press("n");
   await expect(page.locator("#roundOneRestoration")).toBeVisible({ timeout: 5000 });
@@ -205,6 +206,7 @@ async function forceRoundTwoFailureAndRetry(page) {
 }
 
 async function verifySupremeReviewHookRare(page, screenshotPath) {
+  await expect.poll(async () => page.evaluate(() => window.__bloomReviewHooksEnabled === true)).toBe(true);
   const before = await page.evaluate(() => ({
     supremeOn: Boolean(document.querySelector("#supreme.on")),
     text: document.body.innerText
