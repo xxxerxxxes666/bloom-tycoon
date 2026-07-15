@@ -101,7 +101,7 @@ for (const config of [
     expect(report.visibleButtons.length, "Round 1 non-tile controls").toBeLessThanOrEqual(2);
     expect(report.brokenImages).toEqual([]);
     expect(report.overflowX).toBe(false);
-    if (config.mobile) expect(report.completeRows).toBe(8);
+    expect(report.completeRows, `${config.label} visible board rows`).toBe(8);
     expect(consoleErrors).toEqual([]);
     expect(pageErrors).toEqual([]);
 
