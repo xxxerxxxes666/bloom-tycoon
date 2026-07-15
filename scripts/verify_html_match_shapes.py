@@ -245,8 +245,6 @@ def verify_source_hooks():
     html = HTML.read_text()
     required = [
         "function analyzeMatchShape",
-        "shapeAuditData",
-        "function analyzeBoardSnapshot",
         "QA match-shape review",
         "Witch's Cross!",
         "Night Garden L-Bloom!",
@@ -262,6 +260,8 @@ def verify_source_hooks():
         "const QA_REVIEW_HOOKS_ENABLED",
         "new URLSearchParams(window.location.search).get(\"bloomReview\") === \"1\"",
         "window.__bloomReviewHooksEnabled = QA_REVIEW_HOOKS_ENABLED",
+        "(() => {",
+        "})();",
         "round-one-active",
         "body.round-one-active:not(.first-move-made) #shuffleBtn",
         "firstSwapCue",
@@ -918,6 +918,10 @@ def verify_source_hooks():
         "elementPulseTargets",
         "function scheduleElementPulseClear",
         "const elementsEl",
+        'id="shapeAuditData"',
+        "function analyzeBoardSnapshot",
+        "function refreshShapeAuditData",
+        "window.triggerSupremeBloom",
         "chestState",
         "Chest Storage",
         "Resources and storage",
