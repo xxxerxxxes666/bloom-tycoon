@@ -5688,7 +5688,6 @@
     let lastSettledCascadeCount = 0;
     let bouquetSealPulseActive = false;
     let nextOrderPulseActive = false;
-    let shapeDemoIndex = 0;
     const $ = (id) => document.getElementById(id);
     const QA_REVIEW_HOOKS_ENABLED = (() => {
       try {
@@ -10079,28 +10078,6 @@
       renewBouquet();
     }
 
-    function demoCompleteBouquet() {
-      // Local QA shortcut; normal players must complete the bouquet on the board.
-      if (isResolving || roundComplete) {
-        return;
-      }
-      const plan = activeRoundPlan();
-      plan.targets.forEach((target) => {
-        counts[target.flowerId] = Math.max(counts[target.flowerId], target.needed);
-        orderPulseTargets.add(target.flowerId);
-      });
-      if (plan.thornGoal) {
-        clearedCursedThorns = Math.max(clearedCursedThorns, thornGoalNeeded(plan));
-        cursedThorns = [];
-        thornPulseCells.clear();
-        thornClearedCells.clear();
-      }
-      notePlayerInteraction();
-      maybeCompleteRound();
-      render();
-      scheduleOrderPulseClear();
-    }
-
     function canSpendMoves(cost) {
       return moves >= cost;
     }
@@ -10144,102 +10121,8 @@
       }, 340);
     }
 
-    function demoSupremeBloom() {
-      if (isResolving) {
-        return;
-      }
-      clearIdleHint();
-      const [a, b] = legalMoves()[0] || [{ x: 3, y: 3 }, { x: 4, y: 3 }];
-      const originCells = dedupeCells([
-        [a.x, a.y],
-        [b.x, b.y],
-        [3, 3],
-        [4, 3],
-        [3, 4]
-      ]);
-      isResolving = true;
-      coins += 12;
-      ritualMessage = "<strong>QA review hook:</strong> Supreme Bloom gathers. +12 ✪";
-      chargeSupreme(originCells);
-      window.setTimeout(() => {
-        isResolving = false;
-        ritualMessage = "<strong>SUPREME BLOOM!</strong> Review hook complete. The board is ready.";
-        render();
-      }, 460);
-    }
-
-    function makeShapeAuditBoard(shapeCells) {
-      const baseValues = [0, 1, 3, 4, 5];
-      const demo = Array.from({ length: BOARD_SIZE }, (_, y) => (
-        Array.from({ length: BOARD_SIZE }, (_, x) => baseValues[(x + y * 2) % baseValues.length])
-      ));
-      shapeCells.forEach(([x, y]) => {
-        demo[y][x] = 2;
-      });
-      return demo;
-    }
-
-    function makeShapeDemoBoard(kind) {
-      const shapeCells = {
-        line5: [[1, 3], [2, 3], [3, 3], [4, 3], [5, 3]],
-        line4: [[2, 3], [3, 3], [4, 3], [5, 3]],
-        cross: [[3, 3], [2, 3], [4, 3], [3, 2], [3, 4]],
-        t: [[2, 3], [3, 3], [4, 3], [3, 4], [3, 5]],
-        l: [[2, 2], [3, 2], [4, 2], [2, 3], [2, 4]]
-      }[kind] || [];
-      return makeShapeAuditBoard(shapeCells);
-    }
-
-    function demoMatchShape(forcedKind = "") {
-      if (isResolving) {
-        return;
-      }
-      const demoKinds = ["line5", "line4", "cross", "l", "t"];
-      const kind = demoKinds.includes(forcedKind)
-        ? forcedKind
-        : demoKinds[shapeDemoIndex % demoKinds.length];
-      shapeDemoIndex += 1;
-      clearIdleHint();
-      selected = null;
-      board = makeShapeDemoBoard(kind);
-      harvestFlashCells.clear();
-      fallAnimations.clear();
-      refillBornCells.clear();
-      refillColumns.clear();
-      superBloomCells.clear();
-      boardParticles = [];
-      const demoNames = {
-        line5: "Eclipse Seed Rune",
-        line4: "Black Candle Vine",
-        cross: "Witch's Cross",
-        l: "Night Garden L-Bloom",
-        t: "Twin Stem Bloom"
-      };
-      ritualMessage = `<strong>QA match-shape review:</strong> ${demoNames[kind]} resolving. Press M again for another shape.`;
-      isResolving = true;
-      render();
-      window.setTimeout(async () => {
-        let result = null;
-        try {
-          result = await resolveAnimated({ maxCascades: 1 });
-          ritualMessage = result.matched
-            ? `<strong>Shape demo complete:</strong> ${harvestSummary(result)}`
-            : "Shape demo did not find a match.";
-          if (result.matched) {
-            pulseOrderCounts(result.gained, result.gainedCells);
-          }
-        } finally {
-          isResolving = false;
-          render();
-          if (result && result.matched) {
-            scheduleBoardParticleClear(result.cascades);
-          }
-        }
-      }, 260);
-    }
-
     function showSupreme(originCells = []) {
-      // Supreme Bloom is intentionally rare: 6+ HTML matches or the forced review paths.
+      // Supreme Bloom is intentionally rare: 6+ HTML matches or the local review path.
       const supreme = $("supreme");
       const particleLayer = $("supremeParticles");
       particleLayer.innerHTML = "";
@@ -10275,6 +10158,145 @@
         supreme.classList.remove("on");
         particleLayer.innerHTML = "";
       }, 2200);
+    }
+
+    function installLocalReviewHooks() {
+      if (!QA_REVIEW_HOOKS_ENABLED) {
+        return;
+      }
+      let shapeDemoIndex = 0;
+
+      function completeBouquetForReview() {
+        if (isResolving || roundComplete) {
+          return;
+        }
+        const plan = activeRoundPlan();
+        plan.targets.forEach((target) => {
+          counts[target.flowerId] = Math.max(counts[target.flowerId], target.needed);
+          orderPulseTargets.add(target.flowerId);
+        });
+        if (plan.thornGoal) {
+          clearedCursedThorns = Math.max(clearedCursedThorns, thornGoalNeeded(plan));
+          cursedThorns = [];
+          thornPulseCells.clear();
+          thornClearedCells.clear();
+        }
+        notePlayerInteraction();
+        maybeCompleteRound();
+        render();
+        scheduleOrderPulseClear();
+      }
+
+      function supremeBloomForReview() {
+        if (isResolving) {
+          return;
+        }
+        clearIdleHint();
+        const [a, b] = legalMoves()[0] || [{ x: 3, y: 3 }, { x: 4, y: 3 }];
+        const originCells = dedupeCells([
+          [a.x, a.y],
+          [b.x, b.y],
+          [3, 3],
+          [4, 3],
+          [3, 4]
+        ]);
+        isResolving = true;
+        coins += 12;
+        ritualMessage = "<strong>QA review hook:</strong> Supreme Bloom gathers. +12 ✪";
+        chargeSupreme(originCells);
+        window.setTimeout(() => {
+          isResolving = false;
+          ritualMessage = "<strong>SUPREME BLOOM!</strong> Review hook complete. The board is ready.";
+          render();
+        }, 460);
+      }
+
+      function shapeReviewBoard(shapeCells) {
+        const baseValues = [0, 1, 3, 4, 5];
+        const reviewBoard = Array.from({ length: BOARD_SIZE }, (_, y) => (
+          Array.from({ length: BOARD_SIZE }, (_, x) => baseValues[(x + y * 2) % baseValues.length])
+        ));
+        shapeCells.forEach(([x, y]) => {
+          reviewBoard[y][x] = 2;
+        });
+        return reviewBoard;
+      }
+
+      function shapeBoardForReview(kind) {
+        const shapeCells = {
+          line5: [[1, 3], [2, 3], [3, 3], [4, 3], [5, 3]],
+          line4: [[2, 3], [3, 3], [4, 3], [5, 3]],
+          cross: [[3, 3], [2, 3], [4, 3], [3, 2], [3, 4]],
+          t: [[2, 3], [3, 3], [4, 3], [3, 4], [3, 5]],
+          l: [[2, 2], [3, 2], [4, 2], [2, 3], [2, 4]]
+        }[kind] || [];
+        return shapeReviewBoard(shapeCells);
+      }
+
+      function matchShapeForReview(forcedKind = "") {
+        if (isResolving) {
+          return;
+        }
+        const reviewKinds = ["line5", "line4", "cross", "l", "t"];
+        const kind = reviewKinds.includes(forcedKind)
+          ? forcedKind
+          : reviewKinds[shapeDemoIndex % reviewKinds.length];
+        shapeDemoIndex += 1;
+        clearIdleHint();
+        selected = null;
+        board = shapeBoardForReview(kind);
+        harvestFlashCells.clear();
+        fallAnimations.clear();
+        refillBornCells.clear();
+        refillColumns.clear();
+        superBloomCells.clear();
+        boardParticles = [];
+        const reviewNames = {
+          line5: "Eclipse Seed Rune",
+          line4: "Black Candle Vine",
+          cross: "Witch's Cross",
+          l: "Night Garden L-Bloom",
+          t: "Twin Stem Bloom"
+        };
+        ritualMessage = `<strong>QA match-shape review:</strong> ${reviewNames[kind]} resolving. Press M again for another shape.`;
+        isResolving = true;
+        render();
+        window.setTimeout(async () => {
+          let result = null;
+          try {
+            result = await resolveAnimated({ maxCascades: 1 });
+            ritualMessage = result.matched
+              ? `<strong>Shape review complete:</strong> ${harvestSummary(result)}`
+              : "Shape review did not find a match.";
+            if (result.matched) {
+              pulseOrderCounts(result.gained, result.gainedCells);
+            }
+          } finally {
+            isResolving = false;
+            render();
+            if (result && result.matched) {
+              scheduleBoardParticleClear(result.cascades);
+            }
+          }
+        }, 260);
+      }
+
+      document.addEventListener("keydown", (event) => {
+        if (event.metaKey || event.ctrlKey || event.altKey) {
+          return;
+        }
+        const key = event.key.toLowerCase();
+        if (key === "m") {
+          event.preventDefault();
+          matchShapeForReview();
+        } else if (key === "b") {
+          event.preventDefault();
+          supremeBloomForReview();
+        } else if (key === "n") {
+          event.preventDefault();
+          completeBouquetForReview();
+        }
+      });
     }
 
     function awardRareBloomDrop(result) {
@@ -10408,22 +10430,6 @@
     $("board").addEventListener("touchcancel", handleBoardTouchCancel);
     $("board").addEventListener("click", handleBoardClick);
     $("board").addEventListener("keydown", handleBoardKeyDown);
-    document.addEventListener("keydown", (event) => {
-      if (QA_REVIEW_HOOKS_ENABLED && event.key.toLowerCase() === "m" && !event.metaKey && !event.ctrlKey && !event.altKey) {
-        // Local QA shortcut for shape reward coverage.
-        event.preventDefault();
-        demoMatchShape();
-      } else if (QA_REVIEW_HOOKS_ENABLED && event.key.toLowerCase() === "b" && !event.metaKey && !event.ctrlKey && !event.altKey) {
-        // Local QA shortcut for Supreme Bloom coverage.
-        event.preventDefault();
-        demoSupremeBloom();
-      } else if (QA_REVIEW_HOOKS_ENABLED && event.key.toLowerCase() === "n" && !event.metaKey && !event.ctrlKey && !event.altKey) {
-        // Local QA shortcut for first-three-order ceremony coverage.
-        event.preventDefault();
-        demoCompleteBouquet();
-      }
-    });
-
     window.__bloomAudioProbe = () => ({
       eventCount: bloomAudioEventCount,
       voiceCount: bloomAudioVoiceCount,
@@ -10432,6 +10438,7 @@
       events: bloomAudioEvents.slice()
     });
     window.__bloomReviewHooksEnabled = QA_REVIEW_HOOKS_ENABLED;
+    installLocalReviewHooks();
 
     loadProgress();
     if (!board.length || matches().length || !hasLegalMoves()) {
