@@ -5504,7 +5504,7 @@
       <div class="objective" id="objective">
         <span class="objective-text">Round 1 · Collect Thorn Rose 0/8 and Bone Star 0/6</span>
         <span class="objective-separator">·</span>
-        <span class="moves-counter">Moves 12</span>
+        <span class="moves-counter">Moves 6</span>
       </div>
       <div class="first-session-plaque" id="firstSessionPlaque">
         Match Thorn Rose and Bone Star to complete Round 1: First Bouquet.
@@ -5547,8 +5547,8 @@
         <div class="payoff-stage">
           <div class="bouquet-trophy" id="bouquetTrophy" data-bouquet-payoff-state="sealed" aria-label="Sealed bouquet payoff trophy"></div>
           <div class="restoration-scene" aria-label="Greenhouse restoration before and after">
-            <img class="greenhouse-art greenhouse-art-withered" src="../assets/greenhouse/first_greenhouse_withered.jpg" width="1672" height="941" alt="" decoding="async" loading="eager">
-            <img class="greenhouse-art greenhouse-art-restored" src="../assets/greenhouse/first_greenhouse_restored.jpg" width="1672" height="941" alt="" decoding="async" loading="eager">
+            <img class="greenhouse-art greenhouse-art-withered" src="../assets/greenhouse/first_greenhouse_withered.jpg" width="1672" height="941" alt="" decoding="async" loading="lazy">
+            <img class="greenhouse-art greenhouse-art-restored" src="../assets/greenhouse/first_greenhouse_restored.jpg" width="1672" height="941" alt="" decoding="async" loading="lazy">
             <span class="greenhouse-light" aria-hidden="true"></span>
             <span class="restoration-veil" aria-hidden="true"></span>
             <span class="restoration-cracks" aria-hidden="true"></span>
@@ -5668,7 +5668,7 @@
     const roundTemplates = [
       {
         name: "First Bouquet",
-        moves: 12,
+        moves: 6,
         targets: [
           { flowerId: 5, needed: 8, order: "Velvet Funeral" },
           { flowerId: 1, needed: 6, order: "Saint's Offering" }
@@ -5677,7 +5677,7 @@
       },
       {
         name: "Moonlit Wreath",
-        moves: 10,
+        moves: 8,
         targets: [
           { flowerId: 2, needed: 10, order: "Moonlit Wreath" },
           { flowerId: 4, needed: 9, order: "Amber Keepsake" },
@@ -5693,7 +5693,7 @@
       },
       {
         name: "Bloodroot Compact",
-        moves: 10,
+        moves: 7,
         targets: [
           { flowerId: 3, needed: 14, order: "Bloodroot Compact" },
           { flowerId: 0, needed: 13, order: "Solar Ash" }
@@ -7516,7 +7516,8 @@
       const hero = document.querySelector(".hero");
       const main = document.querySelector(".main");
       const mobilePlinth = $("mobileGreenhousePlinth");
-      const cssStageSrc = focusedSliceRound() && !roundComplete
+      const activePlayUsesWitheredArt = focusedSliceRound() && !roundComplete;
+      const cssStageSrc = activePlayUsesWitheredArt
         ? activeGreenhouseStages.withered.src
         : stage.src;
       document.body.dataset.activeGreenhouseStage = stageKey;
@@ -7525,8 +7526,11 @@
       if (stageEl) {
         stageEl.dataset.stageKey = stageKey;
       }
-      if (stageArt && stageArt.getAttribute("src") !== stage.src) {
-        stageArt.src = stage.src;
+      const stageArtSrc = activePlayUsesWitheredArt
+        ? activeGreenhouseStages.withered.src
+        : stage.src;
+      if (stageArt && stageArt.getAttribute("src") !== stageArtSrc) {
+        stageArt.src = stageArtSrc;
       }
       if (stageArt) {
         stageArt.width = stage.width;

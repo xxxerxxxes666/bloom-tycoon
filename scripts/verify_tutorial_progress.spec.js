@@ -213,7 +213,7 @@ test("guided Round 1 payoff keeps one dominant action", async ({ page }) => {
   await expect(page.locator("#objective")).toContainText("Amber Seed");
   await expect(page.locator("#objective")).toContainText("Thorn Rose");
   await expect(page.locator("#objective")).toContainText("Cursed Thorn");
-  await expect(page.locator("#objective .moves-counter")).toHaveText("Moves 10");
+  await expect(page.locator("#objective .moves-counter")).toHaveText("Moves 8");
   await expect(page.locator("#firstSwapCue")).toContainText("Crack the marked thorns");
   await expect(page.locator(".tile[tabindex='0']")).toHaveCount(1);
   await expect(page.locator(".tile[tabindex='0']")).toBeFocused();
@@ -394,6 +394,7 @@ test("keyboard play follows the board and payoff focus", async ({ page }) => {
   await expect(page.locator("#nextOrderBtn")).toBeFocused();
   report = await visibleReport(page);
   expect(report.visibleNonTileButtons).toEqual(["Next Order → Moonlit Wreath"]);
+  await page.waitForFunction(() => Array.from(document.images).every((image) => image.complete), null, { timeout: 5000 });
   await page.reload({ waitUntil: "networkidle" });
   await expect(page.locator("#tutorialCopy")).toHaveText("Tap Next Order.");
   await expect(page.locator("#nextOrderBtn")).toBeFocused();
