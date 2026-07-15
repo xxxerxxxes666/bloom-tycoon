@@ -8775,6 +8775,15 @@
       saveProgress();
     }
 
+    function concludeTutorial() {
+      if (tutorialStartTimer && window.clearTimeout) {
+        window.clearTimeout(tutorialStartTimer);
+        tutorialStartTimer = null;
+      }
+      tutorialSkipped = true;
+      tutorialActive = false;
+    }
+
     function scheduleFreshTutorial() {
       if (tutorialSkipped || tutorialActive || currentRound !== 1 || roundComplete || hasMadeValidMove) {
         return;
@@ -10461,6 +10470,9 @@
         ? focusedSliceCompletionMessage(plan, streakPayout)
         : `<strong>${plan.name} fulfilled.</strong> <strong>Bouquet Streak ${bouquetStreak}:</strong> +${streakPayout.total} coins (${plan.reward.coins} base + ${streakPayout.bonus} streak bonus at ${streakPayout.percent}%), and ${plan.reward.item} placed in Chest Storage.${nextBouquetStreakTargetCopy()}`;
       ritualMessage = carryMessage ? `${carryMessage} ${completionMessage}` : completionMessage;
+      if (focusedSliceRound(plan)) {
+        tutorialActive = true;
+      }
       pulseBouquetSealFeedback();
       if (plan.round >= 2) {
         pulseNextOrderReady();
@@ -11029,6 +11041,9 @@
       } else {
         restoredGreenhouseHandoff = false;
       }
+      if (secondUpgradeNextOrder) {
+        concludeTutorial();
+      }
       render();
       if (restoredGreenhouseNextOrder || secondUpgradeNextOrder) {
         focusRestoredNextOrderViewport();
@@ -11068,6 +11083,7 @@
       roundThreeConservatoryRaised = false;
       hasMadeValidMove = false;
       roundComplete = false;
+      concludeTutorial();
       const plan = buildRoundPlan(1);
       moves = plan.moves;
       counts = [0, 0, 0, 0, 0, 0];
@@ -12499,6 +12515,9 @@
           || clearedCursedThorns > 0;
         tutorialSkipped = Boolean(state.tutorialSkipped);
         tutorialActive = !tutorialSkipped && Boolean(state.tutorialActive);
+        if (roundComplete && currentRound <= FOCUSED_LEVEL_COUNT) {
+          tutorialActive = true;
+        }
         restoredRoundTwoGuideMoves = Math.max(0, Math.min(
           RESTORED_ROUND_TWO_GUIDE_LIMIT,
           Math.floor(Number(state.restoredRoundTwoGuideMoves) || 0)

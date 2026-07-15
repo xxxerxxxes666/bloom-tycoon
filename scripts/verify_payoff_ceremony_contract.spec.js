@@ -127,6 +127,30 @@ async function expectActiveBoard(page) {
   expect(active).toMatchObject({ boardVisible: true, tiles: 64, overflowX: false });
 }
 
+async function expectCleanReplayBoard(page) {
+  await expectActiveBoard(page);
+  await expect(page.locator("#tutorialPanel")).toBeHidden();
+  await expect(page.locator("#tutorialHelpBtn")).toBeVisible();
+  const buttons = await page.evaluate(() => {
+    const visible = (node) => {
+      if (!node) return false;
+      const style = window.getComputedStyle(node);
+      const rect = node.getBoundingClientRect();
+      return style.display !== "none"
+        && style.visibility !== "hidden"
+        && Number(style.opacity || 1) !== 0
+        && rect.width > 0
+        && rect.height > 0;
+    };
+    return Array.from(document.querySelectorAll("button"))
+      .filter((button) => visible(button) && !button.closest(".board"))
+      .map((button) => button.textContent.trim())
+      .filter(Boolean);
+  });
+  expect(buttons.length, "clean active board keeps the non-board action cap").toBeLessThanOrEqual(2);
+  expect(buttons).toContain("Help");
+}
+
 async function clickPrimary(page) {
   await page.locator("#roundOneRestoration button:not([hidden])").click();
   await page.waitForTimeout(450);
@@ -178,7 +202,7 @@ async function runJourney(page, label, includeRetry) {
   await expectCeremony(page, "Next Order", `work/pass2-${label}-round2-upgraded.png`);
   await assertReloadKeeps(page, "Next Order", `work/pass2-${label}-round2-upgraded-reload.png`);
   await clickPrimary(page);
-  await expectActiveBoard(page);
+  await expectCleanReplayBoard(page);
   await expect(page.locator(".moves-counter")).toContainText("Moves 14");
 
   await completeRoundWithReviewKey(page);
@@ -188,7 +212,7 @@ async function runJourney(page, label, includeRetry) {
   await expectCeremony(page, "Play Again", `work/pass2-${label}-round3-raised.png`, "Play again.");
   await assertReloadKeeps(page, "Play Again", `work/pass2-${label}-round3-raised-reload.png`, "Play again.");
   await clickPrimary(page);
-  await expectActiveBoard(page);
+  await expectCleanReplayBoard(page);
 }
 
 test("payoff ceremony contract desktop journey", async ({ page }) => {
