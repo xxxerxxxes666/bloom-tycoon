@@ -93,8 +93,8 @@ for (const config of [
     expect(report.dormantPreviewNodes, "future preview DOM is absent").toBe(0);
     expect(report.nodes, "focused runtime DOM budget").toBeLessThanOrEqual(700);
     expect(report.images, "focused runtime image budget").toBeLessThanOrEqual(90);
-    expect(report.filteredElements, "focused filter budget").toBeLessThanOrEqual(80);
-    expect(report.shadowedElements, "focused shadow budget").toBeLessThanOrEqual(125);
+    expect(report.filteredElements, "focused filter budget").toBeLessThanOrEqual(60);
+    expect(report.shadowedElements, "focused shadow budget").toBeLessThanOrEqual(95);
     expect(report.animatedElements, "focused idle animation budget").toBeLessThanOrEqual(4);
     expect(report.meaningfulBars, "one bouquet bar plus one greenhouse bar").toHaveLength(2);
     expect(report.bouquetProgressText).toMatch(/Bouquet .* -> \+\d+ coins/);

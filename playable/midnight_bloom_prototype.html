@@ -1667,7 +1667,7 @@
 
     .tile.swap-glide {
       z-index: 5;
-      animation: swap-glide 210ms cubic-bezier(.16,.84,.22,1) both;
+      animation: swap-glide 185ms cubic-bezier(.16,.84,.22,1) both;
       will-change: transform;
     }
 
@@ -5000,6 +5000,26 @@
     body.round-one-active.round-one-complete .controls,
     body.round-one-active.round-one-complete .bottom {
       display: none !important;
+    }
+    body.round-one-active:not(.round-one-complete) #roundOneRestoration,
+    body.restored-next-order-focus:not(.round-two-upgrade-pending):not(.round-two-upgrade-complete) #roundOneRestoration,
+    body.round-three-focus-active:not(.round-three-final-pending):not(.round-three-final-complete) #roundOneRestoration,
+    body.round-one-active .bottom,
+    body.restored-next-order-focus .bottom,
+    body.round-three-focus-active .bottom {
+      content-visibility: hidden;
+      contain: layout style paint;
+    }
+    body.round-one-active:not(.round-one-complete) #roundOneRestoration *,
+    body.restored-next-order-focus:not(.round-two-upgrade-pending):not(.round-two-upgrade-complete) #roundOneRestoration *,
+    body.round-three-focus-active:not(.round-three-final-pending):not(.round-three-final-complete) #roundOneRestoration *,
+    body.round-one-active .bottom *,
+    body.restored-next-order-focus .bottom *,
+    body.round-three-focus-active .bottom * {
+      animation: none !important;
+      filter: none !important;
+      box-shadow: none !important;
+      transition: none !important;
     }
     body.round-two-upgrade-pending .left,
     body.round-two-upgrade-complete .left,
@@ -8962,7 +8982,7 @@
       selected = null;
       isResolving = true;
       render();
-      await delay(210);
+      await delay(185);
       clearSwapGlide();
       let result = null;
       let schedulePostResolveIdleHint = false;
@@ -9720,12 +9740,12 @@
           chargeSupreme(effectRareCells);
         }
 
-        await delay(wave.rare ? 220 : Math.max(120, 170 - cascadeIndex * 14));
+        await delay(wave.rare ? 180 : Math.max(95, 125 - cascadeIndex * 10));
         clearWaveCells(wave);
         queueSettleSparks(cascadeIndex);
         playBloomSound("settle", { cascade: cascadeIndex, drops: settledCells.size });
         render();
-        await delay(Math.min(310, 220 + cascadeIndex * 22));
+        await delay(Math.min(235, 160 + cascadeIndex * 16));
       }
 
       harvestFlashCells.clear();
