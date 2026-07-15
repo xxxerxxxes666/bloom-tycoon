@@ -71,10 +71,12 @@ async function clickGuidedSwap(page) {
 async function keyboardGuidedSwap(page) {
   const pair = await page.locator(".tile.idle-hint").evaluateAll((tiles) => tiles.map((tile) => ({
     x: Number(tile.dataset.x),
-    y: Number(tile.dataset.y)
+    y: Number(tile.dataset.y),
+    focusable: tile.getAttribute("tabindex") === "0"
   })));
   expect(pair).toHaveLength(2);
-  const [first, second] = pair;
+  const first = pair.find((tile) => tile.focusable) || pair[0];
+  const second = pair.find((tile) => tile.x !== first.x || tile.y !== first.y);
   const key = second.x > first.x
     ? "ArrowRight"
     : second.x < first.x
