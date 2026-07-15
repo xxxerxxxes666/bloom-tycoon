@@ -57,6 +57,7 @@ async function runtimeReport(page) {
       meaningfulBars,
       bouquetProgressText: document.querySelector("#bouquetProgressLabel")?.textContent.trim() || "",
       greenhouseNextText: document.querySelector(".restoration-dial-phase")?.textContent.trim() || "",
+      visibleProgressText: document.body.innerText,
       visibleButtons: Array.from(document.querySelectorAll("button"))
         .filter((node) => visible(node) && !node.closest(".board"))
         .map((node) => node.textContent.trim())
@@ -96,6 +97,7 @@ for (const config of [
     expect(report.meaningfulBars, "one bouquet bar plus one greenhouse bar").toHaveLength(2);
     expect(report.bouquetProgressText).toMatch(/Bouquet .* -> \+\d+ coins/);
     expect(report.greenhouseNextText).toMatch(/Restore|Unlock|Raise|Replay/);
+    expect(report.visibleProgressText).not.toMatch(/\b(?:SAP|MANA|BLOOD)\b|\d[\d,]*\s*\/\s*\d[\d,]*\s*XP|Greenhouse \+\d+ XP|Apothecary \+\d+ XP/);
     expect(report.visibleButtons.length, "Round 1 non-tile controls").toBeLessThanOrEqual(2);
     expect(report.brokenImages).toEqual([]);
     expect(report.overflowX).toBe(false);

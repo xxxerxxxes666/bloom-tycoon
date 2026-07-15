@@ -339,102 +339,6 @@
       text-shadow: 0 2px 0 #000;
     }
 
-    .xp {
-      height: 58px;
-      margin: 12px 0 8px;
-      padding: 8px 13px;
-      position: relative;
-      overflow: hidden;
-      border: 2px solid #9a6b37;
-      border-radius: 30px 30px 34px 34px;
-      background:
-        radial-gradient(ellipse at 10% 50%, #120807 0 18px, #0000 19px),
-        radial-gradient(ellipse at 90% 50%, #120807 0 18px, #0000 19px),
-        linear-gradient(180deg, #3a2819, #090606 48%, #020101);
-      box-shadow:
-        inset 0 0 0 2px #000,
-        inset 0 0 28px #000,
-        0 0 0 1px #000,
-        0 0 18px #000,
-        0 0 10px #7f4b1d55;
-    }
-
-    .xp::before {
-      content: attr(data-vial);
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 4;
-      color: #f3d29b;
-      font-size: 10px;
-      font-weight: 900;
-      letter-spacing: 1.4px;
-      text-shadow: 0 2px 0 #000, 0 0 7px #000;
-      pointer-events: none;
-    }
-
-    .xp::after {
-      content: "";
-      position: absolute;
-      inset: 5px 10px 23px;
-      z-index: 3;
-      border-radius: 999px;
-      background: linear-gradient(180deg, #fff7cc7a, #fff7cc25 45%, #0000);
-      box-shadow: inset 0 0 7px #fff0b422;
-      pointer-events: none;
-      mix-blend-mode: screen;
-    }
-
-    .xp-fill {
-      display: block;
-      height: 100%;
-      width: 55%;
-      min-width: 24px;
-      border-radius: 999px 18px 18px 999px;
-      position: relative;
-      z-index: 1;
-      background:
-        radial-gradient(circle at 26% 22%, #f3d879aa 0, #0000 18%),
-        linear-gradient(180deg, #9dc25b, #526f24 48%, #1c260c);
-      box-shadow:
-        inset 0 7px 8px #f6e29a25,
-        inset 0 -11px 14px #0009,
-        0 0 12px #6b8f31;
-      transition: width 280ms ease;
-    }
-
-    .xp-fill::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      background:
-        repeating-linear-gradient(90deg, #0000 0 13px, #fff3b626 14px, #0000 16px),
-        linear-gradient(90deg, #0008, #0000 18%, #fff3b624 58%, #0008);
-      mix-blend-mode: screen;
-    }
-
-    .apothecary-fill {
-      background:
-        radial-gradient(circle at 28% 22%, #f4d8ffaa 0, #0000 18%),
-        linear-gradient(180deg, #2e72b5, #54298d 52%, #180d33);
-      box-shadow:
-        inset 0 7px 8px #e6c3ff25,
-        inset 0 -11px 14px #0009,
-        0 0 12px #4a46a8;
-    }
-
-    .faction-fill {
-      background:
-        radial-gradient(circle at 28% 22%, #ffd5b0aa 0, #0000 18%),
-        linear-gradient(180deg, #d94d43, #8a1418 52%, #310000);
-      box-shadow:
-        inset 0 7px 8px #ffd2a425,
-        inset 0 -11px 14px #0009,
-        0 0 12px #8a1418;
-    }
-
     .main {
       grid-column: 2;
       min-width: 0;
@@ -4655,24 +4559,18 @@
         height: 21px;
       }
 
-      body.round-one-active .greenhouse-card,
       body.round-one-active .active-orders-card,
-      body.restored-next-order-focus .greenhouse-card,
       body.restored-next-order-focus .active-orders-card {
         padding: 8px 9px;
       }
 
-      body.round-one-active .greenhouse-card .panel-title,
       body.round-one-active .active-orders-card .panel-title,
-      body.restored-next-order-focus .greenhouse-card .panel-title,
       body.restored-next-order-focus .active-orders-card .panel-title {
         gap: 7px;
         margin-bottom: 0;
       }
 
-      body.round-one-active .greenhouse-card h3,
       body.round-one-active .active-orders-card h3,
-      body.restored-next-order-focus .greenhouse-card h3,
       body.restored-next-order-focus .active-orders-card h3 {
         font-size: 14px;
         letter-spacing: 0.9px;
@@ -4684,21 +4582,9 @@
         height: 32px;
       }
 
-      body.round-one-active .panel-gate,
-      body.restored-next-order-focus .panel-gate {
-        width: 24px;
-        height: 24px;
-      }
-
       body.round-one-active .small,
       body.restored-next-order-focus .small {
         font-size: 11px;
-      }
-
-      body.round-one-active .vial-meter,
-      body.restored-next-order-focus .vial-meter {
-        height: 28px;
-        margin: 5px 0 6px;
       }
 
       body.round-one-active .order-line,
@@ -4938,16 +4824,12 @@
 
     }
 
-    body.round-one-active .greenhouse-card,
     body.round-one-active .active-orders-card,
-    body.restored-next-order-focus .greenhouse-card,
     body.restored-next-order-focus .active-orders-card {
       display: none;
     }
 
-    body.round-one-active .greenhouse-card,
     body.round-one-active .active-orders-card,
-    body.restored-next-order-focus .greenhouse-card,
     body.restored-next-order-focus .active-orders-card {
       min-height: 0;
       padding: 12px;
@@ -5474,11 +5356,6 @@
       18% { opacity:1; transform:translate(var(--coin-rise-x),-34px) scale(1) rotateY(130deg); }
       72% { opacity:1; transform:translate(var(--coin-mid-x),58px) scale(.88) rotateY(340deg); }
       100% { opacity:0; transform:translate(var(--coin-end-x),95px) scale(.56) rotateY(520deg); }
-    }
-    @keyframes greenhouse-xp-confirm {
-      0% { transform:scale(.985); }
-      45% { transform:scale(1.015); }
-      100% { transform:scale(1); }
     }
     @keyframes cue-breathe { to { color:#fff; text-shadow:0 0 12px #e2a94d; } }
     @keyframes cue-refused {
@@ -6118,18 +5995,6 @@
         <span class="greenhouse-restoration-dial" id="heroRestorationDial" aria-hidden="true"></span>
       </div>
 
-      <!-- Left panel progression placeholders stay separate from the chest system. -->
-      <div class="side-card greenhouse-card">
-        <div class="panel-title">
-          <img class="panel-icon" src="../assets/tiles/96/withered_sun_medallion.png" srcset="../assets/tiles/48/withered_sun_medallion.png 48w, ../assets/tiles/96/withered_sun_medallion.png 96w" sizes="42px" alt="">
-          <h3>Greenhouse</h3>
-          <span class="panel-gate" aria-hidden="true">›</span>
-        </div>
-        <div class="small" id="greenhouseLevel">Level 4</div>
-        <div class="xp vial-meter" data-vial="SAP"><span class="xp-fill" id="greenhouseXpFill"></span></div>
-        <div class="small" id="greenhouseXpText">1,240 / 2,000 XP</div>
-      </div>
-
       <div class="side-card active-orders-card">
         <div class="panel-title">
           <img class="panel-icon" src="../assets/tiles/96/crimson_rose_rune.png" srcset="../assets/tiles/48/crimson_rose_rune.png 48w, ../assets/tiles/96/crimson_rose_rune.png 96w" sizes="42px" alt="">
@@ -6399,7 +6264,7 @@
           { flowerId: 5, needed: 8, order: "Velvet Funeral" },
           { flowerId: 1, needed: 6, order: "Saint's Offering" }
         ],
-        reward: { coins: 120, greenhouse: 180, apothecary: 60, faction: 35, item: "First Bouquet Coffer", flowerId: 5 }
+        reward: { coins: 120, item: "First Bouquet Coffer", flowerId: 5 }
       },
       {
         name: "Moonlit Wreath",
@@ -6415,7 +6280,7 @@
           { x: 1, y: 1, hp: 1 },
           { x: 2, y: 1, hp: 1 }
         ],
-        reward: { coins: 150, greenhouse: 150, apothecary: 130, faction: 45, item: "Moonlit Wreath Cache", flowerId: 2 }
+        reward: { coins: 150, item: "Moonlit Wreath Cache", flowerId: 2 }
       },
       {
         name: "Bloodroot Compact",
@@ -6424,7 +6289,7 @@
           { flowerId: 3, needed: 14, order: "Bloodroot Compact" },
           { flowerId: 0, needed: 13, order: "Solar Ash" }
         ],
-        reward: { coins: 180, greenhouse: 210, apothecary: 90, faction: 60, item: "Bloodroot Compact", flowerId: 3 }
+        reward: { coins: 180, item: "Bloodroot Compact", flowerId: 3 }
       }
     ];
     const chestState = {
@@ -6535,10 +6400,6 @@
     let pendingRuneTendedSoil = false;
     let activeRuneTendedSoil = false;
     let shapeDemoIndex = 0;
-    let greenhouse = { level: 4, xp: 1240, next: 2000 };
-    let apothecary = { level: 2, xp: 420, next: 1000 };
-    let faction = { level: 3, xp: 510, next: 1200, title: "Trusted" };
-
     const $ = (id) => document.getElementById(id);
     const flowerIcon48 = (src) => src.replace("/96/", "/48/");
     const flowerIconSrcset = (src) => `${flowerIcon48(src)} 48w, ${src} 96w`;
@@ -8695,7 +8556,6 @@
       $("renewBtn").textContent = roundComplete ? "Next Bouquet" : failed ? "Retry Bouquet" : "Renew Bouquet";
       $("renewBtn").classList.toggle("visible", failed || roundComplete);
       updateChestSummary();
-      renderTycoonPanels();
       $("elements").innerHTML = focusedSliceRound(activePlan) ? "" : flowers.map((flower, index) => `
         <div class="element">
           ${iconMarkup(index, "", flower[0], "element-icon-wrap")}
@@ -10463,33 +10323,10 @@
         <span class="ceremony-rewards">
           <span class="reward-token">✪ +${streakPayout.total}</span>
           ${streakRewardToken}
-          <span class="reward-token">Greenhouse +${reward.greenhouse} XP</span>
-          <span class="reward-token">Apothecary +${reward.apothecary} XP</span>
-          <span class="reward-token">Sub Rosa +${reward.faction} Favor</span>
           <span class="reward-token">${reward.item}</span>
         </span>
         <span class="ceremony-next-target" id="nextStreakTarget">${nextTargetCopy.trim()}</span>
       `;
-    }
-
-    function renderTycoonPanels() {
-      const write = (id, value) => {
-        const node = $(id);
-        if (node) node.textContent = value;
-      };
-      const fill = (id, pct) => {
-        const node = $(id);
-        if (node) node.style.width = `${pct}%`;
-      };
-      write("greenhouseLevel", `Level ${greenhouse.level}`);
-      write("greenhouseXpText", `${greenhouse.xp.toLocaleString()} / ${greenhouse.next.toLocaleString()} XP`);
-      fill("greenhouseXpFill", Math.min(100, (greenhouse.xp / greenhouse.next) * 100));
-      write("apothecaryLevel", `Level ${apothecary.level}`);
-      write("apothecaryXpText", `${apothecary.xp.toLocaleString()} / ${apothecary.next.toLocaleString()} XP`);
-      fill("apothecaryXpFill", Math.min(100, (apothecary.xp / apothecary.next) * 100));
-      write("factionLevel", `Level ${faction.level} · ${faction.title || "Trusted"}`);
-      write("factionXpText", `${faction.xp.toLocaleString()} / ${faction.next.toLocaleString()} Favor`);
-      fill("factionXpFill", Math.min(100, (faction.xp / faction.next) * 100));
     }
 
     function maybeCompleteRound(carryMessage = "") {
@@ -10507,7 +10344,6 @@
       bouquetStreak += 1;
       const streakPayout = completionCoinPayout(plan);
       coins += streakPayout.total;
-      grantTycoonXp(plan.reward.greenhouse, plan.reward.apothecary, plan.reward.faction);
       addChestItem({
         id: `round-${plan.round}-${plan.reward.item.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
         name: plan.reward.item,
@@ -10519,7 +10355,7 @@
       });
       const completionMessage = focusedSliceRound(plan)
         ? focusedSliceCompletionMessage(plan, streakPayout)
-        : `<strong>${plan.name} fulfilled.</strong> <strong>Bouquet Streak ${bouquetStreak}:</strong> +${streakPayout.total} coins (${plan.reward.coins} base + ${streakPayout.bonus} streak bonus at ${streakPayout.percent}%), +${plan.reward.greenhouse} Greenhouse XP, +${plan.reward.apothecary} Apothecary XP, +${plan.reward.faction} Sub Rosa Favor, and ${plan.reward.item} placed in Chest Storage.${nextBouquetStreakTargetCopy()}`;
+        : `<strong>${plan.name} fulfilled.</strong> <strong>Bouquet Streak ${bouquetStreak}:</strong> +${streakPayout.total} coins (${plan.reward.coins} base + ${streakPayout.bonus} streak bonus at ${streakPayout.percent}%), and ${plan.reward.item} placed in Chest Storage.${nextBouquetStreakTargetCopy()}`;
       ritualMessage = carryMessage ? `${carryMessage} ${completionMessage}` : completionMessage;
       pulseBouquetSealFeedback();
       if (plan.round >= 2) {
@@ -10753,22 +10589,6 @@
         bonus,
         total: base + bonus
       };
-    }
-
-    function grantTycoonXp(greenhouseAmount, apothecaryAmount, factionAmount = 0) {
-      addProgress(greenhouse, greenhouseAmount);
-      addProgress(apothecary, apothecaryAmount);
-      addProgress(faction, factionAmount);
-      faction.title = faction.level >= 5 ? "Favored" : "Trusted";
-    }
-
-    function addProgress(track, amount) {
-      track.xp += Math.max(0, Number(amount) || 0);
-      while (track.xp >= track.next) {
-        track.xp -= track.next;
-        track.level += 1;
-        track.next = Math.round(track.next * 1.28);
-      }
     }
 
     function pulseBouquetSealFeedback() {
@@ -12444,9 +12264,8 @@
       if (rune.qty <= 0) {
         chestState.items = chestState.items.filter((item) => item.id !== "eclipse-seed-rune");
       }
-      addProgress(greenhouse, 90);
       pendingRuneTendedSoil = true;
-      ritualMessage = "<strong>Eclipse Seed Rune planted.</strong> Greenhouse +90 XP. <strong>Rune-Tended Soil</strong> is queued: the next bouquet starts with +1 move.";
+      ritualMessage = "<strong>Eclipse Seed Rune planted.</strong> <strong>Rune-Tended Soil</strong> is queued: the next bouquet starts with +1 move.";
       render();
       renderChest();
     }
@@ -12511,9 +12330,6 @@
         tutorialSkipped,
         pendingRuneTendedSoil,
         activeRuneTendedSoil,
-        greenhouse,
-        apothecary,
-        faction,
         boosters,
         bouquetStreak,
         graveSoilCells: [...graveSoilCells],
@@ -12590,10 +12406,6 @@
         }
         pendingRuneTendedSoil = Boolean(state.pendingRuneTendedSoil);
         activeRuneTendedSoil = Boolean(state.activeRuneTendedSoil);
-        greenhouse = validProgressState(state.greenhouse, greenhouse);
-        apothecary = validProgressState(state.apothecary, apothecary);
-        faction = validProgressState(state.faction, faction);
-        faction.title = typeof state.faction?.title === "string" ? state.faction.title : (faction.level >= 5 ? "Favored" : "Trusted");
         boosters = validBoosterState(state.boosters, boosters);
         bouquetStreak = validBouquetStreak(state.bouquetStreak);
         graveSoilCells = validGraveSoilCells(state.graveSoilCells);
@@ -12618,17 +12430,6 @@
         && candidate.every((row) => Array.isArray(row)
           && row.length === BOARD_SIZE
           && row.every((tile) => Number.isInteger(tile) && tile >= 0 && tile < flowers.length));
-    }
-
-    function validProgressState(candidate, fallback) {
-      if (!candidate || typeof candidate !== "object") {
-        return fallback;
-      }
-      return {
-        level: Math.max(1, Number(candidate.level) || fallback.level),
-        xp: Math.max(0, Number(candidate.xp) || fallback.xp),
-        next: Math.max(1, Number(candidate.next) || fallback.next)
-      };
     }
 
     function validBoosterState(candidate, fallback) {

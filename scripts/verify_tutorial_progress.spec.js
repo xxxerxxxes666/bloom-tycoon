@@ -52,6 +52,7 @@ async function visibleReport(page) {
       bouquetText: document.querySelector("#bouquetProgressLabel")?.textContent.trim() || "",
       bouquetNext: document.querySelector("#bouquetProgressNext")?.textContent.trim() || "",
       greenhouseText: document.querySelector(".restoration-dial-phase")?.textContent.trim() || "",
+      visibleProgressText: document.body.innerText,
       bars: bars.map((node) => node.className),
       round: JSON.parse(localStorage.getItem("bloomTycoonPlayableStateV1") || "{}").currentRound || 1,
       overflowX: document.documentElement.scrollWidth > innerWidth + 1,
@@ -143,6 +144,7 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
     brokenImages: []
   });
   expect(report.bars, "exactly bouquet and greenhouse bars").toHaveLength(2);
+  expect(report.visibleProgressText).not.toMatch(/\b(?:SAP|MANA|BLOOD)\b|\d[\d,]*\s*\/\s*\d[\d,]*\s*XP|Greenhouse \+\d+ XP|Apothecary \+\d+ XP/);
 
   await page.locator("#tutorialSkipBtn").click();
   await expect(page.locator("#tutorialPanel")).toBeHidden();
@@ -172,6 +174,7 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
   expect(report.tutorialPrompt).toBe("Match beside thorns.");
   expect(report.tutorialSpotlights).toBeGreaterThanOrEqual(3);
   expect(report.bars, "Round 2 still has one bouquet bar and one greenhouse bar").toHaveLength(2);
+  expect(report.visibleProgressText).not.toMatch(/\b(?:SAP|MANA|BLOOD)\b|\d[\d,]*\s*\/\s*\d[\d,]*\s*XP|Greenhouse \+\d+ XP|Apothecary \+\d+ XP/);
 
   await forceActiveBouquetFailure(page);
   await page.locator("#tutorialHelpBtn").click();
