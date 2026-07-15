@@ -40,6 +40,10 @@ async function visibleContract(page) {
     };
     const visible = (selector) => Array.from(document.querySelectorAll(selector)).filter(isVisible);
     const visibleButtons = visible("#roundOneRestoration button").map((button) => button.textContent.trim());
+    const visibleNonBoardButtons = Array.from(document.querySelectorAll("button"))
+      .filter((button) => isVisible(button) && !button.closest(".board"))
+      .map((button) => button.textContent.trim())
+      .filter(Boolean);
     const visibleRetired = [
       ".restoration-xp-preview",
       ".greenhouse-payoff-ladder",
@@ -72,6 +76,7 @@ async function visibleContract(page) {
       controls: visible(".controls").length,
       objective: visible(".objective").length,
       buttons: visibleButtons,
+      nonBoardButtons: visibleNonBoardButtons,
       retired: visibleRetired,
       text: document.body.innerText,
       overflowX: document.documentElement.scrollWidth > window.innerWidth + 1,
@@ -88,6 +93,8 @@ async function expectCeremony(page, expectedButton, screenshotPath) {
   expect(contract.transactions, "one visible transaction line").toBe(1);
   expect(contract.buttons, "one visible primary action").toHaveLength(1);
   expect(contract.buttons[0]).toContain(expectedButton);
+  expect(contract.nonBoardButtons, "one visible non-board action during ceremony").toHaveLength(1);
+  expect(contract.nonBoardButtons[0]).toContain(expectedButton);
   expect(contract.board, "board hidden during ceremony").toBe(0);
   expect(contract.controls, "controls hidden during ceremony").toBe(0);
   expect(contract.objective, "objective hidden during ceremony").toBe(0);

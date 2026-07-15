@@ -54,6 +54,10 @@ async function visibleReport(page) {
       greenhouseText: document.querySelector(".restoration-dial-phase")?.textContent.trim() || "",
       visibleProgressText: document.body.innerText,
       bars: bars.map((node) => node.className),
+      visibleButtons: Array.from(document.querySelectorAll("button"))
+        .filter((button) => visible(button) && !button.closest(".board"))
+        .map((button) => button.textContent.trim())
+        .filter(Boolean),
       round: JSON.parse(localStorage.getItem("bloomTycoonPlayableStateV1") || "{}").currentRound || 1,
       overflowX: document.documentElement.scrollWidth > innerWidth + 1,
       brokenImages
@@ -161,6 +165,10 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
 
   await completeRoundWithReviewKey(page);
   await expect(page.locator("#tutorialCopy")).toHaveText("Coins restore the greenhouse.");
+  await expect(page.locator("#tutorialPanel")).toBeHidden();
+  await expect(page.locator("#tutorialHelpBtn")).toBeHidden();
+  report = await visibleReport(page);
+  expect(report.visibleButtons).toEqual(["Restore Greenhouse · 100 coins"]);
   await expect(page.locator("#bouquetProgressNext")).toContainText("Coins ready -> Restore First Bouquet Glass");
   await page.locator("#restoreGreenhouseBtn").click();
   await expect(page.locator("#nextOrderBtn")).toBeVisible({ timeout: 5000 });

@@ -1046,6 +1046,20 @@
         0 10px 24px #000c;
     }
 
+    body.focused-payoff-active .tutorial-panel,
+    body.focused-payoff-active .tutorial-help,
+    body.focused-payoff-active .first-swap-cue {
+      display: none !important;
+    }
+
+    body.tutorial-active.focused-payoff-active .restore-btn:not([hidden]),
+    body.tutorial-active.focused-payoff-active .next-order-btn:not([hidden]) {
+      box-shadow:
+        0 0 0 2px #120906,
+        0 0 24px #d7b16d7a,
+        inset 0 0 16px #000;
+    }
+
 
     body.round-one-active .tile img,
     body.restored-next-order-focus .tile img,
@@ -8319,6 +8333,7 @@
       document.body.classList.toggle("round-three-final-complete", roundThreeFinalComplete);
       document.body.classList.toggle("round-three-focus-active", currentRound === 3 && !roundComplete && roundOneRestored && roundTwoGreenhouseUpgraded);
       document.body.classList.toggle("focused-slice-failed", activePlan.round <= 3 && isBouquetFailed(activePlan));
+      document.body.classList.toggle("focused-payoff-active", focusedSliceRound(activePlan) && roundComplete);
       document.body.classList.toggle("thorn-lesson-active", activePlan.round === 2 && Boolean(activePlan.thornGoal) && thornGoalProgress(activePlan) === 0 && !roundComplete);
       document.body.classList.toggle("round-two-followup-cue", isRestoredRoundTwoGuideActive() && hasMadeValidMove && idleHintCells.size === 2 && !roundComplete);
       document.body.classList.toggle("first-move-made", hasMadeValidMove);
