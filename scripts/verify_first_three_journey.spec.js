@@ -193,11 +193,23 @@ async function clickGuidedSwap(page, strategy = "optimized") {
       y: String(tile.y)
     }));
     expect(pair, "guided pair").toHaveLength(2);
+    async function clickTileCenter(tile) {
+      const point = await page.evaluate(({ x, y }) => {
+        const node = document.querySelector(`.tile[data-x="${x}"][data-y="${y}"]`);
+        if (!node) return null;
+        const rect = node.getBoundingClientRect();
+        return {
+          x: rect.left + rect.width / 2,
+          y: rect.top + rect.height / 2
+        };
+      }, tile);
+      expect(point, `tile ${tile.x},${tile.y} center`).not.toBeNull();
+      await page.mouse.click(point.x, point.y);
+    }
     try {
-      await page.locator(`.tile[data-x="${pair[0].x}"][data-y="${pair[0].y}"]`).click({ force: true });
-      // The first selection re-renders the board. Resolve the second tile again
-      // so a detached pre-render node cannot make the fairness audit flaky.
-      await page.locator(`.tile[data-x="${pair[1].x}"][data-y="${pair[1].y}"]`).click({ force: true });
+      await clickTileCenter(pair[0]);
+      // The first selection re-renders the board, so resolve the second tile center again.
+      await clickTileCenter(pair[1]);
       await page.waitForFunction(() => (
         document.querySelector("#roundOneRestoration")?.offsetParent
         || document.querySelector("#renewBtn")?.classList.contains("visible")

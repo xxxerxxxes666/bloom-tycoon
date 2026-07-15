@@ -131,6 +131,7 @@ async function expectCleanReplayBoard(page) {
   await expectActiveBoard(page);
   await expect(page.locator("#tutorialPanel")).toBeHidden();
   await expect(page.locator("#tutorialHelpBtn")).toBeVisible();
+  await expect(page.locator("#tutorialHelpBtn")).toHaveAttribute("aria-label", "Replay Tutorial");
   const buttons = await page.evaluate(() => {
     const visible = (node) => {
       if (!node) return false;
@@ -148,7 +149,7 @@ async function expectCleanReplayBoard(page) {
       .filter(Boolean);
   });
   expect(buttons.length, "clean active board keeps the non-board action cap").toBeLessThanOrEqual(2);
-  expect(buttons).toContain("Help");
+  expect(buttons).toContain("?");
   const mobileFooter = await page.evaluate(() => {
     const visible = (node) => {
       if (!node) return false;

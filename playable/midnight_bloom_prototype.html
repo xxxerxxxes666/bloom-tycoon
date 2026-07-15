@@ -1005,10 +1005,13 @@
     .tutorial-help {
       display: block;
       margin: 8px auto 0;
+      width: 30px;
       min-height: 30px;
-      padding: 6px 10px;
-      border-radius: 3px;
+      padding: 0;
+      border-radius: 50%;
       box-shadow: inset 0 0 8px #000;
+      font-size: 14px;
+      line-height: 1;
     }
 
     body.round-one-active:not(.round-one-complete) .tile.idle-hint,
@@ -1721,8 +1724,8 @@
         0 0 20px #d7b16d55,
         0 0 30px #5f833833;
       text-shadow: 0 2px 4px #000;
-      animation: bouquet-bind-seal 1180ms cubic-bezier(.12,.82,.18,1) forwards;
-      will-change: transform, opacity, filter;
+      animation: bouquet-bind-seal 720ms cubic-bezier(.12,.82,.18,1) forwards;
+      will-change: transform, opacity;
     }
 
     .bouquet-bind-seal::before {
@@ -3327,22 +3330,18 @@
       0% {
         opacity: 0;
         transform: translateY(10px) scale(.72) rotate(-2deg);
-        filter: brightness(.8);
       }
       24% {
         opacity: 1;
         transform: translateY(0) scale(1.04) rotate(0deg);
-        filter: brightness(1.28);
       }
       68% {
         opacity: 1;
         transform: translateY(-5px) scale(1);
-        filter: brightness(1.06);
       }
       100% {
         opacity: 0;
         transform: translateY(-20px) scale(.9);
-        filter: brightness(.92);
       }
     }
 
@@ -5527,7 +5526,7 @@
       <div class="board" id="board" role="grid" aria-label="Bloom Tycoon match board" aria-rowcount="8" aria-colcount="8"></div>
       <div class="mobile-greenhouse-plinth" id="mobileGreenhousePlinth" aria-hidden="true">
       </div>
-      <button class="tutorial-help" id="tutorialHelpBtn" type="button">Help</button>
+      <button class="tutorial-help" id="tutorialHelpBtn" type="button" aria-label="Replay Tutorial" title="Replay Tutorial">?</button>
       <div class="controls">
         <button class="btn" id="shuffleBtn" type="button">
           <span>Shuffle (-1 move)</span>
@@ -5547,8 +5546,8 @@
         <div class="payoff-stage">
           <div class="bouquet-trophy" id="bouquetTrophy" data-bouquet-payoff-state="sealed" aria-label="Sealed bouquet payoff trophy"></div>
           <div class="restoration-scene" aria-label="Greenhouse restoration before and after">
-            <img class="greenhouse-art greenhouse-art-withered" src="../assets/greenhouse/first_greenhouse_withered.jpg" width="1672" height="941" alt="" decoding="async" loading="lazy">
-            <img class="greenhouse-art greenhouse-art-restored" src="../assets/greenhouse/first_greenhouse_restored.jpg" width="1672" height="941" alt="" decoding="async" loading="lazy">
+            <img class="greenhouse-art greenhouse-art-withered" src="../assets/greenhouse/first_greenhouse_withered.jpg" width="1672" height="941" alt="" decoding="async" loading="eager">
+            <img class="greenhouse-art greenhouse-art-restored" src="../assets/greenhouse/first_greenhouse_restored.jpg" width="1672" height="941" alt="" decoding="async" loading="eager">
             <span class="greenhouse-light" aria-hidden="true"></span>
             <span class="restoration-veil" aria-hidden="true"></span>
             <span class="restoration-cracks" aria-hidden="true"></span>
@@ -9992,7 +9991,7 @@
             return;
           }
           queueBouquetBindingSeal(target, gained[target.flowerId], targetRect);
-        }, 430);
+        }, 260);
       });
     }
 
@@ -10081,7 +10080,7 @@
       `;
       document.body.appendChild(seal);
       seal.addEventListener("animationend", () => seal.remove(), { once: true });
-      window.setTimeout(() => seal.remove(), 860);
+      window.setTimeout(() => seal.remove(), 760);
     }
 
     function scheduleOrderPulseClear() {
