@@ -852,24 +852,9 @@
       border-color: #5e412d;
     }
 
-    .objective-boon.streak {
-      color: #f3dca0;
-      border-color: #b3814e;
-    }
-
-    .objective-boon.streak.target {
-      color: #d8efad;
-      border-color: #8fac57;
-    }
-
     .objective-boon.thorn {
       color: #ffb6a6;
       border-color: #8a332a;
-    }
-
-    .objective-boon.pattern {
-      color: #d8c7ff;
-      border-color: #6f5a8f;
     }
 
     .objective-text {
@@ -4388,18 +4373,6 @@
     body.round-three-final-complete #renewBtn {
       display: none !important;
     }
-    body.round-one-active.round-one-complete #bouquetStreakBadge,
-    body.round-one-active.round-one-complete #nextStreakTargetBadge,
-    body.round-two-upgrade-pending #bouquetStreakBadge,
-    body.round-two-upgrade-complete #bouquetStreakBadge,
-    body.round-two-upgrade-pending #nextStreakTargetBadge,
-    body.round-two-upgrade-complete #nextStreakTargetBadge,
-    body.round-three-final-pending #bouquetStreakBadge,
-    body.round-three-final-complete #bouquetStreakBadge,
-    body.round-three-final-pending #nextStreakTargetBadge,
-    body.round-three-final-complete #nextStreakTargetBadge {
-      display: none !important;
-    }
     body.restored-greenhouse-handoff .left,
     body.restored-greenhouse-handoff .first-session-plaque,
     body.restored-greenhouse-handoff .controls, body.restored-greenhouse-handoff #roundCeremony { display:none!important; }
@@ -5632,8 +5605,6 @@
         reward: { coins: 180, item: "Bloodroot Compact", flowerId: 3 }
       }
     ];
-    const STREAK_COIN_BONUS_STEP = 5;
-    const STREAK_COIN_BONUS_CAP = 25;
     const MOONLIT_GREENHOUSE_UPGRADE_COST = 120;
     const BLOODROOT_CONSERVATORY_COST = 180;
     const RESTORED_ROUND_TWO_GUIDE_LIMIT = 2;
@@ -5656,7 +5627,6 @@
     let counts = [0, 0, 0, 0, 0, 0];
     let cursedThorns = [];
     let clearedCursedThorns = 0;
-    let bouquetStreak = 0;
     let ritualMessage = "Match botanical elements to feed the First Bouquet.";
     let harvestFlashCells = new Set();
     let transmuteFlashCell = "";
@@ -7862,9 +7832,6 @@
         <span class="objective-text">Round ${plan.round} · ${roundComplete ? "Bouquet Complete" : failed ? "Bouquet Withered" : objectiveVerb}</span>
         ${goalMarkup(plan)}
         ${thornObjectiveHintMarkup(plan)}
-        ${shapeDiscoveryHintMarkup()}
-        ${bouquetStreakMarkup()}
-        ${nextStreakTargetMarkup()}
         <span class="objective-separator">·</span>
         <span class="moves-counter">Moves ${moves}</span>
       `;
@@ -8038,43 +8005,11 @@
       boardEl.appendChild(arrow);
     }
 
-    function bouquetStreakMarkup() {
-      if (!bouquetStreak || focusedSliceRound() || isRestoredNextOrderFocus()) {
-        return "";
-      }
-      const bonusPercent = bouquetStreakBonusPercent(bouquetStreak);
-      return `<span class="objective-boon streak" id="bouquetStreakBadge">Bouquet Streak ${bouquetStreak} · +${bonusPercent}% coins</span>`;
-    }
-
-    function nextStreakTargetMarkup() {
-      if (!roundComplete || focusedSliceRound()) {
-        return "";
-      }
-      const nextStreak = bouquetStreak + 1;
-      const bonusPercent = bouquetStreakBonusPercent(nextStreak);
-      return `<span class="objective-boon streak target" id="nextStreakTargetBadge">Next Streak Target ${nextStreak} · +${bonusPercent}% coins</span>`;
-    }
-
     function thornObjectiveHintMarkup(plan = activeRoundPlan()) {
       if (!plan.thornGoal || roundComplete || thornGoalComplete(plan) || isRestoredRoundTwoGuideActive()) {
         return "";
       }
       return '<span class="objective-boon thorn" id="thornObjectiveHint">Match beside Cursed Thorns</span>';
-    }
-
-    function shapeDiscoveryHintMarkup() {
-      const plan = activeRoundPlan();
-      if (focusedSliceRound(plan) || roundComplete || isRestoredNextOrderFocus() || (bouquetStreak < 1 && plan.round < 2)) {
-        return "";
-      }
-      return '<span class="objective-boon pattern" id="shapeDiscoveryHint">L/T/cross = Shape Bloom</span>';
-    }
-
-    function patternDiscoveryCopy() {
-      if (isRestoredNextOrderFocus()) {
-        return "";
-      }
-      return " Shape Bloom: make L, T, or cross matches in normal play for Night Garden, Twin Stem, or Witch's Cross rewards.";
     }
 
     function thornObjectiveHintCopy(plan = activeRoundPlan()) {
@@ -8084,18 +8019,9 @@
       return " Cursed Thorn Goal: make matches beside the vine-crowned blockers to crack and clear them.";
     }
 
-    function nextBouquetStreakTargetCopy() {
-      const nextStreak = bouquetStreak + 1;
-      const bonusPercent = bouquetStreakBonusPercent(nextStreak);
-      return ` Next Streak Target ${nextStreak}: complete the next bouquet for +${bonusPercent}% coins.`;
-    }
-
     function roundPlaqueCopy(plan = activeRoundPlan()) {
       const baseCopy = goalCopy(plan);
-      const thornCopy = `${thornObjectiveHintCopy(plan)}${thornTeachingCopy(plan)}`;
-      const patternCopy = bouquetStreak > 0 || plan.round >= 2 ? patternDiscoveryCopy() : "";
-      const nextTargetCopy = roundComplete ? nextBouquetStreakTargetCopy() : "";
-      return `${baseCopy}${thornCopy}${patternCopy}${nextTargetCopy}`;
+      return `${baseCopy}${thornObjectiveHintCopy(plan)}${thornTeachingCopy(plan)}`;
     }
 
     async function tap(x, y) {
@@ -9532,24 +9458,14 @@
       }
       const reward = plan.reward;
       const streakPayout = completionCoinPayout(plan);
-      const showStreakReward = !focusedSliceRound(plan) && bouquetStreak;
-      const streakRewardToken = showStreakReward
-        ? `<span class="reward-token">Bouquet Streak ${bouquetStreak} · +${streakPayout.percent}% coins (+${streakPayout.bonus})</span>`
-        : "";
-      const streakCopy = showStreakReward
-        ? ` Bouquet Streak ${bouquetStreak} adds +${streakPayout.bonus} bonus coins (${streakPayout.percent}%).`
-        : "";
-      const nextTargetCopy = focusedSliceRound(plan) ? "" : nextBouquetStreakTargetCopy();
       ceremony.hidden = false;
       ceremony.innerHTML = `
         <span class="ceremony-title">${plan.name} fulfilled</span>
-        <span class="ceremony-copy">The client pays. The greenhouse deepens.${streakCopy}${nextTargetCopy}</span>
+        <span class="ceremony-copy">The client pays. The greenhouse deepens.</span>
         <span class="ceremony-rewards">
           <span class="reward-token">✪ +${streakPayout.total}</span>
-          ${streakRewardToken}
           <span class="reward-token">${reward.item}</span>
         </span>
-        <span class="ceremony-next-target" id="nextStreakTarget">${nextTargetCopy.trim()}</span>
       `;
     }
 
@@ -9565,12 +9481,9 @@
         roundTwoGreenhouseUpgraded = false;
         roundThreeConservatoryRaised = false;
       }
-      bouquetStreak += 1;
       const streakPayout = completionCoinPayout(plan);
       coins += streakPayout.total;
-      const completionMessage = focusedSliceRound(plan)
-        ? focusedSliceCompletionMessage(plan, streakPayout)
-        : `<strong>${plan.name} fulfilled.</strong> <strong>Bouquet Streak ${bouquetStreak}:</strong> +${streakPayout.total} coins (${plan.reward.coins} base + ${streakPayout.bonus} streak bonus at ${streakPayout.percent}%).${nextBouquetStreakTargetCopy()}`;
+      const completionMessage = focusedSliceCompletionMessage(plan, streakPayout);
       ritualMessage = carryMessage ? `${carryMessage} ${completionMessage}` : completionMessage;
       if (focusedSliceRound(plan)) {
         tutorialActive = true;
@@ -9588,11 +9501,8 @@
       return plan.round <= 3;
     }
 
-    function completionCoinPayout(plan = activeRoundPlan(), streak = bouquetStreak) {
-      if (focusedSliceRound(plan)) {
-        return { base: plan.reward.coins, percent: 0, bonus: 0, total: plan.reward.coins };
-      }
-      return bouquetStreakPayout(plan.reward.coins, streak);
+    function completionCoinPayout(plan = activeRoundPlan()) {
+      return { base: plan.reward.coins, percent: 0, bonus: 0, total: plan.reward.coins };
     }
 
     function focusedSliceCompletionMessage(plan, payout) {
@@ -9790,23 +9700,6 @@
         return;
       }
       window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "auto" }));
-    }
-
-    function bouquetStreakBonusPercent(streak = bouquetStreak) {
-      const safeStreak = Math.max(0, Math.floor(Number(streak) || 0));
-      return Math.min(STREAK_COIN_BONUS_CAP, safeStreak * STREAK_COIN_BONUS_STEP);
-    }
-
-    function bouquetStreakPayout(baseCoins, streak = bouquetStreak) {
-      const base = Math.max(0, Math.floor(Number(baseCoins) || 0));
-      const percent = bouquetStreakBonusPercent(streak);
-      const bonus = Math.round(base * (percent / 100));
-      return {
-        base,
-        percent,
-        bonus,
-        total: base + bonus
-      };
     }
 
     function pulseBouquetSealFeedback() {
@@ -10102,7 +9995,7 @@
         : `<strong>Round ${plan.round}: ${plan.name}</strong> begins. `;
       ritualMessage = restoredGreenhouseNextOrder
         ? "<strong>Moonlit Wreath:</strong> Match beside the glowing Cursed Thorns."
-        : `${introCopy}${goalCopy(plan)}${thornObjectiveHintCopy(plan)}${thornTeachingCopy(plan)}${patternDiscoveryCopy()}`;
+        : `${introCopy}${goalCopy(plan)}${thornObjectiveHintCopy(plan)}${thornTeachingCopy(plan)}`;
       resetCursedThorns(plan);
       build();
       startThornTeachingCue(plan);
@@ -10410,8 +10303,7 @@
         hasMadeValidMove,
         restoredRoundTwoGuideMoves,
         tutorialSkipped,
-        tutorialActive,
-        bouquetStreak
+        tutorialActive
       };
       try {
         localStorage.setItem(SAVE_KEY, JSON.stringify(state));
@@ -10485,7 +10377,6 @@
         if (!isRestoredRoundTwoWindow()) {
           restoredRoundTwoGuideMoves = 0;
         }
-        bouquetStreak = validBouquetStreak(state.bouquetStreak);
         if (shouldSaveMigratedProgress) {
           saveProgress();
         }
@@ -10501,10 +10392,6 @@
         && candidate.every((row) => Array.isArray(row)
           && row.length === BOARD_SIZE
           && row.every((tile) => Number.isInteger(tile) && tile >= 0 && tile < flowers.length));
-    }
-
-    function validBouquetStreak(candidate) {
-      return Math.max(0, Math.floor(Number(candidate) || 0));
     }
 
     function analyzeBoardSnapshot(candidateBoard) {
