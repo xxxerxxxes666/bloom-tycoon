@@ -2,6 +2,75 @@ const { test, expect } = require("@playwright/test");
 
 const BASE_URL = process.env.BLOOM_TEST_URL || "http://127.0.0.1:4173/playable/midnight_bloom_prototype.html";
 const SAVE_KEY = "bloomTycoonPlayableStateV1";
+const FOCUSED_ECONOMY_VERSION = 1;
+const LEGACY_ECONOMY_CASES = [
+  {
+    label: "active-round-one",
+    state: { currentRound: 1, roundComplete: false, moves: 6, counts: [0, 0, 0, 0, 0, 0] },
+    coins: 0
+  },
+  {
+    label: "round-one-payoff",
+    state: { currentRound: 1, roundComplete: true, roundOneRestored: false, moves: 2, counts: [0, 6, 0, 0, 0, 8] },
+    coins: 120,
+    action: "Restore Greenhouse · 100 coins",
+    transaction: "Earned 120 coins. Restore costs 100.",
+    spentCoins: 20,
+    spentAction: "Next Order → Moonlit Wreath",
+    spentTransaction: "Restored for 100. 20 coins remain."
+  },
+  {
+    label: "round-one-restored",
+    state: { currentRound: 1, roundComplete: true, roundOneRestored: true, moves: 2, counts: [0, 6, 0, 0, 0, 8] },
+    coins: 20,
+    action: "Next Order → Moonlit Wreath",
+    transaction: "Restored for 100. 20 coins remain."
+  },
+  {
+    label: "active-round-two",
+    state: { currentRound: 2, roundComplete: false, roundOneRestored: true, moves: 9, counts: [0, 0, 0, 0, 0, 0] },
+    coins: 20
+  },
+  {
+    label: "round-two-payoff",
+    state: { currentRound: 2, roundComplete: true, roundOneRestored: true, roundTwoGreenhouseUpgraded: false, moves: 2, counts: [0, 0, 10, 0, 9, 7], clearedCursedThorns: 3 },
+    coins: 170,
+    action: "Upgrade Greenhouse · 120 coins",
+    transaction: "Earned 150 coins. Upgrade costs 120.",
+    spentCoins: 50,
+    spentAction: "Next Order → Bloodroot Compact",
+    spentTransaction: "Upgraded for 120. 50 coins remain."
+  },
+  {
+    label: "round-two-upgraded",
+    state: { currentRound: 2, roundComplete: true, roundOneRestored: true, roundTwoGreenhouseUpgraded: true, moves: 2, counts: [0, 0, 10, 0, 9, 7], clearedCursedThorns: 3 },
+    coins: 50,
+    action: "Next Order → Bloodroot Compact",
+    transaction: "Upgraded for 120. 50 coins remain."
+  },
+  {
+    label: "active-round-three",
+    state: { currentRound: 3, roundComplete: false, roundOneRestored: true, roundTwoGreenhouseUpgraded: true, moves: 8, counts: [0, 0, 0, 0, 0, 0] },
+    coins: 50
+  },
+  {
+    label: "round-three-payoff",
+    state: { currentRound: 3, roundComplete: true, roundOneRestored: true, roundTwoGreenhouseUpgraded: true, roundThreeConservatoryRaised: false, moves: 2, counts: [13, 0, 0, 14, 0, 0] },
+    coins: 230,
+    action: "Raise Conservatory · 180 coins",
+    transaction: "Earned 180 coins. Conservatory costs 180.",
+    spentCoins: 50,
+    spentAction: "Play Again → First Bouquet",
+    spentTransaction: "Raised for 180. 50 coins remain."
+  },
+  {
+    label: "round-three-raised",
+    state: { currentRound: 3, roundComplete: true, roundOneRestored: true, roundTwoGreenhouseUpgraded: true, roundThreeConservatoryRaised: true, moves: 2, counts: [13, 0, 0, 14, 0, 0] },
+    coins: 50,
+    action: "Play Again → First Bouquet",
+    transaction: "Raised for 180. 50 coins remain."
+  }
+];
 
 test.setTimeout(90000);
 
@@ -139,16 +208,125 @@ async function completeRoundWithReviewKey(page) {
 }
 
 async function forceActiveBouquetFailure(page) {
-  await page.evaluate((key) => {
+  const marker = "bloomForcedFailureStateV1";
+  await page.addInitScript(({ key, markerKey }) => {
+    const forcedState = sessionStorage.getItem(markerKey);
+    if (forcedState) {
+      localStorage.setItem(key, forcedState);
+      sessionStorage.removeItem(markerKey);
+    }
+  }, { key: SAVE_KEY, markerKey: marker });
+  await page.evaluate(({ key, markerKey }) => {
     const state = JSON.parse(localStorage.getItem(key));
     state.roundComplete = false;
     state.moves = 0;
     state.tutorialSkipped = false;
-    localStorage.setItem(key, JSON.stringify(state));
-  }, SAVE_KEY);
+    sessionStorage.setItem(markerKey, JSON.stringify(state));
+  }, { key: SAVE_KEY, markerKey: marker });
   await page.reload({ waitUntil: "networkidle" });
   await expect(page.locator(".tile")).toHaveCount(64);
   await expect(page.locator("#renewBtn.visible")).toHaveText("Retry Bouquet");
+}
+
+async function economyMigrationReport(page) {
+  return page.evaluate((key) => {
+    const visible = (node) => {
+      if (!node) return false;
+      const rect = node.getBoundingClientRect();
+      const style = getComputedStyle(node);
+      return style.display !== "none"
+        && style.visibility !== "hidden"
+        && Number(style.opacity || 1) !== 0
+        && rect.width > 0
+        && rect.height > 0;
+    };
+    const saved = JSON.parse(localStorage.getItem(key) || "{}");
+    return {
+      coins: saved.coins,
+      version: saved.focusedEconomyVersion,
+      tiles: document.querySelectorAll(".tile").length,
+      actions: Array.from(document.querySelectorAll("button"))
+        .filter((button) => visible(button) && !button.closest("#board"))
+        .map((button) => button.textContent.trim())
+        .filter(Boolean),
+      transaction: document.querySelector("#payoffTransaction")?.textContent.trim() || "",
+      brokenImages: Array.from(document.images)
+        .filter((image) => visible(image) && image.complete && image.naturalWidth === 0)
+        .map((image) => image.getAttribute("src")),
+      overflowX: document.documentElement.scrollWidth > innerWidth + 1
+    };
+  }, SAVE_KEY);
+}
+
+for (const viewport of [
+  { label: "desktop", width: 1280, height: 720 },
+  { label: "mobile390", width: 390, height: 844 }
+]) {
+  test(`legacy focused economy migrates once on ${viewport.label}`, async ({ browser }) => {
+    for (const migrationCase of LEGACY_ECONOMY_CASES) {
+      const context = await browser.newContext({
+        viewport: { width: viewport.width, height: viewport.height }
+      });
+      const page = await context.newPage();
+      const legacyState = {
+        coins: 188,
+        cursedThorns: [],
+        clearedCursedThorns: 0,
+        roundOneRestored: false,
+        roundTwoGreenhouseUpgraded: false,
+        roundThreeConservatoryRaised: false,
+        hasMadeValidMove: true,
+        tutorialSkipped: true,
+        tutorialActive: false,
+        ...migrationCase.state
+      };
+      await page.addInitScript(({ key, state, marker }) => {
+        if (!sessionStorage.getItem(marker)) {
+          localStorage.setItem(key, JSON.stringify(state));
+          sessionStorage.setItem(marker, "1");
+        }
+      }, {
+        key: SAVE_KEY,
+        state: legacyState,
+        marker: `legacy-economy-${viewport.label}-${migrationCase.label}`
+      });
+      await page.goto(`${BASE_URL}?legacy-economy=${viewport.label}-${migrationCase.label}&bloomReview=1`, { waitUntil: "networkidle" });
+      await expect(page.locator(".tile")).toHaveCount(64);
+
+      for (let reload = 0; reload < 2; reload += 1) {
+        const report = await economyMigrationReport(page);
+        expect(report.coins, `${migrationCase.label} balance after reload ${reload}`).toBe(migrationCase.coins);
+        expect(report.version, `${migrationCase.label} migration version`).toBe(FOCUSED_ECONOMY_VERSION);
+        expect(report.tiles).toBe(64);
+        expect(report.brokenImages).toEqual([]);
+        expect(report.overflowX).toBe(false);
+        expect(report.actions.length, `${migrationCase.label} focused action cap`).toBeLessThanOrEqual(2);
+        if (migrationCase.action) {
+          expect(report.actions).toEqual([migrationCase.action]);
+          expect(report.transaction).toBe(migrationCase.transaction);
+        }
+        await page.reload({ waitUntil: "networkidle" });
+        await expect(page.locator(".tile")).toHaveCount(64);
+      }
+
+      if (migrationCase.spentCoins !== undefined) {
+        await page.getByRole("button", { name: migrationCase.action, exact: true }).click();
+        for (let reload = 0; reload < 2; reload += 1) {
+          const report = await economyMigrationReport(page);
+          expect(report.coins, `${migrationCase.label} spent balance after reload ${reload}`).toBe(migrationCase.spentCoins);
+          expect(report.version).toBe(FOCUSED_ECONOMY_VERSION);
+          expect(report.actions).toEqual([migrationCase.spentAction]);
+          expect(report.transaction).toBe(migrationCase.spentTransaction);
+          expect(report.tiles).toBe(64);
+          expect(report.brokenImages).toEqual([]);
+          expect(report.overflowX).toBe(false);
+          await page.reload({ waitUntil: "networkidle" });
+          await expect(page.locator(".tile")).toHaveCount(64);
+        }
+      }
+      await context.close();
+    }
+  });
 }
 
 test("guided Round 1 payoff keeps one dominant action", async ({ page }) => {

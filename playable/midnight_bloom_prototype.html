@@ -5677,6 +5677,7 @@
     };
 
     const SAVE_KEY = "bloomTycoonPlayableStateV1";
+    const FOCUSED_ECONOMY_SAVE_VERSION = 1;
     const BOARD_SIZE = 8;
     const MAX_BOARD_BUILD_ATTEMPTS = 650;
     const baseElementCounts = [42, 37, 28, 33, 24, 31];
@@ -10576,11 +10577,25 @@
       return " <strong>Supreme Bloom!</strong> Rare petals erupted across the altar.";
     }
 
+    function focusedEconomyBalanceForProgress() {
+      if (currentRound <= 1) {
+        if (!roundComplete) return 0;
+        return roundOneRestored ? 20 : roundTemplates[0].reward.coins;
+      }
+      if (currentRound === 2) {
+        if (!roundComplete) return 20;
+        return roundTwoGreenhouseUpgraded ? 50 : 20 + roundTemplates[1].reward.coins;
+      }
+      if (!roundComplete) return 50;
+      return roundThreeConservatoryRaised ? 50 : 50 + roundTemplates[2].reward.coins;
+    }
+
     function saveProgress() {
       if (typeof localStorage === "undefined") {
         return;
       }
       const state = {
+        focusedEconomyVersion: FOCUSED_ECONOMY_SAVE_VERSION,
         board,
         moves,
         coins,
@@ -10614,6 +10629,7 @@
           return;
         }
         const state = JSON.parse(raw);
+        const savedFocusedEconomyVersion = Math.max(0, Math.floor(Number(state.focusedEconomyVersion) || 0));
         let shouldSaveMigratedProgress = false;
         if (isValidBoard(state.board)) {
           board = state.board;
@@ -10649,6 +10665,10 @@
           roundTwoGreenhouseUpgraded = true;
           roundThreeConservatoryRaised = true;
           ritualMessage = "<strong>First three orders complete.</strong> Replay First Bouquet to start another polished greenhouse run.";
+          shouldSaveMigratedProgress = true;
+        }
+        if (savedFocusedEconomyVersion < FOCUSED_ECONOMY_SAVE_VERSION) {
+          coins = focusedEconomyBalanceForProgress();
           shouldSaveMigratedProgress = true;
         }
         hasMadeValidMove = Boolean(state.hasMadeValidMove)

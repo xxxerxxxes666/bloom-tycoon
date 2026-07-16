@@ -1,5 +1,15 @@
 # Codex Build Notes
 
+## 2026-07-16 focused economy save migration
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `scripts/verify_tutorial_progress.spec.js`, and this note.
+- Player-visible result: legacy saves can no longer carry pre-bound match coins into the focused order economy. A pre-update Round 1 payoff now migrates to exactly `120` coins, restoration spends `100`, and reload preserves the intended `20`-coin balance instead of the reproduced `88`.
+- Save contract: focused economy version `1` is persisted once. Unversioned saves derive exact balances from progression: active Round 1 `0`; Round 1 payoff `120`; restored/active Round 2 `20`; Round 2 payoff `170`; upgraded/active Round 3 `50`; Round 3 payoff `230`; raised conservatory `50`. Current-version saves retain their persisted balance.
+- Regression coverage: nine crafted legacy progression states run on desktop and exact `390x844` mobile. Each state reloads twice; pending restoration/upgrade/conservatory spends are exercised and reload twice more, verifying version persistence, exact balances, transaction copy, one focused payoff action, 64 tiles, no broken images, and no overflow.
+- Harness reliability: forced Retry state now uses a one-shot pre-boot init script, eliminating the known delayed-save race that could overwrite `moves = 0` during test navigation. The complete tutorial file passed three consecutive times (`15/15`).
+- Verification: `python3 scripts/verify_project.py`, `python3 scripts/verify_html_match_shapes.py`, JavaScript syntax, and `git diff --check` passed. The full Chromium suite passed `38/38`, including 24 deterministic desktop/mobile journeys, migration, fresh `120 -> 20` behavior, save/reload, retry, keyboard/touch, ceremonies, reduced motion, 64-tile integrity, eight mobile rows, and runtime/layout checks.
+- Security: no assets, dependencies, services, trackers, analytics, accounts, payments, ads, permissions, credentials, or backend behavior were added. Commit, push, deployment, and public live migration verification follow this recorded checkpoint.
+
 ## 2026-07-16 marathon integration and deterministic fairness
 
 - Reconciled the final four local polish checkpoints onto the remotely published goal-following fairness work without discarding either player-facing path.
