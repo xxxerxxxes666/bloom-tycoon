@@ -1662,28 +1662,26 @@
     .objective-flight {
       position: fixed;
       z-index: 1000;
-      width: 30px;
-      height: 30px;
+      width: 26px;
+      height: 26px;
       pointer-events: none;
-      filter: drop-shadow(0 0 8px #e7bd67);
       will-change: transform, opacity;
     }
 
     .greenhouse-intake-flight {
       position: fixed;
       z-index: 999;
-      width: 18px;
-      height: 18px;
-      margin: -9px 0 0 -9px;
+      width: 15px;
+      height: 15px;
+      margin: -7px 0 0 -7px;
       border: 1px solid color-mix(in srgb, var(--intake-color, #d7b16d) 74%, #fff0b4);
       border-radius: 50%;
       pointer-events: none;
       background:
         radial-gradient(circle at 50% 45%, #fff5bf 0 13%, var(--intake-color, #d7b16d) 34%, #0000 72%);
       box-shadow:
-        0 0 12px color-mix(in srgb, var(--intake-color, #d7b16d) 72%, #0000),
-        0 0 22px #d7b16d66,
-        inset 0 0 7px #000;
+        0 0 10px color-mix(in srgb, var(--intake-color, #d7b16d) 62%, #0000),
+        inset 0 0 6px #000;
       will-change: transform, opacity;
     }
 
@@ -1693,10 +1691,9 @@
       left: 50%;
       top: 50%;
       width: 2px;
-      height: 46px;
+      height: 34px;
       border-radius: 999px;
       background: linear-gradient(180deg, #fff0b4, var(--intake-color, #d7b16d), #0000);
-      box-shadow: 0 0 10px var(--intake-color, #d7b16d);
       opacity: .72;
       transform: translate(-50%, -88%) rotate(var(--intake-tilt, 0deg));
       transform-origin: 50% 100%;
@@ -1721,8 +1718,7 @@
         linear-gradient(180deg, #190c08f2, #060403ef);
       box-shadow:
         inset 0 0 14px #000,
-        0 0 20px #d7b16d55,
-        0 0 30px #5f833833;
+        0 0 16px #d7b16d42;
       text-shadow: 0 2px 4px #000;
       animation: bouquet-bind-seal 720ms cubic-bezier(.12,.82,.18,1) forwards;
       will-change: transform, opacity;
@@ -1735,7 +1731,7 @@
       border: 1px solid #d7b16d66;
       clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
       opacity: .76;
-      animation: bouquet-bind-ring 1180ms ease-out forwards;
+      animation: bouquet-bind-ring 820ms ease-out forwards;
     }
 
     .bouquet-bind-seal img {
@@ -5709,7 +5705,18 @@
     const WILD_CHAIN_RELIC_BONUS = 10;
     const WILD_CHAIN_RARE_BONUS = 18;
     const WILD_CHAIN_BONUS_CAP = 80;
-    const MAX_BOARD_PARTICLES = 24;
+    const MAX_BOARD_PARTICLES = 18;
+    const LOW_PRIORITY_BOARD_PARTICLES = new Set([
+      "settle-spark",
+      "petal-pop",
+      "resource-pop",
+      "coin-pop",
+      "chain-lash",
+      "thorn-splinter",
+      "blood-pop",
+      "shard-pop",
+      "slash-pop"
+    ]);
     const ALTAR_DRIFT_FOCUSED_BAITS = 1;
     const ALTAR_DRIFT_STANDARD_BAITS = 1;
 
@@ -8847,6 +8854,15 @@
       }
     }
 
+    function pushBoardParticle(particle) {
+      boardParticles.push(particle);
+      if (boardParticles.length <= MAX_BOARD_PARTICLES) {
+        return;
+      }
+      const dropIndex = boardParticles.findIndex((queued) => LOW_PRIORITY_BOARD_PARTICLES.has(queued.type));
+      boardParticles.splice(dropIndex >= 0 ? dropIndex : 0, 1);
+    }
+
     function dedupeCells(cells) {
       const seen = new Set();
       return cells.filter((cell) => {
@@ -9075,7 +9091,7 @@
       }, { x: 0, y: 0 });
       const x = center.x / wave.clearCells.length;
       const y = center.y / wave.clearCells.length;
-      boardParticles.push({
+      pushBoardParticle({
         type: "cascade-ring",
         x,
         y,
@@ -9083,7 +9099,7 @@
         scale: 1.35 + Math.min(0.75, cascadeIndex * 0.18),
         delay: 0
       });
-      boardParticles.push({
+      pushBoardParticle({
         type: "impact-sigil",
         text: cascadeIndex > 0 ? `x${cascadeIndex + 1}` : "HIT",
         x,
@@ -9103,7 +9119,7 @@
         }, { x: 0, y: 0 });
         const runX = runCenter.x / run.cells.length;
         const runY = runCenter.y / run.cells.length;
-        boardParticles.push({
+        pushBoardParticle({
           type: "cascade-vein",
           x: runX,
           y: runY,
@@ -9136,7 +9152,7 @@
       const chainText = result.wildChain.cascades > 1
         ? `Wild Chain x${result.wildChain.cascades}`
         : result.wildChain.shapeLabel || "Wild Chain";
-      boardParticles.push({
+      pushBoardParticle({
         type: "wild-chain-banner",
         text: `${chainText} +${result.wildChain.bonusCoins}`,
         x,
@@ -9145,7 +9161,7 @@
         fontSize: result.wildChain.cascades > 2 ? 19 : 17,
         delay: 140
       });
-      boardParticles.push({
+      pushBoardParticle({
         type: "chain-bonus",
         text: `+${result.wildChain.bonusCoins} coins`,
         x,
@@ -9157,7 +9173,7 @@
       const lashCount = Math.min(2, 1 + result.wildChain.cascades + result.wildChain.relics + result.wildChain.runes);
       for (let index = 0; index < lashCount; index += 1) {
         const angle = (360 / lashCount) * index + (Math.random() * 18 - 9);
-        boardParticles.push({
+        pushBoardParticle({
           type: "chain-lash",
           x,
           y,
@@ -9177,7 +9193,7 @@
       const sparkLimit = cascadeIndex > 0 ? 2 : 1;
       Array.from(settledCells).slice(0, sparkLimit).forEach((key, index) => {
         const [x, y] = key.split(",").map(Number);
-        boardParticles.push({
+        pushBoardParticle({
           type: "settle-spark",
           x,
           y,
@@ -9193,7 +9209,7 @@
       // Match reward FX: coins originate from the harvested cells, then lift out of the board.
       const baseDelay = cascadeIndex * 120;
       cells.slice(0, 1).forEach(([x, y], index) => {
-        boardParticles.push({
+        pushBoardParticle({
           type: "coin-pop",
           text: "✪",
           x,
@@ -9209,7 +9225,7 @@
 
       if (coinsEarned > 0 && cells.length) {
         const [x, y] = cells[Math.floor(cells.length / 2)];
-        boardParticles.push({
+        pushBoardParticle({
           type: "coin-pop",
           text: `+${coinsEarned}`,
           x,
@@ -9229,7 +9245,7 @@
       for (let index = 0; index < 1; index += 1) {
         const angle = -Math.PI / 2 + (Math.random() - 0.5) * 1.35;
         const distance = 30 + Math.random() * 42;
-        boardParticles.push({
+        pushBoardParticle({
           type: "petal-pop",
           x,
           y,
@@ -9242,7 +9258,7 @@
           delay: cascadeIndex * 120 + index * 34 + Math.random() * 36
         });
       }
-      boardParticles.push({
+      pushBoardParticle({
         type: "resource-pop",
         text: flower[3],
         x,
@@ -9260,7 +9276,7 @@
       const baseDelay = cascadeIndex * 120;
       const sigil = shape.kind === "cross" ? "✣" : shape.kind === "t" ? "♆" : "⌞";
       cells.slice(0, 6).forEach(([x, y], cellIndex) => {
-        boardParticles.push({
+        pushBoardParticle({
           type: "shape-sigil",
           text: sigil,
           x,
@@ -9273,7 +9289,7 @@
           delay: baseDelay + cellIndex * 18
         });
         if (cellIndex % 3 === 0) {
-          boardParticles.push({
+          pushBoardParticle({
             type: "blood-aura",
             x,
             y,
@@ -9290,7 +9306,7 @@
 
     function queueThornBurst(x, y, cleared = false, cascadeIndex = 0) {
       const baseDelay = cascadeIndex * 120;
-      boardParticles.push({
+      pushBoardParticle({
         type: "thorn-shock",
         x,
         y,
@@ -9304,7 +9320,7 @@
       for (let index = 0; index < shards; index += 1) {
         const angle = Math.random() * Math.PI * 2;
         const distance = (cleared ? 48 : 30) + Math.random() * (cleared ? 50 : 26);
-        boardParticles.push({
+        pushBoardParticle({
           type: "thorn-splinter",
           text: index % 2 ? "✕" : "✦",
           x,
@@ -9326,7 +9342,7 @@
         const center = relic.direction === "vertical"
           ? [relic.fixed, (BOARD_SIZE - 1) / 2]
           : [(BOARD_SIZE - 1) / 2, relic.fixed];
-        boardParticles.push({
+        pushBoardParticle({
           type: "line-relic",
           x: center[0],
           y: center[1],
@@ -9338,7 +9354,7 @@
           delay: baseDelay + relicIndex * 90
         });
         relic.matchCells.slice(0, 2).forEach(([x, y], cellIndex) => {
-          boardParticles.push({
+          pushBoardParticle({
             type: "shape-sigil",
             text: "☽",
             x,
@@ -9360,7 +9376,7 @@
         const center = rune.direction === "vertical"
           ? [rune.fixed, rune.cells.reduce((sum, cell) => sum + cell[1], 0) / rune.cells.length]
           : [rune.cells.reduce((sum, cell) => sum + cell[0], 0) / rune.cells.length, rune.fixed];
-        boardParticles.push({
+        pushBoardParticle({
           type: "blood-aura",
           x: center[0],
           y: center[1],
@@ -9372,7 +9388,7 @@
           delay: baseDelay + runeIndex * 92
         });
         rune.cells.forEach(([x, y], cellIndex) => {
-          boardParticles.push({
+          pushBoardParticle({
             type: "seed-rune",
             text: cellIndex === 2 ? "◆" : "✦",
             x,
@@ -9392,7 +9408,7 @@
       // Super Bloom FX is reserved for 6+ straight lines and local review paths.
       const baseDelay = cascadeIndex * 120;
       cells.slice(0, 6).forEach(([x, y], cellIndex) => {
-        boardParticles.push({
+        pushBoardParticle({
           type: "blood-aura",
           x,
           y,
@@ -9407,7 +9423,7 @@
           const angle = Math.random() * Math.PI * 2;
           const distance = 28 + Math.random() * 118;
           const type = ["blood-pop", "blood-pop", "blood-pop", "shard-pop", "slash-pop", "slash-pop"][i % 6];
-          boardParticles.push({
+          pushBoardParticle({
             type,
             x,
             y,
@@ -9901,7 +9917,7 @@
         window.clearTimeout(bouquetSealPulseTimer);
       }
       bouquetSealPulseActive = true;
-      boardParticles.push({
+      pushBoardParticle({
         type: "order-seal",
         text: "Sealed",
         x: (BOARD_SIZE - 1) / 2,
@@ -9967,9 +9983,9 @@
           flight.setAttribute("aria-hidden", "true");
           flight.src = flowers[target.flowerId][1];
           flight.srcset = flowerIconSrcset(flowers[target.flowerId][1]);
-          flight.sizes = "30px";
-          flight.style.left = `${originX - 15}px`;
-          flight.style.top = `${originY - 15}px`;
+          flight.sizes = "26px";
+          flight.style.left = `${originX - 13}px`;
+          flight.style.top = `${originY - 13}px`;
           document.body.appendChild(flight);
           const dx = targetRect.left + targetRect.width / 2 - originX;
           const dy = targetRect.top + targetRect.height / 2 - originY;
@@ -9979,8 +9995,8 @@
             { transform: `translate(${dx * .45 + arc}px, ${dy * .34 - 34}px) scale(1.16) rotate(7deg)`, opacity: 1, offset: .42 },
             { transform: `translate(${dx}px, ${dy}px) scale(.4) rotate(0deg)`, opacity: .22 }
           ], {
-            duration: 560 + flightIndex * 35,
-            delay: flightIndex * 35,
+            duration: 480 + flightIndex * 28,
+            delay: flightIndex * 28,
             easing: "cubic-bezier(.2,.75,.25,1)",
             fill: "forwards"
           });
@@ -9991,7 +10007,7 @@
             return;
           }
           queueBouquetBindingSeal(target, gained[target.flowerId], targetRect);
-        }, 260);
+        }, 220);
       });
     }
 
@@ -10054,13 +10070,13 @@
           { opacity: .88, transform: `translate(${dx * .72 - arc * .35}px, ${dy * .66 - 16}px) scale(.82)`, offset: .74 },
           { opacity: 0, transform: `translate(${dx}px, ${dy}px) scale(.32)` }
         ], {
-          duration: 540 + cascadeIndex * 42 + index * 18,
-          delay: cascadeIndex * 62 + index * 26,
+          duration: 460 + cascadeIndex * 36 + index * 16,
+          delay: cascadeIndex * 52 + index * 22,
           easing: "cubic-bezier(.16,.82,.2,1)",
           fill: "forwards"
         });
         animation.finished.catch(() => {}).finally(() => mote.remove());
-        window.setTimeout(() => mote.remove(), 920 + cascadeIndex * 72 + index * 38);
+        window.setTimeout(() => mote.remove(), 760 + cascadeIndex * 62 + index * 34);
       });
     }
 

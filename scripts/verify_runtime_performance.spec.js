@@ -214,7 +214,7 @@ test("mobile guided swaps return control without particle buildup", async ({ pag
   } else {
     expect(second.controlMs, "second guided swap control return").toBeLessThanOrEqual(1050);
     expect(second.report.disabledTiles).toBe(0);
-    expect(second.report.particles, "active particle buildup after second swap").toBeLessThanOrEqual(32);
+    expect(second.report.particles, "active particle buildup after second swap").toBeLessThanOrEqual(24);
   }
   expect(second.report.tiles).toBe(64);
   expect(second.report.overflowX).toBe(false);
