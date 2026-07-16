@@ -880,7 +880,7 @@
     .progress {
       width: min(650px, calc(100% - 16px));
       display: grid;
-      grid-template-columns: auto auto minmax(92px, 1fr) auto;
+      grid-template-columns: auto auto auto minmax(92px, 1fr) auto;
       align-items: center;
       gap: 8px;
       min-height: 28px;
@@ -907,6 +907,47 @@
       overflow: hidden;
       text-overflow: ellipsis;
       max-width: 28ch;
+    }
+
+    .coin-balance {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      min-height: 18px;
+      padding: 2px 6px;
+      border: 1px solid #72522f;
+      background: linear-gradient(180deg, #21160c, #090604);
+      box-shadow: inset 0 0 7px #000;
+      color: #c8aa70;
+      white-space: nowrap;
+      font-size: 8px;
+      letter-spacing: 0.08em;
+    }
+
+    .coin-balance[hidden] {
+      display: none;
+    }
+
+    .coin-balance-sigil,
+    .coin-balance strong {
+      color: #f0cf82;
+      text-shadow: 0 0 7px #bb7a2466;
+    }
+
+    .coin-balance strong {
+      min-width: 2ch;
+      font-size: 10px;
+    }
+
+    .coin-balance.balance-pulse {
+      animation: coin-balance-confirm 1300ms ease-out both;
+    }
+
+    @keyframes coin-balance-confirm {
+      0% { border-color:#72522f; filter:brightness(1); transform:scale(1); }
+      28% { border-color:#e0b65d; filter:brightness(1.35); transform:scale(1.035); box-shadow:inset 0 0 7px #000, 0 0 11px #d59a3b55; }
+      100% { border-color:#72522f; filter:brightness(1); transform:scale(1); }
     }
 
     .progress-meter {
@@ -5142,6 +5183,10 @@
       .coin-payoff {
         display:none !important;
       }
+      .coin-balance.balance-pulse {
+        animation: none !important;
+        border-color: #a87b3d;
+      }
     }
     @media (max-width:760px) {
       body.restored-next-order-focus .game,
@@ -5178,12 +5223,22 @@
       body.round-one-active .progress,
       body.focused-payoff-active .progress {
         width: calc(100vw - 26px);
-        grid-template-columns: auto auto minmax(82px, 1fr);
+        grid-template-columns: auto auto auto minmax(64px, 1fr);
         min-height: 22px;
         margin-top: 4px;
         padding: 3px 6px;
         gap: 6px;
         font-size: 9px;
+      }
+      body.restored-next-order-focus .coin-balance,
+      body.restored-greenhouse-handoff .coin-balance,
+      body.round-three-focus-active .coin-balance,
+      body.round-one-active .coin-balance,
+      body.focused-payoff-active .coin-balance {
+        min-height: 17px;
+        padding: 1px 4px;
+        gap: 3px;
+        font-size: 7px;
       }
       body.restored-next-order-focus .live-bouquet-assembly,
       body.restored-greenhouse-handoff .live-bouquet-assembly,
@@ -5723,6 +5778,11 @@
       </div>
       <div class="progress bouquet-progress" id="bouquetProgress" aria-label="Bouquet progress">
         <span class="progress-label" id="bouquetProgressLabel">Bouquet -> 120 coins</span>
+        <span class="coin-balance" id="coinBalance" aria-label="Current coin balance" aria-live="polite" hidden>
+          <span class="coin-balance-sigil" aria-hidden="true">✪</span>
+          <span>Coins</span>
+          <strong id="coins">0</strong>
+        </span>
         <span class="live-bouquet-assembly" id="liveBouquetAssembly" aria-hidden="true" data-assembly-hook="authoritative-target-progress"></span>
         <span class="progress-meter" aria-hidden="true"><span class="bar" id="bar"></span></span>
         <span class="progress-next" id="bouquetProgressNext">Complete the order to restore the greenhouse.</span>
@@ -5970,6 +6030,8 @@
     let validSwapTimer = null;
     let bouquetSealPulseTimer = null;
     let nextOrderPulseTimer = null;
+    let coinBalancePulseTimer = null;
+    let coinBalancePulseActive = false;
     const SWIPE_THRESHOLD = 18;
     let tileSwipeStart = null;
     let touchSwipeStart = null;
@@ -8535,6 +8597,12 @@
       if (coinsEl) {
         coinsEl.textContent = coins;
       }
+      const coinBalanceEl = $("coinBalance");
+      if (coinBalanceEl) {
+        coinBalanceEl.hidden = !focusedSliceRound(plan);
+        coinBalanceEl.dataset.balance = String(coins);
+        coinBalanceEl.classList.toggle("balance-pulse", coinBalancePulseActive);
+      }
       $("shuffleBtn").disabled = isResolving
         || roundComplete
         || moves < 1
@@ -10218,6 +10286,7 @@
       }
       const streakPayout = completionCoinPayout(plan);
       coins += streakPayout.total;
+      pulseCoinBalance();
       const completionMessage = focusedSliceCompletionMessage(plan, streakPayout);
       ritualMessage = carryMessage ? `${carryMessage} ${completionMessage}` : completionMessage;
       if (focusedSliceRound(plan)) {
@@ -10361,6 +10430,7 @@
     function restoreRoundOneGreenhouse() {
       if (currentRound !== 1 || !roundComplete || roundOneRestored || coins < FIRST_GREENHOUSE_RESTORE_COST) return;
       coins -= FIRST_GREENHOUSE_RESTORE_COST;
+      pulseCoinBalance();
       roundOneRestored = true;
       ritualMessage = "<strong>Greenhouse restored.</strong> The dead glass burns gold and the first vines wake.";
       pulseNextOrderReady();
@@ -10388,6 +10458,7 @@
         return;
       }
       coins -= MOONLIT_GREENHOUSE_UPGRADE_COST;
+      pulseCoinBalance();
       roundTwoGreenhouseUpgraded = true;
       ritualMessage = "<strong>Moonlit greenhouse upgraded.</strong> Night glass opens the Bloodroot Compact.";
       pulseNextOrderReady();
@@ -10414,6 +10485,7 @@
         return;
       }
       coins -= BLOODROOT_CONSERVATORY_COST;
+      pulseCoinBalance();
       roundThreeConservatoryRaised = true;
       ritualMessage = "<strong>Bloodroot conservatory raised.</strong> Crimson glass seals the first three orders into one complete run.";
       pulseNextOrderReady();
@@ -10497,6 +10569,21 @@
           render();
         }
       }, 1100);
+    }
+
+    function pulseCoinBalance() {
+      if (coinBalancePulseTimer && window.clearTimeout) {
+        window.clearTimeout(coinBalancePulseTimer);
+      }
+      coinBalancePulseActive = true;
+      coinBalancePulseTimer = window.setTimeout(() => {
+        coinBalancePulseActive = false;
+        coinBalancePulseTimer = null;
+        const balance = $("coinBalance");
+        if (balance) {
+          balance.classList.remove("balance-pulse");
+        }
+      }, prefersReducedMotion() ? 40 : 1300);
     }
 
     function pulseOrderCounts(gained, gainedCells = []) {
@@ -10819,6 +10906,7 @@
       clearThornTeachingCue(false);
       currentRound = 1;
       coins = 0;
+      pulseCoinBalance();
       restoredRoundTwoGuideMoves = 0;
       roundOneRestored = false;
       roundTwoGreenhouseUpgraded = false;

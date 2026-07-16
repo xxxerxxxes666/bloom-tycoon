@@ -1,5 +1,14 @@
 # Codex Build Notes
 
+## 2026-07-16 visible focused coin balance
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_first_three_journey.spec.js`, `scripts/verify_tutorial_progress.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.
+- Selected weakness: the focused economy persisted exact balances, but active orders hid those coins. Round 2 saved 20 and Round 3 saved 50 while the HUD showed only the prospective order reward, making the greenhouse capital feel like ceremony scripting instead of retained value.
+- Player-visible result: the existing bouquet-progress strip now contains one compact aged-gold `✪ Coins N` token driven by the authoritative `coins` value. It shows `0`, `20`, and `50` during active focused orders and the exact earned/spent values during payoff ceremonies, while the separate `+N coins` order reward remains legible. Reward, spend, and Play Again reinvestment changes receive one restrained 1.3-second confirmation pulse; load, migration, and ordinary reload do not replay it.
+- Layout evidence: Hermes independently measured the token inside the existing strip at `75.75x18` on desktop and `65.06x17` at exact `390x844`. The mobile strip remained `364x28`, the board remained fully visible from `y=256` to `634` with all eight rows, and there was no horizontal overflow. Three-digit balances `120`, `170`, and `230` were exercised in the real journey matrix without clipping.
+- Economy/browser coverage: desktop and exact-mobile optimized and goal-following journeys retained the exact visible trace `0 -> 120 -> 20 -> 170 -> 50 -> 230 -> 50 -> 0`; the two-cycle mobile journey retained the same trace into replay. Unversioned/version-1 migration states showed their deterministic version-2 balance without a pulse; actual spend pulsed once, then two reloads preserved the balance without replaying it. The affected Chromium run passed `32/34`; both failures exposed a test sequencing error that treated the immediate post-spend frame as a reload. After correcting that contract, the focused migration rerun passed `2/2` and the final integrated Chromium suite passed `44/44` in 11.7 minutes.
+- Scope/security: no new currency, wallet system, panel, row, bar, control, save version, economy value, asset, dependency, service, tracker, analytics, account, backend, or permission was added.
+
 ## 2026-07-16 protected Round 1 tutorial moves
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_tutorial_progress.spec.js`, and this note.

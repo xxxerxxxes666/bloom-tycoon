@@ -428,6 +428,11 @@ async function economyMigrationReport(page) {
     return {
       coins: saved.coins,
       version: saved.focusedEconomyVersion,
+      coinBalanceText: document.querySelector("#coinBalance")?.textContent.replace(/\s+/g, " ").trim() || "",
+      coinBalanceValue: document.querySelector("#coinBalance")?.dataset.balance || "",
+      coinBalanceVisible: visible(document.querySelector("#coinBalance")),
+      coinBalancePulsing: document.querySelector("#coinBalance")?.classList.contains("balance-pulse") || false,
+      coinBalanceOccurrences: (document.body.innerText.match(/COINS\s+\d+/gi) || []).length,
       tiles: document.querySelectorAll(".tile").length,
       actions: Array.from(document.querySelectorAll("button"))
         .filter((button) => visible(button) && !button.closest("#board"))
@@ -488,6 +493,11 @@ for (const viewport of [
           const report = await economyMigrationReport(page);
           expect(report.coins, `${source.label} ${migrationCase.label} balance after reload ${reload}`).toBe(migrationCase.coins);
           expect(report.version, `${migrationCase.label} migration version`).toBe(FOCUSED_ECONOMY_VERSION);
+          expect(report.coinBalanceText).toBe(`✪ Coins ${migrationCase.coins}`);
+          expect(report.coinBalanceValue).toBe(String(migrationCase.coins));
+          expect(report.coinBalanceVisible).toBe(true);
+          expect(report.coinBalancePulsing).toBe(false);
+          expect(report.coinBalanceOccurrences).toBe(1);
           expect(report.tiles).toBe(64);
           expect(report.brokenImages).toEqual([]);
           expect(report.overflowX).toBe(false);
@@ -504,17 +514,24 @@ for (const viewport of [
         if (migrationCase.spentCoins !== undefined) {
           await expect(page.getByRole("button", { name: migrationCase.action, exact: true })).toBeFocused();
           await page.keyboard.press("Enter");
+          const changedReport = await economyMigrationReport(page);
+          expect(changedReport.coinBalancePulsing, `${migrationCase.label} spend confirms balance change`).toBe(true);
           for (let reload = 0; reload < 2; reload += 1) {
+            await page.reload({ waitUntil: "networkidle" });
+            await expect(page.locator(".tile")).toHaveCount(64);
             const report = await economyMigrationReport(page);
             expect(report.coins, `${migrationCase.label} spent balance after reload ${reload}`).toBe(migrationCase.spentCoins);
+            expect(report.coinBalanceText).toBe(`✪ Coins ${migrationCase.spentCoins}`);
+            expect(report.coinBalanceValue).toBe(String(migrationCase.spentCoins));
+            expect(report.coinBalanceVisible).toBe(true);
+            expect(report.coinBalancePulsing, `reload ${reload} does not replay balance pulse`).toBe(false);
+            expect(report.coinBalanceOccurrences).toBe(1);
             expect(report.version).toBe(FOCUSED_ECONOMY_VERSION);
             expect(report.actions).toEqual([migrationCase.spentAction]);
             expect(report.transaction).toBe(migrationCase.spentTransaction);
             expect(report.tiles).toBe(64);
             expect(report.brokenImages).toEqual([]);
             expect(report.overflowX).toBe(false);
-            await page.reload({ waitUntil: "networkidle" });
-            await expect(page.locator(".tile")).toHaveCount(64);
           }
         } else if (migrationCase.enteredRound) {
           await expect(page.getByRole("button", { name: migrationCase.action, exact: true })).toBeFocused();
@@ -522,6 +539,10 @@ for (const viewport of [
           await expect(page.locator(".tile")).toHaveCount(64);
           const activeState = await economyMigrationReport(page);
           expect(activeState.coins).toBe(migrationCase.enteredCoins);
+          expect(activeState.coinBalanceText).toBe(`✪ Coins ${migrationCase.enteredCoins}`);
+          expect(activeState.coinBalanceValue).toBe(String(migrationCase.enteredCoins));
+          expect(activeState.coinBalanceVisible).toBe(true);
+          expect(activeState.coinBalanceOccurrences).toBe(1);
           expect(activeState.version).toBe(FOCUSED_ECONOMY_VERSION);
           expect(activeState.actions.length).toBeLessThanOrEqual(2);
           expect(activeState.brokenImages).toEqual([]);

@@ -59,6 +59,8 @@ async function journeyState(page) {
     const tileRows = [...new Set(Array.from(document.querySelectorAll(".tile"))
       .map((tile) => Math.round(tile.getBoundingClientRect().top)))].length;
     const boardRect = document.querySelector(".board")?.getBoundingClientRect();
+    const progressRect = document.querySelector("#bouquetProgress")?.getBoundingClientRect();
+    const coinRect = document.querySelector("#coinBalance")?.getBoundingClientRect();
     return {
       round: state.currentRound || 1,
       moves: state.moves,
@@ -68,6 +70,16 @@ async function journeyState(page) {
       roundThreeConservatoryRaised: Boolean(state.roundThreeConservatoryRaised),
       coins: state.coins,
       focusedEconomyVersion: state.focusedEconomyVersion,
+      coinBalanceText: document.querySelector("#coinBalance")?.textContent.replace(/\s+/g, " ").trim() || "",
+      coinBalanceValue: document.querySelector("#coinBalance")?.dataset.balance || "",
+      coinBalanceVisible: visible(document.querySelector("#coinBalance")),
+      coinBalancePulsing: document.querySelector("#coinBalance")?.classList.contains("balance-pulse") || false,
+      coinBalanceOccurrences: (document.body.innerText.match(/COINS\s+\d+/gi) || []).length,
+      coinBalanceInsideProgress: Boolean(progressRect && coinRect
+        && coinRect.left >= progressRect.left - 1
+        && coinRect.right <= progressRect.right + 1
+        && coinRect.top >= progressRect.top - 1
+        && coinRect.bottom <= progressRect.bottom + 1),
       bouquet: document.querySelector("#bouquetProgressLabel")?.textContent.trim() || "",
       greenhouse: document.querySelector(".restoration-dial-phase")?.textContent.trim() || "",
       payoffTransaction: document.querySelector("#payoffTransaction")?.textContent.trim() || "",
@@ -92,6 +104,18 @@ async function journeyState(page) {
         .map((image) => image.getAttribute("src"))
     };
   }, SAVE_KEY);
+}
+
+async function expectVisibleCoinBalance(page, expectedCoins, options = {}) {
+  const state = await journeyState(page);
+  expect(state.coinBalanceVisible).toBe(true);
+  expect(state.coinBalanceText).toBe(`✪ Coins ${expectedCoins}`);
+  expect(state.coinBalanceValue).toBe(String(expectedCoins));
+  expect(state.coinBalanceOccurrences).toBe(1);
+  expect(state.coinBalanceInsideProgress).toBe(true);
+  if (options.pulsing !== undefined) {
+    expect(state.coinBalancePulsing).toBe(options.pulsing);
+  }
 }
 
 async function clickGuidedSwap(page, strategy = "optimized") {
@@ -303,10 +327,13 @@ async function playFocusedCycle(page, config, runLabel, strategy, options = {}) 
   const results = [];
   for (let round = 1; round <= 3; round += 1) {
     const startCoins = (await journeyState(page)).coins;
+    await expectVisibleCoinBalance(page, startCoins);
     const result = await playCurrentRound(page, runLabel, round, strategy);
     const earnedCoins = (await journeyState(page)).coins;
+    await expectVisibleCoinBalance(page, earnedCoins, { pulsing: true });
     const firstAction = await spendPrimaryCeremonyAction(page);
     const spentState = await journeyState(page);
+    await expectVisibleCoinBalance(page, spentState.coins, { pulsing: true });
     result.balances = [startCoins, earnedCoins, spentState.coins];
 
     if (round === 3 && options.evidencePrefix) {
@@ -342,6 +369,7 @@ async function playFocusedCycle(page, config, runLabel, strategy, options = {}) 
       round === 3 ? options.replayActivation : "pointer"
     );
     const advancedCoins = (await journeyState(page)).coins;
+    await expectVisibleCoinBalance(page, advancedCoins, { pulsing: round === 3 ? true : undefined });
     result.balances.push(advancedCoins);
     result.actions = [firstAction, secondAction];
     results.push(result);
@@ -362,6 +390,7 @@ async function reloadAndExpectActiveReplayBalance(page, config, expectedCoins) {
     expect(state.roundComplete).toBe(false);
     expect(state.coins).toBe(expectedCoins);
     expect(state.focusedEconomyVersion).toBe(2);
+    await expectVisibleCoinBalance(page, expectedCoins, { pulsing: false });
     await assertActiveBoard(page, config.mobile);
   }
 }
@@ -373,6 +402,8 @@ async function assertActiveBoard(page, mobile) {
   expect(state.overflowX).toBe(false);
   expect(state.brokenImages).toEqual([]);
   expect(state.mobilePlinthVisible, "active mobile plinth hidden").toBe(false);
+  expect(state.coinBalanceVisible).toBe(true);
+  expect(state.coinBalanceInsideProgress).toBe(true);
   if (mobile) {
     expect(state.ritualLogVisible, "active mobile ritual log hidden").toBe(false);
     expect(state.boardBottom, "exact mobile board stays in first viewport").toBeLessThanOrEqual(844);
