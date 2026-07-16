@@ -1,5 +1,14 @@
 # Codex Build Notes
 
+## 2026-07-16 ceremony reload focus restoration
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_payoff_ceremony_contract.spec.js`, `scripts/verify_tutorial_progress.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.
+- Selected weakness: reloading any completed focused-order save left keyboard focus on the document body even though the ceremony correctly exposed one primary action. Keyboard players had to rediscover `Restore`, `Next Order`, `Upgrade`, `Raise Conservatory`, or `Play Again` after every reload.
+- Player-visible result: every completed Round 1-3 ceremony now restores focus to its sole primary action after initial load and reload. Pressing Enter immediately spends or advances as expected; active orders still restore exactly one roving board tile as the focus target.
+- Save/economy coverage: inflated version-1 and current version-2 saves were exercised for all six pending/spent ceremony states on desktop `1280x720` and exact mobile `390x844`, through initial load, two reloads, and Enter activation. Balances, transaction copy, one-time migration, 64 tiles, eight rows, and version-2 persistence stayed exact. Hermes independently repeated this as a 24-case matrix and reported `24/24` passing with no console, page, request, image, or overflow failures.
+- Verification: `python3 scripts/verify_project.py`, `python3 scripts/verify_html_match_shapes.py`, JavaScript syntax, and `git diff --check` passed. The final integrated Chromium suite passed `41/41` in 11.4 minutes, covering the complete first-three journey, ceremonies, economy migration, Retry, keyboard/touch play, reduced motion, runtime budgets, broken images, and horizontal overflow.
+- Security/scope: no UI, copy, assets, economy values, save schema, dependencies, services, trackers, analytics, accounts, permissions, rounds, controls, or progression surfaces were added.
+
 ## 2026-07-16 six-stem bouquet payoff
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_payoff_ceremony_contract.spec.js`, `scripts/verify_project.py`, `scripts/verify_html_match_shapes.py`, and this note.

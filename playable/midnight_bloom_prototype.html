@@ -10964,7 +10964,9 @@
     }
     if (currentRound === 1 && roundComplete && !tutorialSkipped) {
       tutorialActive = true;
-      queuePostRenderFocus(roundOneRestored ? "nextOrderBtn" : "restoreGreenhouseBtn");
+    }
+    if (roundComplete && focusedSliceRound()) {
+      queuePostRenderFocus(focusedPayoffPrimaryButtonId());
     }
     ensureCursedThornsForPlan(activeRoundPlan());
     if (currentRound === 1 && !roundComplete && !hasMadeValidMove) {

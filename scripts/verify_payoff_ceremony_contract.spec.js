@@ -186,6 +186,8 @@ async function expectCeremony(page, expectedButton, screenshotPath, expectedGuid
 
 async function expectActiveBoard(page) {
   await expect(page.locator(".tile")).toHaveCount(64, { timeout: 5000 });
+  await expect(page.locator(".tile[tabindex='0']")).toHaveCount(1);
+  await expect(page.locator(".tile[tabindex='0']")).toBeFocused();
   const active = await page.evaluate(() => {
     const board = document.querySelector(".board");
     const rect = board?.getBoundingClientRect();
@@ -246,13 +248,15 @@ async function expectCleanReplayBoard(page) {
 }
 
 async function clickPrimary(page) {
-  await page.locator("#roundOneRestoration button:not([hidden])").click();
+  await expect(page.locator("#roundOneRestoration button:not([hidden])")).toBeFocused();
+  await page.keyboard.press("Enter");
   await page.waitForTimeout(450);
 }
 
 async function assertReloadKeeps(page, expectedButton, screenshotPath, expectedGuide = "") {
   await page.reload({ waitUntil: "networkidle" });
   await expectCeremony(page, expectedButton, screenshotPath, expectedGuide);
+  await expect(page.locator("#roundOneRestoration button:not([hidden])")).toBeFocused();
 }
 
 async function forceRoundTwoFailure(page) {

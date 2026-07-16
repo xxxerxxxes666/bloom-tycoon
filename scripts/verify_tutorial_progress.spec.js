@@ -24,7 +24,9 @@ const LEGACY_ECONOMY_CASES = [
     state: { currentRound: 1, roundComplete: true, roundOneRestored: true, moves: 2, counts: [0, 6, 0, 0, 0, 8] },
     coins: 20,
     action: "Next Order → Moonlit Wreath",
-    transaction: "Restored for 100. 20 coins remain."
+    transaction: "Restored for 100. 20 coins remain.",
+    enteredRound: 2,
+    enteredCoins: 20
   },
   {
     label: "active-round-two",
@@ -46,7 +48,9 @@ const LEGACY_ECONOMY_CASES = [
     state: { currentRound: 2, roundComplete: true, roundOneRestored: true, roundTwoGreenhouseUpgraded: true, moves: 2, counts: [0, 0, 10, 0, 9, 7], clearedCursedThorns: 3 },
     coins: 50,
     action: "Next Order → Bloodroot Compact",
-    transaction: "Upgraded for 120. 50 coins remain."
+    transaction: "Upgraded for 120. 50 coins remain.",
+    enteredRound: 3,
+    enteredCoins: 50
   },
   {
     label: "active-round-three",
@@ -68,7 +72,9 @@ const LEGACY_ECONOMY_CASES = [
     state: { currentRound: 3, roundComplete: true, roundOneRestored: true, roundTwoGreenhouseUpgraded: true, roundThreeConservatoryRaised: true, moves: 2, counts: [13, 0, 0, 14, 0, 0] },
     coins: 50,
     action: "Play Again → First Bouquet",
-    transaction: "Raised for 180. 50 coins seed the next greenhouse run."
+    transaction: "Raised for 180. 50 coins seed the next greenhouse run.",
+    enteredRound: 1,
+    enteredCoins: 0
   }
 ];
 
@@ -318,13 +324,15 @@ for (const viewport of [
           if (migrationCase.action) {
             expect(report.actions).toEqual([migrationCase.action]);
             expect(report.transaction).toBe(migrationCase.transaction);
+            await expect(page.getByRole("button", { name: migrationCase.action, exact: true })).toBeFocused();
           }
           await page.reload({ waitUntil: "networkidle" });
           await expect(page.locator(".tile")).toHaveCount(64);
         }
 
         if (migrationCase.spentCoins !== undefined) {
-          await page.getByRole("button", { name: migrationCase.action, exact: true }).click();
+          await expect(page.getByRole("button", { name: migrationCase.action, exact: true })).toBeFocused();
+          await page.keyboard.press("Enter");
           for (let reload = 0; reload < 2; reload += 1) {
             const report = await economyMigrationReport(page);
             expect(report.coins, `${migrationCase.label} spent balance after reload ${reload}`).toBe(migrationCase.spentCoins);
@@ -337,6 +345,20 @@ for (const viewport of [
             await page.reload({ waitUntil: "networkidle" });
             await expect(page.locator(".tile")).toHaveCount(64);
           }
+        } else if (migrationCase.enteredRound) {
+          await expect(page.getByRole("button", { name: migrationCase.action, exact: true })).toBeFocused();
+          await page.keyboard.press("Enter");
+          await expect(page.locator(".tile")).toHaveCount(64);
+          const activeState = await economyMigrationReport(page);
+          expect(activeState.coins).toBe(migrationCase.enteredCoins);
+          expect(activeState.version).toBe(FOCUSED_ECONOMY_VERSION);
+          expect(activeState.actions.length).toBeLessThanOrEqual(2);
+          expect(activeState.brokenImages).toEqual([]);
+          expect(activeState.overflowX).toBe(false);
+          await expect(page.locator(`.tile[tabindex="0"]`)).toHaveCount(1);
+          await expect(page.locator(`.tile[tabindex="0"]`)).toBeFocused();
+          const saved = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}"), SAVE_KEY);
+          expect(saved.currentRound).toBe(migrationCase.enteredRound);
         }
         await context.close();
       }

@@ -374,6 +374,8 @@ def verify_source_hooks():
         "function focusedEconomyBalanceForProgress()",
         "focusedEconomyVersion: FOCUSED_ECONOMY_SAVE_VERSION",
         "savedFocusedEconomyVersion < FOCUSED_ECONOMY_SAVE_VERSION",
+        "if (roundComplete && focusedSliceRound())",
+        "queuePostRenderFocus(focusedPayoffPrimaryButtonId());",
         "${coins} coins seed the next greenhouse run.",
         "Play Again reinvests the seed into a fresh First Bouquet run.",
         "Next Order → Moonlit Wreath",
