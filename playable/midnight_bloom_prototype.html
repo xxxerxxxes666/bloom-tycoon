@@ -5690,7 +5690,7 @@
       },
       {
         name: "Moonlit Wreath",
-        moves: 8,
+        moves: 9,
         targets: [
           { flowerId: 2, needed: 10, order: "Moonlit Wreath" },
           { flowerId: 4, needed: 9, order: "Amber Keepsake" },
@@ -5706,7 +5706,7 @@
       },
       {
         name: "Bloodroot Compact",
-        moves: 7,
+        moves: 8,
         targets: [
           { flowerId: 3, needed: 14, order: "Bloodroot Compact" },
           { flowerId: 0, needed: 13, order: "Solar Ash" }
@@ -5819,6 +5819,11 @@
     })();
     const flowerIcon48 = (src) => src.replace("/96/", "/48/");
     const flowerIconSrcset = (src) => `${flowerIcon48(src)} 48w, ${src} 96w`;
+    let fxRandomState = 0x6d2b79f5;
+    function fxRandom() {
+      fxRandomState = (Math.imul(fxRandomState, 1664525) + 1013904223) >>> 0;
+      return fxRandomState / 4294967296;
+    }
     const rand = () => {
       const pool = roundTilePool(activeRoundPlan());
       return pool[Math.floor(Math.random() * pool.length)];
@@ -7035,7 +7040,7 @@
       const data = buffer.getChannelData(0);
       for (let index = 0; index < data.length; index += 1) {
         const fade = 1 - index / data.length;
-        data[index] = (Math.random() * 2 - 1) * fade;
+        data[index] = (fxRandom() * 2 - 1) * fade;
       }
       const source = ctx.createBufferSource();
       const filter = ctx.createBiquadFilter();
@@ -9194,14 +9199,14 @@
       });
       const lashCount = Math.min(2, 1 + result.wildChain.cascades + result.wildChain.relics + result.wildChain.runes);
       for (let index = 0; index < lashCount; index += 1) {
-        const angle = (360 / lashCount) * index + (Math.random() * 18 - 9);
+        const angle = (360 / lashCount) * index + (fxRandom() * 18 - 9);
         pushBoardParticle({
           type: "chain-lash",
           x,
           y,
-          size: 76 + Math.random() * 46,
+          size: 76 + fxRandom() * 46,
           spin: angle,
-          scale: 1.05 + Math.random() * 0.58,
+          scale: 1.05 + fxRandom() * 0.58,
           delay: 210 + index * 34
         });
       }
@@ -9219,9 +9224,9 @@
           type: "settle-spark",
           x,
           y,
-          dx: (Math.random() - 0.5) * 18,
-          dy: -10 - Math.random() * 18,
-          size: 6 + Math.random() * 4,
+          dx: (fxRandom() - 0.5) * 18,
+          dy: -10 - fxRandom() * 18,
+          size: 6 + fxRandom() * 4,
           delay: baseDelay + index * 10
         });
       });
@@ -9236,11 +9241,11 @@
           text: "✪",
           x,
           y,
-          dx: (Math.random() - 0.5) * 68,
-          dy: -42 - Math.random() * 66,
+          dx: (fxRandom() - 0.5) * 68,
+          dy: -42 - fxRandom() * 66,
           size: 18,
           fontSize: 16,
-          spin: (Math.random() - 0.5) * 180,
+          spin: (fxRandom() - 0.5) * 180,
           delay: baseDelay + index * 16
         });
       });
@@ -9265,19 +9270,19 @@
     function queueResourceBurst(x, y, flowerId, cascadeIndex = 0) {
       const flower = flowers[flowerId] || flowers[0];
       for (let index = 0; index < 1; index += 1) {
-        const angle = -Math.PI / 2 + (Math.random() - 0.5) * 1.35;
-        const distance = 30 + Math.random() * 42;
+        const angle = -Math.PI / 2 + (fxRandom() - 0.5) * 1.35;
+        const distance = 30 + fxRandom() * 42;
         pushBoardParticle({
           type: "petal-pop",
           x,
           y,
           dx: Math.cos(angle) * distance,
-          dy: Math.sin(angle) * distance - 18 - Math.random() * 26,
-          size: 12 + Math.random() * 8,
-          spin: (Math.random() - 0.5) * 220,
-          scale: 1.05 + Math.random() * 0.28,
+          dy: Math.sin(angle) * distance - 18 - fxRandom() * 26,
+          size: 12 + fxRandom() * 8,
+          spin: (fxRandom() - 0.5) * 220,
+          scale: 1.05 + fxRandom() * 0.28,
           color: flower[4],
-          delay: cascadeIndex * 120 + index * 34 + Math.random() * 36
+          delay: cascadeIndex * 120 + index * 34 + fxRandom() * 36
         });
       }
       pushBoardParticle({
@@ -9285,12 +9290,12 @@
         text: flower[3],
         x,
         y,
-        dx: 36 + Math.random() * 56,
-        dy: 84 + Math.random() * 38,
+        dx: 36 + fxRandom() * 56,
+        dy: 84 + fxRandom() * 38,
         size: 22,
         fontSize: 20,
-        spin: (Math.random() - 0.5) * 60,
-        delay: cascadeIndex * 120 + Math.random() * 80
+        spin: (fxRandom() - 0.5) * 60,
+        delay: cascadeIndex * 120 + fxRandom() * 80
       });
     }
 
@@ -9303,11 +9308,11 @@
           text: sigil,
           x,
           y,
-          dx: (Math.random() - 0.5) * 86,
-          dy: -72 - Math.random() * 74,
+          dx: (fxRandom() - 0.5) * 86,
+          dy: -72 - fxRandom() * 74,
           size: shape.kind === "cross" ? 36 : 30,
           fontSize: shape.kind === "cross" ? 28 : 24,
-          spin: (Math.random() - 0.5) * 120,
+          spin: (fxRandom() - 0.5) * 120,
           delay: baseDelay + cellIndex * 18
         });
         if (cellIndex % 3 === 0) {
@@ -9318,8 +9323,8 @@
             dx: 0,
             dy: 0,
             size: shape.kind === "cross" ? 74 : 58,
-            spin: Math.random() * 360,
-            scale: 1.08 + Math.random() * 0.24,
+            spin: fxRandom() * 360,
+            scale: 1.08 + fxRandom() * 0.24,
             delay: baseDelay + cellIndex * 14
           });
         }
@@ -9340,8 +9345,8 @@
       });
       const shards = cleared ? 3 : 1;
       for (let index = 0; index < shards; index += 1) {
-        const angle = Math.random() * Math.PI * 2;
-        const distance = (cleared ? 48 : 30) + Math.random() * (cleared ? 50 : 26);
+        const angle = fxRandom() * Math.PI * 2;
+        const distance = (cleared ? 48 : 30) + fxRandom() * (cleared ? 50 : 26);
         pushBoardParticle({
           type: "thorn-splinter",
           text: index % 2 ? "✕" : "✦",
@@ -9351,7 +9356,7 @@
           dy: Math.sin(angle) * distance - 22,
           size: cleared ? 30 : 22,
           fontSize: cleared ? 22 : 17,
-          spin: (Math.random() - 0.5) * 210,
+          spin: (fxRandom() - 0.5) * 210,
           scale: cleared ? 1.35 : 1.08,
           delay: baseDelay + 80 + index * 26
         });
@@ -9381,11 +9386,11 @@
             text: "☽",
             x,
             y,
-            dx: (Math.random() - 0.5) * 54,
-            dy: -44 - Math.random() * 44,
+            dx: (fxRandom() - 0.5) * 54,
+            dy: -44 - fxRandom() * 44,
             size: 26,
             fontSize: 20,
-            spin: (Math.random() - 0.5) * 90,
+            spin: (fxRandom() - 0.5) * 90,
             delay: baseDelay + relicIndex * 90 + cellIndex * 16
           });
         });
@@ -9405,7 +9410,7 @@
           dx: 0,
           dy: 0,
           size: 88,
-          spin: Math.random() * 360,
+          spin: fxRandom() * 360,
           scale: 1.12,
           delay: baseDelay + runeIndex * 92
         });
@@ -9415,11 +9420,11 @@
             text: cellIndex === 2 ? "◆" : "✦",
             x,
             y,
-            dx: (Math.random() - 0.5) * 78,
-            dy: -58 - Math.random() * 64,
+            dx: (fxRandom() - 0.5) * 78,
+            dy: -58 - fxRandom() * 64,
             size: cellIndex === 2 ? 38 : 28,
             fontSize: cellIndex === 2 ? 28 : 21,
-            spin: (Math.random() - 0.5) * 190,
+            spin: (fxRandom() - 0.5) * 190,
             delay: baseDelay + runeIndex * 92 + cellIndex * 20
           });
         });
@@ -9436,25 +9441,25 @@
           y,
           dx: 0,
           dy: 0,
-          size: 82 + Math.random() * 34,
-          spin: Math.random() * 360,
-          scale: 1.18 + Math.random() * 0.35,
+          size: 82 + fxRandom() * 34,
+          spin: fxRandom() * 360,
+          scale: 1.18 + fxRandom() * 0.35,
           delay: baseDelay + cellIndex * 8
         });
         for (let i = 0; i < 4; i += 1) {
-          const angle = Math.random() * Math.PI * 2;
-          const distance = 28 + Math.random() * 118;
+          const angle = fxRandom() * Math.PI * 2;
+          const distance = 28 + fxRandom() * 118;
           const type = ["blood-pop", "blood-pop", "blood-pop", "shard-pop", "slash-pop", "slash-pop"][i % 6];
           pushBoardParticle({
             type,
             x,
             y,
             dx: Math.cos(angle) * distance,
-            dy: Math.sin(angle) * distance - Math.random() * 22,
-            size: type === "slash-pop" ? 13 + Math.random() * 12 : 8 + Math.random() * 20,
-            spin: Math.random() * 360,
-            scale: 1 + Math.random() * 1.65,
-            delay: baseDelay + cellIndex * 8 + Math.random() * 70
+            dy: Math.sin(angle) * distance - fxRandom() * 22,
+            size: type === "slash-pop" ? 13 + fxRandom() * 12 : 8 + fxRandom() * 20,
+            spin: fxRandom() * 360,
+            scale: 1 + fxRandom() * 1.65,
+            delay: baseDelay + cellIndex * 8 + fxRandom() * 70
           });
         }
       });
@@ -10371,10 +10376,10 @@
         const origin = originCells.length
           ? supremeOriginForCell(originCells[i % originCells.length], supreme)
           : null;
-        const angle = (Math.PI * 2 * i) / particleCount + (Math.random() - 0.5) * (reducedMotion ? 0.2 : 0.62);
-        const distance = reducedMotion ? 38 + Math.random() * 90 : 80 + Math.random() * 310;
+        const angle = (Math.PI * 2 * i) / particleCount + (fxRandom() - 0.5) * (reducedMotion ? 0.2 : 0.62);
+        const distance = reducedMotion ? 38 + fxRandom() * 90 : 80 + fxRandom() * 310;
         const dx = Math.cos(angle) * distance;
-        const dy = Math.sin(angle) * distance * 0.66 - Math.random() * (reducedMotion ? 10 : 40);
+        const dy = Math.sin(angle) * distance * 0.66 - fxRandom() * (reducedMotion ? 10 : 40);
         particle.className = `particle ${type}`;
         if (origin) {
           particle.style.left = `${origin.left}px`;
@@ -10382,10 +10387,10 @@
         }
         particle.style.setProperty("--dx", `${dx}px`);
         particle.style.setProperty("--dy", `${dy}px`);
-        particle.style.setProperty("--size", `${reducedMotion ? 5 + Math.random() * 8 : 6 + Math.random() * 18}px`);
-        particle.style.setProperty("--spin", `${Math.random() * (reducedMotion ? 60 : 360)}deg`);
-        particle.style.setProperty("--scale", `${reducedMotion ? 0.75 + Math.random() * 0.4 : 0.8 + Math.random() * 1.45}`);
-        particle.style.setProperty("--delay", `${reducedMotion ? 0 : Math.random() * 0.18}s`);
+        particle.style.setProperty("--size", `${reducedMotion ? 5 + fxRandom() * 8 : 6 + fxRandom() * 18}px`);
+        particle.style.setProperty("--spin", `${fxRandom() * (reducedMotion ? 60 : 360)}deg`);
+        particle.style.setProperty("--scale", `${reducedMotion ? 0.75 + fxRandom() * 0.4 : 0.8 + fxRandom() * 1.45}`);
+        particle.style.setProperty("--delay", `${reducedMotion ? 0 : fxRandom() * 0.18}s`);
         particleLayer.appendChild(particle);
       }
 

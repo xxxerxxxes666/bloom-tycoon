@@ -1,5 +1,14 @@
 # Codex Build Notes
 
+## 2026-07-16 marathon integration and deterministic fairness
+
+- Reconciled the final four local polish checkpoints onto the remotely published goal-following fairness work without discarding either player-facing path.
+- Separated presentation randomness (`fxRandom`) from board randomness so particle/audio tuning can no longer alter flower drops, cascade outcomes, or difficulty.
+- Set the focused move budgets to Round 1 `6`, Round 2 `9`, and Round 3 `8`. Across the final deterministic matrix, all optimized and ordinary goal-following desktop/mobile journeys completed with a real cushion; the previously brittle `bone-star-vigil`, `candle-vine`, and `nightshade-glass` routes now finish rather than relying on a zero-move seal.
+- Preserved the marathon improvements: compact `?` tutorial replay, deterministic greenhouse ceremony art, faster binding seal, capped priority-aware feedback, lightweight reduced-motion Supreme Bloom, hidden ritual-log narrator during focused play, 465-node/80-image runtime, two meaningful bars, 64 tiles, and eight complete mobile rows.
+- Integrated verification: project and HTML shape verifiers passed; JavaScript syntax and diff checks passed; the final Chromium run passed all 24 first-three journey tests plus all feedback, ceremony, runtime, reduced-motion, keyboard, touch, tutorial, save/reload, and mobile layout tests. One stale Round 2 move-count assertion was updated and its complete 3-test tutorial suite passed again.
+- Security/IP: no new services, trackers, analytics, accounts, payments, ads, credentials, broad permissions, dependencies, or protected third-party expression.
+
 ## 2026-07-16 active-play clarity and transient budget polish
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_runtime_performance.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.
