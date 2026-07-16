@@ -145,9 +145,7 @@ for (const config of [
       ? "mobile active play keeps one bouquet bar plus one greenhouse bar"
       : "desktop keeps one bouquet bar plus one greenhouse bar").toHaveLength(2);
     expect(report.mobileGreenhousePlinthVisible, "mobile greenhouse plinth stays out of active play").toBe(false);
-    if (config.mobile) {
-      expect(report.ritualLogVisible, "ritual log stays out of mobile active play").toBe(false);
-    }
+    expect(report.ritualLogVisible, "ritual log stays out of focused active play").toBe(false);
     expect(report.greenhouseIntakeTargetId, "intake feedback retains a visible destination").toBe(config.mobile
       ? "mobileRestorationDial"
       : "heroRestorationDial");

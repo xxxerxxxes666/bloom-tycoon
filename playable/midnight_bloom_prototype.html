@@ -2241,6 +2241,10 @@
       font-weight: normal;
     }
 
+    body.focused-active-play .ritual-log {
+      display: none !important;
+    }
+
     .round-ceremony {
       max-width: 650px;
       margin: 0 auto 14px;
@@ -5719,7 +5723,7 @@
     const WILD_CHAIN_RELIC_BONUS = 10;
     const WILD_CHAIN_RARE_BONUS = 18;
     const WILD_CHAIN_BONUS_CAP = 80;
-    const MAX_BOARD_PARTICLES = 18;
+    const MAX_BOARD_PARTICLES = 16;
     const LOW_PRIORITY_BOARD_PARTICLES = new Set([
       "settle-spark",
       "petal-pop",
