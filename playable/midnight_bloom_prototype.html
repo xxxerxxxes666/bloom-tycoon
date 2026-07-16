@@ -5914,7 +5914,7 @@
     }
 
     function isBouquetFailed(plan = activeRoundPlan()) {
-      return !roundComplete && moves <= 0 && !roundObjectivesComplete(plan);
+      return !roundComplete && !isResolving && moves <= 0 && !roundObjectivesComplete(plan);
     }
 
     function targetMarkup(flowerId, current, needed) {
@@ -6540,6 +6540,36 @@
       board[2][3] = fillerA;
     }
 
+    function seedRoundThreeFinalTargetMove(targetIndex, target, plan = activeRoundPlan()) {
+      if (plan.round !== 3 || moves !== 1 || roundComplete || !target) {
+        return null;
+      }
+      const deficit = target.needed - targetProgress(target);
+      if (deficit <= 0 || deficit > 4) {
+        return null;
+      }
+      const preferredX = targetIndex === 0 ? 0 : targetIndex === 1 ? 4 : null;
+      if (preferredX === null) {
+        return null;
+      }
+      const original = boardSnapshot();
+      const origins = [preferredX, preferredX === 0 ? 4 : 0]
+        .flatMap((originX) => [0, 3, 6].map((originY) => ({ originX, originY })));
+      for (const { originX, originY } of origins) {
+        restoreBoard(original);
+        writeTargetLegalMovePatch(originX, originY, target.flowerId, 4);
+        if (matches().length) {
+          continue;
+        }
+        const move = [{ x: originX + 1, y: originY }, { x: originX + 1, y: originY + 1 }];
+        if (isLegalSwap(...move) && targetMoveCreatesHarvest(...move, target.flowerId)) {
+          return move;
+        }
+      }
+      restoreBoard(original);
+      return null;
+    }
+
     function nextTargetMoveHint() {
       if (roundComplete) {
         return "";
@@ -6555,7 +6585,8 @@
         return "";
       }
       seedRoundOneBlackCandleVineLesson(remainingTargetIndex, remainingTarget);
-      let move = findTargetLegalMove(remainingTarget.flowerId, remainingTargetIndex);
+      let move = seedRoundThreeFinalTargetMove(remainingTargetIndex, remainingTarget, plan)
+        || findTargetLegalMove(remainingTarget.flowerId, remainingTargetIndex);
       if (!move && isRestoredRoundTwoGuideActive()) {
         seedFocusedGuideMove(remainingTargetIndex, remainingTarget);
         move = findTargetLegalMove(remainingTarget.flowerId, remainingTargetIndex);

@@ -1,5 +1,19 @@
 # Codex Build Notes
 
+## 2026-07-15 Round 3 final-swap resolution and goal-following fairness
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_first_three_journey.spec.js`, and this note.
+- Player-visible result: Bloodroot Compact still has seven moves and the same 14 Bloodroot / 13 Sol Rot objectives, but a final target deficit of up to four now receives a legal four-flower closing opportunity. The final swap resolves before failure can be declared, removing the transient `Bouquet Withered` flash that previously appeared while its match was still animating.
+- Audit reproduction and fix: the independent `vesper-thorn` route reproduced the reported 26/27 loss on desktop and mobile. Instrumentation showed the last swap had already formed four Bloodroots, but the test and UI could observe `Moves 0` failure during the 165ms resolution window. Failure detection now waits until resolution finishes, and the closing opportunity is explicitly deficit-aware without adding moves or changing rewards.
+- Regression coverage: added a secondary goal-following strategy that scores target flowers and Round 2 thorn adjacency but receives no four-match or total-cell optimization bonus. Four independent seeds run on desktop and exact `390x844` mobile for eight additional complete Round 1 -> 2 -> 3 journeys, alongside the existing 16 optimized journeys.
+- Fairness result: all 24 deterministic journeys passed. The optimized matrix retained its existing envelope: Round 1 completed in 2-4 swaps, Round 2 in 4-7, and Round 3 in 3-6. All eight ordinary goal-following journeys completed; `vesper-thorn` sealed Round 3 at 27/27 on its seventh and final move on both viewports.
+- Verification commands/results: `python3 scripts/verify_project.py`, HTML match-shape checks, `node --check`, and `git diff --check` passed; the 24-test journey matrix passed; the remaining focused Chromium suite passed 11/11 for 35/35 browser tests total.
+- Browser coverage: desktop `1280x720` and exact mobile `390x844`, 64 tiles/eight complete rows, all three ceremonies, retry and replay flow, reduced motion, touch/click and keyboard play, no horizontal overflow, no visible broken images, no visible review controls, and no console warnings/errors, page errors, or failed requests.
+- Runtime metrics: desktop and mobile each rendered `465` nodes, `80` images, `64` tiles, `8` complete rows, and `2` meaningful progress bars. Mobile guided swaps returned control in `376ms` and `501ms` with no disabled active tiles, overflow, or broken images.
+- Visual QA: inspected the repaired `vesper-thorn` Round 3 completion on desktop and exact mobile. The focused Bloodroot ceremony remains unclipped, keeps one dominant `Raise Conservatory` action, and preserves the board-first hierarchy leading into the payoff.
+- Commit/push/live status: pending commit and deployment checks at note time.
+- Security status: the changed-line credential and external-URL scans passed with no findings. No assets, dependencies, external services, trackers, analytics, accounts, backend, ads, payments, permissions, credentials, or protected third-party expression were added.
+
 ## 2026-07-15 multi-seed first-three fairness hardening
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_first_three_journey.spec.js`, and this note.

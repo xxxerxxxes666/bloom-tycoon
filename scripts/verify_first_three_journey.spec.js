@@ -17,6 +17,12 @@ const JOURNEY_SEEDS = [
   "sol-rot-dawn",
   "thorn-choir"
 ];
+const GOAL_FOLLOWING_SEEDS = [
+  "vesper-thorn",
+  "bloodroot-moon",
+  "crypt-iris",
+  "relic-garden"
+];
 
 test.setTimeout(180000);
 
@@ -81,11 +87,11 @@ async function journeyState(page) {
   }, SAVE_KEY);
 }
 
-async function clickGuidedSwap(page) {
+async function clickGuidedSwap(page, strategy = "optimized") {
   const movesBefore = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}").moves, SAVE_KEY);
   let lastError = null;
   for (let attempt = 0; attempt < 3; attempt += 1) {
-    const pairHandle = await page.waitForFunction(({ targets }) => {
+    const pairHandle = await page.waitForFunction(({ targets, strategy }) => {
     const hinted = Array.from(document.querySelectorAll(".tile.idle-hint")).slice(0, 2).map((tile) => ({
       x: Number(tile.dataset.x),
       y: Number(tile.dataset.y)
@@ -171,7 +177,8 @@ async function clickGuidedSwap(page) {
             }).length
             : 0;
           const fourScore = found.runs.some((run) => run.length >= 4) ? 3 : 0;
-          const score = targetMatches * 10 + thornScore * 7 + fourScore + found.cells.size;
+          const optimizationScore = strategy === "optimized" ? fourScore + found.cells.size : 0;
+          const score = targetMatches * 10 + thornScore * 7 + optimizationScore;
           if (!best || score > best.score) {
             best = { score, pair: [a, b] };
           }
@@ -179,7 +186,7 @@ async function clickGuidedSwap(page) {
       }
     }
     return best?.pair || null;
-    }, { targets: ROUND_TARGETS }, { timeout: 8500 });
+    }, { targets: ROUND_TARGETS, strategy }, { timeout: 8500 });
     const pairValue = await pairHandle.jsonValue();
     const pair = (pairValue || []).map((tile) => ({
       x: String(tile.x),
@@ -220,7 +227,7 @@ async function spendPrimaryCeremonyAction(page) {
   return text;
 }
 
-async function playCurrentRound(page, label, round) {
+async function playCurrentRound(page, label, round, strategy = "optimized") {
   const start = await journeyState(page);
   const startMoves = start.moves;
   let swaps = 0;
@@ -240,10 +247,51 @@ async function playCurrentRound(page, label, round) {
       return summary;
     }
     expect(state.moves, `${label} round ${round} has moves remaining`).toBeGreaterThan(0);
-    await clickGuidedSwap(page);
+    await clickGuidedSwap(page, strategy);
     swaps += 1;
     expect(swaps, `${label} round ${round} should not drag`).toBeLessThanOrEqual(10);
   }
+}
+
+async function playFirstThree(page, config, seed, strategy) {
+  const consoleMessages = [];
+  const pageErrors = [];
+  const failedRequests = [];
+  page.on("console", (message) => {
+    if (message.type() === "error" || message.type() === "warning") {
+      consoleMessages.push(`${message.type()}: ${message.text()}`);
+    }
+  });
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("requestfailed", (request) => failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`));
+
+  await page.setViewportSize(config.viewport);
+  const runLabel = `${config.label}-${strategy}-${seed}`;
+  await openFresh(page, seed, runLabel);
+  await assertActiveBoard(page, config.mobile);
+
+  const results = [];
+  for (let round = 1; round <= 3; round += 1) {
+    results.push(await playCurrentRound(page, runLabel, round, strategy));
+    const firstAction = await spendPrimaryCeremonyAction(page);
+    const secondAction = await spendPrimaryCeremonyAction(page);
+    results[results.length - 1].actions = [firstAction, secondAction];
+    if (round < 3) {
+      await expect(page.locator(".tile")).toHaveCount(64);
+      await assertActiveBoard(page, config.mobile);
+    }
+  }
+
+  const finalState = await journeyState(page);
+  expect(finalState.round).toBe(1);
+  expect(finalState.tiles).toBe(64);
+  expect(finalState.overflowX).toBe(false);
+  expect(finalState.brokenImages).toEqual([]);
+  await page.screenshot({ path: `work/first-three-${runLabel}-replay.png`, fullPage: true });
+  expect(consoleMessages).toEqual([]);
+  expect(pageErrors).toEqual([]);
+  expect(failedRequests).toEqual([]);
+  return { runLabel, results };
 }
 
 async function assertActiveBoard(page, mobile) {
@@ -265,33 +313,7 @@ for (const config of [
 ]) {
   for (const seed of JOURNEY_SEEDS) {
     test(`real first-three journey is fair on ${config.label} with ${seed}`, async ({ page }) => {
-      const consoleMessages = [];
-      const pageErrors = [];
-      const failedRequests = [];
-      page.on("console", (message) => {
-        if (message.type() === "error" || message.type() === "warning") {
-          consoleMessages.push(`${message.type()}: ${message.text()}`);
-        }
-      });
-      page.on("pageerror", (error) => pageErrors.push(error.message));
-      page.on("requestfailed", (request) => failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`));
-
-      await page.setViewportSize(config.viewport);
-      const runLabel = `${config.label}-${seed}`;
-      await openFresh(page, seed, runLabel);
-      await assertActiveBoard(page, config.mobile);
-
-      const results = [];
-      for (let round = 1; round <= 3; round += 1) {
-        results.push(await playCurrentRound(page, runLabel, round));
-        const firstAction = await spendPrimaryCeremonyAction(page);
-        const secondAction = await spendPrimaryCeremonyAction(page);
-        results[results.length - 1].actions = [firstAction, secondAction];
-        if (round < 3) {
-          await expect(page.locator(".tile")).toHaveCount(64);
-          await assertActiveBoard(page, config.mobile);
-        }
-      }
+      const { runLabel, results } = await playFirstThree(page, config, seed, "optimized");
 
       console.log(`${runLabel} first-three journey: ${JSON.stringify(results)}`);
       expect(results[0].movesLeft, "Round 1 remains a forgiving tutorial").toBeGreaterThanOrEqual(2);
@@ -308,15 +330,19 @@ for (const config of [
       expect(results[1].actions).toEqual(["Upgrade Greenhouse · 120 coins", "Next Order → Bloodroot Compact"]);
       expect(results[2].actions).toEqual(["Raise Conservatory · 180 coins", "Play Again → First Bouquet"]);
 
-      const finalState = await journeyState(page);
-      expect(finalState.round).toBe(1);
-      expect(finalState.tiles).toBe(64);
-      expect(finalState.overflowX).toBe(false);
-      expect(finalState.brokenImages).toEqual([]);
-      await page.screenshot({ path: `work/first-three-${runLabel}-replay.png`, fullPage: true });
-      expect(consoleMessages).toEqual([]);
-      expect(pageErrors).toEqual([]);
-      expect(failedRequests).toEqual([]);
+    });
+  }
+
+  for (const seed of GOAL_FOLLOWING_SEEDS) {
+    test(`goal-following first-three journey completes on ${config.label} with ${seed}`, async ({ page }) => {
+      const { runLabel, results } = await playFirstThree(page, config, seed, "goal-following");
+      console.log(`${runLabel} first-three journey: ${JSON.stringify(results)}`);
+      expect(results[0].swaps, "Round 1 goal-following tutorial does not drag").toBeLessThanOrEqual(4);
+      expect(results[1].movesLeft, "Round 2 goal-following play completes").toBeGreaterThanOrEqual(0);
+      expect(results[2].movesLeft, "Round 3 goal-following play completes").toBeGreaterThanOrEqual(0);
+      expect(results[0].actions).toEqual(["Restore Greenhouse · 100 coins", "Next Order → Moonlit Wreath"]);
+      expect(results[1].actions).toEqual(["Upgrade Greenhouse · 120 coins", "Next Order → Bloodroot Compact"]);
+      expect(results[2].actions).toEqual(["Raise Conservatory · 180 coins", "Play Again → First Bouquet"]);
     });
   }
 }
