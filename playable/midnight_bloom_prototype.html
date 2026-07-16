@@ -4923,6 +4923,20 @@
       .board-particle.chain-lash {
         display:none !important;
       }
+      .supreme.on {
+        animation:none !important;
+        opacity:1 !important;
+        transform:none !important;
+      }
+      .supreme.on .burst,
+      .supreme.on .burst::before,
+      .supreme.on .particle {
+        animation:none !important;
+        opacity:1 !important;
+      }
+      .supreme.on .particle {
+        transform:translate(-50%, -50%) scale(var(--scale)) rotate(var(--spin));
+      }
       .board-particle.coin-pop,
       .board-particle.resource-pop,
       .board-particle.petal-pop,
@@ -6801,8 +6815,12 @@
       }
     }
 
+    function prefersReducedMotion() {
+      return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches || false;
+    }
+
     function pulseHaptic(pattern) {
-      if (navigator.vibrate && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      if (navigator.vibrate && !prefersReducedMotion()) {
         navigator.vibrate(pattern);
       }
     }
@@ -10331,25 +10349,28 @@
         supremeChargeActive = false;
         showSupreme(originCells);
         render();
-      }, 340);
+      }, prefersReducedMotion() ? 80 : 340);
     }
 
     function showSupreme(originCells = []) {
       // Supreme Bloom is intentionally rare: 6+ HTML matches or the local review path.
       const supreme = $("supreme");
       const particleLayer = $("supremeParticles");
+      const reducedMotion = prefersReducedMotion();
+      const particleCount = reducedMotion ? 16 : 84;
       particleLayer.innerHTML = "";
+      supreme.dataset.motion = reducedMotion ? "reduced" : "full";
 
-      for (let i = 0; i < 84; i += 1) {
+      for (let i = 0; i < particleCount; i += 1) {
         const particle = document.createElement("span");
         const type = ["blood", "petal", "shard", "spark", "coin", "slash", "thorn"][i % 7];
         const origin = originCells.length
           ? supremeOriginForCell(originCells[i % originCells.length], supreme)
           : null;
-        const angle = (Math.PI * 2 * i) / 84 + (Math.random() - 0.5) * 0.62;
-        const distance = 80 + Math.random() * 310;
+        const angle = (Math.PI * 2 * i) / particleCount + (Math.random() - 0.5) * (reducedMotion ? 0.2 : 0.62);
+        const distance = reducedMotion ? 38 + Math.random() * 90 : 80 + Math.random() * 310;
         const dx = Math.cos(angle) * distance;
-        const dy = Math.sin(angle) * distance * 0.66 - Math.random() * 40;
+        const dy = Math.sin(angle) * distance * 0.66 - Math.random() * (reducedMotion ? 10 : 40);
         particle.className = `particle ${type}`;
         if (origin) {
           particle.style.left = `${origin.left}px`;
@@ -10357,10 +10378,10 @@
         }
         particle.style.setProperty("--dx", `${dx}px`);
         particle.style.setProperty("--dy", `${dy}px`);
-        particle.style.setProperty("--size", `${6 + Math.random() * 18}px`);
-        particle.style.setProperty("--spin", `${Math.random() * 360}deg`);
-        particle.style.setProperty("--scale", `${0.8 + Math.random() * 1.45}`);
-        particle.style.setProperty("--delay", `${Math.random() * 0.18}s`);
+        particle.style.setProperty("--size", `${reducedMotion ? 5 + Math.random() * 8 : 6 + Math.random() * 18}px`);
+        particle.style.setProperty("--spin", `${Math.random() * (reducedMotion ? 60 : 360)}deg`);
+        particle.style.setProperty("--scale", `${reducedMotion ? 0.75 + Math.random() * 0.4 : 0.8 + Math.random() * 1.45}`);
+        particle.style.setProperty("--delay", `${reducedMotion ? 0 : Math.random() * 0.18}s`);
         particleLayer.appendChild(particle);
       }
 
@@ -10370,7 +10391,7 @@
       window.setTimeout(() => {
         supreme.classList.remove("on");
         particleLayer.innerHTML = "";
-      }, 2200);
+      }, reducedMotion ? 650 : 2200);
     }
 
     function installLocalReviewHooks() {

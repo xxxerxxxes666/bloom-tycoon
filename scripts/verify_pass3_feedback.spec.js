@@ -233,6 +233,13 @@ async function verifySupremeReviewHookRare(page, screenshotPath) {
   await expect(page.locator(".tile")).toHaveCount(64);
 }
 
+async function triggerSupremeReviewHook(page) {
+  await expect.poll(async () => page.evaluate(() => window.__bloomReviewHooksEnabled === true)).toBe(true);
+  await page.locator("body").click({ position: { x: 14, y: 14 } });
+  await page.keyboard.press("b");
+  await page.waitForSelector("#supreme.on", { timeout: 2000 });
+}
+
 async function runFullJourney(page, label, mobile = false) {
   await resetPage(page, `pass3_${label}`);
   if (mobile) {
@@ -302,6 +309,47 @@ test("pass 3 exact 390x844 mobile active feedback and round 1-3 journey", async 
   const guards = wireRuntimeGuards(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await runFullJourney(page, "mobile390", true);
+  expect(guards.consoleMessages).toEqual([]);
+  expect(guards.pageErrors).toEqual([]);
+  expect(guards.failedRequests).toEqual([]);
+});
+
+test("reduced motion keeps Supreme Bloom lightweight", async ({ page }) => {
+  const guards = wireRuntimeGuards(page);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await resetPage(page, "pass3_reduced_supreme");
+  await triggerSupremeReviewHook(page);
+  const report = await page.evaluate(() => ({
+    motion: document.querySelector("#supreme")?.dataset.motion || "",
+    visible: (() => {
+      const supreme = document.querySelector("#supreme");
+      if (!supreme) return false;
+      const rect = supreme.getBoundingClientRect();
+      const style = getComputedStyle(supreme);
+      return style.display !== "none"
+        && style.visibility !== "hidden"
+        && Number(style.opacity || 1) > 0.8
+        && rect.width > 0
+        && rect.height > 0;
+    })(),
+    particles: document.querySelectorAll("#supremeParticles .particle").length,
+    tiles: document.querySelectorAll(".tile").length,
+    overflowX: document.documentElement.scrollWidth > window.innerWidth + 1,
+    brokenImages: Array.from(document.images)
+      .filter((image) => image.complete && image.naturalWidth === 0)
+      .map((image) => image.getAttribute("src"))
+  }));
+  expect(report.motion).toBe("reduced");
+  expect(report.visible, "Supreme Bloom remains readable in reduced motion").toBe(true);
+  expect(report.particles, "Supreme Bloom particle count respects reduced motion").toBeLessThanOrEqual(16);
+  expect(report.tiles).toBe(64);
+  expect(report.overflowX).toBe(false);
+  expect(report.brokenImages).toEqual([]);
+  await page.screenshot({ path: "work/pass3-mobile390-reduced-supreme.png", fullPage: true });
+  await page.waitForTimeout(800);
+  await expect(page.locator("#supreme.on")).toHaveCount(0);
+  await expect(page.locator(".tile")).toHaveCount(64);
   expect(guards.consoleMessages).toEqual([]);
   expect(guards.pageErrors).toEqual([]);
   expect(guards.failedRequests).toEqual([]);
