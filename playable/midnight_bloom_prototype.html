@@ -4521,11 +4521,12 @@
     .bouquet-ingredient-count { position:absolute; right:-5px; bottom:-5px; min-width:20px; padding:2px 3px; border:1px solid #d7b16d; background:#060403; color:#f4dfaa; font:900 9px/1 system-ui,sans-serif; box-shadow:0 0 8px #000; }
     .bouquet-thorn-seal { border:1px solid #8a332a; background:radial-gradient(circle,#240707,#050302 72%); box-shadow:inset 0 0 10px #000,0 0 9px #9b1d2255; overflow:visible; }
     .bouquet-thorn-seal .thorn-seal-icon { width:38px; height:38px; }
-    .bouquet-stems { min-height:92px; display:flex; align-items:center; justify-content:center; gap:0; margin:3px auto; }
-    .bouquet-stem { width:58px; height:86px; margin:0 -9px; position:relative; display:grid; place-items:start center; transform:rotate(var(--stem-rot,0deg)) translateY(var(--stem-y,0)); filter:drop-shadow(0 5px 8px #000); }
-    .bouquet-stem::before { content:""; position:absolute; left:50%; top:42px; width:2px; height:50px; background:linear-gradient(#d7b16d,#4f762c 58%,#25170d); transform:translateX(-50%); box-shadow:0 0 8px #000; }
-    .bouquet-stem .icon-wrap { width:54px; height:54px; }
-    .bouquet-stem img { width:54px; height:54px; object-fit:contain; filter:drop-shadow(0 0 8px #000) drop-shadow(0 0 8px currentColor); }
+    .bouquet-stems { min-height:108px; display:flex; align-items:center; justify-content:center; gap:0; margin:0 auto 2px; }
+    .bouquet-stem { width:64px; height:102px; margin:0 -14px; position:relative; display:grid; place-items:start center; transform:rotate(var(--stem-rot,0deg)) translateY(var(--stem-y,0)); filter:drop-shadow(0 6px 9px #000); }
+    .bouquet-stem::before { content:""; position:absolute; left:50%; top:48px; width:2px; height:60px; background:linear-gradient(#d7b16d,#4f762c 58%,#25170d); transform:translateX(-50%); box-shadow:0 0 8px #000; }
+    .bouquet-stem::after { content:""; position:absolute; left:calc(50% + var(--leaf-x, 7px)); top:70px; width:18px; height:8px; border:1px solid #6f944d66; border-radius:80% 12%; background:linear-gradient(90deg,#1b2d12,#6f944d 65%,#1a170d); transform:rotate(var(--leaf-rot, -22deg)); box-shadow:0 0 7px #000; }
+    .bouquet-stem .icon-wrap { width:60px; height:60px; }
+    .bouquet-stem img { width:60px; height:60px; object-fit:contain; filter:drop-shadow(0 0 8px #000) drop-shadow(0 0 8px currentColor); }
 
     .bouquet-ribbon { position:absolute; left:50%; bottom:17px; z-index:2; width:96px; height:24px; transform:translateX(-50%); background:linear-gradient(90deg,#4c1a16,#b8823f,#4c1a16); border:1px solid #d7b16d; box-shadow:inset 0 0 9px #000,0 0 12px #000; }
     .bouquet-ribbon::before,.bouquet-ribbon::after { content:""; position:absolute; top:4px; width:28px; height:18px; background:linear-gradient(90deg,#37100f,#8f5d2b); border:1px solid #6f4a29; z-index:-1; }
@@ -4648,10 +4649,11 @@
       .bouquet-ingredient { width:32px; height:32px; transform:translate(-50%,-50%) rotate(var(--ingredient-angle,0deg)) translateY(-36px) rotate(var(--ingredient-counter-angle,0deg)); }
       .bouquet-ingredient .icon-wrap,.bouquet-ingredient img { width:30px; height:30px; }
       .bouquet-ingredient-count { right:-6px; bottom:-6px; min-width:18px; font-size:8px; }
-      .bouquet-stems { min-height:78px; }
-      .bouquet-stem { width:50px; height:72px; margin:0 -8px; }
+      .bouquet-stems { min-height:82px; }
+      .bouquet-stem { width:50px; height:78px; margin:0 -11px; }
       .bouquet-stem .icon-wrap,.bouquet-stem img { width:48px; height:48px; }
-      .bouquet-stem::before { top:38px; height:42px; }
+      .bouquet-stem::before { top:38px; height:46px; }
+      .bouquet-stem::after { top:56px; width:14px; height:7px; }
       .bouquet-trophy-name { font-size:19px; }
       .bouquet-trophy-copy { max-width:30ch; }
     }
@@ -5558,7 +5560,7 @@
         </div>
         <div class="restoration-title" id="restorationTitle">First Bouquet Complete</div>
         <div class="payoff-stage">
-          <div class="bouquet-trophy" id="bouquetTrophy" data-bouquet-payoff-state="sealed" aria-label="Sealed bouquet payoff trophy"></div>
+          <div class="bouquet-trophy" id="bouquetTrophy" data-bouquet-payoff-state="sealed" aria-label="Crafted bouquet payoff trophy"></div>
           <div class="restoration-scene" aria-label="Greenhouse restoration before and after">
             <img class="greenhouse-art greenhouse-art-withered" src="../assets/greenhouse/first_greenhouse_withered.jpg" width="1672" height="941" alt="" decoding="async" loading="eager">
             <img class="greenhouse-art greenhouse-art-restored" src="../assets/greenhouse/first_greenhouse_restored.jpg" width="1672" height="941" alt="" decoding="async" loading="eager">
@@ -5590,7 +5592,7 @@
           </div>
         </div>
         <div class="payoff-transaction" id="payoffTransaction" aria-label="Bouquet coin transaction">
-          +120 coins -> Restore -100 coins
+          Earned 120 coins. Restore costs 100.
         </div>
         <div class="restoration-copy" id="restorationCopy">Spend 100 coins to relight the abandoned greenhouse.</div>
         <button class="restore-btn" id="restoreGreenhouseBtn" type="button">Restore Greenhouse · 100 coins</button>
@@ -5716,6 +5718,7 @@
     ];
     const MOONLIT_GREENHOUSE_UPGRADE_COST = 120;
     const BLOODROOT_CONSERVATORY_COST = 180;
+    const FIRST_GREENHOUSE_RESTORE_COST = 100;
     const RESTORED_ROUND_TWO_GUIDE_LIMIT = 2;
     const FOCUSED_LEVEL_COUNT = 3;
     const WILD_CHAIN_CASCADE_BONUS = 8;
@@ -7768,7 +7771,9 @@
           payoffState: "bloodroot",
           title: "Bloodroot Compact Complete",
           state: spent ? "BLOODROOT CONSERVATORY RAISED" : "BLOODROOT CONSERVATORY READY",
-          transaction: `+${roundThreePlan.reward.coins} coins -> ${spent ? "Raised" : "Raise"} -${BLOODROOT_CONSERVATORY_COST}${spent ? " spent" : " coins"}`,
+          transaction: spent
+            ? `Raised for ${BLOODROOT_CONSERVATORY_COST}. ${coins} coins remain.`
+            : `Earned ${roundThreePlan.reward.coins} coins. Conservatory costs ${BLOODROOT_CONSERVATORY_COST}.`,
           copy: spent ? "First Bouquet is ready to replay." : "Spend the Bloodroot payout to raise the conservatory.",
           spendText: coins >= BLOODROOT_CONSERVATORY_COST
             ? `Raise Conservatory · ${BLOODROOT_CONSERVATORY_COST} coins`
@@ -7785,7 +7790,9 @@
           payoffState: "moonlit",
           title: "Moonlit Wreath Complete",
           state: spent ? "MOONLIT GREENHOUSE UPGRADED" : "MOONLIT UPGRADE READY",
-          transaction: `+${roundTwoPlan.reward.coins} coins -> ${spent ? "Upgraded" : "Upgrade"} -${MOONLIT_GREENHOUSE_UPGRADE_COST}${spent ? " spent" : " coins"}`,
+          transaction: spent
+            ? `Upgraded for ${MOONLIT_GREENHOUSE_UPGRADE_COST}. ${coins} coins remain.`
+            : `Earned ${roundTwoPlan.reward.coins} coins. Upgrade costs ${MOONLIT_GREENHOUSE_UPGRADE_COST}.`,
           copy: spent ? "Bloodroot Compact is ready." : "Spend the Moonlit payout to raise the night glass.",
           spendText: coins >= MOONLIT_GREENHOUSE_UPGRADE_COST
             ? `Upgrade Greenhouse · ${MOONLIT_GREENHOUSE_UPGRADE_COST} coins`
@@ -7799,11 +7806,13 @@
         plan: roundOnePlan,
         artKey: "first",
         payoffState: spent ? "restored" : "sealed",
-        title: spent ? "Greenhouse Restored" : "First Bouquet Complete",
+        title: spent ? "Greenhouse Restored" : "First Bouquet Bound",
         state: spent ? "RESTORED GREENHOUSE" : "WITHERED GLASSHOUSE",
-        transaction: `+${roundOnePlan.reward.coins} coins -> ${spent ? "Restored" : "Restore"} -100${spent ? " spent" : " coins"}`,
-        copy: spent ? "Moonlit Wreath is ready." : "Spend the bouquet payout to relight the abandoned glass.",
-        spendText: "Restore Greenhouse · 100 coins",
+        transaction: spent
+          ? `Restored for ${FIRST_GREENHOUSE_RESTORE_COST}. ${coins} coins remain.`
+          : `Earned ${roundOnePlan.reward.coins} coins. Restore costs ${FIRST_GREENHOUSE_RESTORE_COST}.`,
+        copy: spent ? "Moonlit Wreath is ready." : "Thorn Rose and Bone Star are bound; spend 100 to relight the greenhouse.",
+        spendText: `Restore Greenhouse · ${FIRST_GREENHOUSE_RESTORE_COST} coins`,
         nextText: "Next Order → Moonlit Wreath",
         primary: spent ? "next" : "spend"
       };
@@ -7821,7 +7830,7 @@
       $("nextOrderBtn").textContent = ceremony.nextText;
       $("restoreGreenhouseBtn").hidden = ceremony.primary !== "spend";
       $("nextOrderBtn").hidden = ceremony.primary !== "next";
-      $("restoreGreenhouseBtn").disabled = (currentRound === 1 && (!roundComplete || roundOneRestored || coins < 100))
+      $("restoreGreenhouseBtn").disabled = (currentRound === 1 && (!roundComplete || roundOneRestored || coins < FIRST_GREENHOUSE_RESTORE_COST))
         || (currentRound === 2 && roundComplete && (!roundOneRestored || roundTwoGreenhouseUpgraded || coins < MOONLIT_GREENHOUSE_UPGRADE_COST))
         || (currentRound === 3 && roundComplete && (roundThreeConservatoryRaised || coins < BLOODROOT_CONSERVATORY_COST));
       $("nextOrderBtn").disabled = ceremony.primary !== "next";
@@ -8069,6 +8078,12 @@
     }
 
     function greenhouseNextUnlockLabel() {
+      if (roundComplete && currentRound === 1) {
+        return roundOneRestored ? "Moonlit Wreath ready" : "Restore First Bouquet Glass";
+      }
+      if (roundComplete && currentRound === 2) {
+        return roundTwoGreenhouseUpgraded ? "Bloodroot Compact ready" : "Upgrade Moonlit Greenhouse";
+      }
       if (!roundOneRestored && currentRound <= 1) {
         return "Restore First Bouquet Glass";
       }
@@ -8725,7 +8740,7 @@
       const cleared = wave.clearCells.length;
       const effectRareCells = dedupeCells([...wave.rareCells, ...forcedRareCells]);
       const isRareWave = wave.rare || effectRareCells.length > 0;
-      const coinsEarned = Math.round(cleared * (isRareWave ? 12 : 2) * (wave.coinMultiplier || 1));
+      const coinsEarned = focusedSliceRound() ? 0 : Math.round(cleared * (isRareWave ? 12 : 2) * (wave.coinMultiplier || 1));
       coins += coinsEarned;
       queueCoinBurst(wave.clearCells, coinsEarned, cascadeIndex);
       queueGreenhouseIntakeFlights(wave.clearCells, cascadeIndex, wave.strongestShape);
@@ -8848,6 +8863,10 @@
     function applyWildChainBonus(result, options = {}) {
       const suppressWildChain = options.suppressWildChain || Number(options.maxCascades) === 1;
       if (suppressWildChain || !result.matched) {
+        lastWildChain = null;
+        return;
+      }
+      if (focusedSliceRound()) {
         lastWildChain = null;
         return;
       }
@@ -9757,18 +9776,25 @@
       if (!trophy) return;
       const rewardFlower = flowers[plan.reward.flowerId] || flowers[0];
       const accent = rewardFlower[4] || "#d7b16d";
-      const stemAngles = [-17, -7, 7, 17];
-      const stemOffsets = [2, -4, -2, 3];
+      const stemAngles = [-24, -16, -7, 6, 15, 24];
+      const stemOffsets = [4, -4, 0, -3, 3, -2];
       trophy.dataset.bouquetPayoffState = payoffState;
       trophy.dataset.assemblyState = bouquetSealPulseActive ? "forming" : "assembled";
+      trophy.setAttribute("aria-label", `${plan.name} crafted bouquet trophy`);
       trophy.style.setProperty("--bouquet-aura", `${accent}55`);
       trophy.style.setProperty("--bouquet-ray", `${accent}2c`);
-      const stemMarkup = plan.targets.map((target, index) => {
+      const bouquetStems = plan.targets.flatMap((target) => {
+        const repeats = Math.min(3, Math.max(2, Math.round(target.needed / 4)));
+        return Array.from({ length: repeats }, () => target);
+      });
+      const stemMarkup = bouquetStems.map((target, index) => {
         const flower = flowers[target.flowerId] || flowers[0];
         const angle = stemAngles[index % stemAngles.length];
         const y = stemOffsets[index % stemOffsets.length];
+        const leafX = index % 2 ? "-20px" : "7px";
+        const leafRot = index % 2 ? "202deg" : "-22deg";
         return `
-          <span class="bouquet-stem" style="--stem-rot:${angle}deg;--stem-y:${y}px;--stem-delay:${index * 80}ms;">
+          <span class="bouquet-stem" style="--stem-rot:${angle}deg;--stem-y:${y}px;--stem-delay:${index * 70}ms;--leaf-x:${leafX};--leaf-rot:${leafRot};">
             ${iconMarkup(target.flowerId, "bouquet-stem-icon", flower[0], "bouquet-stem-wrap")}
           </span>
         `;
@@ -9776,13 +9802,14 @@
       const assemblyMarkup = bouquetAssemblyMarkup(plan);
       const copy = plan.round === 1
         ? payoffState === "restored"
-          ? "Coins spent; the sealed bouquet wakes repaired glass."
-          : "Velvet Funeral and Saint's Offering tied for the greenhouse."
+          ? "The bound bouquet has relit the repaired glass."
+          : "Thorn Rose and Bone Star tied into a greenhouse bouquet."
         : plan.round === 2
           ? "Nightshade, amber, rose, and broken thorns raise the night house."
           : "Bloodroot and Sol Rot seal the conservatory run.";
+      const kicker = payoffState === "restored" ? "Greenhouse Relit" : "Bouquet Bound";
       trophy.innerHTML = `
-        <span class="bouquet-trophy-kicker">Sealed Order</span>
+        <span class="bouquet-trophy-kicker">${kicker}</span>
         <span>
           <span class="bouquet-trophy-name">${plan.name}</span>
           <span class="bouquet-trophy-copy">${copy}</span>
@@ -9837,8 +9864,8 @@
     }
 
     function restoreRoundOneGreenhouse() {
-      if (currentRound !== 1 || !roundComplete || roundOneRestored || coins < 100) return;
-      coins -= 100;
+      if (currentRound !== 1 || !roundComplete || roundOneRestored || coins < FIRST_GREENHOUSE_RESTORE_COST) return;
+      coins -= FIRST_GREENHOUSE_RESTORE_COST;
       roundOneRestored = true;
       ritualMessage = "<strong>Greenhouse restored.</strong> The dead glass burns gold and the first vines wake.";
       pulseNextOrderReady();

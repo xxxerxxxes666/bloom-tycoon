@@ -59,6 +59,9 @@ async function visibleReport(page) {
       bouquetText: document.querySelector("#bouquetProgressLabel")?.textContent.trim() || "",
       bouquetNext: document.querySelector("#bouquetProgressNext")?.textContent.trim() || "",
       greenhouseText: document.querySelector(".restoration-dial-phase")?.textContent.trim() || "",
+      payoffTransaction: document.querySelector("#payoffTransaction")?.textContent.trim() || "",
+      restorationState: document.querySelector("#restorationState")?.textContent.trim() || "",
+      coins: JSON.parse(localStorage.getItem("bloomTycoonPlayableStateV1") || "{}").coins ?? 0,
       mobileGreenhousePlinthVisible: visible(document.querySelector("#mobileGreenhousePlinth")),
       ritualLogVisible: visible(document.querySelector("#ritualLog")),
       visibleProgressText: document.body.innerText,
@@ -171,6 +174,8 @@ test("guided Round 1 payoff keeps one dominant action", async ({ page }) => {
     tiles: 64,
     tutorialVisible: true,
     tutorialInViewport: true,
+    coins: 120,
+    payoffTransaction: "Earned 120 coins. Restore costs 100.",
     overflowX: false,
     brokenImages: []
   });
@@ -182,6 +187,9 @@ test("guided Round 1 payoff keeps one dominant action", async ({ page }) => {
   await expect(page.locator("#restoreGreenhouseBtn")).toBeFocused();
   report = await visibleReport(page);
   expect(report.tutorialInViewport).toBe(true);
+  expect(report.coins).toBe(120);
+  expect(report.payoffTransaction).toBe("Earned 120 coins. Restore costs 100.");
+  expect(report.visibleProgressText).not.toContain("+120 coins -> Restore -100 coins");
   expect(report.visibleNonTileButtons).toEqual(["Restore Greenhouse · 100 coins"]);
   expect(report.visibleProgressText).not.toContain("Swap the glowing flowers.");
 
@@ -190,6 +198,9 @@ test("guided Round 1 payoff keeps one dominant action", async ({ page }) => {
   await expect(page.locator("#nextOrderBtn")).toHaveText("Next Order → Moonlit Wreath");
   await expect(page.locator("#nextOrderBtn")).toBeFocused();
   report = await visibleReport(page);
+  expect(report.coins).toBe(20);
+  expect(report.payoffTransaction).toBe("Restored for 100. 20 coins remain.");
+  expect(report.restorationState).toBe("RESTORED GREENHOUSE");
   expect(report.visibleNonTileButtons).toEqual(["Next Order → Moonlit Wreath"]);
   expect(report.tutorialInViewport).toBe(true);
   await page.waitForFunction(() => {
@@ -204,6 +215,9 @@ test("guided Round 1 payoff keeps one dominant action", async ({ page }) => {
   await expect(page.locator("#nextOrderBtn")).toBeFocused();
   report = await visibleReport(page);
   expect(report.tutorialInViewport).toBe(true);
+  expect(report.coins).toBe(20);
+  expect(report.payoffTransaction).toBe("Restored for 100. 20 coins remain.");
+  expect(report.restorationState).toBe("RESTORED GREENHOUSE");
   expect(report.visibleNonTileButtons).toEqual(["Next Order → Moonlit Wreath"]);
   expect(report.visibleProgressText).not.toContain("Swap the glowing flowers.");
 

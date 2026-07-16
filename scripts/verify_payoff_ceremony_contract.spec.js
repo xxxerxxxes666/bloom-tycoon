@@ -73,6 +73,9 @@ async function visibleContract(page) {
       trophies: visible(".bouquet-trophy").length,
       scenes: visible(".restoration-scene").length,
       transactions: visible(".payoff-transaction").length,
+      transactionText: document.querySelector("#payoffTransaction")?.textContent.trim() || "",
+      trophyKicker: document.querySelector(".bouquet-trophy-kicker")?.textContent.trim() || "",
+      coins: JSON.parse(localStorage.getItem("bloomTycoonPlayableStateV1") || "{}").coins ?? 0,
       board: visible(".board").length,
       controls: visible(".controls").length,
       objective: visible(".objective").length,
@@ -94,6 +97,20 @@ async function expectCeremony(page, expectedButton, screenshotPath, expectedGuid
   expect(contract.trophies, "one visible bouquet trophy").toBe(1);
   expect(contract.scenes, "one visible greenhouse scene").toBe(1);
   expect(contract.transactions, "one visible transaction line").toBe(1);
+  expect(contract.transactionText, "no raw ledger-arrow accounting").not.toContain("->");
+  if (expectedButton.includes("Restore Greenhouse")) {
+    expect(contract.transactionText).toBe("Earned 120 coins. Restore costs 100.");
+    expect(contract.trophyKicker).toBe("Bouquet Bound");
+    expect(contract.coins).toBe(120);
+  }
+  if (expectedButton.includes("Next Order")) {
+    expect(contract.transactionText).toMatch(/coins remain\.|spent$/);
+    if (contract.text.includes("Greenhouse Restored")) {
+      expect(contract.transactionText).toBe("Restored for 100. 20 coins remain.");
+      expect(contract.trophyKicker).toBe("Greenhouse Relit");
+      expect(contract.coins).toBe(20);
+    }
+  }
   expect(contract.buttons, "one visible primary action").toHaveLength(1);
   expect(contract.buttons[0]).toContain(expectedButton);
   expect(contract.nonBoardButtons, "one visible non-board action during ceremony").toHaveLength(1);
