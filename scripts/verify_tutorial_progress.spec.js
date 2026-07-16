@@ -2,7 +2,7 @@ const { test, expect } = require("@playwright/test");
 
 const BASE_URL = process.env.BLOOM_TEST_URL || "http://127.0.0.1:4173/playable/midnight_bloom_prototype.html";
 const SAVE_KEY = "bloomTycoonPlayableStateV1";
-const FOCUSED_ECONOMY_VERSION = 1;
+const FOCUSED_ECONOMY_VERSION = 2;
 const LEGACY_ECONOMY_CASES = [
   {
     label: "active-round-one",
@@ -61,18 +61,18 @@ const LEGACY_ECONOMY_CASES = [
     transaction: "Earned 180 coins. Conservatory costs 180.",
     spentCoins: 50,
     spentAction: "Play Again → First Bouquet",
-    spentTransaction: "Raised for 180. 50 coins remain."
+    spentTransaction: "Raised for 180. 50 coins seed the next greenhouse run."
   },
   {
     label: "round-three-raised",
     state: { currentRound: 3, roundComplete: true, roundOneRestored: true, roundTwoGreenhouseUpgraded: true, roundThreeConservatoryRaised: true, moves: 2, counts: [13, 0, 0, 14, 0, 0] },
     coins: 50,
     action: "Play Again → First Bouquet",
-    transaction: "Raised for 180. 50 coins remain."
+    transaction: "Raised for 180. 50 coins seed the next greenhouse run."
   }
 ];
 
-test.setTimeout(90000);
+test.setTimeout(180000);
 
 async function openFresh(page, suffix) {
   await page.goto(`${BASE_URL}?tutorial-progress=${suffix}&bloomReview=1`, { waitUntil: "networkidle" });
@@ -265,73 +265,81 @@ async function economyMigrationReport(page) {
   }, SAVE_KEY);
 }
 
+const LEGACY_ECONOMY_SOURCES = [
+  { label: "unversioned", version: undefined, surplus: 188 },
+  { label: "version-one-inflated", version: 1, surplus: 100 }
+];
+
 for (const viewport of [
   { label: "desktop", width: 1280, height: 720 },
   { label: "mobile390", width: 390, height: 844 }
 ]) {
   test(`legacy focused economy migrates once on ${viewport.label}`, async ({ browser }) => {
-    for (const migrationCase of LEGACY_ECONOMY_CASES) {
-      const context = await browser.newContext({
-        viewport: { width: viewport.width, height: viewport.height }
-      });
-      const page = await context.newPage();
-      const legacyState = {
-        coins: 188,
-        cursedThorns: [],
-        clearedCursedThorns: 0,
-        roundOneRestored: false,
-        roundTwoGreenhouseUpgraded: false,
-        roundThreeConservatoryRaised: false,
-        hasMadeValidMove: true,
-        tutorialSkipped: true,
-        tutorialActive: false,
-        ...migrationCase.state
-      };
-      await page.addInitScript(({ key, state, marker }) => {
-        if (!sessionStorage.getItem(marker)) {
-          localStorage.setItem(key, JSON.stringify(state));
-          sessionStorage.setItem(marker, "1");
-        }
-      }, {
-        key: SAVE_KEY,
-        state: legacyState,
-        marker: `legacy-economy-${viewport.label}-${migrationCase.label}`
-      });
-      await page.goto(`${BASE_URL}?legacy-economy=${viewport.label}-${migrationCase.label}&bloomReview=1`, { waitUntil: "networkidle" });
-      await expect(page.locator(".tile")).toHaveCount(64);
-
-      for (let reload = 0; reload < 2; reload += 1) {
-        const report = await economyMigrationReport(page);
-        expect(report.coins, `${migrationCase.label} balance after reload ${reload}`).toBe(migrationCase.coins);
-        expect(report.version, `${migrationCase.label} migration version`).toBe(FOCUSED_ECONOMY_VERSION);
-        expect(report.tiles).toBe(64);
-        expect(report.brokenImages).toEqual([]);
-        expect(report.overflowX).toBe(false);
-        expect(report.actions.length, `${migrationCase.label} focused action cap`).toBeLessThanOrEqual(2);
-        if (migrationCase.action) {
-          expect(report.actions).toEqual([migrationCase.action]);
-          expect(report.transaction).toBe(migrationCase.transaction);
-        }
-        await page.reload({ waitUntil: "networkidle" });
+    for (const source of LEGACY_ECONOMY_SOURCES) {
+      for (const migrationCase of LEGACY_ECONOMY_CASES) {
+        const context = await browser.newContext({
+          viewport: { width: viewport.width, height: viewport.height }
+        });
+        const page = await context.newPage();
+        const legacyState = {
+          coins: source.version === undefined ? source.surplus : migrationCase.coins + source.surplus,
+          cursedThorns: [],
+          clearedCursedThorns: 0,
+          roundOneRestored: false,
+          roundTwoGreenhouseUpgraded: false,
+          roundThreeConservatoryRaised: false,
+          hasMadeValidMove: true,
+          tutorialSkipped: true,
+          tutorialActive: false,
+          ...(source.version === undefined ? {} : { focusedEconomyVersion: source.version }),
+          ...migrationCase.state
+        };
+        await page.addInitScript(({ key, state, marker }) => {
+          if (!sessionStorage.getItem(marker)) {
+            localStorage.setItem(key, JSON.stringify(state));
+            sessionStorage.setItem(marker, "1");
+          }
+        }, {
+          key: SAVE_KEY,
+          state: legacyState,
+          marker: `legacy-economy-${viewport.label}-${source.label}-${migrationCase.label}`
+        });
+        await page.goto(`${BASE_URL}?legacy-economy=${viewport.label}-${migrationCase.label}&bloomReview=1`, { waitUntil: "networkidle" });
         await expect(page.locator(".tile")).toHaveCount(64);
-      }
 
-      if (migrationCase.spentCoins !== undefined) {
-        await page.getByRole("button", { name: migrationCase.action, exact: true }).click();
         for (let reload = 0; reload < 2; reload += 1) {
           const report = await economyMigrationReport(page);
-          expect(report.coins, `${migrationCase.label} spent balance after reload ${reload}`).toBe(migrationCase.spentCoins);
-          expect(report.version).toBe(FOCUSED_ECONOMY_VERSION);
-          expect(report.actions).toEqual([migrationCase.spentAction]);
-          expect(report.transaction).toBe(migrationCase.spentTransaction);
+          expect(report.coins, `${source.label} ${migrationCase.label} balance after reload ${reload}`).toBe(migrationCase.coins);
+          expect(report.version, `${migrationCase.label} migration version`).toBe(FOCUSED_ECONOMY_VERSION);
           expect(report.tiles).toBe(64);
           expect(report.brokenImages).toEqual([]);
           expect(report.overflowX).toBe(false);
+          expect(report.actions.length, `${migrationCase.label} focused action cap`).toBeLessThanOrEqual(2);
+          if (migrationCase.action) {
+            expect(report.actions).toEqual([migrationCase.action]);
+            expect(report.transaction).toBe(migrationCase.transaction);
+          }
           await page.reload({ waitUntil: "networkidle" });
           await expect(page.locator(".tile")).toHaveCount(64);
         }
+
+        if (migrationCase.spentCoins !== undefined) {
+          await page.getByRole("button", { name: migrationCase.action, exact: true }).click();
+          for (let reload = 0; reload < 2; reload += 1) {
+            const report = await economyMigrationReport(page);
+            expect(report.coins, `${migrationCase.label} spent balance after reload ${reload}`).toBe(migrationCase.spentCoins);
+            expect(report.version).toBe(FOCUSED_ECONOMY_VERSION);
+            expect(report.actions).toEqual([migrationCase.spentAction]);
+            expect(report.transaction).toBe(migrationCase.spentTransaction);
+            expect(report.tiles).toBe(64);
+            expect(report.brokenImages).toEqual([]);
+            expect(report.overflowX).toBe(false);
+            await page.reload({ waitUntil: "networkidle" });
+            await expect(page.locator(".tile")).toHaveCount(64);
+          }
+        }
+        await context.close();
       }
-      await context.close();
     }
   });
 }

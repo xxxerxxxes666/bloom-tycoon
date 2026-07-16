@@ -66,8 +66,12 @@ async function journeyState(page) {
       roundOneRestored: Boolean(state.roundOneRestored),
       roundTwoGreenhouseUpgraded: Boolean(state.roundTwoGreenhouseUpgraded),
       roundThreeConservatoryRaised: Boolean(state.roundThreeConservatoryRaised),
+      coins: state.coins,
+      focusedEconomyVersion: state.focusedEconomyVersion,
       bouquet: document.querySelector("#bouquetProgressLabel")?.textContent.trim() || "",
       greenhouse: document.querySelector(".restoration-dial-phase")?.textContent.trim() || "",
+      payoffTransaction: document.querySelector("#payoffTransaction")?.textContent.trim() || "",
+      payoffCopy: document.querySelector("#restorationCopy")?.textContent.trim() || "",
       cue: document.querySelector("#firstSwapCue")?.textContent.trim() || "",
       tutorial: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
       tiles: document.querySelectorAll(".tile").length,
@@ -271,20 +275,12 @@ async function playFirstThree(page, config, seed, strategy) {
   await openFresh(page, seed, runLabel);
   await assertActiveBoard(page, config.mobile);
 
-  const results = [];
-  for (let round = 1; round <= 3; round += 1) {
-    results.push(await playCurrentRound(page, runLabel, round, strategy));
-    const firstAction = await spendPrimaryCeremonyAction(page);
-    const secondAction = await spendPrimaryCeremonyAction(page);
-    results[results.length - 1].actions = [firstAction, secondAction];
-    if (round < 3) {
-      await expect(page.locator(".tile")).toHaveCount(64);
-      await assertActiveBoard(page, config.mobile);
-    }
-  }
+  const results = await playFocusedCycle(page, config, runLabel, strategy);
 
   const finalState = await journeyState(page);
   expect(finalState.round).toBe(1);
+  expect(finalState.coins).toBe(0);
+  expect(finalState.focusedEconomyVersion).toBe(2);
   expect(finalState.tiles).toBe(64);
   expect(finalState.overflowX).toBe(false);
   expect(finalState.brokenImages).toEqual([]);
@@ -293,6 +289,67 @@ async function playFirstThree(page, config, seed, strategy) {
   expect(pageErrors).toEqual([]);
   expect(failedRequests).toEqual([]);
   return { runLabel, results };
+}
+
+async function playFocusedCycle(page, config, runLabel, strategy, options = {}) {
+  const results = [];
+  for (let round = 1; round <= 3; round += 1) {
+    const startCoins = (await journeyState(page)).coins;
+    const result = await playCurrentRound(page, runLabel, round, strategy);
+    const earnedCoins = (await journeyState(page)).coins;
+    const firstAction = await spendPrimaryCeremonyAction(page);
+    const spentState = await journeyState(page);
+    result.balances = [startCoins, earnedCoins, spentState.coins];
+
+    if (round === 3 && options.evidencePrefix) {
+      expect(spentState.payoffTransaction).toBe("Raised for 180. 50 coins seed the next greenhouse run.");
+      expect(spentState.payoffCopy).toBe("Play Again reinvests the seed into a fresh First Bouquet run.");
+      expect(spentState.visibleButtons).toEqual(["Play Again → First Bouquet"]);
+      await page.screenshot({ path: `${options.evidencePrefix}-reinvestment.png`, fullPage: true });
+    }
+    if (round === 1 && options.verifyRestoredRoundOne) {
+      expect(spentState.coins).toBe(20);
+      await page.screenshot({ path: `${options.evidencePrefix}-round1-restored-20.png`, fullPage: true });
+      for (let reload = 0; reload < 2; reload += 1) {
+        await page.reload({ waitUntil: "networkidle" });
+        await expect(page.locator(".tile")).toHaveCount(64);
+        const reloaded = await journeyState(page);
+        expect(reloaded.coins, `replayed Round 1 reload ${reload + 1}`).toBe(20);
+        expect(reloaded.focusedEconomyVersion).toBe(2);
+        expect(reloaded.payoffTransaction).toBe("Restored for 100. 20 coins remain.");
+        expect(reloaded.visibleButtons).toEqual(["Next Order → Moonlit Wreath"]);
+      }
+    }
+
+    if (round === 3 && options.stopBeforeReplay) {
+      result.actions = [firstAction];
+      results.push(result);
+      break;
+    }
+    const secondAction = await spendPrimaryCeremonyAction(page);
+    const advancedCoins = (await journeyState(page)).coins;
+    result.balances.push(advancedCoins);
+    result.actions = [firstAction, secondAction];
+    results.push(result);
+    if (round < 3) {
+      await expect(page.locator(".tile")).toHaveCount(64);
+      await assertActiveBoard(page, config.mobile);
+    }
+  }
+  return results;
+}
+
+async function reloadAndExpectActiveReplayBalance(page, config, expectedCoins) {
+  for (let reload = 0; reload < 2; reload += 1) {
+    await page.reload({ waitUntil: "networkidle" });
+    await expect(page.locator(".tile")).toHaveCount(64);
+    const state = await journeyState(page);
+    expect(state.round).toBe(1);
+    expect(state.roundComplete).toBe(false);
+    expect(state.coins).toBe(expectedCoins);
+    expect(state.focusedEconomyVersion).toBe(2);
+    await assertActiveBoard(page, config.mobile);
+  }
 }
 
 async function assertActiveBoard(page, mobile) {
@@ -346,4 +403,52 @@ for (const config of [
       expect(results[2].actions).toEqual(["Raise Conservatory · 180 coins", "Play Again → First Bouquet"]);
     });
   }
+
+  test(`focused economy closes across two full cycles on ${config.label}`, async ({ page }) => {
+    const consoleMessages = [];
+    const pageErrors = [];
+    const failedRequests = [];
+    page.on("console", (message) => {
+      if (message.type() === "error" || message.type() === "warning") {
+        consoleMessages.push(`${message.type()}: ${message.text()}`);
+      }
+    });
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    page.on("requestfailed", (request) => failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`));
+
+    await page.setViewportSize(config.viewport);
+    const runLabel = `${config.label}-two-cycle-vesper-thorn`;
+    await openFresh(page, "vesper-thorn", runLabel);
+    expect((await journeyState(page)).coins).toBe(0);
+
+    const firstCycle = await playFocusedCycle(page, config, `${runLabel}-cycle1`, "goal-following", {
+      evidencePrefix: `work/economy-${config.label}-cycle1`
+    });
+    expect(firstCycle.map((round) => round.balances)).toEqual([
+      [0, 120, 20, 20],
+      [20, 170, 50, 50],
+      [50, 230, 50, 0]
+    ]);
+    await reloadAndExpectActiveReplayBalance(page, config, 0);
+
+    const secondCycle = await playFocusedCycle(page, config, `${runLabel}-cycle2`, "goal-following", {
+      evidencePrefix: `work/economy-${config.label}-cycle2`,
+      verifyRestoredRoundOne: true,
+      stopBeforeReplay: true
+    });
+    expect(secondCycle.map((round) => round.balances)).toEqual([
+      [0, 120, 20, 20],
+      [20, 170, 50, 50],
+      [50, 230, 50]
+    ]);
+    const finalState = await journeyState(page);
+    expect(finalState.coins).toBe(50);
+    expect(finalState.visibleButtons).toEqual(["Play Again → First Bouquet"]);
+    expect(finalState.overflowX).toBe(false);
+    expect(finalState.brokenImages).toEqual([]);
+    console.log(`${runLabel} balance traces: ${JSON.stringify({ firstCycle: firstCycle.map((round) => round.balances), secondCycle: secondCycle.map((round) => round.balances) })}`);
+    expect(consoleMessages).toEqual([]);
+    expect(pageErrors).toEqual([]);
+    expect(failedRequests).toEqual([]);
+  });
 }

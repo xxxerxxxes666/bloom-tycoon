@@ -214,7 +214,7 @@ test("mobile guided swaps return control without particle buildup", async ({ pag
   const reachedPayoff = second.report.disabledTiles === 64 && second.report.bouquet.includes("14/14");
   if (reachedPayoff) {
     expect(second.controlMs, "guided completion ceremony appears").toBeLessThanOrEqual(3200);
-    await expect(page.locator("#restoreGreenhouseBtn")).toBeVisible({ timeout: 1000 });
+    await expect(page.locator("#restoreGreenhouseBtn")).toBeVisible({ timeout: 1800 });
   } else {
     expect(second.controlMs, "second guided swap control return").toBeLessThanOrEqual(1050);
     expect(second.report.disabledTiles).toBe(0);

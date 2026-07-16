@@ -1,5 +1,18 @@
 # Codex Build Notes
 
+## 2026-07-16 closed Play Again economy loop
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_first_three_journey.spec.js`, `scripts/verify_tutorial_progress.spec.js`, `scripts/verify_payoff_ceremony_contract.spec.js`, `scripts/verify_runtime_performance.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.
+- Selected weakness: `Play Again` preserved the completed run's 50 coins, so replayed Round 1 restored to 70 and every subsequent loop inflated the balance by another 50. This undermined the focused greenhouse economy more than the remaining bouquet-stem cosmetic discrepancy.
+- Player-visible result: the raised Bloodroot ceremony now says `Raised for 180. 50 coins seed the next greenhouse run.` and explains that Play Again reinvests the seed. Choosing the sole `Play Again -> First Bouquet` action consumes that seed and saves the new active Round 1 at exactly 0 coins.
+- Save contract: focused economy version `2` normalizes every older unversioned or version-1 state once from authoritative progression. Version-2 saves preserve their stored in-cycle balance on ordinary reload.
+- Exact real-play traces on desktop and exact `390x844` mobile: first cycle `0 -> 120 -> 20 -> 170 -> 50 -> 230 -> 50 -> Play Again -> 0`; second cycle `0 -> 120 -> 20 -> 170 -> 50 -> 230 -> 50`. Replayed active Round 1 stayed at 0 across two reloads; replayed restored Round 1 stayed at 20 across two reloads.
+- Migration matrix: unversioned and deliberately inflated version-1 saves were exercised at all nine active/pending/spent focused progression states on desktop and mobile. Every case normalized to `0`, `120`, `20`, `170`, `50`, or `230` as appropriate, persisted version 2, reloaded twice, preserved one focused action, and retained 64 tiles with no broken images or overflow.
+- Screenshot evidence: `work/economy-desktop-cycle1-reinvestment.png`, `work/economy-mobile390-cycle1-reinvestment.png`, `work/economy-desktop-cycle2-round1-restored-20.png`, and `work/economy-mobile390-cycle2-round1-restored-20.png` were visually inspected. The finale and replayed restoration remain fully visible, focused, and one-action on both viewports.
+- Verification: project and HTML static verifiers passed; JavaScript syntax and `git diff --check` passed. The focused two-cycle test passed `2/2`, the migration matrix passed `2/2`, the runtime suite passed `4/4`, and the final integrated Chromium suite passed `41/41` in 11.3 minutes. Coverage includes real legal swaps, authored Black Candle Vine and Cursed Thorn teaching, Retry, save/reload, ceremonies, reduced motion, 64 tiles/eight rows, first-viewport hierarchy, no horizontal overflow, no broken images, and no console/page/request errors.
+- Harness correction: the newly integrated bouquet binding intentionally lasts 1080 ms, while one runtime assertion allowed only 1000 ms. Its visibility allowance now matches the existing 1800 ms ceremony contract; the focused runtime rerun and clean full-suite rerun both passed.
+- Security: no assets, dependencies, services, trackers, analytics, accounts, payments, ads, permissions, credentials, backend behavior, or additional progression surfaces were added.
+
 ## 2026-07-16 focused economy save migration
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `scripts/verify_tutorial_progress.spec.js`, and this note.

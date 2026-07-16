@@ -5818,7 +5818,7 @@
     };
 
     const SAVE_KEY = "bloomTycoonPlayableStateV1";
-    const FOCUSED_ECONOMY_SAVE_VERSION = 1;
+    const FOCUSED_ECONOMY_SAVE_VERSION = 2;
     const BOARD_SIZE = 8;
     const MAX_BOARD_BUILD_ATTEMPTS = 650;
     const baseElementCounts = [42, 37, 28, 33, 24, 31];
@@ -7962,9 +7962,9 @@
           title: "Bloodroot Compact Complete",
           state: spent ? "BLOODROOT CONSERVATORY RAISED" : "BLOODROOT CONSERVATORY READY",
           transaction: spent
-            ? `Raised for ${BLOODROOT_CONSERVATORY_COST}. ${coins} coins remain.`
+            ? `Raised for ${BLOODROOT_CONSERVATORY_COST}. ${coins} coins seed the next greenhouse run.`
             : `Earned ${roundThreePlan.reward.coins} coins. Conservatory costs ${BLOODROOT_CONSERVATORY_COST}.`,
-          copy: spent ? "First Bouquet is ready to replay." : "Spend the Bloodroot payout to raise the conservatory.",
+          copy: spent ? "Play Again reinvests the seed into a fresh First Bouquet run." : "Spend the Bloodroot payout to raise the conservatory.",
           spendText: coins >= BLOODROOT_CONSERVATORY_COST
             ? `Raise Conservatory · ${BLOODROOT_CONSERVATORY_COST} coins`
             : `Need ${BLOODROOT_CONSERVATORY_COST} coins`,
@@ -10531,6 +10531,7 @@
       thornClearedCells.clear();
       clearThornTeachingCue(false);
       currentRound = 1;
+      coins = 0;
       restoredRoundTwoGuideMoves = 0;
       roundOneRestored = false;
       roundTwoGreenhouseUpgraded = false;
