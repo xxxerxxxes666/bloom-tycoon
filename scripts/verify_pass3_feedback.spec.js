@@ -101,8 +101,12 @@ async function assertMobileBoardRows(page) {
 async function clickGuidedSwap(page) {
   const hints = page.locator(".tile.idle-hint");
   await expect(hints).toHaveCount(2, { timeout: 5000 });
-  await hints.nth(0).click({ force: true });
-  await hints.nth(1).click({ force: true });
+  const pair = await hints.evaluateAll((tiles) => tiles.slice(0, 2).map((tile) => ({
+    x: tile.dataset.x,
+    y: tile.dataset.y
+  })));
+  await page.locator(`.tile[data-x="${pair[0].x}"][data-y="${pair[0].y}"]`).click({ force: true });
+  await page.locator(`.tile[data-x="${pair[1].x}"][data-y="${pair[1].y}"]`).click({ force: true });
 }
 
 async function assertSingleWaveHit(page) {

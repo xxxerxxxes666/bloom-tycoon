@@ -87,6 +87,13 @@ async function openFresh(page, suffix) {
   await expect(page.locator(".tile")).toHaveCount(64);
 }
 
+async function openFreshNoReview(page, suffix) {
+  await page.goto(`${BASE_URL}?tutorial-progress=${suffix}`, { waitUntil: "networkidle" });
+  await page.evaluate((key) => localStorage.removeItem(key), SAVE_KEY);
+  await page.reload({ waitUntil: "networkidle" });
+  await expect(page.locator(".tile")).toHaveCount(64);
+}
+
 async function visibleReport(page) {
   return page.evaluate(() => {
     const visible = (node) => {
@@ -159,8 +166,8 @@ async function clickGuidedSwap(page) {
     x: tile.dataset.x,
     y: tile.dataset.y
   })));
-  await page.locator(`.tile[data-x="${pair[0].x}"][data-y="${pair[0].y}"]`).click({ force: true });
-  await page.locator(`.tile[data-x="${pair[1].x}"][data-y="${pair[1].y}"]`).click({ force: true });
+  await page.locator(`.tile[data-x="${pair[0].x}"][data-y="${pair[0].y}"]`).dispatchEvent("click");
+  await page.locator(`.tile[data-x="${pair[1].x}"][data-y="${pair[1].y}"]`).dispatchEvent("click");
   await expect(page.locator(".tile")).toHaveCount(64);
   await page.waitForFunction(() => {
     const payoff = document.querySelector("#roundOneRestoration");
@@ -226,6 +233,142 @@ async function activeState(page) {
         .map((tile) => Math.round(tile.getBoundingClientRect().top)))].length,
       overflowX: document.documentElement.scrollWidth > innerWidth + 1
     };
+  }, SAVE_KEY);
+}
+
+async function guidedRoundOneState(page, tag) {
+  return page.evaluate(({ key, tag }) => {
+    const visible = (node) => {
+      if (!node) return false;
+      const rect = node.getBoundingClientRect();
+      const style = getComputedStyle(node);
+      return style.display !== "none"
+        && style.visibility !== "hidden"
+        && Number(style.opacity || 1) !== 0
+        && rect.width > 0
+        && rect.height > 0;
+    };
+    const saved = JSON.parse(localStorage.getItem(key) || "{}");
+    const tileRects = Array.from(document.querySelectorAll(".tile")).map((tile) => tile.getBoundingClientRect());
+    const board = document.querySelector(".board");
+    const hints = Array.from(document.querySelectorAll(".tile.idle-hint")).map((tile) => ({
+      x: Number(tile.dataset.x),
+      y: Number(tile.dataset.y),
+      flowerId: Number(tile.dataset.flowerId),
+      label: tile.getAttribute("aria-label") || ""
+    }));
+    return {
+      tag,
+      round: saved.currentRound || 1,
+      moves: saved.moves,
+      counts: saved.counts || [],
+      roundComplete: Boolean(saved.roundComplete),
+      coins: saved.coins,
+      bouquet: document.querySelector("#bouquetProgressLabel")?.textContent.trim() || "",
+      cue: document.querySelector("#firstSwapCue")?.textContent.trim() || "",
+      tutorial: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
+      hints,
+      tiles: document.querySelectorAll(".tile").length,
+      rows: [...new Set(tileRects.map((rect) => Math.round(rect.top)))].length,
+      completeRows: [...new Set(tileRects
+        .filter((rect) => rect.top >= -1 && rect.bottom <= innerHeight + 1)
+        .map((rect) => Math.round(rect.top)))].length,
+      boardVisible: visible(board),
+      boardBottom: board?.getBoundingClientRect().bottom || 0,
+      payoffVisible: visible(document.querySelector("#roundOneRestoration")),
+      ritualLogVisible: visible(document.querySelector("#ritualLog")),
+      ritualLogText: document.querySelector("#ritualLog")?.textContent.trim() || "",
+      burnHold: document.body.classList.contains("round-one-black-candle-burn-hold"),
+      lineRelicHit: Boolean(board?.classList.contains("line-relic-hit")),
+      lineRelicParticles: document.querySelectorAll(".board-particle.line-relic").length,
+      visibleButtons: Array.from(document.querySelectorAll("button"))
+        .filter((button) => visible(button) && !button.closest(".board"))
+        .map((button) => button.textContent.trim())
+        .filter(Boolean),
+      payoffTokens: Array.from(document.querySelectorAll(".bouquet-payoff-token")).map((node) => node.textContent.trim()),
+      overflowX: document.documentElement.scrollWidth > innerWidth + 1,
+      brokenImages: Array.from(document.images)
+        .filter((image) => visible(image) && image.complete && image.naturalWidth === 0)
+        .map((image) => image.getAttribute("src"))
+    };
+  }, { key: SAVE_KEY, tag });
+}
+
+async function assertActiveGuidedState(state, mobile, label) {
+  expect(state.round, `${label} active round`).toBe(1);
+  expect(state.roundComplete, `${label} not complete before Black Candle`).toBe(false);
+  expect(state.payoffVisible, `${label} payoff hidden before Black Candle`).toBe(false);
+  expect(state.bouquet, `${label} no early 14/14`).not.toContain("14/14");
+  expect(state.moves, `${label} moves remain nonnegative`).toBeGreaterThanOrEqual(0);
+  expect(state.tiles, `${label} tile count`).toBe(64);
+  expect(state.rows, `${label} board rows`).toBe(8);
+  expect(state.overflowX, `${label} no horizontal overflow`).toBe(false);
+  expect(state.brokenImages, `${label} no broken images`).toEqual([]);
+  if (mobile) {
+    expect(state.completeRows, `${label} all mobile rows visible`).toBe(8);
+    expect(state.boardBottom, `${label} mobile board in viewport`).toBeLessThanOrEqual(844);
+  }
+}
+
+async function clickHighlightedPair(page) {
+  const movesBefore = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}").moves, SAVE_KEY);
+  const cueBefore = await page.locator("#firstSwapCue").textContent().catch(() => "");
+  const pair = await hintedPair(page);
+  await page.locator(`.tile[data-x="${pair[0].x}"][data-y="${pair[0].y}"]`).click({ force: true });
+  await page.locator(`.tile[data-x="${pair[1].x}"][data-y="${pair[1].y}"]`).click({ force: true });
+  await page.waitForFunction(({ key, movesBefore, cueBefore }) => {
+    const saved = JSON.parse(localStorage.getItem(key) || "{}");
+    const spentMove = Number(saved.moves) < Number(movesBefore);
+    if (!spentMove) {
+      return false;
+    }
+    const cueNow = document.querySelector("#firstSwapCue")?.textContent.trim() || "";
+    return document.body.classList.contains("round-one-black-candle-burn-hold")
+      || (document.querySelectorAll(".tile.idle-hint").length === 2 && cueNow !== String(cueBefore || "").trim());
+  }, { key: SAVE_KEY, movesBefore, cueBefore }, { timeout: 10000 });
+  await page.waitForTimeout(350);
+}
+
+async function legalFourBoneStarPreview(page) {
+  return page.evaluate((key) => {
+    const saved = JSON.parse(localStorage.getItem(key) || "{}");
+    const board = (saved.board || []).map((row) => row.slice());
+    const hints = Array.from(document.querySelectorAll(".tile.idle-hint")).map((tile) => ({
+      x: Number(tile.dataset.x),
+      y: Number(tile.dataset.y)
+    }));
+    if (hints.length !== 2) {
+      return { ok: false, reason: "missing hints", hints };
+    }
+    const [a, b] = hints;
+    const adjacent = Math.abs(a.x - b.x) + Math.abs(a.y - b.y) === 1;
+    const previous = board[a.y][a.x];
+    board[a.y][a.x] = board[b.y][b.x];
+    board[b.y][b.x] = previous;
+    const runs = [];
+    for (let y = 0; y < 8; y += 1) {
+      let start = 0;
+      for (let x = 1; x <= 8; x += 1) {
+        if (x === 8 || board[y][x] !== board[y][start]) {
+          if (board[y][start] === 1 && x - start === 4) {
+            runs.push({ direction: "horizontal", cells: Array.from({ length: 4 }, (_, index) => [start + index, y]) });
+          }
+          start = x;
+        }
+      }
+    }
+    for (let x = 0; x < 8; x += 1) {
+      let start = 0;
+      for (let y = 1; y <= 8; y += 1) {
+        if (y === 8 || board[y][x] !== board[start][x]) {
+          if (board[start][x] === 1 && y - start === 4) {
+            runs.push({ direction: "vertical", cells: Array.from({ length: 4 }, (_, index) => [x, start + index]) });
+          }
+          start = y;
+        }
+      }
+    }
+    return { ok: adjacent && runs.length > 0, adjacent, hints, runs };
   }, SAVE_KEY);
 }
 
@@ -555,6 +698,128 @@ for (const viewport of [
         await context.close();
       }
     }
+  });
+}
+
+for (const viewport of [
+  { label: "desktop", width: 1280, height: 720, mobile: false },
+  { label: "mobile390", width: 390, height: 844, mobile: true }
+]) {
+  test(`fresh no-review guided Round 1 teaches Black Candle before payoff on ${viewport.label}`, async ({ page }) => {
+    const consoleMessages = [];
+    const pageErrors = [];
+    const failedRequests = [];
+    page.on("console", (message) => {
+      if (message.type() === "error" || message.type() === "warning") {
+        consoleMessages.push(`${message.type()}: ${message.text()}`);
+      }
+    });
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    page.on("requestfailed", (request) => failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`));
+
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await openFreshNoReview(page, `black-candle-${viewport.label}`);
+    await expect.poll(async () => page.evaluate(() => window.__bloomReviewHooksEnabled === true)).toBe(false);
+    await expect(page.locator("#tutorialPanel")).toBeVisible({ timeout: 3000 });
+
+    const trace = [await guidedRoundOneState(page, "initial")];
+    assertActiveGuidedState(trace[0], viewport.mobile, `${viewport.label} initial`);
+
+    for (let index = 1; index <= 2; index += 1) {
+      await clickHighlightedPair(page);
+      trace.push(await guidedRoundOneState(page, `after swap ${index}`));
+      assertActiveGuidedState(trace[trace.length - 1], viewport.mobile, `${viewport.label} after swap ${index}`);
+    }
+
+    await page.reload({ waitUntil: "networkidle" });
+    await expect(page.locator(".tile")).toHaveCount(64);
+    const reloaded = await guidedRoundOneState(page, "after reload");
+    assertActiveGuidedState(reloaded, viewport.mobile, `${viewport.label} reload`);
+    expect(reloaded.moves).toBe(trace[2].moves);
+    expect(reloaded.counts).toEqual(trace[2].counts);
+
+    await clickHighlightedPair(page);
+    const blackCandleCue = await guidedRoundOneState(page, "before Black Candle swap");
+    trace.push(blackCandleCue);
+    assertActiveGuidedState(blackCandleCue, viewport.mobile, `${viewport.label} before Black Candle`);
+    expect(blackCandleCue.tutorial).toBe("Match 4 makes Black Candle Vine.");
+    expect(blackCandleCue.cue).toBe("Make 4 Bone Stars - Black Candle Vine burns a row.");
+    expect(blackCandleCue.hints).toHaveLength(2);
+    expect(Math.abs(blackCandleCue.hints[0].x - blackCandleCue.hints[1].x) + Math.abs(blackCandleCue.hints[0].y - blackCandleCue.hints[1].y)).toBe(1);
+    const preview = await legalFourBoneStarPreview(page);
+    expect(preview.ok, JSON.stringify(preview)).toBe(true);
+    await page.screenshot({ path: `work/black-candle-${viewport.label}-cue.png`, fullPage: true });
+
+    await clickHighlightedPair(page);
+    await page.waitForFunction(() => (
+      document.body.classList.contains("round-one-black-candle-burn-hold")
+      && document.querySelector(".board")?.classList.contains("line-relic-hit")
+      && document.querySelectorAll(".board-particle.line-relic").length > 0
+    ), null, { timeout: 2500 });
+    const burn = await guidedRoundOneState(page, "Black Candle burn");
+    trace.push(burn);
+    expect(burn.roundComplete).toBe(true);
+    expect(burn.bouquet).toBe("Bouquet 14/14 -> +120 coins");
+    expect(burn.moves).toBeGreaterThanOrEqual(0);
+    expect(burn.boardVisible).toBe(true);
+    expect(burn.payoffVisible).toBe(false);
+    expect(burn.ritualLogVisible).toBe(false);
+    expect(burn.ritualLogText).toContain("Black Candle Vine");
+    expect(burn.tutorial).toContain("Black Candle Vine");
+    expect(burn.tutorial).not.toContain("Coins restore");
+    expect(burn.cue).toContain("Black Candle Vine");
+    expect(burn.cue).toContain("cleared");
+    expect(burn.visibleButtons).toEqual([]);
+    expect(burn.burnHold).toBe(true);
+    expect(burn.lineRelicHit).toBe(true);
+    expect(burn.lineRelicParticles).toBeGreaterThan(0);
+    expect(burn.tiles).toBe(64);
+    expect(burn.overflowX).toBe(false);
+    expect(burn.brokenImages).toEqual([]);
+    if (viewport.mobile) {
+      expect(burn.completeRows).toBe(8);
+      expect(burn.boardBottom).toBeLessThanOrEqual(844);
+    }
+    await page.screenshot({ path: `work/black-candle-${viewport.label}-burn.png`, fullPage: false });
+
+    await expect(page.locator("#restoreGreenhouseBtn")).toBeVisible({ timeout: 3000 });
+    const ceremony = await guidedRoundOneState(page, "ceremony");
+    trace.push(ceremony);
+    expect(ceremony.boardVisible).toBe(false);
+    expect(ceremony.payoffVisible).toBe(true);
+    expect(ceremony.coins).toBe(120);
+    expect(ceremony.bouquet).toBe("Bouquet 14/14 -> +120 coins");
+    expect(ceremony.tutorial).toBe("Coins restore the greenhouse.");
+    expect(ceremony.visibleButtons).toEqual(["Restore Greenhouse · 100 coins"]);
+    expect(ceremony.visibleButtons.filter((label) => label.startsWith("Restore"))).toHaveLength(1);
+    expect(ceremony.payoffTokens).toEqual(expect.arrayContaining(["x8 Thorn Rose", "x6 Bone Star"]));
+    expect(ceremony.overflowX).toBe(false);
+    expect(ceremony.brokenImages).toEqual([]);
+    await page.screenshot({ path: `work/black-candle-${viewport.label}-ceremony.png`, fullPage: true });
+
+    await page.locator("#restoreGreenhouseBtn").click();
+    await expect(page.locator("#nextOrderBtn")).toBeVisible({ timeout: 3000 });
+    const restored = await guidedRoundOneState(page, "restored");
+    expect(restored.coins).toBe(20);
+    expect(restored.visibleButtons).toEqual(["Next Order → Moonlit Wreath"]);
+
+    console.log(`${viewport.label} fresh guided Black Candle trace: ${JSON.stringify(trace.map((state) => ({
+      tag: state.tag,
+      moves: state.moves,
+      counts: state.counts,
+      bouquet: state.bouquet,
+      cue: state.cue,
+      tutorial: state.tutorial,
+      hints: state.hints,
+      roundComplete: state.roundComplete,
+      burnHold: state.burnHold,
+      lineRelicHit: state.lineRelicHit,
+      lineRelicParticles: state.lineRelicParticles,
+      payoffVisible: state.payoffVisible
+    })))}`);
+    expect(consoleMessages).toEqual([]);
+    expect(pageErrors).toEqual([]);
+    expect(failedRequests).toEqual([]);
   });
 }
 

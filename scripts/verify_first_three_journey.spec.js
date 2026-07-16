@@ -271,14 +271,21 @@ async function playCurrentRound(page, label, round, strategy = "optimized") {
   while (true) {
     const state = await journeyState(page);
     if (state.roundComplete) {
+      // Round 1 deliberately holds the Black Candle board event before the
+      // coin ceremony. Sample completion economy only after that handoff so
+      // the balance confirmation is tested where the player can act on it.
+      if (round === 1) {
+        await page.locator("#roundOneRestoration").waitFor({ state: "visible", timeout: 3000 });
+      }
+      const settledState = await journeyState(page);
       const summary = {
         round,
         startMoves,
-        movesLeft: state.moves,
+        movesLeft: settledState.moves,
         swaps,
-        bouquet: state.bouquet,
-        greenhouse: state.greenhouse,
-        cue: state.cue
+        bouquet: settledState.bouquet,
+        greenhouse: settledState.greenhouse,
+        cue: settledState.cue
       };
       await page.screenshot({ path: `work/first-three-${label}-round${round}-complete.png`, fullPage: true });
       return summary;
