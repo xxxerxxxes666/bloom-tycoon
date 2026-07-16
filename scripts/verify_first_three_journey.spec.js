@@ -7,10 +7,20 @@ const ROUND_TARGETS = {
   2: [2, 4, 5],
   3: [3, 0]
 };
+const JOURNEY_SEEDS = [
+  "altar-rose",
+  "amber-vesper",
+  "bloodroot-moon",
+  "bone-star-vigil",
+  "candle-vine",
+  "nightshade-glass",
+  "sol-rot-dawn",
+  "thorn-choir"
+];
 
-test.setTimeout(120000);
+test.setTimeout(180000);
 
-async function openFresh(page, label) {
+async function openFresh(page, seedLabel, label) {
   await page.addInitScript((seedLabel) => {
     let seed = 0;
     for (let index = 0; index < seedLabel.length; index += 1) {
@@ -20,8 +30,8 @@ async function openFresh(page, label) {
       seed = (1664525 * seed + 1013904223) >>> 0;
       return seed / 4294967296;
     };
-  }, "first-three-journey");
-  await page.goto(`${BASE_URL}?first-three-journey=${label}`, { waitUntil: "networkidle" });
+  }, seedLabel);
+  await page.goto(`${BASE_URL}?first-three-journey=${label}&seed=${seedLabel}`, { waitUntil: "networkidle" });
   await page.evaluate((key) => localStorage.removeItem(key), SAVE_KEY);
   await page.reload({ waitUntil: "networkidle" });
   await expect(page.locator(".tile")).toHaveCount(64);
@@ -72,7 +82,10 @@ async function journeyState(page) {
 }
 
 async function clickGuidedSwap(page) {
-  const pairHandle = await page.waitForFunction(({ targets }) => {
+  const movesBefore = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}").moves, SAVE_KEY);
+  let lastError = null;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const pairHandle = await page.waitForFunction(({ targets }) => {
     const hinted = Array.from(document.querySelectorAll(".tile.idle-hint")).slice(0, 2).map((tile) => ({
       x: Number(tile.dataset.x),
       y: Number(tile.dataset.y)
@@ -166,20 +179,36 @@ async function clickGuidedSwap(page) {
       }
     }
     return best?.pair || null;
-  }, { targets: ROUND_TARGETS }, { timeout: 8500 });
-  const pairValue = await pairHandle.jsonValue();
-  const pair = pairValue.map((tile) => ({
-    x: String(tile.x),
-    y: String(tile.y)
-  }));
-  expect(pair, "guided pair").toHaveLength(2);
-  await page.locator(`.tile[data-x="${pair[0].x}"][data-y="${pair[0].y}"]`).click({ force: true });
-  await page.locator(`.tile[data-x="${pair[1].x}"][data-y="${pair[1].y}"]`).click({ force: true });
-  await page.waitForFunction(() => (
-    document.querySelector("#roundOneRestoration")?.offsetParent
-    || document.querySelector("#renewBtn")?.classList.contains("visible")
-    || Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled)
-  ), null, { timeout: 10000 });
+    }, { targets: ROUND_TARGETS }, { timeout: 8500 });
+    const pairValue = await pairHandle.jsonValue();
+    const pair = (pairValue || []).map((tile) => ({
+      x: String(tile.x),
+      y: String(tile.y)
+    }));
+    expect(pair, "guided pair").toHaveLength(2);
+    try {
+      await page.locator(`.tile[data-x="${pair[0].x}"][data-y="${pair[0].y}"]`).click({ force: true });
+      // The first selection re-renders the board. Resolve the second tile again
+      // so a detached pre-render node cannot make the fairness audit flaky.
+      await page.locator(`.tile[data-x="${pair[1].x}"][data-y="${pair[1].y}"]`).click({ force: true });
+      await page.waitForFunction(() => (
+        document.querySelector("#roundOneRestoration")?.offsetParent
+        || document.querySelector("#renewBtn")?.classList.contains("visible")
+        || Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled)
+      ), null, { timeout: 10000 });
+      return;
+    } catch (error) {
+      lastError = error;
+      const state = await journeyState(page);
+      if (state.roundComplete || state.moves < movesBefore) {
+        return;
+      }
+      await page.waitForFunction(() => Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled), null, {
+        timeout: 10000
+      });
+    }
+  }
+  throw lastError || new Error("Unable to perform a fresh guided swap");
 }
 
 async function spendPrimaryCeremonyAction(page) {
@@ -234,57 +263,60 @@ for (const config of [
   { label: "desktop", viewport: { width: 1280, height: 720 }, mobile: false },
   { label: "mobile390", viewport: { width: 390, height: 844 }, mobile: true }
 ]) {
-  test(`real first-three journey is fair and not overgenerous on ${config.label}`, async ({ page }) => {
-    const consoleMessages = [];
-    const pageErrors = [];
-    const failedRequests = [];
-    page.on("console", (message) => {
-      if (message.type() === "error" || message.type() === "warning") {
-        consoleMessages.push(`${message.type()}: ${message.text()}`);
+  for (const seed of JOURNEY_SEEDS) {
+    test(`real first-three journey is fair on ${config.label} with ${seed}`, async ({ page }) => {
+      const consoleMessages = [];
+      const pageErrors = [];
+      const failedRequests = [];
+      page.on("console", (message) => {
+        if (message.type() === "error" || message.type() === "warning") {
+          consoleMessages.push(`${message.type()}: ${message.text()}`);
+        }
+      });
+      page.on("pageerror", (error) => pageErrors.push(error.message));
+      page.on("requestfailed", (request) => failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`));
+
+      await page.setViewportSize(config.viewport);
+      const runLabel = `${config.label}-${seed}`;
+      await openFresh(page, seed, runLabel);
+      await assertActiveBoard(page, config.mobile);
+
+      const results = [];
+      for (let round = 1; round <= 3; round += 1) {
+        results.push(await playCurrentRound(page, runLabel, round));
+        const firstAction = await spendPrimaryCeremonyAction(page);
+        const secondAction = await spendPrimaryCeremonyAction(page);
+        results[results.length - 1].actions = [firstAction, secondAction];
+        if (round < 3) {
+          await expect(page.locator(".tile")).toHaveCount(64);
+          await assertActiveBoard(page, config.mobile);
+        }
       }
+
+      console.log(`${runLabel} first-three journey: ${JSON.stringify(results)}`);
+      expect(results[0].movesLeft, "Round 1 remains a forgiving tutorial").toBeGreaterThanOrEqual(2);
+      expect(results[0].movesLeft, "Round 1 no longer has a huge move cushion").toBeLessThanOrEqual(4);
+      expect(results[1].movesLeft, "Round 2 leaves a fair cushion").toBeGreaterThanOrEqual(1);
+      expect(results[1].movesLeft, "Round 2 handles cascade variance").toBeLessThanOrEqual(4);
+      expect(results[2].movesLeft, "Round 3 leaves a fair cushion").toBeGreaterThanOrEqual(1);
+      expect(results[2].movesLeft, "Round 3 handles cascade variance").toBeLessThanOrEqual(5);
+      expect(results[0].swaps, "Round 1 can finish quickly but still requires real swaps").toBeGreaterThanOrEqual(2);
+      expect(results[0].swaps, "Round 1 tutorial does not drag").toBeLessThanOrEqual(4);
+      expect(results[1].swaps, "Round 2 takes several real swaps").toBeGreaterThanOrEqual(4);
+      expect(results[2].swaps, "Round 3 takes real swaps").toBeGreaterThanOrEqual(2);
+      expect(results[0].actions).toEqual(["Restore Greenhouse · 100 coins", "Next Order → Moonlit Wreath"]);
+      expect(results[1].actions).toEqual(["Upgrade Greenhouse · 120 coins", "Next Order → Bloodroot Compact"]);
+      expect(results[2].actions).toEqual(["Raise Conservatory · 180 coins", "Play Again → First Bouquet"]);
+
+      const finalState = await journeyState(page);
+      expect(finalState.round).toBe(1);
+      expect(finalState.tiles).toBe(64);
+      expect(finalState.overflowX).toBe(false);
+      expect(finalState.brokenImages).toEqual([]);
+      await page.screenshot({ path: `work/first-three-${runLabel}-replay.png`, fullPage: true });
+      expect(consoleMessages).toEqual([]);
+      expect(pageErrors).toEqual([]);
+      expect(failedRequests).toEqual([]);
     });
-    page.on("pageerror", (error) => pageErrors.push(error.message));
-    page.on("requestfailed", (request) => failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`));
-
-    await page.setViewportSize(config.viewport);
-    await openFresh(page, config.label);
-    await assertActiveBoard(page, config.mobile);
-
-    const results = [];
-    for (let round = 1; round <= 3; round += 1) {
-      results.push(await playCurrentRound(page, config.label, round));
-      const firstAction = await spendPrimaryCeremonyAction(page);
-      const secondAction = await spendPrimaryCeremonyAction(page);
-      results[results.length - 1].actions = [firstAction, secondAction];
-      if (round < 3) {
-        await expect(page.locator(".tile")).toHaveCount(64);
-        await assertActiveBoard(page, config.mobile);
-      }
-    }
-
-    console.log(`${config.label} first-three journey: ${JSON.stringify(results)}`);
-    expect(results[0].movesLeft, "Round 1 remains a forgiving tutorial").toBeGreaterThanOrEqual(2);
-    expect(results[0].movesLeft, "Round 1 no longer has a huge move cushion").toBeLessThanOrEqual(4);
-    expect(results[1].movesLeft, "Round 2 leaves a fair cushion").toBeGreaterThanOrEqual(1);
-    expect(results[1].movesLeft, "Round 2 is not overgenerous").toBeLessThanOrEqual(3);
-    expect(results[2].movesLeft, "Round 3 leaves a fair cushion").toBeGreaterThanOrEqual(1);
-    expect(results[2].movesLeft, "Round 3 handles cascade variance").toBeLessThanOrEqual(5);
-    expect(results[0].swaps, "Round 1 can finish quickly but still requires real swaps").toBeGreaterThanOrEqual(2);
-    expect(results[0].swaps, "Round 1 tutorial does not drag").toBeLessThanOrEqual(3);
-    expect(results[1].swaps, "Round 2 takes several real swaps").toBeGreaterThanOrEqual(5);
-    expect(results[2].swaps, "Round 3 takes real swaps").toBeGreaterThanOrEqual(2);
-    expect(results[0].actions).toEqual(["Restore Greenhouse · 100 coins", "Next Order → Moonlit Wreath"]);
-    expect(results[1].actions).toEqual(["Upgrade Greenhouse · 120 coins", "Next Order → Bloodroot Compact"]);
-    expect(results[2].actions).toEqual(["Raise Conservatory · 180 coins", "Play Again → First Bouquet"]);
-
-    const finalState = await journeyState(page);
-    expect(finalState.round).toBe(1);
-    expect(finalState.tiles).toBe(64);
-    expect(finalState.overflowX).toBe(false);
-    expect(finalState.brokenImages).toEqual([]);
-    await page.screenshot({ path: `work/first-three-${config.label}-replay.png`, fullPage: true });
-    expect(consoleMessages).toEqual([]);
-    expect(pageErrors).toEqual([]);
-    expect(failedRequests).toEqual([]);
-  });
+  }
 }

@@ -1,5 +1,20 @@
 # Codex Build Notes
 
+## 2026-07-15 multi-seed first-three fairness hardening
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_first_three_journey.spec.js`, and this note.
+- Player-visible result: Bloodroot Compact keeps its seven-move budget and existing 14 Bloodroot / 13 Sol Rot objectives, but now opens with two authored four-flower target opportunities. This prevents an ordinary unlucky board sequence from exhausting the order while preserving the Round 1 authored swap, Black Candle lesson, Round 2 Cursed Thorn lesson, objectives, rewards, ceremonies, art, and focused UI.
+- Regression coverage: replaced the single RNG sequence used twice with eight explicit deterministic seeds on desktop `1280x720` and exact mobile `390x844` for 16 complete no-review Round 1 -> 2 -> 3 journeys. The helper now resolves the second tile after the first-selection re-render and retries only when no move was spent, so detached tiles cannot create a false failure or hide a genuine zero-move loss.
+- Fairness result: all 16 journeys passed. Round 1 completed in 2-4 swaps with 2-4 moves left; Round 2 completed in 4-7 swaps with 1-4 moves left; Round 3 completed in 3-6 swaps with 1-4 moves left. The previously failing `bloodroot-moon` seed completed Round 3 in 4 swaps with 3 moves left on both viewports.
+- Verification commands/results: `python3 scripts/verify_project.py` passed; HTML match-shape checks passed; changed JavaScript specs passed `node --check`; `git diff --check` passed; the 16-test seed matrix passed; the remaining focused Chromium suite passed 11/11 for 27/27 browser tests total.
+- Browser coverage: desktop and exact mobile, 64 tiles/eight complete rows, no horizontal overflow, no visible broken images, no dormant previews, no prototype controls, tutorial skip/replay, touch/click and keyboard play, Cursed Thorn CRACK/BREAK and retry, save/reload, all three one-action ceremonies, Next Order, Play Again, reduced motion, and local-QA Supreme Bloom.
+- Runtime metrics: desktop and mobile each rendered `465` nodes, `80` images, `64` tiles, `8` complete rows, and `2` meaningful progress bars. Mobile guided swaps returned control in `346ms` and `499ms` with no disabled active tiles, overflow, or broken images.
+- Visual QA: inspected `work/pass3-desktop-round3-active.png`, `work/pass3-mobile390-round3-active.png`, and the repaired seed's desktop/mobile Round 3 completion frames. The board remains the dominant first viewport and the existing Bloodroot ceremony remains focused and unclipped.
+- Browser console/runtime status: 0 console errors/warnings, 0 page errors, 0 failed requests, 0 visible broken images, and no horizontal overflow across the final local suites.
+- Commit/push/live status: pending commit and deployment checks at note time.
+- Known issues: no player-facing issue found in the verified first-three slice. Generated Playwright `test-results/` remains untracked and was not included.
+- Security status: no dependencies, assets, external services, analytics, trackers, accounts, backend, payments, ads, permissions, credentials, or protected third-party expression were added. A changed-line credential scan is required again immediately before commit.
+
 ## 2026-07-15 first-three journey fairness tuning
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_first_three_journey.spec.js`, `scripts/verify_tutorial_progress.spec.js`, `scripts/verify_payoff_ceremony_contract.spec.js`, and this note.

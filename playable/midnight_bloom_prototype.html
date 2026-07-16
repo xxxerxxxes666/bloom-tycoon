@@ -6164,7 +6164,7 @@
       const plan = activeRoundPlan();
       const targetIds = plan.targets.map((target) => target.flowerId);
       if (targetIds[0] !== undefined) {
-        writeTargetLegalMovePatch(0, 0, targetIds[0]);
+        writeTargetLegalMovePatch(0, 0, targetIds[0], plan.round === 3 ? 4 : 3);
       }
       if (targetIds[1] !== undefined) {
         writeTargetLegalMovePatch(4, 0, targetIds[1], 4);
