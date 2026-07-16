@@ -5819,6 +5819,7 @@
 
     const SAVE_KEY = "bloomTycoonPlayableStateV1";
     const FOCUSED_ECONOMY_SAVE_VERSION = 2;
+    const CRAFTED_BOUQUET_BLOOM_COUNT = 6;
     const BOARD_SIZE = 8;
     const MAX_BOARD_BUILD_ATTEMPTS = 650;
     const baseElementCounts = [42, 37, 28, 33, 24, 31];
@@ -10022,10 +10023,10 @@
         { x: 8, y: 68, size: 50, rot: 9, z: 7, stemX: 5, stemRot: 5 },
         { x: -18, y: 75, size: 42, rot: -11, z: 6, stemX: -12, stemRot: -9 }
       ];
-      const entries = plan.targets.flatMap((target) => {
-        const repeats = Math.min(3, Math.max(2, Math.ceil(target.needed / 4)));
-        return Array.from({ length: repeats }, () => target);
-      });
+      const entries = Array.from(
+        { length: CRAFTED_BOUQUET_BLOOM_COUNT },
+        (_, index) => plan.targets[index % plan.targets.length]
+      );
       const stems = entries.map((target, index) => {
         const layout = bloomLayouts[index % bloomLayouts.length];
         return `
@@ -10037,7 +10038,7 @@
         const flower = flowers[target.flowerId] || flowers[0];
         const layout = bloomLayouts[index % bloomLayouts.length];
         return `
-          <span class="crafted-bloom" style="--bloom-x:calc(50% + ${layout.x}px);--bloom-y:${layout.y}px;--bloom-size:${layout.size}px;--bloom-rot:${layout.rot}deg;--bloom-z:${layout.z};--bloom-color:${flower[4]};--bloom-delay:${index * 70}ms;" title="${flower[0]}">
+          <span class="crafted-bloom crafted-flower-bloom" data-crafted-flower="${target.flowerId}" style="--bloom-x:calc(50% + ${layout.x}px);--bloom-y:${layout.y}px;--bloom-size:${layout.size}px;--bloom-rot:${layout.rot}deg;--bloom-z:${layout.z};--bloom-color:${flower[4]};--bloom-delay:${index * 70}ms;" title="${flower[0]}">
             ${iconMarkup(target.flowerId, "crafted-bouquet-icon", flower[0], "crafted-bouquet-wrap")}
           </span>
         `;
@@ -10048,7 +10049,7 @@
         </span>
       ` : "";
       return `
-        <span class="crafted-bouquet" data-crafted-bouquet="true">
+        <span class="crafted-bouquet" data-crafted-bouquet="true" data-crafted-bloom-count="${entries.length}">
           ${stems}
           ${blooms}
           ${thornCharm}

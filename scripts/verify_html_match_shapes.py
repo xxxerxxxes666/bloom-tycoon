@@ -350,6 +350,8 @@ def verify_source_hooks():
         "objective-target-fill",
         "function liveBouquetAssemblyMarkup",
         "function craftedBouquetMarkup",
+        "const CRAFTED_BOUQUET_BLOOM_COUNT = 6;",
+        'data-crafted-bloom-count="${entries.length}"',
         "id=\"liveBouquetAssembly\"",
         "bouquet-assembly-ring",
         "crafted-bloom-bind",

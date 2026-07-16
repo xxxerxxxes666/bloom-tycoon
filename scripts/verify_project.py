@@ -66,7 +66,9 @@ html_checks = {
     "function liveBouquetAssemblyMarkup": "live bouquet markup derives from targets",
     "visibleLiveBouquetTargetRect": "target harvest feedback links to live bouquet",
     "function craftedBouquetMarkup": "crafted bouquet ceremony renderer",
+    "const CRAFTED_BOUQUET_BLOOM_COUNT = 6;": "six-stem crafted bouquet contract",
     'data-crafted-bouquet="true"': "crafted bouquet object marker",
+    'data-crafted-bloom-count="${entries.length}"': "crafted bouquet count hook",
     "dataset.assemblyReady": "payoff action readiness gate"
 }
 missing_html = [desc for needle, desc in html_checks.items() if needle not in html]

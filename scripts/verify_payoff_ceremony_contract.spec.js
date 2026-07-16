@@ -106,7 +106,9 @@ async function visibleContract(page) {
       assemblyReady: document.querySelector("#roundOneRestoration")?.dataset.assemblyReady || "",
       trophies: visible(".bouquet-trophy").length,
       craftedBouquets: visible(".crafted-bouquet").length,
-      craftedBlooms: visible(".crafted-bloom").length,
+      craftedBlooms: visible(".crafted-flower-bloom").length,
+      craftedStems: visible(".crafted-stem").length,
+      craftedBloomCount: document.querySelector(".crafted-bouquet")?.dataset.craftedBloomCount || "",
       trophyState: document.querySelector("#bouquetTrophy")?.dataset.assemblyState || "",
       liveAssemblies: visible("#liveBouquetAssembly").length,
       scenes: visible(".restoration-scene").length,
@@ -143,7 +145,9 @@ async function expectCeremony(page, expectedButton, screenshotPath, expectedGuid
   const contract = await visibleContract(page);
   expect(contract.trophies, "one visible bouquet trophy").toBe(1);
   expect(contract.craftedBouquets, "one crafted bouquet object").toBe(1);
-  expect(contract.craftedBlooms, "overlapping bouquet bloom heads").toBeGreaterThanOrEqual(4);
+  expect(contract.craftedBlooms, "six overlapping bouquet bloom heads").toBe(6);
+  expect(contract.craftedStems, "six bouquet stems").toBe(6);
+  expect(contract.craftedBloomCount).toBe("6");
   expect(contract.trophyState, "bouquet presentation is ready").toBe("assembled");
   expect(contract.scenes, "one visible greenhouse scene").toBe(1);
   expect(contract.transactions, "one visible transaction line").toBe(1);
@@ -367,6 +371,8 @@ test("reduced motion presents assembled bouquet and ready restore promptly", asy
   const contract = await visibleContract(page);
   expect(contract.trophyState).toBe("assembled");
   expect(contract.craftedBouquets).toBe(1);
+  expect(contract.craftedBlooms).toBe(6);
+  expect(contract.craftedStems).toBe(6);
   expect(contract.buttons).toEqual(["Restore Greenhouse · 100 coins"]);
   expect(contract.coins).toBe(120);
   expect(contract.overflowX).toBe(false);

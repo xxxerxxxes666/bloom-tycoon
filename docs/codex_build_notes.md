@@ -1,5 +1,15 @@
 # Codex Build Notes
 
+## 2026-07-16 six-stem bouquet payoff
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_payoff_ceremony_contract.spec.js`, `scripts/verify_project.py`, `scripts/verify_html_match_shapes.py`, and this note.
+- Selected weakness: the unified payoff ceremony described a full bouquet but rendered only four flower heads in the crafted object. The payoff looked sparse beside the ingredient totals and weakened the visual reward at the end of each order.
+- Player-visible result: every First Bouquet, Moonlit Wreath, and Bloodroot Compact ceremony now assembles exactly six flower heads and six stems. Two-target orders alternate three of each flower; the three-target Moonlit order distributes two of each, with Cursed Thorn retained as a separate charm rather than counted as a flower.
+- Visual verification: desktop `1280x720` and exact `390x844` screenshots for all three pending ceremonies were inspected. The six-head composition remains inside the bouquet frame, ingredient chips stay readable, greenhouse art and transaction copy remain unobstructed, and each ceremony retains one dominant action.
+- Regression coverage: the ceremony contract now asserts exactly one crafted bouquet, six flower heads, six stems, and the authored count hook across desktop/mobile Round 1 -> Round 2 -> Round 3. Reduced motion asserts the same assembled object. The ceremony suite passed `3/3`; full three-round feedback plus runtime checks passed `7/7`.
+- Runtime/browser result: active desktop/mobile remained at 64 tiles and eight rows with 495 nodes, 84 images, no dormant preview/prototype scaffold nodes, no broken images, no horizontal overflow, and no console/page/request errors. Mobile guided-swap control returned in `352ms` and `470ms` in the focused run.
+- Security: no assets, dependencies, services, trackers, analytics, accounts, backend behavior, permissions, credentials, save changes, currencies, rounds, controls, or progression surfaces were added.
+
 ## 2026-07-16 closed Play Again economy loop
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_first_three_journey.spec.js`, `scripts/verify_tutorial_progress.spec.js`, `scripts/verify_payoff_ceremony_contract.spec.js`, `scripts/verify_runtime_performance.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.
