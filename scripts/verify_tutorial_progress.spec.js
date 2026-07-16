@@ -213,6 +213,177 @@ async function keyboardGuidedSwap(page) {
   await page.waitForFunction(() => !document.querySelector(".tile.sel"));
 }
 
+async function activeState(page) {
+  return page.evaluate((key) => {
+    const state = JSON.parse(localStorage.getItem(key) || "{}");
+    return {
+      moves: state.moves,
+      counts: state.counts || [],
+      board: (state.board || []).map((row) => row.join(",")).join("|"),
+      roundComplete: Boolean(state.roundComplete),
+      tiles: document.querySelectorAll(".tile").length,
+      rows: [...new Set(Array.from(document.querySelectorAll(".tile"))
+        .map((tile) => Math.round(tile.getBoundingClientRect().top)))].length,
+      overflowX: document.documentElement.scrollWidth > innerWidth + 1
+    };
+  }, SAVE_KEY);
+}
+
+async function hintedPair(page) {
+  await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 5000 });
+  const pair = await page.locator(".tile.idle-hint").evaluateAll((tiles) => tiles.map((tile) => ({
+    x: Number(tile.dataset.x),
+    y: Number(tile.dataset.y)
+  })));
+  expect(Math.abs(pair[0].x - pair[1].x) + Math.abs(pair[0].y - pair[1].y)).toBe(1);
+  return pair;
+}
+
+async function tileGeometry(page, pair) {
+  return page.evaluate((pair) => {
+    const pick = ({ x, y }) => {
+      const tile = document.querySelector(`.tile[data-x="${x}"][data-y="${y}"]`);
+      const rect = tile.getBoundingClientRect();
+      return {
+        x,
+        y,
+        left: rect.left,
+        top: rect.top,
+        width: rect.width,
+        height: rect.height,
+        centerX: rect.left + rect.width / 2,
+        centerY: rect.top + rect.height / 2,
+        transform: getComputedStyle(tile).transform,
+        classes: tile.className
+      };
+    };
+    return pair.map(pick);
+  }, pair);
+}
+
+function dragVector(pair, geometry, scale = 0.62) {
+  const [a, b] = pair;
+  const [source, neighbor] = geometry;
+  const dx = Math.sign(b.x - a.x);
+  const dy = Math.sign(b.y - a.y);
+  const distance = Math.max(
+    34,
+    Math.abs(dx ? neighbor.centerX - source.centerX : neighbor.centerY - source.centerY) * scale
+  );
+  return {
+    startX: source.centerX,
+    startY: source.centerY,
+    endX: source.centerX + dx * distance,
+    endY: source.centerY + dy * distance,
+    dx,
+    dy
+  };
+}
+
+async function moveMouseToReadyPreview(page, pair, scale = 0.62) {
+  const beforeGeometry = await tileGeometry(page, pair);
+  const vector = dragVector(pair, beforeGeometry, scale);
+  await page.mouse.move(vector.startX, vector.startY);
+  await page.mouse.down();
+  await page.mouse.move(vector.endX, vector.endY, { steps: 8 });
+  await page.waitForFunction(() => document.querySelectorAll(".tile.drag-preview-ready").length === 2);
+  const afterGeometry = await tileGeometry(page, pair);
+  return { beforeGeometry, afterGeometry, vector };
+}
+
+async function previewDelta(page, pair, scale = 0.62) {
+  const preview = await moveMouseToReadyPreview(page, pair, scale);
+  const sourceDeltaX = preview.afterGeometry[0].left - preview.beforeGeometry[0].left;
+  const sourceDeltaY = preview.afterGeometry[0].top - preview.beforeGeometry[0].top;
+  const neighborDeltaX = preview.afterGeometry[1].left - preview.beforeGeometry[1].left;
+  const neighborDeltaY = preview.afterGeometry[1].top - preview.beforeGeometry[1].top;
+  return {
+    ...preview,
+    sourceAxis: preview.vector.dx ? sourceDeltaX : sourceDeltaY,
+    neighborAxis: preview.vector.dx ? neighborDeltaX : neighborDeltaY
+  };
+}
+
+async function releaseMouseAndWaitIdle(page) {
+  await page.mouse.up();
+  await page.waitForFunction(() => (
+    !document.querySelector(".tile.drag-preview-source, .tile.drag-preview-neighbor, .tile.drag-preview-ready")
+    && Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled)
+  ), null, { timeout: 10000 });
+}
+
+async function findInvalidAdjacentPair(page) {
+  return page.evaluate(() => {
+    const board = Array.from({ length: 8 }, () => Array(8).fill(-1));
+    Array.from(document.querySelectorAll(".tile")).forEach((tile) => {
+      board[Number(tile.dataset.y)][Number(tile.dataset.x)] = Number(tile.dataset.flowerId);
+    });
+    const swap = (a, b) => {
+      const next = board.map((row) => row.slice());
+      const temp = next[a.y][a.x];
+      next[a.y][a.x] = next[b.y][b.x];
+      next[b.y][b.x] = temp;
+      return next;
+    };
+    const hasMatch = (next) => {
+      for (let y = 0; y < 8; y += 1) {
+        let start = 0;
+        for (let x = 1; x <= 8; x += 1) {
+          if (x === 8 || next[y][x] !== next[y][start]) {
+            if (next[y][start] >= 0 && x - start >= 3) return true;
+            start = x;
+          }
+        }
+      }
+      for (let x = 0; x < 8; x += 1) {
+        let start = 0;
+        for (let y = 1; y <= 8; y += 1) {
+          if (y === 8 || next[y][x] !== next[start][x]) {
+            if (next[start][x] >= 0 && y - start >= 3) return true;
+            start = y;
+          }
+        }
+      }
+      return false;
+    };
+    for (let y = 0; y < 8; y += 1) {
+      for (let x = 0; x < 8; x += 1) {
+        for (const [dx, dy] of [[1, 0], [0, 1]]) {
+          const a = { x, y };
+          const b = { x: x + dx, y: y + dy };
+          if (b.x >= 8 || b.y >= 8 || board[a.y][a.x] === board[b.y][b.x]) continue;
+          if (!hasMatch(swap(a, b))) return [a, b];
+        }
+      }
+    }
+    return null;
+  });
+}
+
+async function dragTouchViaCdp(page, pair, scale = 0.62) {
+  const beforeGeometry = await tileGeometry(page, pair);
+  const vector = dragVector(pair, beforeGeometry, scale);
+  const client = await page.context().newCDPSession(page);
+  await client.send("Input.dispatchTouchEvent", {
+    type: "touchStart",
+    touchPoints: [{ x: vector.startX, y: vector.startY, id: 7 }]
+  });
+  await client.send("Input.dispatchTouchEvent", {
+    type: "touchMove",
+    touchPoints: [{ x: vector.endX, y: vector.endY, id: 7 }]
+  });
+  await page.waitForFunction(() => document.querySelectorAll(".tile.drag-preview-ready").length === 2);
+  const afterGeometry = await tileGeometry(page, pair);
+  await page.screenshot({ path: "work/drag-preview-mobile-ready.png", fullPage: true });
+  await client.send("Input.dispatchTouchEvent", {
+    type: "touchEnd",
+    touchPoints: [],
+    changedTouchPoints: [{ x: vector.endX, y: vector.endY, id: 7 }]
+  });
+  await page.waitForFunction(() => Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled), null, { timeout: 10000 });
+  return { beforeGeometry, afterGeometry, vector };
+}
+
 async function completeRoundWithReviewKey(page) {
   await expect.poll(async () => page.evaluate(() => window.__bloomReviewHooksEnabled === true)).toBe(true);
   await page.locator("body").click({ position: { x: 12, y: 12 } });
@@ -589,6 +760,120 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
   expect(consoleErrors).toEqual([]);
   expect(pageErrors).toEqual([]);
   expect(failedRequests).toEqual([]);
+});
+
+test("drag preview moves the hinted pair before one authoritative release", async ({ page }) => {
+  const consoleErrors = [];
+  const pageErrors = [];
+  const failedRequests = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") consoleErrors.push(message.text());
+  });
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("requestfailed", (request) => failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`));
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await openFresh(page, "drag-preview-desktop");
+  const pair = await hintedPair(page);
+  const before = await activeState(page);
+  const preview = await previewDelta(page, pair);
+  await page.screenshot({ path: "work/drag-preview-desktop-ready.png", fullPage: true });
+  const during = await activeState(page);
+  expect(Math.abs(preview.sourceAxis), "source pre-release translation").toBeGreaterThan(18);
+  expect(Math.abs(preview.neighborAxis), "neighbor pre-release translation").toBeGreaterThan(5);
+  expect(Math.sign(preview.sourceAxis), "source tracks toward neighbor").toBe(preview.vector.dx || preview.vector.dy);
+  expect(Math.sign(preview.neighborAxis), "neighbor yields opposite source").toBe(-(preview.vector.dx || preview.vector.dy));
+  expect(during.moves).toBe(before.moves);
+  expect(during.counts).toEqual(before.counts);
+  expect(during.board).toBe(before.board);
+  expect(during.roundComplete).toBe(before.roundComplete);
+  expect(during.tiles).toBe(before.tiles);
+  expect(during.overflowX).toBe(before.overflowX);
+
+  await releaseMouseAndWaitIdle(page);
+  const after = await activeState(page);
+  expect(after.moves, "valid drag spends exactly one move").toBe(before.moves - 1);
+  expect(after.counts.reduce((sum, value) => sum + value, 0), "valid drag advances objective counts").toBeGreaterThan(before.counts.reduce((sum, value) => sum + value, 0));
+  expect(await page.locator(".tile.drag-preview-source, .tile.drag-preview-neighbor, .tile.drag-preview-ready").count()).toBe(0);
+  expect(consoleErrors).toEqual([]);
+  expect(pageErrors).toEqual([]);
+  expect(failedRequests).toEqual([]);
+});
+
+test("invalid, cancel, mobile touch, and reduced motion drag paths stay clean", async ({ page, browser }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await openFresh(page, "drag-invalid");
+  const invalidPair = await findInvalidAdjacentPair(page);
+  expect(invalidPair, "invalid adjacent pair").toHaveLength(2);
+  const invalidBefore = await activeState(page);
+  const invalidPreview = await previewDelta(page, invalidPair);
+  expect(Math.abs(invalidPreview.sourceAxis), "invalid source previews").toBeGreaterThan(18);
+  expect(Math.abs(invalidPreview.neighborAxis), "invalid neighbor previews").toBeGreaterThan(5);
+  await releaseMouseAndWaitIdle(page);
+  await page.waitForTimeout(900);
+  const invalidAfter = await activeState(page);
+  expect(invalidAfter.moves, "invalid drag spends no move").toBe(invalidBefore.moves);
+  expect(invalidAfter.board, "invalid drag leaves board authoritative").toBe(invalidBefore.board);
+  expect(await page.locator(".tile.invalid-swap").count()).toBe(0);
+
+  const edge = [{ x: 0, y: 0 }, { x: -1, y: 0 }];
+  const edgeGeometry = await tileGeometry(page, [edge[0]]);
+  await page.mouse.move(edgeGeometry[0].centerX, edgeGeometry[0].centerY);
+  await page.mouse.down();
+  await page.mouse.move(edgeGeometry[0].centerX - 46, edgeGeometry[0].centerY, { steps: 5 });
+  await page.dispatchEvent("#board", "pointercancel", {
+    pointerId: 1,
+    bubbles: true,
+    cancelable: true,
+    isPrimary: true,
+    clientX: edgeGeometry[0].centerX - 46,
+    clientY: edgeGeometry[0].centerY
+  });
+  await page.mouse.up();
+  const cancelAfter = await activeState(page);
+  expect(cancelAfter.moves, "cancel spends no move").toBe(invalidAfter.moves);
+  expect(await page.locator(".tile.drag-preview-source, .tile.drag-preview-neighbor, .tile.drag-preview-ready").count()).toBe(0);
+  await expect.poll(async () => page.evaluate(() => Array.from(document.querySelectorAll(".tile")).every((tile) => getComputedStyle(tile).transform === "none"))).toBe(true);
+
+  const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  try {
+    await openFresh(mobile, "drag-mobile390");
+    const mobilePair = await hintedPair(mobile);
+    const mobileBefore = await activeState(mobile);
+    const touchPreview = await dragTouchViaCdp(mobile, mobilePair);
+    const mobileAfter = await activeState(mobile);
+    const sourceAxis = mobilePair[0].x !== mobilePair[1].x
+      ? touchPreview.afterGeometry[0].left - touchPreview.beforeGeometry[0].left
+      : touchPreview.afterGeometry[0].top - touchPreview.beforeGeometry[0].top;
+    const neighborAxis = mobilePair[0].x !== mobilePair[1].x
+      ? touchPreview.afterGeometry[1].left - touchPreview.beforeGeometry[1].left
+      : touchPreview.afterGeometry[1].top - touchPreview.beforeGeometry[1].top;
+    expect(Math.abs(sourceAxis), "mobile source previews").toBeGreaterThan(18);
+    expect(Math.abs(neighborAxis), "mobile neighbor previews").toBeGreaterThan(5);
+    expect(mobileAfter.moves, "mobile drag has one commit").toBe(mobileBefore.moves - 1);
+    expect(mobileAfter.tiles).toBe(64);
+    expect(mobileAfter.rows).toBe(8);
+    expect(mobileAfter.overflowX).toBe(false);
+  } finally {
+    await mobile.close();
+  }
+
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await openFresh(page, "drag-reduced-motion");
+  const reducedPair = await hintedPair(page);
+  const reducedBefore = await activeState(page);
+  const reducedGeometry = await tileGeometry(page, reducedPair);
+  const reducedVector = dragVector(reducedPair, reducedGeometry);
+  await page.mouse.move(reducedVector.startX, reducedVector.startY);
+  await page.mouse.down();
+  await page.mouse.move(reducedVector.endX, reducedVector.endY, { steps: 4 });
+  await page.waitForFunction(() => document.querySelectorAll(".tile.drag-preview-ready").length === 2);
+  const reducedPreview = await tileGeometry(page, reducedPair);
+  expect(reducedPreview[0].transform, "reduced motion source does not continuously translate").toBe("none");
+  expect(reducedPreview[1].transform, "reduced motion neighbor does not continuously translate").toBe("none");
+  await releaseMouseAndWaitIdle(page);
+  const reducedAfter = await activeState(page);
+  expect(reducedAfter.moves, "reduced motion release commits").toBe(reducedBefore.moves - 1);
 });
 
 test("keyboard play follows the board and payoff focus", async ({ page }) => {

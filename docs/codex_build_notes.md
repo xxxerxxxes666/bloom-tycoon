@@ -32,6 +32,34 @@
 - Harness correction: the newly integrated bouquet binding intentionally lasts 1080 ms, while one runtime assertion allowed only 1000 ms. Its visibility allowance now matches the existing 1800 ms ceremony contract; the focused runtime rerun and clean full-suite rerun both passed.
 - Security: no assets, dependencies, services, trackers, analytics, accounts, payments, ads, permissions, credentials, backend behavior, or additional progression surfaces were added.
 
+## 2026-07-16 tactile drag-preview board pass
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_tutorial_progress.spec.js`, and this note.
+- Player-visible result: pressing an enabled active tile now gives a tactile drag preview before release. The held flower tracks the dominant axis with bounded movement, the adjacent in-bounds neighbor yields in the opposite direction, and both tiles enter a restrained gold ready state once the existing swipe threshold is crossed. Gameplay state still changes only on release through the existing two-tap swap path.
+- Implementation details: drag preview state is presentation-only and uses delegated board pointer/touch handlers. Movement updates only the two involved tile classes and inline transforms; the board is not rerendered on pointer move. Native image/button dragging is suppressed so desktop mouse drags keep pointer ownership. Startup tutorial and idle-hint timers defer while a drag is active, and render/reload/tutorial transitions clear preview state.
+- Functional evidence:
+  - Desktop authored hinted pair `(1,0) -> (1,1)`: pre-release source translation `+36.11px`, neighbor translation `-13px`; moves stayed `6`, counts stayed `0`, board save stayed unchanged before release. Release spent exactly one move (`6 -> 5`) and advanced objective count sum (`0 -> 3`), with 64 tiles, no overflow, no broken images, and 0 residual drag classes.
+  - Exact mobile `390x844` touch-equivalent drag on the same hinted pair: pre-release source translation `+34px`, neighbor translation `-12.24px`; release spent exactly one move (`6 -> 5`), retained 64 tiles, 8 rows, no overflow, no broken images, and 0 residual drag classes.
+  - Invalid adjacent drag `(0,0) -> (1,0)`: preview source `+36.11px`, neighbor `-13px`; release used the existing refusal path, moves stayed `6`, board contents stayed identical, and residual drag classes were `0`.
+  - Pointer cancel/off-board path: moves stayed `6 -> 6`, residual drag classes were `0`; no move was spent.
+  - Reduced motion: ready classes are applied statically, source/neighbor computed transforms stayed `none`, and release still committed one valid swap (`6 -> 5`) with residual drag classes `0`.
+- Screenshots captured and inspected:
+  - `work/drag-preview-desktop-ready.png`
+  - `work/drag-preview-mobile-ready.png`
+- Verification commands/results:
+  - `python3 scripts/verify_project.py` passed.
+  - `python3 scripts/verify_html_match_shapes.py` passed.
+  - `node --check scripts/verify_tutorial_progress.spec.js` passed.
+  - Extracted playable inline script syntax check via `node -e ... new vm.Script(...)` passed.
+  - `git diff --check` passed.
+  - Focused drag Playwright run passed `2/2`: `npx playwright test scripts/verify_tutorial_progress.spec.js --grep "drag preview|invalid, cancel"`.
+  - Codex's full affected Playwright suite passed `41/41` in `11.9m`: `scripts/verify_tutorial_progress.spec.js`, `scripts/verify_first_three_journey.spec.js`, `scripts/verify_payoff_ceremony_contract.spec.js`, `scripts/verify_pass3_feedback.spec.js`, and `scripts/verify_runtime_performance.spec.js`.
+  - Hermes independently reran the focused drag paths (`2/2`). Its first combined rerun passed `40/41`; only optimized `nightshade-glass` mobile Round 2 missed the existing one-move fairness cushion while still completing the round. The exact failed case then passed (`1/1`), and a fresh complete optimized/goal-following desktop/mobile fairness matrix passed `24/24`. The other 16 focused tests in the combined run passed.
+  - After rebasing the concurrent Play Again economy-loop fix, the final integrated Chromium suite passed `43/43` in `14.2m`, including the merged version-2 save/economy replay paths and all drag-preview scenarios.
+- Regression evidence from the final reruns: desktop and exact-mobile optimized plus goal-following first-three journeys all completed; `vesper-thorn` completed Round 3 on both viewports; save/reload, retry, keyboard, tap-tap/click, ceremonies, bouquet assembly, greenhouse transactions, reduced motion, runtime budgets, 64-tile integrity, eight mobile rows, no horizontal overflow, no broken images, and no console/page/request failures passed.
+- Browser/runtime status: local Chromium evidence probe reported no console warnings/errors, page errors, or failed requests during the drag scenarios. Runtime spec reported desktop/mobile/reduced-motion 64 tiles, 8 rows, no dormant preview/prototype nodes, no broken images, no overflow, and focused mobile guided swaps returning control without particle buildup.
+- Security status: no assets, dependencies, services, trackers, analytics, accounts, payments, ads, credentials, backend behavior, cron, or permissions were added. Changed-file secret/tracker/private-IP scan is recorded in the final pass report.
+- Known risk: the preview relies on CSS transforms on active tiles; existing reduced-motion handling disables continuous translation and keeps only the static ready treatment. No deployment, commit, or push was performed.
 ## 2026-07-16 focused economy save migration
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `scripts/verify_tutorial_progress.spec.js`, and this note.

@@ -1265,6 +1265,8 @@
       z-index: 1;
       cursor: pointer;
       overflow: hidden;
+      user-select: none;
+      -webkit-user-drag: none;
       box-shadow:
         inset 0 0 14px #000,
         inset 0 0 13px color-mix(in srgb, var(--tile-color) 13%, #0000),
@@ -1322,6 +1324,8 @@
         brightness(1.04);
       position: relative;
       z-index: 1;
+      user-select: none;
+      -webkit-user-drag: none;
     }
 
     .icon-wrap {
@@ -1451,6 +1455,50 @@
     .tile.idle-hint {
       outline: 2px solid #d7b16d;
       animation: idle-hint-pulse 1.35s ease-in-out infinite;
+    }
+
+    .board.drag-preview-active {
+      cursor: grabbing;
+    }
+
+    .tile.drag-preview-source,
+    .tile.drag-preview-neighbor {
+      z-index: 6;
+      transition: outline-color 100ms ease, box-shadow 100ms ease, filter 100ms ease;
+      will-change: transform;
+    }
+
+    .tile.drag-preview-source {
+      outline: 2px solid color-mix(in srgb, var(--tile-color) 64%, #d7b16d);
+      filter: brightness(1.08) saturate(1.08);
+      box-shadow:
+        inset 0 0 15px #000,
+        inset 0 0 0 2px #2b180d,
+        0 0 0 1px #160f0c,
+        0 0 18px color-mix(in srgb, var(--tile-color) 42%, #d7b16d);
+    }
+
+    .tile.drag-preview-neighbor {
+      outline: 1px solid color-mix(in srgb, var(--tile-color) 48%, #b9874d);
+      filter: brightness(1.03) saturate(1.03);
+    }
+
+    .tile.drag-preview-ready {
+      outline: 2px solid #f0c477;
+      box-shadow:
+        inset 0 0 15px #000,
+        inset 0 0 0 2px #2b180d,
+        0 0 0 1px #160f0c,
+        0 0 22px #d7b16d,
+        0 0 12px color-mix(in srgb, var(--tile-color) 52%, #f0c477);
+    }
+
+    .tile.drag-preview-ready::after {
+      z-index: 4;
+      opacity: 1;
+      background:
+        radial-gradient(circle at 50% 45%, #fff0b433 0, #0000 58%),
+        linear-gradient(90deg, #0000 0 42%, #f0c47791 48%, #0000 55%);
     }
 
     .swap-path-arrow {
@@ -4411,7 +4459,7 @@
     .first-swap-cue::before { content:"GLYPH GUIDE"; flex:none; padding-right:8px; border-right:1px solid #76582e; color:#b9965f; font:700 9px/1.1 system-ui,sans-serif; letter-spacing:.12em; }
     body.round-one-active.round-one-black-candle-cue .first-swap-cue::before { content:"BLACK CANDLE"; }
     body.round-one-active.round-one-black-candle-cue .first-swap-cue { position:relative; z-index:12; }
-    body.round-one-active .board { touch-action:none; }
+    body.round-one-active .board { touch-action:manipulation; }
     body.round-one-active.round-one-complete .objective,
     body.round-one-active.round-one-complete .active-greenhouse-stage,
     body.round-one-active.round-one-complete .ritual-log { display:none; }
@@ -4510,7 +4558,7 @@
         0 0 30px color-mix(in srgb, var(--stage-accent, #b9874d) 28%, #0000),
         0 18px 42px #000c;
     }
-    body.restored-next-order-focus .board { touch-action:none; box-shadow:0 0 0 1px #6f944d,0 0 22px #7fcf6530,inset 0 0 16px #000; }
+    body.restored-next-order-focus .board { touch-action:manipulation; box-shadow:0 0 0 1px #6f944d,0 0 22px #7fcf6530,inset 0 0 16px #000; }
     body.restored-next-order-focus:not(.restored-greenhouse-handoff) .board {
       box-shadow:
         inset 0 0 42px #000,
@@ -5032,6 +5080,9 @@
       .tile.thorn-cleared .cursed-thorn-art,
       .tile.invalid-swap,
       .tile.invalid-swap::after,
+      .tile.drag-preview-source,
+      .tile.drag-preview-neighbor,
+      .tile.drag-preview-ready,
       .tile.swap-snap,
       .tile.swap-glide,
       .tile.fall-in,
@@ -5060,6 +5111,10 @@
       }
       .board-particle.chain-lash {
         display:none !important;
+      }
+      .tile.drag-preview-source,
+      .tile.drag-preview-neighbor {
+        transform:none !important;
       }
       .supreme.on {
         animation:none !important;
@@ -5883,6 +5938,9 @@
     ]);
     const ALTAR_DRIFT_FOCUSED_BAITS = 1;
     const ALTAR_DRIFT_STANDARD_BAITS = 1;
+    const DRAG_INTENT_THRESHOLD = 6;
+    const DRAG_MAX_TRAVEL_RATIO = 0.78;
+    const DRAG_NEIGHBOR_YIELD_RATIO = 0.36;
 
     let board = [];
     let selected = null;
@@ -5913,6 +5971,7 @@
     const SWIPE_THRESHOLD = 18;
     let tileSwipeStart = null;
     let touchSwipeStart = null;
+    let dragPreview = null;
     let suppressNextBoardClick = false;
     let superBloomCells = new Set();
     let invalidSwapCells = new Set();
@@ -5980,7 +6039,7 @@
       return `
         <span class="icon-wrap ${wrapClass}" style="--icon-color: ${flower[4]}" data-fallback-wrap>
           <span class="fallback-glyph" aria-hidden="true">${flower[3]}</span>
-          <img class="${className}" src="${flower[1]}" srcset="${flowerIconSrcset(flower[1])}" sizes="96px" alt="${alt}" data-fallback-img>
+          <img class="${className}" src="${flower[1]}" srcset="${flowerIconSrcset(flower[1])}" sizes="96px" alt="${alt}" draggable="false" data-fallback-img>
         </span>
       `;
     }
@@ -6957,6 +7016,10 @@
         if ((hasMadeValidMove && !postOnboardingIdleHintAfterDelay) || roundComplete || isBouquetFailed() || isResolving) {
           return;
         }
+        if (boardDragInputActive()) {
+          scheduleIdleHint();
+          return;
+        }
         const plan = activeRoundPlan();
         const targetIndex = plan.targets.findIndex((target) => targetProgress(target) < target.needed);
         const target = plan.targets[targetIndex];
@@ -7400,6 +7463,170 @@
       }, 880);
     }
 
+    function tileForCell(x, y) {
+      return document.querySelector(`#board .tile[data-x="${x}"][data-y="${y}"]`);
+    }
+
+    function canBeginBoardDrag(cell) {
+      return Boolean(cell?.tile)
+        && !cell.tile.disabled
+        && !isResolving
+        && !roundComplete
+        && !isBouquetFailed()
+        && moves > 0;
+    }
+
+    function resetDragTile(tile) {
+      if (!tile) {
+        return;
+      }
+      tile.style.transform = "";
+      tile.classList.remove("drag-preview-source", "drag-preview-neighbor", "drag-preview-ready");
+    }
+
+    function clearDragPreview(options = {}) {
+      const boardEl = $("board");
+      if (dragPreview) {
+        resetDragTile(dragPreview.sourceTile);
+        resetDragTile(dragPreview.neighborTile);
+      }
+      if (boardEl) {
+        boardEl.classList.remove("drag-preview-active", "drag-preview-ready");
+        boardEl.querySelectorAll(".drag-preview-source, .drag-preview-neighbor, .drag-preview-ready").forEach(resetDragTile);
+      }
+      dragPreview = null;
+      if (options.resetInputs) {
+        tileSwipeStart = null;
+        touchSwipeStart = null;
+      }
+    }
+
+    function boardDragInputActive() {
+      return Boolean(dragPreview || tileSwipeStart || touchSwipeStart);
+    }
+
+    function beginDragPreview(start, sourceTile) {
+      clearDragPreview();
+      const boardEl = $("board");
+      dragPreview = {
+        start,
+        sourceTile,
+        neighborTile: null,
+        neighbor: null,
+        ready: false
+      };
+      if (boardEl) {
+        boardEl.classList.add("drag-preview-active");
+      }
+      sourceTile.classList.add("drag-preview-source");
+    }
+
+    function dragTravelDistance(sourceTile, neighborTile, horizontal) {
+      const boardEl = $("board");
+      const boardStyle = boardEl ? window.getComputedStyle(boardEl) : null;
+      const gap = boardStyle
+        ? Number.parseFloat(horizontal ? boardStyle.columnGap : boardStyle.rowGap) || 0
+        : 0;
+      const tileSpan = horizontal ? sourceTile.offsetWidth : sourceTile.offsetHeight;
+      return Math.max(1, tileSpan + gap);
+    }
+
+    function applyDragPreview(start, event) {
+      if (!start || (event.pointerId !== undefined && start.pointerId !== event.pointerId) || isResolving || roundComplete || isBouquetFailed()) {
+        clearDragPreview({ resetInputs: isResolving || roundComplete || isBouquetFailed() });
+        return;
+      }
+      if (!dragPreview) {
+        const sourceTile = tileForCell(start.x, start.y);
+        if (!sourceTile || sourceTile.disabled) {
+          return;
+        }
+        beginDragPreview(start, sourceTile);
+      }
+      const dx = event.clientX - start.clientX;
+      const dy = event.clientY - start.clientY;
+      const absX = Math.abs(dx);
+      const absY = Math.abs(dy);
+      const dominant = Math.max(absX, absY);
+      const sourceTile = dragPreview.sourceTile;
+      if (dominant < DRAG_INTENT_THRESHOLD) {
+        resetDragTile(dragPreview.neighborTile);
+        dragPreview.neighborTile = null;
+        dragPreview.neighbor = null;
+        sourceTile.style.transform = "";
+        sourceTile.classList.remove("drag-preview-ready");
+        $("board")?.classList.remove("drag-preview-ready");
+        return;
+      }
+
+      start.dragEstablished = true;
+      if (event.pointerType === "touch" && event.cancelable !== false && event.preventDefault) {
+        event.preventDefault();
+      }
+
+      const horizontal = absX >= absY;
+      const direction = horizontal ? Math.sign(dx) : Math.sign(dy);
+      if (!direction) {
+        return;
+      }
+      const neighbor = {
+        x: start.x + (horizontal ? direction : 0),
+        y: start.y + (horizontal ? 0 : direction)
+      };
+      if (neighbor.x < 0 || neighbor.x >= BOARD_SIZE || neighbor.y < 0 || neighbor.y >= BOARD_SIZE) {
+        resetDragTile(dragPreview.neighborTile);
+        dragPreview.neighborTile = null;
+        dragPreview.neighbor = null;
+        sourceTile.style.transform = "";
+        sourceTile.classList.remove("drag-preview-ready");
+        $("board")?.classList.remove("drag-preview-ready");
+        return;
+      }
+
+      const neighborTile = tileForCell(neighbor.x, neighbor.y);
+      if (!neighborTile || neighborTile.disabled) {
+        return;
+      }
+      if (dragPreview.neighborTile && dragPreview.neighborTile !== neighborTile) {
+        resetDragTile(dragPreview.neighborTile);
+      }
+      dragPreview.neighborTile = neighborTile;
+      dragPreview.neighbor = neighbor;
+      sourceTile.classList.add("drag-preview-source");
+      neighborTile.classList.add("drag-preview-neighbor");
+      const ready = dominant >= SWIPE_THRESHOLD;
+      dragPreview.ready = ready;
+      sourceTile.classList.toggle("drag-preview-ready", ready);
+      neighborTile.classList.toggle("drag-preview-ready", ready);
+      $("board")?.classList.toggle("drag-preview-ready", ready);
+
+      if (prefersReducedMotion()) {
+        sourceTile.style.transform = "";
+        neighborTile.style.transform = "";
+        return;
+      }
+
+      const centerDistance = dragTravelDistance(sourceTile, neighborTile, horizontal);
+      const maxTravel = centerDistance * DRAG_MAX_TRAVEL_RATIO;
+      const sourceTravel = Math.min(maxTravel, dominant) * direction;
+      const neighborTravel = -sourceTravel * DRAG_NEIGHBOR_YIELD_RATIO;
+      const sourceTransform = horizontal
+        ? `translate3d(${sourceTravel}px, 0, 0)`
+        : `translate3d(0, ${sourceTravel}px, 0)`;
+      const neighborTransform = horizontal
+        ? `translate3d(${neighborTravel}px, 0, 0)`
+        : `translate3d(0, ${neighborTravel}px, 0)`;
+      sourceTile.style.transform = sourceTransform;
+      neighborTile.style.transform = neighborTransform;
+    }
+
+    function suppressBoardClickBriefly() {
+      suppressNextBoardClick = true;
+      window.setTimeout(() => {
+        suppressNextBoardClick = false;
+      }, 350);
+    }
+
     function finishTileSwipe(start, event, x, y) {
       if (!start || start.pointerId !== event.pointerId || isResolving) {
         return;
@@ -7407,6 +7634,13 @@
       const dx = event.clientX - start.clientX;
       const dy = event.clientY - start.clientY;
       if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE_THRESHOLD) {
+        if (start.dragEstablished) {
+          if (event.preventDefault) {
+            event.preventDefault();
+          }
+          suppressBoardClickBriefly();
+        }
+        clearDragPreview();
         return;
       }
       const horizontal = Math.abs(dx) > Math.abs(dy);
@@ -7414,14 +7648,17 @@
         x: x + (horizontal ? Math.sign(dx) : 0),
         y: y + (horizontal ? 0 : Math.sign(dy))
       };
+      if (event.preventDefault) {
+        event.preventDefault();
+      }
+      suppressBoardClickBriefly();
+      tileSwipeStart = null;
+      touchSwipeStart = null;
+      clearDragPreview();
       if (target.x < 0 || target.x >= BOARD_SIZE || target.y < 0 || target.y >= BOARD_SIZE) {
         return;
       }
-      event.preventDefault();
-      suppressNextBoardClick = true;
-      window.setTimeout(() => {
-        suppressNextBoardClick = false;
-      }, 350);
+      selected = null;
       tap(x, y);
       tap(target.x, target.y);
     }
@@ -7545,7 +7782,7 @@
         return;
       }
       const cell = boardTileFromEvent(event);
-      if (!cell) {
+      if (!cell || !canBeginBoardDrag(cell)) {
         return;
       }
       boardFocusCell = { x: cell.x, y: cell.y };
@@ -7556,15 +7793,24 @@
         x: cell.x,
         y: cell.y
       };
+      beginDragPreview(tileSwipeStart, cell.tile);
       if (event.isTrusted && cell.tile.setPointerCapture) {
         cell.tile.setPointerCapture(event.pointerId);
       }
+    }
+
+    function handleBoardPointerMove(event) {
+      if (!event.isPrimary || !tileSwipeStart) {
+        return;
+      }
+      applyDragPreview(tileSwipeStart, event);
     }
 
     function handleBoardPointerUp(event) {
       const start = tileSwipeStart;
       tileSwipeStart = null;
       if (!start) {
+        clearDragPreview();
         return;
       }
       finishTileSwipe(start, event, start.x, start.y);
@@ -7572,16 +7818,18 @@
 
     function handleBoardPointerCancel() {
       tileSwipeStart = null;
+      clearDragPreview();
     }
 
     function handleBoardTouchStart(event) {
       if (event.touches.length !== 1) {
         touchSwipeStart = null;
+        clearDragPreview();
         return;
       }
       const touch = event.touches[0];
       const cell = boardTileFromPoint(touch.clientX, touch.clientY);
-      if (!cell) {
+      if (!cell || !canBeginBoardDrag(cell)) {
         touchSwipeStart = null;
         return;
       }
@@ -7593,16 +7841,38 @@
         x: cell.x,
         y: cell.y
       };
+      beginDragPreview(touchSwipeStart, cell.tile);
+    }
+
+    function handleBoardTouchMove(event) {
+      const start = touchSwipeStart;
+      if (!start || event.touches.length !== 1) {
+        return;
+      }
+      const touch = Array.from(event.touches).find((candidate) => candidate.identifier === start.pointerId);
+      if (!touch) {
+        return;
+      }
+      applyDragPreview(start, {
+        pointerId: start.pointerId,
+        pointerType: "touch",
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        cancelable: event.cancelable,
+        preventDefault: () => event.preventDefault()
+      });
     }
 
     function handleBoardTouchEnd(event) {
       const start = touchSwipeStart;
       touchSwipeStart = null;
       if (!start) {
+        clearDragPreview();
         return;
       }
       const touch = Array.from(event.changedTouches).find((candidate) => candidate.identifier === start.pointerId);
       if (!touch) {
+        clearDragPreview();
         return;
       }
       finishTileSwipe(start, {
@@ -7615,6 +7885,7 @@
 
     function handleBoardTouchCancel() {
       touchSwipeStart = null;
+      clearDragPreview();
     }
 
     function handleBoardClick(event) {
@@ -8034,6 +8305,7 @@
     }
 
     function render() {
+      clearDragPreview({ resetInputs: true });
       const roundOneActive = currentRound === 1;
       const roundTwoUpgradePending = currentRound === 2 && roundComplete && roundOneRestored && !roundTwoGreenhouseUpgraded;
       const roundTwoUpgradeComplete = currentRound === 2 && roundComplete && roundOneRestored && roundTwoGreenhouseUpgraded;
@@ -8114,6 +8386,7 @@
           tile.dataset.y = y;
           tile.dataset.flowerId = value;
           tile.id = `tile-${x}-${y}`;
+          tile.draggable = false;
           tile.setAttribute("aria-rowindex", String(y + 1));
           tile.setAttribute("aria-colindex", String(x + 1));
           const selectedClass = selected && selected.x === x && selected.y === y ? "sel" : "";
@@ -8427,6 +8700,10 @@
       }
       tutorialStartTimer = window.setTimeout(() => {
         tutorialStartTimer = null;
+        if (boardDragInputActive()) {
+          scheduleFreshTutorial();
+          return;
+        }
         startTutorial();
       }, 700);
     }
@@ -10941,11 +11218,14 @@
     $("tutorialSkipBtn").addEventListener("click", skipTutorial);
     $("tutorialHelpBtn").addEventListener("click", () => startTutorial({ replay: true }));
     $("board").addEventListener("pointerdown", handleBoardPointerDown);
+    $("board").addEventListener("pointermove", handleBoardPointerMove);
     $("board").addEventListener("pointerup", handleBoardPointerUp);
     $("board").addEventListener("pointercancel", handleBoardPointerCancel);
     $("board").addEventListener("touchstart", handleBoardTouchStart, { passive: true });
+    $("board").addEventListener("touchmove", handleBoardTouchMove, { passive: false });
     $("board").addEventListener("touchend", handleBoardTouchEnd, { passive: false });
     $("board").addEventListener("touchcancel", handleBoardTouchCancel);
+    $("board").addEventListener("dragstart", (event) => event.preventDefault());
     $("board").addEventListener("click", handleBoardClick);
     $("board").addEventListener("keydown", handleBoardKeyDown);
     window.__bloomAudioProbe = () => ({
