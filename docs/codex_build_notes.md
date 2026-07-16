@@ -1,5 +1,14 @@
 # Codex Build Notes
 
+## 2026-07-16 protected Round 1 tutorial moves
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_tutorial_progress.spec.js`, and this note.
+- Selected weakness: after the first authored swap, the still-active Round 1 tutorial exposed `Shuffle (-1 move)`. A new player could spend the tight opening budget and rebuild the authored board before learning Black Candle Vine, binding the bouquet, earning coins, or restoring the greenhouse.
+- Player-visible result: Skip is now the only non-tile action throughout active Round 1 tutorial guidance. Shuffle is hidden, disabled, and guarded against synthetic activation while the lesson is active; Skip immediately restores the normal enabled Shuffle control when moves remain. Non-tutorial Round 1 and Rounds 2-3 keep their existing Shuffle behavior.
+- Regression coverage: desktop `1280x720` and exact mobile `390x844` verify protection after the first guided swap and Help/replay tutorial, protection across reload, no move spend from direct hidden-button activation, post-Skip restoration, exact one-move spend, 64 tiles, and eight rows. Hermes independently reproduced the original leak `4/4` on both public hosts and passed its corrected precommit probe `2/2` before the semantic disabled-state tightening.
+- Verification: `python3 scripts/verify_project.py`, `python3 scripts/verify_html_match_shapes.py`, changed-spec JavaScript syntax, and `git diff --check` passed. Focused tutorial coverage passed `2/2`; the full tutorial file passed `8/8`; the complete Chromium suite passed `44/44` in 11.7 minutes across seeded desktop/mobile journeys, two full economy cycles, migration, ceremonies, tactile drag, invalid/cancel, keyboard, touch, reduced motion, Retry, 64 tiles/eight rows, runtime budgets, images, and overflow.
+- Security/scope: no assets, dependencies, services, trackers, analytics, accounts, permissions, economy values, save schema, rounds, currencies, panels, controls, or progression surfaces were added.
+
 ## 2026-07-16 legible replay reinvestment handoff
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_first_three_journey.spec.js`, `scripts/verify_tutorial_progress.spec.js`, `scripts/verify_payoff_ceremony_contract.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.

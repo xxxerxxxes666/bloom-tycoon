@@ -4448,6 +4448,7 @@
     body.round-one-active .controls .red,
     body.round-one-active #renewBtn,
     body.round-one-active:not(.first-move-made) #shuffleBtn,
+    body.round-one-active.tutorial-active #shuffleBtn,
     body.round-one-active #roundCeremony {
       display: none !important;
     }
@@ -8534,7 +8535,10 @@
       if (coinsEl) {
         coinsEl.textContent = coins;
       }
-      $("shuffleBtn").disabled = isResolving || roundComplete || moves < 1;
+      $("shuffleBtn").disabled = isResolving
+        || roundComplete
+        || moves < 1
+        || (currentRound === 1 && tutorialActive);
       $("ritualLog").innerHTML = ritualMessage;
       $("renewBtn").textContent = roundComplete ? "Next Bouquet" : failed ? "Retry Bouquet" : "Renew Bouquet";
       $("renewBtn").classList.toggle("visible", failed || roundComplete);
@@ -10684,6 +10688,9 @@
 
     function shuffleBoard() {
       if (isResolving) {
+        return;
+      }
+      if (currentRound === 1 && tutorialActive) {
         return;
       }
       if (roundComplete) {

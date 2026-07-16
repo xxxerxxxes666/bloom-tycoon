@@ -629,6 +629,36 @@ test("guided Round 1 payoff keeps one dominant action", async ({ page }) => {
   expect(failedRequests).toEqual([]);
 });
 
+test("Round 1 tutorial protects moves until Skip restores Shuffle", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await openFresh(page, "tutorial-shuffle-desktop");
+  await expect(page.locator("#tutorialPanel")).toBeVisible({ timeout: 3000 });
+  await clickGuidedSwap(page);
+
+  const movesDuringLesson = Number((await page.locator(".moves-counter").textContent()).match(/\d+/)?.[0]);
+  await expect(page.locator("#tutorialCopy")).toContainText(/Match 3 fills|Match 4 makes/);
+  await expect(page.locator("#shuffleBtn")).toBeHidden();
+  await expect(page.locator("#shuffleBtn")).toBeDisabled();
+  await expect(page.locator("#tutorialSkipBtn")).toBeVisible();
+  expect((await visibleReport(page)).visibleNonTileButtons).toEqual(["Skip"]);
+
+  await page.locator("#shuffleBtn").evaluate((button) => button.click());
+  await expect(page.locator(".moves-counter")).toHaveText(`Moves ${movesDuringLesson}`);
+  await page.reload({ waitUntil: "networkidle" });
+  await expect(page.locator("#tutorialPanel")).toBeVisible();
+  await expect(page.locator("#shuffleBtn")).toBeHidden();
+  await expect(page.locator("#shuffleBtn")).toBeDisabled();
+  await expect(page.locator(".moves-counter")).toHaveText(`Moves ${movesDuringLesson}`);
+
+  await page.locator("#tutorialSkipBtn").click();
+  await expect(page.locator("#shuffleBtn")).toBeVisible();
+  await expect(page.locator("#shuffleBtn")).toBeEnabled();
+  await page.locator("#shuffleBtn").click();
+  await expect(page.locator(".moves-counter")).toHaveText(`Moves ${movesDuringLesson - 1}`);
+  await expect(page.locator(".tile")).toHaveCount(64);
+  expect(new Set(await page.locator(".tile").evaluateAll((tiles) => tiles.map((tile) => tile.dataset.y))).size).toBe(8);
+});
+
 test("fresh tutorial is skippable, replayable, and tied to concrete progress", async ({ page }) => {
   const consoleErrors = [];
   const pageErrors = [];
@@ -681,8 +711,10 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
   await expect(page.locator("#tutorialCopy")).toContainText(/Match 3 fills|Match 4 makes/);
   report = await visibleReport(page);
   expect(report.tutorialInViewport, "post-swap tutorial panel stays in viewport").toBe(true);
-  expect(report.visibleButtons, "post-swap tutorial button cap").toEqual(["Skip", "Shuffle (-1 move)"]);
-  expect(report.visibleNonTileButtons).toEqual(["Skip", "Shuffle (-1 move)"]);
+  expect(report.visibleButtons, "post-swap tutorial button cap").toEqual(["Skip"]);
+  expect(report.visibleNonTileButtons).toEqual(["Skip"]);
+  await expect(page.locator("#shuffleBtn")).toBeHidden();
+  await expect(page.locator("#shuffleBtn")).toBeDisabled();
   await page.locator("#tutorialSkipBtn").click();
   await expect(page.locator("#tutorialPanel")).toBeHidden();
   await expect(page.locator("#tutorialHelpBtn")).toBeVisible();
@@ -691,8 +723,20 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
   await expect(page.locator("#tutorialCopy")).toContainText(/Match 3 fills|Match 4 makes/);
   report = await visibleReport(page);
   expect(report.tutorialInViewport, "post-swap replay panel stays in viewport").toBe(true);
-  expect(report.visibleButtons, "post-swap replay button cap").toEqual(["Skip", "Shuffle (-1 move)"]);
-  expect(report.visibleNonTileButtons).toEqual(["Skip", "Shuffle (-1 move)"]);
+  expect(report.visibleButtons, "post-swap replay button cap").toEqual(["Skip"]);
+  expect(report.visibleNonTileButtons).toEqual(["Skip"]);
+  await expect(page.locator("#shuffleBtn")).toBeHidden();
+  await expect(page.locator("#shuffleBtn")).toBeDisabled();
+
+  const movesBeforeSkip = Number((await page.locator(".moves-counter").textContent()).match(/\d+/)?.[0]);
+  await page.locator("#tutorialSkipBtn").click();
+  await expect(page.locator("#tutorialPanel")).toBeHidden();
+  await expect(page.locator("#shuffleBtn")).toBeVisible();
+  await expect(page.locator("#shuffleBtn")).toBeEnabled();
+  await page.locator("#shuffleBtn").click();
+  await expect(page.locator(".moves-counter")).toHaveText(`Moves ${movesBeforeSkip - 1}`);
+  await expect(page.locator(".tile")).toHaveCount(64);
+  expect(new Set(await page.locator(".tile").evaluateAll((tiles) => tiles.map((tile) => tile.dataset.y))).size).toBe(8);
 
   await completeRoundWithReviewKey(page);
   await expect(page.locator("#tutorialCopy")).toHaveText("Coins restore the greenhouse.");
