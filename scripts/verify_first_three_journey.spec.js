@@ -73,6 +73,9 @@ async function journeyState(page) {
       payoffTransaction: document.querySelector("#payoffTransaction")?.textContent.trim() || "",
       payoffCopy: document.querySelector("#restorationCopy")?.textContent.trim() || "",
       cue: document.querySelector("#firstSwapCue")?.textContent.trim() || "",
+      handoffCue: document.querySelector("#nextOrderCue")?.textContent.trim() || "",
+      handoffCueVisible: visible(document.querySelector("#nextOrderCue")),
+      handoffCueBottom: document.querySelector("#nextOrderCue")?.getBoundingClientRect().bottom || 0,
       tutorial: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
       tiles: document.querySelectorAll(".tile").length,
       tileRows,
@@ -222,12 +225,17 @@ async function clickGuidedSwap(page, strategy = "optimized") {
   throw lastError || new Error("Unable to perform a fresh guided swap");
 }
 
-async function spendPrimaryCeremonyAction(page) {
+async function spendPrimaryCeremonyAction(page, activation = "pointer") {
   await page.waitForSelector("#roundOneRestoration button:not([hidden])", { timeout: 5000 });
   const button = page.locator("#roundOneRestoration button:not([hidden])");
   await expect(button).toBeEnabled({ timeout: 2000 });
   const text = (await button.textContent()).trim();
-  await button.click();
+  if (activation === "keyboard") {
+    await expect(button).toBeFocused();
+    await page.keyboard.press("Enter");
+  } else {
+    await button.click();
+  }
   await page.waitForTimeout(650);
   return text;
 }
@@ -302,9 +310,12 @@ async function playFocusedCycle(page, config, runLabel, strategy, options = {}) 
     result.balances = [startCoins, earnedCoins, spentState.coins];
 
     if (round === 3 && options.evidencePrefix) {
-      expect(spentState.payoffTransaction).toBe("Raised for 180. 50 coins seed the next greenhouse run.");
+      expect(spentState.payoffTransaction).toBe("Raised for 180. Play Again reinvests the remaining 50 coins.");
       expect(spentState.payoffCopy).toBe("Play Again reinvests the seed into a fresh First Bouquet run.");
       expect(spentState.visibleButtons).toEqual(["Play Again → First Bouquet"]);
+      await expect(page.getByRole("button", { name: "Play Again → First Bouquet", exact: true })).toBeFocused();
+      const transactionBox = await page.locator("#payoffTransaction").boundingBox();
+      expect((transactionBox?.y || 0) + (transactionBox?.height || 0)).toBeLessThanOrEqual(config.viewport.height);
       await page.screenshot({ path: `${options.evidencePrefix}-reinvestment.png`, fullPage: true });
     }
     if (round === 1 && options.verifyRestoredRoundOne) {
@@ -326,7 +337,10 @@ async function playFocusedCycle(page, config, runLabel, strategy, options = {}) 
       results.push(result);
       break;
     }
-    const secondAction = await spendPrimaryCeremonyAction(page);
+    const secondAction = await spendPrimaryCeremonyAction(
+      page,
+      round === 3 ? options.replayActivation : "pointer"
+    );
     const advancedCoins = (await journeyState(page)).coins;
     result.balances.push(advancedCoins);
     result.actions = [firstAction, secondAction];
@@ -422,14 +436,33 @@ for (const config of [
     expect((await journeyState(page)).coins).toBe(0);
 
     const firstCycle = await playFocusedCycle(page, config, `${runLabel}-cycle1`, "goal-following", {
-      evidencePrefix: `work/economy-${config.label}-cycle1`
+      evidencePrefix: `work/economy-${config.label}-cycle1`,
+      replayActivation: config.mobile ? "keyboard" : "pointer"
     });
     expect(firstCycle.map((round) => round.balances)).toEqual([
       [0, 120, 20, 20],
       [20, 170, 50, 50],
       [50, 230, 50, 0]
     ]);
+    const replayHandoff = await journeyState(page);
+    expect(replayHandoff.handoffCue).toBe("50 coins reinvested · First Bouquet begins");
+    expect(replayHandoff.handoffCueVisible).toBe(true);
+    expect(replayHandoff.handoffCueBottom).toBeLessThanOrEqual(config.viewport.height);
+    expect(replayHandoff.tiles).toBe(64);
+    if (config.mobile) {
+      expect(replayHandoff.boardBottom).toBeLessThanOrEqual(config.viewport.height);
+    }
+    await expect(page.locator(".tile[tabindex='0']")).toHaveCount(1);
+    await expect(page.locator(".tile[tabindex='0']")).toBeFocused();
+    await page.screenshot({ path: `work/replay-handoff-${config.label}.png`, fullPage: true });
+    const replayMovesBeforeSwap = replayHandoff.moves;
+    await clickGuidedSwap(page, "goal-following");
+    expect((await journeyState(page)).moves).toBe(replayMovesBeforeSwap - 1);
+    expect((await journeyState(page)).handoffCueVisible).toBe(true);
+    await expect(page.locator("#nextOrderCue")).toBeHidden({ timeout: 3000 });
+    await expect(page.locator("#firstSwapCue")).not.toContainText("reinvested");
     await reloadAndExpectActiveReplayBalance(page, config, 0);
+    expect((await journeyState(page)).handoffCueVisible).toBe(false);
 
     const secondCycle = await playFocusedCycle(page, config, `${runLabel}-cycle2`, "goal-following", {
       evidencePrefix: `work/economy-${config.label}-cycle2`,

@@ -4459,6 +4459,7 @@
     .first-swap-cue::before { content:"GLYPH GUIDE"; flex:none; padding-right:8px; border-right:1px solid #76582e; color:#b9965f; font:700 9px/1.1 system-ui,sans-serif; letter-spacing:.12em; }
     body.round-one-active.round-one-black-candle-cue .first-swap-cue::before { content:"BLACK CANDLE"; }
     body.round-one-active.round-one-black-candle-cue .first-swap-cue { position:relative; z-index:12; }
+    body.restored-greenhouse-handoff.round-one-active .first-swap-cue { display:none!important; }
     body.round-one-active .board { touch-action:manipulation; }
     body.round-one-active.round-one-complete .objective,
     body.round-one-active.round-one-complete .active-greenhouse-stage,
@@ -8234,7 +8235,7 @@
           title: "Bloodroot Compact Complete",
           state: spent ? "BLOODROOT CONSERVATORY RAISED" : "BLOODROOT CONSERVATORY READY",
           transaction: spent
-            ? `Raised for ${BLOODROOT_CONSERVATORY_COST}. ${coins} coins seed the next greenhouse run.`
+            ? `Raised for ${BLOODROOT_CONSERVATORY_COST}. Play Again reinvests the remaining ${coins} coins.`
             : `Earned ${roundThreePlan.reward.coins} coins. Conservatory costs ${BLOODROOT_CONSERVATORY_COST}.`,
           copy: spent ? "Play Again reinvests the seed into a fresh First Bouquet run." : "Spend the Bloodroot payout to raise the conservatory.",
           spendText: coins >= BLOODROOT_CONSERVATORY_COST
@@ -8326,7 +8327,7 @@
       updateBloomSoundscapeStage(activeGreenhouseStageKey());
       document.body.classList.toggle("round-one-active", roundOneActive);
       document.body.classList.toggle("round-one-complete", roundOneActive && roundComplete);
-      document.body.classList.toggle("restored-greenhouse-handoff", restoredGreenhouseHandoff && currentRound === 2 && !roundComplete);
+      document.body.classList.toggle("restored-greenhouse-handoff", restoredGreenhouseHandoff && !roundComplete);
       document.body.classList.toggle("restored-next-order-focus", isRestoredRoundTwoWindow() || failedFocusedRestoredOrder);
       document.body.classList.toggle("restored-next-order-guide", isRestoredNextOrderFocus());
       document.body.classList.toggle("round-two-upgrade-pending", roundTwoUpgradePending);
@@ -10437,10 +10438,11 @@
       restoreRoundOneGreenhouse();
     }
 
-    function startRestoredGreenhouseHandoff() {
+    function startRestoredGreenhouseHandoff(message = "Restored Greenhouse - Moonlit Wreath begins") {
       if (restoredGreenhouseHandoffTimer && window.clearTimeout) {
         window.clearTimeout(restoredGreenhouseHandoffTimer);
       }
+      $("nextOrderCue").textContent = message;
       restoredGreenhouseHandoff = true;
       restoredGreenhouseHandoffTimer = window.setTimeout(() => {
         restoredGreenhouseHandoff = false;
@@ -10824,6 +10826,7 @@
       clearedCursedThorns = 0;
       ritualMessage = `<strong>First Bouquet:</strong> ${goalCopy(plan)} Match the glowing pair to begin another greenhouse run.`;
       build();
+      startRestoredGreenhouseHandoff("50 coins reinvested · First Bouquet begins");
       render();
       const firstMove = legalMoves()[0];
       if (firstMove) {

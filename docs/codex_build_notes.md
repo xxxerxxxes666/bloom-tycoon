@@ -1,5 +1,15 @@
 # Codex Build Notes
 
+## 2026-07-16 legible replay reinvestment handoff
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_first_three_journey.spec.js`, `scripts/verify_tutorial_progress.spec.js`, `scripts/verify_payoff_ceremony_contract.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.
+- Selected weakness: the replay economy correctly consumed the final 50 coins, but the raised-conservatory ceremony only called them a seed and Play Again cut directly to a withered Round 1 at 0. The reset could read as lost progress instead of an intentional reinvestment.
+- Player-visible result: the final transaction now reads `Raised for 180. Play Again reinvests the remaining 50 coins.` The sole focused Play Again action starts a playable 64-tile Round 1 immediately and reuses the existing handoff cue for `50 coins reinvested · First Bouquet begins` for 2.2 seconds. The cue occupies the normal instruction slot, does not block tile input, then clears without being persisted so ordinary reloads cannot resurrect it.
+- Interaction/browser evidence: desktop `1280x720` pointer activation and exact `390x844` Enter activation both retained one focused Play Again action, first-viewport transaction copy, 64 tiles/eight rows, one roving tile focus, and a successful real guided swap while the handoff cue was visible. Screenshots `work/economy-desktop-cycle1-reinvestment.png`, `work/economy-mobile390-cycle1-reinvestment.png`, `work/replay-handoff-desktop.png`, and `work/replay-handoff-mobile390.png` were inspected; copy, ceremony art, cue hierarchy, and the complete mobile board remain unobstructed.
+- Economy/reload result: the first and second cycles retained the exact `0 -> 120 -> 20 -> 170 -> 50 -> 230 -> 50` trace. Play Again saved active Round 1 at version 2 / 0 coins; two reloads preserved 0 and did not show a stale reinvestment cue. Hermes independently repeated the pointer/mobile-keyboard interaction probe `2/2` with a real swap during the cue and no errors.
+- Integrated verification: `python3 scripts/verify_project.py`, `python3 scripts/verify_html_match_shapes.py`, JavaScript syntax, and `git diff --check` passed. The focused two-cycle replay test passed `2/2`; the complete merged Chromium suite passed `43/43` in 11.9 minutes, including first-three fairness, migration, ceremonies, Retry, tutorial/Help, keyboard/touch, reduced motion, runtime budgets, and the concurrent tactile drag-preview slice from `5558bc3`.
+- Runtime/security: desktop/mobile remained at 495 nodes, 84 images, 64 tiles, eight rows, no dormant preview/prototype scaffold nodes, no broken images, no horizontal overflow, and no console/page/request errors. No assets, currencies, economy values, save versions, rounds, panels, controls, dependencies, services, trackers, analytics, accounts, permissions, backend behavior, or security boundaries were added.
+
 ## 2026-07-16 ceremony reload focus restoration
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_payoff_ceremony_contract.spec.js`, `scripts/verify_tutorial_progress.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.
