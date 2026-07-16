@@ -57,3 +57,33 @@ print("Bloom Tycoon project verification passed.")
 print(f"Project root: {root}")
 print(f"GDScript lines: {len(main.splitlines())}")
 runpy.run_path(str(root / "scripts" / "verify_html_match_shapes.py"), run_name="__main__")
+
+html = (root / "playable" / "midnight_bloom_prototype.html").read_text()
+html_checks = {
+    'id="liveBouquetAssembly"': "single live bouquet assembly hook",
+    'data-assembly-hook="authoritative-target-progress"': "authoritative target progress assembly marker",
+    "function renderLiveBouquetAssembly": "live bouquet progress renderer",
+    "function liveBouquetAssemblyMarkup": "live bouquet markup derives from targets",
+    "visibleLiveBouquetTargetRect": "target harvest feedback links to live bouquet",
+    "function craftedBouquetMarkup": "crafted bouquet ceremony renderer",
+    'data-crafted-bouquet="true"': "crafted bouquet object marker",
+    "dataset.assemblyReady": "payoff action readiness gate"
+}
+missing_html = [desc for needle, desc in html_checks.items() if needle not in html]
+if missing_html:
+    raise SystemExit(f"Missing bouquet assembly implementation areas: {missing_html}")
+
+unique_ids = [
+    'id="bouquetProgress"',
+    'id="liveBouquetAssembly"',
+    'id="bouquetTrophy"',
+    'id="roundOneRestoration"'
+]
+duplicates = [needle for needle in unique_ids if html.count(needle) != 1]
+if duplicates:
+    raise SystemExit(f"Unexpected duplicate bouquet/payoff scaffold ids: {duplicates}")
+
+if "bouquet-assembly-panel" in html or "live-bouquet-panel" in html:
+    raise SystemExit("Unexpected duplicate bouquet assembly panel scaffold found.")
+
+print("Bouquet assembly static hooks verified.")

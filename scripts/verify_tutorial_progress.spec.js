@@ -173,6 +173,13 @@ async function completeGuidedRoundOne(page) {
   await expect(page.locator("#roundOneRestoration")).toBeVisible({ timeout: 5000 });
 }
 
+async function expectReadyPrimaryAction(page, text) {
+  const primary = page.locator("#roundOneRestoration button:not([hidden])");
+  await expect(primary).toBeVisible({ timeout: 1800 });
+  await expect(primary).toBeEnabled({ timeout: 1800 });
+  await expect(primary).toHaveText(text);
+}
+
 async function keyboardGuidedSwap(page) {
   const pair = await page.locator(".tile.idle-hint").evaluateAll((tiles) => tiles.map((tile) => ({
     x: Number(tile.dataset.x),
@@ -346,6 +353,7 @@ test("guided Round 1 payoff keeps one dominant action", async ({ page }) => {
 
   await expect(page.locator("#bouquetProgressLabel")).toHaveText("Bouquet 14/14 -> +120 coins");
   await expect(page.locator("#tutorialCopy")).toHaveText("Coins restore the greenhouse.");
+  await expectReadyPrimaryAction(page, "Restore Greenhouse · 100 coins");
   await expect(page.locator("#restoreGreenhouseBtn")).toBeFocused();
   let report = await visibleReport(page);
   expect(report).toMatchObject({
@@ -490,6 +498,7 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
   await expect(page.locator("#tutorialPanel")).toBeVisible();
   await expect(page.locator("#tutorialSkipBtn")).toBeHidden();
   await expect(page.locator("#tutorialHelpBtn")).toBeHidden();
+  await expectReadyPrimaryAction(page, "Restore Greenhouse · 100 coins");
   report = await visibleReport(page);
   expect(report.visibleButtons).toEqual(["Restore Greenhouse · 100 coins"]);
   await expect(page.locator("#bouquetProgressNext")).toContainText("Coins ready -> Restore First Bouquet Glass");
@@ -572,6 +581,7 @@ test("keyboard play follows the board and payoff focus", async ({ page }) => {
 
   await completeRoundWithReviewKey(page);
   await expect(page.locator("#tutorialCopy")).toHaveText("Coins restore the greenhouse.");
+  await expectReadyPrimaryAction(page, "Restore Greenhouse · 100 coins");
   await expect(page.locator("#restoreGreenhouseBtn")).toBeFocused();
   let report = await visibleReport(page);
   expect(report.visibleNonTileButtons).toEqual(["Restore Greenhouse · 100 coins"]);

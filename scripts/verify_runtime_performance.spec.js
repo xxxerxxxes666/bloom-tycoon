@@ -167,8 +167,14 @@ for (const config of [
 
     const hints = page.locator(".tile.idle-hint");
     await expect(hints).toHaveCount(2);
-    await hints.nth(0).click({ force: true });
-    await hints.nth(1).click({ force: true });
+    const pair = await hints.evaluateAll((tiles) => tiles.slice(0, 2).map((tile) => ({
+      x: tile.dataset.x,
+      y: tile.dataset.y
+    })));
+    expect(pair).toHaveLength(2);
+    await page.locator(`.tile[data-x="${pair[0].x}"][data-y="${pair[0].y}"]`).click({ force: true });
+    // Selection rerenders the board, so reacquire the second tile by coordinates.
+    await page.locator(`.tile[data-x="${pair[1].x}"][data-y="${pair[1].y}"]`).click({ force: true });
     await page.waitForFunction(() => document.querySelectorAll(".tile").length === 64);
     await expect(page.locator(".tile")).toHaveCount(64);
   });

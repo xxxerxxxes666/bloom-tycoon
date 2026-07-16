@@ -15,9 +15,42 @@ async function resetPage(page, suffix) {
 async function clickGuidedSwap(page) {
   const hints = page.locator(".tile.idle-hint");
   await expect(hints).toHaveCount(2, { timeout: 5000 });
-  await hints.nth(0).click({ force: true });
-  await hints.nth(1).click({ force: true });
+  const pair = await hints.evaluateAll((tiles) => tiles.slice(0, 2).map((tile) => ({
+    x: tile.dataset.x,
+    y: tile.dataset.y
+  })));
+  expect(pair).toHaveLength(2);
+  await page.locator(`.tile[data-x="${pair[0].x}"][data-y="${pair[0].y}"]`).click({ force: true });
+  await page.locator(`.tile[data-x="${pair[1].x}"][data-y="${pair[1].y}"]`).click({ force: true });
   await page.waitForTimeout(1400);
+}
+
+async function activeBouquetAssemblyState(page) {
+  return page.evaluate(() => {
+    const assembly = document.querySelector("#liveBouquetAssembly");
+    const rect = assembly?.getBoundingClientRect();
+    const ingredients = Array.from(document.querySelectorAll("#liveBouquetAssembly .live-bouquet-ingredient"))
+      .map((ingredient) => {
+        const style = getComputedStyle(ingredient);
+        return {
+          flowerId: Number(ingredient.dataset.flowerId),
+          progress: ingredient.dataset.progress,
+          opacity: Number(style.opacity),
+          transform: style.transform
+        };
+      });
+    const board = document.querySelector(".board")?.getBoundingClientRect();
+    return {
+      progress: assembly?.dataset.progress || "",
+      complete: assembly?.dataset.assemblyComplete || "",
+      round: assembly?.dataset.round || "",
+      width: rect?.width || 0,
+      height: rect?.height || 0,
+      ingredients,
+      boardBottom: board?.bottom || 0,
+      overflowX: document.documentElement.scrollWidth > innerWidth + 1
+    };
+  });
 }
 
 async function completeRoundWithReviewKey(page) {
@@ -70,7 +103,12 @@ async function visibleContract(page) {
       .map((image) => image.getAttribute("src"));
     return {
       bodyClass: document.body.className,
+      assemblyReady: document.querySelector("#roundOneRestoration")?.dataset.assemblyReady || "",
       trophies: visible(".bouquet-trophy").length,
+      craftedBouquets: visible(".crafted-bouquet").length,
+      craftedBlooms: visible(".crafted-bloom").length,
+      trophyState: document.querySelector("#bouquetTrophy")?.dataset.assemblyState || "",
+      liveAssemblies: visible("#liveBouquetAssembly").length,
       scenes: visible(".restoration-scene").length,
       transactions: visible(".payoff-transaction").length,
       transactionText: document.querySelector("#payoffTransaction")?.textContent.trim() || "",
@@ -84,6 +122,7 @@ async function visibleContract(page) {
       buttons: visibleButtons,
       nonBoardButtons: visibleNonBoardButtons,
       retired: visibleRetired,
+      transientFlights: visible(".objective-flight, .bouquet-bind-seal, .greenhouse-intake-flight").length,
       text: document.body.innerText,
       overflowX: document.documentElement.scrollWidth > window.innerWidth + 1,
       brokenImages
@@ -93,8 +132,19 @@ async function visibleContract(page) {
 
 async function expectCeremony(page, expectedButton, screenshotPath, expectedGuide = "") {
   await page.waitForTimeout(250);
+  const waitingForBouquet = await visibleContract(page);
+  if (waitingForBouquet.assemblyReady === "false") {
+    expect(waitingForBouquet.buttons, "payoff action waits for the bouquet object").toEqual([]);
+    expect(waitingForBouquet.trophyState).toBe("forming");
+  }
+  const primaryButton = page.locator("#roundOneRestoration button:not([hidden])");
+  await expect(primaryButton).toBeVisible({ timeout: 1800 });
+  await expect(primaryButton).toBeEnabled({ timeout: 1800 });
   const contract = await visibleContract(page);
   expect(contract.trophies, "one visible bouquet trophy").toBe(1);
+  expect(contract.craftedBouquets, "one crafted bouquet object").toBe(1);
+  expect(contract.craftedBlooms, "overlapping bouquet bloom heads").toBeGreaterThanOrEqual(4);
+  expect(contract.trophyState, "bouquet presentation is ready").toBe("assembled");
   expect(contract.scenes, "one visible greenhouse scene").toBe(1);
   expect(contract.transactions, "one visible transaction line").toBe(1);
   expect(contract.transactionText, "no raw ledger-arrow accounting").not.toContain("->");
@@ -123,6 +173,7 @@ async function expectCeremony(page, expectedButton, screenshotPath, expectedGuid
   expect(contract.controls, "controls hidden during ceremony").toBe(0);
   expect(contract.objective, "objective hidden during ceremony").toBe(0);
   expect(contract.retired, "retired ceremony UI hidden").toEqual([]);
+  expect(contract.transientFlights, "target-flight feedback cleans up").toBe(0);
   expect(contract.text).not.toMatch(/Path \/ Ledger|Flowerpedia|Chapter|Chest|Storage|Reward Choice|Bouquet Streak|Greenhouse \+\d+ XP/);
   expect(contract.overflowX, "no horizontal overflow").toBe(false);
   expect(contract.brokenImages, "no visible broken images").toEqual([]);
@@ -220,7 +271,20 @@ async function forceRoundTwoFailure(page) {
 
 async function runJourney(page, label, includeRetry) {
   await resetPage(page, `pass2_${label}`);
+  const initialAssembly = await activeBouquetAssemblyState(page);
+  expect(initialAssembly.progress).toBe("0/14");
+  expect(initialAssembly.ingredients).toHaveLength(2);
+  expect(initialAssembly.overflowX).toBe(false);
+  if (label.includes("mobile390")) {
+    expect(initialAssembly.boardBottom, "mobile active board stays in viewport with live bouquet").toBeLessThanOrEqual(844);
+  }
   await clickGuidedSwap(page);
+  const firstAssembly = await activeBouquetAssemblyState(page);
+  expect(firstAssembly.progress).not.toBe(initialAssembly.progress);
+  expect(firstAssembly.ingredients.some((ingredient) => ingredient.progress !== "0/8" && ingredient.progress !== "0/6")).toBe(true);
+  await clickGuidedSwap(page);
+  const secondAssembly = await activeBouquetAssemblyState(page);
+  expect(secondAssembly.progress).not.toBe(firstAssembly.progress);
   await completeRoundWithReviewKey(page);
   await expectCeremony(page, "Restore Greenhouse", `work/pass2-${label}-round1-pending.png`, "Coins restore the greenhouse.");
   await assertReloadKeeps(page, "Restore Greenhouse", `work/pass2-${label}-round1-pending-reload.png`, "Coins restore the greenhouse.");
@@ -281,6 +345,33 @@ test("payoff ceremony contract mobile 390x844 journey", async ({ page }) => {
   page.on("requestfailed", (request) => failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`));
   await page.setViewportSize({ width: 390, height: 844 });
   await runJourney(page, "mobile390", false);
+  expect(consoleMessages).toEqual([]);
+  expect(pageErrors).toEqual([]);
+  expect(failedRequests).toEqual([]);
+});
+
+test("reduced motion presents assembled bouquet and ready restore promptly", async ({ page }) => {
+  const consoleMessages = [];
+  const pageErrors = [];
+  const failedRequests = [];
+  page.on("console", (message) => consoleMessages.push(`${message.type()}: ${message.text()}`));
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("requestfailed", (request) => failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`));
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await resetPage(page, "pass2_reduced_motion");
+  await clickGuidedSwap(page);
+  await clickGuidedSwap(page);
+  await completeRoundWithReviewKey(page);
+  await expect(page.locator("#roundOneRestoration button:not([hidden])")).toBeEnabled({ timeout: 700 });
+  const contract = await visibleContract(page);
+  expect(contract.trophyState).toBe("assembled");
+  expect(contract.craftedBouquets).toBe(1);
+  expect(contract.buttons).toEqual(["Restore Greenhouse · 100 coins"]);
+  expect(contract.coins).toBe(120);
+  expect(contract.overflowX).toBe(false);
+  expect(contract.brokenImages).toEqual([]);
+  await page.screenshot({ path: "work/pass2-reduced-motion-round1-pending.png", fullPage: true });
   expect(consoleMessages).toEqual([]);
   expect(pageErrors).toEqual([]);
   expect(failedRequests).toEqual([]);

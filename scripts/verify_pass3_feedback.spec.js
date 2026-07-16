@@ -140,7 +140,10 @@ async function assertCeremony(page, expectedButton, screenshotPath) {
   await expect(page.locator(".bouquet-trophy:visible")).toHaveCount(1);
   await expect(page.locator(".restoration-scene:visible")).toHaveCount(1);
   await expect(page.locator(".payoff-transaction:visible")).toHaveCount(1);
-  const buttons = await page.locator("#roundOneRestoration button:not([hidden])").allTextContents();
+  const primary = page.locator("#roundOneRestoration button:not([hidden])");
+  await expect(primary).toBeVisible({ timeout: 1800 });
+  await expect(primary).toBeEnabled({ timeout: 1800 });
+  const buttons = await primary.allTextContents();
   expect(buttons).toHaveLength(1);
   expect(buttons[0]).toContain(expectedButton);
   await assertNoPageBreakage(page, false);
@@ -153,7 +156,9 @@ async function reloadAndAssertCeremony(page, expectedButton, screenshotPath) {
 }
 
 async function clickPrimaryCeremonyAction(page) {
-  await page.locator("#roundOneRestoration button:not([hidden])").click();
+  const primary = page.locator("#roundOneRestoration button:not([hidden])");
+  await expect(primary).toBeEnabled({ timeout: 1800 });
+  await primary.click();
   await page.waitForTimeout(520);
 }
 

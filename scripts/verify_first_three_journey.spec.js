@@ -221,6 +221,7 @@ async function clickGuidedSwap(page, strategy = "optimized") {
 async function spendPrimaryCeremonyAction(page) {
   await page.waitForSelector("#roundOneRestoration button:not([hidden])", { timeout: 5000 });
   const button = page.locator("#roundOneRestoration button:not([hidden])");
+  await expect(button).toBeEnabled({ timeout: 2000 });
   const text = (await button.textContent()).trim();
   await button.click();
   await page.waitForTimeout(650);

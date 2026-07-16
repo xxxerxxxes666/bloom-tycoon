@@ -10,6 +10,38 @@
 - Verification: `python3 scripts/verify_project.py`, `python3 scripts/verify_html_match_shapes.py`, JavaScript syntax, and `git diff --check` passed. The full Chromium suite passed `38/38`, including 24 deterministic desktop/mobile journeys, migration, fresh `120 -> 20` behavior, save/reload, retry, keyboard/touch, ceremonies, reduced motion, 64-tile integrity, eight mobile rows, and runtime/layout checks.
 - Security: no assets, dependencies, services, trackers, analytics, accounts, payments, ads, permissions, credentials, or backend behavior were added. Commit, push, deployment, and public live migration verification follow this recorded checkpoint.
 
+## 2026-07-16 live bouquet assembly continuity
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_html_match_shapes.py`, `scripts/verify_project.py`, `scripts/verify_payoff_ceremony_contract.spec.js`, `scripts/verify_pass3_feedback.spec.js`, `scripts/verify_runtime_performance.spec.js`, `scripts/verify_tutorial_progress.spec.js`, `scripts/verify_first_three_journey.spec.js`, and this note.
+- Player-visible result: the existing bouquet progress strip now includes one compact live bouquet assembly derived from authoritative target counts. Thorn Rose and Bone Star visibly fill the small bouquet during active Round 1, target gains still update the objective counters, and the positive gain seal lands on the live bouquet without gating control return.
+- Payoff result: the Round 1 ceremony bouquet is now one crafted object with overlapping Thorn Rose/Bone Star heads, stems, leaves, binding, ribbon, and ingredient chips below the flowers. The restore button stays hidden until the bouquet presentation is assembled, then receives focus; reduced motion reaches the assembled/ready state promptly.
+- Economy and progression observed: real guided Round 1 completion still pays exactly `120`; Restore spends exactly `100`; post-restore state leaves `20` coins and one dominant `Next Order -> Moonlit Wreath` action. Reloaded pending/restored states are covered by the payoff ceremony suite.
+- Verification commands/results:
+  - `python3 scripts/verify_project.py` passed, including new static checks for the live assembly hook, crafted bouquet renderer, readiness gate, and duplicate scaffold ban.
+  - `node --check scripts/verify_payoff_ceremony_contract.spec.js`, `node --check scripts/verify_first_three_journey.spec.js`, `node --check scripts/verify_pass3_feedback.spec.js`, and `node --check scripts/verify_tutorial_progress.spec.js` passed.
+  - `git diff --check` passed.
+  - Local server: `python3 -m http.server 4174` from repo root; port `4173` was already occupied.
+  - `agent-browser` was unavailable in this shell (`command not found`), so browser verification used bundled Playwright against `http://127.0.0.1:4174/playable/midnight_bloom_prototype.html`.
+  - First payoff contract rerun after helper fixes: `scripts/verify_payoff_ceremony_contract.spec.js --browser=chromium` passed `3/3`.
+  - Previously failing readiness assumptions rerun: `scripts/verify_pass3_feedback.spec.js scripts/verify_tutorial_progress.spec.js --browser=chromium` passed `6/6`.
+  - After rebasing the concurrent focused-economy save migration, the integrated Chromium matrix passed `39/39`: 24 optimized/goal-following first-three journeys plus 15 feedback, ceremony, runtime, tutorial, migration, retry, save/reload, and reduced-motion checks. The runtime probe now reacquires the second guided tile after the first-selection rerender, eliminating a stale-locator race without changing gameplay.
+- Browser/runtime evidence from the integrated suite: desktop runtime `483` nodes, `82` images, 64 tiles, 8 rows, no dormant preview/prototype scaffold nodes, no broken images, no overflow; exact mobile runtime `483` nodes, `82` images, 64 tiles, 8 rows, no overflow; reduced motion runtime passed. The final exact-mobile guided swaps returned control in `518ms` and `716ms`.
+- Final first-three matrix evidence: desktop and exact `390x844` optimized and goal-following journeys all completed Round 1 -> Round 2 -> Round 3. `vesper-thorn` goal-following completed Round 3 on both viewports. Round 1 stayed at 3-4 real swaps; actions stayed `Restore Greenhouse · 100 coins`, `Next Order -> Moonlit Wreath`, `Upgrade Greenhouse · 120 coins`, `Next Order -> Bloodroot Compact`, `Raise Conservatory · 180 coins`, `Play Again -> First Bouquet`.
+- Screenshot evidence captured and inspected:
+  - `work/bouquet-assembly-desktop-1280x720-initial-active.png`
+  - `work/bouquet-assembly-desktop-1280x720-mid-progress.png`
+  - `work/bouquet-assembly-desktop-1280x720-round1-pending-assembled.png`
+  - `work/bouquet-assembly-desktop-1280x720-post-restoration.png`
+  - `work/bouquet-assembly-mobile-390x844-initial-active.png`
+  - `work/bouquet-assembly-mobile-390x844-mid-progress.png`
+  - `work/bouquet-assembly-mobile-390x844-round1-pending-assembled.png`
+  - `work/bouquet-assembly-mobile-390x844-post-restoration.png`
+- Screenshot capture metrics: desktop initial/mid active states had 64 tiles, 8 visible rows, board bottom `675`, no overflow; desktop mid live assembly was `9/14` with `3/8` Thorn Rose and `6/6` Bone Star. Mobile initial/mid active states had 64 tiles, 8 visible rows, board bottom `614`/`620`, no overflow; mobile mid live assembly was `9/14` with `6/8` Thorn Rose and `3/6` Bone Star. Pending/restored screenshots had `0` transient flights, `0` broken images, `0` failed requests, `0` console warnings/errors, and focus on `restoreGreenhouseBtn` then `nextOrderBtn`.
+- Known issues/risks: no new local player-facing issue found. Two optimized Round 2 seeds still take 8 swaps while finishing with one move; this is outside the current bouquet-continuity slice and the existing focused suite accepts the completed outcomes. No commit, push, deployment, dependency install, cron, backend, tracker, or external asset was added.
+- How to trigger and verify L/T/cross matches without console: on a local QA URL with `bloomReview=1`, focus the playable and press `M` until `Witch's Cross!`, `Night Garden L-Bloom!`, or `Twin Stem Bloom!` appears. Normal player URLs leave this shortcut disabled; real shape resolution remains covered by the focused feedback suite.
+- How to trigger and verify Supreme Bloom without console: on a local QA URL with `bloomReview=1`, focus the playable and press `B`; reduced motion keeps the Supreme Bloom path lightweight and returns to 64 tiles.
+- Security/IP scan status: final changed-file scan found no credential-shaped code findings. Broad hits were descriptive build-note security text and harmless PNG verifier words such as `visible`/`solid`. Implementation used only existing repo-local flower/greenhouse assets and CSS/DOM. No new secrets, services, SDKs, trackers, analytics, backend, accounts, payments, ads, dependencies, permissions, or copied protected expression were added.
+
 ## 2026-07-16 marathon integration and deterministic fairness
 
 - Reconciled the final four local polish checkpoints onto the remotely published goal-following fairness work without discarding either player-facing path.
