@@ -82,6 +82,15 @@ async function journeyState(page) {
         && coinRect.bottom <= progressRect.bottom + 1),
       bouquet: document.querySelector("#bouquetProgressLabel")?.textContent.trim() || "",
       greenhouse: document.querySelector(".restoration-dial-phase")?.textContent.trim() || "",
+      greenhouseStage: document.querySelector("#heroRestorationDial")?.dataset.restorationDialStage || "",
+      greenhouseOwnedStage: document.querySelector("#heroRestorationDial")?.dataset.ownedStage || "",
+      greenhousePct: document.querySelector("#heroRestorationDial")?.dataset.restorationDialPct || "",
+      greenhouseText: document.querySelector("#heroRestorationDial")?.textContent.replace(/\s+/g, " ").trim() || "",
+      greenhouseGoalCounts: document.querySelectorAll(".greenhouse-restoration-dial .restoration-goal-count").length,
+      activeStageKey: document.querySelector("#activeGreenhouseStage")?.dataset.stageKey || "",
+      activeStageArt: document.querySelector("#activeGreenhouseStageArt")?.getAttribute("src") || "",
+      bodyStage: document.body.dataset.activeGreenhouseStage || "",
+      bodyRevivalPct: document.body.dataset.greenhouseRevivalPct || "",
       payoffTransaction: document.querySelector("#payoffTransaction")?.textContent.trim() || "",
       payoffCopy: document.querySelector("#restorationCopy")?.textContent.trim() || "",
       cue: document.querySelector("#firstSwapCue")?.textContent.trim() || "",
@@ -104,6 +113,57 @@ async function journeyState(page) {
         .map((image) => image.getAttribute("src"))
     };
   }, SAVE_KEY);
+}
+
+const GREENHOUSE_EXPECTATIONS = [
+  {
+    stage: 0,
+    pct: "0",
+    key: "withered",
+    phase: "Withered",
+    art: "first_greenhouse_withered.jpg",
+    note: "Owned 0/3 · Next: Restore Greenhouse"
+  },
+  {
+    stage: 1,
+    pct: "33",
+    key: "restored",
+    phase: "First panes restored",
+    art: "first_greenhouse_restored.jpg",
+    note: "Owned 1/3 · Next: Upgrade Greenhouse"
+  },
+  {
+    stage: 2,
+    pct: "67",
+    key: "moonlit",
+    phase: "Moonlit upgrade owned",
+    art: "moonlit_wreath_greenhouse.jpg",
+    note: "Owned 2/3 · Next: Raise Conservatory"
+  },
+  {
+    stage: 3,
+    pct: "100",
+    key: "bloodroot",
+    phase: "Conservatory raised",
+    art: "bloodroot_compact_greenhouse.jpg",
+    note: "Owned 3/3 · Complete: Play Again"
+  }
+];
+
+async function expectGreenhouseOwned(page, expectedStage, context) {
+  const expected = GREENHOUSE_EXPECTATIONS[expectedStage];
+  const state = await journeyState(page);
+  expect(state.greenhouseOwnedStage, `${context} owned stage`).toBe(String(expected.stage));
+  expect(state.greenhousePct, `${context} owned pct`).toBe(expected.pct);
+  expect(state.bodyRevivalPct, `${context} body revival pct`).toBe(expected.pct);
+  expect(state.greenhouseStage, `${context} dial stage`).toBe(expected.key);
+  expect(state.activeStageKey, `${context} active stage key`).toBe(expected.key);
+  expect(state.bodyStage, `${context} body stage`).toBe(expected.key);
+  expect(state.activeStageArt, `${context} active greenhouse art`).toContain(expected.art);
+  expect(state.greenhouse, `${context} greenhouse phase`).toBe(expected.phase);
+  expect(state.greenhouseText, `${context} greenhouse note`).toContain(expected.note);
+  expect(state.greenhouseGoalCounts, `${context} greenhouse target counts removed`).toBe(0);
+  return state;
 }
 
 async function expectVisibleCoinBalance(page, expectedCoins, options = {}) {
@@ -264,10 +324,11 @@ async function spendPrimaryCeremonyAction(page, activation = "pointer") {
   return text;
 }
 
-async function playCurrentRound(page, label, round, strategy = "optimized") {
+async function playCurrentRound(page, label, round, strategy = "optimized", expectedOwnedStage = 0) {
   const start = await journeyState(page);
   const startMoves = start.moves;
   let swaps = 0;
+  await expectGreenhouseOwned(page, expectedOwnedStage, `${label} round ${round} before swaps`);
   while (true) {
     const state = await journeyState(page);
     if (state.roundComplete) {
@@ -292,6 +353,7 @@ async function playCurrentRound(page, label, round, strategy = "optimized") {
     }
     expect(state.moves, `${label} round ${round} has moves remaining`).toBeGreaterThan(0);
     await clickGuidedSwap(page, strategy);
+    await expectGreenhouseOwned(page, expectedOwnedStage, `${label} round ${round} after swap ${swaps + 1}`);
     swaps += 1;
     expect(swaps, `${label} round ${round} should not drag`).toBeLessThanOrEqual(10);
   }
@@ -333,13 +395,17 @@ async function playFirstThree(page, config, seed, strategy) {
 async function playFocusedCycle(page, config, runLabel, strategy, options = {}) {
   const results = [];
   for (let round = 1; round <= 3; round += 1) {
+    const expectedOwnedBeforeSpend = round - 1;
     const startCoins = (await journeyState(page)).coins;
     await expectVisibleCoinBalance(page, startCoins);
-    const result = await playCurrentRound(page, runLabel, round, strategy);
+    await expectGreenhouseOwned(page, expectedOwnedBeforeSpend, `${runLabel} round ${round} active start`);
+    const result = await playCurrentRound(page, runLabel, round, strategy, expectedOwnedBeforeSpend);
+    await expectGreenhouseOwned(page, expectedOwnedBeforeSpend, `${runLabel} round ${round} pending reward`);
     const earnedCoins = (await journeyState(page)).coins;
     await expectVisibleCoinBalance(page, earnedCoins, { pulsing: true });
     const firstAction = await spendPrimaryCeremonyAction(page);
     const spentState = await journeyState(page);
+    await expectGreenhouseOwned(page, round, `${runLabel} round ${round} immediately after spend`);
     await expectVisibleCoinBalance(page, spentState.coins, { pulsing: true });
     result.balances = [startCoins, earnedCoins, spentState.coins];
 
@@ -363,6 +429,7 @@ async function playFocusedCycle(page, config, runLabel, strategy, options = {}) 
         expect(reloaded.focusedEconomyVersion).toBe(2);
         expect(reloaded.payoffTransaction).toBe("Restored for 100. 20 coins remain.");
         expect(reloaded.visibleButtons).toEqual(["Next Order → Moonlit Wreath"]);
+        await expectGreenhouseOwned(page, 1, `${runLabel} round 1 restored reload ${reload + 1}`);
       }
     }
 
@@ -376,6 +443,7 @@ async function playFocusedCycle(page, config, runLabel, strategy, options = {}) 
       round === 3 ? options.replayActivation : "pointer"
     );
     const advancedCoins = (await journeyState(page)).coins;
+    await expectGreenhouseOwned(page, round === 3 ? 0 : round, `${runLabel} round ${round} after primary next action`);
     await expectVisibleCoinBalance(page, advancedCoins, { pulsing: round === 3 ? true : undefined });
     result.balances.push(advancedCoins);
     result.actions = [firstAction, secondAction];
@@ -383,6 +451,7 @@ async function playFocusedCycle(page, config, runLabel, strategy, options = {}) 
     if (round < 3) {
       await expect(page.locator(".tile")).toHaveCount(64);
       await assertActiveBoard(page, config.mobile);
+      await expectGreenhouseOwned(page, round, `${runLabel} round ${round + 1} active handoff`);
     }
   }
   return results;
@@ -496,6 +565,7 @@ for (const config of [
     const replayMovesBeforeSwap = replayHandoff.moves;
     await clickGuidedSwap(page, "goal-following");
     expect((await journeyState(page)).moves).toBe(replayMovesBeforeSwap - 1);
+    await expectGreenhouseOwned(page, 0, `${runLabel} replay after first swap`);
     expect((await journeyState(page)).handoffCueVisible).toBe(true);
     await expect(page.locator("#nextOrderCue")).toBeHidden({ timeout: 3000 });
     await expect(page.locator("#firstSwapCue")).not.toContainText("reinvested");

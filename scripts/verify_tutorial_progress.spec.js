@@ -140,7 +140,7 @@ async function visibleReport(page) {
       ).length,
       bouquetText: document.querySelector("#bouquetProgressLabel")?.textContent.trim() || "",
       bouquetNext: document.querySelector("#bouquetProgressNext")?.textContent.trim() || "",
-      greenhouseText: document.querySelector(".restoration-dial-phase")?.textContent.trim() || "",
+      greenhouseText: document.querySelector(".restoration-owned-note")?.textContent.trim() || "",
       payoffTransaction: document.querySelector("#payoffTransaction")?.textContent.trim() || "",
       restorationState: document.querySelector("#restorationState")?.textContent.trim() || "",
       coins: JSON.parse(localStorage.getItem("bloomTycoonPlayableStateV1") || "{}").coins ?? 0,
@@ -969,7 +969,7 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
     tutorialInViewport: true,
     visibleInstructionCues: 1,
     bouquetText: "Bouquet 0/14 -> +120 coins",
-    greenhouseText: "Restore First Bouquet Glass",
+    greenhouseText: "Owned 0/3 · Next: Restore Greenhouse",
     mobileGreenhousePlinthVisible: false,
     ritualLogVisible: false,
     overflowX: false,
@@ -1053,7 +1053,7 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
   await expect(page.locator("#tutorialCopy")).toHaveText("Match beside thorns.");
   report = await visibleReport(page);
   expect(report.round).toBe(2);
-  expect(report.greenhouseText).toBe("Unlock Bloodroot Compact");
+  expect(report.greenhouseText).toBe("Owned 1/3 · Next: Upgrade Greenhouse");
   expect(report.tutorialPrompt).toBe("Match beside thorns.");
   expect(report.mobilePlinthVisible, "Round 2 mobile active play has no greenhouse footer").toBe(false);
   expect(report.ritualLogVisible, "Round 2 mobile active play has no ritual log footer").toBe(false);

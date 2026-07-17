@@ -1,5 +1,35 @@
 # Codex Build Notes
 
+## 2026-07-17 spend-driven greenhouse ownership correction
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_first_three_journey.spec.js`, `scripts/verify_payoff_ceremony_contract.spec.js`, `scripts/verify_runtime_performance.spec.js`, `scripts/verify_tutorial_progress.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.
+- Player-visible result: the Greenhouse rail/plinth/dial now derives only from purchased restoration ownership. Live bouquet matches no longer advance the greenhouse rail, glow, art, or target counts. The bouquet strip remains the only active order progress surface.
+- State contract: existing save flags are authoritative. `roundOneRestored=false`, `roundTwoGreenhouseUpgraded=false`, `roundThreeConservatoryRaised=false` = withered `0%`; first spend = restored `33%`; second spend = moonlit `67%`; final spend = bloodroot conservatory `100%`. No new currency, save schema, progression ledger, round, or dependency was added.
+- Timing correction: ordinary target matches and Cursed Thorn damage no longer pulse or fly into the greenhouse. `Restore Greenhouse`, `Upgrade Greenhouse`, and `Raise Conservatory` are the only moments that pulse the greenhouse ownership display and change the active greenhouse art/stage.
+- Measured browser evidence captured in `work/greenhouse-earned-evidence.json`:
+  - Desktop active pre-match screenshot `work/greenhouse-earned-desktop-active-pre-match.png`: bouquet `0/14`, moves `6`, coins `0`, greenhouse `withered`, owned stage `0`, pct `0`, art `first_greenhouse_withered.jpg`, `0` greenhouse goal counts, 64 tiles, 8 rows, no overflow/broken images.
+  - Desktop post-match screenshot `work/greenhouse-earned-desktop-post-match-unchanged-greenhouse.png`: bouquet `3/14`, moves `5`, coins `0`, greenhouse still `withered`, owned stage `0`, pct `0`, same withered art, `0` greenhouse goal counts.
+  - Desktop pending screenshot `work/greenhouse-earned-desktop-pending-reward-before-spend.png`: bouquet `14/14`, coins `120`, greenhouse still `withered`, owned stage `0`, pct `0`, one action `Restore Greenhouse · 100 coins`.
+  - Desktop post-spend screenshot `work/greenhouse-earned-desktop-post-spend-restored.png`: coins `20`, greenhouse `restored`, owned stage `1`, pct `33`, art `first_greenhouse_restored.jpg`, one action `Next Order → Moonlit Wreath`.
+  - Mobile evidence mirrors those states at exact `390x844`: `work/greenhouse-earned-mobile390-active-pre-match.png`, `work/greenhouse-earned-mobile390-post-match-unchanged-greenhouse.png`, `work/greenhouse-earned-mobile390-pending-reward-before-spend.png`, and `work/greenhouse-earned-mobile390-post-spend-restored.png`.
+  - Evidence probe status: `0` console warnings/errors, `0` page errors, `0` failed requests, `0` visible broken images, and no horizontal overflow for both desktop and mobile captures.
+- Strengthened contracts: `verify_first_three_journey` now samples owned greenhouse stage/pct/art before swaps, after every real guided/goal-following swap, pending reward, immediately after each spend, after Next Order, after two reloads, and after Play Again. `verify_payoff_ceremony_contract` covers forced failure/Retry and desktop/mobile reduced motion with the same ownership assertions. Runtime/tutorial specs now read the compact owned greenhouse note instead of live bouquet target copy.
+- Exact economy traces verified: optimized and goal-following first-three journeys kept `0 -> 120 -> 20 -> 170 -> 50 -> 230 -> 50 -> Play Again -> 0`; two-cycle desktop/mobile runs kept `[[0,120,20,20],[20,170,50,50],[50,230,50,0]]` then `[[0,120,20,20],[20,170,50,50],[50,230,50]]`.
+- Verification commands/results:
+  - `python3 scripts/verify_project.py` passed.
+  - `python3 scripts/verify_html_match_shapes.py` passed.
+  - JS syntax checks passed for all changed specs plus extracted inline script: `node --check scripts/verify_first_three_journey.spec.js`, `node --check scripts/verify_payoff_ceremony_contract.spec.js`, `node --check scripts/verify_runtime_performance.spec.js`, `node --check scripts/verify_tutorial_progress.spec.js`, `node --check scripts/verify_pass3_feedback.spec.js`, and `node --check work/inline-script-check.js`.
+  - `git diff --check` passed before browser verification; rerun again after this note is expected before handoff.
+  - Temporary local server: `python3 -m http.server 4173`, stopped after verification.
+  - Focused payoff contract passed `4/4`: `BLOOM_TEST_URL=http://127.0.0.1:4173/playable/midnight_bloom_prototype.html node_modules/.bin/playwright test scripts/verify_payoff_ceremony_contract.spec.js --browser=chromium --reporter=line`.
+  - First-three journey contract passed `26/26` in `12.2m` with real optimized and goal-following swaps on desktop and exact mobile.
+  - Remaining focused specs passed `17/17` in `3.5m`: pass3 feedback, runtime performance, and tutorial progress.
+  - Complete serial Chromium suite passed `47/47` in `16.4m`: `BLOOM_TEST_URL=http://127.0.0.1:4173/playable/midnight_bloom_prototype.html node_modules/.bin/playwright test scripts/verify_first_three_journey.spec.js scripts/verify_payoff_ceremony_contract.spec.js scripts/verify_pass3_feedback.spec.js scripts/verify_runtime_performance.spec.js scripts/verify_tutorial_progress.spec.js --browser=chromium --workers=1 --reporter=line`.
+- Runtime/layout status from suite: desktop/mobile active runtime retained 509 nodes, 84 images, 64 tiles, 8 visible rows, two meaningful bars, no dormant preview/prototype scaffold, no mobile plinth/log leak, no horizontal overflow, and no visible broken images. Mobile guided swaps returned control in `671ms` and `729ms` in the final serial run.
+- Hermes acceptance correction: visual inspection found the longer `WITHERED GREENHOUSE` dial heading clipping in the narrow desktop rail. The dial now uses the concise owned stage key (`WITHERED`, `RESTORED`, `MOONLIT`, or `BLOODROOT`) while retaining the full atmospheric label elsewhere and the owned/next note below. The corrected local screen was visually inspected and the payoff contract reran `4/4` against port `4182`.
+- Known risk: Round 2 optimized `candle-vine` and `nightshade-glass` still take 8 swaps in the current fairness matrix, matching the inherited test tolerance but looser than older audit notes. This slice did not change board fairness.
+- Security/scope scan: changed files were scanned for credential-shaped strings, secrets, trackers, new network calls, private IPs, dependency changes, and protected-source references. No findings; no cron, deployment, permission, asset, dependency, backend, analytics, SDK, account, ad, tracker, or external network behavior was added.
+
 ## 2026-07-16 legible live bouquet assembly correction
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_payoff_ceremony_contract.spec.js`, `scripts/verify_project.py`, `scripts/verify_html_match_shapes.py`, and this note.

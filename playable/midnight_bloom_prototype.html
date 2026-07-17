@@ -478,6 +478,17 @@
       --stage-art-saturation: 1.02;
     }
 
+    body[data-active-greenhouse-stage="restored"] {
+      --stage-secondary: #d1a15e;
+      --stage-deep: #0d1208;
+      --stage-glass: #7fcf6538;
+      --stage-bloom: #7fcf6564;
+      --stage-haze: #050804;
+      --stage-rib-opacity: 0.58;
+      --stage-art-brightness: 1.08;
+      --stage-art-saturation: 1.1;
+    }
+
     body[data-active-greenhouse-stage="moonlit"] {
       --stage-secondary: #c7b4ff;
       --stage-deep: #0c0a1a;
@@ -601,6 +612,12 @@
         radial-gradient(ellipse at 50% 78%, color-mix(in srgb, var(--stage-accent, #b9874d) 48%, #0000) 0, #0000 68%);
       box-shadow: 0 0 18px color-mix(in srgb, var(--stage-accent, #b9874d) 32%, #0000);
       transition: width 620ms cubic-bezier(.16,.8,.22,1), opacity 520ms ease;
+    }
+
+    body[data-active-greenhouse-stage="restored"] .greenhouse-vine,
+    body[data-active-greenhouse-stage="restored"] .greenhouse-bed {
+      opacity: 0.62;
+      border-color: color-mix(in srgb, #7fcf65 48%, #1d2d12);
     }
 
     body[data-active-greenhouse-stage="moonlit"] .greenhouse-vine {
@@ -1326,6 +1343,11 @@
         0 0 28px color-mix(in srgb, var(--board-stage-glow) 14%, #000),
         0 18px 42px #000b;
       position: relative;
+    }
+
+    body[data-active-greenhouse-stage="restored"] .board {
+      --board-stage-glow: #8fac57;
+      --board-stage-shadow: #1b3219;
     }
 
     body[data-active-greenhouse-stage="moonlit"] .board {
@@ -4099,7 +4121,6 @@
       display: block;
       width: var(--dial-pct);
       height: 100%;
-      min-width: 8px;
       background:
         linear-gradient(90deg, color-mix(in srgb, var(--stage-accent, #b9874d) 58%, #5f8338), #f3dfaa);
       box-shadow: 0 0 13px color-mix(in srgb, var(--stage-accent, #b9874d) 44%, #0000);
@@ -4116,6 +4137,21 @@
       justify-content: center;
       gap: 5px;
       flex-wrap: wrap;
+      color: #bfa878;
+      font: 900 9px/1.1 system-ui, sans-serif;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .restoration-owned-note {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 20px;
+      padding: 3px 7px;
+      border: 1px solid color-mix(in srgb, var(--stage-accent, #b9874d) 34%, #1b1009);
+      background: #050302b8;
+      box-shadow: inset 0 0 9px #000;
     }
 
     .restoration-goal-seal {
@@ -6066,6 +6102,15 @@
         label: "Withered Greenhouse",
         shortLabel: "WITHERED GREENHOUSE",
         copy: "Dead glass surrounds the first altar."
+      },
+      restored: {
+        src: "../assets/greenhouse/first_greenhouse_restored.jpg",
+        width: 1672,
+        height: 941,
+        accent: "#8fac57",
+        label: "Restored Greenhouse",
+        shortLabel: "RESTORED GREENHOUSE",
+        copy: "The first panes are repaired with earned bouquet coins."
       },
       moonlit: {
         src: "../assets/greenhouse/moonlit_wreath_greenhouse.jpg",
@@ -8505,11 +8550,14 @@
     }
 
     function activeGreenhouseStageKey() {
-      if (currentRound >= 3) {
+      if (roundThreeConservatoryRaised) {
         return "bloodroot";
       }
-      if (roundOneRestored || currentRound === 2) {
+      if (roundTwoGreenhouseUpgraded) {
         return "moonlit";
+      }
+      if (roundOneRestored) {
+        return "restored";
       }
       return "withered";
     }
@@ -8523,21 +8571,14 @@
       const hero = document.querySelector(".hero");
       const main = document.querySelector(".main");
       const mobilePlinth = $("mobileGreenhousePlinth");
-      const activePlayUsesWitheredArt = focusedSliceRound() && !roundComplete;
-      const cssStageSrc = activePlayUsesWitheredArt
-        ? activeGreenhouseStages.withered.src
-        : stage.src;
       document.body.dataset.activeGreenhouseStage = stageKey;
-      document.body.style.setProperty("--active-greenhouse-image", `url("${cssStageSrc}")`);
+      document.body.style.setProperty("--active-greenhouse-image", `url("${stage.src}")`);
       document.body.style.setProperty("--stage-accent", stage.accent);
       if (stageEl) {
         stageEl.dataset.stageKey = stageKey;
       }
-      const stageArtSrc = activePlayUsesWitheredArt
-        ? activeGreenhouseStages.withered.src
-        : stage.src;
-      if (stageArt && stageArt.getAttribute("src") !== stageArtSrc) {
-        stageArt.src = stageArtSrc;
+      if (stageArt && stageArt.getAttribute("src") !== stage.src) {
+        stageArt.src = stage.src;
       }
       if (stageArt) {
         stageArt.width = stage.width;
@@ -8562,25 +8603,38 @@
       }
     }
 
-    function greenhouseRevivalTier(pct) {
-      if (pct >= 99) {
-        return 3;
-      }
-      if (pct >= 56) {
-        return 2;
-      }
-      if (pct > 0) {
-        return 1;
-      }
+    function greenhouseOwnedStage() {
+      if (roundThreeConservatoryRaised) return 3;
+      if (roundTwoGreenhouseUpgraded) return 2;
+      if (roundOneRestored) return 1;
       return 0;
     }
 
-    function applyActiveGreenhouseRevival(progress = roundProgress(activeRoundPlan())) {
-      const pct = Math.max(0, Math.min(100, Number(progress.pct) || 0));
-      const tier = greenhouseRevivalTier(roundComplete ? 100 : pct);
-      const livePct = roundComplete ? 100 : pct;
-      const activeGlow = livePct > 0 ? Math.min(0.86, 0.1 + livePct / 118) : 0;
-      const vineGlow = livePct > 0 ? Math.min(0.82, 0.08 + livePct / 130) : 0;
+    function greenhouseOwnedProgress() {
+      const stage = greenhouseOwnedStage();
+      const pct = stage >= 3 ? 100 : Math.round((stage / 3) * 100);
+      const next = stage === 0
+        ? "Next: Restore Greenhouse"
+        : stage === 1
+          ? "Next: Upgrade Greenhouse"
+          : stage === 2
+            ? "Next: Raise Conservatory"
+            : "Complete: Play Again";
+      return {
+        stage,
+        pct,
+        stageKey: activeGreenhouseStageKey(),
+        next,
+        ownedLabel: `Owned ${stage}/3`
+      };
+    }
+
+    function applyActiveGreenhouseRevival() {
+      const ownership = greenhouseOwnedProgress();
+      const livePct = ownership.pct;
+      const tier = ownership.stage;
+      const activeGlow = tier > 0 ? Math.min(0.86, 0.1 + livePct / 118) : 0;
+      const vineGlow = tier > 0 ? Math.min(0.82, 0.08 + livePct / 130) : 0;
       const sigilGlow = Math.min(0.72, activeGlow * 0.82);
       const scale = (livePct / 100 * 0.44).toFixed(3);
       const pctValue = `${livePct.toFixed(2)}%`;
@@ -8604,87 +8658,36 @@
       });
     }
 
-    function greenhouseDialPhase(plan = activeRoundPlan(), pct = 0) {
-      if (isBouquetFailed(plan)) {
-        return "Retry First Bouquet";
-      }
-      if (roundComplete) {
-        if (plan.round === 1 && !roundOneRestored) {
-          return "Restore First Bouquet Glass";
-        }
-        if (plan.round === 2) {
-          return roundTwoGreenhouseUpgraded ? "Unlock Bloodroot Compact" : "Upgrade Moonlit Greenhouse";
-        }
-        if (plan.round === 3) {
-          return roundThreeConservatoryRaised ? "Replay First Bouquet" : "Raise Bloodroot Conservatory";
-        }
-        return "Greenhouse ready";
-      }
-      if (plan.round === 2) {
-        return "Unlock Bloodroot Compact";
-      }
-      if (plan.round === 3) {
-        return "Raise Bloodroot Conservatory";
-      }
-      if (pct >= 99) {
-        return "Restore First Bouquet Glass";
-      }
-      if (pct >= 56) {
-        return "Restore First Bouquet Glass";
-      }
-      if (pct > 0) {
-        return "Restore First Bouquet Glass";
-      }
-      return "Restore First Bouquet Glass";
+    function greenhouseDialPhase(ownership = greenhouseOwnedProgress()) {
+      return ownership.stage === 0
+        ? "Withered"
+        : ownership.stage === 1
+          ? "First panes restored"
+          : ownership.stage === 2
+            ? "Moonlit upgrade owned"
+            : "Conservatory raised";
     }
 
-    function restorationGoalSealMarkup(target) {
-      const flower = flowers[target.flowerId];
-      const progress = targetProgress(target);
-      const complete = progress >= target.needed;
-      return `
-        <span class="restoration-goal-seal ${complete ? "complete" : ""}" data-restoration-goal="${target.flowerId}" style="--icon-color:${flower[4]}">
-          ${iconMarkup(target.flowerId, "", flower[0], "restoration-goal-icon")}
-          <span class="restoration-goal-count">${progress}/${target.needed}</span>
-        </span>
-      `;
-    }
-
-    function restorationThornSealMarkup(plan = activeRoundPlan()) {
-      if (!plan.thornGoal) {
-        return "";
-      }
-      const progress = thornGoalProgress(plan);
-      const needed = thornGoalNeeded(plan);
-      const complete = progress >= needed;
-      return `
-        <span class="restoration-goal-seal ${complete ? "complete" : ""}" data-restoration-goal="thorn">
-          ${thornSealMarkup("restoration-goal-thorn", "Cursed Thorn")}
-          <span class="restoration-goal-count">${progress}/${needed}</span>
-        </span>
-      `;
-    }
-
-    function renderGreenhouseRestorationDial(plan = activeRoundPlan(), progress = roundProgress(plan)) {
-      const livePct = roundComplete ? 100 : Math.max(0, Math.min(100, Number(progress.pct) || 0));
+    function renderGreenhouseRestorationDial() {
+      const ownership = greenhouseOwnedProgress();
+      const livePct = ownership.pct;
       const pctLabel = `${Math.round(livePct)}%`;
-      const stageName = activeGreenhouseStageKey().toUpperCase();
-      const goalMarkup = plan.targets.map(restorationGoalSealMarkup).join("") + restorationThornSealMarkup(plan);
+      const stageLabel = ownership.stageKey.toUpperCase();
       const markup = `
         <span class="restoration-dial-topline">
-          <span class="restoration-dial-stage">${stageName}</span>
+          <span class="restoration-dial-stage">${stageLabel}</span>
           <span class="restoration-dial-percent">${pctLabel}</span>
         </span>
         <span class="restoration-dial-track" aria-hidden="true"><span class="restoration-dial-fill"></span></span>
-        <span class="restoration-dial-phase">${greenhouseDialPhase(plan, livePct)}</span>
-        <span class="restoration-dial-goals">${goalMarkup}</span>
+        <span class="restoration-dial-phase">${greenhouseDialPhase(ownership)}</span>
+        <span class="restoration-dial-goals"><span class="restoration-owned-note">${ownership.ownedLabel} · ${ownership.next}</span></span>
       `;
       [$("heroRestorationDial"), $("mobileRestorationDial")].filter(Boolean).forEach((dial) => {
-        dial.dataset.restorationDialStage = activeGreenhouseStageKey();
+        dial.dataset.restorationDialStage = ownership.stageKey;
+        dial.dataset.ownedStage = String(ownership.stage);
         dial.dataset.restorationDialPct = String(Math.round(livePct));
         dial.style.setProperty("--dial-pct", `${livePct.toFixed(2)}%`);
         dial.innerHTML = markup;
-        applyImageFallbacks(dial);
       });
     }
 
@@ -8799,8 +8802,8 @@
         && isBouquetFailed(activePlan);
       applyGreenhouseArtwork(payoffCeremony.artKey);
       applyActiveGreenhouseStage(activeGreenhouseStageKey());
-      applyActiveGreenhouseRevival(progress);
-      renderGreenhouseRestorationDial(activePlan, progress);
+      applyActiveGreenhouseRevival();
+      renderGreenhouseRestorationDial();
       updateBloomSoundscapeStage(activeGreenhouseStageKey());
       document.body.classList.toggle("round-one-active", roundOneActive);
       document.body.classList.toggle("round-one-complete", roundOneActive && roundComplete);
@@ -9708,7 +9711,6 @@
       const coinsEarned = focusedSliceRound() ? 0 : Math.round(cleared * (isRareWave ? 12 : 2) * (wave.coinMultiplier || 1));
       coins += coinsEarned;
       queueCoinBurst(wave.clearCells, coinsEarned, cascadeIndex);
-      queueGreenhouseIntakeFlights(wave.clearCells, cascadeIndex, wave.strongestShape);
       if (wave.strongestShape) {
         queueShapeBurst(wave.shapeCells, wave.strongestShape, cascadeIndex);
       }
@@ -9800,7 +9802,6 @@
         thornClearedCells.add(key);
         thornPulseCells.add(key);
       });
-      pulseActiveGreenhouseIntake();
     }
 
     function clearWaveCells(wave) {
@@ -10865,6 +10866,7 @@
       pulseNextOrderReady();
       queuePostRenderFocus("nextOrderBtn");
       render();
+      pulseActiveGreenhouseIntake();
       playBloomSound("restore");
       const panel = $("roundOneRestoration");
       panel.classList.add("spend-pulse");
@@ -10893,6 +10895,7 @@
       pulseNextOrderReady();
       queuePostRenderFocus("nextOrderBtn");
       render();
+      pulseActiveGreenhouseIntake();
       playBloomSound("restore");
       const panel = $("roundOneRestoration");
       panel.classList.add("spend-pulse");
@@ -10920,6 +10923,7 @@
       pulseNextOrderReady();
       queuePostRenderFocus("nextOrderBtn");
       render();
+      pulseActiveGreenhouseIntake();
       playBloomSound("restore");
       const panel = $("roundOneRestoration");
       panel.classList.add("spend-pulse");
@@ -11043,7 +11047,6 @@
         }
       });
       if (orderPulseTargets.size) {
-        pulseActiveGreenhouseIntake();
         launchObjectiveFlights(gained, gainedCells);
         scheduleOrderPulseClear();
       }

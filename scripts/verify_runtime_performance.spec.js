@@ -68,7 +68,7 @@ async function runtimeReport(page) {
       greenhouseIntakeTargetId: greenhouseIntakeTarget?.id || "",
       meaningfulBars,
       bouquetProgressText: document.querySelector("#bouquetProgressLabel")?.textContent.trim() || "",
-      greenhouseNextText: document.querySelector(".restoration-dial-phase")?.textContent.trim() || "",
+      greenhouseNextText: document.querySelector(".restoration-owned-note")?.textContent.trim() || "",
       visibleProgressText: document.body.innerText,
       visibleButtons: Array.from(document.querySelectorAll("button"))
         .filter((node) => visible(node) && !node.closest(".board"))

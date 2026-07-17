@@ -260,6 +260,25 @@ async function expectActiveBoard(page) {
   expect(active).toMatchObject({ boardVisible: true, tiles: 64, overflowX: false });
 }
 
+async function expectGreenhouseOwned(page, expected) {
+  const state = await page.evaluate(() => ({
+    stage: document.querySelector("#heroRestorationDial")?.dataset.restorationDialStage || "",
+    ownedStage: document.querySelector("#heroRestorationDial")?.dataset.ownedStage || "",
+    pct: document.querySelector("#heroRestorationDial")?.dataset.restorationDialPct || "",
+    text: document.querySelector("#heroRestorationDial")?.textContent.replace(/\s+/g, " ").trim() || "",
+    activeStageKey: document.querySelector("#activeGreenhouseStage")?.dataset.stageKey || "",
+    activeStageArt: document.querySelector("#activeGreenhouseStageArt")?.getAttribute("src") || "",
+    goalCounts: document.querySelectorAll(".greenhouse-restoration-dial .restoration-goal-count").length
+  }));
+  expect(state.stage).toBe(expected.stage);
+  expect(state.ownedStage).toBe(String(expected.ownedStage));
+  expect(state.pct).toBe(String(expected.pct));
+  expect(state.activeStageKey).toBe(expected.stage);
+  expect(state.activeStageArt).toContain(expected.art);
+  expect(state.text).toContain(expected.note);
+  expect(state.goalCounts).toBe(0);
+}
+
 async function expectCleanReplayBoard(page) {
   await expectActiveBoard(page);
   await expect(page.locator("#tutorialPanel")).toBeHidden();
@@ -332,8 +351,22 @@ async function forceRoundTwoFailure(page) {
   }, SAVE_KEY);
   await page.reload({ waitUntil: "networkidle" });
   await expect(page.locator("#renewBtn.visible")).toHaveText("Retry Bouquet");
+  await expectGreenhouseOwned(page, {
+    stage: "restored",
+    ownedStage: 1,
+    pct: 33,
+    art: "first_greenhouse_restored.jpg",
+    note: "Owned 1/3 · Next: Upgrade Greenhouse"
+  });
   await page.locator("#renewBtn.visible").click();
   await expectActiveBoard(page);
+  await expectGreenhouseOwned(page, {
+    stage: "restored",
+    ownedStage: 1,
+    pct: 33,
+    art: "first_greenhouse_restored.jpg",
+    note: "Owned 1/3 · Next: Upgrade Greenhouse"
+  });
 }
 
 async function runJourney(page, label, includeRetry) {
@@ -432,35 +465,61 @@ test("payoff ceremony contract mobile 390x844 journey", async ({ page }) => {
   expect(failedRequests).toEqual([]);
 });
 
-test("reduced motion presents assembled bouquet and ready restore promptly", async ({ page }) => {
-  const consoleMessages = [];
-  const pageErrors = [];
-  const failedRequests = [];
-  page.on("console", (message) => consoleMessages.push(`${message.type()}: ${message.text()}`));
-  page.on("pageerror", (error) => pageErrors.push(error.message));
-  page.on("requestfailed", (request) => failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`));
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.setViewportSize({ width: 390, height: 844 });
-  await resetPage(page, "pass2_reduced_motion");
-  await clickGuidedSwap(page);
-  await clickGuidedSwap(page);
-  const active = await activeBouquetAssemblyState(page);
-  expect(active.ingredients).toHaveLength(6);
-  expect(active.width).toBeGreaterThanOrEqual(100);
-  expect(active.height).toBeGreaterThanOrEqual(42);
-  await completeRoundWithReviewKey(page);
-  await expect(page.locator("#roundOneRestoration button:not([hidden])")).toBeEnabled({ timeout: 700 });
-  const contract = await visibleContract(page);
-  expect(contract.trophyState).toBe("assembled");
-  expect(contract.craftedBouquets).toBe(1);
-  expect(contract.craftedBlooms).toBe(6);
-  expect(contract.craftedStems).toBe(6);
-  expect(contract.buttons).toEqual(["Restore Greenhouse · 100 coins"]);
-  expect(contract.coins).toBe(120);
-  expect(contract.overflowX).toBe(false);
-  expect(contract.brokenImages).toEqual([]);
-  await page.screenshot({ path: "work/pass2-reduced-motion-round1-pending.png", fullPage: true });
-  expect(consoleMessages).toEqual([]);
-  expect(pageErrors).toEqual([]);
-  expect(failedRequests).toEqual([]);
-});
+for (const config of [
+  { label: "desktop", viewport: { width: 1280, height: 720 }, minWidth: 116, minHeight: 52 },
+  { label: "mobile390", viewport: { width: 390, height: 844 }, minWidth: 100, minHeight: 42 }
+]) {
+  test(`reduced motion presents assembled bouquet and ready restore promptly on ${config.label}`, async ({ page }) => {
+    const consoleMessages = [];
+    const pageErrors = [];
+    const failedRequests = [];
+    page.on("console", (message) => consoleMessages.push(`${message.type()}: ${message.text()}`));
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    page.on("requestfailed", (request) => failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`));
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.setViewportSize(config.viewport);
+    await resetPage(page, `pass2_reduced_motion_${config.label}`);
+    await expectGreenhouseOwned(page, {
+      stage: "withered",
+      ownedStage: 0,
+      pct: 0,
+      art: "first_greenhouse_withered.jpg",
+      note: "Owned 0/3 · Next: Restore Greenhouse"
+    });
+    await clickGuidedSwap(page);
+    await expectGreenhouseOwned(page, {
+      stage: "withered",
+      ownedStage: 0,
+      pct: 0,
+      art: "first_greenhouse_withered.jpg",
+      note: "Owned 0/3 · Next: Restore Greenhouse"
+    });
+    await clickGuidedSwap(page);
+    const active = await activeBouquetAssemblyState(page);
+    expect(active.ingredients).toHaveLength(6);
+    expect(active.width).toBeGreaterThanOrEqual(config.minWidth);
+    expect(active.height).toBeGreaterThanOrEqual(config.minHeight);
+    await completeRoundWithReviewKey(page);
+    await expectGreenhouseOwned(page, {
+      stage: "withered",
+      ownedStage: 0,
+      pct: 0,
+      art: "first_greenhouse_withered.jpg",
+      note: "Owned 0/3 · Next: Restore Greenhouse"
+    });
+    await expect(page.locator("#roundOneRestoration button:not([hidden])")).toBeEnabled({ timeout: 700 });
+    const contract = await visibleContract(page);
+    expect(contract.trophyState).toBe("assembled");
+    expect(contract.craftedBouquets).toBe(1);
+    expect(contract.craftedBlooms).toBe(6);
+    expect(contract.craftedStems).toBe(6);
+    expect(contract.buttons).toEqual(["Restore Greenhouse · 100 coins"]);
+    expect(contract.coins).toBe(120);
+    expect(contract.overflowX).toBe(false);
+    expect(contract.brokenImages).toEqual([]);
+    await page.screenshot({ path: `work/pass2-reduced-motion-${config.label}-round1-pending.png`, fullPage: true });
+    expect(consoleMessages).toEqual([]);
+    expect(pageErrors).toEqual([]);
+    expect(failedRequests).toEqual([]);
+  });
+}
