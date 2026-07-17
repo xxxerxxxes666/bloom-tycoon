@@ -340,6 +340,11 @@ async function guidedRoundOneState(page, tag) {
     const saved = JSON.parse(localStorage.getItem(key) || "{}");
     const tileRects = Array.from(document.querySelectorAll(".tile")).map((tile) => tile.getBoundingClientRect());
     const board = document.querySelector(".board");
+    const firstSwapCue = document.querySelector("#firstSwapCue");
+    const tutorialPanel = document.querySelector("#tutorialPanel");
+    const tutorialIcon = tutorialPanel?.querySelector(".tutorial-icon");
+    const tutorialPanelRect = tutorialPanel?.getBoundingClientRect();
+    const tutorialCopyRect = document.querySelector("#tutorialCopy")?.getBoundingClientRect();
     const hints = Array.from(document.querySelectorAll(".tile.idle-hint")).map((tile) => ({
       x: Number(tile.dataset.x),
       y: Number(tile.dataset.y),
@@ -354,8 +359,33 @@ async function guidedRoundOneState(page, tag) {
       roundComplete: Boolean(saved.roundComplete),
       coins: saved.coins,
       bouquet: document.querySelector("#bouquetProgressLabel")?.textContent.trim() || "",
-      cue: document.querySelector("#firstSwapCue")?.textContent.trim() || "",
+      cue: firstSwapCue?.textContent.trim() || "",
       tutorial: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
+      tutorialPanelText: tutorialPanel?.innerText.trim() || "",
+      tutorialIconText: tutorialIcon?.textContent.trim() || "",
+      tutorialIconAriaHidden: tutorialIcon?.getAttribute("aria-hidden") || "",
+      namedBlackCandleTutorial: tutorialPanel?.classList.contains("black-candle-tutorial") || false,
+      firstSwapCueVisible: visible(firstSwapCue),
+      visibleInstructionSurfaces: [firstSwapCue, tutorialPanel].filter(visible).length,
+      tutorialPanelInViewport: visible(tutorialPanel)
+        && tutorialPanelRect.top >= 0
+        && tutorialPanelRect.bottom <= innerHeight,
+      tutorialPanelClipped: Boolean(
+        tutorialPanel
+        && (
+          tutorialPanel.scrollWidth > tutorialPanel.clientWidth + 1
+          || tutorialCopyRect?.left < tutorialPanelRect.left - 1
+          || tutorialCopyRect?.right > tutorialPanelRect.right + 1
+        )
+      ),
+      tutorialPanelGeometry: tutorialPanelRect ? {
+        left: Math.round(tutorialPanelRect.left),
+        right: Math.round(tutorialPanelRect.right),
+        clientWidth: tutorialPanel.clientWidth,
+        scrollWidth: tutorialPanel.scrollWidth,
+        copyLeft: Math.round(tutorialCopyRect?.left || 0),
+        copyRight: Math.round(tutorialCopyRect?.right || 0)
+      } : null,
       hints,
       tiles: document.querySelectorAll(".tile").length,
       rows: [...new Set(tileRects.map((rect) => Math.round(rect.top)))].length,
@@ -380,6 +410,28 @@ async function guidedRoundOneState(page, tag) {
         .map((image) => image.getAttribute("src"))
     };
   }, { key: SAVE_KEY, tag });
+}
+
+function assertNaturalBlackCandleTutorial(state, mobile, label) {
+  expect(state.tutorial, `${label} keeps exact directional action`).toBe("Swap right to burn this row.");
+  expect(state.tutorialIconText, `${label} visible semantic category`).toBe("BLACK CANDLE");
+  expect(state.tutorialIconAriaHidden, `${label} category reaches accessibility tree`).toBe("false");
+  expect(state.namedBlackCandleTutorial, `${label} named tutorial state`).toBe(true);
+  expect(state.tutorialPanelText, `${label} visible pixels include category and action`).toContain("BLACK CANDLE");
+  expect(state.tutorialPanelText, `${label} visible pixels include exact action`).toContain("Swap right to burn this row.");
+  expect(state.firstSwapCueVisible, `${label} hidden persistent cue does not duplicate tutorial`).toBe(false);
+  expect(state.visibleInstructionSurfaces, `${label} one instruction surface`).toBe(1);
+  expect(state.visibleButtons, `${label} Skip is the sole active non-tile action`).toEqual(["Skip"]);
+  expect(state.tutorialPanelInViewport, `${label} tutorial remains in viewport`).toBe(true);
+  expect(
+    state.tutorialPanelClipped,
+    `${label} tutorial text is not clipped: ${JSON.stringify(state.tutorialPanelGeometry)}`
+  ).toBe(false);
+  if (mobile) {
+    expect(state.completeRows, `${label} all mobile rows remain visible`).toBe(8);
+    expect(state.boardBottom, `${label} board remains in first viewport`).toBeLessThanOrEqual(844);
+  }
+  expect(state.overflowX, `${label} no horizontal overflow`).toBe(false);
 }
 
 async function assertActiveGuidedState(state, mobile, label) {
@@ -1071,10 +1123,13 @@ for (const viewport of [
     }
     expect(formed.moves).toBe(blackCandleCue.moves - 1);
     expect(formed.counts[1] - blackCandleCue.counts[1]).toBe(4);
-    expect(formed.tutorial).toBe("Swap right to burn this row.");
     expect(formed.cue).toContain("Swap Black Candle Vine");
     expect(formed.hints).toHaveLength(2);
-    expect(formed.visibleButtons).toEqual(["Skip"]);
+    assertNaturalBlackCandleTutorial(
+      formed,
+      viewport.mobile,
+      `${viewport.label} formed Round 1 Black Candle`
+    );
     assertArmedRelicGuidance(
       await armedRelicGuidance(page),
       "horizontal",
@@ -1082,6 +1137,57 @@ for (const viewport of [
       viewport.mobile
     );
     await page.screenshot({ path: "work/black-candle-" + viewport.label + "-formed.png", fullPage: true });
+
+    for (let reloadIndex = 0; reloadIndex < 2; reloadIndex += 1) {
+      await page.reload({ waitUntil: "networkidle" });
+      await waitForSettledBoard(page);
+      const reloadedArmed = await guidedRoundOneState(page, `Black Candle armed reload ${reloadIndex + 1}`);
+      expect(reloadedArmed.moves).toBe(formed.moves);
+      expect(reloadedArmed.counts).toEqual(formed.counts);
+      assertNaturalBlackCandleTutorial(
+        reloadedArmed,
+        viewport.mobile,
+        `${viewport.label} armed reload ${reloadIndex + 1}`
+      );
+    }
+
+    const interruptedActivation = await interruptGuidedSwapWithReload(page);
+    expect(interruptedActivation.after, `${viewport.label} activation interruption restores armed state`).toMatchObject({
+      moves: interruptedActivation.before.moves,
+      counts: interruptedActivation.before.counts,
+      board: interruptedActivation.before.board,
+      armedLineRelic: interruptedActivation.before.armedLineRelic,
+      tiles: 64,
+      rows: 8,
+      overflowX: false
+    });
+    assertNaturalBlackCandleTutorial(
+      await guidedRoundOneState(page, "Black Candle armed after interrupted activation"),
+      viewport.mobile,
+      `${viewport.label} interrupted activation`
+    );
+
+    await page.locator("#tutorialSkipBtn").click();
+    await expect(page.locator("#tutorialPanel")).toBeHidden();
+    await expect(page.locator("#firstSwapCue")).toBeVisible();
+    await expect(page.locator("#shuffleBtn")).toBeVisible();
+    await expect(page.locator("#shuffleBtn")).toBeEnabled();
+    assertArmedRelicGuidance(
+      await armedRelicGuidance(page),
+      "horizontal",
+      `${viewport.label} Skip restores persistent Black Candle cue`,
+      viewport.mobile
+    );
+    await page.locator("#tutorialHelpBtn").click();
+    await expect(page.locator("#tutorialPanel")).toBeVisible();
+    await expect(page.locator("#firstSwapCue")).toBeHidden();
+    await expect(page.locator("#shuffleBtn")).toBeHidden();
+    await expect(page.locator("#shuffleBtn")).toBeDisabled();
+    assertNaturalBlackCandleTutorial(
+      await guidedRoundOneState(page, "Black Candle armed after Help replay"),
+      viewport.mobile,
+      `${viewport.label} Help replay`
+    );
 
     await clickHighlightedPair(page);
     await expect(page.locator('.tile[data-line-relic="black-candle-vine"]')).toHaveCount(0);
@@ -1093,6 +1199,11 @@ for (const viewport of [
     expect(activated.tiles).toBe(64);
     expect(activated.overflowX).toBe(false);
     expect(activated.brokenImages).toEqual([]);
+    expect(activated.namedBlackCandleTutorial).toBe(false);
+    expect(activated.tutorialIconText).toBe("✦");
+    expect(activated.tutorialIconAriaHidden).toBe("true");
+    expect(activated.tutorialPanelText).not.toContain("BLACK CANDLE");
+    expect(activated.visibleInstructionSurfaces).toBe(1);
     await page.screenshot({ path: "work/black-candle-" + viewport.label + "-activated.png", fullPage: true });
 
     await expect(page.locator("#restoreGreenhouseBtn")).toBeVisible({ timeout: 3000 });

@@ -1202,6 +1202,36 @@
       filter: none;
     }
 
+    .tutorial-panel.black-candle-tutorial .tutorial-icon {
+      padding-right: 7px;
+      border-right: 1px solid #76582e;
+      color: #b9965f;
+      font: 900 9px/1 system-ui, sans-serif;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 600px) {
+      .tutorial-panel.black-candle-tutorial {
+        gap: 5px;
+        padding-right: 4px;
+        padding-left: 6px;
+        font-size: 12px;
+        letter-spacing: 0;
+      }
+      .tutorial-panel.black-candle-tutorial .tutorial-icon {
+        padding-right: 5px;
+        font-size: 8px;
+        letter-spacing: .045em;
+      }
+      .tutorial-panel.black-candle-tutorial .tutorial-skip {
+        padding-right: 6px;
+        padding-left: 6px;
+        font-size: 9px;
+      }
+    }
+
     .tutorial-copy {
       white-space: nowrap;
     }
@@ -9548,10 +9578,17 @@
 
     function renderTutorialPanel() {
       const panel = $("tutorialPanel");
+      const icon = panel?.querySelector(".tutorial-icon");
       const copy = $("tutorialCopy");
       const skip = $("tutorialSkipBtn");
       if (!panel || !copy) {
         return;
+      }
+      const namedBlackCandle = tutorialActive && currentRound === 1 && Boolean(armedLineRelic);
+      panel.classList.toggle("black-candle-tutorial", namedBlackCandle);
+      if (icon) {
+        icon.textContent = namedBlackCandle ? "BLACK CANDLE" : "✦";
+        icon.setAttribute("aria-hidden", namedBlackCandle ? "false" : "true");
       }
       if (skip) {
         skip.hidden = roundComplete;
