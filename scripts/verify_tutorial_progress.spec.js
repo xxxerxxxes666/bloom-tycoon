@@ -335,6 +335,7 @@ async function assertActiveGuidedState(state, mobile, label) {
 }
 
 async function clickHighlightedPair(page) {
+  await waitForSettledBoard(page);
   const movesBefore = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}").moves, SAVE_KEY);
   const cueBefore = await page.locator("#firstSwapCue").textContent().catch(() => "");
   const pair = await hintedPair(page);
