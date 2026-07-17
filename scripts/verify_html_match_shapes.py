@@ -290,6 +290,8 @@ def verify_source_hooks():
         "first-swap-cue::before",
         "GLYPH GUIDE",
         "BLACK CANDLE",
+        'content:"BLACK CANDLE"!important',
+        "body.focused-active-play.armed-line-relic-cue .first-swap-cue {",
         "body.round-one-active.round-one-black-candle-cue .first-swap-cue { position:relative; z-index:12; }",
         "moves-counter",
         "body.round-one-active .objective-target",

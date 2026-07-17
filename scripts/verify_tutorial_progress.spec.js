@@ -480,6 +480,11 @@ async function armedRelicGuidance(page) {
     };
     const state = JSON.parse(localStorage.getItem(key) || "{}");
     const relic = state.armedLineRelic || null;
+    const cueNode = document.querySelector("#firstSwapCue");
+    const cueStyle = cueNode ? getComputedStyle(cueNode) : null;
+    const cueBeforeStyle = cueNode ? getComputedStyle(cueNode, "::before") : null;
+    const cuePrefix = (cueBeforeStyle?.content || "")
+      .replace(/^['"]|['"]$/g, "");
     const hints = Array.from(document.querySelectorAll(".tile.idle-hint")).map((tile) => ({
       x: Number(tile.dataset.x),
       y: Number(tile.dataset.y),
@@ -500,7 +505,17 @@ async function armedRelicGuidance(page) {
       relic,
       hints,
       laneTiles,
-      cue: document.querySelector("#firstSwapCue")?.textContent.trim() || "",
+      cue: cueNode?.textContent.trim() || "",
+      cuePrefix,
+      cuePresentation: cueStyle ? {
+        borderColor: cueStyle.borderColor,
+        color: cueStyle.color,
+        backgroundImage: cueStyle.backgroundImage,
+        boxShadow: cueStyle.boxShadow,
+        prefixBorderColor: cueBeforeStyle.borderRightColor,
+        prefixColor: cueBeforeStyle.color
+      } : null,
+      bodyClasses: document.body.className,
       tutorial: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
       boardActive: document.querySelector("#board")?.classList.contains("line-relic-guidance") || false,
       arrows: document.querySelectorAll(".swap-path-arrow").length,
@@ -522,6 +537,25 @@ async function armedRelicGuidance(page) {
         .map((image) => image.getAttribute("src"))
     };
   }, SAVE_KEY);
+}
+
+async function cueSemanticPresentation(page) {
+  return page.evaluate(() => {
+    const cue = document.querySelector("#firstSwapCue");
+    const style = cue ? getComputedStyle(cue) : null;
+    const before = cue ? getComputedStyle(cue, "::before") : null;
+    return {
+      text: cue?.textContent.trim() || "",
+      prefix: (before?.content || "").replace(/^['"]|['"]$/g, ""),
+      visible: Boolean(cue && style.display !== "none" && cue.getBoundingClientRect().width > 0),
+      bodyClasses: document.body.className,
+      borderColor: style?.borderColor || "",
+      color: style?.color || "",
+      backgroundImage: style?.backgroundImage || "",
+      prefixBorderColor: before?.borderRightColor || "",
+      prefixColor: before?.color || ""
+    };
+  });
 }
 
 async function startBlackCandleThornFeedbackRecorder(page, options = {}) {
@@ -622,6 +656,16 @@ function assertArmedRelicGuidance(report, expectedDirection, label, mobile = fal
   expect(report.boardActive, `${label} board has armed guidance state`).toBe(true);
   expect(report.arrows, `${label} one direct swap arrow`).toBe(1);
   expect(report.cue, `${label} cue names derived lane`).toContain(expectedDirection === "vertical" ? "column" : "row");
+  expect(report.cuePrefix, `${label} cue category`).toBe("BLACK CANDLE");
+  expect(report.cuePresentation, `${label} cue presentation exists`).toMatchObject({
+    borderColor: "rgb(142, 107, 53)",
+    color: "rgb(255, 240, 180)",
+    prefixBorderColor: "rgb(118, 88, 46)",
+    prefixColor: "rgb(185, 150, 95)"
+  });
+  expect(report.cuePresentation.backgroundImage, `${label} dark special background`).toContain("rgb(23, 16, 12)");
+  expect(report.cuePresentation.backgroundImage, `${label} aged-gold center`).toContain("rgb(43, 29, 13)");
+  expect(report.bodyClasses, `${label} armed semantic state`).toContain("armed-line-relic-cue");
   expect(report.laneDirection, `${label} board lane direction`).toBe(expectedDirection);
   expect(report.laneTiles, `${label} complete lane preview`).toHaveLength(8);
   expect(report.laneTiles.filter((tile) => tile.armed), `${label} lane contains relic`).toHaveLength(1);
@@ -1614,6 +1658,206 @@ test("vertical Black Candle Vine follows its anchor flower through gravity", asy
       expect(activated.tiles).toBe(64);
       expect(activated.rows).toBe(8);
       expect(activated.overflowX).toBe(false);
+      expect(consoleErrors).toEqual([]);
+      expect(pageErrors).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  }
+});
+
+test("Black Candle cue semantics outrank every focused-round category", async ({ browser }) => {
+  const viewports = [
+    { label: "desktop", viewport: { width: 1280, height: 720 } },
+    { label: "mobile390", viewport: { width: 390, height: 844 }, mobile: true }
+  ];
+  const scenarios = [
+    { round: 1, direction: "vertical", preArmed: true },
+    { round: 2, direction: "horizontal", baselinePrefix: "CURSED THORN" },
+    { round: 2, direction: "vertical", baselinePrefix: "CURSED THORN", interruptActivation: true },
+    { round: 3, direction: "horizontal" },
+    { round: 3, direction: "vertical" }
+  ];
+
+  for (const viewport of viewports) {
+    const context = await browser.newContext({
+      viewport: viewport.viewport,
+      hasTouch: Boolean(viewport.mobile),
+      isMobile: Boolean(viewport.mobile)
+    });
+    const page = await context.newPage();
+    const consoleErrors = [];
+    const pageErrors = [];
+    page.on("console", (message) => {
+      if (message.type() === "error") consoleErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+
+    try {
+      for (const scenario of scenarios) {
+        const label = `${viewport.label}-round${scenario.round}-${scenario.direction}`;
+        await seedDeterministicMath(page, `cue-precedence-${label}`);
+        await openFresh(page, `cue-precedence-${label}`);
+        const formationPair = await page.evaluate(({ key, round, direction, preArmed }) => {
+          const state = JSON.parse(localStorage.getItem(key));
+          state.currentRound = round;
+          state.moves = round === 1 ? 6 : (round === 2 ? 9 : 8);
+          state.coins = round === 1 ? 0 : (round === 2 ? 20 : 50);
+          state.counts = [0, 0, 0, 0, 0, 0];
+          state.roundComplete = false;
+          state.roundOneRestored = round >= 2;
+          state.roundTwoGreenhouseUpgraded = round >= 3;
+          state.roundThreeConservatoryRaised = false;
+          state.tutorialSkipped = true;
+          state.tutorialActive = false;
+          state.blackCandleLessonComplete = true;
+          state.hasMadeValidMove = true;
+          state.restoredRoundTwoGuideMoves = 0;
+          state.armedLineRelic = null;
+          state.cursedThorns = round === 2 ? [{ x: 7, y: 7, hp: 1 }] : [];
+          state.clearedCursedThorns = 0;
+          state.board = Array.from({ length: 8 }, (_, y) => (
+            Array.from({ length: 8 }, (_, x) => (x + 2 * y) % 6)
+          ));
+          if (preArmed) {
+            state.counts[1] = 3;
+            state.counts[5] = 6;
+            state.board[3][3] = 1;
+            state.armedLineRelic = { x: 3, y: 3, direction, flowerId: 1 };
+          } else if (direction === "vertical") {
+            state.board[0][3] = 1;
+            state.board[1][3] = 1;
+            state.board[2][3] = 2;
+            state.board[3][3] = 1;
+            state.board[2][4] = 1;
+          } else {
+            state.board[3][0] = 1;
+            state.board[3][1] = 1;
+            state.board[3][2] = 2;
+            state.board[3][3] = 1;
+            state.board[2][2] = 1;
+          }
+          localStorage.setItem(key, JSON.stringify(state));
+          return direction === "vertical"
+            ? [{ x: 3, y: 2 }, { x: 4, y: 2 }]
+            : [{ x: 2, y: 3 }, { x: 2, y: 2 }];
+        }, {
+          key: SAVE_KEY,
+          round: scenario.round,
+          direction: scenario.direction,
+          preArmed: Boolean(scenario.preArmed)
+        });
+        await page.reload({ waitUntil: "networkidle" });
+        await waitForSettledBoard(page);
+        if (!scenario.preArmed) {
+          const formationCells = await page.evaluate((pair) => pair.map(({ x, y }) => ({
+            x,
+            y,
+            flowerId: Number(document.querySelector(`.tile[data-x="${x}"][data-y="${y}"]`)?.dataset.flowerId)
+          })), formationPair);
+          expect(formationCells, `${label} authored strict-four setup`).toEqual(
+            scenario.direction === "vertical"
+              ? [{ x: 3, y: 2, flowerId: 2 }, { x: 4, y: 2, flowerId: 1 }]
+              : [{ x: 2, y: 3, flowerId: 2 }, { x: 2, y: 2, flowerId: 1 }]
+          );
+        }
+
+        if (scenario.baselinePrefix) {
+          const baseline = await cueSemanticPresentation(page);
+          expect(baseline.prefix, `${label} baseline category`).toBe(scenario.baselinePrefix);
+        }
+
+        if (!scenario.preArmed) {
+          if (viewport.mobile) {
+            await dragTouchViaCdp(page, formationPair);
+          } else {
+            for (const cell of formationPair) {
+              await page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`).click();
+            }
+          }
+        }
+        await expect(
+          page.locator('.tile[data-line-relic="black-candle-vine"]'),
+          `${label} forms one Black Candle`
+        ).toHaveCount(1);
+        await waitForSettledBoard(page);
+        const formedGuidance = await armedRelicGuidance(page);
+        assertArmedRelicGuidance(
+          formedGuidance,
+          scenario.direction,
+          `${label} formed special`,
+          Boolean(viewport.mobile)
+        );
+        expect(formedGuidance.cue, `${label} exact directional action`).toMatch(
+          /^Swap Black Candle Vine (left|right|up|down) - burn this (row|column)\.$/
+        );
+
+        for (let reload = 0; reload < 2; reload += 1) {
+          await page.reload({ waitUntil: "networkidle" });
+          await waitForSettledBoard(page);
+          assertArmedRelicGuidance(
+            await armedRelicGuidance(page),
+            scenario.direction,
+            `${label} reload ${reload + 1}`,
+            Boolean(viewport.mobile)
+          );
+        }
+
+        if (
+          (scenario.round === 2 && scenario.direction === "vertical")
+          || (scenario.round === 3 && scenario.direction === "horizontal")
+        ) {
+          await page.screenshot({
+            path: `work/black-candle-cue-precedence-${label}.png`,
+            fullPage: true
+          });
+        }
+
+        if (scenario.interruptActivation) {
+          const interrupted = await interruptGuidedSwapWithReload(page);
+          expect(interrupted.after, `${label} interrupted activation restores armed state`).toMatchObject({
+            moves: interrupted.before.moves,
+            counts: interrupted.before.counts,
+            board: interrupted.before.board,
+            armedLineRelic: interrupted.before.armedLineRelic,
+            tiles: 64,
+            rows: 8,
+            overflowX: false
+          });
+          assertArmedRelicGuidance(
+            await armedRelicGuidance(page),
+            scenario.direction,
+            `${label} interrupted activation`,
+            Boolean(viewport.mobile)
+          );
+        }
+
+        const activationPair = await hintedPair(page);
+        if (viewport.mobile) {
+          await dragTouchViaCdp(page, activationPair);
+        } else {
+          for (const cell of activationPair) {
+            await page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`).click();
+          }
+        }
+        await expect(page.locator('.tile[data-line-relic="black-candle-vine"]')).toHaveCount(0);
+        await expect.poll(
+          async () => (await activeState(page)).armedLineRelic,
+          { message: `${label} relic consumed` }
+        ).toBeNull();
+        const activatedState = await activeState(page);
+        if (!activatedState.roundComplete) {
+          await waitForSettledBoard(page);
+        }
+        expect(activatedState.tiles, `${label} activation keeps tile integrity`).toBe(64);
+
+        if (scenario.baselinePrefix) {
+          const resumed = await cueSemanticPresentation(page);
+          expect(resumed.prefix, `${label} ordinary category after activation`).toBe(scenario.baselinePrefix);
+          expect(resumed.bodyClasses, `${label} armed category removed`).not.toContain("armed-line-relic-cue");
+        }
+
+      }
       expect(consoleErrors).toEqual([]);
       expect(pageErrors).toEqual([]);
     } finally {
