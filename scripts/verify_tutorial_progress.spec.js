@@ -240,8 +240,13 @@ async function keyboardGuidedSwap(page) {
   await expect(firstTile).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(firstTile).toHaveClass(/sel/);
-  await expect(firstTile).toBeFocused();
-  await page.keyboard.press(key);
+  const secondTile = page.locator(`.tile[data-x="${second.x}"][data-y="${second.y}"]`);
+  if (await secondTile.evaluate((tile) => document.activeElement === tile)) {
+    await page.keyboard.press("Enter");
+  } else {
+    await expect(firstTile).toBeFocused();
+    await page.keyboard.press(key);
+  }
   await expect(page.locator(".tile")).toHaveCount(64);
   await page.waitForFunction(() => !document.querySelector(".tile.sel"));
 }
@@ -558,6 +563,9 @@ async function firstActionGuideReport(page) {
     const sourceHalo = guide?.querySelector(".first-action-source-halo") || null;
     const destinationHalo = guide?.querySelector(".first-action-destination-halo") || null;
     const tokenStyle = token ? getComputedStyle(token) : null;
+    const sourceStyle = sourceHalo ? getComputedStyle(sourceHalo) : null;
+    const destinationStyle = destinationHalo ? getComputedStyle(destinationHalo) : null;
+    const tutorialPanel = document.querySelector("#tutorialPanel");
     const hints = Array.from(document.querySelectorAll(".tile.idle-hint")).map((tile) => ({
       x: Number(tile.dataset.x),
       y: Number(tile.dataset.y),
@@ -571,6 +579,7 @@ async function firstActionGuideReport(page) {
       ariaHidden: guide?.getAttribute("aria-hidden") || "",
       focusableInside: guide?.querySelectorAll("button, [href], input, select, textarea, [tabindex]").length || 0,
       data: guide ? {
+        mode: guide.dataset.mode || "",
         sourceX: Number(guide.dataset.sourceX),
         sourceY: Number(guide.dataset.sourceY),
         destinationX: Number(guide.dataset.destinationX),
@@ -585,11 +594,30 @@ async function firstActionGuideReport(page) {
       token: rect(token),
       tokenDisplay: tokenStyle?.display || "",
       tokenAnimation: tokenStyle?.animationName || "",
+      sourceDisplay: sourceStyle?.display || "",
+      destinationDisplay: destinationStyle?.display || "",
+      destinationAnimation: destinationStyle?.animationName || "",
       oldArrows: document.querySelectorAll(".swap-path-arrow").length,
       dragPreviewTiles: document.querySelectorAll(".tile.drag-preview-source, .tile.drag-preview-neighbor, .tile.drag-preview-ready").length,
       selectedTiles: document.querySelectorAll(".tile.sel").length,
+      selectedCell: (() => {
+        const tile = document.querySelector(".tile.sel");
+        return tile ? { x: Number(tile.dataset.x), y: Number(tile.dataset.y) } : null;
+      })(),
+      focusedCell: (() => {
+        const tile = document.activeElement?.closest?.(".tile");
+        return tile ? { x: Number(tile.dataset.x), y: Number(tile.dataset.y) } : null;
+      })(),
+      tutorialCopy: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
+      instructionSurfaces: [tutorialPanel, document.querySelector("#firstSwapCue")].filter(visible).length,
+      visibleNonTileButtons: Array.from(document.querySelectorAll("button"))
+        .filter((button) => visible(button) && !button.closest("#board"))
+        .map((button) => button.textContent.trim())
+        .filter(Boolean),
+      boardBottom: document.querySelector("#board")?.getBoundingClientRect().bottom || 0,
       tiles: tileRects.length,
-      rows: [...new Set(tileRects.map((tile) => Math.round(tile.top)))].length,
+      rows: [...new Set(Array.from(document.querySelectorAll(".tile"))
+        .map((tile) => Number(tile.dataset.y)))].length,
       completeRows: [...new Set(tileRects
         .filter((tile) => tile.top >= -1 && tile.bottom <= innerHeight + 1)
         .map((tile) => Math.round(tile.top)))].length,
@@ -610,6 +638,7 @@ function assertFirstActionGuide(report, pair, label, options = {}) {
   expect(report.focusableInside, `${label} no focusable overlay controls`).toBe(0);
   expect(report.oldArrows, `${label} no competing legacy arrow`).toBe(0);
   expect(report.data, `${label} guide data`).toMatchObject({
+    mode: "full",
     sourceX: source.x,
     sourceY: source.y,
     destinationX: destination.x,
@@ -639,6 +668,60 @@ function assertFirstActionGuide(report, pair, label, options = {}) {
   } else {
     expect(report.tokenDisplay, `${label} animated token visible`).not.toBe("none");
     expect(report.tokenAnimation, `${label} token animates`).toBe("first-action-token-travel");
+  }
+}
+
+function assertSelectedFirstActionGuide(report, pair, selectedCell, label, options = {}) {
+  const destination = pair.find((cell) => cell.x !== selectedCell.x || cell.y !== selectedCell.y);
+  expect(report.count, `${label} guide count`).toBe(1);
+  expect(report.visible, `${label} guide visible`).toBe(true);
+  expect(report.pointerEvents, `${label} pointer inert`).toBe("none");
+  expect(report.ariaHidden, `${label} aria hidden`).toBe("true");
+  expect(report.focusableInside, `${label} no focusable controls`).toBe(0);
+  expect(report.oldArrows, `${label} no competing arrow`).toBe(0);
+  expect(report.data, `${label} destination-only data`).toMatchObject({
+    mode: "destination",
+    sourceX: selectedCell.x,
+    sourceY: selectedCell.y,
+    destinationX: destination.x,
+    destinationY: destination.y,
+    direction: guideDirection([selectedCell, destination])
+  });
+  expect(report.selectedTiles, `${label} one selected tile`).toBe(1);
+  expect(report.selectedCell, `${label} selected source`).toEqual(selectedCell);
+  if (options.focusDestination !== false) {
+    expect(report.focusedCell, `${label} keyboard focus continues at destination`).toEqual(destination);
+  }
+  expect(report.tutorialCopy, `${label} visible action copy`).toBe("Tap the other glowing flower.");
+  expect(report.instructionSurfaces, `${label} one instruction surface`).toBe(1);
+  expect(report.visibleNonTileButtons, `${label} Skip remains sole action`).toEqual(["Skip"]);
+  expect(report.sourceDisplay, `${label} source choreography retires`).toBe("none");
+  expect(report.tokenDisplay, `${label} no competing moving token`).toBe("none");
+  expect(report.destinationDisplay, `${label} destination halo visible`).not.toBe("none");
+  const destinationHint = report.hints.find((hint) => (
+    hint.x === destination.x && hint.y === destination.y
+  ));
+  expect(destinationHint, `${label} destination remains hinted`).toBeTruthy();
+  expect(
+    Math.abs(report.destinationHalo.centerX - destinationHint.rect.centerX),
+    `${label} destination halo x`
+  ).toBeLessThan(3);
+  expect(
+    Math.abs(report.destinationHalo.centerY - destinationHint.rect.centerY),
+    `${label} destination halo y`
+  ).toBeLessThan(3);
+  expect(report.tiles, `${label} tile count`).toBe(64);
+  expect(report.rows, `${label} board rows`).toBe(8);
+  expect(report.overflowX, `${label} no horizontal overflow`).toBe(false);
+  expect(report.brokenImages, `${label} no broken images`).toEqual([]);
+  if (options.mobile) {
+    expect(report.completeRows, `${label} exact mobile rows`).toBe(8);
+    expect(report.boardBottom, `${label} mobile board in viewport`).toBeLessThanOrEqual(844);
+  }
+  if (options.reducedMotion) {
+    expect(report.destinationAnimation, `${label} static reduced-motion destination`).toBe("none");
+  } else {
+    expect(report.destinationAnimation, `${label} restrained destination pulse`).toBe("first-action-destination-pulse");
   }
 }
 
@@ -702,7 +785,7 @@ async function armedRelicGuidance(page) {
       boardBottom: boardRect ? boardRect.bottom : 0,
       tiles: document.querySelectorAll(".tile").length,
       rows: [...new Set(Array.from(document.querySelectorAll(".tile"))
-        .map((tile) => Math.round(tile.getBoundingClientRect().top)))].length,
+        .map((tile) => Number(tile.dataset.y)))].length,
       completeRows: [...new Set(Array.from(document.querySelectorAll(".tile"))
         .map((tile) => tile.getBoundingClientRect())
         .filter((rect) => rect.top >= -1 && rect.bottom <= innerHeight + 1)
@@ -978,6 +1061,55 @@ async function findInvalidAdjacentPair(page) {
     }
     return null;
   });
+}
+
+async function findInvalidNeighborForCell(page, cell, excluded = null) {
+  return page.evaluate(({ cell, excluded }) => {
+    const board = Array.from({ length: 8 }, () => Array(8).fill(-1));
+    Array.from(document.querySelectorAll(".tile")).forEach((tile) => {
+      board[Number(tile.dataset.y)][Number(tile.dataset.x)] = Number(tile.dataset.flowerId);
+    });
+    const hasMatch = (next) => {
+      for (let y = 0; y < 8; y += 1) {
+        let start = 0;
+        for (let x = 1; x <= 8; x += 1) {
+          if (x === 8 || next[y][x] !== next[y][start]) {
+            if (next[y][start] >= 0 && x - start >= 3) return true;
+            start = x;
+          }
+        }
+      }
+      for (let x = 0; x < 8; x += 1) {
+        let start = 0;
+        for (let y = 1; y <= 8; y += 1) {
+          if (y === 8 || next[y][x] !== next[start][x]) {
+            if (next[start][x] >= 0 && y - start >= 3) return true;
+            start = y;
+          }
+        }
+      }
+      return false;
+    };
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const neighbor = { x: cell.x + dx, y: cell.y + dy };
+      if (
+        neighbor.x < 0 || neighbor.x >= 8 || neighbor.y < 0 || neighbor.y >= 8
+        || (excluded && neighbor.x === excluded.x && neighbor.y === excluded.y)
+        || board[cell.y][cell.x] === board[neighbor.y][neighbor.x]
+      ) {
+        continue;
+      }
+      const next = board.map((row) => row.slice());
+      [next[cell.y][cell.x], next[neighbor.y][neighbor.x]] = [
+        next[neighbor.y][neighbor.x],
+        next[cell.y][cell.x]
+      ];
+      if (!hasMatch(next)) {
+        return neighbor;
+      }
+    }
+    return null;
+  }, { cell, excluded });
 }
 
 async function invalidFeedbackState(page) {
@@ -2136,6 +2268,8 @@ test("vertical Black Candle Vine follows its anchor flower through gravity", asy
       await expect(relic).toHaveCount(1);
       await expect.poll(async () => (await activeState(page)).moves).toBe(beforeFormation.moves - 1);
       await waitForSettledBoard(page);
+      await page.waitForTimeout(120);
+      await waitForSettledBoard(page);
       const formed = await page.evaluate((key) => {
         const state = JSON.parse(localStorage.getItem(key));
         const relicTile = document.querySelector('.tile[data-line-relic="black-candle-vine"]');
@@ -2151,7 +2285,7 @@ test("vertical Black Candle Vine follows its anchor flower through gravity", asy
           } : null,
           tiles: document.querySelectorAll(".tile").length,
           rows: new Set(Array.from(document.querySelectorAll(".tile"))
-            .map((tile) => Math.round(tile.getBoundingClientRect().top))).size,
+            .map((tile) => Number(tile.dataset.y))).size,
           overflowX: document.documentElement.scrollWidth > innerWidth + 1,
           brokenImages: Array.from(document.images)
             .filter((image) => image.complete && image.naturalWidth === 0)
@@ -2926,10 +3060,79 @@ test("Round 1 tutorial board choreography derives from the authoritative hinted 
     guide = await firstActionGuideReport(page);
     assertFirstActionGuide(guide, pair, `replay ${config.label}`, { mobile: config.mobile });
 
-    await page.locator(`.tile[data-x="${pair[0].x}"][data-y="${pair[0].y}"]`).click();
-    await expect(page.locator(".tile.sel")).toHaveCount(1);
-    guide = await firstActionGuideReport(page);
-    expect(guide.visible, `selection hides ${config.label} guide`).toBe(false);
+    for (const order of [0, 1]) {
+      if (order > 0) {
+        await openFresh(page, `first-action-guide-${config.label}-reverse`);
+        await expect(page.locator("#tutorialPanel")).toBeVisible({ timeout: 3000 });
+      }
+      const orderedPair = await hintedPair(page);
+      const source = orderedPair[order];
+      const destination = orderedPair[order === 0 ? 1 : 0];
+      const before = await activeState(page);
+      const sourceTile = page.locator(`.tile[data-x="${source.x}"][data-y="${source.y}"]`);
+      await sourceTile.click();
+      guide = await firstActionGuideReport(page);
+      assertSelectedFirstActionGuide(
+        guide,
+        orderedPair,
+        source,
+        `${config.label} selected order ${order + 1}`,
+        { mobile: config.mobile }
+      );
+      const selectedState = await activeState(page);
+      expect(selectedState.moves, `${config.label} selection spends no move`).toBe(before.moves);
+      expect(selectedState.counts, `${config.label} selection changes no objective`).toEqual(before.counts);
+      expect(selectedState.board, `${config.label} selection preserves board`).toBe(before.board);
+      if (order === 0) {
+        await page.screenshot({ path: `work/first-action-selected-${config.label}.png`, fullPage: true });
+        await page.reload({ waitUntil: "networkidle" });
+        await expect(page.locator("#tutorialPanel")).toBeVisible({ timeout: 3000 });
+        assertFirstActionGuide(
+          await firstActionGuideReport(page),
+          orderedPair,
+          `${config.label} half-selection reload restores full guide`,
+          { mobile: config.mobile }
+        );
+        const restoredSource = page.locator(`.tile[data-x="${source.x}"][data-y="${source.y}"]`);
+        await restoredSource.click();
+        assertSelectedFirstActionGuide(
+          await firstActionGuideReport(page),
+          orderedPair,
+          source,
+          `${config.label} selected again after reload`,
+          { mobile: config.mobile }
+        );
+      }
+      const destinationTile = page.locator(`.tile[data-x="${destination.x}"][data-y="${destination.y}"]`);
+      await destinationTile.evaluate((tile) => tile.click());
+      await waitForSettledBoard(page);
+      const after = await activeState(page);
+      expect(after.moves, `${config.label} authored pair spends one move`).toBe(before.moves - 1);
+      expect(
+        after.counts.reduce((sum, value) => sum + value, 0),
+        `${config.label} authored pair advances bouquet`
+      ).toBeGreaterThan(before.counts.reduce((sum, value) => sum + value, 0));
+    }
+
+    if (!config.mobile) {
+      await openFresh(page, "first-action-guide-keyboard");
+      await expect(page.locator("#tutorialPanel")).toBeVisible({ timeout: 3000 });
+      const keyboardPair = await hintedPair(page);
+      const sourceTile = page.locator(`.tile[data-x="${keyboardPair[0].x}"][data-y="${keyboardPair[0].y}"]`);
+      const destinationTile = page.locator(`.tile[data-x="${keyboardPair[1].x}"][data-y="${keyboardPair[1].y}"]`);
+      await sourceTile.focus();
+      await page.keyboard.press("Enter");
+      assertSelectedFirstActionGuide(
+        await firstActionGuideReport(page),
+        keyboardPair,
+        keyboardPair[0],
+        "keyboard first Enter"
+      );
+      await expect(destinationTile).toBeFocused();
+      await page.keyboard.press("Enter");
+      await waitForSettledBoard(page);
+      expect((await activeState(page)).moves, "keyboard second Enter completes pair").toBe(5);
+    }
   }
 
   await page.emulateMedia({ reducedMotion: "reduce" });
@@ -2937,13 +3140,55 @@ test("Round 1 tutorial board choreography derives from the authoritative hinted 
   await openFresh(page, "first-action-guide-reduced-mobile390");
   await expect(page.locator("#tutorialPanel")).toBeVisible({ timeout: 3000 });
   const reducedPair = await hintedPair(page);
-  const reducedGuide = await firstActionGuideReport(page);
+  let reducedGuide = await firstActionGuideReport(page);
   assertFirstActionGuide(reducedGuide, reducedPair, "reduced mobile390", { mobile: true, reducedMotion: true });
+  await page.locator(`.tile[data-x="${reducedPair[0].x}"][data-y="${reducedPair[0].y}"]`).click();
+  reducedGuide = await firstActionGuideReport(page);
+  assertSelectedFirstActionGuide(
+    reducedGuide,
+    reducedPair,
+    reducedPair[0],
+    "reduced selected mobile390",
+    { mobile: true, reducedMotion: true }
+  );
   await page.screenshot({ path: "work/first-action-guide-mobile390-reduced.png", fullPage: true });
 
   expect(consoleErrors).toEqual([]);
   expect(pageErrors).toEqual([]);
   expect(failedRequests).toEqual([]);
+});
+
+test("exact mobile touch taps keep the first-action destination explicit", async ({ browser }) => {
+  const mobile = await browser.newPage({
+    viewport: { width: 390, height: 844 },
+    hasTouch: true,
+    isMobile: true
+  });
+  try {
+    await openFresh(mobile, "first-action-touch-tap-mobile390");
+    await expect(mobile.locator("#tutorialPanel")).toBeVisible({ timeout: 3000 });
+    const pair = await hintedPair(mobile);
+    const before = await activeState(mobile);
+    await mobile.locator(`.tile[data-x="${pair[0].x}"][data-y="${pair[0].y}"]`).tap({ force: true });
+    assertSelectedFirstActionGuide(
+      await firstActionGuideReport(mobile),
+      pair,
+      pair[0],
+      "exact mobile touch first tap",
+      { mobile: true }
+    );
+    expect((await activeState(mobile)).moves, "touch selection spends no move").toBe(before.moves);
+    await mobile.locator(`.tile[data-x="${pair[1].x}"][data-y="${pair[1].y}"]`).tap({ force: true });
+    await waitForSettledBoard(mobile);
+    const after = await activeState(mobile);
+    expect(after.moves, "touch destination tap commits authored swap").toBe(before.moves - 1);
+    expect(after.counts.reduce((sum, value) => sum + value, 0), "touch swap advances bouquet").toBeGreaterThan(0);
+    expect(after.tiles).toBe(64);
+    expect(after.rows).toBe(8);
+    expect(after.overflowX).toBe(false);
+  } finally {
+    await mobile.close();
+  }
 });
 
 test("passive selection and canceled input preserve completed order feedback", async ({ page, browser }) => {
@@ -3281,6 +3526,83 @@ test("invalid, cancel, mobile touch, and reduced motion drag paths stay clean", 
     return transform === "none" || new DOMMatrixReadOnly(transform).isIdentity;
   }))).toBe(true);
   assertFirstActionGuide(await firstActionGuideReport(page), startingPair, "pointer cancel restore desktop");
+
+  await openFresh(page, "first-action-selected-refusal");
+  await expect(page.locator("#tutorialPanel")).toBeVisible();
+  const selectedPair = await hintedPair(page);
+  const selectedSource = selectedPair[0];
+  const selectedDestination = selectedPair[1];
+  await page.locator(`.tile[data-x="${selectedSource.x}"][data-y="${selectedSource.y}"]`).click();
+  assertSelectedFirstActionGuide(
+    await firstActionGuideReport(page),
+    selectedPair,
+    selectedSource,
+    "selected-state pre-cancel desktop"
+  );
+  const selectedGeometry = await tileGeometry(page, [selectedSource]);
+  const selectedBoardRect = await page.locator("#board").boundingBox();
+  const selectedCancelEnd = {
+    x: Math.max(1, (selectedBoardRect?.x || 0) - 30),
+    y: selectedGeometry[0].centerY
+  };
+  await page.mouse.move(selectedGeometry[0].centerX, selectedGeometry[0].centerY);
+  await page.mouse.down();
+  await page.mouse.move(selectedCancelEnd.x, selectedCancelEnd.y, { steps: 5 });
+  await page.dispatchEvent("#board", "pointercancel", {
+    pointerId: 1,
+    bubbles: true,
+    cancelable: true,
+    isPrimary: true,
+    clientX: selectedCancelEnd.x,
+    clientY: selectedCancelEnd.y
+  });
+  await page.mouse.up();
+  assertSelectedFirstActionGuide(
+    await firstActionGuideReport(page),
+    selectedPair,
+    selectedSource,
+    "selected-state pointer cancel desktop",
+    { focusDestination: false }
+  );
+
+  const invalidNeighbor = await findInvalidNeighborForCell(page, selectedSource, selectedDestination);
+  expect(invalidNeighbor, "selected source has an invalid adjacent alternative").toBeTruthy();
+  const selectedBeforeRefusal = await activeState(page);
+  await page.locator(`.tile[data-x="${invalidNeighbor.x}"][data-y="${invalidNeighbor.y}"]`).click();
+  await expect(page.locator(".tile.invalid-swap")).toHaveCount(2);
+  expect((await firstActionGuideReport(page)).visible, "NO BLOOM owns the directional layer").toBe(false);
+  const selectedRefusalPeak = await invalidFeedbackState(page);
+  expect(selectedRefusalPeak.tutorialIcon).toBe("NO BLOOM");
+  expect(selectedRefusalPeak.tutorialCopy).toBe("Use the glowing pair.");
+  expect(selectedRefusalPeak.moves).toBe(selectedBeforeRefusal.moves);
+  expect(selectedRefusalPeak.board).toBe(selectedBeforeRefusal.board);
+  await page.waitForTimeout(900);
+  assertSelectedFirstActionGuide(
+    await firstActionGuideReport(page),
+    selectedPair,
+    selectedSource,
+    "selected-state refusal restores destination desktop"
+  );
+
+  const nonadjacent = await page.evaluate(({ source, pair }) => {
+    for (let y = 0; y < 8; y += 1) {
+      for (let x = 0; x < 8; x += 1) {
+        if (
+          Math.abs(source.x - x) + Math.abs(source.y - y) > 1
+          && !pair.some((cell) => cell.x === x && cell.y === y)
+        ) {
+          return { x, y };
+        }
+      }
+    }
+    return null;
+  }, { source: selectedSource, pair: selectedPair });
+  await page.locator(`.tile[data-x="${nonadjacent.x}"][data-y="${nonadjacent.y}"]`).click();
+  const reselectedGuide = await firstActionGuideReport(page);
+  assertFirstActionGuide(reselectedGuide, selectedPair, "nonadjacent reselection restores full guide");
+  expect(reselectedGuide.selectedTiles, "nonadjacent replacement remains selected").toBe(1);
+  expect(reselectedGuide.selectedCell, "replacement selection is coherent").toEqual(nonadjacent);
+  expect(reselectedGuide.tutorialCopy, "replacement selection restores opening copy").toBe("Swap the glowing flowers.");
 
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
   try {

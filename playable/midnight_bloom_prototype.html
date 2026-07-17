@@ -1809,6 +1809,41 @@
       opacity: .82;
     }
 
+    .first-action-swap-guide.selected-continuation .first-action-source-halo,
+    .first-action-swap-guide.selected-continuation .first-action-drag-token {
+      display: none;
+    }
+
+    .first-action-swap-guide.selected-continuation .first-action-track {
+      opacity: .78;
+      filter: drop-shadow(0 0 6px #d7b16d88) drop-shadow(0 1px 3px #000);
+    }
+
+    .first-action-swap-guide.selected-continuation .first-action-track::before {
+      left: 34%;
+      right: 20%;
+    }
+
+    .first-action-swap-guide.selected-continuation .first-action-destination-halo {
+      border-width: 3px;
+      opacity: 1;
+      box-shadow:
+        inset 0 0 12px #000,
+        0 0 0 2px #3a2112,
+        0 0 13px #fff0b4,
+        0 0 22px #9b1d2277;
+      animation: first-action-destination-pulse 900ms ease-in-out infinite;
+    }
+
+    .first-action-swap-guide.selected-continuation .first-action-destination-halo::after {
+      content: "";
+      position: absolute;
+      inset: 7px;
+      border: 1px solid #f0c477;
+      transform: rotate(45deg);
+      box-shadow: 0 0 7px #d7b16d;
+    }
+
     .first-action-track {
       position: absolute;
       left: var(--guide-source-left);
@@ -3880,6 +3915,16 @@
       }
     }
 
+    @keyframes first-action-destination-pulse {
+      0%,
+      100% {
+        transform: translate(-50%, -50%) scale(.94);
+      }
+      50% {
+        transform: translate(-50%, -50%) scale(1.06);
+      }
+    }
+
 
     @keyframes invalid-swap {
       0% {
@@ -5658,6 +5703,10 @@
       .first-action-drag-token {
         display:none !important;
       }
+      .first-action-swap-guide.selected-continuation .first-action-destination-halo {
+        animation:none !important;
+        transform:translate(-50%, -50%);
+      }
       .first-action-track::before {
         left: 20%;
         right: 18%;
@@ -6588,6 +6637,7 @@
     let invalidSwapTimer = null;
     let invalidSwapReturnCue = "";
     let invalidSwapReturnHintCells = new Set();
+    let invalidSwapReturnSelection = null;
     let validSwapTimer = null;
     let bouquetSealPulseTimer = null;
     let nextOrderPulseTimer = null;
@@ -8524,7 +8574,7 @@
       }
     }
 
-    function markInvalidSwap(a, b, hintSnapshot = idleHintCells) {
+    function markInvalidSwap(a, b, hintSnapshot = idleHintCells, selectionSnapshot = null) {
       const continuingRefusal = Boolean(invalidSwapTimer);
       if (invalidSwapTimer && window.clearTimeout) {
         window.clearTimeout(invalidSwapTimer);
@@ -8537,8 +8587,12 @@
       const returnHintCells = continuingRefusal
         ? new Set(invalidSwapReturnHintCells)
         : focusedCueActive ? new Set(hintSnapshot) : new Set();
+      const returnSelection = continuingRefusal
+        ? invalidSwapReturnSelection
+        : selectionSnapshot ? { ...selectionSnapshot } : null;
       invalidSwapReturnCue = returnCue;
       invalidSwapReturnHintCells = new Set(returnHintCells);
+      invalidSwapReturnSelection = returnSelection ? { ...returnSelection } : null;
       clearIdleHint();
       pulseHaptic([10, 35, 18]);
       playBloomSound("invalid");
@@ -8560,8 +8614,17 @@
           cue.textContent = returnCue;
           idleHintCells = new Set(returnHintCells);
         }
+        selected = returnSelection ? { ...returnSelection } : null;
+        if (selected) {
+          const selectedGuide = firstActionBoardGuidePair();
+          boardFocusCell = clampBoardFocusCell(
+            selectedGuide?.selectedContinuation ? selectedGuide.destination : selected
+          );
+          queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
+        }
         invalidSwapReturnCue = "";
         invalidSwapReturnHintCells.clear();
+        invalidSwapReturnSelection = null;
         render();
       }, 880);
     }
@@ -8762,8 +8825,8 @@
         return;
       }
       selected = null;
-      tap(x, y);
-      tap(target.x, target.y);
+      tap(x, y, { restoreSelectionOnRefusal: false });
+      tap(target.x, target.y, { restoreSelectionOnRefusal: false });
     }
 
     function boardTileFromEvent(event) {
@@ -8925,6 +8988,11 @@
       }
       if (currentRound === 1 && !hasMadeValidMove && !tutorialSkipped && !roundComplete && !isBouquetFailed()) {
         restoreFirstSwapCueAfterRefusal({ preserveCue: true });
+        const selectedGuide = firstActionBoardGuidePair();
+        if (selectedGuide?.selectedContinuation) {
+          boardFocusCell = clampBoardFocusCell(selectedGuide.destination);
+          queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
+        }
         render();
       }
     }
@@ -9768,6 +9836,9 @@
       if (plan.round === 1 && hasMadeValidMove) {
         return "Match 3 fills the bouquet.";
       }
+      if (plan.round === 1 && selectedMatchesHintedPair(hintedPairCells())) {
+        return "Tap the other glowing flower.";
+      }
       return "Swap the glowing flowers.";
     }
 
@@ -9879,6 +9950,10 @@
       return Boolean(a && b && Math.abs(a.x - b.x) + Math.abs(a.y - b.y) === 1);
     }
 
+    function selectedMatchesHintedPair(pair) {
+      return Boolean(selected && pair.some((cell) => cell.x === selected.x && cell.y === selected.y));
+    }
+
     function boardGuideTransientStateActive() {
       return isResolving
         || invalidSwapCells.size > 0
@@ -9902,7 +9977,6 @@
         || tutorialSkipped
         || roundComplete
         || isBouquetFailed()
-        || selected
         || boardGuideTransientStateActive()
       ) {
         return null;
@@ -9913,10 +9987,24 @@
       if (!isAdjacentPair(source, destination) || !isLegalSwap(source, destination)) {
         return null;
       }
+      const selectedHint = selected && pair.find((cell) => (
+        cell.x === selected.x && cell.y === selected.y
+      ));
+      if (selectedHint) {
+        return {
+          source: { ...selectedHint },
+          destination: pair.find((cell) => (
+            cell.x !== selectedHint.x || cell.y !== selectedHint.y
+          )),
+          stage: relicGuidance ? "black-candle-activation" : roundOneGuidedStage(activeRoundPlan()) || "round-one-tutorial",
+          selectedContinuation: true
+        };
+      }
       return {
         source,
         destination,
-        stage: relicGuidance ? "black-candle-activation" : roundOneGuidedStage(activeRoundPlan()) || "round-one-tutorial"
+        stage: relicGuidance ? "black-candle-activation" : roundOneGuidedStage(activeRoundPlan()) || "round-one-tutorial",
+        selectedContinuation: false
       };
     }
 
@@ -9928,7 +10016,7 @@
       if (!guide) {
         return false;
       }
-      const { source, destination } = guide;
+      const { source, destination, selectedContinuation = false } = guide;
       const boardRect = boardEl.getBoundingClientRect();
       const sourceTile = tileForCell(source.x, source.y);
       const destinationTile = tileForCell(destination.x, destination.y);
@@ -9958,6 +10046,8 @@
             : "up";
       const guideEl = document.createElement("span");
       guideEl.className = "first-action-swap-guide";
+      guideEl.classList.toggle("selected-continuation", selectedContinuation);
+      guideEl.dataset.mode = selectedContinuation ? "destination" : "full";
       guideEl.dataset.sourceX = String(source.x);
       guideEl.dataset.sourceY = String(source.y);
       guideEl.dataset.destinationX = String(destination.x);
@@ -10032,7 +10122,7 @@
       return `${baseCopy}${thornObjectiveHintCopy(plan)}${thornTeachingCopy(plan)}`;
     }
 
-    async function tap(x, y) {
+    async function tap(x, y, options = {}) {
       if (isResolving) {
         return;
       }
@@ -10061,6 +10151,10 @@
         if (shouldPreserveSelectedHintPair(selectedHintPair, selected)) {
           idleHintCells = selectedHintPair;
         }
+        const selectedGuide = firstActionBoardGuidePair();
+        if (selectedGuide?.selectedContinuation) {
+          boardFocusCell = clampBoardFocusCell(selectedGuide.destination);
+        }
         ritualMessage = "<strong>Selected.</strong> Tap a glowing adjacent flower to swap.";
         queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
         render();
@@ -10071,6 +10165,9 @@
       const dy = Math.abs(selected.y - y);
       if (dx + dy !== 1) {
         selected = { x, y };
+        if (shouldPreserveSelectedHintPair(selectedHintPair, selected)) {
+          idleHintCells = selectedHintPair;
+        }
         queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
         render();
         return;
@@ -10084,7 +10181,12 @@
         ritualMessage = "The garden refuses that graft.";
         boardFocusCell = source;
         queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
-        markInvalidSwap(source, target, selectedHintPair);
+        markInvalidSwap(
+          source,
+          target,
+          selectedHintPair,
+          options.restoreSelectionOnRefusal === false ? null : source
+        );
         return;
       }
 
@@ -10783,6 +10885,14 @@
       nextOrderPulseTimer = null;
       harvestFlashClearTimer = null;
       orderPulseTimer = null;
+      if (invalidSwapTimer && window.clearTimeout) {
+        window.clearTimeout(invalidSwapTimer);
+      }
+      invalidSwapTimer = null;
+      invalidSwapReturnCue = "";
+      invalidSwapReturnHintCells.clear();
+      invalidSwapReturnSelection = null;
+      invalidSwapCells.clear();
       validSwapCells.clear();
       harvestFlashCells.clear();
       orderPulseTargets.clear();
