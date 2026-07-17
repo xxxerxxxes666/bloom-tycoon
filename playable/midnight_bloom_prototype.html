@@ -1266,7 +1266,7 @@
     }
 
     body.focused-payoff-active .tutorial-help,
-    body.focused-payoff-active:not(.round-one-black-candle-burn-hold) .first-swap-cue {
+    body.focused-payoff-active .first-swap-cue {
       display: none !important;
     }
 
@@ -2096,6 +2096,78 @@
       background:
         radial-gradient(circle, #d7b16d1d 0, #0000 58%),
         linear-gradient(90deg, #0000 0 46%, #ff8a4875 49%, #0000 54%);
+    }
+
+    .tile.black-candle-vine {
+      z-index: 4;
+      outline: 2px solid #d7b16d;
+      box-shadow:
+        inset 0 0 20px #000,
+        inset 0 0 0 2px #5f160f,
+        0 0 0 1px #160f0c,
+        0 0 18px #b52822b8,
+        0 0 30px #d7b16d66;
+    }
+
+    .tile.black-candle-vine::before {
+      inset: 5px;
+      border-color: #e0bd78;
+      background:
+        radial-gradient(circle at 50% 52%, #d9472870 0 8%, #0000 31%),
+        repeating-conic-gradient(from 45deg, #0000 0 18deg, #b528225c 19deg 21deg, #0000 22deg 45deg);
+      opacity: .9;
+      animation: black-candle-breathe 900ms ease-in-out infinite alternate;
+    }
+
+    .tile.black-candle-vine::after {
+      content: "";
+      inset: 9%;
+      opacity: 1;
+      background:
+        linear-gradient(var(--relic-angle), #0000 0 44%, #ffd48acc 48% 52%, #0000 56%),
+        radial-gradient(circle at 50% 50%, #ff5a2f8a 0 7%, #0000 34%);
+      filter: drop-shadow(0 0 5px #d62d22);
+    }
+
+    .black-candle-mark {
+      position: absolute;
+      z-index: 5;
+      inset: 10%;
+      display: grid;
+      place-items: center;
+      pointer-events: none;
+    }
+
+    .black-candle-mark::before {
+      content: "";
+      width: 24%;
+      height: 26%;
+      margin-top: -42%;
+      border-radius: 70% 20% 65% 35%;
+      background: radial-gradient(circle at 55% 65%, #fff0ad 0 12%, #ef6b2f 36%, #a71919 68%, #0000 72%);
+      filter: drop-shadow(0 0 5px #e13c22);
+      transform: rotate(9deg);
+    }
+
+    .black-candle-mark::after {
+      content: "";
+      position: absolute;
+      left: 37%;
+      right: 37%;
+      top: 37%;
+      bottom: 16%;
+      border: 1px solid #d5ac65;
+      border-radius: 3px 3px 8px 8px;
+      background:
+        linear-gradient(115deg, #0000 0 42%, #81251f 45% 51%, #0000 54%) 0 0 / 100% 42%,
+        linear-gradient(65deg, #0000 0 42%, #81251f 45% 51%, #0000 54%) 0 58% / 100% 42%,
+        linear-gradient(90deg, #090706, #28201b 48%, #050404);
+      box-shadow: inset 0 0 5px #000, 0 0 7px #b72720;
+    }
+
+    @keyframes black-candle-breathe {
+      from { filter: brightness(.82); transform: rotate(45deg) scale(.94); }
+      to { filter: brightness(1.18); transform: rotate(45deg) scale(1.03); }
     }
 
     .tile.harvest-flash {
@@ -4350,7 +4422,6 @@
       }
 
       body.round-one-active:not(.round-one-complete) .board,
-      body.round-one-active.round-one-complete.round-one-black-candle-burn-hold .board,
       body.restored-next-order-focus:not(.restored-greenhouse-handoff) .board,
       body.restored-greenhouse-handoff .board {
         width: min(650px, calc(100vh - 186px), calc(100vw - 470px));
@@ -4455,7 +4526,6 @@
       }
 
       body.round-one-active:not(.round-one-complete) .board,
-      body.round-one-active.round-one-complete.round-one-black-candle-burn-hold .board,
       body.restored-next-order-focus:not(.restored-greenhouse-handoff) .board,
       body.restored-greenhouse-handoff .board {
         width: min(610px, calc(100vh - 240px), calc(100vw - 470px));
@@ -4619,40 +4689,14 @@
     body.round-one-active.round-one-black-candle-cue .first-swap-cue { position:relative; z-index:12; }
     body.restored-greenhouse-handoff.round-one-active .first-swap-cue { display:none!important; }
     body.round-one-active .board { touch-action:manipulation; }
-    body.round-one-active.round-one-complete.round-one-black-candle-burn-hold .first-swap-cue {
-      display:flex;
-      width:max-content;
-      max-width:calc(100% - 20px);
-      min-height:30px;
-      margin:7px auto 0;
-      padding:5px 10px;
-      align-items:center;
-      gap:8px;
-      border:1px solid #8e6b35;
-      border-radius:999px;
-      color:#fff0b4;
-      background:linear-gradient(90deg,#17100c,#2b1d0d,#17100c);
-      box-shadow:0 0 12px #c58a3326,inset 0 0 9px #000;
-      font:800 14px Georgia,serif;
-      letter-spacing:.035em;
-      text-align:center;
-    }
-    body.round-one-active.round-one-complete.round-one-black-candle-burn-hold .first-swap-cue::before { content:"BLACK CANDLE"; }
-    body.round-one-active.round-one-complete.round-one-black-candle-burn-hold .controls,
-    body.round-one-active.round-one-complete.round-one-black-candle-burn-hold .ritual-log {
-      display:none !important;
-    }
-    body.round-one-active.round-one-complete.round-one-black-candle-burn-hold .board-particle.line-relic {
-      animation-duration: 1200ms;
-    }
     /* Legacy verifier marker: body.round-one-active.round-one-complete .objective,
        body.round-one-active.round-one-complete .active-greenhouse-stage,
        body.round-one-active.round-one-complete .ritual-log { display:none; } */
-    body.round-one-active.round-one-complete:not(.round-one-black-candle-burn-hold) .objective,
-    body.round-one-active.round-one-complete:not(.round-one-black-candle-burn-hold) .active-greenhouse-stage,
-    body.round-one-active.round-one-complete:not(.round-one-black-candle-burn-hold) .ritual-log { display:none; }
-    body.round-one-active.round-one-complete:not(.round-one-black-candle-burn-hold) .board,
-    body.round-one-active.round-one-complete:not(.round-one-black-candle-burn-hold) .controls {
+    body.round-one-active.round-one-complete .objective,
+    body.round-one-active.round-one-complete .active-greenhouse-stage,
+    body.round-one-active.round-one-complete .ritual-log { display:none; }
+    body.round-one-active.round-one-complete .board,
+    body.round-one-active.round-one-complete .controls {
       display: none !important;
     }
     body.round-one-active:not(.round-one-complete) #roundOneRestoration,
@@ -4821,8 +4865,7 @@
         0 0 16px #000;
       animation: petal-pop 820ms cubic-bezier(.12,.82,.18,1) forwards;
     }
-    body.round-one-active.round-one-complete.round-one-black-candle-burn-hold .round-one-restoration { display:none; }
-    body.round-one-active.round-one-complete:not(.round-one-black-candle-burn-hold) .round-one-restoration { position:relative; overflow:hidden; display:grid; width:min(800px,calc(100% - 16px)); margin:12px auto 0; padding:16px; gap:12px; border:1px solid #b98b42; background:radial-gradient(circle at 50% 0,#3a2410,#100d0d 70%); box-shadow:0 0 36px #b8793045,inset 0 0 28px #000,0 18px 45px #000b; text-align:center; }
+    body.round-one-active.round-one-complete .round-one-restoration { position:relative; overflow:hidden; display:grid; width:min(800px,calc(100% - 16px)); margin:12px auto 0; padding:16px; gap:12px; border:1px solid #b98b42; background:radial-gradient(circle at 50% 0,#3a2410,#100d0d 70%); box-shadow:0 0 36px #b8793045,inset 0 0 28px #000,0 18px 45px #000b; text-align:center; }
     .payoff-stage { display:grid; grid-template-columns:minmax(210px,.42fr) minmax(0,1fr); gap:10px; align-items:stretch; }
     .bouquet-trophy { min-height:clamp(184px,21vw,270px); position:relative; overflow:hidden; display:grid; grid-template-rows:auto 1fr auto; align-items:center; padding:11px 10px 10px; border:1px solid #60482d; background:radial-gradient(circle at 50% 18%,#3a2013 0,#120807 48%,#030202 100%); box-shadow:inset 0 0 28px #000,0 0 18px #000; isolation:isolate; }
     .bouquet-trophy::before { content:""; position:absolute; inset:8px; z-index:0; border:1px solid #d7b16d33; clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%); box-shadow:inset 0 0 24px #000; pointer-events:none; }
@@ -5279,6 +5322,7 @@
       .tile.drag-preview-ready,
       .tile.swap-snap,
       .tile.swap-glide,
+      .tile.black-candle-vine::before,
       .tile.fall-in,
       .tile.settle-pop,
       .board.swap-accepted,
@@ -5621,10 +5665,6 @@
       body.restored-greenhouse-handoff .board,
       body.round-three-focus-active .board,
       body.round-one-active .board { width:calc(100vw - 12px); max-width:378px; gap:3px; padding:5px; margin:7px auto 0; }
-      body.round-one-active.round-one-complete.round-one-black-candle-burn-hold .board {
-        width: calc(100vw - 40px);
-        max-width: 350px;
-      }
       body.round-one-active:not(.focused-payoff-active) .mobile-greenhouse-progress,
       body.restored-next-order-focus:not(.focused-payoff-active) .mobile-greenhouse-progress,
       body.round-three-focus-active:not(.focused-payoff-active) .mobile-greenhouse-progress {
@@ -5866,9 +5906,9 @@
       body.round-one-active .controls .btn { min-width:0; width:min(216px,calc(100vw - 18px)); padding:7px 13px; gap:7px; font-size:12px; line-height:1.08; min-height:38px; }
       body.round-one-active .controls .btn-icon { width:25px; height:25px; }
       body.round-one-active .controls .btn span { white-space:normal; text-align:left; }
-      body.round-one-active.round-one-complete:not(.round-one-black-candle-burn-hold) .board,
-      body.round-one-active.round-one-complete:not(.round-one-black-candle-burn-hold) .controls,
-      body.round-one-active.round-one-complete:not(.round-one-black-candle-burn-hold) .ritual-log { display:none; }
+      body.round-one-active.round-one-complete .board,
+      body.round-one-active.round-one-complete .controls,
+      body.round-one-active.round-one-complete .ritual-log { display:none; }
       body.round-one-active.round-one-complete .round-one-restoration { margin-top:8px; padding:11px; gap:8px; }
       body.round-two-upgrade-pending .round-one-restoration,
       body.round-two-upgrade-complete .round-one-restoration,
@@ -6204,6 +6244,7 @@
 
     let board = [];
     let selected = null;
+    let armedLineRelic = null;
     let boardFocusCell = { x: 0, y: 0 };
     let postRenderFocusTarget = "";
     let moves = roundTemplates[0].moves;
@@ -6230,7 +6271,6 @@
     let nextOrderPulseTimer = null;
     let coinBalancePulseTimer = null;
     let coinBalancePulseActive = false;
-    let roundOneBlackCandleBurnHoldTimer = null;
     const SWIPE_THRESHOLD = 18;
     let tileSwipeStart = null;
     let touchSwipeStart = null;
@@ -6253,6 +6293,7 @@
     let restoredRoundTwoGuideMoves = 0;
     let tutorialSkipped = false;
     let tutorialActive = false;
+    let blackCandleLessonComplete = false;
     let tutorialStartTimer = null;
     let currentRound = 1;
     let roundComplete = false;
@@ -6276,7 +6317,6 @@
     let lastSettledCascadeCount = 0;
     let bouquetSealPulseActive = false;
     let nextOrderPulseActive = false;
-    let roundOneBlackCandleBurnHoldActive = false;
     const $ = (id) => document.getElementById(id);
     const QA_REVIEW_HOOKS_ENABLED = (() => {
       try {
@@ -7065,6 +7105,36 @@
       return Math.abs(a.x - b.x) + Math.abs(a.y - b.y) === 1;
     }
 
+    function lineRelicAt(cell) {
+      return Boolean(armedLineRelic)
+        && armedLineRelic.x === cell?.x
+        && armedLineRelic.y === cell?.y;
+    }
+
+    function normalizeArmedLineRelic(candidate) {
+      if (!candidate || !Number.isInteger(candidate.x) || !Number.isInteger(candidate.y)) {
+        return null;
+      }
+      if (candidate.x < 0 || candidate.x >= BOARD_SIZE || candidate.y < 0 || candidate.y >= BOARD_SIZE) {
+        return null;
+      }
+      return {
+        x: candidate.x,
+        y: candidate.y,
+        direction: candidate.direction === "vertical" ? "vertical" : "horizontal",
+        flowerId: Number.isInteger(candidate.flowerId) ? candidate.flowerId : board[candidate.y]?.[candidate.x]
+      };
+    }
+
+    function lineRelicActivationPair(relic = armedLineRelic) {
+      if (!relic) return null;
+      const candidates = relic.direction === "vertical"
+        ? [{ x: relic.x, y: relic.y + 1 }, { x: relic.x, y: relic.y - 1 }]
+        : [{ x: relic.x + 1, y: relic.y }, { x: relic.x - 1, y: relic.y }];
+      const neighbor = candidates.find((cell) => cell.x >= 0 && cell.x < BOARD_SIZE && cell.y >= 0 && cell.y < BOARD_SIZE);
+      return neighbor ? [{ x: relic.x, y: relic.y }, neighbor] : null;
+    }
+
     function swapBoardCells(a, b) {
       const previous = board[a.y][a.x];
       board[a.y][a.x] = board[b.y][b.x];
@@ -7099,10 +7169,13 @@
     }
 
     function isLegalSwap(a, b) {
-      // Standard switch-match rule: a normal swap is legal only if the moved tiles create a match.
-      if (!isAdjacent(a, b) || board[a.y][a.x] === board[b.y][b.x]) {
+      // An armed Black Candle Vine follows familiar match-3 grammar: any
+      // adjacent swap activates it, even when the flowers would not match.
+      if (!isAdjacent(a, b)) {
         return false;
       }
+      if (lineRelicAt(a) || lineRelicAt(b)) return true;
+      if (board[a.y][a.x] === board[b.y][b.x]) return false;
       swapBoardCells(a, b);
       const createsMoveMatch = matches().some((match) => match.cells.some(([mx, my]) =>
         (mx === a.x && my === a.y) || (mx === b.x && my === b.y)
@@ -7312,6 +7385,13 @@
       if (roundComplete) {
         return "";
       }
+      const relicPair = lineRelicActivationPair();
+      if (relicPair) {
+        idleHintCells = new Set(relicPair.map((cell) => `${cell.x},${cell.y}`));
+        const lane = armedLineRelic.direction === "vertical" ? "column" : "row";
+        $("firstSwapCue").textContent = `Swap Black Candle Vine to burn its ${lane}.`;
+        return ` <strong>Black Candle Vine armed.</strong> Swap the glowing relic to burn its ${lane}.`;
+      }
       const plan = activeRoundPlan();
       const roundOneStage = roundOneGuidedStage(plan);
       if (roundOneStage) {
@@ -7319,7 +7399,7 @@
         if (roundOneStage === "black-candle" && hasRoundOneBlackCandleLessonMove(plan)) {
           const move = roundOneBlackCandleLessonSwap();
           idleHintCells = new Set(move.map((cell) => `${cell.x},${cell.y}`));
-          $("firstSwapCue").textContent = "Make 4 Bone Stars - Black Candle Vine burns a row.";
+          $("firstSwapCue").textContent = "Make 4 Bone Stars - arm Black Candle Vine.";
           return " <strong>Black Candle Vine.</strong> Match 4 Bone Stars with the glowing pair.";
         }
         if (roundOneStage === "bone-ordinary") {
@@ -7381,7 +7461,7 @@
       }
       if (plan.round === 1 && remainingTargetIndex === 1) {
         $("firstSwapCue").textContent = roundOneStage === "black-candle"
-          ? "Make 4 Bone Stars - Black Candle Vine burns a row."
+          ? "Make 4 Bone Stars - arm Black Candle Vine."
           : "Bone Star next - swap the glowing pair.";
       }
       if (isRestoredNextOrderFocus()) {
@@ -7511,7 +7591,7 @@
         if (roundOneStage === "black-candle" && hasRoundOneBlackCandleLessonMove(plan)) {
           const move = roundOneBlackCandleLessonSwap();
           idleHintCells = new Set(move.map((cell) => `${cell.x},${cell.y}`));
-          $("firstSwapCue").textContent = "Make 4 Bone Stars - Black Candle Vine burns a row.";
+          $("firstSwapCue").textContent = "Make 4 Bone Stars - arm Black Candle Vine.";
           render();
           return;
         }
@@ -7546,7 +7626,7 @@
         const move = roundOneBlackCandleLessonSwap();
         idleHintCells = new Set(move.map((cell) => `${cell.x},${cell.y}`));
         if (!preserveCue) {
-          $("firstSwapCue").textContent = "Make 4 Bone Stars - Black Candle Vine burns a row.";
+          $("firstSwapCue").textContent = "Make 4 Bone Stars - arm Black Candle Vine.";
         }
         return;
       }
@@ -7573,7 +7653,7 @@
         return;
       }
       if (plan.round === 1 && hasMadeValidMove && targetIndex === 1) {
-        $("firstSwapCue").textContent = "Make 4 Bone Stars - Black Candle Vine burns a row.";
+        $("firstSwapCue").textContent = "Make 4 Bone Stars - arm Black Candle Vine.";
         return;
       }
       if (plan.round === 1 && hasMadeValidMove) {
@@ -8765,7 +8845,7 @@
       const panel = $("roundOneRestoration");
       const presentationPending = focusedSliceRound(ceremony.plan)
         && ceremony.primary === "spend"
-        && (bouquetSealPulseActive || roundOneBlackCandleBurnHoldActive);
+        && bouquetSealPulseActive;
       panel.dataset.payoffRound = String(ceremony.plan.round);
       panel.dataset.payoffPrimary = ceremony.primary;
       panel.dataset.assemblyReady = String(!presentationPending);
@@ -8807,7 +8887,6 @@
       updateBloomSoundscapeStage(activeGreenhouseStageKey());
       document.body.classList.toggle("round-one-active", roundOneActive);
       document.body.classList.toggle("round-one-complete", roundOneActive && roundComplete);
-      document.body.classList.toggle("round-one-black-candle-burn-hold", roundOneActive && roundComplete && roundOneBlackCandleBurnHoldActive);
       document.body.classList.toggle("restored-greenhouse-handoff", restoredGreenhouseHandoff && !roundComplete);
       document.body.classList.toggle("restored-next-order-focus", isRestoredRoundTwoWindow() || failedFocusedRestoredOrder);
       document.body.classList.toggle("restored-next-order-guide", isRestoredNextOrderFocus());
@@ -8904,10 +8983,17 @@
           const previewClass = harvestPreview.cells.has(fallKey) ? "match-preview" : "";
           const previewAnchorClass = harvestPreview.anchors.has(fallKey) ? "match-preview-anchor" : "";
           const relicPreviewClass = harvestPreview.relicCells.has(fallKey) ? "relic-preview" : "";
-          tile.className = `tile ${selectedClass} ${legalClass} ${previewClass} ${previewAnchorClass} ${relicPreviewClass} ${harvestClass} ${superClass} ${invalidClass} ${validSwapClass} ${swapClass} ${swapGlideClass} ${idleHintClass} ${thornTeachClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass} ${refillBornClass} ${settleClass}`;
+          const armedRelic = lineRelicAt({ x, y }) ? armedLineRelic : null;
+          const armedRelicClass = armedRelic ? "black-candle-vine" : "";
+          tile.className = `tile ${selectedClass} ${legalClass} ${previewClass} ${previewAnchorClass} ${relicPreviewClass} ${armedRelicClass} ${harvestClass} ${superClass} ${invalidClass} ${validSwapClass} ${swapClass} ${swapGlideClass} ${idleHintClass} ${thornTeachClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass} ${refillBornClass} ${settleClass}`;
           tile.disabled = isResolving || roundComplete || isBouquetFailed();
           tile.tabIndex = !tile.disabled && boardFocusCell.x === x && boardFocusCell.y === y ? 0 : -1;
           tile.style.setProperty("--tile-color", flowers[value][4]);
+          if (armedRelic) {
+            tile.style.setProperty("--relic-angle", armedRelic.direction === "vertical" ? "0deg" : "90deg");
+            tile.dataset.lineRelic = "black-candle-vine";
+            tile.dataset.lineRelicDirection = armedRelic.direction;
+          }
           if (swapGlide) {
             tile.style.setProperty("--swap-dx", String(swapGlide.dx));
             tile.style.setProperty("--swap-dy", String(swapGlide.dy));
@@ -8926,9 +9012,13 @@
             : "";
           const thornLabel = thorn ? " with Cursed Thorn blocker" : thornClearedClass ? " where a Cursed Thorn cracked" : "";
           const previewLabel = previewClass ? " in selected harvest preview" : relicPreviewClass ? " in Black Candle Vine lane preview" : "";
-          tile.setAttribute("aria-label", `${flowers[value][0]} tile${legalLabel}${previewLabel}${thornTeachLabel}${thornLabel}`);
+          const relicLabel = armedRelic
+            ? ` armed Black Candle Vine, clears ${armedRelic.direction === "vertical" ? "column" : "row"} when swapped`
+            : "";
+          tile.setAttribute("aria-label", `${flowers[value][0]} tile${relicLabel}${legalLabel}${previewLabel}${thornTeachLabel}${thornLabel}`);
           tile.innerHTML = `
             ${iconMarkup(value, "", flowers[value][0], "tile-icon-wrap")}
+            ${armedRelic ? '<span class="black-candle-mark" aria-hidden="true"></span>' : ""}
             ${thornTeachingActive && thorn ? '<span class="thorn-teach-marker blocker" aria-hidden="true">×</span>' : ""}
             ${thorn || thornClearedClass ? `<span class="cursed-thorn-overlay" aria-hidden="true"><span class="thorn-root"></span>${thornSealMarkup("cursed-thorn-art", "")}${thornHitClass ? `<span class="thorn-event">${thornClearedClass ? "BREAK" : "CRACK"}</span>` : ""}</span>` : ""}
           `;
@@ -9083,9 +9173,6 @@
       if (isBouquetFailed(plan)) {
         return "Moves ended. Retry the bouquet.";
       }
-      if (roundOneBlackCandleBurnHoldActive) {
-        return "Black Candle Vine row cleared.";
-      }
       if (roundComplete) {
         if (currentRound === 1 && !roundOneRestored) {
           return "Coins restore the greenhouse.";
@@ -9110,8 +9197,11 @@
       if (plan.round === 3 && !roundComplete) {
         return "Complete Bloodroot Compact.";
       }
+      if (plan.round === 1 && armedLineRelic) {
+        return "Swap the vine to clear its lane.";
+      }
       if (plan.round === 1 && hasMadeValidMove && $("firstSwapCue").textContent.includes("Black Candle Vine")) {
-        return "Match 4 makes Black Candle Vine.";
+        return "Match 4 arms Black Candle Vine.";
       }
       if (plan.round === 1 && hasMadeValidMove) {
         return "Match 3 fills the bouquet.";
@@ -9172,6 +9262,7 @@
     function skipTutorial() {
       tutorialSkipped = true;
       tutorialActive = false;
+      blackCandleLessonComplete = true;
       render();
       saveProgress();
     }
@@ -9183,6 +9274,7 @@
       }
       tutorialSkipped = true;
       tutorialActive = false;
+      blackCandleLessonComplete = true;
     }
 
     function scheduleFreshTutorial() {
@@ -9298,6 +9390,10 @@
       }
 
       clearIdleHint();
+      const source = { ...selected };
+      const activatingRelic = lineRelicAt(source) || lineRelicAt(target)
+        ? { ...armedLineRelic }
+        : null;
       const isFirstValidMove = !hasMadeValidMove;
       const guidedRoundTwoLesson = isRestoredRoundTwoGuideActive();
       hasMadeValidMove = true;
@@ -9308,6 +9404,10 @@
         );
       }
       swapBoardCells(selected, target);
+      if (activatingRelic) {
+        const destination = lineRelicAt(source) ? target : source;
+        armedLineRelic = { ...activatingRelic, x: destination.x, y: destination.y };
+      }
       boardFocusCell = clampBoardFocusCell(target);
       pulseHaptic(18);
       playBloomSound("swap");
@@ -9325,11 +9425,17 @@
         const authoredRoundOneLesson = currentRound === 1 && (
           isFirstValidMove || $("firstSwapCue").textContent.includes("Black Candle Vine")
         );
-        result = await resolveAnimated(authoredRoundOneLesson
-          ? { maxCascades: 1, quietReseed: true }
+        result = await resolveAnimated(activatingRelic
+          ? {
+              activationRelic: { ...armedLineRelic },
+              playerSwap: { a: source, b: target },
+              ...(currentRound === 1 && tutorialActive ? { maxCascades: 1, quietReseed: true } : {})
+            }
+          : authoredRoundOneLesson
+          ? { maxCascades: 1, quietReseed: true, playerSwap: { a: source, b: target } }
           : guidedRoundTwoLesson
-            ? { maxCascades: 1, quietReseed: true, suppressAltarDrift: true }
-            : {});
+            ? { maxCascades: 1, quietReseed: true, suppressAltarDrift: true, playerSwap: { a: source, b: target } }
+            : { playerSwap: { a: source, b: target } });
         const firstMoveCopy = isFirstValidMove && currentRound === 1
           ? "<strong>First bloom!</strong> Your bouquet is already taking shape. "
           : "";
@@ -9508,16 +9614,17 @@
 
     function findRunSegments() {
       const segments = [];
+      const matchValue = (x, y) => lineRelicAt({ x, y }) ? null : board[y][x];
       for (let y = 0; y < BOARD_SIZE; y += 1) {
         let start = 0;
         for (let x = 1; x <= BOARD_SIZE; x += 1) {
-          if (x === BOARD_SIZE || board[y][x] !== board[y][start]) {
-            if (board[y][start] !== null && x - start >= 3) {
+          if (x === BOARD_SIZE || matchValue(x, y) !== matchValue(start, y)) {
+            if (matchValue(start, y) !== null && x - start >= 3) {
               const cells = [];
               for (let mx = start; mx < x; mx += 1) {
                 cells.push([mx, y]);
               }
-              segments.push({ val: board[y][start], direction: "horizontal", cells });
+              segments.push({ val: matchValue(start, y), direction: "horizontal", cells });
             }
             start = x;
           }
@@ -9527,13 +9634,13 @@
       for (let x = 0; x < BOARD_SIZE; x += 1) {
         let start = 0;
         for (let y = 1; y <= BOARD_SIZE; y += 1) {
-          if (y === BOARD_SIZE || board[y][x] !== board[start][x]) {
-            if (board[start][x] !== null && y - start >= 3) {
+          if (y === BOARD_SIZE || matchValue(x, y) !== matchValue(x, start)) {
+            if (matchValue(x, start) !== null && y - start >= 3) {
               const cells = [];
               for (let my = start; my < y; my += 1) {
                 cells.push([x, my]);
               }
-              segments.push({ val: board[start][x], direction: "vertical", cells });
+              segments.push({ val: matchValue(x, start), direction: "vertical", cells });
             }
             start = y;
           }
@@ -9555,6 +9662,7 @@
         shapeBonuses: [],
         shapeCells: [],
         lineRelics: [],
+        armedLineRelics: [],
         lineRelicCells: [],
         rareSeedRunes: [],
         rareSeedRuneCells: [],
@@ -9566,7 +9674,7 @@
       };
     }
 
-    function scanMatchWave() {
+    function scanMatchWave(options = {}) {
       const foundMatches = matches();
       if (!foundMatches.length) {
         return null;
@@ -9577,6 +9685,7 @@
       const waveShapeCells = new Set();
       const lineRelicClearCells = new Map();
       const lineRelics = [];
+      let createdLineRelic = null;
       const rareSeedRunes = [];
       const rareSeedRuneCells = new Map();
       const shapeBonuses = [];
@@ -9586,11 +9695,13 @@
       // Match collection loop: unique matched cells feed orders and future crafting systems.
       foundMatches.forEach((match) => {
         const shape = analyzeMatchShape(match);
-        const lineRelic = lineRelicForMatch(match, shape);
+        const lineRelic = !armedLineRelic && !createdLineRelic && options.playerSwap
+          ? lineRelicForMatch(match, shape, options.playerSwap)
+          : null;
         const rareSeedRune = rareSeedRuneForMatch(match, shape);
         if (lineRelic) {
           lineRelics.push(lineRelic);
-          lineRelic.cells.forEach((cell) => lineRelicClearCells.set(cell.join(","), cell));
+          createdLineRelic = lineRelic;
         }
         if (rareSeedRune) {
           rareSeedRunes.push(rareSeedRune);
@@ -9619,14 +9730,16 @@
           clear[cell.join(",")] = cell;
         });
       });
-      lineRelicClearCells.forEach((cell, key) => {
-        clear[key] = cell;
-      });
+      const rewardCells = Object.values(clear);
+      if (createdLineRelic) {
+        delete clear[`${createdLineRelic.x},${createdLineRelic.y}`];
+      }
 
       const clearCells = Object.values(clear);
       const strongestShape = bestShape(shapeBonuses);
       return {
         clearCells,
+        rewardCells,
         clearKeys: clearCells.map((cell) => cell.join(",")),
         rare: rareWave,
         rareCells: [...waveRareCells].map((cell) => cell.split(",").map(Number)),
@@ -9637,8 +9750,9 @@
         shapeKeys: waveShapeCells,
         matchRuns,
         lineRelics,
-        lineRelicCells: [...lineRelicClearCells.values()],
-        lineRelicKeys: new Set(lineRelicClearCells.keys()),
+        createdLineRelic,
+        lineRelicCells: createdLineRelic ? [[createdLineRelic.x, createdLineRelic.y]] : [],
+        lineRelicKeys: new Set(createdLineRelic ? [`${createdLineRelic.x},${createdLineRelic.y}`] : []),
         rareSeedRunes,
         rareSeedRuneCells: [...rareSeedRuneCells.values()],
         rareSeedRuneKeys: new Set(rareSeedRuneCells.keys()),
@@ -9647,7 +9761,7 @@
       };
     }
 
-    function lineRelicForMatch(match, shape) {
+    function lineRelicForMatch(match, shape, playerSwap = null) {
       if (!shape || shape.kind !== "line" || match.len !== 4 || !Array.isArray(match.runs) || match.runs.length !== 1) {
         return null;
       }
@@ -9660,10 +9774,17 @@
       const cells = Array.from({ length: BOARD_SIZE }, (_, index) => (
         direction === "vertical" ? [fixed, index] : [index, fixed]
       ));
+      const matchKeys = new Set(run.cells.map((cell) => cell.join(",")));
+      const swapCells = playerSwap ? [playerSwap.a, playerSwap.b].filter(Boolean) : [];
+      const anchor = swapCells.find((cell) => matchKeys.has(`${cell.x},${cell.y}`))
+        || { x: run.cells[1][0], y: run.cells[1][1] };
       return {
         name: "Black Candle Vine",
         direction,
         fixed,
+        x: anchor.x,
+        y: anchor.y,
+        flowerId: match.val,
         cells,
         matchCells: run.cells
       };
@@ -9690,10 +9811,11 @@
 
     function collectWaveRewards(wave, result, cascadeIndex, forcedRareCells = []) {
       const resourceMultiplier = wave.resourceMultiplier || 1;
-      const visibleResourceCells = new Set(dedupeCells(wave.clearCells)
+      const rewardCells = wave.rewardCells || wave.clearCells;
+      const visibleResourceCells = new Set(dedupeCells(rewardCells)
         .slice(0, wave.strongestShape ? 3 : 2)
         .map((cell) => cell.join(",")));
-      wave.clearCells.forEach(([x, y]) => {
+      rewardCells.forEach(([x, y]) => {
         const flowerId = board[y][x];
         counts[flowerId] += resourceMultiplier;
         result.gained[flowerId] += resourceMultiplier;
@@ -9705,24 +9827,27 @@
         }
       });
 
-      const cleared = wave.clearCells.length;
+      const cleared = rewardCells.length;
       const effectRareCells = dedupeCells([...wave.rareCells, ...forcedRareCells]);
       const isRareWave = wave.rare || effectRareCells.length > 0;
       const coinsEarned = focusedSliceRound() ? 0 : Math.round(cleared * (isRareWave ? 12 : 2) * (wave.coinMultiplier || 1));
       coins += coinsEarned;
-      queueCoinBurst(wave.clearCells, coinsEarned, cascadeIndex);
+      queueCoinBurst(rewardCells, coinsEarned, cascadeIndex);
       if (wave.strongestShape) {
         queueShapeBurst(wave.shapeCells, wave.strongestShape, cascadeIndex);
       }
       if (wave.lineRelics.length) {
-        queueLineRelicBurst(wave.lineRelics, cascadeIndex);
-        const taughtBlackCandle = currentRound === 1
-          && wave.lineRelics.find((relic) => relic.name === "Black Candle Vine");
-        if (taughtBlackCandle) {
-          const lane = taughtBlackCandle.direction === "vertical" ? "Column" : "Row";
-          startRoundOneBlackCandleBurnHold();
-          $("firstSwapCue").textContent = `Black Candle Vine! ${lane} cleared.`;
-          ritualMessage = `<strong>Black Candle Vine!</strong> ${lane} cleared; the First Bouquet is ready to seal.`;
+        if (wave.activatingLineRelic) {
+          if (currentRound === 1 && tutorialActive) {
+            blackCandleLessonComplete = true;
+          }
+          queueLineRelicBurst(wave.lineRelics, cascadeIndex);
+        } else if (wave.createdLineRelic) {
+          armedLineRelic = normalizeArmedLineRelic(wave.createdLineRelic);
+          queueLineRelicArming(armedLineRelic, cascadeIndex);
+          const lane = armedLineRelic.direction === "vertical" ? "column" : "row";
+          $("firstSwapCue").textContent = `Swap Black Candle Vine to burn its ${lane}.`;
+          ritualMessage = `<strong>Black Candle Vine armed.</strong> Swap it with a glowing neighbor to burn its ${lane}.`;
         }
       }
       if (wave.rareSeedRunes.length) {
@@ -9740,7 +9865,11 @@
       result.cascades += 1;
       result.shapeBonuses.push(...wave.shapeBonuses);
       result.shapeCells.push(...wave.shapeCells);
-      result.lineRelics.push(...wave.lineRelics);
+      if (wave.activatingLineRelic) {
+        result.lineRelics.push(...wave.lineRelics);
+      } else if (wave.createdLineRelic) {
+        result.armedLineRelics.push({ ...wave.createdLineRelic });
+      }
       result.lineRelicCells.push(...wave.lineRelicCells);
       effectRareCells.forEach((cell) => {
         result.rareCells.push(cell);
@@ -9810,6 +9939,43 @@
       });
       collapseColumns();
       seedAltarDriftCascade();
+    }
+
+    function lineRelicActivationWave(relic) {
+      const fixed = relic.direction === "vertical" ? relic.x : relic.y;
+      const clearCells = Array.from({ length: BOARD_SIZE }, (_, index) => (
+        relic.direction === "vertical" ? [fixed, index] : [index, fixed]
+      ));
+      const activationRelic = {
+        ...relic,
+        name: "Black Candle Vine",
+        fixed,
+        cells: clearCells,
+        matchCells: [[relic.x, relic.y]]
+      };
+      return {
+        clearCells,
+        rewardCells: clearCells,
+        clearKeys: clearCells.map((cell) => cell.join(",")),
+        rare: false,
+        rareCells: [],
+        rareKeys: new Set(),
+        shapeBonuses: [],
+        strongestShape: null,
+        shapeCells: [],
+        shapeKeys: new Set(),
+        matchRuns: [{ direction: relic.direction, len: BOARD_SIZE, cells: clearCells, shapeKind: "line" }],
+        lineRelics: [activationRelic],
+        activatingLineRelic: true,
+        createdLineRelic: null,
+        lineRelicCells: clearCells,
+        lineRelicKeys: new Set(clearCells.map((cell) => cell.join(","))),
+        rareSeedRunes: [],
+        rareSeedRuneCells: [],
+        rareSeedRuneKeys: new Set(),
+        coinMultiplier: 1,
+        resourceMultiplier: 1
+      };
     }
 
     function finishResolve(result, options = {}) {
@@ -9904,13 +10070,9 @@
       if (nextOrderPulseTimer && window.clearTimeout) {
         window.clearTimeout(nextOrderPulseTimer);
       }
-      if (roundOneBlackCandleBurnHoldTimer && window.clearTimeout) {
-        window.clearTimeout(roundOneBlackCandleBurnHoldTimer);
-      }
       validSwapTimer = null;
       bouquetSealPulseTimer = null;
       nextOrderPulseTimer = null;
-      roundOneBlackCandleBurnHoldTimer = null;
       validSwapCells.clear();
       settledCells.clear();
       refillBornCells.clear();
@@ -9918,7 +10080,6 @@
       lastWildChain = null;
       bouquetSealPulseActive = false;
       nextOrderPulseActive = false;
-      roundOneBlackCandleBurnHoldActive = false;
       document.querySelectorAll(
         ".objective-flight, .bouquet-bind-seal, .greenhouse-intake-flight"
       ).forEach((effect) => effect.remove());
@@ -9997,11 +10158,22 @@
       lastSettledCascadeCount = 0;
       const result = createResolveResult();
       const maxCascades = Math.max(1, Number(options.maxCascades) || 20);
+      let pendingActivation = options.activationRelic
+        ? normalizeArmedLineRelic(options.activationRelic)
+        : null;
 
       while (result.cascades < maxCascades) {
-        const wave = scanMatchWave();
+        const wave = pendingActivation
+          ? lineRelicActivationWave(pendingActivation)
+          : scanMatchWave({
+              playerSwap: result.cascades === 0 ? options.playerSwap : null
+            });
         if (!wave) {
           break;
+        }
+        if (pendingActivation) {
+          armedLineRelic = null;
+          pendingActivation = null;
         }
 
         fallAnimations.clear();
@@ -10388,6 +10560,33 @@
       });
     }
 
+    function queueLineRelicArming(relic, cascadeIndex = 0) {
+      if (!relic) return;
+      const baseDelay = cascadeIndex * 90;
+      pushBoardParticle({
+        type: "impact-sigil",
+        text: "ARMED",
+        x: relic.x,
+        y: relic.y,
+        size: 72,
+        fontSize: 13,
+        scale: 1.18,
+        delay: baseDelay + 40
+      });
+      pushBoardParticle({
+        type: "shape-sigil",
+        text: "✦",
+        x: relic.x,
+        y: relic.y,
+        dx: 0,
+        dy: -34,
+        size: 30,
+        fontSize: 23,
+        spin: 0,
+        delay: baseDelay + 85
+      });
+    }
+
     function queueRareSeedRuneBurst(runes, cascadeIndex = 0) {
       const baseDelay = cascadeIndex * 120;
       runes.forEach((rune, runeIndex) => {
@@ -10478,9 +10677,7 @@
       if (boardParticleClearTimer && window.clearTimeout) {
         window.clearTimeout(boardParticleClearTimer);
       }
-      const clearDelay = roundOneBlackCandleBurnHoldActive
-        ? 1280
-        : 560 + Math.min(4, Math.max(0, Number(cascadeCount) || 0)) * 52;
+      const clearDelay = 560 + Math.min(4, Math.max(0, Number(cascadeCount) || 0)) * 52;
       boardParticleClearTimer = window.setTimeout(() => {
         if (!boardParticles.length) {
           return;
@@ -10565,9 +10762,12 @@
     }
 
     function lineRelicMessage(result) {
-      if (!result.lineRelics || !result.lineRelics.length) {
-        return "";
+      if (result.armedLineRelics?.length) {
+        const relic = result.armedLineRelics[0];
+        const lane = relic.direction === "vertical" ? "column" : "row";
+        return `Black Candle Vine armed; swap it to burn its ${lane}.`;
       }
+      if (!result.lineRelics || !result.lineRelics.length) return "";
       const labels = result.lineRelics.map((relic) => {
         const lane = relic.direction === "vertical" ? `column ${relic.fixed + 1}` : `row ${relic.fixed + 1}`;
         return `${relic.name} swept ${lane}`;
@@ -10703,7 +10903,10 @@
     function maybeCompleteRound(carryMessage = "") {
       const plan = activeRoundPlan();
       const targetsComplete = plan.targets.every((target) => counts[target.flowerId] >= target.needed);
-      if (roundComplete || !targetsComplete || !thornGoalComplete(plan)) {
+      const authoredLessonPending = plan.round === 1
+        && tutorialActive
+        && !blackCandleLessonComplete;
+      if (roundComplete || !targetsComplete || !thornGoalComplete(plan) || authoredLessonPending) {
         return false;
       }
       roundComplete = true;
@@ -10714,12 +10917,7 @@
       }
       const streakPayout = completionCoinPayout(plan);
       coins += streakPayout.total;
-      // Round 1 first presents the Black Candle burn. Pulse the newly earned
-      // balance when the coin ceremony becomes visible instead of spending the
-      // confirmation animation behind the board interstitial.
-      if (!(plan.round === 1 && roundOneBlackCandleBurnHoldActive)) {
-        pulseCoinBalance();
-      }
+      pulseCoinBalance();
       const completionMessage = focusedSliceCompletionMessage(plan, streakPayout);
       ritualMessage = carryMessage ? `${carryMessage} ${completionMessage}` : completionMessage;
       if (focusedSliceRound(plan)) {
@@ -10958,26 +11156,6 @@
         restoredGreenhouseHandoffTimer = null;
         render();
       }, duration);
-    }
-
-    function startRoundOneBlackCandleBurnHold() {
-      if (currentRound !== 1 || roundComplete) {
-        return;
-      }
-      if (roundOneBlackCandleBurnHoldTimer && window.clearTimeout) {
-        window.clearTimeout(roundOneBlackCandleBurnHoldTimer);
-      }
-      roundOneBlackCandleBurnHoldActive = true;
-      roundOneBlackCandleBurnHoldTimer = window.setTimeout(() => {
-        roundOneBlackCandleBurnHoldActive = false;
-        roundOneBlackCandleBurnHoldTimer = null;
-        if (roundComplete) {
-          pulseCoinBalance();
-          queuePostRenderFocus(focusedPayoffPrimaryButtonId());
-          render();
-        }
-      // Keep the authored Black Candle row burn inspectable before payoff without delaying reduced-motion players.
-      }, prefersReducedMotion() ? 160 : 1350);
     }
 
     function focusRestoredNextOrderViewport() {
@@ -11254,6 +11432,7 @@
       thornClearedCells.clear();
       clearThornTeachingCue(false);
       boardParticles = [];
+      armedLineRelic = null;
       ritualMessage = "The greenhouse table shuffles. One move is spent.";
       build();
       if (isBouquetFailed()) {
@@ -11286,6 +11465,7 @@
       const plan = buildRoundPlan(nextRound);
       clearIdleHint();
       selected = null;
+      armedLineRelic = null;
       clearTransientGameFeel();
       harvestFlashCells.clear();
       fallAnimations.clear();
@@ -11307,6 +11487,7 @@
       moves = plan.moves;
       counts = [0, 0, 0, 0, 0, 0];
       hasMadeValidMove = false;
+      blackCandleLessonComplete = currentRound !== 1 || tutorialSkipped;
       roundComplete = false;
       const introCopy = retryingFailedBouquet
         ? `<strong>Retry Bouquet:</strong> Round ${plan.round}: ${plan.name} is restored. `
@@ -11348,6 +11529,7 @@
       }
       clearIdleHint();
       selected = null;
+      armedLineRelic = null;
       clearTransientGameFeel();
       harvestFlashCells.clear();
       fallAnimations.clear();
@@ -11367,6 +11549,7 @@
       roundTwoGreenhouseUpgraded = false;
       roundThreeConservatoryRaised = false;
       hasMadeValidMove = false;
+      blackCandleLessonComplete = true;
       roundComplete = false;
       concludeTutorial();
       const plan = buildRoundPlan(1);
@@ -11509,6 +11692,10 @@
           cursedThorns = [];
           thornPulseCells.clear();
           thornClearedCells.clear();
+        }
+        if (plan.round === 1) {
+          blackCandleLessonComplete = true;
+          armedLineRelic = null;
         }
         notePlayerInteraction();
         maybeCompleteRound();
@@ -11655,6 +11842,7 @@
       const state = {
         focusedEconomyVersion: FOCUSED_ECONOMY_SAVE_VERSION,
         board,
+        armedLineRelic,
         moves,
         coins,
         counts,
@@ -11668,7 +11856,8 @@
         hasMadeValidMove,
         restoredRoundTwoGuideMoves,
         tutorialSkipped,
-        tutorialActive
+        tutorialActive,
+        blackCandleLessonComplete
       };
       try {
         localStorage.setItem(SAVE_KEY, JSON.stringify(state));
@@ -11692,6 +11881,7 @@
         if (isValidBoard(state.board)) {
           board = state.board;
         }
+        armedLineRelic = normalizeArmedLineRelic(state.armedLineRelic);
         if (Array.isArray(state.counts) && state.counts.length === flowers.length) {
           counts = state.counts.map((count) => Math.max(0, Number(count) || 0));
         }
@@ -11734,6 +11924,10 @@
           || clearedCursedThorns > 0;
         tutorialSkipped = Boolean(state.tutorialSkipped);
         tutorialActive = !tutorialSkipped && Boolean(state.tutorialActive);
+        blackCandleLessonComplete = Boolean(state.blackCandleLessonComplete)
+          || tutorialSkipped
+          || currentRound !== 1
+          || roundComplete;
         if (roundComplete && currentRound <= FOCUSED_LEVEL_COUNT) {
           tutorialActive = true;
         }
@@ -11802,7 +11996,15 @@
       queuePostRenderFocus(focusedPayoffPrimaryButtonId());
     }
     ensureCursedThornsForPlan(activeRoundPlan());
-    if (currentRound === 1 && !roundComplete && !hasMadeValidMove) {
+    if (armedLineRelic && !roundComplete) {
+      const relicPair = lineRelicActivationPair();
+      if (relicPair) {
+        idleHintCells = new Set(relicPair.map((cell) => `${cell.x},${cell.y}`));
+        boardFocusCell = clampBoardFocusCell(relicPair[0]);
+        const lane = armedLineRelic.direction === "vertical" ? "column" : "row";
+        $("firstSwapCue").textContent = `Swap Black Candle Vine to burn its ${lane}.`;
+      }
+    } else if (currentRound === 1 && !roundComplete && !hasMadeValidMove) {
       const firstMove = legalMoves()[0];
       if (firstMove) {
         idleHintCells = new Set(firstMove.map((cell) => `${cell.x},${cell.y}`));

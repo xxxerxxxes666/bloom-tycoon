@@ -332,9 +332,9 @@ async function playCurrentRound(page, label, round, strategy = "optimized", expe
   while (true) {
     const state = await journeyState(page);
     if (state.roundComplete) {
-      // Round 1 deliberately holds the Black Candle board event before the
-      // coin ceremony. Sample completion economy only after that handoff so
-      // the balance confirmation is tested where the player can act on it.
+      // Round 1 now requires a deliberate Black Candle activation before the
+      // normal coin ceremony. Sample completion economy where the player can
+      // act on it rather than during the activation resolution.
       if (round === 1) {
         await page.locator("#roundOneRestoration").waitFor({ state: "visible", timeout: 3000 });
       }
@@ -495,14 +495,14 @@ for (const config of [
       const { runLabel, results } = await playFirstThree(page, config, seed, "optimized");
 
       console.log(`${runLabel} first-three journey: ${JSON.stringify(results)}`);
-      expect(results[0].movesLeft, "Round 1 remains a forgiving tutorial").toBeGreaterThanOrEqual(2);
+      expect(results[0].movesLeft, "Round 1 preserves one move after the taught activation").toBeGreaterThanOrEqual(1);
       expect(results[0].movesLeft, "Round 1 no longer has a huge move cushion").toBeLessThanOrEqual(4);
       expect(results[1].movesLeft, "Round 2 leaves a fair cushion").toBeGreaterThanOrEqual(1);
       expect(results[1].movesLeft, "Round 2 handles cascade variance").toBeLessThanOrEqual(4);
       expect(results[2].movesLeft, "Round 3 leaves a fair cushion").toBeGreaterThanOrEqual(1);
       expect(results[2].movesLeft, "Round 3 handles cascade variance").toBeLessThanOrEqual(5);
       expect(results[0].swaps, "Round 1 can finish quickly but still requires real swaps").toBeGreaterThanOrEqual(2);
-      expect(results[0].swaps, "Round 1 tutorial does not drag").toBeLessThanOrEqual(4);
+      expect(results[0].swaps, "Round 1 tutorial does not drag").toBeLessThanOrEqual(5);
       expect(results[1].swaps, "Round 2 takes several real swaps").toBeGreaterThanOrEqual(4);
       expect(results[2].swaps, "Round 3 takes real swaps").toBeGreaterThanOrEqual(2);
       expect(results[0].actions).toEqual(["Restore Greenhouse · 100 coins", "Next Order → Moonlit Wreath"]);
@@ -516,7 +516,7 @@ for (const config of [
     test(`goal-following first-three journey completes on ${config.label} with ${seed}`, async ({ page }) => {
       const { runLabel, results } = await playFirstThree(page, config, seed, "goal-following");
       console.log(`${runLabel} first-three journey: ${JSON.stringify(results)}`);
-      expect(results[0].swaps, "Round 1 goal-following tutorial does not drag").toBeLessThanOrEqual(4);
+      expect(results[0].swaps, "Round 1 goal-following tutorial does not drag").toBeLessThanOrEqual(5);
       expect(results[1].movesLeft, "Round 2 goal-following play completes").toBeGreaterThanOrEqual(0);
       expect(results[2].movesLeft, "Round 3 goal-following play completes").toBeGreaterThanOrEqual(0);
       expect(results[0].actions).toEqual(["Restore Greenhouse · 100 coins", "Next Order → Moonlit Wreath"]);

@@ -176,8 +176,21 @@ async function clickGuidedSwap(page) {
   }, null, { timeout: 7000 });
 }
 
+async function dispatchGuidedSwap(page) {
+  const pair = await hintedPair(page);
+  for (const cell of pair) {
+    await page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`).dispatchEvent("click");
+  }
+  await expect(page.locator(".tile")).toHaveCount(64);
+  await page.waitForFunction(() => (
+    document.querySelectorAll('.tile[data-line-relic="black-candle-vine"]').length === 1
+    || document.querySelectorAll(".tile.idle-hint").length === 2
+    || getComputedStyle(document.querySelector("#roundOneRestoration")).display !== "none"
+  ), null, { timeout: 7000 });
+}
+
 async function completeGuidedRoundOne(page) {
-  for (let swap = 0; swap < 4; swap += 1) {
+  for (let swap = 0; swap < 6; swap += 1) {
     await clickGuidedSwap(page);
     if (await page.locator("#roundOneRestoration").isVisible()) {
       break;
@@ -226,6 +239,7 @@ async function activeState(page) {
     return {
       moves: state.moves,
       counts: state.counts || [],
+      armedLineRelic: state.armedLineRelic || null,
       board: (state.board || []).map((row) => row.join(",")).join("|"),
       roundComplete: Boolean(state.roundComplete),
       tiles: document.querySelectorAll(".tile").length,
@@ -234,6 +248,17 @@ async function activeState(page) {
       overflowX: document.documentElement.scrollWidth > innerWidth + 1
     };
   }, SAVE_KEY);
+}
+
+async function waitForSettledBoard(page) {
+  await page.waitForFunction(() => {
+    const tiles = Array.from(document.querySelectorAll(".tile"));
+    if (tiles.length !== 64 || tiles.some((tile) => tile.disabled)) {
+      return false;
+    }
+    const rowTops = new Set(tiles.map((tile) => Math.round(tile.getBoundingClientRect().top)));
+    return rowTops.size === 8;
+  }, null, { timeout: 5000 });
 }
 
 async function guidedRoundOneState(page, tag) {
@@ -278,7 +303,6 @@ async function guidedRoundOneState(page, tag) {
       payoffVisible: visible(document.querySelector("#roundOneRestoration")),
       ritualLogVisible: visible(document.querySelector("#ritualLog")),
       ritualLogText: document.querySelector("#ritualLog")?.textContent.trim() || "",
-      burnHold: document.body.classList.contains("round-one-black-candle-burn-hold"),
       lineRelicHit: Boolean(board?.classList.contains("line-relic-hit")),
       lineRelicParticles: document.querySelectorAll(".board-particle.line-relic").length,
       visibleButtons: Array.from(document.querySelectorAll("button"))
@@ -323,7 +347,7 @@ async function clickHighlightedPair(page) {
       return false;
     }
     const cueNow = document.querySelector("#firstSwapCue")?.textContent.trim() || "";
-    return document.body.classList.contains("round-one-black-candle-burn-hold")
+    return Boolean(saved.roundComplete)
       || (document.querySelectorAll(".tile.idle-hint").length === 2 && cueNow !== String(cueBefore || "").trim());
   }, { key: SAVE_KEY, movesBefore, cueBefore }, { timeout: 10000 });
   await page.waitForTimeout(350);
@@ -523,7 +547,10 @@ async function dragTouchViaCdp(page, pair, scale = 0.62) {
     touchPoints: [],
     changedTouchPoints: [{ x: vector.endX, y: vector.endY, id: 7 }]
   });
-  await page.waitForFunction(() => Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled), null, { timeout: 10000 });
+  await page.waitForFunction(() => (
+    Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled)
+    || getComputedStyle(document.querySelector("#roundOneRestoration")).display !== "none"
+  ), null, { timeout: 10000 });
   return { beforeGeometry, afterGeometry, vector };
 }
 
@@ -742,8 +769,8 @@ for (const viewport of [
     const blackCandleCue = await guidedRoundOneState(page, "before Black Candle swap");
     trace.push(blackCandleCue);
     assertActiveGuidedState(blackCandleCue, viewport.mobile, `${viewport.label} before Black Candle`);
-    expect(blackCandleCue.tutorial).toBe("Match 4 makes Black Candle Vine.");
-    expect(blackCandleCue.cue).toBe("Make 4 Bone Stars - Black Candle Vine burns a row.");
+    expect(blackCandleCue.tutorial).toBe("Match 4 arms Black Candle Vine.");
+    expect(blackCandleCue.cue).toBe("Make 4 Bone Stars - arm Black Candle Vine.");
     expect(blackCandleCue.hints).toHaveLength(2);
     expect(Math.abs(blackCandleCue.hints[0].x - blackCandleCue.hints[1].x) + Math.abs(blackCandleCue.hints[0].y - blackCandleCue.hints[1].y)).toBe(1);
     const preview = await legalFourBoneStarPreview(page);
@@ -751,36 +778,39 @@ for (const viewport of [
     await page.screenshot({ path: `work/black-candle-${viewport.label}-cue.png`, fullPage: true });
 
     await clickHighlightedPair(page);
-    await page.waitForFunction(() => (
-      document.body.classList.contains("round-one-black-candle-burn-hold")
-      && document.querySelector(".board")?.classList.contains("line-relic-hit")
-      && document.querySelectorAll(".board-particle.line-relic").length > 0
-    ), null, { timeout: 2500 });
-    const burn = await guidedRoundOneState(page, "Black Candle burn");
-    trace.push(burn);
-    expect(burn.roundComplete).toBe(true);
-    expect(burn.bouquet).toBe("Bouquet 14/14 -> +120 coins");
-    expect(burn.moves).toBeGreaterThanOrEqual(0);
-    expect(burn.boardVisible).toBe(true);
-    expect(burn.payoffVisible).toBe(false);
-    expect(burn.ritualLogVisible).toBe(false);
-    expect(burn.ritualLogText).toContain("Black Candle Vine");
-    expect(burn.tutorial).toContain("Black Candle Vine");
-    expect(burn.tutorial).not.toContain("Coins restore");
-    expect(burn.cue).toContain("Black Candle Vine");
-    expect(burn.cue).toContain("cleared");
-    expect(burn.visibleButtons).toEqual([]);
-    expect(burn.burnHold).toBe(true);
-    expect(burn.lineRelicHit).toBe(true);
-    expect(burn.lineRelicParticles).toBeGreaterThan(0);
-    expect(burn.tiles).toBe(64);
-    expect(burn.overflowX).toBe(false);
-    expect(burn.brokenImages).toEqual([]);
+    await expect(page.locator('.tile[data-line-relic="black-candle-vine"]')).toHaveCount(1);
+    await waitForSettledBoard(page);
+    const formed = await guidedRoundOneState(page, "Black Candle armed");
+    trace.push(formed);
+    expect(formed.roundComplete).toBe(false);
+    expect(formed.payoffVisible).toBe(false);
+    expect(formed.tiles).toBe(64);
+    expect(formed.rows).toBe(8);
+    expect(formed.overflowX).toBe(false);
+    expect(formed.brokenImages).toEqual([]);
     if (viewport.mobile) {
-      expect(burn.completeRows).toBe(8);
-      expect(burn.boardBottom).toBeLessThanOrEqual(844);
+      expect(formed.completeRows).toBe(8);
+      expect(formed.boardBottom).toBeLessThanOrEqual(844);
     }
-    await page.screenshot({ path: `work/black-candle-${viewport.label}-burn.png`, fullPage: false });
+    expect(formed.moves).toBe(blackCandleCue.moves - 1);
+    expect(formed.counts[1] - blackCandleCue.counts[1]).toBe(4);
+    expect(formed.tutorial).toBe("Swap the vine to clear its lane.");
+    expect(formed.cue).toContain("Swap Black Candle Vine");
+    expect(formed.hints).toHaveLength(2);
+    expect(formed.visibleButtons).toEqual(["Skip"]);
+    await page.screenshot({ path: "work/black-candle-" + viewport.label + "-formed.png", fullPage: true });
+
+    await clickHighlightedPair(page);
+    await expect(page.locator('.tile[data-line-relic="black-candle-vine"]')).toHaveCount(0);
+    const activated = await guidedRoundOneState(page, "Black Candle activated");
+    trace.push(activated);
+    expect(activated.roundComplete).toBe(true);
+    expect(activated.bouquet).toBe("Bouquet 14/14 -> +120 coins");
+    expect(activated.moves).toBe(formed.moves - 1);
+    expect(activated.tiles).toBe(64);
+    expect(activated.overflowX).toBe(false);
+    expect(activated.brokenImages).toEqual([]);
+    await page.screenshot({ path: "work/black-candle-" + viewport.label + "-activated.png", fullPage: true });
 
     await expect(page.locator("#restoreGreenhouseBtn")).toBeVisible({ timeout: 3000 });
     const ceremony = await guidedRoundOneState(page, "ceremony");
@@ -812,7 +842,6 @@ for (const viewport of [
       tutorial: state.tutorial,
       hints: state.hints,
       roundComplete: state.roundComplete,
-      burnHold: state.burnHold,
       lineRelicHit: state.lineRelicHit,
       lineRelicParticles: state.lineRelicParticles,
       payoffVisible: state.payoffVisible
@@ -915,6 +944,182 @@ test("guided Round 1 payoff keeps one dominant action", async ({ page }) => {
   expect(failedRequests).toEqual([]);
 });
 
+test("Black Candle Vine forms, persists, and activates as a deliberate lane special", async ({ browser }) => {
+  const cases = [
+    { label: "desktop", viewport: { width: 1280, height: 720 }, input: "keyboard" },
+    { label: "mobile390", viewport: { width: 390, height: 844 }, input: "touch", mobile: true }
+  ];
+
+  for (const testCase of cases) {
+    const context = await browser.newContext({
+      viewport: testCase.viewport,
+      hasTouch: Boolean(testCase.mobile),
+      isMobile: Boolean(testCase.mobile),
+      reducedMotion: testCase.mobile ? "reduce" : "no-preference"
+    });
+    const page = await context.newPage();
+    const consoleErrors = [];
+    const pageErrors = [];
+    page.on("console", (message) => {
+      if (message.type() === "error") consoleErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+
+    try {
+      await openFresh(page, `black-candle-${testCase.label}`);
+      for (let step = 0; step < 5; step += 1) {
+        const cue = await page.locator("#firstSwapCue").textContent();
+        if (cue.includes("Make 4 Bone Stars")) break;
+        await dispatchGuidedSwap(page);
+      }
+      await expect(page.locator("#firstSwapCue")).toContainText("Make 4 Bone Stars");
+      const beforeFormation = await activeState(page);
+      await dispatchGuidedSwap(page);
+
+      const relic = page.locator('.tile[data-line-relic="black-candle-vine"]');
+      await expect(relic).toHaveCount(1);
+      await waitForSettledBoard(page);
+      await expect(relic).toHaveAttribute("data-line-relic-direction", "horizontal");
+      await expect(page.locator("#tutorialCopy")).toHaveText("Swap the vine to clear its lane.");
+      const formed = await activeState(page);
+      expect(formed.moves, "formation spends one move").toBe(beforeFormation.moves - 1);
+      expect(formed.counts[1] - beforeFormation.counts[1], "formation collects only the strict four").toBe(4);
+      expect(formed.armedLineRelic).toMatchObject({ direction: "horizontal", flowerId: 1 });
+      expect(formed.tiles).toBe(64);
+      expect(formed.rows).toBe(8);
+      expect(formed.overflowX).toBe(false);
+      await page.waitForTimeout(850);
+      await page.screenshot({ path: `work/black-candle-formed-${testCase.label}.png`, fullPage: true });
+
+      await page.reload({ waitUntil: "networkidle" });
+      await page.reload({ waitUntil: "networkidle" });
+      await expect(relic).toHaveCount(1);
+      const persisted = await activeState(page);
+      expect(persisted.armedLineRelic).toEqual(formed.armedLineRelic);
+      expect(persisted.moves).toBe(formed.moves);
+      expect(persisted.counts).toEqual(formed.counts);
+
+      const activationPair = await hintedPair(page);
+      const activationIncludesRelic = activationPair.some((cell) => (
+        cell.x === persisted.armedLineRelic.x && cell.y === persisted.armedLineRelic.y
+      ));
+      expect(activationIncludesRelic, "guided activation includes the armed relic").toBe(true);
+      const laneValues = await page.evaluate(({ key, pair }) => {
+        const state = JSON.parse(localStorage.getItem(key));
+        const board = state.board.map((row) => row.slice());
+        const [a, b] = pair;
+        const temp = board[a.y][a.x];
+        board[a.y][a.x] = board[b.y][b.x];
+        board[b.y][b.x] = temp;
+        return board[state.armedLineRelic.y].slice();
+      }, { key: SAVE_KEY, pair: activationPair });
+      const expectedLaneGain = Array(6).fill(0);
+      laneValues.forEach((flowerId) => { expectedLaneGain[flowerId] += 1; });
+
+      if (testCase.input === "touch") {
+        await dragTouchViaCdp(page, activationPair);
+      } else {
+        await keyboardGuidedSwap(page);
+      }
+      await expect(relic).toHaveCount(0);
+      await page.waitForTimeout(700);
+      const activated = await activeState(page);
+      expect(activated.moves, "activation spends exactly one move").toBe(persisted.moves - 1);
+      expect(activated.armedLineRelic).toBeNull();
+      await expect(page.locator("#tutorialCopy")).toHaveText("Coins restore the greenhouse.");
+      expectedLaneGain.forEach((gain, flowerId) => {
+        expect(
+          activated.counts[flowerId] - persisted.counts[flowerId],
+          `activation collects actual lane flower ${flowerId}`
+        ).toBe(gain);
+      });
+      expect(activated.tiles).toBe(64);
+      expect(activated.overflowX).toBe(false);
+      await page.screenshot({ path: `work/black-candle-activated-${testCase.label}.png`, fullPage: true });
+
+      let completed = activated;
+      while (!completed.roundComplete && completed.moves > 0) {
+        await dispatchGuidedSwap(page);
+        completed = await activeState(page);
+      }
+      expect(completed.roundComplete, "authored route completes within the six-move budget").toBe(true);
+      expect(completed.moves).toBeGreaterThanOrEqual(0);
+      await expect(page.locator("#restoreGreenhouseBtn")).toHaveText("Restore Greenhouse · 100 coins");
+      expect(await page.evaluate((key) => JSON.parse(localStorage.getItem(key)).coins, SAVE_KEY)).toBe(120);
+      expect(consoleErrors).toEqual([]);
+      expect(pageErrors).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  }
+});
+
+test("armed Black Candle Vine stays real in later rounds and Retry clears stale state", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await openFresh(page, "black-candle-later-rounds");
+
+  for (const specialCase of [
+    { round: 2, moves: 9, direction: "horizontal" },
+    { round: 3, moves: 8, direction: "vertical" }
+  ]) {
+    await page.evaluate(({ key, specialCase }) => {
+      const state = JSON.parse(localStorage.getItem(key));
+      state.currentRound = specialCase.round;
+      state.moves = specialCase.moves;
+      state.counts = [0, 0, 0, 0, 0, 0];
+      state.roundComplete = false;
+      state.roundOneRestored = true;
+      state.roundTwoGreenhouseUpgraded = specialCase.round === 3;
+      state.roundThreeConservatoryRaised = false;
+      state.tutorialSkipped = true;
+      state.tutorialActive = false;
+      state.blackCandleLessonComplete = true;
+      state.armedLineRelic = {
+        x: 3,
+        y: 3,
+        direction: specialCase.direction,
+        flowerId: state.board[3][3]
+      };
+      localStorage.setItem(key, JSON.stringify(state));
+    }, { key: SAVE_KEY, specialCase });
+    await page.reload({ waitUntil: "networkidle" });
+    const before = await activeState(page);
+    await expect(page.locator('.tile[data-line-relic="black-candle-vine"]')).toHaveCount(1);
+    const pair = await hintedPair(page);
+    for (const cell of pair) {
+      await page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`).dispatchEvent("click");
+    }
+    await expect(page.locator('.tile[data-line-relic="black-candle-vine"]')).toHaveCount(0);
+    await waitForSettledBoard(page);
+    const after = await activeState(page);
+    expect(after.moves).toBe(before.moves - 1);
+    expect(after.tiles).toBe(64);
+    expect(after.rows).toBe(8);
+  }
+
+  await page.evaluate((key) => {
+    const state = JSON.parse(localStorage.getItem(key));
+    state.currentRound = 1;
+    state.moves = 0;
+    state.roundComplete = false;
+    state.roundOneRestored = false;
+    state.roundTwoGreenhouseUpgraded = false;
+    state.tutorialSkipped = false;
+    state.tutorialActive = true;
+    state.blackCandleLessonComplete = false;
+    state.armedLineRelic = { x: 3, y: 3, direction: "horizontal", flowerId: state.board[3][3] };
+    localStorage.setItem(key, JSON.stringify(state));
+  }, SAVE_KEY);
+  await page.reload({ waitUntil: "networkidle" });
+  await expect(page.locator("#renewBtn.visible")).toHaveText("Retry Bouquet");
+  await page.locator("#renewBtn").click();
+  await expect(page.locator('.tile[data-line-relic="black-candle-vine"]')).toHaveCount(0);
+  const retried = await activeState(page);
+  expect(retried.moves).toBe(6);
+  expect(retried.armedLineRelic).toBeNull();
+  expect(retried.tiles).toBe(64);
+});
+
 test("Round 1 tutorial protects moves until Skip restores Shuffle", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
   await openFresh(page, "tutorial-shuffle-desktop");
@@ -922,7 +1127,7 @@ test("Round 1 tutorial protects moves until Skip restores Shuffle", async ({ pag
   await clickGuidedSwap(page);
 
   const movesDuringLesson = Number((await page.locator(".moves-counter").textContent()).match(/\d+/)?.[0]);
-  await expect(page.locator("#tutorialCopy")).toContainText(/Match 3 fills|Match 4 makes/);
+  await expect(page.locator("#tutorialCopy")).toContainText(/Match 3 fills|Match 4 arms/);
   await expect(page.locator("#shuffleBtn")).toBeHidden();
   await expect(page.locator("#shuffleBtn")).toBeDisabled();
   await expect(page.locator("#tutorialSkipBtn")).toBeVisible();
