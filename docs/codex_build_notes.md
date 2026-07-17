@@ -1,5 +1,16 @@
 # Codex Build Notes
 
+## 2026-07-17 Black Candle and Cursed Thorn feedback discipline
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_tutorial_progress.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.
+- Selected weakness: a strict-four Black Candle Vine created beside a Cursed Thorn rendered generic central `HIT`, central `ARMED`, and localized `BREAK` over the same sockets. The mechanic was correct, but one match read as three competing events.
+- Player-visible result: Black Candle creation keeps one central narrator, `ARMED`, while retaining the existing ring, vein, resource feedback, and localized thorn result. The redundant creation-wave `HIT` is suppressed. A simultaneous `CRACK`/`BREAK` stamp is positioned outward from the armed tile so both labels remain attributable and readable without collision on desktop or exact mobile.
+- Variance correction: the combined regression run exposed a rare post-cascade playability rebuild after vertical formation. The rebuild now pins the armed relic's actual flower back into its settled socket, preserving the same board/save/DOM/aria identity contract through both ordinary gravity and automatic legal-board recovery.
+- Scope: ordinary match waves still present `HIT`; standalone Cursed Thorn damage still presents its immediate localized result; Black Candle activation, formation credit, move costs, persistence, gravity identity, objectives, economy, saves, and all focused-round behavior are unchanged.
+- Deterministic visual/mechanic evidence: desktop `1280x720` and exact mobile `390x844` formed a natural vertical strict four beside the final authored thorn. Twelve presentation frames at 45ms intervals contained no generic `HIT`, never exceeded one central text narrator, and showed no `ARMED`/`BREAK` rectangle intersection. The swap spent one move, credited exactly four Bone Stars, armed one vertical relic without sweeping, and settled to 64 tiles/eight rows. Screenshots `work/black-candle-thorn-feedback-desktop.png` and `work/black-candle-thorn-feedback-mobile390.png` show the peak frame with full readable `BREAK` and separate `ARMED`.
+- Focused verification: the vertical identity plus simultaneous-feedback tests passed `6/6` across three repeats. The broader Black Candle/feedback/reduced-motion matrix passed `10/10`, including ordinary match `HIT`, standalone Cursed Thorn damage, horizontal and vertical formation, two reloads, activation, Retry cleanup, touch/drag, and reduced motion.
+- Integrated verification: the complete serial Chromium suite passed `51/51` in `13.2m`. Coverage includes optimized and goal-following first-three journeys, two economy cycles, migration, ceremonies, persistent specials, feedback discipline, save/reload, Retry, Shuffle guard, Help/Skip, keyboard, pointer, touch/drag, invalid/cancel paths, reduced motion, 64 tiles/eight rows, no visible broken images, no horizontal overflow, and no console/page/request errors. Runtime mobile guided swaps returned control in `374ms` and `459ms`.
+
 ## 2026-07-17 vertical Black Candle gravity identity correction
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_tutorial_progress.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.

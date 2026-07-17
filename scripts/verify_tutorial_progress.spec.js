@@ -1210,6 +1210,160 @@ test("vertical Black Candle Vine follows its anchor flower through gravity", asy
   }
 });
 
+test("Black Candle creation and Cursed Thorn break read as one disciplined wave", async ({ browser }) => {
+  const cases = [
+    { label: "desktop", viewport: { width: 1280, height: 720 } },
+    { label: "mobile390", viewport: { width: 390, height: 844 }, mobile: true }
+  ];
+
+  for (const testCase of cases) {
+    const context = await browser.newContext({
+      viewport: testCase.viewport,
+      hasTouch: Boolean(testCase.mobile),
+      isMobile: Boolean(testCase.mobile)
+    });
+    const page = await context.newPage();
+    const consoleErrors = [];
+    const pageErrors = [];
+    page.on("console", (message) => {
+      if (message.type() === "error") consoleErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+
+    try {
+      await openFresh(page, `black-candle-thorn-feedback-${testCase.label}`);
+      await page.evaluate((key) => {
+        const state = JSON.parse(localStorage.getItem(key));
+        state.currentRound = 2;
+        state.moves = 9;
+        state.coins = 20;
+        state.counts = [0, 0, 0, 0, 0, 0];
+        state.roundComplete = false;
+        state.roundOneRestored = true;
+        state.roundTwoGreenhouseUpgraded = false;
+        state.roundThreeConservatoryRaised = false;
+        state.tutorialSkipped = true;
+        state.tutorialActive = false;
+        state.blackCandleLessonComplete = true;
+        state.hasMadeValidMove = true;
+        state.restoredRoundTwoGuideMoves = 0;
+        state.armedLineRelic = null;
+        state.cursedThorns = [{ x: 2, y: 1, hp: 1 }];
+        state.clearedCursedThorns = 2;
+        state.board = Array.from({ length: 8 }, (_, y) => (
+          Array.from({ length: 8 }, (_, x) => (x + 2 * y) % 6)
+        ));
+        state.board[0][3] = 1;
+        state.board[1][3] = 1;
+        state.board[2][3] = 2;
+        state.board[3][3] = 1;
+        state.board[2][4] = 1;
+        localStorage.setItem(key, JSON.stringify(state));
+      }, SAVE_KEY);
+      await page.reload({ waitUntil: "networkidle" });
+      await waitForSettledBoard(page);
+
+      const before = await activeState(page);
+      const formationPair = [{ x: 3, y: 2 }, { x: 4, y: 2 }];
+      if (testCase.mobile) {
+        await dragTouchViaCdp(page, formationPair);
+      } else {
+        for (const cell of formationPair) {
+          await page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`).dispatchEvent("click");
+        }
+      }
+
+      await page.waitForFunction(() => (
+        Array.from(document.querySelectorAll(".board-particle.impact-sigil"))
+          .some((node) => node.textContent.trim() === "ARMED")
+        && document.querySelector(".thorn-event")
+      ), null, { timeout: 2500 });
+
+      const sampledFrames = [];
+      for (let frame = 0; frame < 12; frame += 1) {
+        sampledFrames.push(await page.evaluate(() => {
+          const visible = (node) => {
+            if (!node) return false;
+            const style = getComputedStyle(node);
+            const rect = node.getBoundingClientRect();
+            return style.display !== "none"
+              && style.visibility !== "hidden"
+              && Number(style.opacity || 0) > 0.02
+              && rect.width > 0
+              && rect.height > 0;
+          };
+          const rect = (node) => {
+            const bounds = node.getBoundingClientRect();
+            return {
+              left: bounds.left,
+              top: bounds.top,
+              right: bounds.right,
+              bottom: bounds.bottom
+            };
+          };
+          const overlaps = (a, b) => (
+            Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1
+            && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1
+          );
+          const impacts = Array.from(document.querySelectorAll(".board-particle.impact-sigil"))
+            .filter(visible)
+            .map((node) => ({ text: node.textContent.trim(), rect: rect(node) }));
+          const thornEvents = Array.from(document.querySelectorAll(".thorn-event"))
+            .filter(visible)
+            .map((node) => ({ text: node.textContent.trim(), rect: rect(node) }));
+          return {
+            impacts,
+            thornEvents,
+            overlap: impacts.some((impact) => (
+              thornEvents.some((thorn) => overlaps(impact.rect, thorn.rect))
+            ))
+          };
+        }));
+        if (frame === 5) {
+          await page.screenshot({
+            path: `work/black-candle-thorn-feedback-${testCase.label}.png`,
+            fullPage: true
+          });
+        }
+        await page.waitForTimeout(45);
+      }
+
+      expect(
+        sampledFrames.some((frame) => frame.impacts.some((impact) => impact.text === "ARMED")),
+        "Black Candle formation presents ARMED"
+      ).toBe(true);
+      expect(
+        sampledFrames.some((frame) => frame.thornEvents.some((event) => event.text === "BREAK")),
+        "the adjacent Cursed Thorn still presents BREAK"
+      ).toBe(true);
+      sampledFrames.forEach((frame, index) => {
+        expect(
+          frame.impacts.some((impact) => impact.text === "HIT"),
+          `frame ${index} omits generic HIT during Black Candle creation`
+        ).toBe(false);
+        expect(
+          frame.impacts.length,
+          `frame ${index} has at most one central text narrator`
+        ).toBeLessThanOrEqual(1);
+        expect(frame.overlap, `frame ${index} keeps thorn text clear of ARMED`).toBe(false);
+      });
+
+      await waitForSettledBoard(page);
+      const formed = await activeState(page);
+      expect(formed.moves).toBe(before.moves - 1);
+      expect(formed.counts[1] - before.counts[1]).toBe(4);
+      expect(formed.armedLineRelic).toMatchObject({ direction: "vertical", flowerId: 1 });
+      expect(formed.tiles).toBe(64);
+      expect(formed.rows).toBe(8);
+      expect(formed.overflowX).toBe(false);
+      expect(consoleErrors).toEqual([]);
+      expect(pageErrors).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  }
+});
+
 test("armed Black Candle Vine stays real in later rounds and Retry clears stale state", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
   await openFresh(page, "black-candle-later-rounds");

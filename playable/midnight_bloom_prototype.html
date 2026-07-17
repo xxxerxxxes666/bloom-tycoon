@@ -1889,6 +1889,31 @@
       background: linear-gradient(90deg, #2a0807f0, #b51d2fed, #2a0807f0);
     }
 
+    .board.line-relic-arming .tile.thorn-hit {
+      z-index: 7;
+      overflow: visible;
+    }
+
+    .board.line-relic-arming .thorn-event.offset-left-up {
+      left: -50%;
+      top: -50%;
+    }
+
+    .board.line-relic-arming .thorn-event.offset-right-up {
+      left: 150%;
+      top: -50%;
+    }
+
+    .board.line-relic-arming .thorn-event.offset-left-down {
+      left: -50%;
+      top: 150%;
+    }
+
+    .board.line-relic-arming .thorn-event.offset-right-down {
+      left: 150%;
+      top: 150%;
+    }
+
     .tile.invalid-swap {
       animation: invalid-swap 720ms ease-out both;
     }
@@ -8616,10 +8641,15 @@
       if (!matches().length && hasLegalMoves()) {
         return false;
       }
+      const preservedLineRelic = normalizeArmedLineRelic(armedLineRelic);
       fallAnimations.clear();
       refillBornCells.clear();
       refillColumns.clear();
       build();
+      if (preservedLineRelic) {
+        armedLineRelic = preservedLineRelic;
+        board[preservedLineRelic.y][preservedLineRelic.x] = preservedLineRelic.flowerId;
+      }
       return true;
     }
 
@@ -9043,6 +9073,10 @@
       boardEl.classList.toggle("bloom-hit", harvestFlashCells.size > 0 || boardParticles.some((particle) => particle.type === "petal-pop" || particle.type === "coin-pop"));
       boardEl.classList.toggle("line-relic-hit", boardParticles.some((particle) => particle.type === "line-relic"));
       boardEl.classList.toggle("chain-payoff", boardParticles.some((particle) => particle.type === "wild-chain-banner" || particle.type === "chain-bonus"));
+      const lineRelicArmingFeedback = boardParticles.find((particle) => (
+        particle.type === "impact-sigil" && particle.text === "ARMED"
+      )) || null;
+      boardEl.classList.toggle("line-relic-arming", Boolean(lineRelicArmingFeedback));
       const harvestPreview = selectedHarvestPreviewFor(selected);
 
       for (let y = 0; y < BOARD_SIZE; y += 1) {
@@ -9122,12 +9156,15 @@
           const relicLabel = armedRelic
             ? ` armed Black Candle Vine, clears ${armedRelic.direction === "vertical" ? "column" : "row"} when swapped`
             : "";
+          const thornEventOffsetClass = thornHitClass && lineRelicArmingFeedback
+            ? `offset-${x <= lineRelicArmingFeedback.x ? "left" : "right"}-${y <= lineRelicArmingFeedback.y ? "up" : "down"}`
+            : "";
           tile.setAttribute("aria-label", `${flowers[value][0]} tile${relicLabel}${legalLabel}${previewLabel}${thornTeachLabel}${thornLabel}`);
           tile.innerHTML = `
             ${iconMarkup(value, "", flowers[value][0], "tile-icon-wrap")}
             ${armedRelic ? '<span class="black-candle-mark" aria-hidden="true"></span>' : ""}
             ${thornTeachingActive && thorn ? '<span class="thorn-teach-marker blocker" aria-hidden="true">×</span>' : ""}
-            ${thorn || thornClearedClass ? `<span class="cursed-thorn-overlay" aria-hidden="true"><span class="thorn-root"></span>${thornSealMarkup("cursed-thorn-art", "")}${thornHitClass ? `<span class="thorn-event">${thornClearedClass ? "BREAK" : "CRACK"}</span>` : ""}</span>` : ""}
+            ${thorn || thornClearedClass ? `<span class="cursed-thorn-overlay" aria-hidden="true"><span class="thorn-root"></span>${thornSealMarkup("cursed-thorn-art", "")}${thornHitClass ? `<span class="thorn-event ${thornEventOffsetClass}">${thornClearedClass ? "BREAK" : "CRACK"}</span>` : ""}</span>` : ""}
           `;
           boardEl.appendChild(tile);
         }
@@ -10408,15 +10445,17 @@
         scale: 1.35 + Math.min(0.75, cascadeIndex * 0.18),
         delay: 0
       });
-      pushBoardParticle({
-        type: "impact-sigil",
-        text: cascadeIndex > 0 ? `x${cascadeIndex + 1}` : "HIT",
-        x,
-        y,
-        size: wave.strongestShape ? 68 : wave.lineRelics.length ? 64 : 58,
-        fontSize: cascadeIndex > 0 ? 16 : 15,
-        delay: 28
-      });
+      if (!wave.createdLineRelic) {
+        pushBoardParticle({
+          type: "impact-sigil",
+          text: cascadeIndex > 0 ? `x${cascadeIndex + 1}` : "HIT",
+          x,
+          y,
+          size: wave.strongestShape ? 68 : wave.lineRelics.length ? 64 : 58,
+          fontSize: cascadeIndex > 0 ? 16 : 15,
+          delay: 28
+        });
+      }
       const run = (wave.matchRuns || [])
         .slice()
         .sort((a, b) => (b.cells.length - a.cells.length))[0];
