@@ -990,8 +990,30 @@ async function invalidFeedbackState(page) {
     const tutorialIcon = tutorialPanel?.querySelector(".tutorial-icon");
     const tutorialRect = tutorialPanel?.getBoundingClientRect();
     const tileRects = Array.from(document.querySelectorAll(".tile")).map((tile) => tile.getBoundingClientRect());
+    const positiveFeedbackNodes = Array.from(document.querySelectorAll([
+      ".board-particle.impact-sigil",
+      ".board-particle.cascade-ring",
+      ".board-particle.cascade-vein",
+      ".board-particle.settle-spark",
+      ".board-particle.resource-pop",
+      ".board-particle.petal-pop",
+      ".board-particle.coin-pop",
+      ".harvest-mote",
+      ".objective-flight",
+      ".bouquet-bind-seal",
+      ".greenhouse-intake-flight",
+      ".order-pulse",
+      ".tile.fall-in",
+      ".tile.refill-born",
+      ".tile.settle-pop"
+    ].join(","))).filter(visible);
+    const invalidNodes = Array.from(document.querySelectorAll(".tile.invalid-swap")).filter(visible);
+    const intersects = (a, b) => (
+      a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top
+    );
     return {
       moves: saved.moves,
+      counts: saved.counts || [],
       board: (saved.board || []).map((row) => row.join(",")).join("|"),
       tutorialCopy: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
       tutorialIcon: tutorialIcon?.textContent.trim() || "",
@@ -1026,6 +1048,20 @@ async function invalidFeedbackState(page) {
         invalidX: tile.style.getPropertyValue("--invalid-x"),
         invalidY: tile.style.getPropertyValue("--invalid-y")
       })),
+      positiveFeedback: positiveFeedbackNodes.map((node) => ({
+        className: node.className,
+        text: node.textContent.trim()
+      })),
+      impactTexts: positiveFeedbackNodes
+        .filter((node) => node.matches(".impact-sigil"))
+        .map((node) => node.textContent.trim()),
+      impactDomTexts: Array.from(document.querySelectorAll(".board-particle.impact-sigil"))
+        .map((node) => node.textContent.trim()),
+      orderPulseCount: positiveFeedbackNodes.filter((node) => node.matches(".order-pulse")).length,
+      positiveFeedbackIntersections: positiveFeedbackNodes.reduce((count, node) => {
+        const rect = node.getBoundingClientRect();
+        return count + invalidNodes.filter((invalid) => intersects(rect, invalid.getBoundingClientRect())).length;
+      }, 0),
       focusedCell: document.activeElement?.classList.contains("tile")
         ? { x: Number(document.activeElement.dataset.x), y: Number(document.activeElement.dataset.y) }
         : null,
@@ -1039,6 +1075,51 @@ async function invalidFeedbackState(page) {
         .map((image) => image.getAttribute("src"))
     };
   }, SAVE_KEY);
+}
+
+async function commitGuidedSwapAtControlReturn(page, { keyboard = false, sampleImpact = false } = {}) {
+  const before = await activeState(page);
+  if (keyboard) {
+    await keyboardGuidedSwap(page);
+  } else {
+    const pair = await hintedPair(page);
+    await page.evaluate((cells) => {
+      cells.forEach(({ x, y }) => {
+        document.querySelector(`.tile[data-x="${x}"][data-y="${y}"]`).click();
+      });
+    }, pair);
+  }
+  let feedbackPeak = null;
+  if (sampleImpact) {
+    await expect(page.locator(".board-particle.impact-sigil")).toHaveCount(1, { timeout: 3000 });
+    await expect(page.locator(".board-particle.impact-sigil")).toHaveText("HIT");
+    feedbackPeak = await invalidFeedbackState(page);
+  }
+  await page.waitForFunction(({ key, movesBefore }) => {
+    const saved = JSON.parse(localStorage.getItem(key) || "{}");
+    const tiles = Array.from(document.querySelectorAll(".tile"));
+    return Number(saved.moves) === Number(movesBefore) - 1
+      && tiles.length === 64
+      && tiles.every((tile) => !tile.disabled);
+  }, { key: SAVE_KEY, movesBefore: before.moves }, { timeout: 7000 });
+  return {
+    before,
+    feedbackPeak,
+    after: await invalidFeedbackState(page)
+  };
+}
+
+function assertRefusalOwnsFeedback(state, label) {
+  expect(state.tutorialIcon, `${label} refusal category`).toBe("NO BLOOM");
+  expect(state.tutorialCopy, `${label} refusal copy`).toBe("Use the glowing pair.");
+  expect(state.invalidTiles, `${label} two refusal marks`).toHaveLength(2);
+  expect(state.positiveFeedback, `${label} no prior positive feedback`).toEqual([]);
+  expect(state.positiveFeedbackIntersections, `${label} no positive/refusal intersections`).toBe(0);
+  expect(state.instructionSurfaces, `${label} one visible instruction`).toBe(1);
+  expect(state.tiles, `${label} tile count`).toBe(64);
+  expect(state.dataRows, `${label} data rows`).toBe(8);
+  expect(state.overflowX, `${label} no horizontal overflow`).toBe(false);
+  expect(state.brokenImages, `${label} no broken images`).toEqual([]);
 }
 
 async function refuseInvalidPair(page, { touch = false, repeat = false } = {}) {
@@ -2768,6 +2849,118 @@ test("first-action board choreography derives from the authoritative opening pai
   expect(failedRequests).toEqual([]);
 });
 
+for (const viewport of [
+  { label: "desktop", width: 1280, height: 720, mobile: false },
+  { label: "mobile390", width: 390, height: 844, mobile: true }
+]) {
+  test(`rapid new interaction owns feedback on ${viewport.label}`, async ({ page }) => {
+    const consoleErrors = [];
+    const pageErrors = [];
+    const failedRequests = [];
+    page.on("console", (message) => {
+      if (message.type() === "error") consoleErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    page.on("requestfailed", (request) => failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`));
+
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await openFreshNoReview(page, `feedback-owner-invalid-${viewport.label}`);
+    const firstValid = await commitGuidedSwapAtControlReturn(page);
+    expect(firstValid.after.moves, `${viewport.label} valid opening move`).toBe(5);
+    expect(firstValid.after.counts.reduce((sum, value) => sum + value, 0), `${viewport.label} opening harvest`).toBe(3);
+    expect(firstValid.after.positiveFeedback.length, `${viewport.label} success feedback exists at control return`).toBeGreaterThan(0);
+    const settledStage = firstValid.after;
+    const invalidPair = await findInvalidAdjacentPair(page);
+    expect(invalidPair, `${viewport.label} rapid invalid pair`).toHaveLength(2);
+    const refusalStartedAt = Date.now();
+    await page.evaluate((cells) => {
+      cells.forEach(({ x, y }) => {
+        document.querySelector(`.tile[data-x="${x}"][data-y="${y}"]`).click();
+      });
+    }, invalidPair);
+    await expect(page.locator(".tile.invalid-swap")).toHaveCount(2);
+    const waitForRefusalAge = async (age) => {
+      await page.waitForTimeout(Math.max(0, age - (Date.now() - refusalStartedAt)));
+    };
+
+    await waitForRefusalAge(140);
+    const peak140 = await invalidFeedbackState(page);
+    assertRefusalOwnsFeedback(peak140, `${viewport.label} 140ms`);
+    expect(peak140.moves).toBe(settledStage.moves);
+    expect(peak140.counts).toEqual(settledStage.counts);
+    expect(peak140.board).toBe(settledStage.board);
+    await page.screenshot({ path: `work/rapid-feedback-owner-${viewport.label}.png`, fullPage: true });
+
+    await waitForRefusalAge(500);
+    const peak500 = await invalidFeedbackState(page);
+    assertRefusalOwnsFeedback(peak500, `${viewport.label} 500ms`);
+    expect(peak500.moves).toBe(settledStage.moves);
+    expect(peak500.counts).toEqual(settledStage.counts);
+    expect(peak500.board).toBe(settledStage.board);
+
+    await waitForRefusalAge(800);
+    const peak800 = await invalidFeedbackState(page);
+    assertRefusalOwnsFeedback(peak800, `${viewport.label} 800ms`);
+    expect(peak800.moves).toBe(settledStage.moves);
+    expect(peak800.counts).toEqual(settledStage.counts);
+    expect(peak800.board).toBe(settledStage.board);
+
+    await expect(page.locator(".tile.invalid-swap")).toHaveCount(0, { timeout: 800 });
+    const recovered = await invalidFeedbackState(page);
+    expect(recovered.tutorialCopy, `${viewport.label} exact stage copy restores`).toBe(settledStage.tutorialCopy);
+    expect(recovered.tutorialIcon, `${viewport.label} exact stage category restores`).toBe(settledStage.tutorialIcon);
+    expect(recovered.cue, `${viewport.label} exact hidden cue restores`).toBe(settledStage.cue);
+    expect(recovered.hints, `${viewport.label} exact hint pair restores`).toEqual(settledStage.hints);
+
+    await openFreshNoReview(page, `feedback-owner-valid-${viewport.label}`);
+    const first = await commitGuidedSwapAtControlReturn(page);
+    const second = await commitGuidedSwapAtControlReturn(page, { sampleImpact: true });
+    expect(second.after.moves, `${viewport.label} rapid second valid move`).toBe(first.after.moves - 1);
+    expect(
+      second.after.counts.reduce((sum, value) => sum + value, 0),
+      `${viewport.label} rapid second valid harvest`
+    ).toBeGreaterThan(first.after.counts.reduce((sum, value) => sum + value, 0));
+    expect(second.feedbackPeak.impactDomTexts, `${viewport.label} one current HIT`).toEqual(["HIT"]);
+    expect(second.after.orderPulseCount, `${viewport.label} current order pulse`).toBeGreaterThan(0);
+    await page.waitForTimeout(650);
+    const afterOldTimerBoundary = await invalidFeedbackState(page);
+    expect(afterOldTimerBoundary.orderPulseCount, `${viewport.label} old timer cannot clear current pulse`).toBeGreaterThan(0);
+    expect(afterOldTimerBoundary.moves).toBe(second.after.moves);
+    expect(afterOldTimerBoundary.counts).toEqual(second.after.counts);
+    expect(afterOldTimerBoundary.tiles).toBe(64);
+    expect(afterOldTimerBoundary.dataRows).toBe(8);
+    expect(afterOldTimerBoundary.overflowX).toBe(false);
+    expect(afterOldTimerBoundary.brokenImages).toEqual([]);
+    if (viewport.mobile) {
+      expect(afterOldTimerBoundary.boardBottom).toBeLessThanOrEqual(844);
+    }
+    expect(consoleErrors).toEqual([]);
+    expect(pageErrors).toEqual([]);
+    expect(failedRequests).toEqual([]);
+  });
+}
+
+test("rapid keyboard refusal retires the prior success generation", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await openFreshNoReview(page, "feedback-owner-keyboard");
+  const firstValid = await commitGuidedSwapAtControlReturn(page, { keyboard: true });
+  expect(firstValid.after.positiveFeedback.length, "keyboard success feedback exists").toBeGreaterThan(0);
+  const invalidPair = await findInvalidAdjacentPair(page);
+  for (const cell of invalidPair) {
+    const tile = page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`);
+    await tile.focus();
+    await page.keyboard.press("Enter");
+  }
+  await expect(page.locator(".tile.invalid-swap")).toHaveCount(2);
+  await page.waitForTimeout(140);
+  const peak = await invalidFeedbackState(page);
+  assertRefusalOwnsFeedback(peak, "keyboard 140ms");
+  expect(peak.moves).toBe(firstValid.after.moves);
+  expect(peak.counts).toEqual(firstValid.after.counts);
+  expect(peak.board).toBe(firstValid.after.board);
+  await expect(page.locator(".tile.invalid-swap")).toHaveCount(0, { timeout: 1600 });
+});
+
 test("drag preview moves the hinted pair before one authoritative release", async ({ page }) => {
   const consoleErrors = [];
   const pageErrors = [];
@@ -2832,6 +3025,8 @@ test("invalid, cancel, mobile touch, and reduced motion drag paths stay clean", 
   expect(invalidPeak.tutorialCopy).toBe("Use the glowing pair.");
   expect(invalidPeak.invalidTiles).toHaveLength(2);
   expect(invalidPeak.instructionSurfaces).toBe(1);
+  expect(invalidPeak.positiveFeedback).toEqual([]);
+  expect(invalidPeak.positiveFeedbackIntersections).toBe(0);
   await page.screenshot({ path: "work/invalid-feedback-desktop-drag.png", fullPage: true });
   await page.waitForTimeout(900);
   const invalidAfter = await activeState(page);
@@ -2901,6 +3096,8 @@ test("invalid, cancel, mobile touch, and reduced motion drag paths stay clean", 
     expect(mobileInvalidPeak.tutorialIcon).toBe("NO BLOOM");
     expect(mobileInvalidPeak.tutorialCopy).toBe("Use the glowing pair.");
     expect(mobileInvalidPeak.invalidTiles).toHaveLength(2);
+    expect(mobileInvalidPeak.positiveFeedback).toEqual([]);
+    expect(mobileInvalidPeak.positiveFeedbackIntersections).toBe(0);
     expect(mobileInvalidPeak.tiles).toBe(64);
     expect(mobileInvalidPeak.dataRows).toBe(8);
     expect(mobileInvalidPeak.boardBottom).toBeLessThanOrEqual(844);
@@ -2940,6 +3137,8 @@ test("invalid, cancel, mobile touch, and reduced motion drag paths stay clean", 
   expect(reducedInvalidPeak.moves, "reduced motion invalid swap spends no move").toBe(reducedAfter.moves);
   expect(reducedInvalidPeak.board, "reduced motion invalid swap preserves board").toBe(reducedAfter.board);
   expect(reducedInvalidPeak.tutorialCopy).toBe("Use the glowing pair.");
+  expect(reducedInvalidPeak.positiveFeedback).toEqual([]);
+  expect(reducedInvalidPeak.positiveFeedbackIntersections).toBe(0);
   await expect(page.locator(".tile.invalid-swap")).toHaveCount(0, { timeout: 1600 });
 
   await page.emulateMedia({ reducedMotion: "no-preference" });

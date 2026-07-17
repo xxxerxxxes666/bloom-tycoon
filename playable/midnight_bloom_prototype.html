@@ -6581,6 +6581,8 @@
     let lastWildChain = null;
     let fallClearTimer = null;
     let boardParticleClearTimer = null;
+    let harvestFlashClearTimer = null;
+    let orderPulseTimer = null;
     let supremeChargeTimer = null;
     let idleHintTimer = null;
     let invalidSwapTimer = null;
@@ -6607,6 +6609,7 @@
     let thornTeachingCells = new Set();
     let thornTeachingTimer = null;
     let orderPulseTargets = new Set();
+    let interactionFeedbackGeneration = 0;
     let isResolving = false;
     let supremeChargeActive = false;
     let hasMadeValidMove = false;
@@ -8119,11 +8122,52 @@
     }
 
     function notePlayerInteraction() {
+      retireCompletedInteractionFeedback();
       clearIdleHint();
       clearThornTeachingCue(false);
       if (!hasMadeValidMove || isArmedLineRelicGuidanceActive()) {
         scheduleIdleHint();
       }
+    }
+
+    function retireCompletedInteractionFeedback() {
+      interactionFeedbackGeneration += 1;
+      if (validSwapTimer && window.clearTimeout) {
+        window.clearTimeout(validSwapTimer);
+      }
+      if (fallClearTimer && window.clearTimeout) {
+        window.clearTimeout(fallClearTimer);
+      }
+      if (boardParticleClearTimer && window.clearTimeout) {
+        window.clearTimeout(boardParticleClearTimer);
+      }
+      if (harvestFlashClearTimer && window.clearTimeout) {
+        window.clearTimeout(harvestFlashClearTimer);
+      }
+      if (orderPulseTimer && window.clearTimeout) {
+        window.clearTimeout(orderPulseTimer);
+      }
+      validSwapTimer = null;
+      fallClearTimer = null;
+      boardParticleClearTimer = null;
+      harvestFlashClearTimer = null;
+      orderPulseTimer = null;
+      validSwapCells.clear();
+      clearSwapGlide();
+      boardParticles = [];
+      harvestFlashCells.clear();
+      fallAnimations.clear();
+      settledCells.clear();
+      refillBornCells.clear();
+      refillColumns.clear();
+      superBloomCells.clear();
+      thornPulseCells.clear();
+      thornClearedCells.clear();
+      transmuteFlashCell = "";
+      orderPulseTargets.clear();
+      document.querySelectorAll(
+        ".objective-flight, .bouquet-bind-seal, .greenhouse-intake-flight"
+      ).forEach((effect) => effect.remove());
     }
 
     function prefersReducedMotion() {
@@ -10703,10 +10747,20 @@
       if (nextOrderPulseTimer && window.clearTimeout) {
         window.clearTimeout(nextOrderPulseTimer);
       }
+      if (harvestFlashClearTimer && window.clearTimeout) {
+        window.clearTimeout(harvestFlashClearTimer);
+      }
+      if (orderPulseTimer && window.clearTimeout) {
+        window.clearTimeout(orderPulseTimer);
+      }
       validSwapTimer = null;
       bouquetSealPulseTimer = null;
       nextOrderPulseTimer = null;
+      harvestFlashClearTimer = null;
+      orderPulseTimer = null;
       validSwapCells.clear();
+      harvestFlashCells.clear();
+      orderPulseTargets.clear();
       settledCells.clear();
       refillBornCells.clear();
       refillColumns.clear();
@@ -11871,6 +11925,7 @@
     function launchObjectiveFlights(gained, gainedCells = []) {
       const boardRect = $("board").getBoundingClientRect();
       const launchRound = currentRound;
+      const launchGeneration = interactionFeedbackGeneration;
       activeRoundPlan().targets.forEach((target, index) => {
         if (!(gained[target.flowerId] > 0)) return;
         const destination = document.querySelector(`.objective-target[data-flower-id="${target.flowerId}"]`);
@@ -11911,7 +11966,7 @@
           animation.finished.catch(() => {}).finally(() => flight.remove());
         });
         window.setTimeout(() => {
-          if (currentRound !== launchRound) {
+          if (currentRound !== launchRound || interactionFeedbackGeneration !== launchGeneration) {
             return;
           }
           const currentLiveTargetRect = visibleLiveBouquetTargetRect(target.flowerId);
@@ -12023,7 +12078,15 @@
     }
 
     function scheduleOrderPulseClear() {
-      window.setTimeout(() => {
+      if (orderPulseTimer && window.clearTimeout) {
+        window.clearTimeout(orderPulseTimer);
+      }
+      const generation = interactionFeedbackGeneration;
+      orderPulseTimer = window.setTimeout(() => {
+        orderPulseTimer = null;
+        if (interactionFeedbackGeneration !== generation) {
+          return;
+        }
         if (!orderPulseTargets.size) {
           return;
         }
@@ -12033,7 +12096,15 @@
     }
 
     function scheduleHarvestFlashClear() {
-      window.setTimeout(() => {
+      if (harvestFlashClearTimer && window.clearTimeout) {
+        window.clearTimeout(harvestFlashClearTimer);
+      }
+      const generation = interactionFeedbackGeneration;
+      harvestFlashClearTimer = window.setTimeout(() => {
+        harvestFlashClearTimer = null;
+        if (interactionFeedbackGeneration !== generation) {
+          return;
+        }
         if (!harvestFlashCells.size) {
           return;
         }
