@@ -25,6 +25,51 @@ async function clickGuidedSwap(page) {
   await page.waitForTimeout(1400);
 }
 
+async function clickGuidedSwapAndSampleFlight(page) {
+  const hints = page.locator(".tile.idle-hint");
+  await expect(hints).toHaveCount(2, { timeout: 5000 });
+  const pair = await hints.evaluateAll((tiles) => tiles.slice(0, 2).map((tile) => ({
+    x: tile.dataset.x,
+    y: tile.dataset.y
+  })));
+  expect(pair).toHaveLength(2);
+  await page.locator(`.tile[data-x="${pair[0].x}"][data-y="${pair[0].y}"]`).click({ force: true });
+  await page.locator(`.tile[data-x="${pair[1].x}"][data-y="${pair[1].y}"]`).click({ force: true });
+  await page.waitForFunction(() => document.querySelector(".objective-flight"), null, { timeout: 2500 });
+  const landing = await page.evaluate(() => {
+    const flight = document.querySelector(".objective-flight");
+    const animation = flight?.getAnimations?.()[0];
+    const finalFrame = animation?.effect?.getKeyframes?.().at(-1);
+    const transform = finalFrame?.transform || "";
+    const match = /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/.exec(transform);
+    const startLeft = Number.parseFloat(flight?.style.left || "0");
+    const startTop = Number.parseFloat(flight?.style.top || "0");
+    const landingX = startLeft + 13 + (match ? Number(match[1]) : 0);
+    const landingY = startTop + 13 + (match ? Number(match[2]) : 0);
+    const assembly = document.querySelector("#liveBouquetAssembly")?.getBoundingClientRect();
+    const bloomRects = Array.from(document.querySelectorAll("#liveBouquetAssembly .live-bouquet-ingredient"))
+      .map((node) => node.getBoundingClientRect());
+    const inside = (rect, pad = 0) => Boolean(rect
+      && landingX >= rect.left - pad
+      && landingX <= rect.right + pad
+      && landingY >= rect.top - pad
+      && landingY <= rect.bottom + pad);
+    return {
+      landingX,
+      landingY,
+      inAssembly: inside(assembly, 2),
+      inBloom: bloomRects.some((rect) => inside(rect, 8)),
+      assemblyWidth: assembly?.width || 0,
+      assemblyHeight: assembly?.height || 0
+    };
+  });
+  await page.waitForFunction(() => (
+    document.querySelectorAll(".objective-flight, .bouquet-bind-seal").length === 0
+  ), null, { timeout: 2500 });
+  await page.waitForTimeout(450);
+  return landing;
+}
+
 async function activeBouquetAssemblyState(page) {
   return page.evaluate(() => {
     const assembly = document.querySelector("#liveBouquetAssembly");
@@ -35,6 +80,8 @@ async function activeBouquetAssemblyState(page) {
         return {
           flowerId: Number(ingredient.dataset.flowerId),
           progress: ingredient.dataset.progress,
+          slotProgress: Number(ingredient.dataset.slotProgress || 0),
+          receiver: ingredient.dataset.receiver === "true",
           opacity: Number(style.opacity),
           transform: style.transform
         };
@@ -43,10 +90,13 @@ async function activeBouquetAssemblyState(page) {
     return {
       progress: assembly?.dataset.progress || "",
       complete: assembly?.dataset.assemblyComplete || "",
+      state: assembly?.dataset.assemblyState || "",
       round: assembly?.dataset.round || "",
       width: rect?.width || 0,
       height: rect?.height || 0,
       ingredients,
+      stems: document.querySelectorAll("#liveBouquetAssembly .live-bouquet-stem").length,
+      leaves: document.querySelectorAll("#liveBouquetAssembly .live-bouquet-leaf").length,
       boardBottom: board?.bottom || 0,
       overflowX: document.documentElement.scrollWidth > innerWidth + 1
     };
@@ -109,12 +159,15 @@ async function visibleContract(page) {
       craftedBlooms: visible(".crafted-flower-bloom").length,
       craftedStems: visible(".crafted-stem").length,
       craftedBloomCount: document.querySelector(".crafted-bouquet")?.dataset.craftedBloomCount || "",
+      craftedComposition: Array.from(document.querySelectorAll(".crafted-flower-bloom"))
+        .map((node) => Number(node.dataset.craftedFlower)),
       trophyState: document.querySelector("#bouquetTrophy")?.dataset.assemblyState || "",
       liveAssemblies: visible("#liveBouquetAssembly").length,
       scenes: visible(".restoration-scene").length,
       transactions: visible(".payoff-transaction").length,
       transactionText: document.querySelector("#payoffTransaction")?.textContent.trim() || "",
       trophyKicker: document.querySelector(".bouquet-trophy-kicker")?.textContent.trim() || "",
+      trophyName: document.querySelector(".bouquet-trophy-name")?.textContent.trim() || "",
       coins: JSON.parse(localStorage.getItem("bloomTycoonPlayableStateV1") || "{}").coins ?? 0,
       board: visible(".board").length,
       controls: visible(".controls").length,
@@ -148,6 +201,12 @@ async function expectCeremony(page, expectedButton, screenshotPath, expectedGuid
   expect(contract.craftedBlooms, "six overlapping bouquet bloom heads").toBe(6);
   expect(contract.craftedStems, "six bouquet stems").toBe(6);
   expect(contract.craftedBloomCount).toBe("6");
+  const expectedComposition = contract.trophyName.includes("Moonlit Wreath")
+    ? [2, 4, 5, 2, 4, 5]
+    : contract.trophyName.includes("Bloodroot Compact")
+      ? [3, 0, 3, 0, 3, 0]
+      : [5, 1, 5, 1, 5, 1];
+  expect(contract.craftedComposition, "ceremony uses the exact six-slot target ingredient sequence").toEqual(expectedComposition);
   expect(contract.trophyState, "bouquet presentation is ready").toBe("assembled");
   expect(contract.scenes, "one visible greenhouse scene").toBe(1);
   expect(contract.transactions, "one visible transaction line").toBe(1);
@@ -281,18 +340,33 @@ async function runJourney(page, label, includeRetry) {
   await resetPage(page, `pass2_${label}`);
   const initialAssembly = await activeBouquetAssemblyState(page);
   expect(initialAssembly.progress).toBe("0/14");
-  expect(initialAssembly.ingredients).toHaveLength(2);
+  expect(initialAssembly.state).toBe("fresh");
+  expect(initialAssembly.width, "fresh live bouquet is readable in the progress strip").toBeGreaterThanOrEqual(label.includes("mobile390") ? 100 : 116);
+  expect(initialAssembly.height, "fresh live bouquet has bouquet silhouette height").toBeGreaterThanOrEqual(label.includes("mobile390") ? 42 : 52);
+  expect(initialAssembly.ingredients).toHaveLength(6);
+  expect(initialAssembly.stems).toBe(6);
+  expect(initialAssembly.leaves).toBe(6);
+  expect(initialAssembly.ingredients.map((ingredient) => ingredient.flowerId)).toEqual([5, 1, 5, 1, 5, 1]);
   expect(initialAssembly.overflowX).toBe(false);
   if (label.includes("mobile390")) {
     expect(initialAssembly.boardBottom, "mobile active board stays in viewport with live bouquet").toBeLessThanOrEqual(844);
   }
-  await clickGuidedSwap(page);
+  const landing = await clickGuidedSwapAndSampleFlight(page);
+  expect(landing.inAssembly, "positive target flight lands inside the live bouquet assembly").toBe(true);
+  expect(landing.inBloom, "positive target flight lands on a visible bouquet bloom target").toBe(true);
   const firstAssembly = await activeBouquetAssemblyState(page);
   expect(firstAssembly.progress).not.toBe(initialAssembly.progress);
-  expect(firstAssembly.ingredients.some((ingredient) => ingredient.progress !== "0/8" && ingredient.progress !== "0/6")).toBe(true);
+  expect(["mid", "nearly", "complete"]).toContain(firstAssembly.state);
+  expect(firstAssembly.ingredients.some((ingredient) => ingredient.slotProgress > 0)).toBe(true);
+  expect(firstAssembly.ingredients.filter((ingredient) => ingredient.receiver)).toHaveLength(2);
+  expect(firstAssembly.ingredients.map((ingredient) => ingredient.flowerId)).toEqual([5, 1, 5, 1, 5, 1]);
+  expect(firstAssembly.width).toBeGreaterThanOrEqual(initialAssembly.width - 1);
+  expect(firstAssembly.height).toBeGreaterThanOrEqual(initialAssembly.height - 1);
   await clickGuidedSwap(page);
   const secondAssembly = await activeBouquetAssemblyState(page);
   expect(secondAssembly.progress).not.toBe(firstAssembly.progress);
+  expect(Math.max(...secondAssembly.ingredients.map((ingredient) => ingredient.slotProgress)))
+    .toBeGreaterThanOrEqual(Math.max(...firstAssembly.ingredients.map((ingredient) => ingredient.slotProgress)));
   await completeRoundWithReviewKey(page);
   await expectCeremony(page, "Restore Greenhouse", `work/pass2-${label}-round1-pending.png`, "Coins restore the greenhouse.");
   await assertReloadKeeps(page, "Restore Greenhouse", `work/pass2-${label}-round1-pending-reload.png`, "Coins restore the greenhouse.");
@@ -370,6 +444,10 @@ test("reduced motion presents assembled bouquet and ready restore promptly", asy
   await resetPage(page, "pass2_reduced_motion");
   await clickGuidedSwap(page);
   await clickGuidedSwap(page);
+  const active = await activeBouquetAssemblyState(page);
+  expect(active.ingredients).toHaveLength(6);
+  expect(active.width).toBeGreaterThanOrEqual(100);
+  expect(active.height).toBeGreaterThanOrEqual(42);
   await completeRoundWithReviewKey(page);
   await expect(page.locator("#roundOneRestoration button:not([hidden])")).toBeEnabled({ timeout: 700 });
   const contract = await visibleContract(page);

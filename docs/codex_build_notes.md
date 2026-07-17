@@ -1,5 +1,34 @@
 # Codex Build Notes
 
+## 2026-07-16 legible live bouquet assembly correction
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_payoff_ceremony_contract.spec.js`, `scripts/verify_project.py`, `scripts/verify_html_match_shapes.py`, and this note.
+- Player-visible result: the existing bouquet progress strip now carries a compact but readable six-slot gothic bouquet object instead of the prior tiny ornament. Fresh active play shows stems, binding, and ghosted target blooms; the first real target match visibly fills Thorn Rose slots; nearly complete and complete states brighten the same object; no new panel, bar, state, objective, currency, asset, dependency, or ceremony was added.
+- Continuity result: live assembly and payoff trophy now use the same `craftedBouquetEntries()` six-slot target sequence. First Bouquet is `[Thorn Rose, Bone Star, Thorn Rose, Bone Star, Thorn Rose, Bone Star]`; Moonlit Wreath is `[Nightshade, Amber Seed, Thorn Rose]` repeated twice; Bloodroot Compact is `[Bloodroot, Sol Rot]` repeated three times. Positive target flights now land inside the live bouquet bloom/assembly target and the receiving bloom gives one restrained ring/seal acknowledgement. Zero-gain paths still launch no target flight, and transient DOM cleanup is asserted.
+- Handoff correction: Play Again's reinvestment cue now lasts `3200ms` while the ordinary restored-greenhouse handoff remains `2200ms`, so a real desktop swap during replay does not outlive the cue. Economy remains exact: `0 -> 120 -> 20 -> 170 -> 50 -> 230 -> 50 -> 0`.
+- Browser screenshot evidence inspected:
+  - `work/live-bouquet-desktop-1280x720-fresh-active.png`: live assembly `118x54`, `0/14`, state `fresh`, 6 slots, 6 stems/leaves, board bottom `705/720`, 64 tiles, 8 rows, no overflow.
+  - `work/live-bouquet-desktop-1280x720-mid-progress.png`: live assembly `118x54`, `3/14`, state `mid`, Thorn Rose slot progress `1.00/0.13`, board bottom `705/720`, no overflow.
+  - `work/black-candle-desktop-burn.png`: normal-player Black Candle hold keeps the board visible, `14/14`, complete six-bloom strip, no restore action shown during the hold.
+  - `work/live-bouquet-desktop-1280x720-ceremony-actionable.png` and `work/live-bouquet-desktop-1280x720-restored-greenhouse.png`: ceremony trophy is the same six-bloom Thorn Rose/Bone Star composition; greenhouse remains withered before spend and restored only after spend.
+  - `work/live-bouquet-mobile-390x844-fresh-active.png`: live assembly `104x44`, `0/14`, board bottom `660/844`, 64 tiles, 8 rows, no overflow.
+  - `work/live-bouquet-mobile-390x844-mid-progress.png`: live assembly `104x44`, `3/14`, board bottom `666/844`, 64 tiles, 8 rows, no overflow.
+  - `work/live-bouquet-mobile-390x844-black-candle-hold.png`, `work/live-bouquet-mobile-390x844-ceremony-actionable.png`, and `work/live-bouquet-mobile-390x844-restored-greenhouse.png`: complete strip, six-bloom trophy, no ingredient-label overlap, and restored greenhouse after the coin transaction.
+  - `work/live-bouquet-visual-metrics.json` records the screenshot measurements plus `0` console warnings/errors, `0` page errors, `0` failed requests, and no visible broken images.
+- Verification commands/results:
+  - `python3 scripts/verify_project.py` passed.
+  - `python3 scripts/verify_html_match_shapes.py` passed.
+  - `node --check scripts/verify_payoff_ceremony_contract.spec.js && node --check scripts/verify_tutorial_progress.spec.js && node --check scripts/verify_first_three_journey.spec.js && node --check scripts/verify_pass3_feedback.spec.js && node --check scripts/verify_runtime_performance.spec.js` passed.
+  - Extracted playable inline script syntax via `node - <<'NODE' ... new vm.Script(...)` passed.
+  - Local server: `python3 -m http.server 4174`; `agent-browser` was not installed, so browser verification used Playwright against `http://127.0.0.1:4174/playable/midnight_bloom_prototype.html`.
+  - Strengthened payoff/assembly contract passed `3/3`: `BLOOM_TEST_URL=http://127.0.0.1:4174/playable/midnight_bloom_prototype.html npx playwright test scripts/verify_payoff_ceremony_contract.spec.js --browser=chromium`.
+  - A parallel-load run exposed one mobile latency miss (`1197ms` vs `1050ms`) and one desktop replay cue timeout; standalone runtime rerun passed at `714ms/841ms`, and the replay cue fix rerun passed `1/1`.
+  - Final serial affected Chromium suite passed `46/46` in `15.2m`: `BLOOM_TEST_URL=http://127.0.0.1:4174/playable/midnight_bloom_prototype.html npx playwright test scripts/verify_first_three_journey.spec.js scripts/verify_payoff_ceremony_contract.spec.js scripts/verify_pass3_feedback.spec.js scripts/verify_runtime_performance.spec.js scripts/verify_tutorial_progress.spec.js --browser=chromium`.
+- Final suite coverage: desktop and exact `390x844` optimized and goal-following first-three journeys, `vesper-thorn`, two-cycle replay/economy, save/reload, pending ceremony, spend/Next Order, failure/Retry, Black Candle hold, Cursed Thorn, keyboard, touch/drag, invalid swap, reduced motion, 64 tiles, 8 mobile rows, no horizontal overflow, no console/page/request failures, and no visible broken images.
+- Runtime metrics from the final suite: active desktop/mobile/reduced-motion each retained 64 tiles, 8 rows, no dormant preview/prototype nodes, no mobile plinth/log leak, two meaningful bars, and no overflow. Node/image counts rose to `527`/`88` from the larger live object, still inside the focused runtime checks; mobile guided swaps returned control in `524ms` and `776ms`.
+- Known risks: no remaining player-facing defect found locally. The live bouquet is larger and more legible, but still subordinate to the board; desktop active board bottom is close at `705/720`, so future HUD additions should be avoided.
+- Security/scope: implementation used only existing repo-local flower/greenhouse assets and CSS/DOM. No secrets, `.env`, credentials, tokens, trackers, analytics, accounts, backend, ads, cron, permissions, deployment config, remote state, dependencies, or external assets were added or changed.
+
 ## 2026-07-16 visible focused coin balance
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_first_three_journey.spec.js`, `scripts/verify_tutorial_progress.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.
