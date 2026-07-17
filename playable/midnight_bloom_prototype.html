@@ -7108,6 +7108,7 @@
       selected = null;
       clearIdleHint();
       ritualMessage = failedBouquetRitualMessage(plan);
+      queuePostRenderFocus("renewBtn");
       return true;
     }
 
@@ -10471,7 +10472,9 @@
         if (hintedFocus && !roundComplete && !isBouquetFailed()) {
           boardFocusCell = hintedFocus;
         }
-        if (!roundComplete && !isBouquetFailed()) {
+        if (isBouquetFailed()) {
+          queuePostRenderFocus("renewBtn");
+        } else if (!roundComplete) {
           queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
         }
         render();
@@ -12491,7 +12494,7 @@
       ritualMessage = "The greenhouse table shuffles. One move is spent.";
       build();
       if (isBouquetFailed()) {
-        ritualMessage = failedBouquetRitualMessage();
+        markBouquetFailed();
       }
       render();
       scheduleIdleHint();

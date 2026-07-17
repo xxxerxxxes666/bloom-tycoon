@@ -1,5 +1,14 @@
 # Codex Build Notes
 
+## 2026-07-17 failed-bouquet Retry focus handoff
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_bouquet_hud_consequence.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.
+- Selected weakness: focused Round 1-3 failures displayed the dominant `Retry Bouquet` action in the first viewport but left keyboard focus on `BODY`. Help became the first Tab stop, so keyboard players needed an unnecessary second Tab before the required recovery action.
+- Player-visible result: once a failure is authoritative and resolution has ended, the existing post-render focus queue hands focus directly to `Retry Bouquet`. Failed-save load/reload uses the same settled failure boundary. The 165ms accepted-swap window, Help availability, button position/copy, board, objectives, move budgets, coins, greenhouse progress, and save schema are unchanged.
+- Permanent browser contract: each focused round begins with one move, commits an ordinary legal final match, and must focus visible Retry only after the match settles into failure. Two failed-save reloads retain Retry focus. Enter and Space each reset the authored order exactly once to moves `6/9/8`, preserve the deterministic `0/20/50` coin and greenhouse state, hide Retry, and return focus to exactly one roving board tile with 64 tiles/eight rows.
+- Focused local verification: the new desktop `1280x720` and exact mobile `390x844` natural-failure/reload/keyboard matrix passed `2/2` in `21.7s`.
+- Final local verification: `python3 scripts/verify_project.py`, `python3 scripts/verify_html_match_shapes.py`, all spec syntax checks, `git diff --check`, and the changed-line credential/tracker/network scan passed. The complete serial Chromium gate passed `70/70` in `17.5m`, retaining first-three journeys, both economy cycles, migration, ceremonies, atomic reloads, Black Candle/Cursed Thorn behavior, feedback ownership, Help/Skip, Retry cleanup, pointer/keyboard/touch/drag, reduced motion, 64 tiles/eight rows, images, overflow, and runtime-error checks.
+
 ## 2026-07-17 short-desktop altar first-viewport fit
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_bouquet_hud_consequence.spec.js`, `scripts/verify_payoff_ceremony_contract.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.

@@ -777,6 +777,7 @@ def verify_source_hooks():
         "function failedBouquetCopy",
         "function failedBouquetRitualMessage",
         "function markBouquetFailed",
+        'queuePostRenderFocus("renewBtn");',
         "function remainingObjectiveRows",
         "function roundObjectivesComplete",
         "Black Candle Vine",
