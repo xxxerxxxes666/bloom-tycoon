@@ -5018,6 +5018,24 @@
         font-size: 11px;
       }
 
+      /* Later-round Help replay keeps its existing tutorial pill without
+         pushing the full-size altar back below the short desktop viewport. */
+      body.restored-next-order-focus.tutorial-active .tutorial-panel,
+      body.round-three-focus-active.tutorial-active .tutorial-panel {
+        min-height: 24px;
+        margin-top: 2px;
+        padding: 1px 5px 1px 8px;
+        gap: 6px;
+        font-size: 10.5px;
+      }
+
+      body.restored-next-order-focus.tutorial-active .tutorial-skip,
+      body.round-three-focus-active.tutorial-active .tutorial-skip {
+        min-height: 20px;
+        padding: 2px 6px;
+        font-size: 9px;
+      }
+
       body.round-one-active:not(.round-one-complete) .board,
       body.restored-next-order-focus:not(.restored-greenhouse-handoff) .board,
       body.round-three-focus-active .board,
@@ -10063,6 +10081,9 @@
       }
       tutorialSkipped = false;
       tutorialActive = true;
+      if (replay) {
+        queuePostRenderFocus("tutorialSkipBtn");
+      }
       render();
       if (replay) {
         if (window.requestAnimationFrame) {
@@ -10078,6 +10099,7 @@
       tutorialSkipped = true;
       tutorialActive = false;
       blackCandleLessonComplete = true;
+      queuePostRenderFocus("tutorialHelpBtn");
       render();
       saveProgress();
     }

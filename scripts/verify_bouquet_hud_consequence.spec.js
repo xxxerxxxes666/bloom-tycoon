@@ -154,8 +154,14 @@ const VIEWPORTS = [
 ];
 
 const ACTIVE_VIEWPORT_CASES = [
-  HUD_CASES.find((fixture) => fixture.label === "r2-active"),
-  HUD_CASES.find((fixture) => fixture.label === "r3-active")
+  {
+    ...HUD_CASES.find((fixture) => fixture.label === "r2-active"),
+    tutorialCopy: "Match beside thorns."
+  },
+  {
+    ...HUD_CASES.find((fixture) => fixture.label === "r3-active"),
+    tutorialCopy: "Complete Bloodroot Compact."
+  }
 ];
 
 test.setTimeout(180000);
@@ -436,7 +442,41 @@ for (const viewport of VIEWPORTS) {
       assertActiveViewport(
         await activeViewportReport(page),
         viewport,
-        `${viewport.label} ${fixture.label}`
+        `${viewport.label} ${fixture.label} before Help`
+      );
+
+      const help = page.locator("#tutorialHelpBtn");
+      const skip = page.locator("#tutorialSkipBtn");
+      await expect(help).toBeVisible();
+      await expect(help).toBeEnabled();
+      await help.focus();
+      await page.keyboard.press("Enter");
+      await expect(page.locator("#tutorialPanel")).toBeVisible();
+      await expect(page.locator("#tutorialCopy")).toHaveText(fixture.tutorialCopy);
+      await expect(help).toBeHidden();
+      await expect(skip).toBeVisible();
+      await expect(skip).toBeFocused();
+      assertActiveViewport(
+        await activeViewportReport(page),
+        viewport,
+        `${viewport.label} ${fixture.label} during Help replay`
+      );
+      if (fixture.label === "r3-active") {
+        await page.screenshot({
+          path: `work/help-replay-${viewport.label}-r3.png`,
+          fullPage: true
+        });
+      }
+
+      await page.keyboard.press("Enter");
+      await expect(page.locator("#tutorialPanel")).toBeHidden();
+      await expect(help).toBeVisible();
+      await expect(help).toBeEnabled();
+      await expect(help).toBeFocused();
+      assertActiveViewport(
+        await activeViewportReport(page),
+        viewport,
+        `${viewport.label} ${fixture.label} after replay Skip`
       );
       await context.close();
     }

@@ -328,6 +328,29 @@ async function waitForSettledBoard(page) {
     const rowTops = new Set(tiles.map((tile) => Math.round(tile.getBoundingClientRect().top)));
     return rowTops.size === 8;
   }, null, { timeout: 5000 });
+  await page.evaluate(() => new Promise((resolve) => {
+    let previousGeometry = "";
+    let stableFrames = 0;
+    const sample = () => {
+      const tiles = Array.from(document.querySelectorAll(".tile"));
+      const geometry = tiles.map((tile) => {
+        const rect = tile.getBoundingClientRect();
+        return `${Math.round(rect.left)},${Math.round(rect.top)},${Math.round(rect.width)},${Math.round(rect.height)}`;
+      }).join("|");
+      const rows = new Set(tiles.map((tile) => Math.round(tile.getBoundingClientRect().top))).size;
+      const settled = tiles.length === 64
+        && tiles.every((tile) => !tile.disabled)
+        && rows === 8;
+      stableFrames = settled && geometry === previousGeometry ? stableFrames + 1 : 0;
+      previousGeometry = geometry;
+      if (stableFrames >= 6) {
+        resolve();
+        return;
+      }
+      requestAnimationFrame(sample);
+    };
+    requestAnimationFrame(sample);
+  }));
 }
 
 async function guidedRoundOneState(page, tag) {
