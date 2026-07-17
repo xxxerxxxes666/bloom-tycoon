@@ -1,5 +1,14 @@
 # Codex Build Notes
 
+## 2026-07-17 Black Candle activation guidance
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_tutorial_progress.spec.js`, `scripts/verify_pass3_feedback.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.
+- Player-visible result: an armed Black Candle Vine now keeps a persistent, derived activation guide: one exact destination, one directional arrow/cue, and a restrained preview across the full row or column it will burn. The guide works for horizontal and vertical relics, survives save/reload, remains available in later focused rounds, and clears on activation, completion, failure, or Retry.
+- Feedback integration: the existing `ARMED` and Cursed Thorn `BREAK` hierarchy remains intact. Browser recorders now begin before the authoritative release/click so transient feedback is measured from event start rather than after its animation may have faded.
+- Browser evidence: `work/black-candle-desktop-formed.png`, `work/black-candle-mobile390-formed.png`, `work/black-candle-vertical-formed-desktop.png`, and `work/black-candle-vertical-formed-mobile390.png`. Exact mobile keeps all eight rows in the first 390x844 viewport with no horizontal overflow.
+- Verification: project/static checks passed; all six Black Candle-focused desktop/mobile tests passed; all three Pass 3 desktop/mobile/reduced-motion journeys passed. Coverage includes authored tutorial completion, horizontal and vertical formation, persistence/reload, activation, touch, later rounds, simultaneous thorn feedback, 64-tile integrity, Retry cleanup, broken images, overflow, and console/page errors.
+- Security: changed-line scans found no credentials, trackers, network calls, private IPs, dependencies, backends, analytics, or debug controls.
+
 ## 2026-07-17 authored Cursed Thorn feedback hierarchy
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_pass3_feedback.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.

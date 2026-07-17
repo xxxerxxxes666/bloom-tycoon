@@ -1598,6 +1598,76 @@
       animation: idle-hint-pulse 1.35s ease-in-out infinite;
     }
 
+    .board.line-relic-guidance .tile.cursed-thorn:not(.line-relic-lane-preview) {
+      filter: brightness(.82) saturate(.86);
+    }
+
+    .tile.line-relic-lane-preview {
+      z-index: 2;
+      outline: 1px solid #b9874d;
+      box-shadow:
+        inset 0 0 16px #000,
+        inset 0 0 0 1px #2a140e,
+        0 0 0 1px #160f0c,
+        0 0 11px #9b1d224f,
+        0 0 15px #d7b16d28;
+    }
+
+    .tile.line-relic-lane-preview::after {
+      opacity: .84;
+      background:
+        radial-gradient(circle at 50% 50%, #d7b16d20 0, #0000 62%),
+        linear-gradient(var(--lane-angle, 90deg), #0000 0 43%, #f0c47788 48% 52%, #0000 57%);
+    }
+
+    .tile.line-relic-destination {
+      z-index: 5;
+      outline: 2px solid #fff0b4;
+      box-shadow:
+        inset 0 0 18px #000,
+        inset 0 0 0 2px #4c2116,
+        0 0 0 1px #160f0c,
+        0 0 18px #d7b16dcc,
+        0 0 20px #9b1d226e;
+    }
+
+    .line-relic-destination-mark {
+      position: absolute;
+      z-index: 6;
+      inset: 18%;
+      border: 1px solid #fff0b4;
+      border-radius: 50%;
+      pointer-events: none;
+      box-shadow:
+        inset 0 0 10px #000,
+        0 0 13px #d7b16d,
+        0 0 20px #9b1d22;
+    }
+
+    .line-relic-destination-mark::before,
+    .line-relic-destination-mark::after {
+      content: "";
+      position: absolute;
+      background: #fff0b4;
+      box-shadow: 0 0 8px #d7b16d;
+    }
+
+    .line-relic-destination-mark::before {
+      left: 50%;
+      top: -5px;
+      bottom: -5px;
+      width: 2px;
+      transform: translateX(-50%);
+    }
+
+    .line-relic-destination-mark::after {
+      left: -5px;
+      right: -5px;
+      top: 50%;
+      height: 2px;
+      transform: translateY(-50%);
+    }
+
     .board.drag-preview-active {
       cursor: grabbing;
     }
@@ -1656,6 +1726,21 @@
       pointer-events: none;
       filter: drop-shadow(0 0 8px #e0a84f) drop-shadow(0 1px 3px #000);
       animation: swap-arrow-pulse 980ms ease-in-out infinite alternate;
+    }
+
+    .board.line-relic-guidance .swap-path-arrow {
+      z-index: 6;
+      width: min(54px, 12.5%);
+      height: 24px;
+      filter: drop-shadow(0 0 9px #fff0aa) drop-shadow(0 1px 3px #000);
+    }
+
+    .board.line-relic-guidance .swap-path-arrow::before {
+      background: linear-gradient(90deg, #9b1d22, #fff0aa);
+    }
+
+    .board.line-relic-guidance .swap-path-arrow::after {
+      border-left-color: #fff0aa;
     }
 
     .swap-path-arrow::before {
@@ -4438,6 +4523,7 @@
       body.round-one-active.round-one-black-candle-cue:not(.round-one-complete) .first-swap-cue,
       body.round-one-active.round-one-followup-cue:not(.round-one-complete) .first-swap-cue,
       body.round-one-active.round-one-refused:not(.round-one-complete) .first-swap-cue,
+      body.focused-active-play.armed-line-relic-cue:not(.round-one-complete) .first-swap-cue,
       body.restored-next-order-focus.restored-next-order-guide:not(.restored-greenhouse-handoff):not(.first-move-made) .first-swap-cue,
       body.restored-next-order-focus.round-two-followup-cue .first-swap-cue {
         min-height: 26px;
@@ -4542,6 +4628,7 @@
       body.round-one-active.round-one-black-candle-cue:not(.round-one-complete) .first-swap-cue,
       body.round-one-active.round-one-followup-cue:not(.round-one-complete) .first-swap-cue,
       body.round-one-active.round-one-refused:not(.round-one-complete) .first-swap-cue,
+      body.focused-active-play.armed-line-relic-cue:not(.round-one-complete) .first-swap-cue,
       body.restored-next-order-focus.restored-next-order-guide:not(.restored-greenhouse-handoff):not(.first-move-made) .first-swap-cue,
       body.restored-next-order-focus.round-two-followup-cue .first-swap-cue {
         min-height: 25px;
@@ -4708,9 +4795,11 @@
     body.round-one-active:not(.round-one-complete):not(.first-move-made) .first-swap-cue,
     body.round-one-active.round-one-black-candle-cue:not(.round-one-complete) .first-swap-cue,
     body.round-one-active.round-one-followup-cue:not(.round-one-complete) .first-swap-cue,
-    body.round-one-active.round-one-refused:not(.round-one-complete) .first-swap-cue { display:flex; width:max-content; max-width:calc(100% - 20px); min-height:30px; margin:7px auto 0; padding:5px 10px; align-items:center; gap:8px; border:1px solid #8e6b35; border-radius:999px; color:#fff0b4; background:linear-gradient(90deg,#17100c,#2b1d0d,#17100c); box-shadow:0 0 12px #c58a3326,inset 0 0 9px #000; font:800 14px Georgia,serif; letter-spacing:.035em; text-align:center; }
+    body.round-one-active.round-one-refused:not(.round-one-complete) .first-swap-cue,
+    body.focused-active-play.armed-line-relic-cue:not(.round-one-complete) .first-swap-cue { display:flex; width:max-content; max-width:calc(100% - 20px); min-height:30px; margin:7px auto 0; padding:5px 10px; align-items:center; gap:8px; border:1px solid #8e6b35; border-radius:999px; color:#fff0b4; background:linear-gradient(90deg,#17100c,#2b1d0d,#17100c); box-shadow:0 0 12px #c58a3326,inset 0 0 9px #000; font:800 14px Georgia,serif; letter-spacing:.035em; text-align:center; }
     .first-swap-cue::before { content:"GLYPH GUIDE"; flex:none; padding-right:8px; border-right:1px solid #76582e; color:#b9965f; font:700 9px/1.1 system-ui,sans-serif; letter-spacing:.12em; }
-    body.round-one-active.round-one-black-candle-cue .first-swap-cue::before { content:"BLACK CANDLE"; }
+    body.round-one-active.round-one-black-candle-cue .first-swap-cue::before,
+    body.focused-active-play.armed-line-relic-cue .first-swap-cue::before { content:"BLACK CANDLE"; }
     body.round-one-active.round-one-black-candle-cue .first-swap-cue { position:relative; z-index:12; }
     body.restored-greenhouse-handoff.round-one-active .first-swap-cue { display:none!important; }
     body.round-one-active .board { touch-action:manipulation; }
@@ -7200,6 +7289,39 @@
       return neighbor ? [{ x: relic.x, y: relic.y }, neighbor] : null;
     }
 
+    function lineRelicGuidance(relic = armedLineRelic) {
+      const pair = lineRelicActivationPair(relic);
+      if (!relic || !pair) {
+        return null;
+      }
+      const [source, destination] = pair;
+      const lane = relic.direction === "vertical" ? "column" : "row";
+      const direction = destination.x > source.x
+        ? "right"
+        : destination.x < source.x
+          ? "left"
+          : destination.y > source.y
+            ? "down"
+            : "up";
+      const laneCells = Array.from({ length: BOARD_SIZE }, (_, index) => (
+        relic.direction === "vertical" ? { x: source.x, y: index } : { x: index, y: source.y }
+      ));
+      return {
+        pair,
+        source,
+        destination,
+        direction: relic.direction,
+        lane,
+        directionText: direction,
+        laneCells,
+        pairKeys: new Set(pair.map((cell) => `${cell.x},${cell.y}`)),
+        laneKeys: new Set(laneCells.map((cell) => `${cell.x},${cell.y}`)),
+        sourceKey: `${source.x},${source.y}`,
+        destinationKey: `${destination.x},${destination.y}`,
+        cue: `Swap Black Candle Vine ${direction} - burn this ${lane}.`
+      };
+    }
+
     function swapBoardCells(a, b) {
       const previous = board[a.y][a.x];
       board[a.y][a.x] = board[b.y][b.x];
@@ -7518,10 +7640,10 @@
       }
       const relicPair = lineRelicActivationPair();
       if (relicPair) {
-        idleHintCells = new Set(relicPair.map((cell) => `${cell.x},${cell.y}`));
-        const lane = armedLineRelic.direction === "vertical" ? "column" : "row";
-        $("firstSwapCue").textContent = `Swap Black Candle Vine to burn its ${lane}.`;
-        return ` <strong>Black Candle Vine armed.</strong> Swap the glowing relic to burn its ${lane}.`;
+        const guidance = lineRelicGuidance();
+        idleHintCells = new Set(guidance.pair.map((cell) => `${cell.x},${cell.y}`));
+        $("firstSwapCue").textContent = guidance.cue;
+        return ` <strong>Black Candle Vine armed.</strong> Swap ${guidance.directionText} to burn this ${guidance.lane}.`;
       }
       const plan = activeRoundPlan();
       const roundOneStage = roundOneGuidedStage(plan);
@@ -7700,7 +7822,8 @@
     function scheduleIdleHint() {
       clearIdleHint();
       const postOnboardingIdleHint = isPostOnboardingIdleHintActive();
-      if ((hasMadeValidMove && !postOnboardingIdleHint) || roundComplete || isBouquetFailed() || isResolving) {
+      const armedRelicHint = isArmedLineRelicGuidanceActive();
+      if ((hasMadeValidMove && !postOnboardingIdleHint && !armedRelicHint) || roundComplete || isBouquetFailed() || isResolving) {
         return;
       }
       const hintDelay = currentRound === 1
@@ -7710,11 +7833,20 @@
           : 7000;
       idleHintTimer = window.setTimeout(() => {
         const postOnboardingIdleHintAfterDelay = isPostOnboardingIdleHintActive();
-        if ((hasMadeValidMove && !postOnboardingIdleHintAfterDelay) || roundComplete || isBouquetFailed() || isResolving) {
+        const armedRelicHintAfterDelay = isArmedLineRelicGuidanceActive();
+        if ((hasMadeValidMove && !postOnboardingIdleHintAfterDelay && !armedRelicHintAfterDelay) || roundComplete || isBouquetFailed() || isResolving) {
           return;
         }
         if (boardDragInputActive()) {
           scheduleIdleHint();
+          return;
+        }
+        if (armedRelicHintAfterDelay) {
+          const guidance = lineRelicGuidance();
+          idleHintCells = new Set(guidance.pair.map((cell) => `${cell.x},${cell.y}`));
+          boardFocusCell = clampBoardFocusCell(guidance.source);
+          $("firstSwapCue").textContent = guidance.cue;
+          render();
           return;
         }
         const plan = activeRoundPlan();
@@ -7751,6 +7883,15 @@
     }
 
     function restoreFirstSwapCueAfterRefusal({ preserveCue = false } = {}) {
+      if (isArmedLineRelicGuidanceActive()) {
+        const guidance = lineRelicGuidance();
+        idleHintCells = new Set(guidance.pair.map((cell) => `${cell.x},${cell.y}`));
+        boardFocusCell = clampBoardFocusCell(guidance.source);
+        if (!preserveCue) {
+          $("firstSwapCue").textContent = guidance.cue;
+        }
+        return;
+      }
       const plan = activeRoundPlan();
       seedRoundOneGuidedMove(plan);
       const roundOneStage = roundOneGuidedStage(plan);
@@ -7805,13 +7946,13 @@
         && hintCells.size === 2
         && hintCells.has(`${cell.x},${cell.y}`)
         && !roundComplete
-        && ((currentRound === 1 && !hasMadeValidMove) || isRestoredNextOrderFocus() || isPostOnboardingIdleHintActive());
+        && ((currentRound === 1 && !hasMadeValidMove) || isRestoredNextOrderFocus() || isPostOnboardingIdleHintActive() || isArmedLineRelicGuidanceActive());
     }
 
     function notePlayerInteraction() {
       clearIdleHint();
       clearThornTeachingCue(false);
-      if (!hasMadeValidMove) {
+      if (!hasMadeValidMove || isArmedLineRelicGuidanceActive()) {
         scheduleIdleHint();
       }
     }
@@ -8742,6 +8883,13 @@
         && restoredRoundTwoGuideMoves >= RESTORED_ROUND_TWO_GUIDE_LIMIT;
     }
 
+    function isArmedLineRelicGuidanceActive() {
+      return Boolean(armedLineRelic)
+        && !roundComplete
+        && !isBouquetFailed()
+        && Boolean(lineRelicActivationPair());
+    }
+
     function applyGreenhouseArtwork(stageKey) {
       const artwork = greenhouseArtwork[stageKey] || greenhouseArtwork.first;
       const witheredArt = document.querySelector(".greenhouse-art-withered");
@@ -9013,6 +9161,9 @@
       const payoffCeremony = focusedPayoffCeremony();
       const activePlan = activeRoundPlan();
       const progress = roundProgress(activePlan);
+      const activeRelicGuidance = !roundComplete && !isBouquetFailed()
+        ? lineRelicGuidance()
+        : null;
       const failedFocusedRestoredOrder = roundOneRestored
         && activePlan.round >= 2
         && activePlan.round <= 3
@@ -9033,6 +9184,7 @@
       document.body.classList.toggle("round-three-final-complete", roundThreeFinalComplete);
       document.body.classList.toggle("round-three-focus-active", currentRound === 3 && !roundComplete && roundOneRestored && roundTwoGreenhouseUpgraded);
       document.body.classList.toggle("focused-active-play", focusedSliceRound(activePlan) && !roundComplete);
+      document.body.classList.toggle("armed-line-relic-cue", Boolean(activeRelicGuidance));
       document.body.classList.toggle("focused-slice-failed", activePlan.round <= 3 && isBouquetFailed(activePlan));
       document.body.classList.toggle("focused-payoff-active", focusedSliceRound(activePlan) && roundComplete);
       document.body.classList.toggle("thorn-lesson-active", activePlan.round === 2 && Boolean(activePlan.thornGoal) && thornGoalProgress(activePlan) === 0 && !roundComplete);
@@ -9067,9 +9219,11 @@
       boardEl.dataset.lastWildChainBonus = String(lastWildChain?.bonusCoins || 0);
       boardEl.dataset.lastWildChainCascades = String(lastWildChain?.cascades || 0);
       boardEl.dataset.refillColumns = String(refillColumns.size);
+      boardEl.dataset.armedRelicDirection = activeRelicGuidance?.direction || "";
       boardEl.classList.toggle("supreme-charge", supremeChargeActive);
       boardEl.classList.toggle("cascade-wave", currentCascadeWave > 0);
       boardEl.classList.toggle("swap-accepted", validSwapCells.size > 0);
+      boardEl.classList.toggle("line-relic-guidance", Boolean(activeRelicGuidance));
       boardEl.classList.toggle("bloom-hit", harvestFlashCells.size > 0 || boardParticles.some((particle) => particle.type === "petal-pop" || particle.type === "coin-pop"));
       boardEl.classList.toggle("line-relic-hit", boardParticles.some((particle) => particle.type === "line-relic"));
       boardEl.classList.toggle("chain-payoff", boardParticles.some((particle) => particle.type === "wild-chain-banner" || particle.type === "chain-bonus"));
@@ -9101,7 +9255,7 @@
           const swapGlide = swapGlideCells.get(`${x},${y}`);
           const swapGlideClass = swapGlide ? "swap-glide" : "";
           const idleHintClass = idleHintCells.has(`${x},${y}`) ? "idle-hint" : "";
-          const thornTeachingActive = thornTeachingCells.has(`${x},${y}`);
+          const thornTeachingActive = !activeRelicGuidance && thornTeachingCells.has(`${x},${y}`);
           const thornTeachingSwapCell = thornTeachingActive && roundTwoThornTeachingSwap().some((cell) => cell.x === x && cell.y === y);
           const transmuteClass = transmuteFlashCell === `${x},${y}` ? "transmute-flash" : "";
           const thorn = thornAt(x, y);
@@ -9121,15 +9275,20 @@
           const fallClass = fallRows ? "fall-in" : "";
           const refillBornClass = refillBornCells.has(fallKey) ? "refill-born" : "";
           const settleClass = settledCells.has(fallKey) ? "settle-pop" : "";
+          const lineRelicLaneClass = activeRelicGuidance?.laneKeys.has(fallKey) ? "line-relic-lane-preview" : "";
+          const lineRelicDestinationClass = activeRelicGuidance?.destinationKey === fallKey ? "line-relic-destination" : "";
           const previewClass = harvestPreview.cells.has(fallKey) ? "match-preview" : "";
           const previewAnchorClass = harvestPreview.anchors.has(fallKey) ? "match-preview-anchor" : "";
           const relicPreviewClass = harvestPreview.relicCells.has(fallKey) ? "relic-preview" : "";
           const armedRelic = lineRelicAt({ x, y }) ? armedLineRelic : null;
           const armedRelicClass = armedRelic ? "black-candle-vine" : "";
-          tile.className = `tile ${selectedClass} ${legalClass} ${previewClass} ${previewAnchorClass} ${relicPreviewClass} ${armedRelicClass} ${harvestClass} ${superClass} ${invalidClass} ${validSwapClass} ${swapClass} ${swapGlideClass} ${idleHintClass} ${thornTeachClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass} ${refillBornClass} ${settleClass}`;
+          tile.className = `tile ${selectedClass} ${legalClass} ${lineRelicLaneClass} ${lineRelicDestinationClass} ${previewClass} ${previewAnchorClass} ${relicPreviewClass} ${armedRelicClass} ${harvestClass} ${superClass} ${invalidClass} ${validSwapClass} ${swapClass} ${swapGlideClass} ${idleHintClass} ${thornTeachClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass} ${refillBornClass} ${settleClass}`;
           tile.disabled = isResolving || roundComplete || isBouquetFailed();
           tile.tabIndex = !tile.disabled && boardFocusCell.x === x && boardFocusCell.y === y ? 0 : -1;
           tile.style.setProperty("--tile-color", flowers[value][4]);
+          if (lineRelicLaneClass) {
+            tile.style.setProperty("--lane-angle", activeRelicGuidance.direction === "vertical" ? "0deg" : "90deg");
+          }
           if (armedRelic) {
             tile.style.setProperty("--relic-angle", armedRelic.direction === "vertical" ? "0deg" : "90deg");
             tile.dataset.lineRelic = "black-candle-vine";
@@ -9144,6 +9303,8 @@
             tile.style.setProperty("--fall-delay", `${Math.min(130, y * 12)}ms`);
           }
           const legalLabel = legalClass ? " legal match swap target" : "";
+          const destinationLabel = lineRelicDestinationClass ? " Black Candle activation destination" : "";
+          const laneLabel = lineRelicLaneClass ? ` in Black Candle ${activeRelicGuidance.lane} burn lane` : "";
           const thornTeachLabel = thornTeachingActive
             ? thorn
               ? " marked Cursed Thorn target"
@@ -9159,10 +9320,11 @@
           const thornEventOffsetClass = thornHitClass && lineRelicArmingFeedback
             ? `offset-${x <= lineRelicArmingFeedback.x ? "left" : "right"}-${y <= lineRelicArmingFeedback.y ? "up" : "down"}`
             : "";
-          tile.setAttribute("aria-label", `${flowers[value][0]} tile${relicLabel}${legalLabel}${previewLabel}${thornTeachLabel}${thornLabel}`);
+          tile.setAttribute("aria-label", `${flowers[value][0]} tile${relicLabel}${legalLabel}${destinationLabel}${laneLabel}${previewLabel}${thornTeachLabel}${thornLabel}`);
           tile.innerHTML = `
             ${iconMarkup(value, "", flowers[value][0], "tile-icon-wrap")}
             ${armedRelic ? '<span class="black-candle-mark" aria-hidden="true"></span>' : ""}
+            ${lineRelicDestinationClass ? '<span class="line-relic-destination-mark" aria-hidden="true"></span>' : ""}
             ${thornTeachingActive && thorn ? '<span class="thorn-teach-marker blocker" aria-hidden="true">×</span>' : ""}
             ${thorn || thornClearedClass ? `<span class="cursed-thorn-overlay" aria-hidden="true"><span class="thorn-root"></span>${thornSealMarkup("cursed-thorn-art", "")}${thornHitClass ? `<span class="thorn-event ${thornEventOffsetClass}">${thornClearedClass ? "BREAK" : "CRACK"}</span>` : ""}</span>` : ""}
           `;
@@ -9342,7 +9504,10 @@
         return "Complete Bloodroot Compact.";
       }
       if (plan.round === 1 && armedLineRelic) {
-        return "Swap the vine to clear its lane.";
+        const guidance = lineRelicGuidance();
+        return guidance
+          ? `Swap ${guidance.directionText} to burn this ${guidance.lane}.`
+          : "Swap the vine to clear its lane.";
       }
       if (plan.round === 1 && hasMadeValidMove && $("firstSwapCue").textContent.includes("Black Candle Vine")) {
         return "Match 4 arms Black Candle Vine.";
@@ -9439,7 +9604,10 @@
     }
 
     function renderFirstSwapArrow(boardEl) {
-      if ((currentRound !== 1 && !isRestoredRoundTwoGuideActive()) || roundComplete || idleHintCells.size !== 2) {
+      if (!isArmedLineRelicGuidanceActive() && (currentRound !== 1 && !isRestoredRoundTwoGuideActive())) {
+        return;
+      }
+      if (roundComplete || idleHintCells.size !== 2) {
         return;
       }
       const cells = [...idleHintCells].map((cell) => {
@@ -9989,9 +10157,11 @@
         } else if (wave.createdLineRelic) {
           armedLineRelic = normalizeArmedLineRelic(wave.createdLineRelic);
           queueLineRelicArming(armedLineRelic, cascadeIndex);
-          const lane = armedLineRelic.direction === "vertical" ? "column" : "row";
-          $("firstSwapCue").textContent = `Swap Black Candle Vine to burn its ${lane}.`;
-          ritualMessage = `<strong>Black Candle Vine armed.</strong> Swap it with a glowing neighbor to burn its ${lane}.`;
+          const guidance = lineRelicGuidance();
+          $("firstSwapCue").textContent = guidance?.cue || "Swap Black Candle Vine - burn its lane.";
+          ritualMessage = guidance
+            ? `<strong>Black Candle Vine armed.</strong> Swap ${guidance.directionText} to burn this ${guidance.lane}.`
+            : "<strong>Black Candle Vine armed.</strong> Swap it with a glowing neighbor to burn its lane.";
         }
       }
       if (wave.rareSeedRunes.length) {
@@ -12159,10 +12329,10 @@
     if (armedLineRelic && !roundComplete) {
       const relicPair = lineRelicActivationPair();
       if (relicPair) {
-        idleHintCells = new Set(relicPair.map((cell) => `${cell.x},${cell.y}`));
-        boardFocusCell = clampBoardFocusCell(relicPair[0]);
-        const lane = armedLineRelic.direction === "vertical" ? "column" : "row";
-        $("firstSwapCue").textContent = `Swap Black Candle Vine to burn its ${lane}.`;
+        const guidance = lineRelicGuidance();
+        idleHintCells = new Set(guidance.pair.map((cell) => `${cell.x},${cell.y}`));
+        boardFocusCell = clampBoardFocusCell(guidance.source);
+        $("firstSwapCue").textContent = guidance.cue;
       }
     } else if (currentRound === 1 && !roundComplete && !hasMadeValidMove) {
       const firstMove = legalMoves()[0];

@@ -166,6 +166,56 @@ async function clickPrimaryCeremonyAction(page) {
   await page.waitForTimeout(520);
 }
 
+async function startThornFeedbackRecorder(page) {
+  await page.evaluate(() => {
+    window.__thornFeedbackFrames = [];
+    const visible = (node) => {
+      if (!node) return false;
+      const style = getComputedStyle(node);
+      const bounds = node.getBoundingClientRect();
+      return style.display !== "none"
+        && style.visibility !== "hidden"
+        && Number(style.opacity || 0) > 0.02
+        && bounds.width > 0
+        && bounds.height > 0;
+    };
+    const rect = (node) => {
+      const bounds = node.getBoundingClientRect();
+      return { left: bounds.left, top: bounds.top, right: bounds.right, bottom: bounds.bottom };
+    };
+    const overlaps = (a, b) => (
+      Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1
+      && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1
+    );
+    let frame = 0;
+    window.__thornFeedbackRecorder = setInterval(() => {
+      const impacts = Array.from(document.querySelectorAll(".board-particle.impact-sigil"))
+        .filter(visible)
+        .map((node) => ({ text: node.textContent.trim(), rect: rect(node) }));
+      const thornEvents = Array.from(document.querySelectorAll(".thorn-event"))
+        .filter(visible)
+        .map((node) => ({ text: node.textContent.trim(), rect: rect(node) }));
+      const thornOverlaps = [];
+      for (let i = 0; i < thornEvents.length; i += 1) {
+        for (let j = i + 1; j < thornEvents.length; j += 1) {
+          if (overlaps(thornEvents[i].rect, thornEvents[j].rect)) thornOverlaps.push(`${i}-${j}`);
+        }
+      }
+      window.__thornFeedbackFrames.push({
+        frame,
+        impacts,
+        thornEvents,
+        thornOverlaps,
+        crossLayerOverlap: impacts.some((impact) => thornEvents.some((thorn) => overlaps(impact.rect, thorn.rect))),
+        shocks: document.querySelectorAll(".board-particle.thorn-shock").length,
+        splinters: document.querySelectorAll(".board-particle.thorn-splinter").length
+      });
+      frame += 1;
+      if (frame >= 100) clearInterval(window.__thornFeedbackRecorder);
+    }, 16);
+  });
+}
+
 async function playThornLesson(page, screenshotPath) {
   const before = await page.evaluate((key) => {
     const state = JSON.parse(localStorage.getItem(key));
@@ -177,65 +227,15 @@ async function playThornLesson(page, screenshotPath) {
   const thornSwap = page.locator(".tile.thorn-teach");
   await expect(thornSwap).toHaveCount(2, { timeout: 5000 });
   await page.locator('.tile[data-x="1"][data-y="2"]').click({ force: true });
+  await startThornFeedbackRecorder(page);
   await page.locator('.tile[data-x="1"][data-y="3"]').click({ force: true });
-  await page.waitForFunction(() => document.querySelectorAll(".thorn-event").length > 0, null, { timeout: 2000 });
-
-  const sampledFrames = [];
-  for (let frame = 0; frame < 12; frame += 1) {
-    sampledFrames.push(await page.evaluate(() => {
-      const visible = (node) => {
-        if (!node) return false;
-        const style = getComputedStyle(node);
-        const rect = node.getBoundingClientRect();
-        return style.display !== "none"
-          && style.visibility !== "hidden"
-          && Number(style.opacity || 0) > 0.02
-          && rect.width > 0
-          && rect.height > 0;
-      };
-      const rect = (node) => {
-        const bounds = node.getBoundingClientRect();
-        return {
-          left: bounds.left,
-          top: bounds.top,
-          right: bounds.right,
-          bottom: bounds.bottom
-        };
-      };
-      const overlaps = (a, b) => (
-        Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1
-        && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1
-      );
-      const impacts = Array.from(document.querySelectorAll(".board-particle.impact-sigil"))
-        .filter(visible)
-        .map((node) => ({ text: node.textContent.trim(), rect: rect(node) }));
-      const thornEvents = Array.from(document.querySelectorAll(".thorn-event"))
-        .filter(visible)
-        .map((node) => ({ text: node.textContent.trim(), rect: rect(node) }));
-      const thornOverlaps = [];
-      for (let i = 0; i < thornEvents.length; i += 1) {
-        for (let j = i + 1; j < thornEvents.length; j += 1) {
-          if (overlaps(thornEvents[i].rect, thornEvents[j].rect)) {
-            thornOverlaps.push(`${i}-${j}`);
-          }
-        }
-      }
-      return {
-        impacts,
-        thornEvents,
-        thornOverlaps,
-        crossLayerOverlap: impacts.some((impact) => (
-          thornEvents.some((thorn) => overlaps(impact.rect, thorn.rect))
-        )),
-        shocks: document.querySelectorAll(".board-particle.thorn-shock").length,
-        splinters: document.querySelectorAll(".board-particle.thorn-splinter").length
-      };
-    }));
-    if (frame === 5) {
-      await page.screenshot({ path: screenshotPath, fullPage: true });
-    }
-    await page.waitForTimeout(45);
-  }
+  await page.waitForTimeout(240);
+  await page.screenshot({ path: screenshotPath, fullPage: true });
+  await page.waitForTimeout(760);
+  const sampledFrames = await page.evaluate(() => {
+    clearInterval(window.__thornFeedbackRecorder);
+    return window.__thornFeedbackFrames || [];
+  });
 
   expect(
     sampledFrames.some((frame) => frame.thornEvents.filter((event) => event.text === "BREAK").length === 3),

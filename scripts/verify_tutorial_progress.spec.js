@@ -80,6 +80,19 @@ const LEGACY_ECONOMY_CASES = [
 
 test.setTimeout(180000);
 
+async function seedDeterministicMath(page, seedLabel) {
+  await page.addInitScript((label) => {
+    let seed = 0;
+    for (let index = 0; index < label.length; index += 1) {
+      seed = (seed * 31 + label.charCodeAt(index)) >>> 0;
+    }
+    Math.random = () => {
+      seed = (1664525 * seed + 1013904223) >>> 0;
+      return seed / 4294967296;
+    };
+  }, seedLabel);
+}
+
 async function openFresh(page, suffix) {
   await page.goto(`${BASE_URL}?tutorial-progress=${suffix}&bloomReview=1`, { waitUntil: "networkidle" });
   await page.evaluate((key) => localStorage.removeItem(key), SAVE_KEY);
@@ -242,6 +255,7 @@ async function activeState(page) {
       armedLineRelic: state.armedLineRelic || null,
       board: (state.board || []).map((row) => row.join(",")).join("|"),
       roundComplete: Boolean(state.roundComplete),
+      cue: document.querySelector("#firstSwapCue")?.textContent.trim() || "",
       tiles: document.querySelectorAll(".tile").length,
       rows: [...new Set(Array.from(document.querySelectorAll(".tile"))
         .map((tile) => Math.round(tile.getBoundingClientRect().top)))].length,
@@ -349,6 +363,7 @@ async function clickHighlightedPair(page) {
     }
     const cueNow = document.querySelector("#firstSwapCue")?.textContent.trim() || "";
     return Boolean(saved.roundComplete)
+      || document.querySelectorAll('.tile[data-line-relic="black-candle-vine"]').length === 1
       || (document.querySelectorAll(".tile.idle-hint").length === 2 && cueNow !== String(cueBefore || "").trim());
   }, { key: SAVE_KEY, movesBefore, cueBefore }, { timeout: 10000 });
   await page.waitForTimeout(350);
@@ -405,6 +420,178 @@ async function hintedPair(page) {
   })));
   expect(Math.abs(pair[0].x - pair[1].x) + Math.abs(pair[0].y - pair[1].y)).toBe(1);
   return pair;
+}
+
+async function armedRelicGuidance(page) {
+  return page.evaluate((key) => {
+    const visible = (node) => {
+      if (!node) return false;
+      const rect = node.getBoundingClientRect();
+      const style = getComputedStyle(node);
+      return style.display !== "none"
+        && style.visibility !== "hidden"
+        && Number(style.opacity || 1) !== 0
+        && rect.width > 0
+        && rect.height > 0;
+    };
+    const state = JSON.parse(localStorage.getItem(key) || "{}");
+    const relic = state.armedLineRelic || null;
+    const hints = Array.from(document.querySelectorAll(".tile.idle-hint")).map((tile) => ({
+      x: Number(tile.dataset.x),
+      y: Number(tile.dataset.y),
+      relic: tile.classList.contains("black-candle-vine"),
+      destination: tile.classList.contains("line-relic-destination"),
+      cue: tile.getAttribute("aria-label") || ""
+    }));
+    const laneTiles = Array.from(document.querySelectorAll(".tile.line-relic-lane-preview")).map((tile) => ({
+      x: Number(tile.dataset.x),
+      y: Number(tile.dataset.y),
+      armed: tile.classList.contains("black-candle-vine"),
+      thornTeach: tile.classList.contains("thorn-teach")
+        || tile.classList.contains("thorn-teach-lane")
+        || tile.classList.contains("thorn-teach-blocker")
+    }));
+    const boardRect = document.querySelector("#board")?.getBoundingClientRect();
+    return {
+      relic,
+      hints,
+      laneTiles,
+      cue: document.querySelector("#firstSwapCue")?.textContent.trim() || "",
+      tutorial: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
+      boardActive: document.querySelector("#board")?.classList.contains("line-relic-guidance") || false,
+      arrows: document.querySelectorAll(".swap-path-arrow").length,
+      destinationCount: document.querySelectorAll(".tile.line-relic-destination").length,
+      relicCount: document.querySelectorAll('.tile[data-line-relic="black-candle-vine"]').length,
+      thornTeachCount: document.querySelectorAll(".tile.thorn-teach, .tile.thorn-teach-lane, .tile.thorn-teach-blocker").length,
+      laneDirection: document.querySelector("#board")?.dataset.armedRelicDirection || "",
+      boardBottom: boardRect ? boardRect.bottom : 0,
+      tiles: document.querySelectorAll(".tile").length,
+      rows: [...new Set(Array.from(document.querySelectorAll(".tile"))
+        .map((tile) => Math.round(tile.getBoundingClientRect().top)))].length,
+      completeRows: [...new Set(Array.from(document.querySelectorAll(".tile"))
+        .map((tile) => tile.getBoundingClientRect())
+        .filter((rect) => rect.top >= -1 && rect.bottom <= innerHeight + 1)
+        .map((rect) => Math.round(rect.top)))].length,
+      overflowX: document.documentElement.scrollWidth > innerWidth + 1,
+      brokenImages: Array.from(document.images)
+        .filter((image) => visible(image) && image.complete && image.naturalWidth === 0)
+        .map((image) => image.getAttribute("src"))
+    };
+  }, SAVE_KEY);
+}
+
+async function startBlackCandleThornFeedbackRecorder(page, options = {}) {
+  await page.evaluate(({ maxFrames, settleFrames }) => {
+    const frameLimit = Number(maxFrames) || 160;
+    const settleAfterBothSeen = Number(settleFrames) || 8;
+    window.__blackCandleThornFeedbackFrames = [];
+    window.__blackCandleThornFeedbackSeen = {
+      armed: false,
+      break: false,
+      frame: null
+    };
+    window.__blackCandleThornFeedbackDone = new Promise((resolve) => {
+      let frame = 0;
+      let bothSeenAt = null;
+      let completed = false;
+      const visible = (node) => {
+        if (!node) return false;
+        const style = getComputedStyle(node);
+        const bounds = node.getBoundingClientRect();
+        return style.display !== "none"
+          && style.visibility !== "hidden"
+          && bounds.width > 0
+          && bounds.height > 0;
+      };
+      const rect = (node) => {
+        const bounds = node.getBoundingClientRect();
+        return {
+          left: bounds.left,
+          top: bounds.top,
+          right: bounds.right,
+          bottom: bounds.bottom
+        };
+      };
+      const overlaps = (a, b) => (
+        Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1
+        && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1
+      );
+      const tick = () => {
+        const impacts = Array.from(document.querySelectorAll(".board-particle.impact-sigil"))
+          .filter(visible)
+          .map((node) => ({ text: node.textContent.trim(), rect: rect(node) }));
+        const thornEvents = Array.from(document.querySelectorAll(".thorn-event"))
+          .filter(visible)
+          .map((node) => ({ text: node.textContent.trim(), rect: rect(node) }));
+        const snapshot = {
+          frame,
+          impacts,
+          thornEvents,
+          overlap: impacts.some((impact) => (
+            thornEvents.some((thorn) => overlaps(impact.rect, thorn.rect))
+          ))
+        };
+        window.__blackCandleThornFeedbackFrames.push(snapshot);
+        window.__blackCandleThornFeedbackSeen.armed ||= impacts.some((impact) => impact.text === "ARMED");
+        window.__blackCandleThornFeedbackSeen.break ||= thornEvents.some((event) => event.text === "BREAK");
+        if (
+          bothSeenAt === null
+          && window.__blackCandleThornFeedbackSeen.armed
+          && window.__blackCandleThornFeedbackSeen.break
+        ) {
+          bothSeenAt = frame;
+          window.__blackCandleThornFeedbackSeen.frame = frame;
+        }
+        frame += 1;
+        if (frame >= frameLimit || (bothSeenAt !== null && frame - bothSeenAt >= settleAfterBothSeen)) {
+          completed = true;
+          clearInterval(interval);
+          resolve(window.__blackCandleThornFeedbackFrames);
+          return;
+        }
+      };
+      const interval = setInterval(() => {
+        if (!completed) {
+          tick();
+        }
+      }, 16);
+      tick();
+    });
+  }, {
+    maxFrames: options.maxFrames || 160,
+    settleFrames: options.settleFrames || 8
+  });
+}
+
+async function blackCandleThornFeedbackFrames(page) {
+  await page.waitForTimeout(1000);
+  return page.evaluate(() => window.__blackCandleThornFeedbackFrames || []);
+}
+
+function assertArmedRelicGuidance(report, expectedDirection, label, mobile = false) {
+  expect(report.relic, `${label} saved relic`).toMatchObject({ direction: expectedDirection });
+  expect(report.relicCount, `${label} one rendered relic`).toBe(1);
+  expect(report.hints, `${label} exactly one activation pair`).toHaveLength(2);
+  expect(report.hints.filter((tile) => tile.relic), `${label} hinted pair includes relic`).toHaveLength(1);
+  expect(report.hints.filter((tile) => tile.destination), `${label} hinted pair includes destination`).toHaveLength(1);
+  expect(report.destinationCount, `${label} one destination marker`).toBe(1);
+  expect(report.boardActive, `${label} board has armed guidance state`).toBe(true);
+  expect(report.arrows, `${label} one direct swap arrow`).toBe(1);
+  expect(report.cue, `${label} cue names derived lane`).toContain(expectedDirection === "vertical" ? "column" : "row");
+  expect(report.laneDirection, `${label} board lane direction`).toBe(expectedDirection);
+  expect(report.laneTiles, `${label} complete lane preview`).toHaveLength(8);
+  expect(report.laneTiles.filter((tile) => tile.armed), `${label} lane contains relic`).toHaveLength(1);
+  expect(report.laneTiles.some((tile) => tile.thornTeach), `${label} thorn accents subordinate`).toBe(false);
+  expect(report.tiles, `${label} tile count`).toBe(64);
+  expect(report.rows, `${label} board rows`).toBe(8);
+  expect(report.overflowX, `${label} no overflow`).toBe(false);
+  expect(report.brokenImages, `${label} no broken images`).toEqual([]);
+  const fixed = expectedDirection === "vertical" ? "x" : "y";
+  expect(new Set(report.laneTiles.map((tile) => tile[fixed])).size, `${label} lane fixed axis`).toBe(1);
+  if (mobile) {
+    expect(report.completeRows, `${label} exact mobile rows`).toBe(8);
+    expect(report.boardBottom, `${label} mobile board in viewport`).toBeLessThanOrEqual(844);
+  }
 }
 
 async function tileGeometry(page, pair) {
@@ -745,6 +932,7 @@ for (const viewport of [
     page.on("pageerror", (error) => pageErrors.push(error.message));
     page.on("requestfailed", (request) => failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`));
 
+    await seedDeterministicMath(page, `fresh-black-candle-${viewport.label}`);
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await openFreshNoReview(page, `black-candle-${viewport.label}`);
     await expect.poll(async () => page.evaluate(() => window.__bloomReviewHooksEnabled === true)).toBe(false);
@@ -795,10 +983,16 @@ for (const viewport of [
     }
     expect(formed.moves).toBe(blackCandleCue.moves - 1);
     expect(formed.counts[1] - blackCandleCue.counts[1]).toBe(4);
-    expect(formed.tutorial).toBe("Swap the vine to clear its lane.");
+    expect(formed.tutorial).toBe("Swap right to burn this row.");
     expect(formed.cue).toContain("Swap Black Candle Vine");
     expect(formed.hints).toHaveLength(2);
     expect(formed.visibleButtons).toEqual(["Skip"]);
+    assertArmedRelicGuidance(
+      await armedRelicGuidance(page),
+      "horizontal",
+      `${viewport.label} formed Round 1 Black Candle`,
+      viewport.mobile
+    );
     await page.screenshot({ path: "work/black-candle-" + viewport.label + "-formed.png", fullPage: true });
 
     await clickHighlightedPair(page);
@@ -967,6 +1161,7 @@ test("Black Candle Vine forms, persists, and activates as a deliberate lane spec
     page.on("pageerror", (error) => pageErrors.push(error.message));
 
     try {
+      await seedDeterministicMath(page, `persistent-black-candle-${testCase.label}`);
       await openFresh(page, `black-candle-${testCase.label}`);
       for (let step = 0; step < 5; step += 1) {
         const cue = await page.locator("#firstSwapCue").textContent();
@@ -981,7 +1176,7 @@ test("Black Candle Vine forms, persists, and activates as a deliberate lane spec
       await expect(relic).toHaveCount(1);
       await waitForSettledBoard(page);
       await expect(relic).toHaveAttribute("data-line-relic-direction", "horizontal");
-      await expect(page.locator("#tutorialCopy")).toHaveText("Swap the vine to clear its lane.");
+      await expect(page.locator("#tutorialCopy")).toHaveText("Swap right to burn this row.");
       const formed = await activeState(page);
       expect(formed.moves, "formation spends one move").toBe(beforeFormation.moves - 1);
       expect(formed.counts[1] - beforeFormation.counts[1], "formation collects only the strict four").toBe(4);
@@ -989,6 +1184,12 @@ test("Black Candle Vine forms, persists, and activates as a deliberate lane spec
       expect(formed.tiles).toBe(64);
       expect(formed.rows).toBe(8);
       expect(formed.overflowX).toBe(false);
+      assertArmedRelicGuidance(
+        await armedRelicGuidance(page),
+        "horizontal",
+        `${testCase.label} horizontal formed special`,
+        Boolean(testCase.mobile)
+      );
       await page.waitForTimeout(850);
       await page.screenshot({ path: `work/black-candle-formed-${testCase.label}.png`, fullPage: true });
 
@@ -999,6 +1200,12 @@ test("Black Candle Vine forms, persists, and activates as a deliberate lane spec
       expect(persisted.armedLineRelic).toEqual(formed.armedLineRelic);
       expect(persisted.moves).toBe(formed.moves);
       expect(persisted.counts).toEqual(formed.counts);
+      assertArmedRelicGuidance(
+        await armedRelicGuidance(page),
+        "horizontal",
+        `${testCase.label} horizontal persisted special`,
+        Boolean(testCase.mobile)
+      );
 
       const activationPair = await hintedPair(page);
       const activationIncludesRelic = activationPair.some((cell) => (
@@ -1076,6 +1283,7 @@ test("vertical Black Candle Vine follows its anchor flower through gravity", asy
     page.on("pageerror", (error) => pageErrors.push(error.message));
 
     try {
+      await seedDeterministicMath(page, `vertical-black-candle-${testCase.label}`);
       await openFresh(page, `black-candle-vertical-gravity-${testCase.label}`);
       await page.evaluate((key) => {
         const state = JSON.parse(localStorage.getItem(key));
@@ -1154,6 +1362,12 @@ test("vertical Black Candle Vine follows its anchor flower through gravity", asy
       expect(formed.brokenImages).toEqual([]);
       expect((await activeState(page)).moves).toBe(beforeFormation.moves - 1);
       expect((await activeState(page)).counts[1] - beforeFormation.counts[1]).toBe(4);
+      assertArmedRelicGuidance(
+        await armedRelicGuidance(page),
+        "vertical",
+        `${testCase.label} vertical formed special`,
+        Boolean(testCase.mobile)
+      );
       await page.screenshot({ path: `work/black-candle-vertical-formed-${testCase.label}.png`, fullPage: true });
 
       await page.reload({ waitUntil: "networkidle" });
@@ -1164,6 +1378,12 @@ test("vertical Black Candle Vine follows its anchor flower through gravity", asy
       await expect(relic).toHaveAttribute("data-x", "3");
       await expect(relic).toHaveAttribute("data-y", "3");
       await expect(relic).toHaveAttribute("data-line-relic-direction", "vertical");
+      assertArmedRelicGuidance(
+        await armedRelicGuidance(page),
+        "vertical",
+        `${testCase.label} vertical persisted special`,
+        Boolean(testCase.mobile)
+      );
 
       const activationPair = await hintedPair(page);
       const expectedLaneGain = await page.evaluate(({ key, pair }) => {
@@ -1266,67 +1486,40 @@ test("Black Candle creation and Cursed Thorn break read as one disciplined wave"
       const before = await activeState(page);
       const formationPair = [{ x: 3, y: 2 }, { x: 4, y: 2 }];
       if (testCase.mobile) {
-        await dragTouchViaCdp(page, formationPair);
+        const beforeGeometry = await tileGeometry(page, formationPair);
+        const vector = dragVector(formationPair, beforeGeometry, 0.62);
+        const client = await page.context().newCDPSession(page);
+        await client.send("Input.dispatchTouchEvent", {
+          type: "touchStart",
+          touchPoints: [{ x: vector.startX, y: vector.startY, id: 7 }]
+        });
+        await client.send("Input.dispatchTouchEvent", {
+          type: "touchMove",
+          touchPoints: [{ x: vector.endX, y: vector.endY, id: 7 }]
+        });
+        await page.waitForFunction(() => document.querySelectorAll(".tile.drag-preview-ready").length === 2);
+        await startBlackCandleThornFeedbackRecorder(page);
+        await client.send("Input.dispatchTouchEvent", {
+          type: "touchEnd",
+          touchPoints: [],
+          changedTouchPoints: [{ x: vector.endX, y: vector.endY, id: 7 }]
+        });
+        await page.waitForFunction(() => (
+          Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled)
+          || getComputedStyle(document.querySelector("#roundOneRestoration")).display !== "none"
+        ), null, { timeout: 10000 });
       } else {
+        await startBlackCandleThornFeedbackRecorder(page);
         for (const cell of formationPair) {
           await page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`).dispatchEvent("click");
         }
       }
 
-      await page.waitForFunction(() => (
-        Array.from(document.querySelectorAll(".board-particle.impact-sigil"))
-          .some((node) => node.textContent.trim() === "ARMED")
-        && document.querySelector(".thorn-event")
-      ), null, { timeout: 2500 });
-
-      const sampledFrames = [];
-      for (let frame = 0; frame < 12; frame += 1) {
-        sampledFrames.push(await page.evaluate(() => {
-          const visible = (node) => {
-            if (!node) return false;
-            const style = getComputedStyle(node);
-            const rect = node.getBoundingClientRect();
-            return style.display !== "none"
-              && style.visibility !== "hidden"
-              && Number(style.opacity || 0) > 0.02
-              && rect.width > 0
-              && rect.height > 0;
-          };
-          const rect = (node) => {
-            const bounds = node.getBoundingClientRect();
-            return {
-              left: bounds.left,
-              top: bounds.top,
-              right: bounds.right,
-              bottom: bounds.bottom
-            };
-          };
-          const overlaps = (a, b) => (
-            Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1
-            && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1
-          );
-          const impacts = Array.from(document.querySelectorAll(".board-particle.impact-sigil"))
-            .filter(visible)
-            .map((node) => ({ text: node.textContent.trim(), rect: rect(node) }));
-          const thornEvents = Array.from(document.querySelectorAll(".thorn-event"))
-            .filter(visible)
-            .map((node) => ({ text: node.textContent.trim(), rect: rect(node) }));
-          return {
-            impacts,
-            thornEvents,
-            overlap: impacts.some((impact) => (
-              thornEvents.some((thorn) => overlaps(impact.rect, thorn.rect))
-            ))
-          };
-        }));
-        if (frame === 5) {
-          await page.screenshot({
-            path: `work/black-candle-thorn-feedback-${testCase.label}.png`,
-            fullPage: true
-          });
-        }
-        await page.waitForTimeout(45);
-      }
+      const sampledFrames = await blackCandleThornFeedbackFrames(page);
+      await page.screenshot({
+        path: `work/black-candle-thorn-feedback-${testCase.label}.png`,
+        fullPage: true
+      });
 
       expect(
         sampledFrames.some((frame) => frame.impacts.some((impact) => impact.text === "ARMED")),
