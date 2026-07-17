@@ -855,6 +855,92 @@ async function findInvalidAdjacentPair(page) {
   });
 }
 
+async function invalidFeedbackState(page) {
+  return page.evaluate((key) => {
+    const visible = (node) => {
+      if (!node) return false;
+      const rect = node.getBoundingClientRect();
+      const style = getComputedStyle(node);
+      return style.display !== "none"
+        && style.visibility !== "hidden"
+        && Number(style.opacity || 1) !== 0
+        && rect.width > 0
+        && rect.height > 0;
+    };
+    const saved = JSON.parse(localStorage.getItem(key) || "{}");
+    const tutorialPanel = document.querySelector("#tutorialPanel");
+    const tutorialIcon = tutorialPanel?.querySelector(".tutorial-icon");
+    const tutorialRect = tutorialPanel?.getBoundingClientRect();
+    const tileRects = Array.from(document.querySelectorAll(".tile")).map((tile) => tile.getBoundingClientRect());
+    return {
+      moves: saved.moves,
+      board: (saved.board || []).map((row) => row.join(",")).join("|"),
+      tutorialCopy: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
+      tutorialIcon: tutorialIcon?.textContent.trim() || "",
+      tutorialIconAriaHidden: tutorialIcon?.getAttribute("aria-hidden") || "",
+      tutorialText: tutorialPanel?.innerText.trim() || "",
+      refusedTutorial: tutorialPanel?.classList.contains("refused-tutorial") || false,
+      tutorialVisible: visible(tutorialPanel),
+      tutorialClipped: Boolean(
+        tutorialPanel
+        && (
+          tutorialPanel.scrollWidth > tutorialPanel.clientWidth + 1
+          || tutorialRect.left < -1
+          || tutorialRect.right > innerWidth + 1
+        )
+      ),
+      firstSwapCueVisible: visible(document.querySelector("#firstSwapCue")),
+      instructionSurfaces: [tutorialPanel, document.querySelector("#firstSwapCue")].filter(visible).length,
+      visibleButtons: Array.from(document.querySelectorAll("button"))
+        .filter((button) => visible(button) && !button.closest(".board"))
+        .map((button) => button.textContent.trim())
+        .filter(Boolean),
+      invalidTiles: Array.from(document.querySelectorAll(".tile.invalid-swap")).map((tile) => ({
+        x: Number(tile.dataset.x),
+        y: Number(tile.dataset.y),
+        transform: getComputedStyle(tile).transform,
+        invalidX: tile.style.getPropertyValue("--invalid-x"),
+        invalidY: tile.style.getPropertyValue("--invalid-y")
+      })),
+      focusedCell: document.activeElement?.classList.contains("tile")
+        ? { x: Number(document.activeElement.dataset.x), y: Number(document.activeElement.dataset.y) }
+        : null,
+      tiles: tileRects.length,
+      rows: new Set(tileRects.map((rect) => Math.round(rect.top))).size,
+      dataRows: new Set(Array.from(document.querySelectorAll(".tile")).map((tile) => tile.dataset.y)).size,
+      boardBottom: Math.round(document.querySelector("#board")?.getBoundingClientRect().bottom || 0),
+      overflowX: document.documentElement.scrollWidth > innerWidth + 1,
+      brokenImages: Array.from(document.images)
+        .filter((image) => visible(image) && image.complete && image.naturalWidth === 0)
+        .map((image) => image.getAttribute("src"))
+    };
+  }, SAVE_KEY);
+}
+
+async function refuseInvalidPair(page, { touch = false } = {}) {
+  const pair = await findInvalidAdjacentPair(page);
+  expect(pair, "invalid adjacent pair").toHaveLength(2);
+  const before = await activeState(page);
+  for (const cell of pair) {
+    const tile = page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`);
+    if (touch) {
+      await tile.tap();
+    } else {
+      await tile.click();
+    }
+  }
+  await expect(page.locator(".tile.invalid-swap")).toHaveCount(2);
+  await page.waitForTimeout(140);
+  const peak = await invalidFeedbackState(page);
+  await expect(page.locator(".tile.invalid-swap")).toHaveCount(0, { timeout: 1600 });
+  return {
+    pair,
+    before,
+    peak,
+    recovered: await invalidFeedbackState(page)
+  };
+}
+
 async function dragTouchViaCdp(page, pair, scale = 0.62) {
   const beforeGeometry = await tileGeometry(page, pair);
   const vector = dragVector(pair, beforeGeometry, scale);
@@ -1106,6 +1192,17 @@ for (const viewport of [
     expect(preview.ok, JSON.stringify(preview)).toBe(true);
     await page.screenshot({ path: `work/black-candle-${viewport.label}-cue.png`, fullPage: true });
 
+    await expect(page.locator("#tutorialPanel")).toBeVisible();
+    const preFormationRefusal = await refuseInvalidPair(page);
+    expect(preFormationRefusal.peak.moves).toBe(preFormationRefusal.before.moves);
+    expect(preFormationRefusal.peak.board).toBe(preFormationRefusal.before.board);
+    expect(preFormationRefusal.peak.tutorialIcon).toBe("NO BLOOM");
+    expect(preFormationRefusal.peak.tutorialCopy).toBe("Use the glowing pair.");
+    expect(preFormationRefusal.recovered.tutorialCopy).toBe("Match 4 arms Black Candle Vine.");
+    const restoredFormationCue = await guidedRoundOneState(page, "Black Candle formation after refusal");
+    expect(restoredFormationCue.cue).toBe("Make 4 Bone Stars - arm Black Candle Vine.");
+    expect(restoredFormationCue.hints).toEqual(blackCandleCue.hints);
+
     await clickHighlightedPair(page);
     await expect(page.locator('.tile[data-line-relic="black-candle-vine"]')).toHaveCount(1);
     await waitForSettledBoard(page);
@@ -1165,6 +1262,19 @@ for (const viewport of [
       await guidedRoundOneState(page, "Black Candle armed after interrupted activation"),
       viewport.mobile,
       `${viewport.label} interrupted activation`
+    );
+
+    const armedRefusal = await refuseInvalidPair(page);
+    expect(armedRefusal.peak.moves).toBe(armedRefusal.before.moves);
+    expect(armedRefusal.peak.board).toBe(armedRefusal.before.board);
+    expect(armedRefusal.peak.tutorialIcon).toBe("NO BLOOM");
+    expect(armedRefusal.peak.tutorialCopy).toBe("Use the glowing pair.");
+    expect(armedRefusal.recovered.tutorialIcon).toBe("BLACK CANDLE");
+    expect(armedRefusal.recovered.tutorialCopy).toBe("Swap right to burn this row.");
+    assertNaturalBlackCandleTutorial(
+      await guidedRoundOneState(page, "Black Candle armed after refusal"),
+      viewport.mobile,
+      `${viewport.label} armed refusal cleanup`
     );
 
     await page.locator("#tutorialSkipBtn").click();
@@ -2347,6 +2457,85 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
   expect(failedRequests).toEqual([]);
 });
 
+for (const viewport of [
+  { label: "desktop", width: 1280, height: 720, mobile: false },
+  { label: "mobile390", width: 390, height: 844, mobile: true }
+]) {
+  test(`invalid tutorial swaps visibly recoil without spending a move on ${viewport.label}`, async ({ page }) => {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await openFreshNoReview(page, `invalid-feedback-${viewport.label}`);
+    const pair = await findInvalidAdjacentPair(page);
+    expect(pair, `${viewport.label} invalid adjacent pair`).toHaveLength(2);
+    const before = await activeState(page);
+    for (const cell of pair) {
+      const tile = page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`);
+      await tile.click();
+    }
+    await expect(page.locator(".tile.invalid-swap")).toHaveCount(2);
+    await page.waitForTimeout(140);
+    const peak = await invalidFeedbackState(page);
+    expect(peak.moves, `${viewport.label} refusal spends no move`).toBe(before.moves);
+    expect(peak.board, `${viewport.label} refusal preserves board`).toBe(before.board);
+    expect(peak.tutorialIcon, `${viewport.label} visible refusal category`).toBe("NO BLOOM");
+    expect(peak.tutorialIconAriaHidden, `${viewport.label} refusal reaches accessibility tree`).toBe("false");
+    expect(peak.tutorialCopy, `${viewport.label} terse corrective action`).toBe("Use the glowing pair.");
+    expect(peak.tutorialText, `${viewport.label} visible pixels include refusal`).toContain("NO BLOOM");
+    expect(peak.refusedTutorial, `${viewport.label} refused tutorial state`).toBe(true);
+    expect(peak.tutorialVisible, `${viewport.label} tutorial remains visible`).toBe(true);
+    expect(peak.tutorialClipped, `${viewport.label} refusal is not clipped`).toBe(false);
+    expect(peak.firstSwapCueVisible, `${viewport.label} hidden cue does not duplicate refusal`).toBe(false);
+    expect(peak.instructionSurfaces, `${viewport.label} one instruction surface`).toBe(1);
+    expect(peak.visibleButtons, `${viewport.label} Skip remains sole non-tile action`).toEqual(["Skip"]);
+    expect(peak.invalidTiles, `${viewport.label} both attempted tiles recoil`).toHaveLength(2);
+    expect(peak.invalidTiles.every((tile) => tile.transform !== "none"), `${viewport.label} directional recoil is visible`).toBe(true);
+    const horizontal = pair[0].y === pair[1].y;
+    expect(
+      peak.invalidTiles.every((tile) => horizontal ? tile.invalidX !== "0%" && tile.invalidY === "0%" : tile.invalidY !== "0%" && tile.invalidX === "0%"),
+      `${viewport.label} recoil follows attempted swap axis`
+    ).toBe(true);
+    expect(peak.focusedCell, `${viewport.label} focus returns to attempted source`).toEqual(pair[0]);
+    expect(peak.tiles).toBe(64);
+    expect(peak.dataRows).toBe(8);
+    expect(peak.overflowX).toBe(false);
+    expect(peak.brokenImages).toEqual([]);
+    if (viewport.mobile) {
+      expect(peak.boardBottom, `${viewport.label} board remains in first viewport`).toBeLessThanOrEqual(844);
+    }
+    await page.screenshot({ path: `work/invalid-feedback-${viewport.label}.png`, fullPage: true });
+
+    await expect(page.locator(".tile.invalid-swap")).toHaveCount(0, { timeout: 1600 });
+    const recovered = await invalidFeedbackState(page);
+    expect(recovered.moves).toBe(before.moves);
+    expect(recovered.board).toBe(before.board);
+    expect(recovered.refusedTutorial).toBe(false);
+    expect(recovered.tutorialIcon).toBe("✦");
+    expect(recovered.tutorialIconAriaHidden).toBe("true");
+    expect(recovered.tutorialCopy).toBe("Swap the glowing flowers.");
+    expect(recovered.rows).toBe(8);
+
+    if (!viewport.mobile) {
+      await page.locator(`.tile[data-x="${pair[0].x}"][data-y="${pair[0].y}"]`).focus();
+      await page.keyboard.press("Enter");
+      await page.locator(`.tile[data-x="${pair[1].x}"][data-y="${pair[1].y}"]`).focus();
+      await page.keyboard.press("Enter");
+      await expect(page.locator("#tutorialPanel")).toContainText("NO BLOOM");
+      const keyboardPeak = await invalidFeedbackState(page);
+      expect(keyboardPeak.moves, "keyboard refusal spends no move").toBe(before.moves);
+      expect(keyboardPeak.board, "keyboard refusal preserves board").toBe(before.board);
+      await page.reload({ waitUntil: "networkidle" });
+      await waitForSettledBoard(page);
+      const reloaded = await invalidFeedbackState(page);
+      expect(reloaded.moves, "refusal reload preserves settled move count").toBe(before.moves);
+      expect(reloaded.board, "refusal reload preserves settled board").toBe(before.board);
+      expect(reloaded.invalidTiles).toHaveLength(0);
+      expect(reloaded.refusedTutorial).toBe(false);
+      expect(reloaded.tutorialIcon).toBe("✦");
+      expect(reloaded.tutorialCopy).toBe("Swap the glowing flowers.");
+      await expect(page.locator('.tile[tabindex="0"]')).toHaveCount(1);
+    }
+  });
+}
+
 test("drag preview moves the hinted pair before one authoritative release", async ({ page }) => {
   const consoleErrors = [];
   const pageErrors = [];
@@ -2388,6 +2577,7 @@ test("drag preview moves the hinted pair before one authoritative release", asyn
 test("invalid, cancel, mobile touch, and reduced motion drag paths stay clean", async ({ page, browser }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
   await openFresh(page, "drag-invalid");
+  await expect(page.locator("#tutorialPanel")).toBeVisible();
   const invalidPair = await findInvalidAdjacentPair(page);
   expect(invalidPair, "invalid adjacent pair").toHaveLength(2);
   const invalidBefore = await activeState(page);
@@ -2395,6 +2585,15 @@ test("invalid, cancel, mobile touch, and reduced motion drag paths stay clean", 
   expect(Math.abs(invalidPreview.sourceAxis), "invalid source previews").toBeGreaterThan(18);
   expect(Math.abs(invalidPreview.neighborAxis), "invalid neighbor previews").toBeGreaterThan(5);
   await releaseMouseAndWaitIdle(page);
+  await expect(page.locator(".tile.invalid-swap")).toHaveCount(2);
+  const invalidPeak = await invalidFeedbackState(page);
+  expect(invalidPeak.moves, "invalid drag peak spends no move").toBe(invalidBefore.moves);
+  expect(invalidPeak.board, "invalid drag peak leaves board authoritative").toBe(invalidBefore.board);
+  expect(invalidPeak.tutorialIcon).toBe("NO BLOOM");
+  expect(invalidPeak.tutorialCopy).toBe("Use the glowing pair.");
+  expect(invalidPeak.invalidTiles).toHaveLength(2);
+  expect(invalidPeak.instructionSurfaces).toBe(1);
+  await page.screenshot({ path: "work/invalid-feedback-desktop-drag.png", fullPage: true });
   await page.waitForTimeout(900);
   const invalidAfter = await activeState(page);
   expect(invalidAfter.moves, "invalid drag spends no move").toBe(invalidBefore.moves);
@@ -2423,6 +2622,7 @@ test("invalid, cancel, mobile touch, and reduced motion drag paths stay clean", 
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
   try {
     await openFresh(mobile, "drag-mobile390");
+    await expect(mobile.locator("#tutorialPanel")).toBeVisible();
     const mobilePair = await hintedPair(mobile);
     const mobileBefore = await activeState(mobile);
     const touchPreview = await dragTouchViaCdp(mobile, mobilePair);
@@ -2439,12 +2639,30 @@ test("invalid, cancel, mobile touch, and reduced motion drag paths stay clean", 
     expect(mobileAfter.tiles).toBe(64);
     expect(mobileAfter.rows).toBe(8);
     expect(mobileAfter.overflowX).toBe(false);
+
+    const mobileInvalidPair = await findInvalidAdjacentPair(mobile);
+    const mobileInvalidBefore = await activeState(mobile);
+    await dragTouchViaCdp(mobile, mobileInvalidPair);
+    await expect(mobile.locator(".tile.invalid-swap")).toHaveCount(2);
+    const mobileInvalidPeak = await invalidFeedbackState(mobile);
+    expect(mobileInvalidPeak.moves, "mobile invalid drag spends no move").toBe(mobileInvalidBefore.moves);
+    expect(mobileInvalidPeak.board, "mobile invalid drag preserves board").toBe(mobileInvalidBefore.board);
+    expect(mobileInvalidPeak.tutorialIcon).toBe("NO BLOOM");
+    expect(mobileInvalidPeak.tutorialCopy).toBe("Use the glowing pair.");
+    expect(mobileInvalidPeak.invalidTiles).toHaveLength(2);
+    expect(mobileInvalidPeak.tiles).toBe(64);
+    expect(mobileInvalidPeak.dataRows).toBe(8);
+    expect(mobileInvalidPeak.boardBottom).toBeLessThanOrEqual(844);
+    expect(mobileInvalidPeak.overflowX).toBe(false);
+    await mobile.screenshot({ path: "work/invalid-feedback-mobile390-drag.png", fullPage: true });
+    await expect(mobile.locator(".tile.invalid-swap")).toHaveCount(0, { timeout: 1600 });
   } finally {
     await mobile.close();
   }
 
   await page.emulateMedia({ reducedMotion: "reduce" });
   await openFresh(page, "drag-reduced-motion");
+  await expect(page.locator("#tutorialPanel")).toBeVisible();
   const reducedPair = await hintedPair(page);
   const reducedBefore = await activeState(page);
   const reducedGeometry = await tileGeometry(page, reducedPair);
@@ -2459,6 +2677,54 @@ test("invalid, cancel, mobile touch, and reduced motion drag paths stay clean", 
   await releaseMouseAndWaitIdle(page);
   const reducedAfter = await activeState(page);
   expect(reducedAfter.moves, "reduced motion release commits").toBe(reducedBefore.moves - 1);
+
+  const reducedInvalidPair = await findInvalidAdjacentPair(page);
+  for (const cell of reducedInvalidPair) {
+    await page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`).click();
+  }
+  await expect(page.locator("#tutorialPanel")).toContainText("NO BLOOM");
+  const reducedInvalidPeak = await invalidFeedbackState(page);
+  expect(reducedInvalidPeak.moves, "reduced motion invalid swap spends no move").toBe(reducedAfter.moves);
+  expect(reducedInvalidPeak.board, "reduced motion invalid swap preserves board").toBe(reducedAfter.board);
+  expect(reducedInvalidPeak.tutorialCopy).toBe("Use the glowing pair.");
+  await expect(page.locator(".tile.invalid-swap")).toHaveCount(0, { timeout: 1600 });
+
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.evaluate((key) => {
+    const state = JSON.parse(localStorage.getItem(key));
+    state.currentRound = 2;
+    state.moves = 9;
+    state.coins = 20;
+    state.counts = [0, 0, 0, 0, 0, 0];
+    state.roundComplete = false;
+    state.roundOneRestored = true;
+    state.roundTwoGreenhouseUpgraded = false;
+    state.tutorialSkipped = true;
+    state.tutorialActive = false;
+    state.hasMadeValidMove = false;
+    state.restoredRoundTwoGuideMoves = 0;
+    state.armedLineRelic = null;
+    state.cursedThorns = [];
+    state.clearedCursedThorns = 0;
+    state.board = Array.from({ length: 8 }, (_, y) => (
+      Array.from({ length: 8 }, (_, x) => (x + 2 * y) % 6)
+    ));
+    localStorage.setItem(key, JSON.stringify(state));
+  }, SAVE_KEY);
+  await page.reload({ waitUntil: "networkidle" });
+  await waitForSettledBoard(page);
+  const laterPair = await findInvalidAdjacentPair(page);
+  const laterBefore = await activeState(page);
+  for (const cell of laterPair) {
+    await page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`).click();
+  }
+  await expect(page.locator("#firstSwapCue")).toContainText("No bloom");
+  await expect(page.locator("#firstSwapCue")).toBeVisible();
+  const laterPeak = await activeState(page);
+  expect(laterPeak.moves, "later-round invalid swap spends no move").toBe(laterBefore.moves);
+  expect(laterPeak.board, "later-round invalid swap preserves board").toBe(laterBefore.board);
+  await expect(page.locator(".tile.invalid-swap")).toHaveCount(0, { timeout: 1600 });
+  await expect(page.locator("#firstSwapCue")).not.toContainText("No bloom");
 });
 
 test("keyboard play follows the board and payoff focus", async ({ page }) => {

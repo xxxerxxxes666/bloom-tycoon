@@ -1202,7 +1202,8 @@
       filter: none;
     }
 
-    .tutorial-panel.black-candle-tutorial .tutorial-icon {
+    .tutorial-panel.black-candle-tutorial .tutorial-icon,
+    .tutorial-panel.refused-tutorial .tutorial-icon {
       padding-right: 7px;
       border-right: 1px solid #76582e;
       color: #b9965f;
@@ -1212,20 +1213,36 @@
       white-space: nowrap;
     }
 
+    .tutorial-panel.refused-tutorial {
+      border-color: #9b1d22;
+      color: #ffd8cd;
+      background: linear-gradient(90deg, #160807f2, #3a0d10f2, #160807f2);
+      box-shadow: 0 0 14px #9b1d2245, inset 0 0 12px #000;
+    }
+
+    .tutorial-panel.refused-tutorial .tutorial-icon {
+      border-right-color: #9b1d22;
+      color: #f0a090;
+      text-shadow: 0 0 10px #9b1d22;
+    }
+
     @media (max-width: 600px) {
-      .tutorial-panel.black-candle-tutorial {
+      .tutorial-panel.black-candle-tutorial,
+      .tutorial-panel.refused-tutorial {
         gap: 5px;
         padding-right: 4px;
         padding-left: 6px;
         font-size: 12px;
         letter-spacing: 0;
       }
-      .tutorial-panel.black-candle-tutorial .tutorial-icon {
+      .tutorial-panel.black-candle-tutorial .tutorial-icon,
+      .tutorial-panel.refused-tutorial .tutorial-icon {
         padding-right: 5px;
         font-size: 8px;
         letter-spacing: .045em;
       }
-      .tutorial-panel.black-candle-tutorial .tutorial-skip {
+      .tutorial-panel.black-candle-tutorial .tutorial-skip,
+      .tutorial-panel.refused-tutorial .tutorial-skip {
         padding-right: 6px;
         padding-left: 6px;
         font-size: 9px;
@@ -2030,7 +2047,7 @@
     }
 
     .tile.invalid-swap {
-      animation: invalid-swap 720ms ease-out both;
+      animation: invalid-swap 720ms cubic-bezier(.18,.78,.24,1) both;
     }
 
     .tile.invalid-swap::after {
@@ -3733,21 +3750,21 @@
     }
 
     @keyframes invalid-swap {
-      0%,
-      100% {
-        transform: translateX(0);
-        box-shadow: inset 0 0 14px #000;
+      0% {
+        transform: translate(var(--invalid-x, 0), var(--invalid-y, 0)) scale(.96);
+        box-shadow: inset 0 0 14px #000, 0 0 14px #9b1d22;
       }
-      20% {
-        transform: translateX(-4px);
-        box-shadow: inset 0 0 14px #000, 0 0 16px #9b1d22;
-      }
-      45% {
-        transform: translateX(4px);
+      32% {
+        transform: translate(var(--invalid-recoil-x, 0), var(--invalid-recoil-y, 0)) scale(1.03);
         box-shadow: inset 0 0 14px #000, 0 0 18px #d23535;
       }
-      70% {
-        transform: translateX(-2px);
+      64% {
+        transform: translate(var(--invalid-settle-x, 0), var(--invalid-settle-y, 0));
+        box-shadow: inset 0 0 14px #000, 0 0 10px #9b1d22;
+      }
+      100% {
+        transform: translate(0, 0);
+        box-shadow: inset 0 0 14px #000;
       }
     }
 
@@ -6432,7 +6449,7 @@
     let dragPreview = null;
     let suppressNextBoardClick = false;
     let superBloomCells = new Set();
-    let invalidSwapCells = new Set();
+    let invalidSwapCells = new Map();
     let validSwapCells = new Set();
     let activeSwapCells = new Set();
     let swapGlideCells = new Map();
@@ -7940,71 +7957,17 @@
       }, hintDelay);
     }
 
-    function restoreFirstSwapCueAfterRefusal({ preserveCue = false } = {}) {
-      if (isArmedLineRelicGuidanceActive()) {
-        const guidance = lineRelicGuidance();
-        idleHintCells = new Set(guidance.pair.map((cell) => `${cell.x},${cell.y}`));
-        boardFocusCell = clampBoardFocusCell(guidance.source);
-        if (!preserveCue) {
-          $("firstSwapCue").textContent = guidance.cue;
-        }
-        return;
-      }
-      const plan = activeRoundPlan();
-      seedRoundOneGuidedMove(plan);
-      const roundOneStage = roundOneGuidedStage(plan);
-      if (roundOneStage === "black-candle" && hasRoundOneBlackCandleLessonMove(plan)) {
-        const move = roundOneBlackCandleLessonSwap();
-        idleHintCells = new Set(move.map((cell) => `${cell.x},${cell.y}`));
-        if (!preserveCue) {
-          $("firstSwapCue").textContent = "Make 4 Bone Stars - arm Black Candle Vine.";
-        }
-        return;
-      }
-      if (roundOneStage === "bone-ordinary") {
-        const move = findTargetLegalMove(plan.targets[1]?.flowerId, 1);
-        if (move) {
-          idleHintCells = new Set(move.map((cell) => `${cell.x},${cell.y}`));
-          if (!preserveCue) {
-            $("firstSwapCue").textContent = "Bone Star next - swap the glowing pair.";
-          }
-          return;
-        }
-      }
-      const targetIndex = plan.targets.findIndex((target) => targetProgress(target) < target.needed);
-      const target = plan.targets[targetIndex];
-      const [a, b] = (target ? findTargetLegalMove(target.flowerId, targetIndex) : null) || legalMoves()[0] || [];
-      if (!a || !b) {
-        $("firstSwapCue").textContent = "Glowing pair incoming…";
-        scheduleIdleHint();
-        return;
-      }
-      idleHintCells = new Set([`${a.x},${a.y}`, `${b.x},${b.y}`]);
-      if (preserveCue) {
-        return;
-      }
-      if (plan.round === 1 && hasMadeValidMove && targetIndex === 1) {
-        $("firstSwapCue").textContent = "Make 4 Bone Stars - arm Black Candle Vine.";
-        return;
-      }
-      if (plan.round === 1 && hasMadeValidMove) {
-        $("firstSwapCue").textContent = "Keep matching - swap the glowing pair.";
-        return;
-      }
-      if (isRestoredRoundTwoGuideActive() && hasMadeValidMove && target) {
-        const direction = a.x === b.x ? "↑↓" : "↔";
-        $("firstSwapCue").textContent = `${flowers[target.flowerId][0]} next ${direction}`;
-        return;
-      }
-      $("firstSwapCue").textContent = firstSwapCueText(a, b);
-    }
-
     function shouldPreserveSelectedHintPair(hintCells, cell) {
       return hintCells && typeof hintCells.has === "function"
         && hintCells.size === 2
-        && hintCells.has(`${cell.x},${cell.y}`)
         && !roundComplete
-        && ((currentRound === 1 && !hasMadeValidMove) || isRestoredNextOrderFocus() || isPostOnboardingIdleHintActive() || isArmedLineRelicGuidanceActive());
+        && (
+          (currentRound === 1 && tutorialActive)
+          || (
+            hintCells.has(`${cell.x},${cell.y}`)
+            && ((currentRound === 1 && !hasMadeValidMove) || isRestoredNextOrderFocus() || isPostOnboardingIdleHintActive() || isArmedLineRelicGuidanceActive())
+          )
+        );
     }
 
     function notePlayerInteraction() {
@@ -8370,28 +8333,34 @@
       }
     }
 
-    function markInvalidSwap(a, b) {
+    function markInvalidSwap(a, b, hintSnapshot = idleHintCells) {
       if (invalidSwapTimer && window.clearTimeout) {
         window.clearTimeout(invalidSwapTimer);
       }
+      const cue = $("firstSwapCue");
+      const focusedCueActive = (currentRound === 1 || isRestoredNextOrderFocus()) && !roundComplete && cue;
+      const returnCue = focusedCueActive ? cue.textContent : "";
+      const returnHintCells = focusedCueActive ? new Set(hintSnapshot) : new Set();
       clearIdleHint();
       pulseHaptic([10, 35, 18]);
       playBloomSound("invalid");
-      const cue = $("firstSwapCue");
-      const focusedCueActive = (currentRound === 1 || isRestoredNextOrderFocus()) && !roundComplete && cue;
       if (focusedCueActive) {
         cue.textContent = "No bloom — follow the glowing pair.";
         cue.classList.add("swap-refused");
-        restoreFirstSwapCueAfterRefusal({ preserveCue: true });
+        idleHintCells = new Set(returnHintCells);
       }
-      invalidSwapCells = new Set([`${a.x},${a.y}`, `${b.x},${b.y}`]);
+      invalidSwapCells = new Map([
+        [`${a.x},${a.y}`, { dx: b.x - a.x, dy: b.y - a.y }],
+        [`${b.x},${b.y}`, { dx: a.x - b.x, dy: a.y - b.y }]
+      ]);
       render();
       invalidSwapTimer = window.setTimeout(() => {
         invalidSwapCells.clear();
         invalidSwapTimer = null;
         if (focusedCueActive) {
           cue.classList.remove("swap-refused");
-          restoreFirstSwapCueAfterRefusal();
+          cue.textContent = returnCue;
+          idleHintCells = new Set(returnHintCells);
         }
         render();
       }, 880);
@@ -9307,7 +9276,8 @@
           const legalClass = selected && isLegalSwap(selected, { x, y }) ? "legal-target" : "";
           const harvestClass = harvestFlashCells.has(`${x},${y}`) ? "harvest-flash" : "";
           const superClass = superBloomCells.has(`${x},${y}`) ? "super-bloom-hot" : "";
-          const invalidClass = invalidSwapCells.has(`${x},${y}`) ? "invalid-swap" : "";
+          const invalidFeedback = invalidSwapCells.get(`${x},${y}`);
+          const invalidClass = invalidFeedback ? "invalid-swap" : "";
           const validSwapClass = validSwapCells.has(`${x},${y}`) ? "valid-swap" : "";
           const swapClass = activeSwapCells.has(`${x},${y}`) ? "swap-snap" : "";
           const swapGlide = swapGlideCells.get(`${x},${y}`);
@@ -9344,6 +9314,14 @@
           tile.disabled = isResolving || roundComplete || isBouquetFailed();
           tile.tabIndex = !tile.disabled && boardFocusCell.x === x && boardFocusCell.y === y ? 0 : -1;
           tile.style.setProperty("--tile-color", flowers[value][4]);
+          if (invalidFeedback) {
+            tile.style.setProperty("--invalid-x", `${invalidFeedback.dx * 18}%`);
+            tile.style.setProperty("--invalid-y", `${invalidFeedback.dy * 18}%`);
+            tile.style.setProperty("--invalid-recoil-x", `${invalidFeedback.dx * -8}%`);
+            tile.style.setProperty("--invalid-recoil-y", `${invalidFeedback.dy * -8}%`);
+            tile.style.setProperty("--invalid-settle-x", `${invalidFeedback.dx * 3}%`);
+            tile.style.setProperty("--invalid-settle-y", `${invalidFeedback.dy * 3}%`);
+          }
           if (lineRelicLaneClass) {
             tile.style.setProperty("--lane-angle", activeRelicGuidance.direction === "vertical" ? "0deg" : "90deg");
           }
@@ -9552,6 +9530,9 @@
         }
         return "Tap Next Order.";
       }
+      if (invalidSwapCells.size > 0) {
+        return "Use the glowing pair.";
+      }
       if (plan.round === 2 && plan.thornGoal && thornGoalProgress(plan) === 0) {
         return "Match beside thorns.";
       }
@@ -9584,11 +9565,13 @@
       if (!panel || !copy) {
         return;
       }
-      const namedBlackCandle = tutorialActive && currentRound === 1 && Boolean(armedLineRelic);
+      const refusedTutorial = tutorialActive && invalidSwapCells.size > 0;
+      const namedBlackCandle = tutorialActive && currentRound === 1 && Boolean(armedLineRelic) && !refusedTutorial;
       panel.classList.toggle("black-candle-tutorial", namedBlackCandle);
+      panel.classList.toggle("refused-tutorial", refusedTutorial);
       if (icon) {
-        icon.textContent = namedBlackCandle ? "BLACK CANDLE" : "✦";
-        icon.setAttribute("aria-hidden", namedBlackCandle ? "false" : "true");
+        icon.textContent = refusedTutorial ? "NO BLOOM" : namedBlackCandle ? "BLACK CANDLE" : "✦";
+        icon.setAttribute("aria-hidden", refusedTutorial || namedBlackCandle ? "false" : "true");
       }
       if (skip) {
         skip.hidden = roundComplete;
@@ -9762,7 +9745,7 @@
         ritualMessage = "The garden refuses that graft.";
         boardFocusCell = source;
         queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
-        markInvalidSwap(source, target);
+        markInvalidSwap(source, target, selectedHintPair);
         return;
       }
 
@@ -11084,7 +11067,6 @@
         refillColumns.clear();
         harvestFlashCells.clear();
         superBloomCells.clear();
-        invalidSwapCells.clear();
         thornPulseCells.clear();
         thornClearedCells.clear();
         transmuteFlashCell = "";

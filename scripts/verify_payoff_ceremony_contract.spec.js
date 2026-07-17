@@ -14,7 +14,16 @@ async function resetPage(page, suffix) {
 
 async function clickGuidedSwap(page) {
   const hints = page.locator(".tile.idle-hint");
-  await expect(hints).toHaveCount(2, { timeout: 5000 });
+  await page.waitForFunction((key) => {
+    const saved = JSON.parse(localStorage.getItem(key) || "{}");
+    const payoff = document.querySelector("#roundOneRestoration");
+    return saved.roundComplete === true
+      || (payoff && getComputedStyle(payoff).display !== "none")
+      || document.querySelectorAll(".tile.idle-hint").length === 2;
+  }, SAVE_KEY, { timeout: 5000 });
+  if (await hints.count() !== 2) {
+    return false;
+  }
   const pair = await hints.evaluateAll((tiles) => tiles.slice(0, 2).map((tile) => ({
     x: tile.dataset.x,
     y: tile.dataset.y
@@ -25,6 +34,7 @@ async function clickGuidedSwap(page) {
     document.querySelector(`.tile[data-x="${x}"][data-y="${y}"]`)?.click();
   }, pair[1]);
   await page.waitForTimeout(1400);
+  return true;
 }
 
 async function clickGuidedSwapNoWait(page) {
