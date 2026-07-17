@@ -6438,6 +6438,8 @@
     let supremeChargeTimer = null;
     let idleHintTimer = null;
     let invalidSwapTimer = null;
+    let invalidSwapReturnCue = "";
+    let invalidSwapReturnHintCells = new Set();
     let validSwapTimer = null;
     let bouquetSealPulseTimer = null;
     let nextOrderPulseTimer = null;
@@ -8334,13 +8336,20 @@
     }
 
     function markInvalidSwap(a, b, hintSnapshot = idleHintCells) {
+      const continuingRefusal = Boolean(invalidSwapTimer);
       if (invalidSwapTimer && window.clearTimeout) {
         window.clearTimeout(invalidSwapTimer);
       }
       const cue = $("firstSwapCue");
       const focusedCueActive = (currentRound === 1 || isRestoredNextOrderFocus()) && !roundComplete && cue;
-      const returnCue = focusedCueActive ? cue.textContent : "";
-      const returnHintCells = focusedCueActive ? new Set(hintSnapshot) : new Set();
+      const returnCue = continuingRefusal
+        ? invalidSwapReturnCue
+        : focusedCueActive ? cue.textContent : "";
+      const returnHintCells = continuingRefusal
+        ? new Set(invalidSwapReturnHintCells)
+        : focusedCueActive ? new Set(hintSnapshot) : new Set();
+      invalidSwapReturnCue = returnCue;
+      invalidSwapReturnHintCells = new Set(returnHintCells);
       clearIdleHint();
       pulseHaptic([10, 35, 18]);
       playBloomSound("invalid");
@@ -8362,6 +8371,8 @@
           cue.textContent = returnCue;
           idleHintCells = new Set(returnHintCells);
         }
+        invalidSwapReturnCue = "";
+        invalidSwapReturnHintCells.clear();
         render();
       }, 880);
     }

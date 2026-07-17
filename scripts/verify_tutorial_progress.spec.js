@@ -879,6 +879,12 @@ async function invalidFeedbackState(page) {
       tutorialIcon: tutorialIcon?.textContent.trim() || "",
       tutorialIconAriaHidden: tutorialIcon?.getAttribute("aria-hidden") || "",
       tutorialText: tutorialPanel?.innerText.trim() || "",
+      cue: document.querySelector("#firstSwapCue")?.textContent.trim() || "",
+      hints: Array.from(document.querySelectorAll(".tile.idle-hint")).map((tile) => ({
+        x: Number(tile.dataset.x),
+        y: Number(tile.dataset.y),
+        flowerId: Number(tile.dataset.flowerId)
+      })),
       refusedTutorial: tutorialPanel?.classList.contains("refused-tutorial") || false,
       tutorialVisible: visible(tutorialPanel),
       tutorialClipped: Boolean(
@@ -917,10 +923,10 @@ async function invalidFeedbackState(page) {
   }, SAVE_KEY);
 }
 
-async function refuseInvalidPair(page, { touch = false } = {}) {
+async function refuseInvalidPair(page, { touch = false, repeat = false } = {}) {
   const pair = await findInvalidAdjacentPair(page);
   expect(pair, "invalid adjacent pair").toHaveLength(2);
-  const before = await activeState(page);
+  const before = await invalidFeedbackState(page);
   for (const cell of pair) {
     const tile = page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`);
     if (touch) {
@@ -932,13 +938,57 @@ async function refuseInvalidPair(page, { touch = false } = {}) {
   await expect(page.locator(".tile.invalid-swap")).toHaveCount(2);
   await page.waitForTimeout(140);
   const peak = await invalidFeedbackState(page);
+  let repeatedPeak = null;
+  if (repeat) {
+    for (const cell of pair) {
+      const tile = page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`);
+      if (touch) {
+        await tile.tap();
+      } else {
+        await tile.click();
+      }
+    }
+    await expect(page.locator(".tile.invalid-swap")).toHaveCount(2);
+    await page.waitForTimeout(140);
+    repeatedPeak = await invalidFeedbackState(page);
+  }
   await expect(page.locator(".tile.invalid-swap")).toHaveCount(0, { timeout: 1600 });
   return {
     pair,
     before,
     peak,
+    repeatedPeak,
     recovered: await invalidFeedbackState(page)
   };
+}
+
+async function assertRepeatedTutorialRefusal(page, { label, touch = false } = {}) {
+  const refusal = await refuseInvalidPair(page, { touch, repeat: true });
+  for (const [peakLabel, peak] of [
+    ["first peak", refusal.peak],
+    ["repeated peak", refusal.repeatedPeak]
+  ]) {
+    expect(peak.moves, `${label} ${peakLabel} preserves moves`).toBe(refusal.before.moves);
+    expect(peak.board, `${label} ${peakLabel} preserves board`).toBe(refusal.before.board);
+    expect(peak.tutorialIcon, `${label} ${peakLabel} category`).toBe("NO BLOOM");
+    expect(peak.tutorialCopy, `${label} ${peakLabel} copy`).toBe("Use the glowing pair.");
+    expect(peak.invalidTiles, `${label} ${peakLabel} keeps both marks`).toHaveLength(2);
+  }
+  expect(refusal.recovered.tutorialCopy, `${label} restores stage copy`).toBe(refusal.before.tutorialCopy);
+  expect(refusal.recovered.tutorialIcon, `${label} restores stage category`).toBe(refusal.before.tutorialIcon);
+  expect(refusal.recovered.cue, `${label} restores hidden cue`).toBe(refusal.before.cue);
+  expect(refusal.recovered.hints, `${label} restores exact hint pair`).toEqual(refusal.before.hints);
+
+  await page.reload({ waitUntil: "networkidle" });
+  await expect(page.locator(".tile")).toHaveCount(64);
+  await expect(page.locator(".tile.idle-hint")).toHaveCount(refusal.before.hints.length);
+  const reloaded = await invalidFeedbackState(page);
+  expect(reloaded.tutorialCopy, `${label} reload stage copy`).toBe(refusal.before.tutorialCopy);
+  expect(reloaded.tutorialIcon, `${label} reload stage category`).toBe(refusal.before.tutorialIcon);
+  expect(reloaded.cue, `${label} reload hidden cue`).toBe(refusal.before.cue);
+  expect(reloaded.hints, `${label} reload exact hint pair`).toEqual(refusal.before.hints);
+  expect(reloaded.invalidTiles, `${label} reload clears transient refusal`).toEqual([]);
+  return refusal;
 }
 
 async function dragTouchViaCdp(page, pair, scale = 0.62) {
@@ -1166,11 +1216,19 @@ for (const viewport of [
 
     const trace = [await guidedRoundOneState(page, "initial")];
     assertActiveGuidedState(trace[0], viewport.mobile, `${viewport.label} initial`);
+    await assertRepeatedTutorialRefusal(page, {
+      label: `${viewport.label} opening refusal`
+    });
 
     for (let index = 1; index <= 2; index += 1) {
       await clickHighlightedPair(page);
       trace.push(await guidedRoundOneState(page, `after swap ${index}`));
       assertActiveGuidedState(trace[trace.length - 1], viewport.mobile, `${viewport.label} after swap ${index}`);
+      if (index === 1) {
+        await assertRepeatedTutorialRefusal(page, {
+          label: `${viewport.label} Match 3 refusal`
+        });
+      }
     }
 
     await page.reload({ waitUntil: "networkidle" });
@@ -1193,12 +1251,9 @@ for (const viewport of [
     await page.screenshot({ path: `work/black-candle-${viewport.label}-cue.png`, fullPage: true });
 
     await expect(page.locator("#tutorialPanel")).toBeVisible();
-    const preFormationRefusal = await refuseInvalidPair(page);
-    expect(preFormationRefusal.peak.moves).toBe(preFormationRefusal.before.moves);
-    expect(preFormationRefusal.peak.board).toBe(preFormationRefusal.before.board);
-    expect(preFormationRefusal.peak.tutorialIcon).toBe("NO BLOOM");
-    expect(preFormationRefusal.peak.tutorialCopy).toBe("Use the glowing pair.");
-    expect(preFormationRefusal.recovered.tutorialCopy).toBe("Match 4 arms Black Candle Vine.");
+    const preFormationRefusal = await assertRepeatedTutorialRefusal(page, {
+      label: `${viewport.label} Match 4 refusal`
+    });
     const restoredFormationCue = await guidedRoundOneState(page, "Black Candle formation after refusal");
     expect(restoredFormationCue.cue).toBe("Make 4 Bone Stars - arm Black Candle Vine.");
     expect(restoredFormationCue.hints).toEqual(blackCandleCue.hints);
@@ -1264,11 +1319,9 @@ for (const viewport of [
       `${viewport.label} interrupted activation`
     );
 
-    const armedRefusal = await refuseInvalidPair(page);
-    expect(armedRefusal.peak.moves).toBe(armedRefusal.before.moves);
-    expect(armedRefusal.peak.board).toBe(armedRefusal.before.board);
-    expect(armedRefusal.peak.tutorialIcon).toBe("NO BLOOM");
-    expect(armedRefusal.peak.tutorialCopy).toBe("Use the glowing pair.");
+    const armedRefusal = await assertRepeatedTutorialRefusal(page, {
+      label: `${viewport.label} armed Black Candle refusal`
+    });
     expect(armedRefusal.recovered.tutorialIcon).toBe("BLACK CANDLE");
     expect(armedRefusal.recovered.tutorialCopy).toBe("Swap right to burn this row.");
     assertNaturalBlackCandleTutorial(
