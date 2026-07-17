@@ -1401,7 +1401,11 @@ test("accepted swaps reload from one authoritative settled state", async ({ brow
       });
 
       await openFresh(page, `atomic-thorn-${testCase.label}`);
-      await page.keyboard.press("n");
+      if (await page.evaluate(() => window.__bloomReviewHooksEnabled)) {
+        await page.keyboard.press("n");
+      } else {
+        await completeGuidedRoundOne(page);
+      }
       await expect(page.locator("#restoreGreenhouseBtn")).toBeVisible();
       await page.locator("#restoreGreenhouseBtn").click();
       await expect(page.locator("#nextOrderBtn")).toBeVisible();
