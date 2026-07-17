@@ -21,8 +21,22 @@ async function clickGuidedSwap(page) {
   })));
   expect(pair).toHaveLength(2);
   await page.locator(`.tile[data-x="${pair[0].x}"][data-y="${pair[0].y}"]`).click({ force: true });
-  await page.locator(`.tile[data-x="${pair[1].x}"][data-y="${pair[1].y}"]`).click({ force: true });
+  await page.evaluate(({ x, y }) => {
+    document.querySelector(`.tile[data-x="${x}"][data-y="${y}"]`)?.click();
+  }, pair[1]);
   await page.waitForTimeout(1400);
+}
+
+async function clickGuidedSwapNoWait(page) {
+  const hints = page.locator(".tile.idle-hint");
+  await expect(hints).toHaveCount(2, { timeout: 5000 });
+  const pair = await hints.evaluateAll((tiles) => tiles.slice(0, 2).map((tile) => ({
+    x: tile.dataset.x,
+    y: tile.dataset.y
+  })));
+  expect(pair).toHaveLength(2);
+  await page.locator(`.tile[data-x="${pair[0].x}"][data-y="${pair[0].y}"]`).click({ force: true });
+  await page.locator(`.tile[data-x="${pair[1].x}"][data-y="${pair[1].y}"]`).click({ force: true });
 }
 
 async function clickGuidedSwapAndSampleFlight(page) {
@@ -158,9 +172,33 @@ async function visibleContract(page) {
       craftedBouquets: visible(".crafted-bouquet").length,
       craftedBlooms: visible(".crafted-flower-bloom").length,
       craftedStems: visible(".crafted-stem").length,
+      craftedLeaves: visible(".crafted-leaf").length,
       craftedBloomCount: document.querySelector(".crafted-bouquet")?.dataset.craftedBloomCount || "",
+      craftedTargetCounts: document.querySelector(".crafted-bouquet")?.dataset.craftedTargetCounts || "",
       craftedComposition: Array.from(document.querySelectorAll(".crafted-flower-bloom"))
         .map((node) => Number(node.dataset.craftedFlower)),
+      craftedFlowerNames: Array.from(document.querySelectorAll(".crafted-flower-bloom"))
+        .map((node) => node.dataset.flowerName || ""),
+      craftedBloomSlots: Array.from(document.querySelectorAll(".crafted-flower-bloom"))
+        .map((node) => Number(node.dataset.craftedSlot)),
+      craftedBloomSizes: Array.from(document.querySelectorAll(".crafted-flower-bloom"))
+        .map((node) => {
+          const rect = node.getBoundingClientRect();
+          return Math.round(Math.min(rect.width, rect.height));
+        }),
+      craftedImageSources: Array.from(document.querySelectorAll(".crafted-flower-bloom img"))
+        .map((image) => ({
+          src: image.getAttribute("src") || "",
+          naturalWidth: image.naturalWidth,
+          naturalHeight: image.naturalHeight,
+          complete: image.complete
+        })),
+      craftedBinding: (() => {
+        const rect = document.querySelector(".crafted-binding")?.getBoundingClientRect();
+        return rect ? { width: Math.round(rect.width), height: Math.round(rect.height) } : { width: 0, height: 0 };
+      })(),
+      ingredientTokenHeights: visible(".bouquet-payoff-token")
+        .map((node) => Math.round(node.getBoundingClientRect().height)),
       trophyState: document.querySelector("#bouquetTrophy")?.dataset.assemblyState || "",
       liveAssemblies: visible("#liveBouquetAssembly").length,
       scenes: visible(".restoration-scene").length,
@@ -200,13 +238,38 @@ async function expectCeremony(page, expectedButton, screenshotPath, expectedGuid
   expect(contract.craftedBouquets, "one crafted bouquet object").toBe(1);
   expect(contract.craftedBlooms, "six overlapping bouquet bloom heads").toBe(6);
   expect(contract.craftedStems, "six bouquet stems").toBe(6);
+  expect(contract.craftedLeaves, "six bouquet leaves").toBe(6);
   expect(contract.craftedBloomCount).toBe("6");
   const expectedComposition = contract.trophyName.includes("Moonlit Wreath")
     ? [2, 4, 5, 2, 4, 5]
     : contract.trophyName.includes("Bloodroot Compact")
       ? [3, 0, 3, 0, 3, 0]
       : [5, 1, 5, 1, 5, 1];
+  const expectedCounts = contract.trophyName.includes("Moonlit Wreath")
+    ? "2:10,4:9,5:7"
+    : contract.trophyName.includes("Bloodroot Compact")
+      ? "3:14,0:13"
+      : "5:8,1:6";
   expect(contract.craftedComposition, "ceremony uses the exact six-slot target ingredient sequence").toEqual(expectedComposition);
+  expect(contract.craftedTargetCounts, "ceremony carries authoritative objective counts").toBe(expectedCounts);
+  expect(contract.craftedBloomSlots, "six bouquet slots are unique and ordered").toEqual([0, 1, 2, 3, 4, 5]);
+  expect(new Set(contract.craftedFlowerNames).size, "both target flower names render in trophy").toBeGreaterThanOrEqual(2);
+  expect(Math.min(...contract.craftedBloomSizes), "flower heads are materially larger than labels and binding").toBeGreaterThanOrEqual(58);
+  expect(Math.min(...contract.craftedBloomSizes), "flower heads dominate the hand binding").toBeGreaterThan(contract.craftedBinding.height * 2);
+  expect(Math.min(...contract.craftedBloomSizes), "flower heads dominate ingredient labels").toBeGreaterThan(
+    Math.max(...contract.ingredientTokenHeights, 0) * 2
+  );
+  expect(contract.craftedImageSources.every((image) => image.complete && image.naturalWidth >= 48 && image.naturalHeight >= 48)).toBe(true);
+  if (contract.trophyName.includes("First Bouquet")) {
+    expect(contract.craftedImageSources.map((image) => image.src)).toEqual([
+      "../assets/tiles/96/crimson_rose_rune.png",
+      "../assets/tiles/96/bone_white_thorn_star.png",
+      "../assets/tiles/96/crimson_rose_rune.png",
+      "../assets/tiles/96/bone_white_thorn_star.png",
+      "../assets/tiles/96/crimson_rose_rune.png",
+      "../assets/tiles/96/bone_white_thorn_star.png"
+    ]);
+  }
   expect(contract.trophyState, "bouquet presentation is ready").toBe("assembled");
   expect(contract.scenes, "one visible greenhouse scene").toBe(1);
   expect(contract.transactions, "one visible transaction line").toBe(1);
@@ -464,6 +527,106 @@ test("payoff ceremony contract mobile 390x844 journey", async ({ page }) => {
   expect(pageErrors).toEqual([]);
   expect(failedRequests).toEqual([]);
 });
+
+for (const config of [
+  { label: "desktop", viewport: { width: 1280, height: 720 } },
+  { label: "mobile390", viewport: { width: 390, height: 844 } }
+]) {
+  test(`natural Round 1 Black Candle handoff binds bouquet before restore on ${config.label}`, async ({ page }) => {
+    const consoleMessages = [];
+    const pageErrors = [];
+    const failedRequests = [];
+    page.on("console", (message) => consoleMessages.push(`${message.type()}: ${message.text()}`));
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    page.on("requestfailed", (request) => failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`));
+    await page.setViewportSize(config.viewport);
+    await resetPage(page, `binding_natural_${config.label}`);
+
+    let observedArmedCandle = false;
+    let observedLineHold = false;
+    for (let moveIndex = 0; moveIndex < 8; moveIndex += 1) {
+      const stateBefore = await page.evaluate(() => ({
+        roundComplete: JSON.parse(localStorage.getItem("bloomTycoonPlayableStateV1") || "{}").roundComplete === true,
+        cue: document.querySelector("#firstSwapCue")?.textContent.trim() || "",
+        candleTiles: document.querySelectorAll(".tile.black-candle-vine").length
+      }));
+      if (stateBefore.roundComplete) break;
+      if (stateBefore.cue.includes("Black Candle Vine") || stateBefore.candleTiles > 0) {
+        observedArmedCandle = true;
+        await page.screenshot({ path: `work/binding-${config.label}-black-candle-armed.png`, fullPage: true });
+        await clickGuidedSwapNoWait(page);
+        await page.waitForFunction(() => {
+          const particle = document.querySelector(".board-particle.line-relic");
+          const board = document.querySelector(".board");
+          const boardRect = board?.getBoundingClientRect();
+          const boardStyle = board ? getComputedStyle(board) : null;
+          const lanePreview = document.querySelector(".tile.line-relic-lane-preview, .tile.line-relic-destination, .tile.black-candle-vine");
+          return (particle || board?.classList.contains("line-relic-hit") || lanePreview)
+            && boardStyle?.display !== "none"
+            && boardRect?.width > 0
+            && boardRect?.height > 0;
+        }, null, { timeout: 2600 });
+        const lineHold = await page.evaluate(() => ({
+          boardVisible: (() => {
+            const board = document.querySelector(".board");
+            const rect = board?.getBoundingClientRect();
+            const style = board ? getComputedStyle(board) : null;
+            return Boolean(style?.display !== "none" && rect?.width > 0 && rect?.height > 0);
+          })(),
+          particles: document.querySelectorAll(".board-particle.line-relic").length,
+          boardLineHit: document.querySelector(".board")?.classList.contains("line-relic-hit") || false,
+          lanePreview: document.querySelectorAll(".tile.line-relic-lane-preview, .tile.line-relic-destination, .tile.black-candle-vine").length,
+          assemblyReady: document.querySelector("#roundOneRestoration")?.dataset.assemblyReady || "",
+          buttons: Array.from(document.querySelectorAll("#roundOneRestoration button"))
+            .filter((button) => {
+              const rect = button.getBoundingClientRect();
+              const style = getComputedStyle(button);
+              return !button.hidden
+                && style.display !== "none"
+                && style.visibility !== "hidden"
+                && rect.width > 0
+                && rect.height > 0;
+            })
+            .map((button) => button.textContent.trim())
+        }));
+        expect(lineHold.boardVisible, "Black Candle line clear is visible before bouquet-only presentation").toBe(true);
+        expect(
+          lineHold.particles + Number(lineHold.boardLineHit) + lineHold.lanePreview,
+          "Black Candle hold renders either the line clear, hit state, or lane preview"
+        ).toBeGreaterThan(0);
+        expect(lineHold.buttons, "restore is not actionable during the line clear hold").toEqual([]);
+        await page.screenshot({ path: `work/binding-${config.label}-final-special-hold.png`, fullPage: true });
+        observedLineHold = true;
+        await page.waitForTimeout(250);
+        const afterLineHold = await page.evaluate(() => ({
+          roundComplete: JSON.parse(localStorage.getItem("bloomTycoonPlayableStateV1") || "{}").roundComplete === true,
+          assemblyReady: document.querySelector("#roundOneRestoration")?.dataset.assemblyReady || ""
+        }));
+        if (afterLineHold.roundComplete || afterLineHold.assemblyReady === "false") {
+          break;
+        }
+        await page.waitForTimeout(900);
+      } else {
+        await clickGuidedSwap(page);
+      }
+    }
+
+    expect(observedArmedCandle, "natural guided play forms the Black Candle Vine").toBe(true);
+    expect(observedLineHold, "natural guided play activates the Black Candle Vine before bouquet binding").toBe(true);
+    await expect(page.locator("#roundOneRestoration")).toBeVisible({ timeout: 5000 });
+    await page.waitForFunction(() => document.querySelector("#roundOneRestoration")?.dataset.assemblyReady === "false", null, { timeout: 2200 });
+    const binding = await visibleContract(page);
+    expect(binding.trophyState).toBe("forming");
+    expect(binding.buttons, "restore waits until binding resolves").toEqual([]);
+    expect(binding.craftedComposition).toEqual([5, 1, 5, 1, 5, 1]);
+    expect(binding.craftedTargetCounts).toBe("5:8,1:6");
+    await page.screenshot({ path: `work/binding-${config.label}-bouquet-binding.png`, fullPage: true });
+    await expectCeremony(page, "Restore Greenhouse", `work/binding-${config.label}-pending-restore.png`, "Coins restore the greenhouse.");
+    expect(consoleMessages).toEqual([]);
+    expect(pageErrors).toEqual([]);
+    expect(failedRequests).toEqual([]);
+  });
+}
 
 for (const config of [
   { label: "desktop", viewport: { width: 1280, height: 720 }, minWidth: 116, minHeight: 52 },

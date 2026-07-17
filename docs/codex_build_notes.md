@@ -1,5 +1,14 @@
 # Codex Build Notes
 
+## 2026-07-17 objective-to-bouquet binding payoff
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_payoff_ceremony_contract.spec.js`, and this note.
+- Player-visible result: the six objective blooms now use one shared deterministic arrangement from active progress through the final trophy. Round 1 visibly binds recognizable Thorn Rose and Bone Star heads into a dense gothic bouquet instead of presenting mostly stems and labels; Rounds 2-3 retain the same shared composition architecture.
+- Sequence/economy: the Black Candle line-clear hold remains ahead of bouquet-only presentation. Normal motion then shows a bounded forming state with no premature restore action; reduced motion resolves promptly. The transaction remains exact at `0 -> 120 earned -> 100 spent -> 20 remaining`, and greenhouse ownership changes only on spend.
+- Browser evidence: `work/binding-desktop-bouquet-binding.png`, `work/binding-desktop-pending-restore.png`, `work/binding-mobile390-bouquet-binding.png`, and `work/binding-mobile390-pending-restore.png`. Exact mobile keeps the ceremony within `390x844`, while active play retains 64 tiles, eight complete rows, and no horizontal overflow.
+- Verification: project/static checks passed; the strengthened payoff ceremony contract passed `6/6`; the serial first-three journey, tutorial, Pass 3 feedback, and runtime matrix passed `47/47`. Coverage includes natural Black Candle formation/activation, binding-before-action sequencing, authoritative bouquet compositions/counts, local asset loading, Round 2/3 shared trophies, exact economy, save/reload, Retry, reduced motion, broken images, overflow, and console/page/request errors.
+- Security/scope: changed files contain no credential material, trackers, analytics, new external network calls, private IPs, dependencies, services, backends, accounts, ads, permissions, new rounds, currencies, objectives, controls, or save-schema changes.
+
 ## 2026-07-17 atomic accepted-swap persistence
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_tutorial_progress.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.

@@ -897,7 +897,7 @@
     .progress {
       width: min(672px, calc(100% - 16px));
       display: grid;
-      grid-template-columns: auto auto minmax(112px, auto) minmax(78px, 1fr) auto;
+      grid-template-columns: auto auto minmax(132px, auto) minmax(78px, 1fr) auto;
       align-items: center;
       gap: 8px;
       min-height: 58px;
@@ -990,8 +990,8 @@
     .live-bouquet-assembly {
       --live-bouquet-fullness: 0;
       position: relative;
-      width: 118px;
-      height: 54px;
+      width: 138px;
+      height: 68px;
       display: block;
       align-self: center;
       justify-self: center;
@@ -1014,9 +1014,9 @@
 
     .live-bouquet-assembly::before {
       left: 50%;
-      bottom: 5px;
-      width: calc(42px + var(--live-bouquet-fullness, 0) * 32px);
-      height: 12px;
+      bottom: 7px;
+      width: calc(58px + var(--live-bouquet-fullness, 0) * 40px);
+      height: 15px;
       transform: translateX(-50%);
       border: 1px solid #744b2b;
       background: linear-gradient(90deg, #431513, #b9874d, #431513);
@@ -1026,9 +1026,9 @@
 
     .live-bouquet-assembly::after {
       left: 50%;
-      bottom: 7px;
-      width: calc(62px + var(--live-bouquet-fullness, 0) * 24px);
-      height: 28px;
+      bottom: 9px;
+      width: calc(78px + var(--live-bouquet-fullness, 0) * 34px);
+      height: 34px;
       transform: translateX(-50%);
       background:
         repeating-linear-gradient(104deg, #0000 0 10px, #6f944d 11px 12px, #0000 13px 24px);
@@ -1041,10 +1041,10 @@
     .live-bouquet-stem {
       position: absolute;
       left: calc(50% + var(--live-stem-x, 0px));
-      top: 24px;
+      top: 30px;
       z-index: 2;
       width: 2px;
-      height: 25px;
+      height: 32px;
       border-radius: 999px;
       transform: rotate(var(--live-stem-rot, 0deg));
       transform-origin: 50% 100%;
@@ -1056,10 +1056,10 @@
     .live-bouquet-leaf {
       position: absolute;
       left: calc(50% + var(--live-leaf-x, 0px));
-      top: var(--live-leaf-y, 36px);
+      top: var(--live-leaf-y, 42px);
       z-index: 3;
-      width: 13px;
-      height: 6px;
+      width: 16px;
+      height: 7px;
       border: 1px solid #6f944d66;
       border-radius: 80% 14% 70% 18%;
       background: linear-gradient(90deg, #17230f, #6f944d 58%, #23190d);
@@ -1080,8 +1080,8 @@
       place-items: center;
       color: var(--live-color, #d7b16d);
       opacity: calc(.28 + var(--ingredient-progress, 0) * .72);
-      transform: translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.56 + var(--ingredient-progress, 0) * .48));
-      filter: saturate(calc(.62 + var(--ingredient-progress, 0) * .62)) brightness(calc(.78 + var(--ingredient-progress, 0) * .32)) drop-shadow(0 4px 5px #000);
+      transform: translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.48 + var(--ingredient-progress, 0) * .56));
+      filter: saturate(calc(.66 + var(--ingredient-progress, 0) * .66)) brightness(calc(.82 + var(--ingredient-progress, 0) * .34)) drop-shadow(0 4px 5px #000);
       transition: opacity 220ms ease, transform 260ms ease, filter 260ms ease;
     }
 
@@ -1131,8 +1131,8 @@
 
     .live-bouquet-thorn {
       position: absolute;
-      right: 11px;
-      top: 9px;
+      right: 9px;
+      top: 8px;
       z-index: 9;
       width: 18px;
       height: 18px;
@@ -4990,9 +4990,9 @@
     .bouquet-trophy-kicker,.bouquet-trophy-name,.bouquet-trophy-copy,.bouquet-trophy-bonus,.bouquet-assembly,.bouquet-stems { position:relative; z-index:1; }
     .bouquet-trophy-kicker { color:#d7b16d; font:900 10px/1 system-ui,sans-serif; letter-spacing:.14em; text-transform:uppercase; }
     .bouquet-trophy-name { display:block; color:#fff2bf; font:900 21px/1.05 Georgia,serif; text-shadow:0 2px 4px #000,0 0 14px var(--bouquet-aura,#d7b16d55); }
-    .bouquet-trophy-copy { display:block; color:#c9b48f; font:700 12px/1.25 system-ui,sans-serif; max-width:25ch; margin:2px auto 0; }
-    .bouquet-assembly { min-height:138px; width:min(238px,100%); display:grid; place-items:center; margin:0 auto; }
-    .bouquet-assembly-ring { position:absolute; width:148px; height:132px; border:1px solid color-mix(in srgb,var(--bouquet-aura,#d7b16d55) 74%,#d7b16d); border-radius:50% 50% 44% 44%; opacity:.46; box-shadow:inset 0 0 18px #000,0 0 18px var(--bouquet-aura,#d7b16d55); }
+    .bouquet-trophy-copy { display:none; color:#c9b48f; font:700 12px/1.25 system-ui,sans-serif; max-width:25ch; margin:2px auto 0; }
+    .bouquet-assembly { min-height:156px; width:min(270px,100%); display:grid; place-items:center; margin:0 auto; }
+    .bouquet-assembly-ring { position:absolute; width:174px; height:144px; border:1px solid color-mix(in srgb,var(--bouquet-aura,#d7b16d55) 74%,#d7b16d); border-radius:50% 50% 44% 44%; opacity:.42; box-shadow:inset 0 0 18px #000,0 0 18px var(--bouquet-aura,#d7b16d55); }
     .bouquet-assembly-ring::before,.bouquet-assembly-ring::after { content:""; position:absolute; inset:13px; border:1px solid color-mix(in srgb,var(--bouquet-aura,#d7b16d55) 52%,#0000); transform:rotate(45deg); box-shadow:inset 0 0 14px #000; }
     .bouquet-assembly-ring::after { inset:28px; border-radius:50%; transform:none; opacity:.72; }
     .bouquet-ingredient { position:absolute; left:50%; top:50%; width:42px; height:42px; display:grid; place-items:center; transform:translate(-50%,-50%) rotate(var(--ingredient-angle,0deg)) translateY(-55px) rotate(var(--ingredient-counter-angle,0deg)); filter:drop-shadow(0 5px 8px #000); }
@@ -5014,21 +5014,21 @@
     .bouquet-ribbon::after { right:-23px; transform:skewY(-18deg); }
     .bouquet-binding-vine { position:absolute; left:50%; bottom:18px; z-index:3; width:122px; height:34px; transform:translateX(-50%); pointer-events:none; background:repeating-linear-gradient(104deg,#0000 0 13px,#6f944d 14px 16px,#0000 17px 31px); filter:drop-shadow(0 0 6px #000) drop-shadow(0 0 7px #6f944d55); clip-path:polygon(0 38%,18% 8%,50% 35%,82% 8%,100% 38%,88% 64%,50% 48%,12% 64%); opacity:.82; }
     .bouquet-assembly-state { position:absolute; left:50%; bottom:0; z-index:4; transform:translateX(-50%); padding:3px 7px; border:1px solid #6f944d; background:#050403e8; color:#e8ffc5; font:900 9px/1 system-ui,sans-serif; letter-spacing:.12em; text-transform:uppercase; white-space:nowrap; box-shadow:0 0 10px #000; }
-    .crafted-bouquet { position:relative; width:206px; height:138px; transform:translateY(-1px); filter:drop-shadow(0 10px 12px #000); }
-    .crafted-stem { position:absolute; left:calc(50% + var(--stem-x, 0px)); top:48px; z-index:1; width:3px; height:82px; border-radius:999px; transform:rotate(var(--stem-rot, 0deg)); transform-origin:50% 100%; background:linear-gradient(180deg,#c29b62 0,#5f8338 42%,#24150d 100%); box-shadow:0 0 7px #000; }
-    .crafted-leaf { position:absolute; left:calc(50% + var(--leaf-x, 0px)); top:var(--leaf-y, 82px); z-index:2; width:24px; height:11px; border:1px solid #6f944d77; border-radius:80% 14% 70% 18%; background:linear-gradient(90deg,#17230f,#6f944d 58%,#23190d); transform:rotate(var(--leaf-rot, -22deg)); box-shadow:0 0 8px #000; }
-    .crafted-bloom { position:absolute; left:var(--bloom-x, 50%); top:var(--bloom-y, 22%); z-index:var(--bloom-z, 4); width:var(--bloom-size, 58px); height:var(--bloom-size, 58px); display:grid; place-items:center; color:var(--bloom-color, #d7b16d); transform:translate(-50%, -50%) rotate(var(--bloom-rot, 0deg)); filter:drop-shadow(0 7px 7px #000); animation-delay:var(--bloom-delay, 0ms); }
+    .crafted-bouquet { position:relative; width:238px; height:154px; transform:translateY(-1px); filter:drop-shadow(0 10px 12px #000); }
+    .crafted-stem { position:absolute; left:calc(50% + var(--stem-x, 0px)); top:58px; z-index:1; width:4px; height:86px; border-radius:999px; transform:rotate(var(--stem-rot, 0deg)); transform-origin:50% 100%; background:linear-gradient(180deg,#d6bd7a 0,#5f8338 42%,#24150d 100%); box-shadow:0 0 7px #000; }
+    .crafted-leaf { position:absolute; left:calc(50% + var(--leaf-x, 0px)); top:var(--leaf-y, 92px); z-index:2; width:28px; height:12px; border:1px solid #6f944d77; border-radius:80% 14% 70% 18%; background:linear-gradient(90deg,#17230f,#6f944d 58%,#23190d); transform:rotate(var(--leaf-rot, -22deg)); box-shadow:0 0 8px #000; }
+    .crafted-bloom { position:absolute; left:var(--bloom-x, 50%); top:var(--bloom-y, 22%); z-index:var(--bloom-z, 4); width:var(--bloom-size, 66px); height:var(--bloom-size, 66px); display:grid; place-items:center; color:var(--bloom-color, #d7b16d); transform:translate(-50%, -50%) rotate(var(--bloom-rot, 0deg)); filter:drop-shadow(0 7px 7px #000); animation-delay:var(--bloom-delay, 0ms); }
     .crafted-bloom .icon-wrap,
     .crafted-bloom img { width:100%; height:100%; }
     .crafted-bloom img { object-fit:contain; filter:drop-shadow(0 0 9px #000) drop-shadow(0 0 8px currentColor); }
     .crafted-bloom.thorn-charm { width:36px; height:36px; border:1px solid #8a332a; border-radius:50%; background:radial-gradient(circle,#240707,#050302 72%); box-shadow:inset 0 0 10px #000,0 0 9px #9b1d2255; }
     .crafted-bloom.thorn-charm .thorn-seal-icon { width:34px; height:34px; }
-    .crafted-binding { position:absolute; left:50%; bottom:14px; z-index:9; width:104px; height:25px; transform:translateX(-50%); border:1px solid #d7b16d; background:linear-gradient(90deg,#431513,#b9874d 50%,#431513); box-shadow:inset 0 0 9px #000,0 0 12px #000; }
+    .crafted-binding { position:absolute; left:50%; bottom:13px; z-index:9; width:122px; height:28px; transform:translateX(-50%); border:1px solid #d7b16d; background:linear-gradient(90deg,#431513,#b9874d 50%,#431513); box-shadow:inset 0 0 9px #000,0 0 12px #000; }
     .crafted-binding::before,
     .crafted-binding::after { content:""; position:absolute; top:5px; width:29px; height:17px; border:1px solid #6f4a29; background:linear-gradient(90deg,#310f0d,#8f5d2b); z-index:-1; }
     .crafted-binding::before { left:-23px; transform:skewY(18deg); }
     .crafted-binding::after { right:-23px; transform:skewY(-18deg); }
-    .crafted-vine { position:absolute; left:50%; bottom:14px; z-index:10; width:128px; height:34px; transform:translateX(-50%); pointer-events:none; background:repeating-linear-gradient(104deg,#0000 0 13px,#6f944d 14px 16px,#0000 17px 31px); filter:drop-shadow(0 0 6px #000) drop-shadow(0 0 7px #6f944d55); clip-path:polygon(0 38%,18% 8%,50% 35%,82% 8%,100% 38%,88% 64%,50% 48%,12% 64%); opacity:.86; }
+    .crafted-vine { position:absolute; left:50%; bottom:14px; z-index:10; width:144px; height:38px; transform:translateX(-50%); pointer-events:none; background:repeating-linear-gradient(104deg,#0000 0 13px,#6f944d 14px 16px,#0000 17px 31px); filter:drop-shadow(0 0 6px #000) drop-shadow(0 0 7px #6f944d55); clip-path:polygon(0 38%,18% 8%,50% 35%,82% 8%,100% 38%,88% 64%,50% 48%,12% 64%); opacity:.86; }
     .crafted-bouquet-state { position:absolute; left:50%; bottom:-2px; z-index:11; transform:translateX(-50%); padding:3px 7px; border:1px solid #6f944d; background:#050403e8; color:#e8ffc5; font:900 9px/1 system-ui,sans-serif; letter-spacing:.12em; text-transform:uppercase; white-space:nowrap; box-shadow:0 0 10px #000; }
     .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .crafted-bloom { animation:crafted-bloom-bind 720ms cubic-bezier(.12,.82,.18,1) both; }
     .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .crafted-stem { animation:crafted-stem-bind 760ms cubic-bezier(.12,.82,.18,1) both; }
@@ -5143,9 +5143,9 @@
     @media (max-width:760px) {
       .payoff-stage { grid-template-columns:1fr; }
       .greenhouse-upgrade-ladder { grid-template-columns:repeat(3,minmax(0,1fr)); gap:4px; }
-      .bouquet-trophy { min-height:216px; grid-template-rows:auto auto 1fr; align-items:start; }
-      .bouquet-assembly { min-height:116px; width:min(210px,100%); margin-top:12px; }
-      .bouquet-assembly-ring { width:118px; height:106px; }
+      .bouquet-trophy { min-height:246px; grid-template-rows:auto auto 1fr; align-items:start; }
+      .bouquet-assembly { min-height:136px; width:min(230px,100%); margin-top:8px; }
+      .bouquet-assembly-ring { width:142px; height:118px; }
       .bouquet-ingredient { width:32px; height:32px; transform:translate(-50%,-50%) rotate(var(--ingredient-angle,0deg)) translateY(-36px) rotate(var(--ingredient-counter-angle,0deg)); }
       .bouquet-ingredient .icon-wrap,.bouquet-ingredient img { width:30px; height:30px; }
       .bouquet-ingredient-count { right:-6px; bottom:-6px; min-width:18px; font-size:8px; }
@@ -5154,11 +5154,11 @@
       .bouquet-stem .icon-wrap,.bouquet-stem img { width:48px; height:48px; }
       .bouquet-stem::before { top:38px; height:46px; }
       .bouquet-stem::after { top:56px; width:14px; height:7px; }
-      .crafted-bouquet { width:184px; height:112px; transform:translateY(-2px) scale(.92); }
-      .crafted-stem { top:38px; height:70px; }
+      .crafted-bouquet { width:208px; height:130px; transform:translateY(-2px) scale(.92); }
+      .crafted-stem { top:48px; height:76px; }
       .crafted-leaf { top:var(--leaf-y, 70px); width:20px; height:9px; }
-      .crafted-binding { bottom:9px; width:92px; height:22px; }
-      .crafted-vine { bottom:8px; width:112px; height:28px; }
+      .crafted-binding { bottom:9px; width:108px; height:24px; }
+      .crafted-vine { bottom:8px; width:126px; height:31px; }
       .crafted-bouquet-state { bottom:-1px; font-size:8px; }
       .bouquet-trophy-name { font-size:19px; }
       .bouquet-trophy-copy { max-width:30ch; }
@@ -5534,7 +5534,7 @@
         width: calc(100vw - 26px);
         grid-template-columns: auto minmax(50px, 1fr) auto;
         grid-template-rows: auto auto;
-        min-height: 66px;
+        min-height: 72px;
         margin-top: 4px;
         padding: 3px 6px 5px;
         gap: 3px 6px;
@@ -5567,24 +5567,24 @@
       body.focused-payoff-active .live-bouquet-assembly {
         grid-column: 1 / -1;
         grid-row: 2;
-        width: 104px;
-        height: 44px;
+        width: 124px;
+        height: 52px;
       }
       body.restored-next-order-focus .live-bouquet-ingredient,
       body.restored-greenhouse-handoff .live-bouquet-ingredient,
       body.round-three-focus-active .live-bouquet-ingredient,
       body.round-one-active .live-bouquet-ingredient,
       body.focused-payoff-active .live-bouquet-ingredient {
-        width: calc(var(--live-size, 28px) * .86);
-        height: calc(var(--live-size, 28px) * .86);
+        width: calc(var(--live-size, 28px) * .78);
+        height: calc(var(--live-size, 28px) * .78);
       }
       body.restored-next-order-focus .live-bouquet-stem,
       body.restored-greenhouse-handoff .live-bouquet-stem,
       body.round-three-focus-active .live-bouquet-stem,
       body.round-one-active .live-bouquet-stem,
       body.focused-payoff-active .live-bouquet-stem {
-        top: 21px;
-        height: 20px;
+        top: 25px;
+        height: 23px;
       }
       body.restored-next-order-focus .progress-next,
       body.restored-greenhouse-handoff .progress-next,
@@ -6699,6 +6699,31 @@
       );
     }
 
+    function craftedBouquetLayout(index) {
+      const layouts = [
+        { x: -40, y: 58, size: 62, rot: -16, z: 6, stemX: -25, stemRot: -19 },
+        { x: 34, y: 55, size: 64, rot: 13, z: 7, stemX: 22, stemRot: 17 },
+        { x: -4, y: 38, size: 74, rot: -4, z: 10, stemX: -5, stemRot: -4 },
+        { x: -64, y: 77, size: 54, rot: 18, z: 5, stemX: -38, stemRot: -27 },
+        { x: 64, y: 75, size: 54, rot: -19, z: 5, stemX: 38, stemRot: 26 },
+        { x: 10, y: 82, size: 58, rot: 9, z: 8, stemX: 7, stemRot: 6 }
+      ];
+      return layouts[index % layouts.length];
+    }
+
+    function liveBouquetLayout(index) {
+      const layout = craftedBouquetLayout(index);
+      return {
+        x: Math.round(layout.x * 0.55),
+        y: Math.round(layout.y * 0.48),
+        size: Math.round(layout.size * 0.56),
+        rot: layout.rot,
+        z: layout.z,
+        stemX: Math.round(layout.stemX * 0.54),
+        stemRot: layout.stemRot
+      };
+    }
+
     function liveBouquetAssemblyState(fullness, complete) {
       if (complete) return "complete";
       if (fullness >= .72) return "nearly";
@@ -6707,14 +6732,6 @@
     }
 
     function liveBouquetAssemblyMarkup(plan = activeRoundPlan(), progress = roundProgress(plan)) {
-      const liveLayouts = [
-        { x: -19, y: 20, size: 28, rot: -17, z: 5, stemX: -12, stemRot: -18 },
-        { x: 18, y: 19, size: 29, rot: 13, z: 6, stemX: 11, stemRot: 16 },
-        { x: -2, y: 14, size: 32, rot: -4, z: 8, stemX: -3, stemRot: -4 },
-        { x: -33, y: 27, size: 24, rot: 19, z: 4, stemX: -19, stemRot: -25 },
-        { x: 34, y: 27, size: 24, rot: -20, z: 4, stemX: 19, stemRot: 24 },
-        { x: 5, y: 29, size: 26, rot: 9, z: 7, stemX: 4, stemRot: 5 }
-      ];
       const fullness = progressRatio(progress.earned, progress.needed);
       const complete = roundObjectivesComplete(plan);
       const entries = craftedBouquetEntries(plan);
@@ -6730,7 +6747,7 @@
         const localSlot = seenSlots.get(target.flowerId) || 0;
         seenSlots.set(target.flowerId, localSlot + 1);
         const slotProgress = Math.max(0, Math.min(1, ratio * (slotsPerFlower.get(target.flowerId) || 1) - localSlot));
-        const layout = liveLayouts[index % liveLayouts.length];
+        const layout = liveBouquetLayout(index);
         return { target, flower, current, ratio, slotProgress, layout, index };
       });
       const receivers = new Map();
@@ -6745,7 +6762,7 @@
       });
       const stemsMarkup = slotDetails.map(({ layout, index }) => `
         <span class="live-bouquet-stem" style="--live-stem-x:${layout.stemX}px;--live-stem-rot:${layout.stemRot}deg;"></span>
-        <span class="live-bouquet-leaf" style="--live-leaf-x:${layout.stemX + (index % 2 ? -10 : 4)}px;--live-leaf-y:${34 + (index % 3) * 4}px;--live-leaf-rot:${index % 2 ? 202 : -22}deg;"></span>
+        <span class="live-bouquet-leaf" style="--live-leaf-x:${layout.stemX + (index % 2 ? -11 : 5)}px;--live-leaf-y:${42 + (index % 3) * 4}px;--live-leaf-rot:${index % 2 ? 202 : -22}deg;"></span>
       `).join("");
       const flowersMarkup = slotDetails.map(({ target, flower, current, slotProgress, layout, index }) => {
         const pulse = orderPulseTargets.has(target.flowerId) ? "order-pulse" : "";
@@ -11326,28 +11343,19 @@
     }
 
     function craftedBouquetMarkup(plan = activeRoundPlan()) {
-      const bloomLayouts = [
-        { x: -34, y: 48, size: 52, rot: -17, z: 5, stemX: -20, stemRot: -18 },
-        { x: 29, y: 45, size: 55, rot: 13, z: 6, stemX: 17, stemRot: 16 },
-        { x: -4, y: 30, size: 62, rot: -4, z: 8, stemX: -4, stemRot: -4 },
-        { x: -55, y: 66, size: 45, rot: 19, z: 4, stemX: -30, stemRot: -25 },
-        { x: 55, y: 64, size: 45, rot: -20, z: 4, stemX: 30, stemRot: 24 },
-        { x: 8, y: 68, size: 50, rot: 9, z: 7, stemX: 5, stemRot: 5 },
-        { x: -18, y: 75, size: 42, rot: -11, z: 6, stemX: -12, stemRot: -9 }
-      ];
       const entries = craftedBouquetEntries(plan);
       const stems = entries.map((target, index) => {
-        const layout = bloomLayouts[index % bloomLayouts.length];
+        const layout = craftedBouquetLayout(index);
         return `
-          <span class="crafted-stem" style="--stem-x:${layout.stemX}px;--stem-rot:${layout.stemRot}deg;"></span>
-          <span class="crafted-leaf" style="--leaf-x:${layout.stemX + (index % 2 ? -18 : 6)}px;--leaf-y:${78 + (index % 3) * 8}px;--leaf-rot:${index % 2 ? 202 : -22}deg;"></span>
+          <span class="crafted-stem" data-crafted-stem-flower="${target.flowerId}" style="--stem-x:${layout.stemX}px;--stem-rot:${layout.stemRot}deg;"></span>
+          <span class="crafted-leaf" data-crafted-leaf-flower="${target.flowerId}" style="--leaf-x:${layout.stemX + (index % 2 ? -20 : 7)}px;--leaf-y:${88 + (index % 3) * 9}px;--leaf-rot:${index % 2 ? 202 : -22}deg;"></span>
         `;
       }).join("");
       const blooms = entries.map((target, index) => {
         const flower = flowers[target.flowerId] || flowers[0];
-        const layout = bloomLayouts[index % bloomLayouts.length];
+        const layout = craftedBouquetLayout(index);
         return `
-          <span class="crafted-bloom crafted-flower-bloom" data-crafted-flower="${target.flowerId}" style="--bloom-x:calc(50% + ${layout.x}px);--bloom-y:${layout.y}px;--bloom-size:${layout.size}px;--bloom-rot:${layout.rot}deg;--bloom-z:${layout.z};--bloom-color:${flower[4]};--bloom-delay:${index * 70}ms;" title="${flower[0]}">
+          <span class="crafted-bloom crafted-flower-bloom" data-crafted-flower="${target.flowerId}" data-crafted-slot="${index}" data-required-count="${target.needed}" data-flower-name="${flower[0]}" style="--bloom-x:calc(50% + ${layout.x}px);--bloom-y:${layout.y}px;--bloom-size:${layout.size}px;--bloom-rot:${layout.rot}deg;--bloom-z:${layout.z};--bloom-color:${flower[4]};--bloom-delay:${index * 86}ms;" title="${flower[0]}">
             ${iconMarkup(target.flowerId, "crafted-bouquet-icon", flower[0], "crafted-bouquet-wrap")}
           </span>
         `;
@@ -11358,7 +11366,7 @@
         </span>
       ` : "";
       return `
-        <span class="crafted-bouquet" data-crafted-bouquet="true" data-crafted-bloom-count="${entries.length}">
+        <span class="crafted-bouquet" data-crafted-bouquet="true" data-crafted-bloom-count="${entries.length}" data-crafted-target-counts="${plan.targets.map((target) => `${target.flowerId}:${target.needed}`).join(",")}">
           ${stems}
           ${blooms}
           ${thornCharm}
@@ -11515,7 +11523,7 @@
           queuePostRenderFocus(focusedPayoffPrimaryButtonId());
           render();
         }
-      }, prefersReducedMotion() ? 40 : 1080);
+      }, prefersReducedMotion() ? 40 : 1420);
     }
 
     function pulseNextOrderReady() {
