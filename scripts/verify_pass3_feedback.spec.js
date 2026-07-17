@@ -188,7 +188,7 @@ async function startThornFeedbackRecorder(page) {
       && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1
     );
     let frame = 0;
-    window.__thornFeedbackRecorder = setInterval(() => {
+    const sample = () => {
       const impacts = Array.from(document.querySelectorAll(".board-particle.impact-sigil"))
         .filter(visible)
         .map((node) => ({ text: node.textContent.trim(), rect: rect(node) }));
@@ -211,6 +211,16 @@ async function startThornFeedbackRecorder(page) {
         splinters: document.querySelectorAll(".board-particle.thorn-splinter").length
       });
       frame += 1;
+    };
+    window.__thornFeedbackObserver = new MutationObserver(() => sample());
+    window.__thornFeedbackObserver.observe(document.querySelector("#board"), {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["class", "style"]
+    });
+    window.__thornFeedbackRecorder = setInterval(() => {
+      sample();
       if (frame >= 100) clearInterval(window.__thornFeedbackRecorder);
     }, 16);
   });
@@ -234,6 +244,7 @@ async function playThornLesson(page, screenshotPath) {
   await page.waitForTimeout(760);
   const sampledFrames = await page.evaluate(() => {
     clearInterval(window.__thornFeedbackRecorder);
+    window.__thornFeedbackObserver?.disconnect();
     return window.__thornFeedbackFrames || [];
   });
 

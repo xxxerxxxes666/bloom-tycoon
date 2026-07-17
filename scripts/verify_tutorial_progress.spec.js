@@ -518,6 +518,124 @@ async function hintedPair(page) {
   return pair;
 }
 
+function guideDirection(pair) {
+  const [source, destination] = pair;
+  if (destination.x > source.x) return "right";
+  if (destination.x < source.x) return "left";
+  if (destination.y > source.y) return "down";
+  return "up";
+}
+
+async function firstActionGuideReport(page) {
+  return page.evaluate(() => {
+    const visible = (node) => {
+      if (!node) return false;
+      const rect = node.getBoundingClientRect();
+      const style = getComputedStyle(node);
+      return style.display !== "none"
+        && style.visibility !== "hidden"
+        && Number(style.opacity || 1) !== 0
+        && rect.width > 0
+        && rect.height > 0;
+    };
+    const rect = (node) => {
+      if (!node) return null;
+      const bounds = node.getBoundingClientRect();
+      return {
+        left: bounds.left,
+        top: bounds.top,
+        right: bounds.right,
+        bottom: bounds.bottom,
+        width: bounds.width,
+        height: bounds.height,
+        centerX: bounds.left + bounds.width / 2,
+        centerY: bounds.top + bounds.height / 2
+      };
+    };
+    const guide = document.querySelector(".first-action-swap-guide");
+    const token = guide?.querySelector(".first-action-drag-token") || null;
+    const track = guide?.querySelector(".first-action-track") || null;
+    const sourceHalo = guide?.querySelector(".first-action-source-halo") || null;
+    const destinationHalo = guide?.querySelector(".first-action-destination-halo") || null;
+    const tokenStyle = token ? getComputedStyle(token) : null;
+    const hints = Array.from(document.querySelectorAll(".tile.idle-hint")).map((tile) => ({
+      x: Number(tile.dataset.x),
+      y: Number(tile.dataset.y),
+      rect: rect(tile)
+    }));
+    const tileRects = Array.from(document.querySelectorAll(".tile")).map((tile) => tile.getBoundingClientRect());
+    return {
+      count: document.querySelectorAll(".first-action-swap-guide").length,
+      visible: visible(guide),
+      pointerEvents: guide ? getComputedStyle(guide).pointerEvents : "",
+      ariaHidden: guide?.getAttribute("aria-hidden") || "",
+      focusableInside: guide?.querySelectorAll("button, [href], input, select, textarea, [tabindex]").length || 0,
+      data: guide ? {
+        sourceX: Number(guide.dataset.sourceX),
+        sourceY: Number(guide.dataset.sourceY),
+        destinationX: Number(guide.dataset.destinationX),
+        destinationY: Number(guide.dataset.destinationY),
+        direction: guide.dataset.direction
+      } : null,
+      hints,
+      sourceHalo: rect(sourceHalo),
+      destinationHalo: rect(destinationHalo),
+      track: rect(track),
+      token: rect(token),
+      tokenDisplay: tokenStyle?.display || "",
+      tokenAnimation: tokenStyle?.animationName || "",
+      oldArrows: document.querySelectorAll(".swap-path-arrow").length,
+      dragPreviewTiles: document.querySelectorAll(".tile.drag-preview-source, .tile.drag-preview-neighbor, .tile.drag-preview-ready").length,
+      selectedTiles: document.querySelectorAll(".tile.sel").length,
+      tiles: tileRects.length,
+      rows: [...new Set(tileRects.map((tile) => Math.round(tile.top)))].length,
+      completeRows: [...new Set(tileRects
+        .filter((tile) => tile.top >= -1 && tile.bottom <= innerHeight + 1)
+        .map((tile) => Math.round(tile.top)))].length,
+      overflowX: document.documentElement.scrollWidth > innerWidth + 1,
+      brokenImages: Array.from(document.images)
+        .filter((image) => visible(image) && image.complete && image.naturalWidth === 0)
+        .map((image) => image.getAttribute("src"))
+    };
+  });
+}
+
+function assertFirstActionGuide(report, pair, label, options = {}) {
+  const [source, destination] = pair;
+  expect(report.count, `${label} guide count`).toBe(1);
+  expect(report.visible, `${label} guide visible`).toBe(true);
+  expect(report.pointerEvents, `${label} pointer inert`).toBe("none");
+  expect(report.ariaHidden, `${label} aria hidden`).toBe("true");
+  expect(report.focusableInside, `${label} no focusable overlay controls`).toBe(0);
+  expect(report.oldArrows, `${label} no competing legacy arrow`).toBe(0);
+  expect(report.data, `${label} guide data`).toMatchObject({
+    sourceX: source.x,
+    sourceY: source.y,
+    destinationX: destination.x,
+    destinationY: destination.y,
+    direction: guideDirection(pair)
+  });
+  expect(report.tiles, `${label} tile count`).toBe(64);
+  expect(report.rows, `${label} board rows`).toBe(8);
+  expect(report.overflowX, `${label} no horizontal overflow`).toBe(false);
+  expect(report.brokenImages, `${label} no broken images`).toEqual([]);
+  expect(Math.abs(report.sourceHalo.centerX - report.hints[0].rect.centerX), `${label} source halo x`).toBeLessThan(3);
+  expect(Math.abs(report.sourceHalo.centerY - report.hints[0].rect.centerY), `${label} source halo y`).toBeLessThan(3);
+  expect(Math.abs(report.destinationHalo.centerX - report.hints[1].rect.centerX), `${label} destination halo x`).toBeLessThan(3);
+  expect(Math.abs(report.destinationHalo.centerY - report.hints[1].rect.centerY), `${label} destination halo y`).toBeLessThan(3);
+  if (options.mobile) {
+    expect(report.completeRows, `${label} exact mobile rows`).toBe(8);
+  }
+  if (options.reducedMotion) {
+    expect(report.tokenDisplay, `${label} reduced motion hides traveling token`).toBe("none");
+    expect(report.tokenAnimation, `${label} reduced motion has no token animation`).toBe("none");
+    expect(report.track, `${label} reduced motion static track remains`).toBeTruthy();
+  } else {
+    expect(report.tokenDisplay, `${label} animated token visible`).not.toBe("none");
+    expect(report.tokenAnimation, `${label} token animates`).toBe("first-action-token-travel");
+  }
+}
+
 async function armedRelicGuidance(page) {
   return page.evaluate((key) => {
     const visible = (node) => {
@@ -1420,6 +1538,7 @@ test("guided Round 1 payoff keeps one dominant action", async ({ page }) => {
   page.on("requestfailed", (request) => failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`));
 
   await page.setViewportSize({ width: 390, height: 844 });
+  await seedDeterministicMath(page, "fresh-black-candle-mobile390");
   await openFresh(page, "guided-payoff-mobile390");
   await expect(page.locator("#tutorialPanel")).toBeVisible({ timeout: 3000 });
   await completeGuidedRoundOne(page);
@@ -2046,7 +2165,7 @@ test("Black Candle cue semantics outrank every focused-round category", async ({
             await dragTouchViaCdp(page, formationPair);
           } else {
             for (const cell of formationPair) {
-              await page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`).click();
+              await page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`).dispatchEvent("click");
             }
           }
         }
@@ -2111,7 +2230,7 @@ test("Black Candle cue semantics outrank every focused-round category", async ({
           await dragTouchViaCdp(page, activationPair);
         } else {
           for (const cell of activationPair) {
-            await page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`).click();
+            await page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`).dispatchEvent("click");
           }
         }
         await expect(page.locator('.tile[data-line-relic="black-candle-vine"]')).toHaveCount(0);
@@ -2314,6 +2433,7 @@ test("armed Black Candle Vine stays real in later rounds and Retry clears stale 
     const state = JSON.parse(localStorage.getItem(key));
     state.currentRound = 1;
     state.moves = 0;
+    state.counts = [0, 0, 0, 0, 0, 0];
     state.roundComplete = false;
     state.roundOneRestored = false;
     state.roundTwoGreenhouseUpgraded = false;
@@ -2588,6 +2708,65 @@ for (const viewport of [
     }
   });
 }
+test("first-action board choreography derives from the authoritative opening pair", async ({ page }) => {
+  const consoleErrors = [];
+  const pageErrors = [];
+  const failedRequests = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") consoleErrors.push(message.text());
+  });
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("requestfailed", (request) => failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`));
+
+  for (const config of [
+    { label: "desktop", viewport: { width: 1280, height: 720 }, mobile: false },
+    { label: "mobile390", viewport: { width: 390, height: 844 }, mobile: true }
+  ]) {
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.setViewportSize(config.viewport);
+    await openFresh(page, `first-action-guide-${config.label}`);
+    await expect(page.locator("#tutorialPanel")).toBeVisible({ timeout: 3000 });
+    const pair = await hintedPair(page);
+    let guide = await firstActionGuideReport(page);
+    assertFirstActionGuide(guide, pair, `fresh ${config.label}`, { mobile: config.mobile });
+    await page.screenshot({ path: `work/first-action-guide-${config.label}.png`, fullPage: true });
+
+    await page.reload({ waitUntil: "networkidle" });
+    await expect(page.locator(".tile")).toHaveCount(64);
+    await expect(page.locator("#tutorialPanel")).toBeVisible({ timeout: 3000 });
+    const reloadedPair = await hintedPair(page);
+    expect(reloadedPair).toEqual(pair);
+    guide = await firstActionGuideReport(page);
+    assertFirstActionGuide(guide, reloadedPair, `pre-move reload ${config.label}`, { mobile: config.mobile });
+
+    await page.locator("#tutorialSkipBtn").click();
+    await expect(page.locator("#tutorialPanel")).toBeHidden();
+    await expect(page.locator(".first-action-swap-guide")).toHaveCount(0);
+
+    await page.locator("#tutorialHelpBtn").click();
+    await expect(page.locator("#tutorialPanel")).toBeVisible();
+    guide = await firstActionGuideReport(page);
+    assertFirstActionGuide(guide, pair, `replay ${config.label}`, { mobile: config.mobile });
+
+    await page.locator(`.tile[data-x="${pair[0].x}"][data-y="${pair[0].y}"]`).click();
+    await expect(page.locator(".tile.sel")).toHaveCount(1);
+    guide = await firstActionGuideReport(page);
+    expect(guide.visible, `selection hides ${config.label} guide`).toBe(false);
+  }
+
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openFresh(page, "first-action-guide-reduced-mobile390");
+  await expect(page.locator("#tutorialPanel")).toBeVisible({ timeout: 3000 });
+  const reducedPair = await hintedPair(page);
+  const reducedGuide = await firstActionGuideReport(page);
+  assertFirstActionGuide(reducedGuide, reducedPair, "reduced mobile390", { mobile: true, reducedMotion: true });
+  await page.screenshot({ path: "work/first-action-guide-mobile390-reduced.png", fullPage: true });
+
+  expect(consoleErrors).toEqual([]);
+  expect(pageErrors).toEqual([]);
+  expect(failedRequests).toEqual([]);
+});
 
 test("drag preview moves the hinted pair before one authoritative release", async ({ page }) => {
   const consoleErrors = [];
@@ -2602,10 +2781,14 @@ test("drag preview moves the hinted pair before one authoritative release", asyn
   await page.setViewportSize({ width: 1280, height: 720 });
   await openFresh(page, "drag-preview-desktop");
   const pair = await hintedPair(page);
+  assertFirstActionGuide(await firstActionGuideReport(page), pair, "pre-drag desktop");
   const before = await activeState(page);
   const preview = await previewDelta(page, pair);
   await page.screenshot({ path: "work/drag-preview-desktop-ready.png", fullPage: true });
   const during = await activeState(page);
+  const guideDuringDrag = await firstActionGuideReport(page);
+  expect(guideDuringDrag.visible, "drag handoff hides first-action guide").toBe(false);
+  expect(guideDuringDrag.dragPreviewTiles, "existing drag preview owns the pair").toBe(2);
   expect(Math.abs(preview.sourceAxis), "source pre-release translation").toBeGreaterThan(18);
   expect(Math.abs(preview.neighborAxis), "neighbor pre-release translation").toBeGreaterThan(5);
   expect(Math.sign(preview.sourceAxis), "source tracks toward neighbor").toBe(preview.vector.dx || preview.vector.dy);
@@ -2622,6 +2805,7 @@ test("drag preview moves the hinted pair before one authoritative release", asyn
   expect(after.moves, "valid drag spends exactly one move").toBe(before.moves - 1);
   expect(after.counts.reduce((sum, value) => sum + value, 0), "valid drag advances objective counts").toBeGreaterThan(before.counts.reduce((sum, value) => sum + value, 0));
   expect(await page.locator(".tile.drag-preview-source, .tile.drag-preview-neighbor, .tile.drag-preview-ready").count()).toBe(0);
+  expect(await page.locator(".first-action-swap-guide").count()).toBe(0);
   expect(consoleErrors).toEqual([]);
   expect(pageErrors).toEqual([]);
   expect(failedRequests).toEqual([]);
@@ -2631,6 +2815,8 @@ test("invalid, cancel, mobile touch, and reduced motion drag paths stay clean", 
   await page.setViewportSize({ width: 1280, height: 720 });
   await openFresh(page, "drag-invalid");
   await expect(page.locator("#tutorialPanel")).toBeVisible();
+  const startingPair = await hintedPair(page);
+  assertFirstActionGuide(await firstActionGuideReport(page), startingPair, "invalid-start desktop");
   const invalidPair = await findInvalidAdjacentPair(page);
   expect(invalidPair, "invalid adjacent pair").toHaveLength(2);
   const invalidBefore = await activeState(page);
@@ -2652,33 +2838,45 @@ test("invalid, cancel, mobile touch, and reduced motion drag paths stay clean", 
   expect(invalidAfter.moves, "invalid drag spends no move").toBe(invalidBefore.moves);
   expect(invalidAfter.board, "invalid drag leaves board authoritative").toBe(invalidBefore.board);
   expect(await page.locator(".tile.invalid-swap").count()).toBe(0);
+  assertFirstActionGuide(await firstActionGuideReport(page), startingPair, "invalid restore desktop");
 
-  const edge = [{ x: 0, y: 0 }, { x: -1, y: 0 }];
-  const edgeGeometry = await tileGeometry(page, [edge[0]]);
-  await page.mouse.move(edgeGeometry[0].centerX, edgeGeometry[0].centerY);
+  const cancelGeometry = await tileGeometry(page, [startingPair[0]]);
+  const boardRect = await page.locator("#board").boundingBox();
+  const cancelEnd = {
+    x: Math.max(1, (boardRect?.x || 0) - 30),
+    y: cancelGeometry[0].centerY
+  };
+  await page.mouse.move(cancelGeometry[0].centerX, cancelGeometry[0].centerY);
   await page.mouse.down();
-  await page.mouse.move(edgeGeometry[0].centerX - 46, edgeGeometry[0].centerY, { steps: 5 });
+  await page.mouse.move(cancelEnd.x, cancelEnd.y, { steps: 5 });
   await page.dispatchEvent("#board", "pointercancel", {
     pointerId: 1,
     bubbles: true,
     cancelable: true,
     isPrimary: true,
-    clientX: edgeGeometry[0].centerX - 46,
-    clientY: edgeGeometry[0].centerY
+    clientX: cancelEnd.x,
+    clientY: cancelEnd.y
   });
   await page.mouse.up();
   const cancelAfter = await activeState(page);
   expect(cancelAfter.moves, "cancel spends no move").toBe(invalidAfter.moves);
   expect(await page.locator(".tile.drag-preview-source, .tile.drag-preview-neighbor, .tile.drag-preview-ready").count()).toBe(0);
-  await expect.poll(async () => page.evaluate(() => Array.from(document.querySelectorAll(".tile")).every((tile) => getComputedStyle(tile).transform === "none"))).toBe(true);
+  await expect.poll(async () => page.evaluate(() => Array.from(document.querySelectorAll(".tile")).every((tile) => {
+    const transform = getComputedStyle(tile).transform;
+    return transform === "none" || new DOMMatrixReadOnly(transform).isIdentity;
+  }))).toBe(true);
+  assertFirstActionGuide(await firstActionGuideReport(page), startingPair, "pointer cancel restore desktop");
 
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
   try {
     await openFresh(mobile, "drag-mobile390");
     await expect(mobile.locator("#tutorialPanel")).toBeVisible();
     const mobilePair = await hintedPair(mobile);
+    assertFirstActionGuide(await firstActionGuideReport(mobile), mobilePair, "touch-start mobile390", { mobile: true });
     const mobileBefore = await activeState(mobile);
     const touchPreview = await dragTouchViaCdp(mobile, mobilePair);
+    const mobileGuideDuringDrag = await firstActionGuideReport(mobile);
+    expect(mobileGuideDuringDrag.visible, "touch handoff hides first-action guide").toBe(false);
     const mobileAfter = await activeState(mobile);
     const sourceAxis = mobilePair[0].x !== mobilePair[1].x
       ? touchPreview.afterGeometry[0].left - touchPreview.beforeGeometry[0].left
@@ -2714,9 +2912,11 @@ test("invalid, cancel, mobile touch, and reduced motion drag paths stay clean", 
   }
 
   await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 390, height: 844 });
   await openFresh(page, "drag-reduced-motion");
   await expect(page.locator("#tutorialPanel")).toBeVisible();
   const reducedPair = await hintedPair(page);
+  assertFirstActionGuide(await firstActionGuideReport(page), reducedPair, "drag reduced-motion mobile390", { mobile: true, reducedMotion: true });
   const reducedBefore = await activeState(page);
   const reducedGeometry = await tileGeometry(page, reducedPair);
   const reducedVector = dragVector(reducedPair, reducedGeometry);

@@ -1759,6 +1759,110 @@
         linear-gradient(90deg, #0000 0 42%, #f0c47791 48%, #0000 55%);
     }
 
+    .first-action-swap-guide {
+      --guide-source-left: 0%;
+      --guide-source-top: 0%;
+      --guide-destination-left: 0%;
+      --guide-destination-top: 0%;
+      --guide-rot: 0deg;
+      --guide-distance: 12.5%;
+      --guide-travel-x: 0px;
+      --guide-travel-y: 0px;
+      --guide-token-offset-x: 0px;
+      --guide-token-offset-y: 16px;
+      position: absolute;
+      inset: 0;
+      z-index: 8;
+      pointer-events: none;
+    }
+
+    .board.drag-preview-active .first-action-swap-guide,
+    .board.drag-preview-ready .first-action-swap-guide {
+      display: none;
+    }
+
+    .first-action-source-halo,
+    .first-action-destination-halo {
+      position: absolute;
+      left: var(--guide-source-left);
+      top: var(--guide-source-top);
+      width: min(42px, 9.1%);
+      aspect-ratio: 1;
+      border: 2px solid #f0c477;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      box-shadow:
+        inset 0 0 10px #000,
+        0 0 12px #d7b16d99,
+        0 0 18px #5f833866;
+      opacity: .94;
+    }
+
+    .first-action-destination-halo {
+      left: var(--guide-destination-left);
+      top: var(--guide-destination-top);
+      border-color: #fff0b4;
+      box-shadow:
+        inset 0 0 10px #000,
+        0 0 10px #d7b16dcc,
+        0 0 16px #9b1d2266;
+      opacity: .82;
+    }
+
+    .first-action-track {
+      position: absolute;
+      left: var(--guide-source-left);
+      top: var(--guide-source-top);
+      width: var(--guide-distance);
+      height: 20px;
+      transform: translateY(-50%) rotate(var(--guide-rot));
+      transform-origin: 0 50%;
+      filter: drop-shadow(0 0 7px #d7b16d88) drop-shadow(0 1px 3px #000);
+    }
+
+    .first-action-track::before {
+      content: "";
+      position: absolute;
+      left: 28%;
+      right: 22%;
+      top: 8px;
+      height: 3px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #6f944d, #d7b16d 56%, #fff0b4);
+      box-shadow: 0 0 8px #d7b16d;
+    }
+
+    .first-action-track::after {
+      content: "";
+      position: absolute;
+      right: 14%;
+      top: 3px;
+      border-left: 12px solid #fff0b4;
+      border-top: 7px solid transparent;
+      border-bottom: 7px solid transparent;
+    }
+
+    .first-action-drag-token {
+      position: absolute;
+      left: var(--guide-source-left);
+      top: var(--guide-source-top);
+      width: 22px;
+      height: 26px;
+      border: 2px solid #fff0b4;
+      border-radius: 52% 52% 58% 58%;
+      background:
+        radial-gradient(circle at 50% 32%, #fff0b499 0 3px, #0000 4px),
+        linear-gradient(180deg, #160b08e6, #070403e6);
+      box-shadow:
+        inset 0 0 8px #000,
+        0 0 11px #d7b16daa,
+        0 2px 7px #000;
+      transform:
+        translate(-50%, -50%)
+        translate(var(--guide-token-offset-x), var(--guide-token-offset-y));
+      animation: first-action-token-travel 1.35s ease-in-out infinite;
+    }
+
     .swap-path-arrow {
       --arrow-x: 0;
       --arrow-y: 0;
@@ -3749,6 +3853,34 @@
       }
     }
 
+    @keyframes first-action-token-travel {
+      0%,
+      18% {
+        opacity: .84;
+        transform:
+          translate(-50%, -50%)
+          translate(var(--guide-token-offset-x), var(--guide-token-offset-y))
+          scale(.92);
+      }
+      64% {
+        opacity: 1;
+        transform:
+          translate(-50%, -50%)
+          translate(var(--guide-token-offset-x), var(--guide-token-offset-y))
+          translate(calc(var(--guide-travel-x) * .74), calc(var(--guide-travel-y) * .74))
+          scale(1.03);
+      }
+      100% {
+        opacity: .72;
+        transform:
+          translate(-50%, -50%)
+          translate(var(--guide-token-offset-x), var(--guide-token-offset-y))
+          translate(calc(var(--guide-travel-x) * .74), calc(var(--guide-travel-y) * .74))
+          scale(.96);
+      }
+    }
+
+
     @keyframes invalid-swap {
       0% {
         transform: translate(var(--invalid-x, 0), var(--invalid-y, 0)) scale(.96);
@@ -5489,6 +5621,7 @@
       .tile.thorn-cleared .cursed-thorn-art,
       .tile.invalid-swap,
       .tile.invalid-swap::after,
+      .first-action-drag-token,
       .tile.drag-preview-source,
       .tile.drag-preview-neighbor,
       .tile.drag-preview-ready,
@@ -5521,6 +5654,19 @@
       }
       .board-particle.chain-lash {
         display:none !important;
+      }
+      .first-action-drag-token {
+        display:none !important;
+      }
+      .first-action-track::before {
+        left: 20%;
+        right: 18%;
+        height: 4px;
+        background: linear-gradient(90deg, #8a332a, #d7b16d 48%, #fff0b4);
+      }
+      .first-action-track::after {
+        right: 8%;
+        border-left-width: 14px;
       }
       .tile.drag-preview-source,
       .tile.drag-preview-neighbor {
@@ -8730,9 +8876,21 @@
       finishTileSwipe(start, event, start.x, start.y);
     }
 
+    function restoreGuideAfterCanceledBoardInput(start) {
+      if (start?.dragEstablished) {
+        suppressBoardClickBriefly();
+      }
+      if (currentRound === 1 && !hasMadeValidMove && !tutorialSkipped && !roundComplete && !isBouquetFailed()) {
+        restoreFirstSwapCueAfterRefusal({ preserveCue: true });
+        render();
+      }
+    }
+
     function handleBoardPointerCancel() {
+      const start = tileSwipeStart;
       tileSwipeStart = null;
       clearDragPreview();
+      restoreGuideAfterCanceledBoardInput(start);
     }
 
     function handleBoardTouchStart(event) {
@@ -8798,8 +8956,10 @@
     }
 
     function handleBoardTouchCancel() {
+      const start = touchSwipeStart;
       touchSwipeStart = null;
       clearDragPreview();
+      restoreGuideAfterCanceledBoardInput(start);
     }
 
     function handleBoardClick(event) {
@@ -9662,19 +9822,118 @@
       }, 700);
     }
 
+    function hintedPairCells() {
+      if (idleHintCells.size !== 2) {
+        return [];
+      }
+      return [...idleHintCells].map((cell) => {
+        const [x, y] = cell.split(",").map(Number);
+        return { x, y };
+      });
+    }
+
+    function isAdjacentPair(a, b) {
+      return Boolean(a && b && Math.abs(a.x - b.x) + Math.abs(a.y - b.y) === 1);
+    }
+
+    function selectedMatchesHintedPair(pair) {
+      return Boolean(selected && pair.some((cell) => cell.x === selected.x && cell.y === selected.y));
+    }
+
+    function firstActionBoardGuidePair() {
+      if (
+        currentRound !== 1
+        || hasMadeValidMove
+        || tutorialSkipped
+        || roundComplete
+        || isResolving
+        || isBouquetFailed()
+        || boardDragInputActive()
+      ) {
+        return null;
+      }
+      const pair = hintedPairCells();
+      const [source, destination] = pair;
+      if (!isAdjacentPair(source, destination) || selectedMatchesHintedPair(pair)) {
+        return null;
+      }
+      return { source, destination };
+    }
+
+    function renderFirstActionSwapGuide(boardEl, guide) {
+      if (!guide) {
+        return false;
+      }
+      const { source, destination } = guide;
+      const boardRect = boardEl.getBoundingClientRect();
+      const sourceTile = tileForCell(source.x, source.y);
+      const destinationTile = tileForCell(destination.x, destination.y);
+      if (!boardRect.width || !boardRect.height || !sourceTile || !destinationTile) {
+        return false;
+      }
+      const sourceRect = sourceTile.getBoundingClientRect();
+      const destinationRect = destinationTile.getBoundingClientRect();
+      const sourceCenter = {
+        x: sourceRect.left + sourceRect.width / 2,
+        y: sourceRect.top + sourceRect.height / 2
+      };
+      const destinationCenter = {
+        x: destinationRect.left + destinationRect.width / 2,
+        y: destinationRect.top + destinationRect.height / 2
+      };
+      const dx = destination.x - source.x;
+      const dy = destination.y - source.y;
+      const travelX = destinationCenter.x - sourceCenter.x;
+      const travelY = destinationCenter.y - sourceCenter.y;
+      const direction = dx > 0
+        ? "right"
+        : dx < 0
+          ? "left"
+          : dy > 0
+            ? "down"
+            : "up";
+      const guideEl = document.createElement("span");
+      guideEl.className = "first-action-swap-guide";
+      guideEl.dataset.sourceX = String(source.x);
+      guideEl.dataset.sourceY = String(source.y);
+      guideEl.dataset.destinationX = String(destination.x);
+      guideEl.dataset.destinationY = String(destination.y);
+      guideEl.dataset.direction = direction;
+      guideEl.setAttribute("aria-hidden", "true");
+      guideEl.style.setProperty("--guide-source-left", `${((sourceCenter.x - boardRect.left) / boardRect.width) * 100}%`);
+      guideEl.style.setProperty("--guide-source-top", `${((sourceCenter.y - boardRect.top) / boardRect.height) * 100}%`);
+      guideEl.style.setProperty("--guide-destination-left", `${((destinationCenter.x - boardRect.left) / boardRect.width) * 100}%`);
+      guideEl.style.setProperty("--guide-destination-top", `${((destinationCenter.y - boardRect.top) / boardRect.height) * 100}%`);
+      guideEl.style.setProperty("--guide-rot", dy === 0 ? (dx > 0 ? "0deg" : "180deg") : (dy > 0 ? "90deg" : "-90deg"));
+      guideEl.style.setProperty("--guide-distance", `${Math.max(1, Math.hypot(travelX, travelY))}px`);
+      guideEl.style.setProperty("--guide-travel-x", `${travelX}px`);
+      guideEl.style.setProperty("--guide-travel-y", `${travelY}px`);
+      guideEl.style.setProperty("--guide-token-offset-x", dy === 0 ? "0px" : "24px");
+      guideEl.style.setProperty("--guide-token-offset-y", dy === 0 ? "24px" : "0px");
+      guideEl.innerHTML = `
+        <span class="first-action-track"></span>
+        <span class="first-action-source-halo"></span>
+        <span class="first-action-destination-halo"></span>
+        <span class="first-action-drag-token"></span>
+      `;
+      boardEl.appendChild(guideEl);
+      return true;
+    }
+
     function renderFirstSwapArrow(boardEl) {
+      const firstActionGuide = firstActionBoardGuidePair();
+      if (renderFirstActionSwapGuide(boardEl, firstActionGuide)) {
+        return;
+      }
       if (!isArmedLineRelicGuidanceActive() && (currentRound !== 1 && !isRestoredRoundTwoGuideActive())) {
         return;
       }
       if (roundComplete || idleHintCells.size !== 2) {
         return;
       }
-      const cells = [...idleHintCells].map((cell) => {
-        const [x, y] = cell.split(",").map(Number);
-        return { x, y };
-      });
+      const cells = hintedPairCells();
       const [a, b] = cells;
-      if (!a || !b || Math.abs(a.x - b.x) + Math.abs(a.y - b.y) !== 1) {
+      if (!isAdjacentPair(a, b)) {
         return;
       }
       const arrow = document.createElement("span");

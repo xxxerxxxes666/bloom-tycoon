@@ -5,6 +5,19 @@ const SAVE_KEY = "bloomTycoonPlayableStateV1";
 
 test.setTimeout(120000);
 
+async function seedDeterministicMath(page, seedLabel) {
+  await page.addInitScript((label) => {
+    let seed = 0;
+    for (let index = 0; index < label.length; index += 1) {
+      seed = (seed * 31 + label.charCodeAt(index)) >>> 0;
+    }
+    Math.random = () => {
+      seed = (1664525 * seed + 1013904223) >>> 0;
+      return seed / 4294967296;
+    };
+  }, seedLabel);
+}
+
 async function resetPage(page, suffix) {
   await page.goto(`${BASE_URL}?${suffix}&bloomReview=1`, { waitUntil: "networkidle" });
   await page.evaluate((key) => localStorage.removeItem(key), SAVE_KEY);
@@ -550,6 +563,7 @@ for (const config of [
     page.on("pageerror", (error) => pageErrors.push(error.message));
     page.on("requestfailed", (request) => failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`));
     await page.setViewportSize(config.viewport);
+    await seedDeterministicMath(page, `fresh-black-candle-${config.label}`);
     await resetPage(page, `binding_natural_${config.label}`);
 
     let observedArmedCandle = false;
