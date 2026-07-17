@@ -153,6 +153,16 @@ const VIEWPORTS = [
   { label: "mobile390", width: 390, height: 844 }
 ];
 
+const LOW_MOVE_BOARD = Array.from(
+  { length: 8 },
+  (_, y) => Array.from({ length: 8 }, (_, x) => (x + (2 * y)) % 6)
+);
+LOW_MOVE_BOARD[0][3] = 3;
+LOW_MOVE_BOARD[1][3] = 3;
+LOW_MOVE_BOARD[2][3] = 4;
+LOW_MOVE_BOARD[2][4] = 3;
+LOW_MOVE_BOARD[3][3] = 2;
+
 const ACTIVE_VIEWPORT_CASES = [
   {
     ...HUD_CASES.find((fixture) => fixture.label === "r2-active"),
@@ -184,6 +194,92 @@ function savedState(fixture) {
     tutorialActive: false,
     ...fixture.state
   };
+}
+
+function lowMoveState(moves, counts = [0, 0, 0, 0, 0, 0]) {
+  return savedState({
+    state: {
+      currentRound: 3,
+      moves,
+      counts,
+      coins: 50,
+      board: LOW_MOVE_BOARD.map((row) => [...row]),
+      roundOneRestored: true,
+      roundTwoGreenhouseUpgraded: true
+    }
+  });
+}
+
+async function commitLowMoveSwap(page, expectPressurePulse = true) {
+  await page.locator('.tile[data-x="3"][data-y="2"]').click();
+  await page.locator('.tile[data-x="4"][data-y="2"]').click();
+  if (expectPressurePulse) {
+    await expect(page.locator(".moves-counter")).toHaveClass(/move-decrement-pulse/, {
+      timeout: 10000
+    });
+    await expect(page.locator(".tile:not(:disabled)")).toHaveCount(64, { timeout: 10000 });
+  }
+}
+
+async function movePressureReport(page) {
+  return page.evaluate(() => {
+    const visible = (node) => {
+      if (!node) return false;
+      const rect = node.getBoundingClientRect();
+      const style = getComputedStyle(node);
+      return style.display !== "none"
+        && style.visibility !== "hidden"
+        && Number(style.opacity || 1) !== 0
+        && rect.width > 0
+        && rect.height > 0;
+    };
+    const counter = document.querySelector(".moves-counter");
+    const objective = document.querySelector("#objective");
+    const board = document.querySelector("#board");
+    const counterStyle = getComputedStyle(counter);
+    const objectiveRect = objective.getBoundingClientRect();
+    const boardRect = board.getBoundingClientRect();
+    const active = document.activeElement;
+    return {
+      text: counter.textContent.trim(),
+      className: counter.className,
+      role: counter.getAttribute("role"),
+      ariaLive: counter.getAttribute("aria-live"),
+      ariaLabel: counter.getAttribute("aria-label"),
+      animationName: counterStyle.animationName,
+      transform: counterStyle.transform,
+      color: counterStyle.color,
+      backgroundImage: counterStyle.backgroundImage,
+      fontWeight: counterStyle.fontWeight,
+      objectiveHeight: objectiveRect.height,
+      boardTop: boardRect.top,
+      boardBottom: boardRect.bottom,
+      boardWidth: boardRect.width,
+      boardHeight: boardRect.height,
+      objectiveLow: objective.classList.contains("low-moves"),
+      retryVisible: visible(document.querySelector("#renewBtn.visible")),
+      retryFocused: active?.id === "renewBtn",
+      payoffActionVisible: [
+        document.querySelector("#restoreGreenhouseBtn"),
+        document.querySelector("#nextOrderBtn")
+      ].some(visible),
+      tiles: document.querySelectorAll(".tile").length,
+      rows: new Set(Array.from(document.querySelectorAll(".tile"), (tile) => tile.dataset.y)).size,
+      tabStops: document.querySelectorAll(".tile[tabindex='0']").length,
+      overflowX: document.documentElement.scrollWidth > innerWidth + 1,
+      brokenImages: Array.from(document.images)
+        .filter((image) => {
+          const rect = image.getBoundingClientRect();
+          const style = getComputedStyle(image);
+          return style.display !== "none"
+            && rect.width > 0
+            && rect.height > 0
+            && image.complete
+            && image.naturalWidth === 0;
+        })
+        .map((image) => image.getAttribute("src"))
+    };
+  });
 }
 
 async function findLegalMatchPair(page) {
@@ -441,6 +537,211 @@ for (const viewport of VIEWPORTS) {
       expect(requestFailures, `${viewport.label} ${fixture.label} request failures`).toEqual([]);
       await context.close();
     }
+  });
+}
+
+for (const viewport of VIEWPORTS) {
+  test(`settled low-move transitions stay direct, static on reload, and geometry-safe on ${viewport.label}`, async ({ browser }) => {
+    for (const fromMoves of [4, 3, 2]) {
+      const context = await browser.newContext({
+        viewport: { width: viewport.width, height: viewport.height }
+      });
+      const page = await context.newPage();
+      const runtimeErrors = [];
+      page.on("console", (message) => {
+        if (message.type() === "error") runtimeErrors.push(message.text());
+      });
+      page.on("pageerror", (error) => runtimeErrors.push(error.message));
+      await page.addInitScript(({ key, state, marker }) => {
+        if (!sessionStorage.getItem(marker)) {
+          localStorage.setItem(key, JSON.stringify(state));
+          sessionStorage.setItem(marker, "1");
+        }
+      }, {
+        key: SAVE_KEY,
+        state: lowMoveState(fromMoves),
+        marker: `move-pressure-${viewport.label}-${fromMoves}`
+      });
+      await page.goto(
+        `${BASE_URL}?move-pressure=${viewport.label}-${fromMoves}`,
+        { waitUntil: "networkidle" }
+      );
+
+      const before = await movePressureReport(page);
+      expect(before.className, `${viewport.label} ${fromMoves} load has no pulse`).not.toContain(
+        "move-decrement-pulse"
+      );
+      expect(before.ariaLive, `${viewport.label} ${fromMoves} load stays quiet`).toBe("off");
+      await commitLowMoveSwap(page);
+
+      const remaining = fromMoves - 1;
+      const peak = await movePressureReport(page);
+      const expectedText = remaining === 1 ? "LAST MOVE · 1" : `Moves ${remaining}`;
+      const expectedLabel = remaining === 1
+        ? "Last move. 1 move remaining."
+        : `${remaining} moves remaining.`;
+      expect(peak.text, `${viewport.label} ${fromMoves}->${remaining} text`).toBe(expectedText);
+      expect(peak.className, `${viewport.label} ${fromMoves}->${remaining} low class`).toContain("moves-low");
+      expect(peak.className, `${viewport.label} ${fromMoves}->${remaining} pulse class`).toContain(
+        "move-decrement-pulse"
+      );
+      expect(
+        peak.className.includes("moves-last"),
+        `${viewport.label} ${fromMoves}->${remaining} last class`
+      ).toBe(remaining === 1);
+      expect(peak.role, `${viewport.label} ${fromMoves}->${remaining} status role`).toBe("status");
+      expect(peak.ariaLive, `${viewport.label} ${fromMoves}->${remaining} polite update`).toBe("polite");
+      expect(peak.ariaLabel, `${viewport.label} ${fromMoves}->${remaining} exact label`).toBe(expectedLabel);
+      expect(peak.animationName, `${viewport.label} ${fromMoves}->${remaining} pulse animation`).toBe(
+        remaining === 1 ? "last-move-decrement-pulse" : "move-decrement-pulse"
+      );
+      expect(peak.backgroundImage, `${viewport.label} ${fromMoves}->${remaining} direct surface`).not.toBe("none");
+      expect(Number(peak.fontWeight), `${viewport.label} ${fromMoves}->${remaining} direct weight`).toBeGreaterThanOrEqual(800);
+      expect(peak.objectiveLow, `${viewport.label} ${fromMoves}->${remaining} frame support`).toBe(true);
+      expect(peak.objectiveHeight, `${viewport.label} ${fromMoves}->${remaining} objective height`).toBeCloseTo(
+        before.objectiveHeight,
+        1
+      );
+      expect(peak.boardTop, `${viewport.label} ${fromMoves}->${remaining} board top`).toBeCloseTo(
+        before.boardTop,
+        1
+      );
+      expect(peak.boardBottom, `${viewport.label} ${fromMoves}->${remaining} board bottom`).toBeCloseTo(
+        before.boardBottom,
+        1
+      );
+      expect(peak.boardWidth, `${viewport.label} ${fromMoves}->${remaining} board width`).toBeCloseTo(
+        before.boardWidth,
+        1
+      );
+      expect(peak.boardHeight, `${viewport.label} ${fromMoves}->${remaining} board height`).toBeCloseTo(
+        before.boardHeight,
+        1
+      );
+      expect(peak.tiles, `${viewport.label} ${fromMoves}->${remaining} tiles`).toBe(64);
+      expect(peak.rows, `${viewport.label} ${fromMoves}->${remaining} rows`).toBe(8);
+      expect(peak.overflowX, `${viewport.label} ${fromMoves}->${remaining} overflow`).toBe(false);
+      expect(peak.brokenImages, `${viewport.label} ${fromMoves}->${remaining} images`).toEqual([]);
+
+      await page.waitForTimeout(700);
+      const settled = await movePressureReport(page);
+      expect(settled.text, `${viewport.label} ${remaining} settled text`).toBe(expectedText);
+      expect(settled.className, `${viewport.label} ${remaining} settled pulse clears`).not.toContain(
+        "move-decrement-pulse"
+      );
+      expect(settled.className, `${viewport.label} ${remaining} static pressure remains`).toContain("moves-low");
+      expect(settled.ariaLive, `${viewport.label} ${remaining} settled status is quiet`).toBe("off");
+
+      await page.reload({ waitUntil: "networkidle" });
+      const reloaded = await movePressureReport(page);
+      expect(reloaded.text, `${viewport.label} ${remaining} reload text`).toBe(expectedText);
+      expect(reloaded.className, `${viewport.label} ${remaining} reload no pulse`).not.toContain(
+        "move-decrement-pulse"
+      );
+      expect(reloaded.className, `${viewport.label} ${remaining} reload pressure`).toContain("moves-low");
+      expect(reloaded.ariaLive, `${viewport.label} ${remaining} reload stays quiet`).toBe("off");
+      expect(reloaded.tiles, `${viewport.label} ${remaining} reload tiles`).toBe(64);
+      expect(reloaded.rows, `${viewport.label} ${remaining} reload rows`).toBe(8);
+      expect(reloaded.overflowX, `${viewport.label} ${remaining} reload overflow`).toBe(false);
+      expect(runtimeErrors, `${viewport.label} ${fromMoves}->${remaining} runtime errors`).toEqual([]);
+      await context.close();
+    }
+  });
+
+  test(`reduced motion and final-move outcomes outrank urgency on ${viewport.label}`, async ({ browser }) => {
+    const reducedContext = await browser.newContext({
+      viewport: { width: viewport.width, height: viewport.height },
+      reducedMotion: "reduce"
+    });
+    const reducedPage = await reducedContext.newPage();
+    await reducedPage.addInitScript(({ key, state, marker }) => {
+      if (!sessionStorage.getItem(marker)) {
+        localStorage.setItem(key, JSON.stringify(state));
+        sessionStorage.setItem(marker, "1");
+      }
+    }, {
+      key: SAVE_KEY,
+      state: lowMoveState(2),
+      marker: `move-pressure-reduced-${viewport.label}`
+    });
+    await reducedPage.goto(
+      `${BASE_URL}?move-pressure-reduced=${viewport.label}`,
+      { waitUntil: "networkidle" }
+    );
+    await commitLowMoveSwap(reducedPage);
+    const reduced = await movePressureReport(reducedPage);
+    expect(reduced.text, `${viewport.label} reduced last move text`).toBe("LAST MOVE · 1");
+    expect(reduced.className, `${viewport.label} reduced static last class`).toContain("moves-last");
+    expect(reduced.animationName, `${viewport.label} reduced animation`).toBe("none");
+    expect(["none", "matrix(1, 0, 0, 1, 0, 0)"], `${viewport.label} reduced transform`).toContain(
+      reduced.transform
+    );
+    await reducedContext.close();
+
+    const successContext = await browser.newContext({
+      viewport: { width: viewport.width, height: viewport.height }
+    });
+    const successPage = await successContext.newPage();
+    await successPage.addInitScript(({ key, state, marker }) => {
+      if (!sessionStorage.getItem(marker)) {
+        localStorage.setItem(key, JSON.stringify(state));
+        sessionStorage.setItem(marker, "1");
+      }
+    }, {
+      key: SAVE_KEY,
+      state: lowMoveState(1, [13, 0, 0, 11, 0, 0]),
+      marker: `move-pressure-success-${viewport.label}`
+    });
+    await successPage.goto(
+      `${BASE_URL}?move-pressure-success=${viewport.label}`,
+      { waitUntil: "networkidle" }
+    );
+    await commitLowMoveSwap(successPage, false);
+    await expect(successPage.locator("#restoreGreenhouseBtn")).toBeVisible({ timeout: 10000 });
+    const success = await movePressureReport(successPage);
+    expect(success.payoffActionVisible, `${viewport.label} final success action`).toBe(true);
+    expect(success.retryVisible, `${viewport.label} final success no Retry`).toBe(false);
+    expect(success.className, `${viewport.label} final success no low state`).not.toContain("moves-low");
+    expect(success.className, `${viewport.label} final success no pulse`).not.toContain(
+      "move-decrement-pulse"
+    );
+    expect(success.objectiveLow, `${viewport.label} final success frame clears`).toBe(false);
+    await successContext.close();
+
+    const failureContext = await browser.newContext({
+      viewport: { width: viewport.width, height: viewport.height }
+    });
+    const failurePage = await failureContext.newPage();
+    await failurePage.addInitScript(({ key, state, marker }) => {
+      if (!sessionStorage.getItem(marker)) {
+        localStorage.setItem(key, JSON.stringify(state));
+        sessionStorage.setItem(marker, "1");
+      }
+    }, {
+      key: SAVE_KEY,
+      state: lowMoveState(1),
+      marker: `move-pressure-failure-${viewport.label}`
+    });
+    await failurePage.goto(
+      `${BASE_URL}?move-pressure-failure=${viewport.label}`,
+      { waitUntil: "networkidle" }
+    );
+    await commitLowMoveSwap(failurePage, false);
+    await expect(failurePage.locator("#renewBtn.visible")).toBeFocused({ timeout: 10000 });
+    const failure = await movePressureReport(failurePage);
+    expect(failure.retryVisible, `${viewport.label} final failure Retry`).toBe(true);
+    expect(failure.retryFocused, `${viewport.label} final failure Retry focus`).toBe(true);
+    expect(failure.payoffActionVisible, `${viewport.label} final failure no payoff`).toBe(false);
+    expect(failure.className, `${viewport.label} final failure no low state`).not.toContain("moves-low");
+    expect(failure.className, `${viewport.label} final failure no pulse`).not.toContain(
+      "move-decrement-pulse"
+    );
+    expect(failure.objectiveLow, `${viewport.label} final failure frame clears`).toBe(false);
+    expect(failure.tiles, `${viewport.label} final failure tiles`).toBe(64);
+    expect(failure.rows, `${viewport.label} final failure rows`).toBe(8);
+    expect(failure.overflowX, `${viewport.label} final failure overflow`).toBe(false);
+    expect(failure.brokenImages, `${viewport.label} final failure images`).toEqual([]);
+    await failureContext.close();
   });
 }
 

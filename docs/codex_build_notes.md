@@ -1,5 +1,17 @@
 # Codex Build Notes
 
+## 2026-07-17 settled low-move urgency
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_bouquet_hud_consequence.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.
+- Selected weakness: the final three moves changed only the objective frame's dark border. The actual Moves counter retained ordinary copy, color, weight, and accessibility semantics, so the final decision was easy to miss even though the deterministic move budgets and failure recovery were healthy.
+- Player-visible result: the existing Moves counter now owns a restrained gothic pressure state once a valid swap settles at three or fewer moves. Settled `4 -> 3` and `3 -> 2` decrements receive one brief aged-gold pulse; settled `2 -> 1` becomes the stronger, explicit `LAST MOVE · 1`. The direct counter surface, weight, and color retain the low/final distinction after the pulse. No objective height, board geometry, hit target, move budget, save field, panel, control, or progression surface changed.
+- Timing/accessibility contract: urgency is queued only after accepted-swap resolution returns control. Its existing status node announces one polite settled count update, then returns to a quiet static state. Reloaded saves at Moves `3/2/1` render the correct static treatment without replaying the pulse. Reduced motion suppresses scale/brightness animation while retaining the direct low/final counter treatment and numerical truth.
+- Outcome precedence: a final-move bouquet completion skips and clears urgency so coin/restoration ceremony feedback owns the screen. A final-move failure likewise skips urgency and preserves the accepted focused `Retry Bouquet` handoff. Shuffle uses the same settled counter boundary, while ordinary mid-resolution rendering and failed/completed objective frames cannot leak a stale low-move state.
+- Permanent browser contract: deterministic natural three-matches cover settled `4 -> 3 -> 2 -> 1` presentation on desktop `1280x720` and exact mobile `390x844`, including polite status semantics, pulse cleanup, static reload, unchanged objective/altar geometry, 64 tiles/eight rows, and image/overflow checks. Separate reduced-motion, final-success, and final-failure fixtures prove static treatment and ceremony/Retry precedence.
+- Focused verification: the new desktop/mobile pressure, reload, reduced-motion, success, and failure matrix passed `4/4` in `29.8s`.
+- Final local verification: `python3 scripts/verify_project.py`, `python3 scripts/verify_html_match_shapes.py`, all spec syntax checks, extracted inline playable syntax, `git diff --check`, and the changed-line credential/tracker/network scan passed. The complete serial Chromium gate passed `74/74` in `18.0m`.
+- Integrated evidence: every deterministic first-three journey retained the authored `6/9/8` budgets and exact economy traces; one desktop and one mobile goal-following seed completed Round 3 on exactly the final move and correctly handed the screen to the payoff ceremony. Runtime remained `509` nodes, `84` images, 64 tiles/eight rows, two meaningful bars, and no dormant prototype surfaces, horizontal overflow, visible broken images, console errors, or page errors. Mobile guided swaps returned control in `394ms` and `486ms`, within the existing ceiling.
+
 ## 2026-07-17 failed-bouquet Retry focus handoff
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_bouquet_hud_consequence.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.
