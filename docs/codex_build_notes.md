@@ -1,5 +1,15 @@
 # Codex Build Notes
 
+## 2026-07-17 contained bouquet payoff labels
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_payoff_ceremony_contract.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.
+- Selected weakness: the desktop first-bouquet trophy clipped the right side of `x6 Bone Star`. The flex bonus row retained a roughly `240px` intrinsic minimum inside a roughly `226px` trophy column, and the trophy's intentional `overflow:hidden` cut the second ingredient token.
+- Player-visible result: the existing ingredient row is now a bounded, shrinkable two-column grid. Both `x8 Thorn Rose` and `x6 Bone Star` remain centered and fully legible inside the trophy without widening the ceremony, changing its two-column hierarchy, or altering the six-bloom bouquet and one-action restoration flow.
+- Permanent geometry contract: every payoff token must remain inside `#bouquetTrophy`, its complete text must fit its own client box, and the bonus row must report `display:grid`, `min-width:0`, and no internal scroll overflow on desktop and exact `390x844` mobile ceremonies.
+- Natural five-swap evidence: desktop trophy `257..480.59px`, bounded ingredient row `268..469.59px`, and two `98.30px` tokens with `scrollWidth <= clientWidth`; mobile trophy `44..368px`, ingredient row `55..357px`, and two `148.50px` tokens. Both viewports retained six blooms, one focused `Restore Greenhouse` action, no horizontal overflow, no broken images, and no console errors. Captures: `work/payoff-labels-desktop.png` and `work/payoff-labels-mobile390.png`.
+- Verification: `python3 scripts/verify_project.py`, `python3 scripts/verify_html_match_shapes.py`, extracted inline JavaScript syntax, all spec syntax, `git diff --check`, and the changed-line credential/tracker/network scan passed. Focused browser checks passed `2/2` complete desktop/mobile ceremony journeys, `2/2` stable first-action checks, and `2/2` reduced-motion payoff checks.
+- Integrated Chromium gate: `63/63` passed serially, including natural desktop/mobile fifth-swap bouquet binding, all three payoff ceremonies and reloads, 64 tiles/eight rows before completion, first-three journeys, two-cycle economy, Black Candle/Cursed Thorn behavior, retry, input modes, focus, and runtime error/overflow checks.
+
 ## 2026-07-17 stable first-swap hit target
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_tutorial_progress.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.

@@ -5250,7 +5250,7 @@
     }
     body.round-one-active.round-one-complete .round-one-restoration { position:relative; overflow:hidden; display:grid; width:min(800px,calc(100% - 16px)); margin:12px auto 0; padding:16px; gap:12px; border:1px solid #b98b42; background:radial-gradient(circle at 50% 0,#3a2410,#100d0d 70%); box-shadow:0 0 36px #b8793045,inset 0 0 28px #000,0 18px 45px #000b; text-align:center; }
     .payoff-stage { display:grid; grid-template-columns:minmax(210px,.42fr) minmax(0,1fr); gap:10px; align-items:stretch; }
-    .bouquet-trophy { min-height:clamp(184px,21vw,270px); position:relative; overflow:hidden; display:grid; grid-template-rows:auto 1fr auto; align-items:center; padding:11px 10px 10px; border:1px solid #60482d; background:radial-gradient(circle at 50% 18%,#3a2013 0,#120807 48%,#030202 100%); box-shadow:inset 0 0 28px #000,0 0 18px #000; isolation:isolate; }
+    .bouquet-trophy { min-width:0; min-height:clamp(184px,21vw,270px); position:relative; overflow:hidden; display:grid; grid-template-columns:minmax(0,1fr); grid-template-rows:auto 1fr auto; align-items:center; padding:11px 10px 10px; border:1px solid #60482d; background:radial-gradient(circle at 50% 18%,#3a2013 0,#120807 48%,#030202 100%); box-shadow:inset 0 0 28px #000,0 0 18px #000; isolation:isolate; }
     .bouquet-trophy::before { content:""; position:absolute; inset:8px; z-index:0; border:1px solid #d7b16d33; clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%); box-shadow:inset 0 0 24px #000; pointer-events:none; }
     .bouquet-trophy::after { content:""; position:absolute; inset:0; z-index:0; opacity:.74; background:radial-gradient(circle at 50% 45%,var(--bouquet-aura,#d7b16d55) 0,#0000 48%),repeating-conic-gradient(from 16deg,#0000 0 16deg,var(--bouquet-ray,#d7b16d22) 17deg 18deg,#0000 19deg 34deg); pointer-events:none; }
     .bouquet-trophy[data-bouquet-payoff-state="restored"] { border-color:#8aa657; background:radial-gradient(circle at 50% 18%,#253815 0,#0b1008 52%,#030202 100%); }
@@ -5303,8 +5303,9 @@
     .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .crafted-stem { animation:crafted-stem-bind 760ms cubic-bezier(.12,.82,.18,1) both; }
     .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .crafted-binding,
     .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .crafted-vine { animation:bouquet-vine-bind 860ms ease-out 120ms both; }
-    .bouquet-trophy-bonus { display:flex; justify-content:center; gap:5px; flex-wrap:wrap; }
-    .bouquet-payoff-token { max-width:100%; padding:4px 7px; border:1px solid #5a452a; background:#080606d9; color:#ead9a9; font:900 11px/1 system-ui,sans-serif; text-transform:uppercase; letter-spacing:.055em; overflow-wrap:anywhere; }
+    .bouquet-trophy-bonus { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); width:100%; min-width:0; gap:5px; align-items:stretch; }
+    .bouquet-payoff-token { box-sizing:border-box; width:100%; min-width:0; max-width:100%; padding:4px; border:1px solid #5a452a; background:#080606d9; color:#ead9a9; font:900 10px/1 system-ui,sans-serif; text-align:center; text-transform:uppercase; letter-spacing:.02em; white-space:nowrap; overflow-wrap:normal; }
+    .bouquet-trophy-bonus:has(.bouquet-payoff-token:nth-child(3)) .bouquet-payoff-token { padding-inline:2px; font-size:9px; letter-spacing:0; }
     .round-one-restoration.restoration-awakening .bouquet-trophy { animation:bouquet-trophy-awaken 960ms ease-out both; }
     .round-one-restoration.restoration-awakening .bouquet-stem { animation:bouquet-stem-settle 820ms cubic-bezier(.12,.82,.18,1) both; animation-delay:var(--stem-delay,0ms); }
     .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .bouquet-ingredient { animation:bouquet-ingredient-bind 920ms cubic-bezier(.12,.82,.18,1) both; animation-delay:var(--ingredient-delay,0ms); }

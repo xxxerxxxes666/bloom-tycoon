@@ -584,6 +584,8 @@ def verify_source_hooks():
         "bouquet-sealed",
         "next-order-ready",
         "bouquet-trophy",
+        "grid-template-columns:repeat(2,minmax(0,1fr))",
+        "white-space:nowrap",
         "Bouquet Bound",
         "Greenhouse Relit",
         "Bloodroot and Sol Rot seal the conservatory run.",

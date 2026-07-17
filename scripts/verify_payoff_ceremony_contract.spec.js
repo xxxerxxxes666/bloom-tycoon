@@ -300,6 +300,47 @@ async function visibleContract(page) {
       })(),
       ingredientTokenHeights: visible(".bouquet-payoff-token")
         .map((node) => Math.round(node.getBoundingClientRect().height)),
+      payoffTokenLayout: (() => {
+        const trophy = document.querySelector("#bouquetTrophy");
+        const bonus = document.querySelector(".bouquet-trophy-bonus");
+        const trophyRect = trophy?.getBoundingClientRect();
+        const bonusRect = bonus?.getBoundingClientRect();
+        const bonusStyle = bonus ? getComputedStyle(bonus) : null;
+        return {
+          bonus: bonusRect ? {
+            left: bonusRect.left,
+            right: bonusRect.right,
+            width: bonusRect.width,
+            clientWidth: bonus.clientWidth,
+            scrollWidth: bonus.scrollWidth,
+            display: bonusStyle.display,
+            minWidth: bonusStyle.minWidth,
+            gridTemplateColumns: bonusStyle.gridTemplateColumns,
+            contained: Boolean(
+              trophyRect
+              && bonusRect.left >= trophyRect.left - 1
+              && bonusRect.right <= trophyRect.right + 1
+            )
+          } : null,
+          tokens: visible(".bouquet-payoff-token").map((node) => {
+            const bounds = node.getBoundingClientRect();
+            return {
+              text: node.textContent.trim(),
+              left: bounds.left,
+              right: bounds.right,
+              width: bounds.width,
+              clientWidth: node.clientWidth,
+              scrollWidth: node.scrollWidth,
+              contained: Boolean(
+                trophyRect
+                && bounds.left >= trophyRect.left - 1
+                && bounds.right <= trophyRect.right + 1
+              ),
+              textFits: node.scrollWidth <= node.clientWidth + 1
+            };
+          })
+        };
+      })(),
       trophyState: document.querySelector("#bouquetTrophy")?.dataset.assemblyState || "",
       liveAssemblies: visible("#liveBouquetAssembly").length,
       scenes: visible(".restoration-scene").length,
@@ -360,6 +401,23 @@ async function expectCeremony(page, expectedButton, screenshotPath, expectedGuid
   expect(Math.min(...contract.craftedBloomSizes), "flower heads dominate ingredient labels").toBeGreaterThan(
     Math.max(...contract.ingredientTokenHeights, 0) * 2
   );
+  expect(contract.payoffTokenLayout.bonus, "ingredient row remains measurable").toMatchObject({
+    display: "grid",
+    minWidth: "0px",
+    contained: true
+  });
+  expect(
+    contract.payoffTokenLayout.bonus.scrollWidth,
+    "ingredient row does not overflow its own trophy track"
+  ).toBeLessThanOrEqual(contract.payoffTokenLayout.bonus.clientWidth + 1);
+  expect(
+    contract.payoffTokenLayout.tokens.every((token) => token.contained),
+    JSON.stringify(contract.payoffTokenLayout.tokens)
+  ).toBe(true);
+  expect(
+    contract.payoffTokenLayout.tokens.every((token) => token.textFits),
+    JSON.stringify(contract.payoffTokenLayout.tokens)
+  ).toBe(true);
   expect(contract.craftedImageSources.every((image) => image.complete && image.naturalWidth >= 48 && image.naturalHeight >= 48)).toBe(true);
   if (contract.trophyName.includes("First Bouquet")) {
     expect(contract.craftedImageSources.map((image) => image.src)).toEqual([
