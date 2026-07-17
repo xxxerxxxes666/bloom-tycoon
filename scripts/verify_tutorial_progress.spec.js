@@ -629,6 +629,69 @@ async function firstActionGuideReport(page) {
   });
 }
 
+async function stableTileGeometryReport(page, sampleCount = 10, intervalMs = 90) {
+  return page.evaluate(async ({ sampleCount, intervalMs }) => {
+    const samples = [];
+    const sleep = (duration) => new Promise((resolve) => setTimeout(resolve, duration));
+    for (let index = 0; index < sampleCount; index += 1) {
+      const tiles = Array.from(document.querySelectorAll(".tile")).map((tile) => {
+        const bounds = tile.getBoundingClientRect();
+        const style = getComputedStyle(tile);
+        return {
+          key: `${tile.dataset.x},${tile.dataset.y}`,
+          left: bounds.left,
+          top: bounds.top,
+          width: bounds.width,
+          height: bounds.height,
+          animationName: style.animationName,
+          transform: style.transform,
+          transformIsIdentity: style.transform === "none"
+            || new DOMMatrixReadOnly(style.transform).isIdentity
+        };
+      });
+      const anchor = document.querySelector(".tile.match-preview-anchor");
+      const anchorAfter = anchor ? getComputedStyle(anchor, "::after") : null;
+      samples.push({
+        tiles,
+        completeRows: [...new Set(tiles.map((tile) => Math.round(tile.top)))].length,
+        boardBottom: document.querySelector("#board")?.getBoundingClientRect().bottom || 0,
+        anchorAfterAnimation: anchorAfter?.animationName || ""
+      });
+      if (index < sampleCount - 1) await sleep(intervalMs);
+    }
+    const baseline = new Map(samples[0].tiles.map((tile) => [tile.key, tile]));
+    const deltas = samples.flatMap((sample) => sample.tiles.map((tile) => {
+      const first = baseline.get(tile.key);
+      return Math.max(
+        Math.abs(tile.left - first.left),
+        Math.abs(tile.top - first.top),
+        Math.abs(tile.width - first.width),
+        Math.abs(tile.height - first.height)
+      );
+    }));
+    return {
+      sampleCount: samples.length,
+      tileCounts: samples.map((sample) => sample.tiles.length),
+      completeRows: samples.map((sample) => sample.completeRows),
+      boardBottoms: samples.map((sample) => sample.boardBottom),
+      maxTileDelta: Math.max(...deltas),
+      movingTransforms: samples.flatMap((sample) => sample.tiles
+        .filter((tile) => !tile.transformIsIdentity)
+        .map((tile) => ({
+          key: tile.key,
+          animationName: tile.animationName,
+          transform: tile.transform
+        }))),
+      tileAnimationNames: [...new Set(samples.flatMap((sample) => sample.tiles
+        .map((tile) => tile.animationName)
+        .filter(Boolean)))],
+      anchorAfterAnimations: [...new Set(samples
+        .map((sample) => sample.anchorAfterAnimation)
+        .filter(Boolean))]
+    };
+  }, { sampleCount, intervalMs });
+}
+
 function assertFirstActionGuide(report, pair, label, options = {}) {
   const [source, destination] = pair;
   expect(report.count, `${label} guide count`).toBe(1);
@@ -722,6 +785,32 @@ function assertSelectedFirstActionGuide(report, pair, selectedCell, label, optio
     expect(report.destinationAnimation, `${label} static reduced-motion destination`).toBe("none");
   } else {
     expect(report.destinationAnimation, `${label} restrained destination pulse`).toBe("first-action-destination-pulse");
+  }
+}
+
+function assertStableSelectedTileGeometry(report, label, options = {}) {
+  expect(report.sampleCount, `${label} geometry sample count`).toBe(10);
+  expect(report.tileCounts, `${label} every sample retains 64 tiles`).toEqual(Array(10).fill(64));
+  expect(report.completeRows, `${label} every geometry sample retains eight rows`).toEqual(Array(10).fill(8));
+  expect(report.maxTileDelta, `${label} real tile hit boxes remain fixed`).toBeLessThan(0.05);
+  expect(report.movingTransforms, `${label} no real tile transform moves a hit target`).toEqual([]);
+  expect(report.tileAnimationNames, `${label} button animation excludes moving preview throb`).not.toContain("harvest-ready-throb");
+  if (options.reducedMotion) {
+    expect(
+      report.anchorAfterAnimations,
+      `${label} reduced-motion preview overlay is effectively static`
+    ).not.toContain("harvest-ready-glow");
+  } else {
+    expect(
+      report.anchorAfterAnimations,
+      `${label} preview overlay keeps the visual pulse`
+    ).toContain("harvest-ready-glow");
+  }
+  if (options.mobile) {
+    expect(
+      Math.max(...report.boardBottoms),
+      `${label} complete mobile board remains in the first viewport`
+    ).toBeLessThanOrEqual(844);
   }
 }
 
@@ -3103,8 +3192,13 @@ test("Round 1 tutorial board choreography derives from the authoritative hinted 
           { mobile: config.mobile }
         );
       }
+      assertStableSelectedTileGeometry(
+        await stableTileGeometryReport(page),
+        `${config.label} selected order ${order + 1}`,
+        { mobile: config.mobile }
+      );
       const destinationTile = page.locator(`.tile[data-x="${destination.x}"][data-y="${destination.y}"]`);
-      await destinationTile.evaluate((tile) => tile.click());
+      await destinationTile.click();
       await waitForSettledBoard(page);
       const after = await activeState(page);
       expect(after.moves, `${config.label} authored pair spends one move`).toBe(before.moves - 1);
@@ -3151,6 +3245,11 @@ test("Round 1 tutorial board choreography derives from the authoritative hinted 
     "reduced selected mobile390",
     { mobile: true, reducedMotion: true }
   );
+  assertStableSelectedTileGeometry(
+    await stableTileGeometryReport(page),
+    "reduced selected mobile390",
+    { mobile: true, reducedMotion: true }
+  );
   await page.screenshot({ path: "work/first-action-guide-mobile390-reduced.png", fullPage: true });
 
   expect(consoleErrors).toEqual([]);
@@ -3165,27 +3264,36 @@ test("exact mobile touch taps keep the first-action destination explicit", async
     isMobile: true
   });
   try {
-    await openFresh(mobile, "first-action-touch-tap-mobile390");
-    await expect(mobile.locator("#tutorialPanel")).toBeVisible({ timeout: 3000 });
-    const pair = await hintedPair(mobile);
-    const before = await activeState(mobile);
-    await mobile.locator(`.tile[data-x="${pair[0].x}"][data-y="${pair[0].y}"]`).tap({ force: true });
-    assertSelectedFirstActionGuide(
-      await firstActionGuideReport(mobile),
-      pair,
-      pair[0],
-      "exact mobile touch first tap",
-      { mobile: true }
-    );
-    expect((await activeState(mobile)).moves, "touch selection spends no move").toBe(before.moves);
-    await mobile.locator(`.tile[data-x="${pair[1].x}"][data-y="${pair[1].y}"]`).tap({ force: true });
-    await waitForSettledBoard(mobile);
-    const after = await activeState(mobile);
-    expect(after.moves, "touch destination tap commits authored swap").toBe(before.moves - 1);
-    expect(after.counts.reduce((sum, value) => sum + value, 0), "touch swap advances bouquet").toBeGreaterThan(0);
-    expect(after.tiles).toBe(64);
-    expect(after.rows).toBe(8);
-    expect(after.overflowX).toBe(false);
+    for (const order of [0, 1]) {
+      await openFresh(mobile, `first-action-touch-tap-mobile390-${order + 1}`);
+      await expect(mobile.locator("#tutorialPanel")).toBeVisible({ timeout: 3000 });
+      const pair = await hintedPair(mobile);
+      const source = pair[order];
+      const destination = pair[order === 0 ? 1 : 0];
+      const before = await activeState(mobile);
+      await mobile.locator(`.tile[data-x="${source.x}"][data-y="${source.y}"]`).tap();
+      assertSelectedFirstActionGuide(
+        await firstActionGuideReport(mobile),
+        pair,
+        source,
+        `exact mobile touch first tap order ${order + 1}`,
+        { mobile: true }
+      );
+      expect((await activeState(mobile)).moves, "touch selection spends no move").toBe(before.moves);
+      assertStableSelectedTileGeometry(
+        await stableTileGeometryReport(mobile),
+        `exact mobile touch order ${order + 1}`,
+        { mobile: true }
+      );
+      await mobile.locator(`.tile[data-x="${destination.x}"][data-y="${destination.y}"]`).tap();
+      await waitForSettledBoard(mobile);
+      const after = await activeState(mobile);
+      expect(after.moves, "touch destination tap commits authored swap").toBe(before.moves - 1);
+      expect(after.counts.reduce((sum, value) => sum + value, 0), "touch swap advances bouquet").toBeGreaterThan(0);
+      expect(after.tiles).toBe(64);
+      expect(after.rows).toBe(8);
+      expect(after.overflowX).toBe(false);
+    }
   } finally {
     await mobile.close();
   }

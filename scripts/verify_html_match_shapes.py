@@ -518,7 +518,8 @@ def verify_source_hooks():
         "in selected harvest preview",
         "Black Candle Vine lane preview",
         "--tile-color",
-        "harvest-ready-throb",
+        ".tile.match-preview-anchor::after",
+        "harvest-ready-glow",
         "let currentCascadeWave = 0",
         "let lastSettledCascadeCount = 0",
         "function queueCascadeImpact(wave, cascadeIndex = 0)",
@@ -917,6 +918,17 @@ def verify_source_hooks():
     missing = [needle for needle in required if needle not in html]
     if missing:
         raise SystemExit(f"Missing HTML match-shape hooks: {missing}")
+    moving_match_preview = re.search(
+        r"\.tile\.match-preview-anchor\s*\{[^}]*\banimation\s*:",
+        html,
+        re.DOTALL,
+    )
+    if moving_match_preview or "@keyframes harvest-ready-throb" in html:
+        raise SystemExit("Match-preview animation returned to the real tile hit target")
+    stable_preview_start = html.index("@keyframes harvest-ready-glow")
+    stable_preview_end = html.index("@keyframes thorn-splinter", stable_preview_start)
+    if "transform:" in html[stable_preview_start:stable_preview_end]:
+        raise SystemExit("Match-preview overlay pulse must not transform the tile geometry")
     dormant_runtime_patterns = [
         r'id="bouquetPath"',
         r'id="pathLedgerDrawer"',

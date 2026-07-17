@@ -1,5 +1,17 @@
 # Codex Build Notes
 
+## 2026-07-17 stable first-swap hit target
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_tutorial_progress.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.
+- Selected weakness: the destination-only opening cue animated the actual `.tile` button with scale and vertical translation. The visible target remained clickable by coordinate, but its moving bounding box failed normal browser actionability checks and could make the novice's first required destination feel less dependable.
+- Player-visible result: the destination stays visually alive, but the restrained brightness pulse now runs on the existing non-hit-tested match-preview overlay. Every real flower button remains geometrically fixed while selectable; reduced motion keeps the same static aged-gold destination treatment.
+- Input contract: both source orders now use ordinary unforced pointer clicks and exact-mobile touch taps in the permanent opening regression. Keyboard still completes the pair with two Enter presses. No DOM-injected clicks or forced touch actions remain in the core source-to-destination contract.
+- Geometry contract: ten in-page samples across the selected-state pulse assert 64 stable tile boxes, exactly eight rendered rows, identity transforms on every tile button, an animated preview overlay, and a mobile board bottom that never extends beyond the `844px` viewport edge, with no horizontal overflow.
+- Browser evidence inspected: `work/first-action-selected-desktop.png`, `work/first-action-selected-mobile390.png`, and `work/first-action-guide-mobile390-reduced.png` preserve one strong aged-gold destination, the complete desktop/mobile board, one instruction surface, and Skip as the sole non-tile action.
+- Focused verification: the exact desktop/mobile unforced actionability and geometry pair passed `6/6`, then passed another `10/10` under lower scheduler pressure. The neighboring tutorial, touch, drag, cancel, refusal, and passive-input matrix passed `5/6`; its only miss was an unchanged short-lived order pulse that expired before the external assertion sampled it.
+- Integrated verification: a complete `63`-case serial run was attempted while unrelated system load peaked at `458`. All twelve desktop journey seeds reached the correct saved balance/layout but missed the transient coin-pulse class, so the duplicate mobile half was stopped. The remaining serial `37`-case gate completed `25/37`; the changed destination choreography and exact-mobile touch tests passed inside it, while the twelve misses were bounded animation/timer or latency windows under scheduler starvation. No failed assertion implicated tile geometry, actionability, moves, objectives, save state, overflow, images, or runtime errors.
+- Static/security verification: `python3 scripts/verify_project.py`, `python3 scripts/verify_html_match_shapes.py`, all five spec syntax checks, extracted playable JavaScript syntax, and `git diff --check` passed. Changed lines were scanned for credential-shaped strings, secrets, trackers, analytics, and new network hooks with no findings.
+
 ## 2026-07-17 first-swap destination continuation
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_tutorial_progress.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.
