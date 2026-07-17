@@ -252,6 +252,8 @@ async function activeState(page) {
     return {
       moves: state.moves,
       counts: state.counts || [],
+      clearedCursedThorns: state.clearedCursedThorns || 0,
+      cursedThorns: state.cursedThorns || [],
       armedLineRelic: state.armedLineRelic || null,
       board: (state.board || []).map((row) => row.join(",")).join("|"),
       roundComplete: Boolean(state.roundComplete),
@@ -262,6 +264,54 @@ async function activeState(page) {
       overflowX: document.documentElement.scrollWidth > innerWidth + 1
     };
   }, SAVE_KEY);
+}
+
+async function interruptGuidedSwapWithReload(page, requestedPair = null) {
+  await waitForSettledBoard(page);
+  const before = await activeState(page);
+  const pair = requestedPair || await hintedPair(page);
+  const navigation = page.waitForNavigation({ waitUntil: "networkidle" });
+  await page.evaluate((pair) => {
+    const click = ({ x, y }) => {
+      document.querySelector(`.tile[data-x="${x}"][data-y="${y}"]`).click();
+    };
+    click(pair[0]);
+    click(pair[1]);
+    window.setTimeout(() => window.location.reload(), 0);
+  }, pair);
+  await navigation;
+  await waitForSettledBoard(page);
+  return {
+    before,
+    after: await activeState(page),
+    pair
+  };
+}
+
+async function settleGuidedSwap(page, requestedPair = null) {
+  await waitForSettledBoard(page);
+  const movesBefore = (await activeState(page)).moves;
+  const pair = requestedPair || await hintedPair(page);
+  await page.evaluate((pair) => {
+    pair.forEach(({ x, y }) => {
+      document.querySelector(`.tile[data-x="${x}"][data-y="${y}"]`).click();
+    });
+  }, pair);
+  await page.waitForFunction(({ key, movesBefore }) => {
+    const saved = JSON.parse(localStorage.getItem(key) || "{}");
+    if (Number(saved.moves) >= Number(movesBefore)) {
+      return false;
+    }
+    const tiles = Array.from(document.querySelectorAll(".tile"));
+    if (saved.roundComplete) {
+      const action = document.querySelector("#restoreGreenhouseBtn");
+      return action && !action.hidden && !action.disabled;
+    }
+    return tiles.length === 64
+      && tiles.every((tile) => !tile.disabled)
+      && new Set(tiles.map((tile) => Math.round(tile.getBoundingClientRect().top))).size === 8
+      && document.querySelectorAll(".tile.idle-hint").length === 2;
+  }, { key: SAVE_KEY, movesBefore }, { timeout: 10000 });
 }
 
 async function waitForSettledBoard(page) {
@@ -1248,6 +1298,150 @@ test("Black Candle Vine forms, persists, and activates as a deliberate lane spec
       expect(completed.moves).toBeGreaterThanOrEqual(0);
       await expect(page.locator("#restoreGreenhouseBtn")).toHaveText("Restore Greenhouse · 100 coins");
       expect(await page.evaluate((key) => JSON.parse(localStorage.getItem(key)).coins, SAVE_KEY)).toBe(120);
+      expect(consoleErrors).toEqual([]);
+      expect(pageErrors).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  }
+});
+
+test("accepted swaps reload from one authoritative settled state", async ({ browser }) => {
+  const cases = [
+    { label: "desktop", viewport: { width: 1280, height: 720 } },
+    { label: "mobile390", viewport: { width: 390, height: 844 }, mobile: true }
+  ];
+
+  for (const testCase of cases) {
+    const context = await browser.newContext({
+      viewport: testCase.viewport,
+      hasTouch: Boolean(testCase.mobile),
+      isMobile: Boolean(testCase.mobile)
+    });
+    const page = await context.newPage();
+    const consoleErrors = [];
+    const pageErrors = [];
+    page.on("console", (message) => {
+      if (message.type() === "error") consoleErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+
+    try {
+      await openFresh(page, `atomic-swap-${testCase.label}`);
+
+      const opening = await interruptGuidedSwapWithReload(page);
+      expect(opening.before.moves).toBe(6);
+      expect(opening.after, "opening reload restores the complete pre-swap snapshot").toMatchObject({
+        moves: 6,
+        counts: [0, 0, 0, 0, 0, 0],
+        board: opening.before.board,
+        armedLineRelic: null,
+        roundComplete: false,
+        tiles: 64,
+        rows: 8,
+        overflowX: false
+      });
+      await expect(page.locator(".tile.idle-hint")).toHaveCount(2);
+
+      await page.evaluate((key) => {
+        const state = JSON.parse(localStorage.getItem(key));
+        state.currentRound = 2;
+        state.moves = 9;
+        state.coins = 20;
+        state.counts = [0, 0, 0, 0, 0, 0];
+        state.roundComplete = false;
+        state.roundOneRestored = true;
+        state.roundTwoGreenhouseUpgraded = false;
+        state.roundThreeConservatoryRaised = false;
+        state.tutorialSkipped = true;
+        state.tutorialActive = false;
+        state.blackCandleLessonComplete = true;
+        state.hasMadeValidMove = true;
+        state.restoredRoundTwoGuideMoves = 0;
+        state.armedLineRelic = null;
+        state.cursedThorns = [];
+        state.clearedCursedThorns = 0;
+        state.board = Array.from({ length: 8 }, (_, y) => (
+          Array.from({ length: 8 }, (_, x) => (x + 2 * y) % 6)
+        ));
+        state.board[0][3] = 1;
+        state.board[1][3] = 1;
+        state.board[2][3] = 2;
+        state.board[3][3] = 1;
+        state.board[2][4] = 1;
+        localStorage.setItem(key, JSON.stringify(state));
+      }, SAVE_KEY);
+      await page.reload({ waitUntil: "networkidle" });
+      await waitForSettledBoard(page);
+      const formationPair = [{ x: 3, y: 2 }, { x: 4, y: 2 }];
+      const formation = await interruptGuidedSwapWithReload(page, formationPair);
+      expect(formation.after, "formation reload restores the settled unarmed board").toMatchObject({
+        moves: 9,
+        counts: formation.before.counts,
+        board: formation.before.board,
+        armedLineRelic: null,
+        roundComplete: false,
+        tiles: 64,
+        rows: 8,
+        overflowX: false
+      });
+
+      await settleGuidedSwap(page, formationPair);
+      await waitForSettledBoard(page);
+      const armed = await activeState(page);
+      expect(armed.moves).toBe(8);
+      expect(armed.counts[1] - formation.before.counts[1]).toBe(4);
+      expect(armed.armedLineRelic).toMatchObject({ direction: "vertical", flowerId: 1 });
+      await page.reload({ waitUntil: "networkidle" });
+      await waitForSettledBoard(page);
+      expect(await activeState(page)).toMatchObject({
+        moves: armed.moves,
+        counts: armed.counts,
+        armedLineRelic: armed.armedLineRelic
+      });
+
+      await openFresh(page, `atomic-thorn-${testCase.label}`);
+      await page.keyboard.press("n");
+      await expect(page.locator("#restoreGreenhouseBtn")).toBeVisible();
+      await page.locator("#restoreGreenhouseBtn").click();
+      await expect(page.locator("#nextOrderBtn")).toBeVisible();
+      await page.locator("#nextOrderBtn").click();
+      await waitForSettledBoard(page);
+      await expect(page.locator("#firstSwapCue")).toContainText("Crack the marked thorns");
+
+      const thornLesson = await interruptGuidedSwapWithReload(page);
+      expect(thornLesson.before).toMatchObject({
+        moves: 9,
+        clearedCursedThorns: 0,
+        roundComplete: false
+      });
+      expect(thornLesson.after, "thorn reload restores all blockers and the unspent move").toMatchObject({
+        moves: 9,
+        counts: thornLesson.before.counts,
+        clearedCursedThorns: 0,
+        cursedThorns: thornLesson.before.cursedThorns,
+        board: thornLesson.before.board,
+        roundComplete: false,
+        tiles: 64,
+        rows: 8,
+        overflowX: false
+      });
+
+      await settleGuidedSwap(page);
+      await waitForSettledBoard(page);
+      const thornSettled = await activeState(page);
+      expect(thornSettled.moves).toBe(8);
+      expect(thornSettled.clearedCursedThorns).toBe(3);
+      await page.reload({ waitUntil: "networkidle" });
+      await waitForSettledBoard(page);
+      expect(await activeState(page)).toMatchObject({
+        moves: 8,
+        counts: thornSettled.counts,
+        clearedCursedThorns: 3,
+        cursedThorns: thornSettled.cursedThorns,
+        board: thornSettled.board
+      });
+
       expect(consoleErrors).toEqual([]);
       expect(pageErrors).toEqual([]);
     } finally {

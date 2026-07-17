@@ -383,6 +383,8 @@ def verify_source_hooks():
         "function focusedEconomyBalanceForProgress()",
         "focusedEconomyVersion: FOCUSED_ECONOMY_SAVE_VERSION",
         "savedFocusedEconomyVersion < FOCUSED_ECONOMY_SAVE_VERSION",
+        "Accepted swaps render several animated frames; only settled states are authoritative.",
+        'if (typeof localStorage === "undefined" || isResolving)',
         "if (roundComplete && focusedSliceRound())",
         "queuePostRenderFocus(focusedPayoffPrimaryButtonId());",
         "Play Again reinvests the remaining ${coins} coins.",
