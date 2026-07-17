@@ -1707,6 +1707,16 @@
       animation: idle-hint-pulse 1.35s ease-in-out infinite;
     }
 
+    body.focused-active-play:not(.round-one-active) .tile.idle-hint {
+      z-index: 7;
+      outline-color: #f0c477;
+      outline-offset: -3px;
+      box-shadow:
+        inset 0 0 14px #000,
+        0 0 0 2px #120906,
+        0 0 18px #d7b16d99;
+    }
+
     .board.line-relic-guidance .tile.cursed-thorn:not(.line-relic-lane-preview) {
       filter: brightness(.82) saturate(.86);
     }
@@ -5492,7 +5502,7 @@
     .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .crafted-binding,
     .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .crafted-vine { animation:bouquet-vine-bind 860ms ease-out 120ms both; }
     .bouquet-trophy-bonus { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); width:100%; min-width:0; gap:5px; align-items:stretch; }
-    .bouquet-payoff-token { box-sizing:border-box; width:100%; min-width:0; max-width:100%; padding:4px; border:1px solid #5a452a; background:#080606d9; color:#ead9a9; font:900 10px/1 system-ui,sans-serif; text-align:center; text-transform:uppercase; letter-spacing:.02em; white-space:nowrap; overflow-wrap:normal; }
+    .bouquet-payoff-token { box-sizing:border-box; width:100%; min-width:0; max-width:100%; padding:4px 2px; border:1px solid #5a452a; background:#080606d9; color:#ead9a9; font:900 10px/1 system-ui,sans-serif; text-align:center; text-transform:uppercase; letter-spacing:.02em; white-space:nowrap; overflow-wrap:normal; }
     .bouquet-trophy-bonus:has(.bouquet-payoff-token:nth-child(3)) .bouquet-payoff-token { padding-inline:2px; font-size:9px; letter-spacing:0; }
     .round-one-restoration.restoration-awakening .bouquet-trophy { animation:bouquet-trophy-awaken 960ms ease-out both; }
     .round-one-restoration.restoration-awakening .bouquet-stem { animation:bouquet-stem-settle 820ms cubic-bezier(.12,.82,.18,1) both; animation-delay:var(--stem-delay,0ms); }
@@ -5565,7 +5575,9 @@
     .round-one-restoration.next-order-ready .next-order-btn { animation:next-order-ready 940ms cubic-bezier(.12,.82,.18,1) both; }
     body.round-two-upgrade-pending .round-one-restoration,
     body.round-two-upgrade-complete .round-one-restoration { position:relative; overflow:hidden; display:grid; width:min(820px,calc(100% - 16px)); margin:12px auto 0; padding:16px; gap:12px; border:1px solid #8a4f5e; background:radial-gradient(circle at 50% 0,#2c0f20,#0d0a0d 72%); box-shadow:0 0 40px #7d49b245,inset 0 0 30px #000,0 18px 45px #000b; text-align:center; }
-    body.focused-slice-failed #shuffleBtn { display:none!important; }
+    body.focused-slice-failed #shuffleBtn,
+    body.focused-slice-failed #tutorialHelpBtn,
+    body.focused-slice-failed #tutorialSkipBtn { display:none!important; }
     body.focused-slice-failed #renewBtn.visible { position:fixed; left:50%; bottom:14px; z-index:1000; display:block!important; min-width:190px; transform:translateX(-50%); box-shadow:0 0 22px #9b1d2266,0 10px 24px #000c; }
     .round-one-restoration.second-greenhouse-upgrade .restoration-scene { border-color:#7d49b2; box-shadow:inset 0 0 30px #7d49b255,0 0 28px #9b1d2245; }
     .round-one-restoration.second-greenhouse-upgrade .restoration-scene::before { background:radial-gradient(circle at 50% 30%,#7d49b244 0 14%,#0000 42%),radial-gradient(circle at 50% 42%,#0000 0 48%,#0008 88%),linear-gradient(180deg,#0008,#2c092055 34%,#0004 76%,#000a); }
@@ -6125,6 +6137,10 @@
         grid-column: 4;
         grid-row: 1;
         justify-self: end;
+      }
+      body.focused-active-play .objective.low-moves:not(.compact-objective) .objective-target {
+        flex: 1 1 0;
+        min-width: 0;
       }
       body.restored-next-order-focus .objective.compact-objective .objective-target,
       body.round-three-focus-active .objective.compact-objective .objective-target {
@@ -6836,6 +6852,7 @@
     const DRAG_INTENT_THRESHOLD = 6;
     const DRAG_MAX_TRAVEL_RATIO = 0.78;
     const DRAG_NEIGHBOR_YIELD_RATIO = 0.36;
+    const INVALID_SWAP_FEEDBACK_MS = 1120;
 
     let board = [];
     let selected = null;
@@ -7100,11 +7117,13 @@
       const needed = thornGoalNeeded(plan);
       const progress = thornGoalProgress(plan);
       const pulseClass = thornPulseCells.size || thornClearedCells.size ? "order-pulse" : "";
+      const completeClass = progress >= needed ? "complete" : "";
       return `
-        <span class="objective-target ${pulseClass}" data-thorn-objective="true">
+        <span class="objective-target ${pulseClass} ${completeClass}" data-thorn-objective="true">
           ${thornSealMarkup("thorn-goal-glyph", "Cursed Thorn")}
           <span class="objective-target-name" data-compact-label="Thorn">Cursed Thorn</span>
           <span class="objective-target-count">${progress}/${needed}</span>
+          ${completeClass ? '<span class="objective-target-seal">Cleared</span>' : ""}
         </span>
       `;
     }
@@ -8327,6 +8346,29 @@
       return targetCueText(target, a, b);
     }
 
+    function focusedOpeningGuideMove(plan = activeRoundPlan()) {
+      if (plan.round === 2 && roundTwoThornTeachingSwap().length) {
+        return roundTwoThornTeachingSwap();
+      }
+      const targetIndex = plan.targets.findIndex((target) => targetProgress(target) < target.needed);
+      const target = plan.targets[targetIndex];
+      return (target ? findTargetLegalMove(target.flowerId, targetIndex) : null)
+        || legalMoves()[0]
+        || [];
+    }
+
+    function primeFailedRetryOpeningGuide(plan = activeRoundPlan()) {
+      const openingMove = focusedOpeningGuideMove(plan);
+      const [a, b] = openingMove;
+      if (!a || !b) {
+        return [];
+      }
+      idleHintCells = new Set(openingMove.map((cell) => `${cell.x},${cell.y}`));
+      boardFocusCell = clampBoardFocusCell(a);
+      $("firstSwapCue").textContent = roundStartCueText(plan, openingMove);
+      return openingMove;
+    }
+
     function scheduleIdleHint() {
       clearIdleHint();
       const postOnboardingIdleHint = isPostOnboardingIdleHintActive();
@@ -8871,7 +8913,7 @@
         invalidSwapReturnHintCells.clear();
         invalidSwapReturnSelection = null;
         render();
-      }, 880);
+      }, INVALID_SWAP_FEEDBACK_MS);
     }
 
     function tileForCell(x, y) {
@@ -12656,12 +12698,14 @@
       resetCursedThorns(plan);
       build();
       startThornTeachingCue(plan);
-      const openingMove = currentRound === 2 && roundTwoThornTeachingSwap().length
-        ? roundTwoThornTeachingSwap()
-        : legalMoves()[0];
+      const openingMove = retryingFailedBouquet
+        ? primeFailedRetryOpeningGuide(plan)
+        : focusedOpeningGuideMove(plan);
       const nextFocusCell = (openingMove || [boardFocusCell])[0];
       boardFocusCell = clampBoardFocusCell(nextFocusCell);
-      $("firstSwapCue").textContent = roundStartCueText(plan, openingMove || []);
+      if (!retryingFailedBouquet) {
+        $("firstSwapCue").textContent = roundStartCueText(plan, openingMove || []);
+      }
       queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
       if (restoredGreenhouseNextOrder) {
         startRestoredGreenhouseHandoff();
@@ -12675,7 +12719,9 @@
       if (restoredGreenhouseNextOrder || secondUpgradeNextOrder) {
         focusRestoredNextOrderViewport();
       }
-      scheduleIdleHint();
+      if (!retryingFailedBouquet) {
+        scheduleIdleHint();
+      }
       playBloomSound(retryingFailedBouquet ? "retry" : "handoff");
     }
 
@@ -13154,7 +13200,7 @@
       queuePostRenderFocus(focusedPayoffPrimaryButtonId());
     }
     ensureCursedThornsForPlan(activeRoundPlan());
-    if (armedLineRelic && !roundComplete) {
+    if (armedLineRelic && !roundComplete && !isBouquetFailed()) {
       const relicPair = lineRelicActivationPair();
       if (relicPair) {
         const guidance = lineRelicGuidance();
@@ -13162,13 +13208,13 @@
         boardFocusCell = clampBoardFocusCell(guidance.source);
         $("firstSwapCue").textContent = guidance.cue;
       }
-    } else if (currentRound === 1 && !roundComplete && !hasMadeValidMove) {
+    } else if (currentRound === 1 && !roundComplete && !hasMadeValidMove && !isBouquetFailed()) {
       const firstMove = legalMoves()[0];
       if (firstMove) {
         idleHintCells = new Set(firstMove.map((cell) => `${cell.x},${cell.y}`));
         boardFocusCell = clampBoardFocusCell(firstMove[0]);
       }
-    } else if (currentRound === 1 && !roundComplete && hasMadeValidMove) {
+    } else if (currentRound === 1 && !roundComplete && hasMadeValidMove && !isBouquetFailed()) {
       seedRoundOneGuidedMove(activeRoundPlan());
       nextTargetMoveHint();
       const hintedFocus = firstHintFocusCell();

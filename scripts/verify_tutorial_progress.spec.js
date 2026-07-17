@@ -3624,7 +3624,7 @@ test("invalid, cancel, mobile touch, and reduced motion drag paths stay clean", 
   expect(invalidPeak.positiveFeedback).toEqual([]);
   expect(invalidPeak.positiveFeedbackIntersections).toBe(0);
   await page.screenshot({ path: "work/invalid-feedback-desktop-drag.png", fullPage: true });
-  await page.waitForTimeout(900);
+  await page.waitForTimeout(1250);
   const invalidAfter = await activeState(page);
   expect(invalidAfter.moves, "invalid drag spends no move").toBe(invalidBefore.moves);
   expect(invalidAfter.board, "invalid drag leaves board authoritative").toBe(invalidBefore.board);
@@ -3707,7 +3707,7 @@ test("invalid, cancel, mobile touch, and reduced motion drag paths stay clean", 
   expect(selectedRefusalPeak.tutorialCopy).toBe("Use the glowing pair.");
   expect(selectedRefusalPeak.moves).toBe(selectedBeforeRefusal.moves);
   expect(selectedRefusalPeak.board).toBe(selectedBeforeRefusal.board);
-  await page.waitForTimeout(900);
+  await page.waitForTimeout(1250);
   assertSelectedFirstActionGuide(
     await firstActionGuideReport(page),
     selectedPair,
