@@ -14,6 +14,29 @@
 - Runtime/layout status: full-run reports retained `513` nodes, `84` images, 64 tiles, eight complete rows, two meaningful bars, no dormant prototype nodes, no horizontal overflow, and no visible broken images. Mobile guided swaps returned control in `395ms` and `570ms`; the selected destination does not delay input.
 - Static/security verification: `python3 scripts/verify_project.py`, `python3 scripts/verify_html_match_shapes.py`, changed spec and extracted playable JavaScript syntax, and `git diff --check` passed. Changed lines were scanned for credential-shaped strings, secrets, trackers, analytics, and new network hooks with no findings.
 
+## 2026-07-17 active bouquet receiver legibility and continuity
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_payoff_ceremony_contract.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.
+- Player-visible result: the existing live bouquet receiver between the objective chips and board now reads as a compact physical bouquet instead of a dark trough. Empty state shows a clear binding/vine/slot structure; the authored first Thorn Rose match produces visible Thorn Rose heads in the receiver; mid-progress shows Thorn Rose and Bone Star heads together; the full pre-ceremony receiver and payoff trophy use the same six-slot target composition.
+- Implementation notes: reused `craftedBouquetEntries`, `liveBouquetAssemblyMarkup`, `visibleLiveBouquetTargetRect`, target flights, and `craftedBouquetMarkup`. Slot fullness still derives only from authoritative objective counts and thorn progress. Added per-slot `data-filled`, stronger rendered slot geometry, larger earned flower heads, a restrained slot-anchored `+n bound` acceptance seal, reduced-motion-shortened flight/seal cleanup, and passive-input pulse preservation for the longer readable order pulse.
+- Screenshots inspected:
+  - Desktop: `work/live-bouquet-desktop-empty.png`, `work/live-bouquet-desktop-first-harvest.png`, `work/live-bouquet-desktop-mid-progress.png`, `work/live-bouquet-desktop-full-pre-ceremony.png`, `work/pass2-desktop-round1-pending.png`.
+  - Mobile exact 390x844: `work/live-bouquet-mobile390-empty.png`, `work/live-bouquet-mobile390-first-harvest.png`, `work/live-bouquet-mobile390-mid-progress.png`, `work/live-bouquet-mobile390-full-pre-ceremony.png`, `work/pass2-mobile390-round1-pending.png`.
+  - Visual inspection confirmed readable empty binding, first harvested Thorn Rose head, mid-progress Thorn Rose + Bone Star proportions, all eight mobile board rows in viewport, no hidden legacy UI leak, and active-to-trophy ingredient continuity.
+- Strengthened browser assertions: `scripts/verify_payoff_ceremony_contract.spec.js` now checks active receiver geometry, computed binding/vine dimensions, loaded flower image metadata and canvas-sampled image pixels, per-slot `data-filled`/`data-slot-progress`, real authored swap target-flight landing and cleanup, empty/partial reload preservation, reduced motion, and live composition equality with the ceremony trophy on desktop and exact mobile.
+- Verification commands/results:
+  - `python3 scripts/verify_project.py` passed.
+  - `python3 scripts/verify_html_match_shapes.py` passed.
+  - `node --check scripts/verify_payoff_ceremony_contract.spec.js` passed.
+  - Extracted playable inline JavaScript syntax check passed with `node -e "... new Function(script) ..."`.
+  - `git diff --check` passed.
+  - Focused payoff contract passed: `npx playwright test scripts/verify_payoff_ceremony_contract.spec.js` -> `6 passed (1.4m)`.
+  - After integrating concurrent `dfdc670` first-swap destination guidance, the complete serial local Chromium gate passed: `npx playwright test scripts/verify_payoff_ceremony_contract.spec.js scripts/verify_tutorial_progress.spec.js scripts/verify_first_three_journey.spec.js scripts/verify_pass3_feedback.spec.js scripts/verify_runtime_performance.spec.js --workers=1` -> `63 passed (21.6m)`.
+- Browser console/network status: the focused payoff suite and post-integration complete serial gate reported no console errors, page errors, broken visible images, hard request failures, or horizontal overflow in covered desktop/mobile/reduced-motion flows. Local server was already running on `http://127.0.0.1:4173`; bundled Playwright was used.
+- Runtime/performance status from the integrated gate: desktop/mobile/reduced-motion retained 64 tiles and eight complete rows, no dormant preview/prototype scaffold, no mobile plinth/log leak, no visible broken images, and no horizontal overflow. Mobile guided swaps returned control in `554ms` and `772ms` without particle buildup.
+- Security/scope scan: changed files were scanned for credential-shaped strings, private keys/tokens, trackers/analytics, new network hooks, private IPs, dependency changes, protected-source references, and debug/review shortcut additions. Findings were limited to expected local Playwright URLs and historical build-note text. No secrets, trackers, analytics, backend, accounts, ads, permissions, dependencies, assets, save schema, rounds, objectives, controls, economy values, or protected Diablo expression were added.
+- Known risks: no local player-facing regression found after integration. Public deployment verification remains required after commit and push.
+
 ## 2026-07-17 rapid interaction feedback ownership
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_tutorial_progress.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.

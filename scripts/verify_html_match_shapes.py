@@ -366,7 +366,7 @@ def verify_source_hooks():
         "will-change: transform, opacity;",
         "function queueBouquetBindingSeal",
         "bouquet-bind-seal",
-        ".bouquet-bind-seal { width:84px; min-height:36px;",
+        ".bouquet-bind-seal { width:64px; min-height:32px;",
         "objective-target-fill",
         "function liveBouquetAssemblyMarkup",
         "function craftedBouquetEntries",
