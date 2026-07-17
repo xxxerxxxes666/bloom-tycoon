@@ -153,6 +153,11 @@ const VIEWPORTS = [
   { label: "mobile390", width: 390, height: 844 }
 ];
 
+const ACTIVE_VIEWPORT_CASES = [
+  HUD_CASES.find((fixture) => fixture.label === "r2-active"),
+  HUD_CASES.find((fixture) => fixture.label === "r3-active")
+];
+
 test.setTimeout(180000);
 
 function savedState(fixture) {
@@ -265,6 +270,62 @@ async function assertHudState(page, fixture, viewport, reload) {
   expect(report.retryVisible, `${label} retry visibility`).toBe(Boolean(fixture.retry));
 }
 
+async function activeViewportReport(page) {
+  return page.evaluate(() => {
+    const visible = (node) => {
+      if (!node) return false;
+      const rect = node.getBoundingClientRect();
+      const style = getComputedStyle(node);
+      return style.display !== "none"
+        && style.visibility !== "hidden"
+        && Number(style.opacity || 1) !== 0
+        && rect.width > 0
+        && rect.height > 0;
+    };
+    const board = document.querySelector("#board");
+    const boardRect = board?.getBoundingClientRect();
+    const help = document.querySelector("#tutorialHelpBtn");
+    const helpRect = help?.getBoundingClientRect();
+    const tileRows = new Set(Array.from(document.querySelectorAll(".tile"), (tile) => tile.dataset.y));
+    const completeRows = new Set(Array.from(document.querySelectorAll(".tile"))
+      .filter((tile) => {
+        const rect = tile.getBoundingClientRect();
+        return rect.top >= 0 && rect.bottom <= innerHeight;
+      })
+      .map((tile) => tile.dataset.y));
+    return {
+      boardTop: boardRect?.top || 0,
+      boardBottom: boardRect?.bottom || 0,
+      boardWidth: boardRect?.width || 0,
+      boardHeight: boardRect?.height || 0,
+      tiles: document.querySelectorAll(".tile").length,
+      rows: tileRows.size,
+      completeRows: completeRows.size,
+      helpVisible: visible(help),
+      helpTop: helpRect?.top || 0,
+      helpBottom: helpRect?.bottom || 0,
+      overflowX: document.documentElement.scrollWidth > innerWidth + 1,
+      brokenImages: Array.from(document.images)
+        .filter((image) => visible(image) && image.complete && image.naturalWidth === 0)
+        .map((image) => image.getAttribute("src"))
+    };
+  });
+}
+
+function assertActiveViewport(report, viewport, label) {
+  expect(report.tiles, `${label} tile integrity`).toBe(64);
+  expect(report.rows, `${label} board rows`).toBe(8);
+  expect(report.completeRows, `${label} complete rows`).toBe(8);
+  expect(report.boardTop, `${label} board starts inside viewport`).toBeGreaterThanOrEqual(0);
+  expect(report.boardBottom, `${label} altar frame stays inside viewport`).toBeLessThanOrEqual(viewport.height - 4);
+  expect(report.overflowX, `${label} no horizontal overflow`).toBe(false);
+  expect(report.brokenImages, `${label} no broken images`).toEqual([]);
+  if (viewport.label === "desktop") {
+    expect(report.boardWidth, `${label} full desktop altar width`).toBeCloseTo(480, 0);
+    expect(report.boardHeight, `${label} full desktop altar height`).toBeCloseTo(480, 0);
+  }
+}
+
 for (const viewport of VIEWPORTS) {
   test(`focused bouquet HUD consequences fit every state on ${viewport.label}`, async ({ browser }) => {
     for (const fixture of HUD_CASES) {
@@ -321,6 +382,62 @@ for (const viewport of VIEWPORTS) {
 
       expect(runtimeErrors, `${viewport.label} ${fixture.label} runtime errors`).toEqual([]);
       expect(requestFailures, `${viewport.label} ${fixture.label} request failures`).toEqual([]);
+      await context.close();
+    }
+  });
+}
+
+test("short desktop keeps the full altar and replay Help in the first viewport", async ({ browser }) => {
+  const viewport = VIEWPORTS[0];
+  const context = await browser.newContext({ viewport: { width: viewport.width, height: viewport.height } });
+  const page = await context.newPage();
+  const runtimeErrors = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") runtimeErrors.push(message.text());
+  });
+  page.on("pageerror", (error) => runtimeErrors.push(error.message));
+
+  await page.goto(`${BASE_URL}?short-desktop=fresh`, { waitUntil: "networkidle" });
+  await expect(page.locator("#tutorialPanel")).toBeVisible();
+  await expect(page.locator("#tutorialSkipBtn")).toBeVisible();
+  await expect(page.locator("#tutorialHelpBtn")).toBeHidden();
+  assertActiveViewport(await activeViewportReport(page), viewport, "fresh desktop tutorial");
+
+  await page.locator("#tutorialSkipBtn").click();
+  await expect(page.locator("#tutorialPanel")).toBeHidden();
+  await expect(page.locator("#tutorialHelpBtn")).toBeVisible();
+  await expect(page.locator("#tutorialHelpBtn")).toBeEnabled();
+  const skipped = await activeViewportReport(page);
+  assertActiveViewport(skipped, viewport, "post-Skip desktop");
+  expect(skipped.helpTop, "Help begins inside first viewport").toBeGreaterThanOrEqual(0);
+  expect(skipped.helpBottom, "Help ends inside first viewport").toBeLessThanOrEqual(viewport.height - 4);
+
+  await page.locator("#tutorialHelpBtn").click();
+  await expect(page.locator("#tutorialPanel")).toBeVisible();
+  await expect(page.locator("#tutorialCopy")).toHaveText("Swap the glowing flowers.");
+  assertActiveViewport(await activeViewportReport(page), viewport, "desktop replay tutorial");
+
+  expect(runtimeErrors, "fresh desktop runtime errors").toEqual([]);
+  await context.close();
+});
+
+for (const viewport of VIEWPORTS) {
+  test(`active first-three altars stay complete in the first viewport on ${viewport.label}`, async ({ browser }) => {
+    for (const fixture of ACTIVE_VIEWPORT_CASES) {
+      const context = await browser.newContext({
+        viewport: { width: viewport.width, height: viewport.height }
+      });
+      const page = await context.newPage();
+      await page.addInitScript(({ key, state }) => {
+        localStorage.setItem(key, JSON.stringify(state));
+      }, { key: SAVE_KEY, state: savedState(fixture) });
+      await page.goto(`${BASE_URL}?active-viewport=${viewport.label}-${fixture.label}`, { waitUntil: "networkidle" });
+      await expect(page.locator("#board")).toBeVisible();
+      assertActiveViewport(
+        await activeViewportReport(page),
+        viewport,
+        `${viewport.label} ${fixture.label}`
+      );
       await context.close();
     }
   });

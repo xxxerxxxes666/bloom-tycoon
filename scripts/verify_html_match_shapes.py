@@ -893,6 +893,7 @@ def verify_source_hooks():
         "function updateBouquetProgress",
         "Bouquet ${progress.earned}/${progress.needed} -> +${plan.reward.coins} coins",
         "function compactBouquetConsequenceLabel",
+        "Short desktop keeps the full 480px altar",
         "Ready: Restore Glass",
         "Next: Bloodroot Compact",
         "Ready: Raise Conservatory",

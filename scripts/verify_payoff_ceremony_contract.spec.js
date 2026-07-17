@@ -594,20 +594,23 @@ async function forceRoundTwoFailure(page) {
 
 async function runJourney(page, label, includeRetry) {
   await resetPage(page, `pass2_${label}`);
+  const viewport = page.viewportSize();
+  const compactReceiver = label.includes("mobile390")
+    || (viewport && viewport.width > 760 && viewport.height <= 760);
   const initialAssembly = await activeBouquetAssemblyState(page);
   expect(initialAssembly.progress).toBe("0/14");
   expect(initialAssembly.state).toBe("fresh");
-  expect(initialAssembly.width, "fresh live bouquet is readable in the progress strip").toBeGreaterThanOrEqual(label.includes("mobile390") ? 124 : 146);
-  expect(initialAssembly.height, "fresh live bouquet has bouquet silhouette height").toBeGreaterThanOrEqual(label.includes("mobile390") ? 54 : 70);
-  expect(initialAssembly.bindingWidth, "fresh live bouquet shows a physical binding").toBeGreaterThanOrEqual(label.includes("mobile390") ? 60 : 64);
-  expect(initialAssembly.vineWidth, "fresh live bouquet shows empty vine slots").toBeGreaterThanOrEqual(label.includes("mobile390") ? 74 : 84);
+  expect(initialAssembly.width, "fresh live bouquet is readable in the progress strip").toBeGreaterThanOrEqual(compactReceiver ? 124 : 146);
+  expect(initialAssembly.height, "fresh live bouquet has bouquet silhouette height").toBeGreaterThanOrEqual(compactReceiver ? 54 : 70);
+  expect(initialAssembly.bindingWidth, "fresh live bouquet shows a physical binding").toBeGreaterThanOrEqual(compactReceiver ? 60 : 64);
+  expect(initialAssembly.vineWidth, "fresh live bouquet shows empty vine slots").toBeGreaterThanOrEqual(compactReceiver ? 74 : 84);
   expect(initialAssembly.ingredients).toHaveLength(6);
   expect(initialAssembly.stems).toBe(6);
   expect(initialAssembly.leaves).toBe(6);
   expect(initialAssembly.ingredients.map((ingredient) => ingredient.flowerId)).toEqual([5, 1, 5, 1, 5, 1]);
   expect(initialAssembly.ingredients.every((ingredient) => ingredient.filled === false)).toBe(true);
   expect(initialAssembly.ingredients.every((ingredient) => ingredient.image.complete && ingredient.image.naturalWidth >= 48)).toBe(true);
-  expect(Math.min(...initialAssembly.ingredients.map((ingredient) => ingredient.imageWidth))).toBeGreaterThanOrEqual(label.includes("mobile390") ? 18 : 24);
+  expect(Math.min(...initialAssembly.ingredients.map((ingredient) => ingredient.imageWidth))).toBeGreaterThanOrEqual(compactReceiver ? 18 : 24);
   const initialVisual = await sampleElementVisual(page, "#liveBouquetAssembly");
   expect(initialVisual.samples).toHaveLength(6);
   expect(initialVisual.samples.every((sample) => sample.complete && sample.naturalWidth >= 48 && sample.coloredPixels > 20)).toBe(true);
@@ -632,7 +635,7 @@ async function runJourney(page, label, includeRetry) {
   expect(firstAssembly.ingredients.some((ingredient) => ingredient.flowerId === 5 && ingredient.filled)).toBe(true);
   expect(Math.max(...firstAssembly.ingredients
     .filter((ingredient) => ingredient.flowerId === 5 && ingredient.filled)
-    .map((ingredient) => ingredient.imageWidth))).toBeGreaterThanOrEqual(label.includes("mobile390") ? 30 : 40);
+    .map((ingredient) => ingredient.imageWidth))).toBeGreaterThanOrEqual(compactReceiver ? 30 : 40);
   expect(Math.max(...firstAssembly.ingredients
     .filter((ingredient) => ingredient.flowerId === 5)
     .map((ingredient) => ingredient.imageOpacity))).toBeGreaterThan(.75);
