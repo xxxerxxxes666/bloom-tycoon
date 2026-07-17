@@ -288,6 +288,7 @@ def verify_source_hooks():
         "invalidSwapReturnCue",
         "invalidSwapReturnHintCells",
         "function retireCompletedInteractionFeedback()",
+        "const target = { x, y };\n      retireCompletedInteractionFeedback();",
         "interactionFeedbackGeneration",
         "harvestFlashClearTimer",
         "orderPulseTimer",

@@ -8122,7 +8122,6 @@
     }
 
     function notePlayerInteraction() {
-      retireCompletedInteractionFeedback();
       clearIdleHint();
       clearThornTeachingCue(false);
       if (!hasMadeValidMove || isArmedLineRelicGuidanceActive()) {
@@ -10053,6 +10052,7 @@
       }
 
       const target = { x, y };
+      retireCompletedInteractionFeedback();
       if (!isLegalSwap(selected, target)) {
         const source = selected;
         selected = null;
@@ -12131,6 +12131,7 @@
       if (!spendMoves(1, "Shuffle")) {
         return;
       }
+      retireCompletedInteractionFeedback();
       harvestFlashCells.clear();
       fallAnimations.clear();
       refillBornCells.clear();
@@ -12407,6 +12408,7 @@
           armedLineRelic = null;
         }
         notePlayerInteraction();
+        retireCompletedInteractionFeedback();
         maybeCompleteRound();
         render();
         scheduleOrderPulseClear();

@@ -1109,6 +1109,21 @@ async function commitGuidedSwapAtControlReturn(page, { keyboard = false, sampleI
   };
 }
 
+function assertPassiveInputPreservesFeedback(before, after, label) {
+  expect(before.orderPulseCount, `${label} starts with order feedback`).toBe(4);
+  expect(after.orderPulseCount, `${label} preserves order feedback`).toBe(before.orderPulseCount);
+  const orderPulses = (state) => state.positiveFeedback.filter((node) => node.className.includes("order-pulse"));
+  expect(orderPulses(after), `${label} preserves the completed order feedback`).toEqual(orderPulses(before));
+  expect(after.moves, `${label} spends no move`).toBe(before.moves);
+  expect(after.counts, `${label} preserves objective counts`).toEqual(before.counts);
+  expect(after.board, `${label} preserves board`).toBe(before.board);
+  expect(after.invalidTiles, `${label} has no refusal`).toEqual([]);
+  expect(after.tiles, `${label} tile count`).toBe(64);
+  expect(after.dataRows, `${label} board rows`).toBe(8);
+  expect(after.overflowX, `${label} no horizontal overflow`).toBe(false);
+  expect(after.brokenImages, `${label} no broken images`).toEqual([]);
+}
+
 function assertRefusalOwnsFeedback(state, label) {
   expect(state.tutorialIcon, `${label} refusal category`).toBe("NO BLOOM");
   expect(state.tutorialCopy, `${label} refusal copy`).toBe("Use the glowing pair.");
@@ -2847,6 +2862,122 @@ test("first-action board choreography derives from the authoritative opening pai
   expect(consoleErrors).toEqual([]);
   expect(pageErrors).toEqual([]);
   expect(failedRequests).toEqual([]);
+});
+
+test("passive selection and canceled input preserve completed order feedback", async ({ page, browser }) => {
+  const prepareFeedback = async (targetPage, label, viewport) => {
+    await targetPage.setViewportSize(viewport);
+    await openFreshNoReview(targetPage, `feedback-passive-${label}`);
+    const opening = await commitGuidedSwapAtControlReturn(targetPage);
+    expect(opening.after.moves, `${label} opening move`).toBe(5);
+    expect(opening.after.counts, `${label} opening objective`).toEqual([0, 0, 0, 0, 0, 3]);
+    expect(opening.after.orderPulseCount, `${label} opening pulses`).toBe(4);
+    return opening.after;
+  };
+
+  for (const config of [
+    { label: "desktop", viewport: { width: 1280, height: 720 }, touch: false },
+    { label: "mobile390", viewport: { width: 390, height: 844 }, touch: true }
+  ]) {
+    const targetPage = config.touch
+      ? await browser.newPage({ viewport: config.viewport, hasTouch: true, isMobile: true })
+      : page;
+    try {
+      const before = await prepareFeedback(targetPage, `${config.label}-selection`, config.viewport);
+      const select = targetPage.locator('.tile[data-x="0"][data-y="0"]');
+      if (config.touch) {
+        await select.tap();
+      } else {
+        await select.click();
+      }
+      await expect(targetPage.locator(".tile.sel")).toHaveCount(1);
+      const selected = await invalidFeedbackState(targetPage);
+      assertPassiveInputPreservesFeedback(before, selected, `${config.label} first selection`);
+
+      const replacement = targetPage.locator('.tile[data-x="2"][data-y="0"]');
+      if (config.touch) {
+        await replacement.tap();
+      } else {
+        await replacement.click();
+      }
+      await expect(targetPage.locator('.tile.sel[data-x="2"][data-y="0"]')).toHaveCount(1);
+      const reselected = await invalidFeedbackState(targetPage);
+      assertPassiveInputPreservesFeedback(before, reselected, `${config.label} nonadjacent reselection`);
+
+      await expect.poll(
+        async () => (await invalidFeedbackState(targetPage)).orderPulseCount,
+        { timeout: 1800 }
+      ).toBe(0);
+      const naturallyCleared = await invalidFeedbackState(targetPage);
+      expect(naturallyCleared.moves, `${config.label} natural clear preserves moves`).toBe(before.moves);
+      expect(naturallyCleared.counts, `${config.label} natural clear preserves objective`).toEqual(before.counts);
+      expect(naturallyCleared.board, `${config.label} natural clear preserves board`).toBe(before.board);
+    } finally {
+      if (config.touch) {
+        await targetPage.close();
+      }
+    }
+  }
+
+  const keyboardBefore = await prepareFeedback(page, "keyboard", { width: 1280, height: 720 });
+  const keyboardTile = page.locator('.tile[data-x="0"][data-y="0"]');
+  await keyboardTile.focus();
+  await page.keyboard.press("ArrowRight");
+  const movedFocus = await invalidFeedbackState(page);
+  assertPassiveInputPreservesFeedback(keyboardBefore, movedFocus, "keyboard focus movement");
+  await page.keyboard.press("Enter");
+  await expect(page.locator(".tile.sel")).toHaveCount(1);
+  const keyboardSelected = await invalidFeedbackState(page);
+  assertPassiveInputPreservesFeedback(keyboardBefore, keyboardSelected, "keyboard first Enter");
+
+  const pointerCancelBefore = await prepareFeedback(page, "pointer-cancel", { width: 1280, height: 720 });
+  const pointerCell = [{ x: 0, y: 0 }];
+  const [pointerGeometry] = await tileGeometry(page, pointerCell);
+  await page.mouse.move(pointerGeometry.centerX, pointerGeometry.centerY);
+  await page.mouse.down();
+  await page.mouse.move(pointerGeometry.centerX + 38, pointerGeometry.centerY, { steps: 5 });
+  await page.dispatchEvent("#board", "pointercancel", {
+    pointerId: 1,
+    bubbles: true,
+    cancelable: true,
+    isPrimary: true,
+    clientX: pointerGeometry.centerX + 38,
+    clientY: pointerGeometry.centerY
+  });
+  await page.mouse.up();
+  await expect(page.locator(".tile.drag-preview-source, .tile.drag-preview-neighbor, .tile.drag-preview-ready")).toHaveCount(0);
+  const pointerCanceled = await invalidFeedbackState(page);
+  assertPassiveInputPreservesFeedback(pointerCancelBefore, pointerCanceled, "desktop pointer cancel");
+
+  const mobile = await browser.newPage({
+    viewport: { width: 390, height: 844 },
+    hasTouch: true,
+    isMobile: true
+  });
+  try {
+    const touchCancelBefore = await prepareFeedback(mobile, "touch-cancel", { width: 390, height: 844 });
+    const [touchGeometry] = await tileGeometry(mobile, [{ x: 0, y: 0 }]);
+    const client = await mobile.context().newCDPSession(mobile);
+    await client.send("Input.dispatchTouchEvent", {
+      type: "touchStart",
+      touchPoints: [{ x: touchGeometry.centerX, y: touchGeometry.centerY, id: 9 }]
+    });
+    await client.send("Input.dispatchTouchEvent", {
+      type: "touchMove",
+      touchPoints: [{ x: touchGeometry.centerX + 38, y: touchGeometry.centerY, id: 9 }]
+    });
+    await mobile.waitForFunction(() => document.querySelectorAll(".tile.drag-preview-source").length === 1);
+    await client.send("Input.dispatchTouchEvent", {
+      type: "touchCancel",
+      touchPoints: []
+    });
+    await expect(mobile.locator(".tile.drag-preview-source, .tile.drag-preview-neighbor, .tile.drag-preview-ready")).toHaveCount(0);
+    const touchCanceled = await invalidFeedbackState(mobile);
+    assertPassiveInputPreservesFeedback(touchCancelBefore, touchCanceled, "mobile touch cancel");
+    expect(touchCanceled.boardBottom, "mobile touch cancel keeps board in viewport").toBeLessThanOrEqual(844);
+  } finally {
+    await mobile.close();
+  }
 });
 
 for (const viewport of [
