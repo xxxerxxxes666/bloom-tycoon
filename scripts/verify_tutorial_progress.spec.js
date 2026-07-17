@@ -351,21 +351,15 @@ async function assertActiveGuidedState(state, mobile, label) {
 async function clickHighlightedPair(page) {
   await waitForSettledBoard(page);
   const movesBefore = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}").moves, SAVE_KEY);
-  const cueBefore = await page.locator("#firstSwapCue").textContent().catch(() => "");
   const pair = await hintedPair(page);
   await page.locator(`.tile[data-x="${pair[0].x}"][data-y="${pair[0].y}"]`).click({ force: true });
   await page.locator(`.tile[data-x="${pair[1].x}"][data-y="${pair[1].y}"]`).click({ force: true });
-  await page.waitForFunction(({ key, movesBefore, cueBefore }) => {
+  await page.waitForFunction(({ key, movesBefore }) => {
     const saved = JSON.parse(localStorage.getItem(key) || "{}");
-    const spentMove = Number(saved.moves) < Number(movesBefore);
-    if (!spentMove) {
-      return false;
-    }
-    const cueNow = document.querySelector("#firstSwapCue")?.textContent.trim() || "";
+    const boardSettled = Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled);
     return Boolean(saved.roundComplete)
-      || document.querySelectorAll('.tile[data-line-relic="black-candle-vine"]').length === 1
-      || (document.querySelectorAll(".tile.idle-hint").length === 2 && cueNow !== String(cueBefore || "").trim());
-  }, { key: SAVE_KEY, movesBefore, cueBefore }, { timeout: 10000 });
+      || (Number(saved.moves) < Number(movesBefore) && boardSettled);
+  }, { key: SAVE_KEY, movesBefore }, { timeout: 10000 });
   await page.waitForTimeout(350);
 }
 
