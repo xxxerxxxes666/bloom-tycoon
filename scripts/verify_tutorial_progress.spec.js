@@ -2970,7 +2970,7 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
   await expectReadyPrimaryAction(page, "Restore Greenhouse · 100 coins");
   report = await visibleReport(page);
   expect(report.visibleButtons).toEqual(["Restore Greenhouse · 100 coins"]);
-  await expect(page.locator("#bouquetProgressNext")).toContainText("Coins ready -> Restore First Bouquet Glass");
+  await expect(page.locator("#bouquetProgressNext")).toHaveText("Ready: Restore Glass");
   report = await visibleReport(page);
   expect(report.visibleNonTileButtons).toEqual(["Restore Greenhouse · 100 coins"]);
   await page.locator("#restoreGreenhouseBtn").click();

@@ -921,9 +921,13 @@
     .progress-next {
       color: #a89070;
       font-size: 9px;
+      line-height: 1.15;
       overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 22ch;
+      text-overflow: clip;
+      max-width: none;
+      letter-spacing: 0.025em;
+      text-align: right;
+      white-space: normal;
     }
 
     .coin-balance {
@@ -9801,23 +9805,28 @@
       saveProgress();
     }
 
-    function greenhouseNextUnlockLabel() {
-      if (roundComplete && currentRound === 1) {
-        return roundOneRestored ? "Moonlit Wreath ready" : "Restore First Bouquet Glass";
+    function compactBouquetConsequenceLabel(plan = activeRoundPlan()) {
+      if (isBouquetFailed(plan)) {
+        return "Retry Bouquet";
       }
-      if (roundComplete && currentRound === 2) {
-        return roundTwoGreenhouseUpgraded ? "Bloodroot Compact ready" : "Upgrade Moonlit Greenhouse";
+      if (roundComplete) {
+        if (plan.round === 1) {
+          return roundOneRestored ? "Next: Moonlit Wreath" : "Ready: Restore Glass";
+        }
+        if (plan.round === 2) {
+          return roundTwoGreenhouseUpgraded ? "Next: Bloodroot Compact" : "Ready: Upgrade Glass";
+        }
+        return roundThreeConservatoryRaised
+          ? "Next: First Bouquet"
+          : "Ready: Raise Conservatory";
       }
-      if (!roundOneRestored && currentRound <= 1) {
-        return "Restore First Bouquet Glass";
+      if (plan.round === 1) {
+        return "Next: Restore Glass";
       }
-      if (!roundTwoGreenhouseUpgraded && currentRound <= 2) {
-        return "Unlock Bloodroot Compact";
+      if (plan.round === 2) {
+        return "Next: Bloodroot Compact";
       }
-      if (!roundThreeConservatoryRaised) {
-        return "Raise Bloodroot Conservatory";
-      }
-      return "Replay First Bouquet";
+      return "Next: Raise Conservatory";
     }
 
     function updateBouquetProgress(plan = activeRoundPlan(), progress = roundProgress(plan)) {
@@ -9831,13 +9840,7 @@
         label.textContent = `Bouquet ${progress.earned}/${progress.needed} -> +${plan.reward.coins} coins`;
       }
       if (next) {
-        if (roundComplete) {
-          next.textContent = `Coins ready -> ${greenhouseNextUnlockLabel()}`;
-        } else if (isBouquetFailed(plan)) {
-          next.textContent = "Moves ended -> Retry Bouquet";
-        } else {
-          next.textContent = `Next: ${greenhouseNextUnlockLabel()}`;
-        }
+        next.textContent = compactBouquetConsequenceLabel(plan);
       }
       renderLiveBouquetAssembly(plan, progress);
     }
