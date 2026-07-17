@@ -740,6 +740,8 @@ def verify_source_hooks():
         "function roundObjectivesComplete",
         "Black Candle Vine",
         "function lineRelicForMatch",
+        "carriesArmedLineRelic: lineRelicAt({ x, y })",
+        "flowerId: tile.value",
         "function queueLineRelicBurst",
         "function lineRelicMessage",
         "line4",

@@ -1055,6 +1055,161 @@ test("Black Candle Vine forms, persists, and activates as a deliberate lane spec
   }
 });
 
+test("vertical Black Candle Vine follows its anchor flower through gravity", async ({ browser }) => {
+  const cases = [
+    { label: "desktop", viewport: { width: 1280, height: 720 } },
+    { label: "mobile390", viewport: { width: 390, height: 844 }, mobile: true }
+  ];
+
+  for (const testCase of cases) {
+    const context = await browser.newContext({
+      viewport: testCase.viewport,
+      hasTouch: Boolean(testCase.mobile),
+      isMobile: Boolean(testCase.mobile)
+    });
+    const page = await context.newPage();
+    const consoleErrors = [];
+    const pageErrors = [];
+    page.on("console", (message) => {
+      if (message.type() === "error") consoleErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+
+    try {
+      await openFresh(page, `black-candle-vertical-gravity-${testCase.label}`);
+      await page.evaluate((key) => {
+        const state = JSON.parse(localStorage.getItem(key));
+        state.currentRound = 2;
+        state.moves = 9;
+        state.coins = 20;
+        state.counts = [0, 0, 0, 0, 0, 0];
+        state.roundComplete = false;
+        state.roundOneRestored = true;
+        state.roundTwoGreenhouseUpgraded = false;
+        state.roundThreeConservatoryRaised = false;
+        state.tutorialSkipped = true;
+        state.tutorialActive = false;
+        state.blackCandleLessonComplete = true;
+        state.hasMadeValidMove = true;
+        state.restoredRoundTwoGuideMoves = 0;
+        state.armedLineRelic = null;
+        state.cursedThorns = [];
+        state.clearedCursedThorns = 0;
+        state.board = Array.from({ length: 8 }, (_, y) => (
+          Array.from({ length: 8 }, (_, x) => (x + 2 * y) % 6)
+        ));
+        state.board[0][3] = 1;
+        state.board[1][3] = 1;
+        state.board[2][3] = 2;
+        state.board[3][3] = 1;
+        state.board[2][4] = 1;
+        localStorage.setItem(key, JSON.stringify(state));
+      }, SAVE_KEY);
+      await page.reload({ waitUntil: "networkidle" });
+      await waitForSettledBoard(page);
+
+      const formationPair = [{ x: 3, y: 2 }, { x: 4, y: 2 }];
+      const beforeFormation = await activeState(page);
+      if (testCase.mobile) {
+        await dragTouchViaCdp(page, formationPair);
+      } else {
+        for (const cell of formationPair) {
+          await page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`).dispatchEvent("click");
+        }
+      }
+
+      const relic = page.locator('.tile[data-line-relic="black-candle-vine"]');
+      await expect(relic).toHaveCount(1);
+      await expect.poll(async () => (await activeState(page)).moves).toBe(beforeFormation.moves - 1);
+      await waitForSettledBoard(page);
+      const formed = await page.evaluate((key) => {
+        const state = JSON.parse(localStorage.getItem(key));
+        const relicTile = document.querySelector('.tile[data-line-relic="black-candle-vine"]');
+        return {
+          armedLineRelic: state.armedLineRelic,
+          relicFlowerId: state.board[state.armedLineRelic.y][state.armedLineRelic.x],
+          dom: relicTile ? {
+            x: Number(relicTile.dataset.x),
+            y: Number(relicTile.dataset.y),
+            flowerId: Number(relicTile.dataset.flowerId),
+            direction: relicTile.dataset.lineRelicDirection,
+            label: relicTile.getAttribute("aria-label")
+          } : null,
+          tiles: document.querySelectorAll(".tile").length,
+          rows: new Set(Array.from(document.querySelectorAll(".tile"))
+            .map((tile) => Math.round(tile.getBoundingClientRect().top))).size,
+          overflowX: document.documentElement.scrollWidth > innerWidth + 1,
+          brokenImages: Array.from(document.images)
+            .filter((image) => image.complete && image.naturalWidth === 0)
+            .map((image) => image.getAttribute("src"))
+        };
+      }, SAVE_KEY);
+      expect(formed.armedLineRelic).toEqual({ x: 3, y: 3, direction: "vertical", flowerId: 1 });
+      expect(formed.relicFlowerId).toBe(1);
+      expect(formed.dom).toMatchObject({ x: 3, y: 3, flowerId: 1, direction: "vertical" });
+      expect(formed.dom.label).toContain("Bone Star tile armed Black Candle Vine");
+      expect(formed.tiles).toBe(64);
+      expect(formed.rows).toBe(8);
+      expect(formed.overflowX).toBe(false);
+      expect(formed.brokenImages).toEqual([]);
+      expect((await activeState(page)).moves).toBe(beforeFormation.moves - 1);
+      expect((await activeState(page)).counts[1] - beforeFormation.counts[1]).toBe(4);
+      await page.screenshot({ path: `work/black-candle-vertical-formed-${testCase.label}.png`, fullPage: true });
+
+      await page.reload({ waitUntil: "networkidle" });
+      await page.reload({ waitUntil: "networkidle" });
+      await waitForSettledBoard(page);
+      const persisted = await activeState(page);
+      expect(persisted.armedLineRelic).toEqual(formed.armedLineRelic);
+      await expect(relic).toHaveAttribute("data-x", "3");
+      await expect(relic).toHaveAttribute("data-y", "3");
+      await expect(relic).toHaveAttribute("data-line-relic-direction", "vertical");
+
+      const activationPair = await hintedPair(page);
+      const expectedLaneGain = await page.evaluate(({ key, pair }) => {
+        const state = JSON.parse(localStorage.getItem(key));
+        const board = state.board.map((row) => row.slice());
+        const [a, b] = pair;
+        const relicBeforeSwap = state.armedLineRelic;
+        const relicDestination = a.x === relicBeforeSwap.x && a.y === relicBeforeSwap.y ? b : a;
+        const temp = board[a.y][a.x];
+        board[a.y][a.x] = board[b.y][b.x];
+        board[b.y][b.x] = temp;
+        const gained = Array(6).fill(0);
+        board.forEach((row) => { gained[row[relicDestination.x]] += 1; });
+        return gained;
+      }, { key: SAVE_KEY, pair: activationPair });
+      const beforeActivation = await activeState(page);
+      if (testCase.mobile) {
+        await dragTouchViaCdp(page, activationPair);
+      } else {
+        for (const cell of activationPair) {
+          await page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`).dispatchEvent("click");
+        }
+      }
+      await expect.poll(async () => (await activeState(page)).moves).toBe(beforeActivation.moves - 1);
+      await waitForSettledBoard(page);
+      await expect(relic).toHaveCount(0);
+      const activated = await activeState(page);
+      expect(activated.moves).toBe(beforeActivation.moves - 1);
+      expect(activated.armedLineRelic).toBeNull();
+      expectedLaneGain.forEach((gain, flowerId) => {
+        expect(
+          activated.counts[flowerId] - beforeActivation.counts[flowerId],
+          `activation credits every flower ${flowerId} cleared from its settled column`
+        ).toBeGreaterThanOrEqual(gain);
+      });
+      expect(activated.tiles).toBe(64);
+      expect(activated.rows).toBe(8);
+      expect(activated.overflowX).toBe(false);
+      expect(consoleErrors).toEqual([]);
+      expect(pageErrors).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  }
+});
+
 test("armed Black Candle Vine stays real in later rounds and Retry clears stale state", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
   await openFresh(page, "black-candle-later-rounds");

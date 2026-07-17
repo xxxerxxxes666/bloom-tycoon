@@ -10345,13 +10345,25 @@
         let columnNewTiles = 0;
         for (let y = BOARD_SIZE - 1; y >= 0; y -= 1) {
           if (board[y][x] !== null) {
-            remaining.push({ value: board[y][x], fromY: y });
+            remaining.push({
+              value: board[y][x],
+              fromY: y,
+              carriesArmedLineRelic: lineRelicAt({ x, y })
+            });
           }
         }
         for (let y = BOARD_SIZE - 1; y >= 0; y -= 1) {
           if (remaining.length) {
             const tile = remaining.shift();
             board[y][x] = tile.value;
+            if (tile.carriesArmedLineRelic && armedLineRelic) {
+              armedLineRelic = {
+                ...armedLineRelic,
+                x,
+                y,
+                flowerId: tile.value
+              };
+            }
             recordFall(x, y, y - tile.fromY);
             columnDropRows = Math.max(columnDropRows, y - tile.fromY);
           } else {

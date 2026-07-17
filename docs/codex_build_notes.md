@@ -1,5 +1,17 @@
 # Codex Build Notes
 
+## 2026-07-17 vertical Black Candle gravity identity correction
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_tutorial_progress.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.
+- Selected weakness: a naturally formed vertical Black Candle Vine retained the matched flower through the formation clear, but collapse moved that flower while the saved relic coordinate stayed behind. The refilled socket could therefore display a different flower with a Black Candle overlay and mismatched accessible label.
+- Player-visible result: column collapse now carries the armed relic identity with its retained flower. After a strict vertical four, the relic settles on the same real Bone Star as the board value, DOM `data-flower-id`, overlay, focus hint, save record, and aria label. Horizontal formation and activation are unchanged.
+- Exact vertical trace: active Round 2 started at `Moves 9`; the strict-four swap spent one move, credited exactly four Bone Stars, did not sweep, and settled one vertical relic from `{x:3,y:2}` to `{x:3,y:3}`. The underlying board value, persisted `flowerId`, rendered `data-flower-id`, and label all remained Bone Star. Two reloads preserved `{x:3,y:3,direction:"vertical",flowerId:1}`. Adjacent non-match activation spent one move, cleared the relic's settled column, credited every flower in that column plus any natural follow-on cascade, removed the relic, and returned 64 tiles in eight rows.
+- Browser evidence inspected: `work/black-candle-vertical-formed-desktop.png` at `1280x720` and `work/black-candle-vertical-formed-mobile390.png` at exact `390x844`. Both show the vertical candle attached to the settled Bone Star, a readable column cue, 64 tiles/eight rows, no horizontal overflow, and no broken images.
+- Focused browser verification: the new desktop/mobile vertical formation, two-reload persistence, and pointer/touch activation contract passed `1/1`; the merged horizontal/tutorial/later-round/fairness matrix passed `7/7`; the full tutorial/special suite passed `13/13`.
+- Integrated verification: after rebasing over concurrent `7154b18` (`fix: shorten brittle Moonlit Wreath paths`), the complete serial Chromium suite passed `50/50` in `13.4m`. Coverage includes optimized and goal-following first-three journeys, two economy cycles, migration, ceremonies, persistent horizontal and vertical specials, Retry cleanup, Shuffle protection, Help/Skip, keyboard, pointer, touch/drag, invalid/cancel paths, reduced motion, 64 tiles/eight rows, no visible broken images, no horizontal overflow, and no console/page/request errors. Runtime mobile guided swaps returned control in `389ms` and `493ms`.
+- Static verification: `python3 scripts/verify_project.py`, `python3 scripts/verify_html_match_shapes.py`, `node --check scripts/verify_tutorial_progress.spec.js`, extracted inline playable JavaScript syntax, and `git diff --check` passed. Static HTML checks now require the relic-carry marker and board-value identity update.
+- Security/scope scan: changed lines contained no credential-shaped strings, secrets, trackers, analytics, new external URLs, network calls, dependencies, assets, permissions, backend behavior, ads, accounts, currencies, rounds, objectives, move-budget changes, panels, or controls. The existing save shape is unchanged.
+
 ## 2026-07-17 Moonlit Wreath Round 2 fairness correction
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_first_three_journey.spec.js`, and this note.
