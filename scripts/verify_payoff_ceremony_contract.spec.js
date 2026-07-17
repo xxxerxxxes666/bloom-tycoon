@@ -42,10 +42,11 @@ async function clickGuidedSwap(page) {
     y: tile.dataset.y
   })));
   expect(pair).toHaveLength(2);
-  await page.locator(`.tile[data-x="${pair[0].x}"][data-y="${pair[0].y}"]`).click({ force: true });
-  await page.evaluate(({ x, y }) => {
-    document.querySelector(`.tile[data-x="${x}"][data-y="${y}"]`)?.click();
-  }, pair[1]);
+  await page.evaluate((pair) => {
+    pair.forEach(({ x, y }) => {
+      document.querySelector(`.tile[data-x="${x}"][data-y="${y}"]`)?.click();
+    });
+  }, pair);
   await page.waitForTimeout(1400);
   return true;
 }
@@ -58,8 +59,11 @@ async function clickGuidedSwapNoWait(page) {
     y: tile.dataset.y
   })));
   expect(pair).toHaveLength(2);
-  await page.locator(`.tile[data-x="${pair[0].x}"][data-y="${pair[0].y}"]`).click({ force: true });
-  await page.locator(`.tile[data-x="${pair[1].x}"][data-y="${pair[1].y}"]`).click({ force: true });
+  await page.evaluate((pair) => {
+    pair.forEach(({ x, y }) => {
+      document.querySelector(`.tile[data-x="${x}"][data-y="${y}"]`)?.click();
+    });
+  }, pair);
 }
 
 async function clickGuidedSwapAndSampleFlight(page) {
@@ -70,8 +74,11 @@ async function clickGuidedSwapAndSampleFlight(page) {
     y: tile.dataset.y
   })));
   expect(pair).toHaveLength(2);
-  await page.locator(`.tile[data-x="${pair[0].x}"][data-y="${pair[0].y}"]`).click({ force: true });
-  await page.locator(`.tile[data-x="${pair[1].x}"][data-y="${pair[1].y}"]`).click({ force: true });
+  await page.evaluate((pair) => {
+    pair.forEach(({ x, y }) => {
+      document.querySelector(`.tile[data-x="${x}"][data-y="${y}"]`)?.click();
+    });
+  }, pair);
   await page.waitForFunction(() => document.querySelector(".objective-flight"), null, { timeout: 2500 });
   const landing = await page.evaluate(() => {
     const flight = document.querySelector(".objective-flight");

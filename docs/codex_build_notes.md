@@ -15,6 +15,33 @@
 - Runtime/layout status: desktop, exact mobile, and reduced motion retained `513` nodes, `84` images, 64 tiles, eight complete rows, two meaningful progress bars, no dormant prototype controls, no horizontal overflow, and no visible broken images. Exact-mobile guided swaps returned control in `378ms` and `496ms`, beneath the existing `550ms` ceiling. Browser suites reported no console, page, or hard request errors.
 - Static/security verification: `python3 scripts/verify_project.py`, `python3 scripts/verify_html_match_shapes.py`, changed spec and extracted playable JavaScript syntax, and `git diff --check` passed. Changed lines were scanned for credential-shaped strings, secrets, trackers, analytics, and new network hooks with no findings.
 
+## 2026-07-17 Round 1 continuous board movement guide
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_tutorial_progress.spec.js`, `scripts/verify_payoff_ceremony_contract.spec.js`, `scripts/verify_pass3_feedback.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.
+- Player-visible result: the existing first-action board guide now follows every authoritative unskipped Round 1 tutorial pair instead of stopping after the opening move. The same source halo, destination halo, connector/arrow, and drag token guide post-first Match 3 swaps, the strict-four Black Candle formation, and the armed Black Candle activation pair. The armed special keeps its `BLACK CANDLE` category and lane preview without a duplicate fallback arrow.
+- Lifecycle: the guide is still a single board overlay instance, `aria-hidden`, non-focusable, `pointer-events:none`, and geometry-derived from rendered tile centers after board render. It is suppressed during selected/drag preview, accepted swap resolution, invalid refusal peak, cascade/settle particles, failure/payoff/round handoff, Skip, and round completion. Refusal cleanup, cancel, Help replay, reload, and settled armed Black Candle state restore the exact authoritative pair.
+- Reduced motion: the connector/arrow and source/destination halos remain; the traveling token is hidden.
+- Focused browser evidence inspected:
+  - `work/tutorial-guide-desktop-post-first-match3.png` and `work/tutorial-guide-mobile390-post-first-match3.png`: post-first-move Match 3 guide, 64 tiles, all eight mobile rows, no overflow.
+  - `work/tutorial-guide-desktop-strict-four.png` and `work/tutorial-guide-mobile390-strict-four.png`: strict-four Black Candle formation guide aligned to the vertical hinted pair.
+  - `work/tutorial-guide-desktop-armed-activation.png` and `work/tutorial-guide-mobile390-armed-activation.png`: armed Black Candle activation guide plus existing lane preview and `BLACK CANDLE` tutorial category.
+  - `work/first-action-guide-mobile390-reduced.png`: reduced-motion static guide with no traveling token.
+  - `work/drag-preview-desktop-ready.png`, `work/drag-preview-mobile-ready.png`, `work/invalid-feedback-desktop-drag.png`, and `work/invalid-feedback-mobile390-drag.png`: drag handoff/refusal evidence.
+- Verification commands/results:
+  - `python3 scripts/verify_project.py` passed.
+  - `python3 scripts/verify_html_match_shapes.py` passed.
+  - `node --check scripts/verify_tutorial_progress.spec.js`, `node --check scripts/verify_pass3_feedback.spec.js`, and `node --check scripts/verify_payoff_ceremony_contract.spec.js` passed.
+  - Extracted playable inline script syntax check passed with `node --check work/inline-script-check.js`; temporary extraction was removed after verification.
+  - `git diff --check` passed.
+  - Focused tutorial suite passed: `BLOOM_TEST_URL=http://127.0.0.1:4178/playable/midnight_bloom_prototype.html node_modules/.bin/playwright test scripts/verify_tutorial_progress.spec.js --browser=chromium --workers=1 --reporter=line` -> `19 passed (5.3m)`.
+  - Payoff contract suite passed after aligning its guided-swap helper with the deterministic DOM-click pattern: `6 passed (1.3m)`.
+  - Pass 3 feedback suite passed after hardening its recorder to assert three distinct localized BREAK labels across the sampled feedback window: `3 passed (1.0m)`.
+  - Complete serial Chromium suite passed: `BLOOM_TEST_URL=http://127.0.0.1:4178/playable/midnight_bloom_prototype.html node_modules/.bin/playwright test scripts/verify_first_three_journey.spec.js scripts/verify_payoff_ceremony_contract.spec.js scripts/verify_pass3_feedback.spec.js scripts/verify_runtime_performance.spec.js scripts/verify_tutorial_progress.spec.js --browser=chromium --workers=1 --reporter=line` -> `58 passed (20.1m)`.
+- Runtime/layout status from the final suite: desktop/mobile/reduced-motion runtime retained `509` nodes, `84` images, 64 tiles, eight complete rows, no dormant preview/prototype scaffold, no mobile plinth/log leak, no horizontal overflow, and no visible broken images. Mobile guided swaps returned control in `499ms` and `742ms`.
+- Console/network status: focused browser checks and the final serial suite completed without console error/page error/hard request failure reports in the covered paths.
+- Security/scope scan: changed files and changed lines were scanned for credentials/secrets, tokens, private keys, trackers/analytics, external network hooks, private IPs, dependency changes, debug/review shortcut additions, protected-source references, and cron/deployment changes. No findings. No dependencies, assets, save schema, services, analytics, backends, accounts, ads, cron jobs, objectives, move budgets, or economy values were added or changed.
+- Known risks: none found locally.
+
 ## 2026-07-17 repeated tutorial refusal continuity
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_tutorial_progress.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.

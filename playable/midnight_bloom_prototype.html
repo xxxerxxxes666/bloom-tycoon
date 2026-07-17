@@ -9879,28 +9879,49 @@
       return Boolean(a && b && Math.abs(a.x - b.x) + Math.abs(a.y - b.y) === 1);
     }
 
-    function selectedMatchesHintedPair(pair) {
-      return Boolean(selected && pair.some((cell) => cell.x === selected.x && cell.y === selected.y));
+    function boardGuideTransientStateActive() {
+      return isResolving
+        || invalidSwapCells.size > 0
+        || validSwapCells.size > 0
+        || activeSwapCells.size > 0
+        || swapGlideCells.size > 0
+        || harvestFlashCells.size > 0
+        || fallAnimations.size > 0
+        || settledCells.size > 0
+        || refillBornCells.size > 0
+        || refillColumns.size > 0
+        || boardParticles.length > 0
+        || supremeChargeActive
+        || boardDragInputActive();
     }
 
-    function firstActionBoardGuidePair() {
+    function currentTutorialBoardGuidePair() {
       if (
         currentRound !== 1
-        || hasMadeValidMove
+        || !tutorialActive
         || tutorialSkipped
         || roundComplete
-        || isResolving
         || isBouquetFailed()
-        || boardDragInputActive()
+        || selected
+        || boardGuideTransientStateActive()
       ) {
         return null;
       }
-      const pair = hintedPairCells();
+      const relicGuidance = lineRelicGuidance();
+      const pair = relicGuidance?.pair || hintedPairCells();
       const [source, destination] = pair;
-      if (!isAdjacentPair(source, destination) || selectedMatchesHintedPair(pair)) {
+      if (!isAdjacentPair(source, destination) || !isLegalSwap(source, destination)) {
         return null;
       }
-      return { source, destination };
+      return {
+        source,
+        destination,
+        stage: relicGuidance ? "black-candle-activation" : roundOneGuidedStage(activeRoundPlan()) || "round-one-tutorial"
+      };
+    }
+
+    function firstActionBoardGuidePair() {
+      return currentTutorialBoardGuidePair();
     }
 
     function renderFirstActionSwapGuide(boardEl, guide) {
@@ -9942,6 +9963,7 @@
       guideEl.dataset.destinationX = String(destination.x);
       guideEl.dataset.destinationY = String(destination.y);
       guideEl.dataset.direction = direction;
+      guideEl.dataset.stage = guide.stage || "round-one-tutorial";
       guideEl.setAttribute("aria-hidden", "true");
       guideEl.style.setProperty("--guide-source-left", `${((sourceCenter.x - boardRect.left) / boardRect.width) * 100}%`);
       guideEl.style.setProperty("--guide-source-top", `${((sourceCenter.y - boardRect.top) / boardRect.height) * 100}%`);
@@ -9964,8 +9986,11 @@
     }
 
     function renderFirstSwapArrow(boardEl) {
-      const firstActionGuide = firstActionBoardGuidePair();
-      if (renderFirstActionSwapGuide(boardEl, firstActionGuide)) {
+      const tutorialGuide = currentTutorialBoardGuidePair();
+      if (renderFirstActionSwapGuide(boardEl, tutorialGuide)) {
+        return;
+      }
+      if (currentRound === 1 && !roundComplete && (tutorialActive || tutorialSkipped)) {
         return;
       }
       if (!isArmedLineRelicGuidanceActive() && (currentRound !== 1 && !isRestoredRoundTwoGuideActive())) {

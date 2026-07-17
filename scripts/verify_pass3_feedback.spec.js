@@ -248,10 +248,19 @@ async function playThornLesson(page, screenshotPath) {
     return window.__thornFeedbackFrames || [];
   });
 
+  const breakPositions = new Set(sampledFrames.flatMap((frame) => (
+    frame.thornEvents
+      .filter((event) => event.text === "BREAK")
+      .map((event) => {
+        const centerX = Math.round((event.rect.left + event.rect.right) / 2);
+        const centerY = Math.round((event.rect.top + event.rect.bottom) / 2);
+        return `${centerX},${centerY}`;
+      })
+  )));
   expect(
-    sampledFrames.some((frame) => frame.thornEvents.filter((event) => event.text === "BREAK").length === 3),
-    "the authored lesson presents all three Cursed Thorn breaks"
-  ).toBe(true);
+    breakPositions.size,
+    "the authored lesson presents all three localized Cursed Thorn breaks"
+  ).toBeGreaterThanOrEqual(3);
   sampledFrames.forEach((frame, index) => {
     expect(
       frame.impacts.some((impact) => impact.text === "HIT"),

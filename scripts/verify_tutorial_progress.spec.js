@@ -575,7 +575,8 @@ async function firstActionGuideReport(page) {
         sourceY: Number(guide.dataset.sourceY),
         destinationX: Number(guide.dataset.destinationX),
         destinationY: Number(guide.dataset.destinationY),
-        direction: guide.dataset.direction
+        direction: guide.dataset.direction,
+        stage: guide.dataset.stage
       } : null,
       hints,
       sourceHalo: rect(sourceHalo),
@@ -615,6 +616,11 @@ function assertFirstActionGuide(report, pair, label, options = {}) {
     destinationY: destination.y,
     direction: guideDirection(pair)
   });
+  if (options.stage) {
+    expect(report.data.stage, `${label} guide stage`).toBe(options.stage);
+  } else {
+    expect(report.data.stage, `${label} guide stage marker`).toBeTruthy();
+  }
   expect(report.tiles, `${label} tile count`).toBe(64);
   expect(report.rows, `${label} board rows`).toBe(8);
   expect(report.overflowX, `${label} no horizontal overflow`).toBe(false);
@@ -816,7 +822,8 @@ async function blackCandleThornFeedbackFrames(page) {
   return page.evaluate(() => window.__blackCandleThornFeedbackFrames || []);
 }
 
-function assertArmedRelicGuidance(report, expectedDirection, label, mobile = false) {
+function assertArmedRelicGuidance(report, expectedDirection, label, mobile = false, options = {}) {
+  const expectedArrows = options.expectedArrows ?? (report.bodyClasses.includes("round-one-active") ? 0 : 1);
   expect(report.relic, `${label} saved relic`).toMatchObject({ direction: expectedDirection });
   expect(report.relicCount, `${label} one rendered relic`).toBe(1);
   expect(report.hints, `${label} exactly one activation pair`).toHaveLength(2);
@@ -824,7 +831,7 @@ function assertArmedRelicGuidance(report, expectedDirection, label, mobile = fal
   expect(report.hints.filter((tile) => tile.destination), `${label} hinted pair includes destination`).toHaveLength(1);
   expect(report.destinationCount, `${label} one destination marker`).toBe(1);
   expect(report.boardActive, `${label} board has armed guidance state`).toBe(true);
-  expect(report.arrows, `${label} one direct swap arrow`).toBe(1);
+  expect(report.arrows, `${label} direct swap arrow count`).toBe(expectedArrows);
   expect(report.cue, `${label} cue names derived lane`).toContain(expectedDirection === "vertical" ? "column" : "row");
   expect(report.cuePrefix, `${label} cue category`).toBe("BLACK CANDLE");
   expect(report.cuePresentation, `${label} cue presentation exists`).toMatchObject({
@@ -1037,6 +1044,8 @@ async function invalidFeedbackState(page) {
       ),
       firstSwapCueVisible: visible(document.querySelector("#firstSwapCue")),
       instructionSurfaces: [tutorialPanel, document.querySelector("#firstSwapCue")].filter(visible).length,
+      guideCount: document.querySelectorAll(".first-action-swap-guide").length,
+      arrowCount: document.querySelectorAll(".swap-path-arrow").length,
       visibleButtons: Array.from(document.querySelectorAll("button"))
         .filter((button) => visible(button) && !button.closest(".board"))
         .map((button) => button.textContent.trim())
@@ -1187,11 +1196,15 @@ async function assertRepeatedTutorialRefusal(page, { label, touch = false } = {}
     expect(peak.tutorialIcon, `${label} ${peakLabel} category`).toBe("NO BLOOM");
     expect(peak.tutorialCopy, `${label} ${peakLabel} copy`).toBe("Use the glowing pair.");
     expect(peak.invalidTiles, `${label} ${peakLabel} keeps both marks`).toHaveLength(2);
+    expect(peak.guideCount, `${label} ${peakLabel} hides board movement guide`).toBe(0);
+    expect(peak.arrowCount, `${label} ${peakLabel} hides fallback arrow`).toBe(0);
   }
   expect(refusal.recovered.tutorialCopy, `${label} restores stage copy`).toBe(refusal.before.tutorialCopy);
   expect(refusal.recovered.tutorialIcon, `${label} restores stage category`).toBe(refusal.before.tutorialIcon);
   expect(refusal.recovered.cue, `${label} restores hidden cue`).toBe(refusal.before.cue);
   expect(refusal.recovered.hints, `${label} restores exact hint pair`).toEqual(refusal.before.hints);
+  expect(refusal.recovered.guideCount, `${label} restores settled movement guide`).toBe(refusal.before.guideCount);
+  expect(refusal.recovered.arrowCount, `${label} restores settled arrow count`).toBe(refusal.before.arrowCount);
 
   await page.reload({ waitUntil: "networkidle" });
   await expect(page.locator(".tile")).toHaveCount(64);
@@ -1201,6 +1214,8 @@ async function assertRepeatedTutorialRefusal(page, { label, touch = false } = {}
   expect(reloaded.tutorialIcon, `${label} reload stage category`).toBe(refusal.before.tutorialIcon);
   expect(reloaded.cue, `${label} reload hidden cue`).toBe(refusal.before.cue);
   expect(reloaded.hints, `${label} reload exact hint pair`).toEqual(refusal.before.hints);
+  expect(reloaded.guideCount, `${label} reload restores settled movement guide`).toBe(refusal.before.guideCount);
+  expect(reloaded.arrowCount, `${label} reload restores settled arrow count`).toBe(refusal.before.arrowCount);
   expect(reloaded.invalidTiles, `${label} reload clears transient refusal`).toEqual([]);
   return refusal;
 }
@@ -1430,15 +1445,31 @@ for (const viewport of [
 
     const trace = [await guidedRoundOneState(page, "initial")];
     assertActiveGuidedState(trace[0], viewport.mobile, `${viewport.label} initial`);
+    assertFirstActionGuide(
+      await firstActionGuideReport(page),
+      await hintedPair(page),
+      `${viewport.label} opening guide`,
+      { mobile: viewport.mobile, stage: "thorn-opening" }
+    );
     await assertRepeatedTutorialRefusal(page, {
       label: `${viewport.label} opening refusal`
     });
 
     for (let index = 1; index <= 2; index += 1) {
       await clickHighlightedPair(page);
+      await expect(page.locator(".first-action-swap-guide")).toHaveCount(1, { timeout: 2500 });
       trace.push(await guidedRoundOneState(page, `after swap ${index}`));
       assertActiveGuidedState(trace[trace.length - 1], viewport.mobile, `${viewport.label} after swap ${index}`);
+      const followupPair = await hintedPair(page);
+      const followupStage = index === 1 ? "thorn-followup" : "bone-ordinary";
+      assertFirstActionGuide(
+        await firstActionGuideReport(page),
+        followupPair,
+        `${viewport.label} after swap ${index} guide`,
+        { mobile: viewport.mobile, stage: followupStage }
+      );
       if (index === 1) {
+        await page.screenshot({ path: `work/tutorial-guide-${viewport.label}-post-first-match3.png`, fullPage: true });
         await assertRepeatedTutorialRefusal(page, {
           label: `${viewport.label} Match 3 refusal`
         });
@@ -1451,8 +1482,15 @@ for (const viewport of [
     assertActiveGuidedState(reloaded, viewport.mobile, `${viewport.label} reload`);
     expect(reloaded.moves).toBe(trace[2].moves);
     expect(reloaded.counts).toEqual(trace[2].counts);
+    assertFirstActionGuide(
+      await firstActionGuideReport(page),
+      await hintedPair(page),
+      `${viewport.label} reload guide`,
+      { mobile: viewport.mobile, stage: "bone-ordinary" }
+    );
 
     await clickHighlightedPair(page);
+    await expect(page.locator(".first-action-swap-guide")).toHaveCount(1, { timeout: 2500 });
     const blackCandleCue = await guidedRoundOneState(page, "before Black Candle swap");
     trace.push(blackCandleCue);
     assertActiveGuidedState(blackCandleCue, viewport.mobile, `${viewport.label} before Black Candle`);
@@ -1462,7 +1500,13 @@ for (const viewport of [
     expect(Math.abs(blackCandleCue.hints[0].x - blackCandleCue.hints[1].x) + Math.abs(blackCandleCue.hints[0].y - blackCandleCue.hints[1].y)).toBe(1);
     const preview = await legalFourBoneStarPreview(page);
     expect(preview.ok, JSON.stringify(preview)).toBe(true);
-    await page.screenshot({ path: `work/black-candle-${viewport.label}-cue.png`, fullPage: true });
+    assertFirstActionGuide(
+      await firstActionGuideReport(page),
+      await hintedPair(page),
+      `${viewport.label} strict-four guide`,
+      { mobile: viewport.mobile, stage: "black-candle" }
+    );
+    await page.screenshot({ path: `work/tutorial-guide-${viewport.label}-strict-four.png`, fullPage: true });
 
     await expect(page.locator("#tutorialPanel")).toBeVisible();
     const preFormationRefusal = await assertRepeatedTutorialRefusal(page, {
@@ -1475,6 +1519,7 @@ for (const viewport of [
     await clickHighlightedPair(page);
     await expect(page.locator('.tile[data-line-relic="black-candle-vine"]')).toHaveCount(1);
     await waitForSettledBoard(page);
+    await expect(page.locator(".first-action-swap-guide")).toHaveCount(1, { timeout: 2500 });
     const formed = await guidedRoundOneState(page, "Black Candle armed");
     trace.push(formed);
     expect(formed.roundComplete).toBe(false);
@@ -1491,6 +1536,12 @@ for (const viewport of [
     expect(formed.counts[1] - blackCandleCue.counts[1]).toBe(4);
     expect(formed.cue).toContain("Swap Black Candle Vine");
     expect(formed.hints).toHaveLength(2);
+    assertFirstActionGuide(
+      await firstActionGuideReport(page),
+      await hintedPair(page),
+      `${viewport.label} armed activation guide`,
+      { mobile: viewport.mobile, stage: "black-candle-activation" }
+    );
     assertNaturalBlackCandleTutorial(
       formed,
       viewport.mobile,
@@ -1500,9 +1551,10 @@ for (const viewport of [
       await armedRelicGuidance(page),
       "horizontal",
       `${viewport.label} formed Round 1 Black Candle`,
-      viewport.mobile
+      viewport.mobile,
+      { expectedArrows: 0 }
     );
-    await page.screenshot({ path: "work/black-candle-" + viewport.label + "-formed.png", fullPage: true });
+    await page.screenshot({ path: "work/tutorial-guide-" + viewport.label + "-armed-activation.png", fullPage: true });
 
     for (let reloadIndex = 0; reloadIndex < 2; reloadIndex += 1) {
       await page.reload({ waitUntil: "networkidle" });
@@ -1514,6 +1566,12 @@ for (const viewport of [
         reloadedArmed,
         viewport.mobile,
         `${viewport.label} armed reload ${reloadIndex + 1}`
+      );
+      assertFirstActionGuide(
+        await firstActionGuideReport(page),
+        await hintedPair(page),
+        `${viewport.label} armed reload ${reloadIndex + 1} guide`,
+        { mobile: viewport.mobile, stage: "black-candle-activation" }
       );
     }
 
@@ -1532,6 +1590,12 @@ for (const viewport of [
       viewport.mobile,
       `${viewport.label} interrupted activation`
     );
+    assertFirstActionGuide(
+      await firstActionGuideReport(page),
+      await hintedPair(page),
+      `${viewport.label} interrupted activation guide restore`,
+      { mobile: viewport.mobile, stage: "black-candle-activation" }
+    );
 
     const armedRefusal = await assertRepeatedTutorialRefusal(page, {
       label: `${viewport.label} armed Black Candle refusal`
@@ -1543,23 +1607,38 @@ for (const viewport of [
       viewport.mobile,
       `${viewport.label} armed refusal cleanup`
     );
+    assertFirstActionGuide(
+      await firstActionGuideReport(page),
+      await hintedPair(page),
+      `${viewport.label} armed refusal guide restore`,
+      { mobile: viewport.mobile, stage: "black-candle-activation" }
+    );
 
     await page.locator("#tutorialSkipBtn").click();
     await expect(page.locator("#tutorialPanel")).toBeHidden();
     await expect(page.locator("#firstSwapCue")).toBeVisible();
     await expect(page.locator("#shuffleBtn")).toBeVisible();
     await expect(page.locator("#shuffleBtn")).toBeEnabled();
+    await expect(page.locator(".first-action-swap-guide")).toHaveCount(0);
+    await expect(page.locator(".swap-path-arrow")).toHaveCount(0);
     assertArmedRelicGuidance(
       await armedRelicGuidance(page),
       "horizontal",
       `${viewport.label} Skip restores persistent Black Candle cue`,
-      viewport.mobile
+      viewport.mobile,
+      { expectedArrows: 0 }
     );
     await page.locator("#tutorialHelpBtn").click();
     await expect(page.locator("#tutorialPanel")).toBeVisible();
     await expect(page.locator("#firstSwapCue")).toBeHidden();
     await expect(page.locator("#shuffleBtn")).toBeHidden();
     await expect(page.locator("#shuffleBtn")).toBeDisabled();
+    assertFirstActionGuide(
+      await firstActionGuideReport(page),
+      await hintedPair(page),
+      `${viewport.label} Help replay guide`,
+      { mobile: viewport.mobile, stage: "black-candle-activation" }
+    );
     assertNaturalBlackCandleTutorial(
       await guidedRoundOneState(page, "Black Candle armed after Help replay"),
       viewport.mobile,
@@ -1765,7 +1844,8 @@ test("Black Candle Vine forms, persists, and activates as a deliberate lane spec
         await armedRelicGuidance(page),
         "horizontal",
         `${testCase.label} horizontal formed special`,
-        Boolean(testCase.mobile)
+        Boolean(testCase.mobile),
+        { expectedArrows: 0 }
       );
       await page.waitForTimeout(850);
       await page.screenshot({ path: `work/black-candle-formed-${testCase.label}.png`, fullPage: true });
@@ -1781,7 +1861,8 @@ test("Black Candle Vine forms, persists, and activates as a deliberate lane spec
         await armedRelicGuidance(page),
         "horizontal",
         `${testCase.label} horizontal persisted special`,
-        Boolean(testCase.mobile)
+        Boolean(testCase.mobile),
+        { expectedArrows: 0 }
       );
 
       const activationPair = await hintedPair(page);
@@ -2804,7 +2885,7 @@ for (const viewport of [
     }
   });
 }
-test("first-action board choreography derives from the authoritative opening pair", async ({ page }) => {
+test("Round 1 tutorial board choreography derives from the authoritative hinted pair", async ({ page }) => {
   const consoleErrors = [];
   const pageErrors = [];
   const failedRequests = [];
@@ -2838,6 +2919,7 @@ test("first-action board choreography derives from the authoritative opening pai
     await page.locator("#tutorialSkipBtn").click();
     await expect(page.locator("#tutorialPanel")).toBeHidden();
     await expect(page.locator(".first-action-swap-guide")).toHaveCount(0);
+    await expect(page.locator(".swap-path-arrow")).toHaveCount(0);
 
     await page.locator("#tutorialHelpBtn").click();
     await expect(page.locator("#tutorialPanel")).toBeVisible();
@@ -3104,6 +3186,7 @@ test("drag preview moves the hinted pair before one authoritative release", asyn
 
   await page.setViewportSize({ width: 1280, height: 720 });
   await openFresh(page, "drag-preview-desktop");
+  await expect(page.locator("#tutorialPanel")).toBeVisible({ timeout: 3000 });
   const pair = await hintedPair(page);
   assertFirstActionGuide(await firstActionGuideReport(page), pair, "pre-drag desktop");
   const before = await activeState(page);
@@ -3129,7 +3212,13 @@ test("drag preview moves the hinted pair before one authoritative release", asyn
   expect(after.moves, "valid drag spends exactly one move").toBe(before.moves - 1);
   expect(after.counts.reduce((sum, value) => sum + value, 0), "valid drag advances objective counts").toBeGreaterThan(before.counts.reduce((sum, value) => sum + value, 0));
   expect(await page.locator(".tile.drag-preview-source, .tile.drag-preview-neighbor, .tile.drag-preview-ready").count()).toBe(0);
-  expect(await page.locator(".first-action-swap-guide").count()).toBe(0);
+  await expect(page.locator(".first-action-swap-guide")).toHaveCount(1, { timeout: 2500 });
+  assertFirstActionGuide(
+    await firstActionGuideReport(page),
+    await hintedPair(page),
+    "post-drag settled Match 3 guide",
+    { stage: "thorn-followup" }
+  );
   expect(consoleErrors).toEqual([]);
   expect(pageErrors).toEqual([]);
   expect(failedRequests).toEqual([]);
