@@ -328,6 +328,7 @@ async function playCurrentRound(page, label, round, strategy = "optimized", expe
   const start = await journeyState(page);
   const startMoves = start.moves;
   let swaps = 0;
+  let attempts = 0;
   await expectGreenhouseOwned(page, expectedOwnedStage, `${label} round ${round} before swaps`);
   while (true) {
     const state = await journeyState(page);
@@ -343,7 +344,7 @@ async function playCurrentRound(page, label, round, strategy = "optimized", expe
         round,
         startMoves,
         movesLeft: settledState.moves,
-        swaps,
+        swaps: startMoves - settledState.moves,
         bouquet: settledState.bouquet,
         greenhouse: settledState.greenhouse,
         cue: settledState.cue
@@ -354,8 +355,9 @@ async function playCurrentRound(page, label, round, strategy = "optimized", expe
     expect(state.moves, `${label} round ${round} has moves remaining`).toBeGreaterThan(0);
     await clickGuidedSwap(page, strategy);
     await expectGreenhouseOwned(page, expectedOwnedStage, `${label} round ${round} after swap ${swaps + 1}`);
-    swaps += 1;
-    expect(swaps, `${label} round ${round} should not drag`).toBeLessThanOrEqual(10);
+    attempts += 1;
+    swaps = startMoves - (await journeyState(page)).moves;
+    expect(attempts, `${label} round ${round} should not drag`).toBeLessThanOrEqual(10);
   }
 }
 
@@ -504,7 +506,9 @@ for (const config of [
       expect(results[0].swaps, "Round 1 can finish quickly but still requires real swaps").toBeGreaterThanOrEqual(2);
       expect(results[0].swaps, "Round 1 tutorial does not drag").toBeLessThanOrEqual(5);
       expect(results[1].swaps, "Round 2 takes several real swaps").toBeGreaterThanOrEqual(4);
+      expect(results[1].swaps, "Round 2 closes before the Moonlit Wreath path drags").toBeLessThanOrEqual(7);
       expect(results[2].swaps, "Round 3 takes real swaps").toBeGreaterThanOrEqual(2);
+      expect(results[2].swaps, "Round 3 stays inside the focused fairness envelope").toBeLessThanOrEqual(6);
       expect(results[0].actions).toEqual(["Restore Greenhouse · 100 coins", "Next Order → Moonlit Wreath"]);
       expect(results[1].actions).toEqual(["Upgrade Greenhouse · 120 coins", "Next Order → Bloodroot Compact"]);
       expect(results[2].actions).toEqual(["Raise Conservatory · 180 coins", "Play Again → First Bouquet"]);

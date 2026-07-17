@@ -7041,6 +7041,46 @@
       board[originY + 1][originX + 2] = fillerC;
     }
 
+    function writeDualTargetLegalMovePatch(originX, originY, firstFlowerId, firstLineLength, secondFlowerId, secondLineLength) {
+      const firstLength = Math.min(4, Math.max(3, Math.floor(Number(firstLineLength) || 3)));
+      const secondLength = Math.min(4, Math.max(3, Math.floor(Number(secondLineLength) || 3)));
+      const maxLength = Math.max(firstLength, secondLength);
+      if (originX + maxLength >= BOARD_SIZE || originY < 1 || originY + 2 >= BOARD_SIZE) {
+        return null;
+      }
+      const fillers = flowers
+        .map((_, flowerId) => flowerId)
+        .filter((flowerId) => flowerId !== firstFlowerId && flowerId !== secondFlowerId);
+      if (fillers.length < 3) {
+        return null;
+      }
+      const rowPatterns = [
+        [fillers[0], fillers[1], fillers[2], fillers[3] ?? fillers[0], fillers[0], fillers[1], fillers[2], fillers[3] ?? fillers[0]],
+        [fillers[2], fillers[3] ?? fillers[0], fillers[0], fillers[1], fillers[2], fillers[3] ?? fillers[0], fillers[0], fillers[1]],
+        [fillers[1], fillers[2], fillers[3] ?? fillers[0], fillers[0], fillers[1], fillers[2], fillers[3] ?? fillers[0], fillers[0]],
+        [fillers[3] ?? fillers[0], fillers[0], fillers[1], fillers[2], fillers[3] ?? fillers[0], fillers[0], fillers[1], fillers[2]]
+      ];
+      for (let x = 0; x < BOARD_SIZE; x += 1) {
+        board[originY - 1][x] = rowPatterns[0][x];
+        board[originY][x] = rowPatterns[1][x];
+        board[originY + 1][x] = rowPatterns[2][x];
+        board[originY + 2][x] = rowPatterns[3][x];
+      }
+      board[originY][originX] = firstFlowerId;
+      board[originY][originX + 1] = secondFlowerId;
+      board[originY][originX + 2] = firstFlowerId;
+      if (firstLength === 4) {
+        board[originY][originX + 3] = firstFlowerId;
+      }
+      board[originY + 1][originX] = secondFlowerId;
+      board[originY + 1][originX + 1] = firstFlowerId;
+      board[originY + 1][originX + 2] = secondFlowerId;
+      if (secondLength === 4) {
+        board[originY + 1][originX + 3] = secondFlowerId;
+      }
+      return [{ x: originX + 1, y: originY }, { x: originX + 1, y: originY + 1 }];
+    }
+
     function seedGuaranteedLegalMove() {
       const original = boardSnapshot();
       for (let offset = 0; offset < flowers.length; offset += 1) {
@@ -7344,6 +7384,58 @@
       ), 0);
     }
 
+    function seedRoundTwoDualClosingTargetMove(plan = activeRoundPlan()) {
+      if (
+        plan.round !== 2
+        || roundComplete
+        || moves !== 3
+        || !thornGoalComplete(plan)
+      ) {
+        return null;
+      }
+      const remainingTargets = plan.targets
+        .map((target, targetIndex) => ({
+          target,
+          targetIndex,
+          deficit: target.needed - targetProgress(target)
+        }))
+        .filter((entry) => entry.deficit > 0 && entry.deficit <= 4);
+      const totalDeficit = remainingTargets.reduce((total, entry) => total + entry.deficit, 0);
+      if (remainingTargets.length !== 2 || totalDeficit > 7) {
+        return null;
+      }
+      const original = boardSnapshot();
+      const origins = [
+        { originX: 1, originY: 3 },
+        { originX: 2, originY: 3 },
+        { originX: 1, originY: 4 },
+        { originX: 2, originY: 4 }
+      ];
+      for (const { originX, originY } of origins) {
+        restoreBoard(original);
+        const [first, second] = remainingTargets;
+        const move = writeDualTargetLegalMovePatch(
+          originX,
+          originY,
+          first.target.flowerId,
+          first.deficit >= 4 ? 4 : 3,
+          second.target.flowerId,
+          second.deficit >= 4 ? 4 : 3
+        );
+        if (
+          move
+          && !matches().length
+          && isLegalSwap(...move)
+          && targetMoveCreatesHarvest(...move, first.target.flowerId)
+          && targetMoveCreatesHarvest(...move, second.target.flowerId)
+        ) {
+          return move;
+        }
+      }
+      restoreBoard(original);
+      return null;
+    }
+
     function seedFocusedClosingTargetMove(targetIndex, target, plan = activeRoundPlan()) {
       if (!focusedSliceRound(plan) || plan.round < 2 || roundComplete || !target) {
         return null;
@@ -7357,8 +7449,22 @@
         && thornGoalComplete(plan)
         && totalDeficit > 0
         && totalDeficit <= 4;
+      const roundTwoThreeMoveClosingWindow = plan.round === 2
+        && moves === 3
+        && thornGoalComplete(plan)
+        && totalDeficit > 0
+        && totalDeficit <= 4;
+      const roundThreeThreeMoveClosingWindow = plan.round === 3
+        && moves === 3
+        && totalDeficit > 0
+        && totalDeficit <= 4;
       const roundThreeFinalFallback = plan.round === 3 && moves === 1;
-      if (!twoMoveClosingWindow && !roundThreeFinalFallback) {
+      if (
+        !twoMoveClosingWindow
+        && !roundTwoThreeMoveClosingWindow
+        && !roundThreeThreeMoveClosingWindow
+        && !roundThreeFinalFallback
+      ) {
         return null;
       }
       const preferredX = targetIndex === 1 ? 4 : 0;
@@ -7430,7 +7536,8 @@
         }
         return "";
       }
-      let move = seedFocusedClosingTargetMove(remainingTargetIndex, remainingTarget, plan)
+      let move = seedRoundTwoDualClosingTargetMove(plan)
+        || seedFocusedClosingTargetMove(remainingTargetIndex, remainingTarget, plan)
         || findTargetLegalMove(remainingTarget.flowerId, remainingTargetIndex);
       if (!move && isRestoredRoundTwoGuideActive()) {
         seedFocusedGuideMove(remainingTargetIndex, remainingTarget);
