@@ -279,7 +279,13 @@ for (const viewport of VIEWPORTS) {
       });
       page.on("pageerror", (error) => runtimeErrors.push(error.message));
       page.on("requestfailed", (request) => {
-        requestFailures.push(`${request.url()} :: ${request.failure()?.errorText || "failed"}`);
+        const errorText = request.failure()?.errorText || "failed";
+        const replacedGreenhouseImage = errorText === "net::ERR_ABORTED"
+          && request.url().includes("/assets/greenhouse/")
+          && request.url().endsWith(".jpg");
+        if (!replacedGreenhouseImage) {
+          requestFailures.push(`${request.url()} :: ${errorText}`);
+        }
       });
       await page.addInitScript(({ key, state, marker }) => {
         if (!sessionStorage.getItem(marker)) {
