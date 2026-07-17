@@ -10046,6 +10046,7 @@
         return;
       }
 
+      wave.thornFeedbackCount = adjacentThornKeys.size;
       const damage = wave.strongestShape ? 2 : 1;
       const cleared = [];
       cursedThorns.forEach((thorn) => {
@@ -10445,7 +10446,8 @@
         scale: 1.35 + Math.min(0.75, cascadeIndex * 0.18),
         delay: 0
       });
-      if (!wave.createdLineRelic) {
+      const thornOutcomesOwnNarration = (wave.thornFeedbackCount || 0) > 1;
+      if (!wave.createdLineRelic && !thornOutcomesOwnNarration) {
         pushBoardParticle({
           type: "impact-sigil",
           text: cascadeIndex > 0 ? `x${cascadeIndex + 1}` : "HIT",

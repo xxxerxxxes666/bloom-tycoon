@@ -1,5 +1,16 @@
 # Codex Build Notes
 
+## 2026-07-17 authored Cursed Thorn feedback hierarchy
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_pass3_feedback.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.
+- Selected weakness: the first authored Round 2 swap breaks three adjacent Cursed Thorns, but the three localized `BREAK` stamps competed with a large generic central `HIT`. The mechanic was correct while the first blocker lesson read as four simultaneous narrators.
+- Player-visible result: match waves now record their actual thorn-feedback count. When multiple thorns crack or break together, their localized outcomes own the event and the redundant generic `HIT` is suppressed. The existing ring, vein, resource feedback, all three thorn shocks/splinters, ordinary no-thorn `HIT`, single-thorn result, Black Candle `ARMED` hierarchy, activation feedback, and reduced-motion behavior remain unchanged.
+- Exact authored trace: desktop `1280x720` and exact mobile `390x844` entered Moonlit Wreath through the real Round 1 ceremony, performed the authored `{1,2} <-> {1,3}` swap, spent exactly one move (`9 -> 8`), cleared and credited all three Cursed Thorns (`0 -> 3`), and returned 64 tiles in eight rows. Across twelve frames sampled at 45ms intervals, all three `BREAK` labels appeared, generic `HIT` never appeared, central narrator count never exceeded one, and no thorn/thorn or thorn/impact rectangles intersected.
+- Browser evidence inspected: `work/pass3-desktop-thorn-damage.png` and `work/pass3-mobile390-thorn-damage.png` show the peak frame with three attributable `BREAK` stamps, restrained ring/vein feedback, no `HIT`, no clipping, and the full board readable.
+- Focused verification: the corrected desktop/mobile Round 1-3 journey passed `2/2`; the broader ordinary feedback, Black Candle horizontal/vertical persistence, simultaneous `ARMED` plus thorn, later-round activation/Retry, and reduced-motion matrix passed `7/7`.
+- Integrated verification: the complete serial Chromium suite passed `51/51` in `13.2m`. Coverage includes optimized and goal-following first-three journeys, two exact economy cycles, legacy migration, ceremonies, persistent specials, feedback discipline, save/reload, Retry, Shuffle guard, Help/Skip, keyboard, pointer, touch/drag, invalid/cancel paths, reduced motion, 64 tiles/eight rows, no visible broken images, no horizontal overflow, and no console/page/request errors. Runtime mobile guided swaps returned control in `401ms` and `467ms`.
+- Static and security verification: `python3 scripts/verify_project.py`, `python3 scripts/verify_html_match_shapes.py`, spec syntax, extracted playable JavaScript syntax, `git diff --check`, changed-line credential scanning, and tracker/network scanning passed. No objective, thorn HP, credit, move cost, economy, save schema, board timing, asset, dependency, control, panel, round, progression, network, analytics, tracker, permission, backend, or service was added or changed.
+
 ## 2026-07-17 Black Candle and Cursed Thorn feedback discipline
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_tutorial_progress.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.

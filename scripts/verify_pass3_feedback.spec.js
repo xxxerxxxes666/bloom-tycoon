@@ -167,39 +167,124 @@ async function clickPrimaryCeremonyAction(page) {
 }
 
 async function playThornLesson(page, screenshotPath) {
+  const before = await page.evaluate((key) => {
+    const state = JSON.parse(localStorage.getItem(key));
+    return {
+      moves: state.moves,
+      clearedCursedThorns: state.clearedCursedThorns
+    };
+  }, SAVE_KEY);
   const thornSwap = page.locator(".tile.thorn-teach");
   await expect(thornSwap).toHaveCount(2, { timeout: 5000 });
   await page.locator('.tile[data-x="1"][data-y="2"]').click({ force: true });
   await page.locator('.tile[data-x="1"][data-y="3"]').click({ force: true });
   await page.waitForFunction(() => document.querySelectorAll(".thorn-event").length > 0, null, { timeout: 2000 });
-  await assertSingleWaveHit(page);
-  const thornState = await page.evaluate(() => ({
-    events: Array.from(document.querySelectorAll(".thorn-event")).map((node) => node.textContent.trim()),
-    eventOverlaps: (() => {
-      const rects = Array.from(document.querySelectorAll(".thorn-event")).map((node) => node.getBoundingClientRect());
-      const overlaps = [];
-      for (let i = 0; i < rects.length; i += 1) {
-        for (let j = i + 1; j < rects.length; j += 1) {
-          const xOverlap = Math.min(rects[i].right, rects[j].right) - Math.max(rects[i].left, rects[j].left);
-          const yOverlap = Math.min(rects[i].bottom, rects[j].bottom) - Math.max(rects[i].top, rects[j].top);
-          if (xOverlap > 1 && yOverlap > 1) {
-            overlaps.push(`${i}-${j}`);
+
+  const sampledFrames = [];
+  for (let frame = 0; frame < 12; frame += 1) {
+    sampledFrames.push(await page.evaluate(() => {
+      const visible = (node) => {
+        if (!node) return false;
+        const style = getComputedStyle(node);
+        const rect = node.getBoundingClientRect();
+        return style.display !== "none"
+          && style.visibility !== "hidden"
+          && Number(style.opacity || 0) > 0.02
+          && rect.width > 0
+          && rect.height > 0;
+      };
+      const rect = (node) => {
+        const bounds = node.getBoundingClientRect();
+        return {
+          left: bounds.left,
+          top: bounds.top,
+          right: bounds.right,
+          bottom: bounds.bottom
+        };
+      };
+      const overlaps = (a, b) => (
+        Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1
+        && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1
+      );
+      const impacts = Array.from(document.querySelectorAll(".board-particle.impact-sigil"))
+        .filter(visible)
+        .map((node) => ({ text: node.textContent.trim(), rect: rect(node) }));
+      const thornEvents = Array.from(document.querySelectorAll(".thorn-event"))
+        .filter(visible)
+        .map((node) => ({ text: node.textContent.trim(), rect: rect(node) }));
+      const thornOverlaps = [];
+      for (let i = 0; i < thornEvents.length; i += 1) {
+        for (let j = i + 1; j < thornEvents.length; j += 1) {
+          if (overlaps(thornEvents[i].rect, thornEvents[j].rect)) {
+            thornOverlaps.push(`${i}-${j}`);
           }
         }
       }
-      return overlaps;
-    })(),
-    shocks: document.querySelectorAll(".board-particle.thorn-shock").length,
-    splinters: document.querySelectorAll(".board-particle.thorn-splinter").length,
-    thorns: document.querySelectorAll(".tile.cursed-thorn").length
-  }));
-  expect(thornState.events.join(" ")).toMatch(/BREAK|CRACK/);
-  expect(thornState.eventOverlaps, "thorn damage labels do not overlap").toEqual([]);
-  expect(thornState.shocks, "thorn shock marker visible").toBeGreaterThan(0);
-  expect(thornState.splinters, "thorn splinters capped").toBeLessThanOrEqual(15);
-  await page.screenshot({ path: screenshotPath, fullPage: true });
+      return {
+        impacts,
+        thornEvents,
+        thornOverlaps,
+        crossLayerOverlap: impacts.some((impact) => (
+          thornEvents.some((thorn) => overlaps(impact.rect, thorn.rect))
+        )),
+        shocks: document.querySelectorAll(".board-particle.thorn-shock").length,
+        splinters: document.querySelectorAll(".board-particle.thorn-splinter").length
+      };
+    }));
+    if (frame === 5) {
+      await page.screenshot({ path: screenshotPath, fullPage: true });
+    }
+    await page.waitForTimeout(45);
+  }
+
+  expect(
+    sampledFrames.some((frame) => frame.thornEvents.filter((event) => event.text === "BREAK").length === 3),
+    "the authored lesson presents all three Cursed Thorn breaks"
+  ).toBe(true);
+  sampledFrames.forEach((frame, index) => {
+    expect(
+      frame.impacts.some((impact) => impact.text === "HIT"),
+      `frame ${index} omits generic HIT when three thorn outcomes own the event`
+    ).toBe(false);
+    expect(
+      frame.impacts.length,
+      `frame ${index} has at most one central text narrator`
+    ).toBeLessThanOrEqual(1);
+    expect(frame.thornOverlaps, `frame ${index} keeps thorn labels separate`).toEqual([]);
+    expect(frame.crossLayerOverlap, `frame ${index} keeps thorn labels clear of central narration`).toBe(false);
+  });
+  expect(
+    sampledFrames.some((frame) => frame.shocks >= 3),
+    "each authored thorn gets a localized shock marker"
+  ).toBe(true);
+  expect(
+    Math.max(...sampledFrames.map((frame) => frame.splinters)),
+    "thorn splinters remain capped"
+  ).toBeLessThanOrEqual(15);
+
   await page.waitForTimeout(1400);
   await expect(page.locator(".tile")).toHaveCount(64);
+  const after = await page.evaluate((key) => {
+    const state = JSON.parse(localStorage.getItem(key));
+    const rows = new Set(
+      Array.from(document.querySelectorAll(".tile")).map((tile) => tile.dataset.y)
+    ).size;
+    return {
+      moves: state.moves,
+      clearedCursedThorns: state.clearedCursedThorns,
+      thorns: state.cursedThorns.length,
+      tiles: document.querySelectorAll(".tile").length,
+      rows
+    };
+  }, SAVE_KEY);
+  expect(after.moves, "the authored thorn lesson spends one move").toBe(before.moves - 1);
+  expect(
+    after.clearedCursedThorns - before.clearedCursedThorns,
+    "the authored thorn lesson clears all three blockers"
+  ).toBe(3);
+  expect(after.thorns).toBe(0);
+  expect(after.tiles).toBe(64);
+  expect(after.rows).toBe(8);
 }
 
 async function forceRoundTwoFailureAndRetry(page) {
