@@ -479,6 +479,117 @@ function assertActiveViewport(report, viewport, label) {
   }
 }
 
+async function roundTwoHandoffReport(page) {
+  return page.evaluate((key) => {
+    const visible = (node) => {
+      if (!node) return false;
+      const rect = node.getBoundingClientRect();
+      const style = getComputedStyle(node);
+      return style.display !== "none"
+        && style.visibility !== "hidden"
+        && Number(style.opacity || 1) !== 0
+        && rect.width > 0
+        && rect.height > 0;
+    };
+    const rect = (node) => {
+      const bounds = node?.getBoundingClientRect();
+      return bounds
+        ? {
+            left: bounds.left,
+            top: bounds.top,
+            right: bounds.right,
+            bottom: bounds.bottom,
+            width: bounds.width,
+            height: bounds.height
+          }
+        : null;
+    };
+    const overlaps = (a, b) => Boolean(
+      a
+      && b
+      && Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1
+      && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1
+    );
+    const state = JSON.parse(localStorage.getItem(key) || "{}");
+    const board = document.querySelector("#board");
+    const boardRect = rect(board);
+    const objectiveRect = rect(document.querySelector("#objective"));
+    const nextCue = document.querySelector("#nextOrderCue");
+    const tutorialPanel = document.querySelector("#tutorialPanel");
+    const firstCue = document.querySelector("#firstSwapCue");
+    const instructionSurfaces = [nextCue, tutorialPanel, firstCue]
+      .filter(visible)
+      .map((node) => ({
+        id: node.id,
+        text: node.textContent.replace(/\s+/g, " ").trim()
+      }));
+    const completeRows = new Set(Array.from(document.querySelectorAll(".tile"))
+      .filter((tile) => {
+        const bounds = tile.getBoundingClientRect();
+        return bounds.top >= 0 && bounds.bottom <= innerHeight;
+      })
+      .map((tile) => tile.dataset.y));
+    const thornGoal = document.querySelector('[data-thorn-objective="true"]');
+    return {
+      handoffActive: document.body.classList.contains("restored-greenhouse-handoff"),
+      instructionSurfaces,
+      nextCueText: nextCue?.textContent.trim() || "",
+      tutorialText: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
+      cueOverlapsBoard: overlaps(rect(nextCue), boardRect),
+      objectiveOverlapsBoard: overlaps(objectiveRect, boardRect),
+      boardTop: boardRect?.top || 0,
+      boardBottom: boardRect?.bottom || 0,
+      boardWidth: boardRect?.width || 0,
+      boardHeight: boardRect?.height || 0,
+      tiles: document.querySelectorAll(".tile").length,
+      rows: new Set(Array.from(document.querySelectorAll(".tile"), (tile) => tile.dataset.y)).size,
+      completeRows: completeRows.size,
+      moves: state.moves,
+      clearedCursedThorns: state.clearedCursedThorns || 0,
+      cursedThorns: Array.isArray(state.cursedThorns) ? state.cursedThorns.length : 0,
+      thornComplete: thornGoal?.classList.contains("complete") || false,
+      thornSeal: thornGoal?.querySelector(".objective-target-seal")?.textContent.trim() || "",
+      thornAriaLabel: thornGoal?.getAttribute("aria-label") || "",
+      overflowX: document.documentElement.scrollWidth > innerWidth + 1,
+      brokenImages: Array.from(document.images)
+        .filter((image) => visible(image) && image.complete && image.naturalWidth === 0)
+        .map((image) => image.getAttribute("src"))
+    };
+  }, SAVE_KEY);
+}
+
+function restoredRoundOneHandoffState() {
+  const restored = HUD_CASES.find((fixture) => fixture.label === "r1-restored");
+  return {
+    ...savedState(restored),
+    tutorialSkipped: false,
+    tutorialActive: true,
+    blackCandleLessonComplete: true
+  };
+}
+
+function assertRoundTwoHandoffGeometry(report, viewport, label) {
+  expect(report.tiles, `${label} tile integrity`).toBe(64);
+  expect(report.rows, `${label} authoritative rows`).toBe(8);
+  expect(report.completeRows, `${label} complete viewport rows`).toBe(8);
+  expect(report.boardTop, `${label} board starts inside viewport`).toBeGreaterThanOrEqual(0);
+  expect(report.boardBottom, `${label} altar frame stays in viewport`).toBeLessThanOrEqual(
+    viewport.height - 4
+  );
+  expect(report.cueOverlapsBoard, `${label} cue stays clear of altar`).toBe(false);
+  expect(report.objectiveOverlapsBoard, `${label} objective stays clear of altar`).toBe(false);
+  expect(report.overflowX, `${label} horizontal overflow`).toBe(false);
+  expect(report.brokenImages, `${label} broken images`).toEqual([]);
+  if (viewport.label === "desktop") {
+    expect(report.boardWidth, `${label} full desktop altar width`).toBeCloseTo(480, 0);
+    expect(report.boardHeight, `${label} full desktop altar height`).toBeCloseTo(480, 0);
+    expect(report.boardBottom, `${label} desktop lower margin`).toBeLessThanOrEqual(716);
+  } else {
+    expect(report.boardWidth, `${label} exact mobile altar width`).toBeCloseTo(378, 0);
+    expect(report.boardHeight, `${label} exact mobile altar height`).toBeCloseTo(378, 0);
+  }
+}
+
 for (const viewport of VIEWPORTS) {
   test(`focused bouquet HUD consequences fit every state on ${viewport.label}`, async ({ browser }) => {
     for (const fixture of HUD_CASES) {
@@ -864,6 +975,188 @@ for (const viewport of VIEWPORTS) {
       expect(runtimeErrors, `${viewport.label} Round ${round} runtime errors`).toEqual([]);
       await context.close();
     }
+  });
+}
+
+const ROUND_TWO_HANDOFF_INPUTS = [
+  { label: "desktop-pointer", viewport: VIEWPORTS[0], input: "pointer" },
+  { label: "desktop-keyboard", viewport: VIEWPORTS[0], input: "keyboard" },
+  { label: "mobile390-touch", viewport: VIEWPORTS[1], input: "touch" }
+];
+
+for (const config of ROUND_TWO_HANDOFF_INPUTS) {
+  test(`Round 1 to 2 handoff stays board-first and immediately playable on ${config.label}`, async ({ browser }) => {
+    const contextOptions = {
+      viewport: { width: config.viewport.width, height: config.viewport.height }
+    };
+    if (config.input === "touch") {
+      contextOptions.hasTouch = true;
+      contextOptions.isMobile = true;
+    }
+
+    const idleContext = await browser.newContext(contextOptions);
+    const idlePage = await idleContext.newPage();
+    const idleErrors = [];
+    idlePage.on("console", (message) => {
+      if (message.type() === "error") idleErrors.push(message.text());
+    });
+    idlePage.on("pageerror", (error) => idleErrors.push(error.message));
+    await idlePage.addInitScript(({ key, state, marker }) => {
+      if (!sessionStorage.getItem(marker)) {
+        localStorage.setItem(key, JSON.stringify(state));
+        sessionStorage.setItem(marker, "1");
+      }
+    }, {
+      key: SAVE_KEY,
+      state: restoredRoundOneHandoffState(),
+      marker: `round-two-handoff-idle-${config.label}`
+    });
+    await idlePage.goto(
+      `${BASE_URL}?round-two-handoff-idle=${config.label}`,
+      { waitUntil: "networkidle" }
+    );
+    const idleAction = idlePage.locator("#nextOrderBtn");
+    await expect(idleAction).toBeFocused();
+    if (config.input === "keyboard") {
+      await idlePage.keyboard.press("Enter");
+    } else if (config.input === "touch") {
+      await idleAction.tap();
+    } else {
+      await idleAction.click();
+    }
+
+    const startedAt = Date.now();
+    for (const sampleAt of [150, 1700, 3500]) {
+      await idlePage.waitForTimeout(Math.max(0, sampleAt - (Date.now() - startedAt)));
+      const report = await roundTwoHandoffReport(idlePage);
+      const label = `${config.label} ${sampleAt}ms`;
+      assertRoundTwoHandoffGeometry(report, config.viewport, label);
+      if (sampleAt < 2200) {
+        expect(report.handoffActive, `${label} handoff owns instruction`).toBe(true);
+        expect(report.instructionSurfaces, `${label} one instruction surface`).toEqual([{
+          id: "nextOrderCue",
+          text: "Restored Greenhouse · Moonlit Wreath · Match beside thorns"
+        }]);
+      } else {
+        expect(report.handoffActive, `${label} handoff yields`).toBe(false);
+        expect(report.instructionSurfaces, `${label} tutorial owns instruction`).toEqual([{
+          id: "tutorialPanel",
+          text: "✦ Match beside thorns. Skip"
+        }]);
+      }
+    }
+    await idlePage.screenshot({
+      path: `work/round-two-handoff-${config.label}-settled.png`,
+      fullPage: true
+    });
+    expect(idleErrors, `${config.label} idle runtime errors`).toEqual([]);
+    await idleContext.close();
+
+    const actionContext = await browser.newContext(contextOptions);
+    const actionPage = await actionContext.newPage();
+    const runtimeErrors = [];
+    const requestFailures = [];
+    actionPage.on("console", (message) => {
+      if (message.type() === "error") runtimeErrors.push(message.text());
+    });
+    actionPage.on("pageerror", (error) => runtimeErrors.push(error.message));
+    actionPage.on("requestfailed", (request) => {
+      const errorText = request.failure()?.errorText || "failed";
+      const replacedGreenhouseImage = errorText === "net::ERR_ABORTED"
+        && request.url().includes("/assets/greenhouse/")
+        && request.url().endsWith(".jpg");
+      if (!replacedGreenhouseImage) {
+        requestFailures.push(`${request.url()} :: ${errorText}`);
+      }
+    });
+    await actionPage.addInitScript(({ key, state, marker }) => {
+      if (!sessionStorage.getItem(marker)) {
+        localStorage.setItem(key, JSON.stringify(state));
+        sessionStorage.setItem(marker, "1");
+      }
+    }, {
+      key: SAVE_KEY,
+      state: restoredRoundOneHandoffState(),
+      marker: `round-two-handoff-action-${config.label}`
+    });
+    await actionPage.goto(
+      `${BASE_URL}?round-two-handoff-action=${config.label}`,
+      { waitUntil: "networkidle" }
+    );
+    const action = actionPage.locator("#nextOrderBtn");
+    await expect(action).toBeFocused();
+    if (config.input === "keyboard") {
+      await actionPage.keyboard.press("Enter");
+    } else if (config.input === "touch") {
+      await action.tap();
+    } else {
+      await action.click();
+    }
+    await actionPage.waitForTimeout(150);
+    const activeHandoff = await roundTwoHandoffReport(actionPage);
+    assertRoundTwoHandoffGeometry(
+      activeHandoff,
+      config.viewport,
+      `${config.label} immediate handoff`
+    );
+    expect(activeHandoff.handoffActive).toBe(true);
+    expect(activeHandoff.instructionSurfaces).toHaveLength(1);
+
+    const source = actionPage.locator('.tile[data-x="1"][data-y="2"]');
+    const destination = actionPage.locator('.tile[data-x="1"][data-y="3"]');
+    if (config.input === "keyboard") {
+      await expect(source).toBeFocused();
+      await actionPage.keyboard.press("Enter");
+      await actionPage.keyboard.press("ArrowDown");
+    } else if (config.input === "touch") {
+      await source.tap();
+      await destination.tap();
+    } else {
+      await source.click();
+      await destination.click();
+    }
+
+    await expect.poll(async () => (
+      actionPage.evaluate((key) => {
+        const state = JSON.parse(localStorage.getItem(key) || "{}");
+        return {
+          moves: state.moves,
+          cleared: state.clearedCursedThorns,
+          thorns: state.cursedThorns?.length,
+          enabledTiles: document.querySelectorAll(".tile:not(:disabled)").length
+        };
+      }, SAVE_KEY)
+    ), { timeout: 10000 }).toEqual({
+      moves: 8,
+      cleared: 3,
+      thorns: 0,
+      enabledTiles: 64
+    });
+
+    const sealed = await roundTwoHandoffReport(actionPage);
+    assertRoundTwoHandoffGeometry(sealed, config.viewport, `${config.label} sealed`);
+    expect(sealed.handoffActive, `${config.label} committed pair retires handoff`).toBe(false);
+    expect(sealed.instructionSurfaces, `${config.label} result owns instruction`).toEqual([{
+      id: "tutorialPanel",
+      text: "✦ Finish the Moonlit Wreath. Skip"
+    }]);
+    expect(sealed.thornComplete, `${config.label} thorn goal retired`).toBe(true);
+    expect(sealed.thornSeal, `${config.label} thorn goal seal`).toBe("Sealed");
+    expect(sealed.thornAriaLabel, `${config.label} thorn goal semantics`).toBe(
+      "Cursed Thorn goal sealed, 3 of 3 cleared"
+    );
+
+    await actionPage.reload({ waitUntil: "networkidle" });
+    const reloaded = await roundTwoHandoffReport(actionPage);
+    assertRoundTwoHandoffGeometry(reloaded, config.viewport, `${config.label} reload`);
+    expect(reloaded.handoffActive, `${config.label} reload does not replay handoff`).toBe(false);
+    expect(reloaded.moves, `${config.label} reload move cost`).toBe(8);
+    expect(reloaded.clearedCursedThorns, `${config.label} reload thorn credit`).toBe(3);
+    expect(reloaded.cursedThorns, `${config.label} reload cleared thorns`).toBe(0);
+    expect(reloaded.thornComplete, `${config.label} reload sealed state`).toBe(true);
+    expect(runtimeErrors, `${config.label} runtime errors`).toEqual([]);
+    expect(requestFailures, `${config.label} request failures`).toEqual([]);
+    await actionContext.close();
   });
 }
 

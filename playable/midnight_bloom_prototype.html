@@ -5116,21 +5116,21 @@
         height: 25px;
       }
 
-      body.restored-next-order-focus:not(.restored-greenhouse-handoff) .objective.compact-objective,
+      body.restored-next-order-focus .objective.compact-objective,
       body.round-three-focus-active .objective.compact-objective {
         flex-wrap: nowrap;
         gap: 4px;
         padding: 4px 8px;
       }
 
-      body.restored-next-order-focus:not(.restored-greenhouse-handoff) .objective.compact-objective .objective-text,
+      body.restored-next-order-focus .objective.compact-objective .objective-text,
       body.round-three-focus-active .objective.compact-objective .objective-text {
         flex: 0 0 auto;
         font-size: 11px;
         letter-spacing: .08em;
       }
 
-      body.restored-next-order-focus:not(.restored-greenhouse-handoff) .objective.compact-objective .objective-target,
+      body.restored-next-order-focus .objective.compact-objective .objective-target,
       body.round-three-focus-active .objective.compact-objective .objective-target {
         flex: 1 1 0;
         display: grid;
@@ -5143,8 +5143,8 @@
         text-align: left;
       }
 
-      body.restored-next-order-focus:not(.restored-greenhouse-handoff) .objective.compact-objective .objective-target .icon-wrap,
-      body.restored-next-order-focus:not(.restored-greenhouse-handoff) .objective.compact-objective .thorn-goal-glyph,
+      body.restored-next-order-focus .objective.compact-objective .objective-target .icon-wrap,
+      body.restored-next-order-focus .objective.compact-objective .thorn-goal-glyph,
       body.round-three-focus-active .objective.compact-objective .objective-target .icon-wrap,
       body.round-three-focus-active .objective.compact-objective .thorn-goal-glyph {
         grid-row: 1 / 3;
@@ -5153,13 +5153,13 @@
         height: 22px;
       }
 
-      body.restored-next-order-focus:not(.restored-greenhouse-handoff) .objective.compact-objective .objective-icon,
+      body.restored-next-order-focus .objective.compact-objective .objective-icon,
       body.round-three-focus-active .objective.compact-objective .objective-icon {
         width: 22px;
         height: 22px;
       }
 
-      body.restored-next-order-focus:not(.restored-greenhouse-handoff) .objective.compact-objective .objective-target-name,
+      body.restored-next-order-focus .objective.compact-objective .objective-target-name,
       body.round-three-focus-active .objective.compact-objective .objective-target-name {
         align-self: end;
         max-width: 100%;
@@ -5168,18 +5168,27 @@
         line-height: 1;
       }
 
-      body.restored-next-order-focus:not(.restored-greenhouse-handoff) .objective.compact-objective .objective-target-name[data-compact-label]::after,
+      body.restored-next-order-focus .objective.compact-objective .objective-target-name[data-compact-label]::after,
       body.round-three-focus-active .objective.compact-objective .objective-target-name[data-compact-label]::after {
         content: attr(data-compact-label);
         font-size: 9px;
         line-height: 1;
       }
 
-      body.restored-next-order-focus:not(.restored-greenhouse-handoff) .objective.compact-objective .objective-target-count,
+      body.restored-next-order-focus .objective.compact-objective .objective-target-count,
       body.round-three-focus-active .objective.compact-objective .objective-target-count {
         align-self: start;
         font-size: 11px;
         line-height: 1;
+      }
+
+      body.restored-next-order-focus .objective.compact-objective .objective-target-seal,
+      body.round-three-focus-active .objective.compact-objective .objective-target-seal {
+        position: absolute;
+        right: 2px;
+        top: 2px;
+        padding: 1px 3px;
+        font-size: 7px;
       }
 
       body.round-one-active .main > .tutorial-help,
@@ -5457,6 +5466,7 @@
     body.restored-greenhouse-handoff .left,
     body.restored-greenhouse-handoff .first-session-plaque,
     body.restored-greenhouse-handoff .controls, body.restored-greenhouse-handoff #roundCeremony { display:none!important; }
+    body.restored-greenhouse-handoff .tutorial-panel { display:none!important; }
     @media (min-width:761px) {
       body.restored-greenhouse-handoff .left { display:block!important; }
     }
@@ -6808,7 +6818,7 @@
         <span class="tutorial-copy" id="tutorialCopy">Swap the glowing flowers.</span>
         <button class="tutorial-skip" id="tutorialSkipBtn" type="button">Skip</button>
       </div>
-      <div class="next-order-cue" id="nextOrderCue" aria-live="polite">Restored Greenhouse - Moonlit Wreath begins</div>
+      <div class="next-order-cue" id="nextOrderCue" aria-live="polite">Restored Greenhouse · Moonlit Wreath · Match beside thorns</div>
       <div class="board" id="board" role="grid" aria-label="Bloom Tycoon match board" aria-rowcount="8" aria-colcount="8"></div>
       <div class="mobile-greenhouse-plinth" id="mobileGreenhousePlinth" aria-hidden="true">
       </div>
@@ -10794,6 +10804,9 @@
 
       const target = { x, y };
       retireCompletedInteractionFeedback();
+      if (restoredGreenhouseHandoff && currentRound === 2) {
+        finishRestoredGreenhouseHandoff();
+      }
       if (!isLegalSwap(selected, target)) {
         const source = selected;
         selected = null;
@@ -12614,10 +12627,16 @@
       restoreRoundOneGreenhouse();
     }
 
-    function startRestoredGreenhouseHandoff(message = "Restored Greenhouse - Moonlit Wreath begins", duration = 2200) {
+    function finishRestoredGreenhouseHandoff() {
       if (restoredGreenhouseHandoffTimer && window.clearTimeout) {
         window.clearTimeout(restoredGreenhouseHandoffTimer);
       }
+      restoredGreenhouseHandoffTimer = null;
+      restoredGreenhouseHandoff = false;
+    }
+
+    function startRestoredGreenhouseHandoff(message = "Restored Greenhouse · Moonlit Wreath · Match beside thorns", duration = 2200) {
+      finishRestoredGreenhouseHandoff();
       $("nextOrderCue").textContent = message;
       restoredGreenhouseHandoff = true;
       restoredGreenhouseHandoffTimer = window.setTimeout(() => {
