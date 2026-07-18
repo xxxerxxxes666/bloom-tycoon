@@ -921,7 +921,7 @@
     .progress {
       width: min(760px, calc(100% - 16px));
       display: grid;
-      grid-template-columns: auto auto minmax(176px, 184px) minmax(70px, 1fr) auto;
+      grid-template-columns: auto auto minmax(210px, 220px) minmax(70px, 1fr) auto;
       align-items: center;
       gap: 8px;
       min-height: 58px;
@@ -1018,7 +1018,7 @@
     .live-bouquet-assembly {
       --live-bouquet-fullness: 0;
       position: relative;
-      width: 184px;
+      width: 220px;
       height: 72px;
       display: block;
       align-self: center;
@@ -1086,9 +1086,10 @@
       border-radius: 999px;
       transform: rotate(var(--live-stem-rot, 0deg));
       transform-origin: 50% 100%;
-      opacity: calc(.52 + var(--ingredient-progress, 0) * .4);
+      opacity: calc(.28 + var(--ingredient-visual-progress, 0) * .7);
       background: linear-gradient(90deg, #263916 0, #a9bd73 48%, #31451c 70%, #171008 100%);
       box-shadow: 0 1px 3px #000;
+      filter: brightness(calc(.58 + var(--ingredient-visual-progress, 0) * .58));
     }
 
     .live-bouquet-leaf {
@@ -1102,8 +1103,9 @@
       border-radius: 80% 14% 70% 18%;
       background: linear-gradient(90deg, #17230f, #6f944d 58%, #23190d);
       transform: rotate(var(--live-leaf-rot, -22deg));
-      opacity: calc(.44 + var(--ingredient-progress, 0) * .4);
+      opacity: calc(.2 + var(--ingredient-visual-progress, 0) * .72);
       box-shadow: 0 1px 3px #000;
+      filter: brightness(calc(.56 + var(--ingredient-visual-progress, 0) * .62));
     }
 
     .live-bouquet-knot {
@@ -1153,8 +1155,8 @@
       place-items: center;
       color: var(--live-color, #d7b16d);
       opacity: 1;
-      transform: translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.88 + var(--ingredient-progress, 0) * .17));
-      filter: saturate(calc(.68 + var(--ingredient-progress, 0) * .62)) brightness(calc(.78 + var(--ingredient-progress, 0) * .42)) drop-shadow(0 3px 4px #000);
+      transform: translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.64 + var(--ingredient-visual-progress, 0) * .46));
+      filter: saturate(calc(.34 + var(--ingredient-visual-progress, 0) * .92)) brightness(calc(.58 + var(--ingredient-visual-progress, 0) * .58)) drop-shadow(0 3px 4px #000);
       transition: opacity 220ms ease, transform 260ms ease, filter 260ms ease;
     }
 
@@ -1168,7 +1170,7 @@
         radial-gradient(circle at 50% 45%, color-mix(in srgb, currentColor 14%, #0000) 0, #0000 58%),
         radial-gradient(circle, #050302 0, #100805 72%);
       box-shadow: inset 0 0 8px #000, 0 0 6px #000;
-      opacity: calc(.84 - var(--ingredient-progress, 0) * .7);
+      opacity: calc(.9 - var(--ingredient-visual-progress, 0) * .84);
     }
 
     .live-bouquet-ingredient .icon-wrap,
@@ -1180,13 +1182,13 @@
     }
 
     .live-bouquet-ingredient .icon-wrap {
-      opacity: calc(.24 + var(--ingredient-progress, 0) * .76);
-      transform: scale(calc(.9 + var(--ingredient-progress, 0) * .1));
+      opacity: calc(.08 + var(--ingredient-visual-progress, 0) * .92);
+      transform: scale(calc(.78 + var(--ingredient-visual-progress, 0) * .22));
       transition: opacity 220ms ease, transform 260ms ease;
     }
 
     .live-bouquet-ingredient[data-filled="false"] .icon-wrap {
-      filter: grayscale(.62) brightness(.66) saturate(.68);
+      filter: grayscale(.82) brightness(.5) saturate(.4);
     }
 
     .live-bouquet-ingredient[data-filled="true"] .icon-wrap {
@@ -1238,6 +1240,11 @@
 
     .live-bouquet-assembly[data-assembly-state="mid"] {
       border-color: #684825;
+      background:
+        radial-gradient(ellipse at 50% 17%, #d7b16d52 0, #0000 60%),
+        radial-gradient(ellipse at 50% 76%, #6f944d3b 0, #0000 66%),
+        linear-gradient(180deg, #1d120a, #060403);
+      box-shadow: inset 0 0 0 1px #000, inset 0 0 13px #000, 0 0 12px #6f4a2938;
     }
 
     .live-bouquet-assembly[data-assembly-state="nearly"] {
@@ -2460,14 +2467,14 @@
     .bouquet-bind-seal {
       position: fixed;
       z-index: 1001;
-      width: 78px;
+      width: 70px;
       min-height: 38px;
-      margin: -19px 0 0 -39px;
+      margin: -19px 0 0 -35px;
       display: grid;
-      grid-template-columns: 26px 1fr;
+      grid-template-columns: 24px 1fr;
       align-items: center;
-      gap: 5px;
-      padding: 5px 7px;
+      gap: 4px;
+      padding: 5px 6px;
       pointer-events: none;
       color: #fff0b4;
       border: 1px solid #d7b16d99;
@@ -5098,7 +5105,7 @@
       body.round-one-active .live-bouquet-assembly,
       body.restored-next-order-focus .live-bouquet-assembly,
       body.round-three-focus-active .live-bouquet-assembly {
-        width: 184px;
+        width: 220px;
         height: 58px;
       }
 
@@ -5839,13 +5846,13 @@
       100% { opacity:.82; clip-path:polygon(0 38%,18% 8%,50% 35%,82% 8%,100% 38%,88% 64%,50% 48%,12% 64%); filter:brightness(1); }
     }
     @keyframes live-bouquet-harvest {
-      0% { transform:translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.88 + var(--ingredient-progress, 0) * .17)); filter:brightness(1) saturate(1) drop-shadow(0 2px 5px #000); }
-      38% { transform:translate(-50%, -58%) rotate(var(--live-rot, 0deg)) scale(calc(1 + var(--ingredient-progress, 0) * .2)); filter:brightness(1.38) saturate(1.24) drop-shadow(0 0 9px currentColor); }
-      100% { transform:translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.88 + var(--ingredient-progress, 0) * .17)); filter:brightness(1) saturate(1) drop-shadow(0 2px 5px #000); }
+      0% { transform:translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.64 + var(--ingredient-visual-progress, 0) * .46)); filter:brightness(1) saturate(1) drop-shadow(0 2px 5px #000); }
+      38% { transform:translate(-50%, -60%) rotate(var(--live-rot, 0deg)) scale(calc(.86 + var(--ingredient-visual-progress, 0) * .52)); filter:brightness(1.48) saturate(1.3) drop-shadow(0 0 11px currentColor); }
+      100% { transform:translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.64 + var(--ingredient-visual-progress, 0) * .46)); filter:brightness(1) saturate(1) drop-shadow(0 2px 5px #000); }
     }
     @keyframes live-bouquet-accept {
-      0%, 100% { transform:translateY(0); }
-      38% { transform:translateY(-1px); }
+      0%, 100% { transform:translateY(0); box-shadow:inset 0 0 0 1px #000,inset 0 0 12px #000,0 0 10px #0008; }
+      38% { transform:translateY(-1px); box-shadow:inset 0 0 0 1px #d7b16d88,inset 0 0 15px #000,0 0 18px #d7b16d66; }
     }
     @keyframes live-bouquet-knot-tighten {
       0%, 100% { transform:translateX(-50%) rotate(45deg) scale(1); filter:brightness(1); }
@@ -6260,7 +6267,7 @@
       body.focused-payoff-active .live-bouquet-assembly {
         grid-column: 1 / -1;
         grid-row: 2;
-        width: 184px;
+        width: min(260px, 100%);
         height: 58px;
       }
       body.restored-next-order-focus .live-bouquet-ingredient,
@@ -6459,11 +6466,11 @@
         padding: 2px 7px;
         font-size: 11px;
       }
-      .bouquet-bind-seal { width:64px; min-height:32px; grid-template-columns:19px 1fr; gap:3px; margin:-16px 0 0 -32px; padding:3px 5px; }
+      .bouquet-bind-seal { width:44px; min-height:28px; grid-template-columns:14px 1fr; gap:2px; margin:-14px 0 0 -22px; padding:3px 4px; }
       .bouquet-bind-seal::before { inset:-5px; }
-      .bouquet-bind-seal img { width:19px; height:19px; }
-      .bouquet-bind-seal b { font-size:12px; }
-      .bouquet-bind-seal span { margin-top:0; font-size:7px; letter-spacing:.04em; }
+      .bouquet-bind-seal img { width:15px; height:15px; }
+      .bouquet-bind-seal b { font-size:11px; }
+      .bouquet-bind-seal span span { display:none; }
       body.restored-next-order-focus .moves-counter,
       body.restored-greenhouse-handoff .moves-counter,
       body.round-three-focus-active .moves-counter,
@@ -7436,8 +7443,8 @@
     function liveBouquetLayout(index) {
       const layout = craftedBouquetLayout(index);
       return {
-        x: Math.round(layout.x * 1.05),
-        y: Math.round((layout.y - 38) * 0.62 + 12),
+        x: Math.round(layout.x * 1.25),
+        y: Math.round((layout.y - 38) * 0.54 + 15),
         size: Math.round(layout.size * 0.78),
         rot: layout.rot,
         z: layout.z,
@@ -7469,24 +7476,27 @@
         const localSlot = seenSlots.get(target.flowerId) || 0;
         seenSlots.set(target.flowerId, localSlot + 1);
         const slotProgress = Math.max(0, Math.min(1, ratio * (slotsPerFlower.get(target.flowerId) || 1) - localSlot));
+        const visualProgress = slotProgress > 0
+          ? Math.min(1, .42 + slotProgress * .58)
+          : 0;
         const layout = liveBouquetLayout(index);
-        return { target, flower, current, ratio, slotProgress, layout, index };
+        return { target, flower, current, ratio, slotProgress, visualProgress, layout, index };
       });
       const receivers = new Map();
       plan.targets.forEach((target) => {
         const targetSlots = slotDetails.filter((slot) => slot.target.flowerId === target.flowerId);
-        const receiver = targetSlots
-          .slice()
-          .sort((a, b) => (b.slotProgress - a.slotProgress) || (a.index - b.index))[0];
+        const receiver = targetSlots.find((slot) => slot.slotProgress > 0 && slot.slotProgress < 1)
+          || targetSlots.slice().reverse().find((slot) => slot.slotProgress >= 1)
+          || targetSlots[0];
         if (receiver) {
           receivers.set(target.flowerId, receiver.index);
         }
       });
-      const stemsMarkup = slotDetails.map(({ layout, index, slotProgress }) => `
-        <span class="live-bouquet-stem" aria-hidden="true" data-filled="${slotProgress > 0 ? "true" : "false"}" style="--ingredient-progress:${slotProgress.toFixed(3)};--live-stem-x:${layout.stemX}px;--live-stem-rot:${layout.stemRot}deg;"></span>
-        <span class="live-bouquet-leaf" aria-hidden="true" data-filled="${slotProgress > 0 ? "true" : "false"}" style="--ingredient-progress:${slotProgress.toFixed(3)};--live-leaf-x:${layout.stemX + (index % 2 ? -11 : 5)}px;--live-leaf-y:${39 + (index % 3) * 3}px;--live-leaf-rot:${index % 2 ? 202 : -22}deg;"></span>
+      const stemsMarkup = slotDetails.map(({ layout, index, slotProgress, visualProgress }) => `
+        <span class="live-bouquet-stem" aria-hidden="true" data-filled="${slotProgress > 0 ? "true" : "false"}" style="--ingredient-progress:${slotProgress.toFixed(3)};--ingredient-visual-progress:${visualProgress.toFixed(3)};--live-stem-x:${layout.stemX}px;--live-stem-rot:${layout.stemRot}deg;"></span>
+        <span class="live-bouquet-leaf" aria-hidden="true" data-filled="${slotProgress > 0 ? "true" : "false"}" style="--ingredient-progress:${slotProgress.toFixed(3)};--ingredient-visual-progress:${visualProgress.toFixed(3)};--live-leaf-x:${layout.stemX + (index % 2 ? -11 : 5)}px;--live-leaf-y:${39 + (index % 3) * 3}px;--live-leaf-rot:${index % 2 ? 202 : -22}deg;"></span>
       `).join("");
-      const flowersMarkup = slotDetails.map(({ target, flower, current, slotProgress, layout, index }) => {
+      const flowersMarkup = slotDetails.map(({ target, flower, current, slotProgress, visualProgress, layout, index }) => {
         const pulse = orderPulseTargets.has(target.flowerId) ? "order-pulse" : "";
         const receiver = receivers.get(target.flowerId) === index;
         return `
@@ -7498,7 +7508,7 @@
             data-filled="${slotProgress > 0 ? "true" : "false"}"
             data-receiver="${receiver}"
             data-progress="${current}/${target.needed}"
-            style="--ingredient-progress:${slotProgress.toFixed(3)};--live-x:calc(50% + ${layout.x}px);--live-y:${layout.y}px;--live-size:${layout.size}px;--live-rot:${layout.rot}deg;--live-z:${layout.z};--live-color:${flower[4]};"
+            style="--ingredient-progress:${slotProgress.toFixed(3)};--ingredient-visual-progress:${visualProgress.toFixed(3)};--live-x:calc(50% + ${layout.x}px);--live-y:${layout.y}px;--live-size:${layout.size}px;--live-rot:${layout.rot}deg;--live-z:${layout.z};--live-color:${flower[4]};"
             title="${flower[0]} ${current}/${target.needed}">
             ${iconMarkup(target.flowerId, "live-bouquet-icon", flower[0], "live-bouquet-wrap")}
           </span>
