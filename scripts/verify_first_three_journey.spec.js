@@ -96,6 +96,9 @@ async function journeyState(page) {
       payoffTransaction: document.querySelector("#payoffTransaction")?.textContent.trim() || "",
       payoffCopy: document.querySelector("#restorationCopy")?.textContent.trim() || "",
       payoffMode: document.querySelector("#roundOneRestoration")?.dataset.payoffMode || "",
+      ownedRenewalPhase: document.querySelector("#roundOneRestoration")?.dataset.ownedRenewalPhase || "",
+      ownedRenewalHidden: document.querySelector("#ownedReplayRenewal")?.hidden ?? true,
+      ownedRenewalTransientNodes: document.querySelector("#ownedReplayRenewal")?.querySelectorAll("*").length || 0,
       restorationTitle: document.querySelector("#restorationTitle")?.textContent.trim() || "",
       restorationState: document.querySelector("#restorationState")?.textContent.trim() || "",
       trophyKicker: document.querySelector(".bouquet-trophy-kicker")?.textContent.trim() || "",
@@ -366,7 +369,71 @@ async function spendPrimaryCeremonyAction(page, activation = "pointer") {
   return text;
 }
 
-async function playCurrentRound(page, label, round, strategy = "optimized", expectedOwnedStage = 0) {
+async function installOwnedRenewalRecorder(page) {
+  await page.evaluate(() => {
+    const previous = window.__ownedRenewalRecorder;
+    previous?.observer?.disconnect();
+    if (previous?.interval) clearInterval(previous.interval);
+    const samples = [];
+    const visible = (node) => {
+      if (!node) return false;
+      const style = getComputedStyle(node);
+      const rect = node.getBoundingClientRect();
+      return !node.hidden
+        && style.display !== "none"
+        && style.visibility !== "hidden"
+        && Number(style.opacity || 1) !== 0
+        && rect.width > 0
+        && rect.height > 0;
+    };
+    const sample = () => {
+      const panel = document.querySelector("#roundOneRestoration");
+      const renewal = document.querySelector("#ownedReplayRenewal");
+      const scene = document.querySelector(".restoration-scene");
+      const ingredients = Array.from(renewal?.querySelectorAll(".owned-renewal-ingredient") || []);
+      samples.push({
+        at: performance.now(),
+        phase: panel?.dataset.ownedRenewalPhase || "",
+        renewalPhase: renewal?.dataset.renewalPhase || "",
+        topCue: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
+        actionCount: Array.from(panel?.querySelectorAll("button") || []).filter(visible).length,
+        transactionVisible: visible(document.querySelector("#payoffTransaction")),
+        state: document.querySelector("#restorationState")?.textContent.trim() || "",
+        ingredientIds: ingredients.map((node) => Number(node.dataset.flowerId)),
+        targetCounts: ingredients.map((node) => Number(node.dataset.requiredCount)),
+        ingredientImagesLoaded: ingredients.every((node) => {
+          const image = node.querySelector("img");
+          return Boolean(image?.complete && image.naturalWidth > 0 && image.naturalHeight > 0);
+        }),
+        responseVisible: visible(renewal?.querySelector(".owned-renewal-response")),
+        raisedArtVisible: visible(scene?.querySelector(".greenhouse-art-restored")),
+        lowerArtVisible: visible(scene?.querySelector(".greenhouse-art-withered")),
+        transientNodes: renewal?.querySelectorAll(".owned-renewal-ingredient, .owned-renewal-response, .owned-renewal-window").length || 0,
+        renewalHidden: renewal?.hidden ?? true
+      });
+    };
+    const panel = document.querySelector("#roundOneRestoration");
+    const observer = new MutationObserver(sample);
+    observer.observe(panel, { attributes: true, childList: true, subtree: true });
+    const interval = setInterval(sample, 45);
+    window.__ownedRenewalRecorder = { observer, interval, samples, sample };
+    sample();
+  });
+}
+
+async function collectOwnedRenewalRecorder(page) {
+  return page.evaluate(() => {
+    const recorder = window.__ownedRenewalRecorder;
+    if (!recorder) return [];
+    recorder.sample();
+    recorder.observer.disconnect();
+    clearInterval(recorder.interval);
+    delete window.__ownedRenewalRecorder;
+    return recorder.samples;
+  });
+}
+
+async function playCurrentRound(page, label, round, strategy = "optimized", expectedOwnedStage = 0, options = {}) {
   const start = await journeyState(page);
   const startMoves = start.moves;
   let swaps = 0;
@@ -375,6 +442,33 @@ async function playCurrentRound(page, label, round, strategy = "optimized", expe
   while (true) {
     const state = await journeyState(page);
     if (state.roundComplete) {
+      if (options.captureOwnedRenewal) {
+        const firstPhase = options.reducedMotion ? "acknowledgment" : "transfer";
+        await page.waitForFunction((phase) => (
+          document.querySelector("#roundOneRestoration")?.dataset.ownedRenewalPhase === phase
+        ), firstPhase, { timeout: 3500 });
+        await page.waitForTimeout(options.reducedMotion ? 80 : 460);
+        await page.evaluate(() => window.scrollTo({ top: 0, left: 0, behavior: "auto" }));
+        if (!options.reducedMotion && [1, 3].includes(round)) {
+          await page.screenshot({ path: `${options.evidencePrefix}-round${round}-transfer.png`, fullPage: true });
+        }
+        if (!options.reducedMotion) {
+          await page.waitForFunction(() => (
+            document.querySelector("#roundOneRestoration")?.dataset.ownedRenewalPhase === "renewal"
+          ), null, { timeout: 2200 });
+          await page.waitForTimeout(420);
+          await page.evaluate(() => window.scrollTo({ top: 0, left: 0, behavior: "auto" }));
+        }
+        if ([1, 3].includes(round)) {
+          await page.screenshot({
+            path: `${options.evidencePrefix}-round${round}-${options.reducedMotion ? "acknowledgment" : "peak"}.png`,
+            fullPage: true
+          });
+        }
+        await page.waitForFunction(() => (
+          document.querySelector("#roundOneRestoration")?.dataset.ownedRenewalPhase === "settled"
+        ), null, { timeout: 2500 });
+      }
       // Round 1 now requires a deliberate Black Candle activation before the
       // normal coin ceremony. Sample completion economy where the player can
       // act on it rather than during the activation resolution.
@@ -552,6 +646,8 @@ async function failAndRetryOwnedReplayRoundOne(page, config, expectedCoins, runL
     expect(failed.moves).toBe(0);
     expect(failed.coins).toBe(expectedCoins);
     expect(failed.visibleButtons).toEqual(["Retry Bouquet"]);
+    expect(failed.ownedRenewalHidden, "failure has no owned-renewal overlay").toBe(true);
+    expect(failed.ownedRenewalTransientNodes, "failure has no owned-renewal debris").toBe(0);
     await expectPermanentRaisedGreenhouse(page, `${runLabel} failed replay reload ${reload + 1}`);
     await expectVisibleCoinBalance(page, expectedCoins, { pulsing: false });
     await assertActiveBoard(page, config.mobile);
@@ -574,6 +670,8 @@ async function failAndRetryOwnedReplayRoundOne(page, config, expectedCoins, runL
   expect(retried.coins).toBe(expectedCoins);
   expect(retried.hintedTiles).toBe(2);
   expect(retried.visibleButtons).not.toContain("Retry Bouquet");
+  expect(retried.ownedRenewalHidden, "Retry clears owned-renewal overlay").toBe(true);
+  expect(retried.ownedRenewalTransientNodes, "Retry clears owned-renewal debris").toBe(0);
   await expectPermanentRaisedGreenhouse(page, `${runLabel} retried replay`);
   await assertActiveBoard(page, config.mobile);
 }
@@ -586,6 +684,7 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
     "Next Order → Bloodroot Compact",
     "Play Again → First Bouquet"
   ];
+  const expectedSettledCues = ["Tap Next Order.", "Tap Next Order.", "Play again."];
   const expectedTitles = [
     "First Bouquet Complete",
     "Moonlit Wreath Complete",
@@ -610,13 +709,66 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
     expect(startCoins, `${runLabel} round ${round} starting wallet`).toBe(expectedStarts[round - 1]);
     await expectVisibleCoinBalance(page, startCoins);
     await expectPermanentRaisedGreenhouse(page, `${runLabel} round ${round} active start`);
-    const result = await playCurrentRound(page, runLabel, round, strategy, 3);
+    await installOwnedRenewalRecorder(page);
+    let result;
+    let renewalSamples;
+    try {
+      result = await playCurrentRound(page, runLabel, round, strategy, 3, {
+        captureOwnedRenewal: true,
+        reducedMotion: config.reducedMotion,
+        evidencePrefix: `work/replay-renewal-${config.label}`
+      });
+    } finally {
+      renewalSamples = await collectOwnedRenewalRecorder(page);
+    }
+    const bindingSampleIndex = renewalSamples.findIndex((sample) => sample.phase === "binding");
+    expect(bindingSampleIndex, `${runLabel} round ${round} recorder started before authoritative completion`).toBeGreaterThanOrEqual(0);
+    const phaseSamples = renewalSamples.slice(bindingSampleIndex).filter((sample) => sample.phase);
+    const phases = [...new Set(phaseSamples.map((sample) => sample.phase))];
+    expect(phases, `${runLabel} round ${round} bounded renewal phases`).toEqual(config.reducedMotion
+      ? ["binding", "acknowledgment", "settled"]
+      : ["binding", "transfer", "renewal", "settled"]);
+    const transientSamples = phaseSamples.filter((sample) => sample.phase !== "settled");
+    expect(transientSamples.length, `${runLabel} round ${round} sampled transient ceremony`).toBeGreaterThan(0);
+    expect(
+      transientSamples.every((sample) => !/Next Order|Play again/i.test(sample.topCue)),
+      `${runLabel} round ${round} transient cue never offers the settled action`
+    ).toBe(true);
+    expect(
+      phaseSamples.filter((sample) => sample.phase === "binding")
+        .every((sample) => sample.topCue === "Bouquet bound."),
+      `${runLabel} round ${round} binding cue follows the bouquet`
+    ).toBe(true);
+    expect(
+      phaseSamples.filter((sample) => ["transfer", "renewal", "acknowledgment"].includes(sample.phase))
+        .every((sample) => sample.topCue === "Nourishing conservatory."),
+      `${runLabel} round ${round} tending cue follows the greenhouse`
+    ).toBe(true);
+    expect(transientSamples.every((sample) => sample.actionCount === 0), "no action during binding/renewal").toBe(true);
+    expect(transientSamples.every((sample) => !sample.transactionVisible), "reward display waits for renewal").toBe(true);
+    expect(transientSamples.every((sample) => sample.raisedArtVisible && !sample.lowerArtVisible), "raised art remains truthful").toBe(true);
+    const ingredientSamples = phaseSamples.filter((sample) => ["transfer", "renewal", "acknowledgment"].includes(sample.phase));
+    expect(ingredientSamples.length, `${runLabel} round ${round} sampled authoritative ingredient transfer`).toBeGreaterThan(0);
+    expect(ingredientSamples.every((sample) => JSON.stringify(sample.ingredientIds) === JSON.stringify(expectedCompositions[round - 1])), "transfer follows trophy composition").toBe(true);
+    expect(ingredientSamples.every((sample) => sample.ingredientImagesLoaded), "transfer images load local pixels").toBe(true);
+    expect(ingredientSamples.every((sample) => sample.transientNodes === 10), "renewal node count stays fixed and bounded").toBe(true);
+    expect(ingredientSamples.some((sample) => sample.responseVisible), "owned greenhouse gives one visible renewal response").toBe(true);
+    const firstTransientAt = transientSamples[0].at;
+    const settledSample = phaseSamples.find((sample) => sample.phase === "settled");
+    expect(settledSample.at - firstTransientAt, "owned renewal remains bounded").toBeLessThan(4500);
+    expect(settledSample.topCue, `${runLabel} round ${round} settled action cue returns`).toBe(expectedSettledCues[round - 1]);
+    expect(settledSample.transientNodes, "settled ceremony removes all transient descendants").toBe(0);
+    expect(settledSample.renewalHidden, "settled ceremony hides transient host").toBe(true);
     const rewardBalance = startCoins + expectedRewards[round - 1];
     const ceremony = await journeyState(page);
     expect(ceremony.coins, `${runLabel} round ${round} reward credited once`).toBe(rewardBalance);
     expect(ceremony.payoffTransaction).toBe(`Reward added · +${expectedRewards[round - 1]} coins · ${rewardBalance} coins balance.`);
     expect(ceremony.payoffCopy).toBe(expectedCopies[round - 1]);
     expect(ceremony.payoffMode).toBe("owned-replay");
+    expect(ceremony.tutorial).toBe(expectedSettledCues[round - 1]);
+    expect(ceremony.ownedRenewalPhase).toBe("settled");
+    expect(ceremony.ownedRenewalHidden).toBe(true);
+    expect(ceremony.ownedRenewalTransientNodes).toBe(0);
     expect(ceremony.restorationTitle).toBe(expectedTitles[round - 1]);
     expect(ceremony.trophyKicker).toBe("Bouquet Complete");
     expect(ceremony.trophyName).toBe(expectedNames[round - 1]);
@@ -636,7 +788,7 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
     expect(ceremony.transactionBottom, "owned transaction fits the first viewport").toBeLessThanOrEqual(config.viewport.height);
     expect(ceremony.actionBottom, "owned action fits the first viewport").toBeLessThanOrEqual(config.viewport.height);
     await expectPermanentRaisedGreenhouse(page, `${runLabel} round ${round} owned ceremony`);
-    await expectVisibleCoinBalance(page, rewardBalance, { pulsing: true });
+    await expectVisibleCoinBalance(page, rewardBalance, { pulsing: !config.reducedMotion });
     await page.screenshot({ path: `work/economy-${config.label}-cycle2-round${round}-owned.png`, fullPage: true });
 
     for (let reload = 0; reload < 2; reload += 1) {
@@ -647,6 +799,10 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
       expect(reloaded.payoffTransaction).toBe(`Reward added · +${expectedRewards[round - 1]} coins · ${rewardBalance} coins balance.`);
       expect(reloaded.payoffCopy).toBe(expectedCopies[round - 1]);
       expect(reloaded.payoffMode).toBe("owned-replay");
+      expect(reloaded.tutorial).toBe(expectedSettledCues[round - 1]);
+      expect(reloaded.ownedRenewalPhase).toBe("settled");
+      expect(reloaded.ownedRenewalHidden).toBe(true);
+      expect(reloaded.ownedRenewalTransientNodes).toBe(0);
       expect(reloaded.restorationTitle).toBe(expectedTitles[round - 1]);
       expect(reloaded.trophyKicker).toBe("Bouquet Complete");
       expect(reloaded.trophyName).toBe(expectedNames[round - 1]);
@@ -672,7 +828,10 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
     result.actions = [expectedActions[round - 1]];
     results.push(result);
     if (round < 3) {
-      const action = await spendPrimaryCeremonyAction(page);
+      const action = await spendPrimaryCeremonyAction(
+        page,
+        config.mobile ? "touch" : round === 2 ? "keyboard" : "pointer"
+      );
       expect(action).toBe(expectedActions[round - 1]);
       const advanced = await journeyState(page);
       expect(advanced.coins).toBe(rewardBalance);
@@ -860,7 +1019,7 @@ test("reduced-motion exact-mobile replay boundary preserves the owned wallet", a
   page.on("requestfailed", (request) => failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`));
 
   try {
-    const config = { label: "mobile390-reduced", viewport: { width: 390, height: 844 }, mobile: true };
+    const config = { label: "mobile390-reduced", viewport: { width: 390, height: 844 }, mobile: true, reducedMotion: true };
     await openFresh(page, "vesper-thorn", "reduced-motion-replay-boundary");
     await page.evaluate((key) => {
       const state = JSON.parse(localStorage.getItem(key) || "{}");
@@ -907,23 +1066,17 @@ test("reduced-motion exact-mobile replay boundary preserves the owned wallet", a
     await reloadAndExpectActiveReplayBalance(page, config, 50);
     await page.screenshot({ path: "work/replay-active-reload-mobile390-reduced.png", fullPage: true });
 
-    await page.evaluate((key) => {
-      const state = JSON.parse(localStorage.getItem(key) || "{}");
-      Object.assign(state, {
-        currentRound: 3,
-        roundComplete: true,
-        roundOneRestored: true,
-        roundTwoGreenhouseUpgraded: true,
-        roundThreeConservatoryRaised: true,
-        moves: 2,
-        coins: 500,
-        counts: [13, 0, 0, 14, 0, 0],
-        cursedThorns: [],
-        clearedCursedThorns: 0
-      });
-      localStorage.setItem(key, JSON.stringify(state));
-    }, SAVE_KEY);
-    await page.reload({ waitUntil: "networkidle" });
+    const reducedReplay = await playOwnedReplayCycle(
+      page,
+      config,
+      "mobile390-reduced-natural-cycle2",
+      "goal-following"
+    );
+    expect(reducedReplay.map((round) => round.balances)).toEqual([
+      [50, 170, 170],
+      [170, 320, 320],
+      [320, 500, 500]
+    ]);
     const secondFinal = await journeyState(page);
     expect(secondFinal.coins).toBe(500);
     expect(secondFinal.payoffTransaction).toBe("Reward added · +180 coins · 500 coins balance.");
