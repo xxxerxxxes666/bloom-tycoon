@@ -95,6 +95,28 @@ async function journeyState(page) {
       bodyRevivalPct: document.body.dataset.greenhouseRevivalPct || "",
       payoffTransaction: document.querySelector("#payoffTransaction")?.textContent.trim() || "",
       payoffCopy: document.querySelector("#restorationCopy")?.textContent.trim() || "",
+      payoffMode: document.querySelector("#roundOneRestoration")?.dataset.payoffMode || "",
+      restorationTitle: document.querySelector("#restorationTitle")?.textContent.trim() || "",
+      restorationState: document.querySelector("#restorationState")?.textContent.trim() || "",
+      trophyKicker: document.querySelector(".bouquet-trophy-kicker")?.textContent.trim() || "",
+      trophyName: document.querySelector(".bouquet-trophy-name")?.textContent.trim() || "",
+      trophyCopy: document.querySelector(".bouquet-trophy-copy")?.textContent.trim() || "",
+      craftedComposition: Array.from(document.querySelectorAll(".crafted-flower-bloom"))
+        .map((node) => Number(node.dataset.craftedFlower)),
+      craftedTargetCounts: document.querySelector(".crafted-bouquet")?.dataset.craftedTargetCounts || "",
+      restorationSceneLabel: document.querySelector(".restoration-scene")?.getAttribute("aria-label") || "",
+      restorationSceneArt: document.querySelector(".restoration-scene")?.dataset.greenhouseArt || "",
+      restoredSceneArt: document.querySelector(".greenhouse-art-restored")?.getAttribute("src") || "",
+      witheredSceneArtVisible: visible(document.querySelector(".greenhouse-art-withered")),
+      restoredSceneArtVisible: visible(document.querySelector(".greenhouse-art-restored")),
+      visibleTransformationLabels: Array.from(document.querySelectorAll(".restoration-before-label, .restoration-after-label"))
+        .filter(visible)
+        .map((label) => label.textContent.trim()),
+      ceremonyText: document.querySelector("#roundOneRestoration")?.innerText.replace(/\s+/g, " ").trim() || "",
+      ceremonyBottom: document.querySelector("#roundOneRestoration")?.getBoundingClientRect().bottom || 0,
+      transactionBottom: document.querySelector("#payoffTransaction")?.getBoundingClientRect().bottom || 0,
+      actionBottom: Array.from(document.querySelectorAll("#roundOneRestoration button"))
+        .find(visible)?.getBoundingClientRect().bottom || 0,
       cue: document.querySelector("#firstSwapCue")?.textContent.trim() || "",
       handoffCue: document.querySelector("#nextOrderCue")?.textContent.trim() || "",
       handoffCueVisible: visible(document.querySelector("#nextOrderCue")),
@@ -564,10 +586,22 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
     "Next Order → Bloodroot Compact",
     "Play Again → First Bouquet"
   ];
+  const expectedTitles = [
+    "First Bouquet Complete",
+    "Moonlit Wreath Complete",
+    "Bloodroot Compact Complete"
+  ];
+  const expectedNames = ["First Bouquet", "Moonlit Wreath", "Bloodroot Compact"];
+  const expectedCompositions = [
+    [5, 1, 5, 1, 5, 1],
+    [2, 4, 5, 2, 4, 5],
+    [3, 0, 3, 0, 3, 0]
+  ];
+  const expectedTargetCounts = ["5:8,1:6", "2:10,4:9,5:7", "3:14,0:13"];
   const expectedCopies = [
-    "Restored greenhouse kept. Reward carried forward.",
-    "Moonlit glass kept. Reward carried forward.",
-    "Raised conservatory kept. Reward carried forward."
+    "Bouquet complete. The raised conservatory remains yours.",
+    "Bouquet complete. The raised conservatory remains yours.",
+    "Bouquet complete. The raised conservatory remains yours."
   ];
   const results = [];
 
@@ -580,9 +614,27 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
     const rewardBalance = startCoins + expectedRewards[round - 1];
     const ceremony = await journeyState(page);
     expect(ceremony.coins, `${runLabel} round ${round} reward credited once`).toBe(rewardBalance);
-    expect(ceremony.payoffTransaction).toBe(`Already owned · +${expectedRewards[round - 1]} coins · ${rewardBalance} coins balance.`);
+    expect(ceremony.payoffTransaction).toBe(`Reward added · +${expectedRewards[round - 1]} coins · ${rewardBalance} coins balance.`);
     expect(ceremony.payoffCopy).toBe(expectedCopies[round - 1]);
+    expect(ceremony.payoffMode).toBe("owned-replay");
+    expect(ceremony.restorationTitle).toBe(expectedTitles[round - 1]);
+    expect(ceremony.trophyKicker).toBe("Bouquet Complete");
+    expect(ceremony.trophyName).toBe(expectedNames[round - 1]);
+    expect(ceremony.trophyCopy).toBe("Order complete. The Bloodroot Conservatory remains fully raised.");
+    expect(ceremony.craftedComposition).toEqual(expectedCompositions[round - 1]);
+    expect(ceremony.craftedTargetCounts).toBe(expectedTargetCounts[round - 1]);
+    expect(ceremony.restorationState).toBe("BLOODROOT CONSERVATORY · OWNED · 100% RAISED");
+    expect(ceremony.restorationSceneLabel).toBe("Owned Bloodroot Conservatory remains fully raised");
+    expect(ceremony.restorationSceneArt).toBe("bloodroot");
+    expect(ceremony.restoredSceneArt).toContain("bloodroot_compact_greenhouse.jpg");
+    expect(ceremony.witheredSceneArtVisible, "owned replay suppresses lower-stage art").toBe(false);
+    expect(ceremony.restoredSceneArtVisible, "owned replay shows raised art").toBe(true);
+    expect(ceremony.visibleTransformationLabels, "owned replay has no before/after treatment").toEqual([]);
+    expect(ceremony.ceremonyText).not.toMatch(/Greenhouse Restored|Greenhouse Relit|\bBefore\b|\bAfter\b|Restore Greenhouse|Upgrade Greenhouse|Raise Conservatory/i);
     expect(ceremony.visibleButtons).toEqual([expectedActions[round - 1]]);
+    expect(ceremony.ceremonyBottom, "owned ceremony fits the first viewport").toBeLessThanOrEqual(config.viewport.height);
+    expect(ceremony.transactionBottom, "owned transaction fits the first viewport").toBeLessThanOrEqual(config.viewport.height);
+    expect(ceremony.actionBottom, "owned action fits the first viewport").toBeLessThanOrEqual(config.viewport.height);
     await expectPermanentRaisedGreenhouse(page, `${runLabel} round ${round} owned ceremony`);
     await expectVisibleCoinBalance(page, rewardBalance, { pulsing: true });
     await page.screenshot({ path: `work/economy-${config.label}-cycle2-round${round}-owned.png`, fullPage: true });
@@ -592,9 +644,26 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
       await expect(page.locator(".tile")).toHaveCount(64);
       const reloaded = await journeyState(page);
       expect(reloaded.coins, `${runLabel} round ${round} reward reload ${reload + 1}`).toBe(rewardBalance);
-      expect(reloaded.payoffTransaction).toBe(`Already owned · +${expectedRewards[round - 1]} coins · ${rewardBalance} coins balance.`);
+      expect(reloaded.payoffTransaction).toBe(`Reward added · +${expectedRewards[round - 1]} coins · ${rewardBalance} coins balance.`);
       expect(reloaded.payoffCopy).toBe(expectedCopies[round - 1]);
+      expect(reloaded.payoffMode).toBe("owned-replay");
+      expect(reloaded.restorationTitle).toBe(expectedTitles[round - 1]);
+      expect(reloaded.trophyKicker).toBe("Bouquet Complete");
+      expect(reloaded.trophyName).toBe(expectedNames[round - 1]);
+      expect(reloaded.trophyCopy).toBe("Order complete. The Bloodroot Conservatory remains fully raised.");
+      expect(reloaded.craftedComposition).toEqual(expectedCompositions[round - 1]);
+      expect(reloaded.craftedTargetCounts).toBe(expectedTargetCounts[round - 1]);
+      expect(reloaded.restorationState).toBe("BLOODROOT CONSERVATORY · OWNED · 100% RAISED");
+      expect(reloaded.restorationSceneArt).toBe("bloodroot");
+      expect(reloaded.restoredSceneArt).toContain("bloodroot_compact_greenhouse.jpg");
+      expect(reloaded.witheredSceneArtVisible).toBe(false);
+      expect(reloaded.restoredSceneArtVisible).toBe(true);
+      expect(reloaded.visibleTransformationLabels).toEqual([]);
+      expect(reloaded.ceremonyText).not.toMatch(/Greenhouse Restored|Greenhouse Relit|\bBefore\b|\bAfter\b|Restore Greenhouse|Upgrade Greenhouse|Raise Conservatory/i);
       expect(reloaded.visibleButtons).toEqual([expectedActions[round - 1]]);
+      expect(reloaded.ceremonyBottom).toBeLessThanOrEqual(config.viewport.height);
+      expect(reloaded.transactionBottom).toBeLessThanOrEqual(config.viewport.height);
+      expect(reloaded.actionBottom).toBeLessThanOrEqual(config.viewport.height);
       await expectPermanentRaisedGreenhouse(page, `${runLabel} round ${round} ceremony reload ${reload + 1}`);
       await expectVisibleCoinBalance(page, rewardBalance, { pulsing: false });
     }
@@ -742,8 +811,8 @@ for (const config of [
       ]);
       const finalState = await journeyState(page);
       expect(finalState.coins).toBe(500);
-      expect(finalState.payoffTransaction).toBe("Already owned · +180 coins · 500 coins balance.");
-      expect(finalState.payoffCopy).toBe("Raised conservatory kept. Reward carried forward.");
+      expect(finalState.payoffTransaction).toBe("Reward added · +180 coins · 500 coins balance.");
+      expect(finalState.payoffCopy).toBe("Bouquet complete. The raised conservatory remains yours.");
       expect(finalState.visibleButtons).toEqual(["Play Again → First Bouquet"]);
       await expectPermanentRaisedGreenhouse(page, `${runLabel} second-cycle final ceremony`);
       expect(finalState.overflowX).toBe(false);
@@ -857,9 +926,24 @@ test("reduced-motion exact-mobile replay boundary preserves the owned wallet", a
     await page.reload({ waitUntil: "networkidle" });
     const secondFinal = await journeyState(page);
     expect(secondFinal.coins).toBe(500);
-    expect(secondFinal.payoffTransaction).toBe("Already owned · +180 coins · 500 coins balance.");
+    expect(secondFinal.payoffTransaction).toBe("Reward added · +180 coins · 500 coins balance.");
+    expect(secondFinal.payoffMode).toBe("owned-replay");
+    expect(secondFinal.restorationTitle).toBe("Bloodroot Compact Complete");
+    expect(secondFinal.trophyKicker).toBe("Bouquet Complete");
+    expect(secondFinal.trophyCopy).toBe("Order complete. The Bloodroot Conservatory remains fully raised.");
+    expect(secondFinal.restorationState).toBe("BLOODROOT CONSERVATORY · OWNED · 100% RAISED");
+    expect(secondFinal.restorationSceneArt).toBe("bloodroot");
+    expect(secondFinal.restoredSceneArt).toContain("bloodroot_compact_greenhouse.jpg");
+    expect(secondFinal.witheredSceneArtVisible).toBe(false);
+    expect(secondFinal.restoredSceneArtVisible).toBe(true);
+    expect(secondFinal.visibleTransformationLabels).toEqual([]);
+    expect(secondFinal.ceremonyText).not.toMatch(/Greenhouse Restored|Greenhouse Relit|\bBefore\b|\bAfter\b|Restore Greenhouse|Upgrade Greenhouse|Raise Conservatory/i);
     expect(secondFinal.visibleButtons).toEqual(["Play Again → First Bouquet"]);
+    expect(secondFinal.ceremonyBottom).toBeLessThanOrEqual(844);
+    expect(secondFinal.transactionBottom).toBeLessThanOrEqual(844);
+    expect(secondFinal.actionBottom).toBeLessThanOrEqual(844);
     await expectPermanentRaisedGreenhouse(page, "reduced-motion second-cycle final ceremony");
+    await page.screenshot({ path: "work/economy-mobile390-reduced-cycle2-round3-owned.png", fullPage: true });
 
     await spendPrimaryCeremonyAction(page, "touch");
     const secondHandoff = await journeyState(page);
