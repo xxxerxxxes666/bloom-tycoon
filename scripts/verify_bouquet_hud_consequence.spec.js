@@ -631,6 +631,7 @@ async function installInPageHandoffTimeline(page, sampleTimes = [150, 1700, 3500
         elapsed: performance.now() - timeline.startedAt,
         handoffActive: document.body.classList.contains("restored-greenhouse-handoff"),
         instructionSurfaces,
+        cueOpacity: Number(getComputedStyle(nextCue).opacity || 0),
         cueOverlapsBoard: overlaps(rect(nextCue), boardRect),
         objectiveOverlapsBoard: overlaps(rect(document.querySelector("#objective")), boardRect),
         boardTop: boardRect?.top || 0,
@@ -1144,7 +1145,7 @@ for (const config of ROUND_TWO_HANDOFF_INPUTS) {
       `${BASE_URL}?round-two-handoff-idle=${config.label}`,
       { waitUntil: "networkidle" }
     );
-    await installInPageHandoffTimeline(idlePage);
+    await installInPageHandoffTimeline(idlePage, [0, 50, 150, 1700, 3500]);
     const idleAction = idlePage.locator("#nextOrderBtn");
     await expect(idleAction).toBeFocused();
     if (config.input === "keyboard") {
@@ -1162,6 +1163,7 @@ for (const config of ROUND_TWO_HANDOFF_INPUTS) {
       assertRoundTwoHandoffGeometry(report, config.viewport, label);
       if (sampleAt < 2200) {
         expect(report.handoffActive, `${label} handoff owns instruction`).toBe(true);
+        expect(report.cueOpacity, `${label} cue is readable from its first frame`).toBeGreaterThanOrEqual(0.7);
         expect(report.instructionSurfaces, `${label} one instruction surface`).toEqual([{
           id: "nextOrderCue",
           text: "Restored Greenhouse · Moonlit Wreath · Match beside thorns"
