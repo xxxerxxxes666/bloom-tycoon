@@ -1722,3 +1722,261 @@ for (const viewport of VIEWPORTS) {
     }
   });
 }
+
+test("active hierarchy scales the roomy altar without moving the accepted short or mobile geometry", async ({ browser }) => {
+  const captures = [
+    {
+      label: "r1-desktop1280",
+      viewport: { width: 1280, height: 720 },
+      screenshot: "work/active-hierarchy-r1-desktop1280.png",
+      expectedBoard: 480,
+      expectedTile: 54.25,
+      maxGreenhouseAreaRatio: 0.53,
+      exerciseOpening: true
+    },
+    {
+      label: "r1-roomy1440",
+      viewport: { width: 1440, height: 900 },
+      screenshot: "work/active-hierarchy-r1-roomy1440.png",
+      expectedBoard: 650,
+      expectedTile: 75.25,
+      maxGreenhouseAreaRatio: 0.27,
+      centered: true
+    },
+    {
+      label: "r1-mobile390",
+      viewport: { width: 390, height: 844 },
+      mobile: true,
+      screenshot: "work/active-hierarchy-r1-mobile390.png",
+      expectedBoard: 378,
+      expectedTile: 42.875,
+      mobileBaseline: true
+    },
+    {
+      label: "r2-thorn-roomy1440",
+      viewport: { width: 1440, height: 900 },
+      screenshot: "work/active-hierarchy-r2-thorn-roomy1440.png",
+      expectedBoard: 650,
+      expectedTile: 75.25,
+      maxGreenhouseAreaRatio: 0.27,
+      centered: true,
+      state: {
+        ...savedState(HUD_CASES.find((fixture) => fixture.label === "r2-active")),
+        moves: 9,
+        counts: [0, 0, 0, 0, 0, 0],
+        clearedCursedThorns: 0,
+        cursedThorns: [{ x: 0, y: 1, hp: 1 }, { x: 1, y: 1, hp: 1 }, { x: 2, y: 1, hp: 1 }],
+        hasMadeValidMove: false,
+        restoredRoundTwoGuideMoves: 0,
+        tutorialSkipped: false,
+        tutorialActive: true,
+        blackCandleLessonComplete: true
+      }
+    },
+    {
+      label: "r3-low-move-roomy1440",
+      viewport: { width: 1440, height: 900 },
+      screenshot: "work/active-hierarchy-r3-low-move-roomy1440.png",
+      expectedBoard: 650,
+      expectedTile: 75.25,
+      maxGreenhouseAreaRatio: 0.27,
+      centered: true,
+      activeOrders: true,
+      state: {
+        ...savedState(HUD_CASES.find((fixture) => fixture.label === "r3-active")),
+        moves: 1,
+        counts: [10, 0, 0, 11, 0, 0],
+        tutorialSkipped: true,
+        tutorialActive: false,
+        blackCandleLessonComplete: true
+      }
+    }
+  ];
+
+  for (const capture of captures) {
+    const context = await browser.newContext({
+      viewport: capture.viewport,
+      isMobile: Boolean(capture.mobile),
+      hasTouch: Boolean(capture.mobile)
+    });
+    const page = await context.newPage();
+    const runtimeErrors = [];
+    const requestFailures = [];
+    page.on("console", (message) => {
+      if (message.type() === "error") runtimeErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => runtimeErrors.push(error.message));
+    page.on("requestfailed", (request) => requestFailures.push(
+      `${request.url()} :: ${request.failure()?.errorText || "failed"}`
+    ));
+    if (capture.state) {
+      await page.addInitScript(({ key, state }) => {
+        localStorage.setItem(key, JSON.stringify(state));
+      }, { key: SAVE_KEY, state: capture.state });
+    }
+
+    await page.goto(`${BASE_URL}?active-hierarchy=${capture.label}`, { waitUntil: "networkidle" });
+    await expect(page.locator("#board .tile")).toHaveCount(64);
+    if (capture.label.startsWith("r1-")) {
+      await expect(page.locator("#tutorialCopy")).toHaveText("Swap the glowing flowers.");
+      await expect(page.locator("#tutorialPanel")).toBeVisible();
+    }
+    if (capture.label.startsWith("r2-")) {
+      await expect(page.locator("#tutorialCopy")).toHaveText("Match beside the Thorn.");
+      await expect(page.locator("#tutorialPanel")).toBeVisible();
+      await expect(page.locator("#board .tile.cursed-thorn")).toHaveCount(3);
+    }
+
+    const report = await page.evaluate(() => {
+      const visible = (node) => {
+        if (!node) return false;
+        const bounds = node.getBoundingClientRect();
+        const style = getComputedStyle(node);
+        return style.display !== "none"
+          && style.visibility !== "hidden"
+          && Number(style.opacity || 1) !== 0
+          && bounds.width > 0
+          && bounds.height > 0;
+      };
+      const rect = (selector) => {
+        const node = document.querySelector(selector);
+        if (!node) return null;
+        const bounds = node.getBoundingClientRect();
+        return {
+          left: bounds.left,
+          top: bounds.top,
+          right: bounds.right,
+          bottom: bounds.bottom,
+          width: bounds.width,
+          height: bounds.height
+        };
+      };
+      const overlap = (a, b) => Boolean(
+        a
+        && b
+        && Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1
+        && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1
+      );
+      const board = rect("#board");
+      const hero = rect(".hero");
+      const tiles = Array.from(document.querySelectorAll("#board .tile"));
+      const completeRows = new Set(tiles
+        .filter((tile) => {
+          const bounds = tile.getBoundingClientRect();
+          return bounds.top >= 0 && bounds.bottom <= innerHeight;
+        })
+        .map((tile) => tile.dataset.y));
+      const instruction = ["#tutorialPanel", "#firstSwapCue", "#nextOrderCue"]
+        .map((selector) => document.querySelector(selector))
+        .find(visible);
+      const visibleButtons = Array.from(document.querySelectorAll("button"))
+        .filter((button) => visible(button) && !button.closest("#board"));
+      return {
+        viewport: { width: innerWidth, height: innerHeight },
+        bodyClasses: document.body.className,
+        board,
+        hero,
+        firstTile: rect("#board .tile"),
+        objective: rect("#objective"),
+        progress: rect("#bouquetProgress"),
+        mobileGreenhouse: rect("#mobileGreenhouseProgress"),
+        instruction: instruction ? rect(`#${instruction.id}`) : null,
+        heroDialVisible: visible(document.querySelector("#heroRestorationDial")),
+        heroDialText: document.querySelector("#heroRestorationDial")?.textContent.replace(/\s+/g, " ").trim() || "",
+        activeOrdersVisible: visible(document.querySelector(".active-orders-card")),
+        tiles: tiles.length,
+        rows: new Set(tiles.map((tile) => tile.dataset.y)).size,
+        completeRows: completeRows.size,
+        boardObjectiveOverlap: overlap(board, rect("#objective")),
+        boardProgressOverlap: overlap(board, rect("#bouquetProgress")),
+        boardInstructionOverlap: overlap(board, instruction ? rect(`#${instruction.id}`) : null),
+        visibleButtonCount: visibleButtons.length,
+        overflowX: document.documentElement.scrollWidth > innerWidth + 1,
+        brokenImages: Array.from(document.images)
+          .filter((image) => visible(image) && image.complete && image.naturalWidth === 0)
+          .map((image) => image.getAttribute("src"))
+      };
+    });
+
+    expect(report.tiles, `${capture.label} tile integrity`).toBe(64);
+    expect(report.rows, `${capture.label} authoritative rows`).toBe(8);
+    expect(report.completeRows, `${capture.label} complete viewport rows`).toBe(8);
+    expect(report.board.width, `${capture.label} altar width`).toBeCloseTo(capture.expectedBoard, 0);
+    expect(report.board.height, `${capture.label} altar height`).toBeCloseTo(capture.expectedBoard, 0);
+    expect(report.firstTile.width, `${capture.label} flower socket width`).toBeCloseTo(capture.expectedTile, 2);
+    expect(report.firstTile.height, `${capture.label} flower socket height`).toBeCloseTo(capture.expectedTile, 2);
+    expect(report.board.top, `${capture.label} altar starts in viewport`).toBeGreaterThanOrEqual(0);
+    expect(report.board.bottom, `${capture.label} altar ends in viewport`).toBeLessThanOrEqual(capture.viewport.height - 4);
+    expect(report.boardObjectiveOverlap, `${capture.label} objective clears altar`).toBe(false);
+    expect(report.boardProgressOverlap, `${capture.label} bouquet HUD clears altar`).toBe(false);
+    expect(report.boardInstructionOverlap, `${capture.label} cue clears altar`).toBe(false);
+    expect(report.visibleButtonCount, `${capture.label} contextual control limit`).toBeLessThanOrEqual(2);
+    expect(report.overflowX, `${capture.label} horizontal overflow`).toBe(false);
+    expect(report.brokenImages, `${capture.label} broken images`).toEqual([]);
+
+    if (capture.maxGreenhouseAreaRatio) {
+      expect(report.heroDialVisible, `${capture.label} greenhouse progress remains visible`).toBe(true);
+      expect(report.heroDialText, `${capture.label} greenhouse ownership and next restoration`).toMatch(
+        /\d+%.*(?:Withered|restored|upgrade owned).*OWNED \d\/3.*NEXT:/i
+      );
+      expect(
+        (report.hero.width * report.hero.height) / (report.board.width * report.board.height),
+        `${capture.label} greenhouse remains subordinate to altar`
+      ).toBeLessThanOrEqual(capture.maxGreenhouseAreaRatio);
+    }
+    if (capture.centered) {
+      expect(
+        report.board.left + (report.board.width / 2),
+        `${capture.label} altar is centered in the viewport`
+      ).toBeCloseTo(capture.viewport.width / 2, 0);
+    }
+    if (capture.activeOrders) {
+      expect(report.activeOrdersVisible, `${capture.label} current Active Orders remain visible`).toBe(true);
+    }
+    if (capture.mobileBaseline) {
+      expect(report.heroDialVisible, `${capture.label} desktop greenhouse rail remains absent`).toBe(false);
+      expect(report.board.top, `${capture.label} accepted altar top`).toBeCloseTo(302, 0);
+      expect(report.objective.top, `${capture.label} accepted objective top`).toBeCloseTo(59, 0);
+      expect(report.progress.top, `${capture.label} accepted bouquet HUD top`).toBeCloseTo(125, 0);
+      expect(report.mobileGreenhouse.top, `${capture.label} accepted greenhouse HUD top`).toBeCloseTo(218, 0);
+    }
+
+    await page.screenshot({ path: capture.screenshot, fullPage: false });
+
+    if (capture.exerciseOpening) {
+      const hints = page.locator("#board .tile.idle-hint");
+      await expect(hints).toHaveCount(2);
+      const pair = await hints.evaluateAll((tiles) => tiles.map((tile) => ({
+        x: tile.dataset.x,
+        y: tile.dataset.y
+      })));
+      await page.locator(`.tile[data-x="${pair[0].x}"][data-y="${pair[0].y}"]`).click();
+      await page.locator(`.tile[data-x="${pair[1].x}"][data-y="${pair[1].y}"]`).click();
+      await expect.poll(() => page.evaluate((key) => {
+        const state = JSON.parse(localStorage.getItem(key) || "{}");
+        return {
+          moves: state.moves,
+          targetCredit: (state.counts?.[1] || 0) + (state.counts?.[5] || 0),
+          enabledTiles: document.querySelectorAll("#board .tile:not(:disabled)").length,
+          tiles: document.querySelectorAll("#board .tile").length,
+          tutorialCopy: document.querySelector("#tutorialCopy")?.textContent.trim() || ""
+        };
+      }, SAVE_KEY), { timeout: 10000 }).toEqual({
+        moves: 5,
+        targetCredit: expect.any(Number),
+        enabledTiles: 64,
+        tiles: 64,
+        tutorialCopy: expect.not.stringMatching(/^Swap the glowing flowers\.$/)
+      });
+      const opening = await page.evaluate((key) => {
+        const state = JSON.parse(localStorage.getItem(key) || "{}");
+        return (state.counts?.[1] || 0) + (state.counts?.[5] || 0);
+      }, SAVE_KEY);
+      expect(opening, `${capture.label} instructed swap advances target objectives`).toBeGreaterThan(0);
+    }
+
+    expect(runtimeErrors, `${capture.label} runtime errors`).toEqual([]);
+    expect(requestFailures, `${capture.label} request failures`).toEqual([]);
+    await context.close();
+  }
+});
