@@ -5221,7 +5221,7 @@
       body.restored-next-order-focus.tutorial-active .tutorial-panel,
       body.round-three-focus-active.tutorial-active .tutorial-panel {
         min-height: 24px;
-        margin-top: 2px;
+        margin-top: 0;
         padding: 1px 5px 1px 8px;
         gap: 6px;
         font-size: 10.5px;
@@ -5239,7 +5239,7 @@
       body.round-three-focus-active .board,
       body.restored-greenhouse-handoff .board {
         width: min(610px, calc(100vh - 240px), calc(100vw - 470px));
-        margin: 5px auto 6px;
+        margin: 3px auto 6px;
         padding: 7px;
       }
     }
@@ -5960,7 +5960,7 @@
       100% { filter:brightness(1); box-shadow:inset 0 0 14px #000,0 3px 9px #0009; }
     }
     @keyframes handoff-cue-rise {
-      0% { opacity:.72; transform:translateY(6px); filter:brightness(.8); }
+      0% { opacity:.72; transform:translateY(0); filter:brightness(.8); }
       22%,78% { opacity:1; transform:translateY(0); filter:brightness(1.12); }
       100% { opacity:.92; filter:brightness(1); }
     }
@@ -6180,6 +6180,12 @@
         border-color: #a87b3d;
       }
     }
+    @media (min-width: 761px) {
+      body.reduced-motion.restored-next-order-focus .game {
+        width: min(1180px, calc(100vw - 10px)) !important;
+        transition: none !important;
+      }
+    }
     @media (max-width:760px) {
       body.restored-next-order-focus .game,
       body.restored-greenhouse-handoff .game,
@@ -6187,6 +6193,10 @@
       body.round-three-focus-active .game,
       body.round-three-final-pending .game,
       body.round-three-final-complete .game { display:block; width:100vw; min-height:100vh; padding:4px 6px 8px; }
+      body.reduced-motion.restored-next-order-focus .game {
+        width: 100vw !important;
+        transition: none !important;
+      }
       body.restored-next-order-focus .left,
       body.restored-greenhouse-handoff .left,
       body.round-three-focus-active .left,
@@ -9772,11 +9782,17 @@
 
     function isRestoredNextOrderFocus() {
       return isRestoredRoundTwoWindow()
-        && restoredRoundTwoGuideMoves < RESTORED_ROUND_TWO_GUIDE_LIMIT;
+        && restoredRoundTwoGuideMoves === 0
+        && thornGoalProgress(activeRoundPlan()) === 0;
     }
 
     function isRestoredRoundTwoGuideActive() {
       return isRestoredNextOrderFocus();
+    }
+
+    function isRestoredRoundTwoOpeningBudgetActive() {
+      return isRestoredRoundTwoWindow()
+        && restoredRoundTwoGuideMoves < RESTORED_ROUND_TWO_GUIDE_LIMIT;
     }
 
     function isPostOnboardingIdleHintActive() {
@@ -10084,6 +10100,7 @@
       document.body.classList.toggle("round-three-final-pending", roundThreeFinalPending);
       document.body.classList.toggle("round-three-final-complete", roundThreeFinalComplete);
       document.body.classList.toggle("round-three-focus-active", currentRound === 3 && !roundComplete && roundOneRestored && roundTwoGreenhouseUpgraded);
+      document.body.classList.toggle("reduced-motion", prefersReducedMotion());
       document.body.classList.toggle("focused-active-play", focusedSliceRound(activePlan) && !roundComplete);
       document.body.classList.toggle("altar-reweave-active", altarReweaveActive && !roundComplete && !isBouquetFailed(activePlan));
       document.body.classList.toggle("post-recovery-guide", postRecoveryGuideActive && !roundComplete && !isBouquetFailed(activePlan));
@@ -10439,7 +10456,7 @@
         return "Use the glowing pair.";
       }
       if (plan.round === 2 && plan.thornGoal && thornGoalProgress(plan) === 0) {
-        return "Match beside thorns.";
+        return "Match beside the Thorn.";
       }
       if (plan.round === 2 && hasMadeValidMove) {
         return "Finish the Moonlit Wreath.";
@@ -10840,13 +10857,19 @@
         ? { ...armedLineRelic }
         : null;
       const isFirstValidMove = !hasMadeValidMove;
-      const guidedRoundTwoLesson = isRestoredRoundTwoGuideActive();
+      const roundTwoOpeningBudgetActive = isRestoredRoundTwoOpeningBudgetActive();
+      const guidedRoundTwoLesson = isRestoredRoundTwoGuideActive()
+        && previewSwapMatches(source, target).some((match) => cellsTouchCursedThorn(match.cells));
       hasMadeValidMove = true;
-      if (isRestoredNextOrderFocus()) {
+      if (roundTwoOpeningBudgetActive) {
         restoredRoundTwoGuideMoves = Math.min(
           RESTORED_ROUND_TWO_GUIDE_LIMIT,
           restoredRoundTwoGuideMoves + 1
         );
+      }
+      if (guidedRoundTwoLesson) {
+        clearThornTeachingCue(false);
+        concludeTutorial();
       }
       swapBoardCells(selected, target);
       if (activatingRelic) {
@@ -10878,16 +10901,16 @@
             }
           : authoredRoundOneLesson
           ? { maxCascades: 1, quietReseed: true, playerSwap: { a: source, b: target } }
-          : guidedRoundTwoLesson
+          : roundTwoOpeningBudgetActive
             ? { maxCascades: 1, quietReseed: true, suppressAltarDrift: true, playerSwap: { a: source, b: target } }
             : { playerSwap: { a: source, b: target } });
         const firstMoveCopy = isFirstValidMove && currentRound === 1
           ? "<strong>First bloom!</strong> Your bouquet is already taking shape. "
           : "";
         const rareDropMessage = awardRareBloomDrop(result);
-        const reachedRestoredGuideLimit = guidedRoundTwoLesson
+        const reachedRestoredGuideLimit = roundTwoOpeningBudgetActive
           && restoredRoundTwoGuideMoves >= RESTORED_ROUND_TWO_GUIDE_LIMIT;
-        const harvestMessage = firstMoveCopy + (guidedRoundTwoLesson
+        const harvestMessage = firstMoveCopy + (roundTwoOpeningBudgetActive
           ? focusedRoundTwoHarvestSummary(result)
           : harvestSummary(result) + rareDropMessage);
         pulseOrderCounts(result.gained, result.gainedCells);
@@ -10903,7 +10926,9 @@
           // the presentation itself is deliberately absent from saved state.
           saveProgress({ allowDuringResolve: true });
           await presentAltarReweave();
-        } else if (!resolvingMoveFailed && reachedRestoredGuideLimit) {
+        } else if (!resolvingMoveFailed && isArmedLineRelicGuidanceActive()) {
+          ritualMessage += nextTargetMoveHint();
+        } else if (!resolvingMoveFailed && (guidedRoundTwoLesson || reachedRestoredGuideLimit)) {
           schedulePostResolveIdleHint = true;
         } else if (!resolvingMoveFailed) {
           const targetHintCopy = nextTargetMoveHint();
@@ -13012,7 +13037,7 @@
       const nextRound = roundComplete ? Math.min(FOCUSED_LEVEL_COUNT, currentRound + 1) : currentRound;
       const preserveCompletedRoundTwoGuide = retryingFailedBouquet
         && nextRound === 2
-        && restoredRoundTwoGuideMoves >= RESTORED_ROUND_TWO_GUIDE_LIMIT;
+        && restoredRoundTwoGuideMoves > 0;
       const restoredGreenhouseNextOrder = currentRound === 1 && roundComplete && roundOneRestored && nextRound === 2;
       const secondUpgradeNextOrder = currentRound === 2 && roundComplete && roundOneRestored && roundTwoGreenhouseUpgraded && nextRound === 3;
       const plan = buildRoundPlan(nextRound);
@@ -13052,19 +13077,33 @@
         : `${introCopy}${goalCopy(plan)}${thornObjectiveHintCopy(plan)}${thornTeachingCopy(plan)}`;
       resetCursedThorns(plan);
       build();
-      startThornTeachingCue(plan);
+      if (!preserveCompletedRoundTwoGuide) {
+        startThornTeachingCue(plan);
+      }
       const openingMove = retryingFailedBouquet
-        ? primeFailedRetryOpeningGuide(plan)
+        ? preserveCompletedRoundTwoGuide
+          ? []
+          : primeFailedRetryOpeningGuide(plan)
         : focusedOpeningGuideMove(plan);
-      const nextFocusCell = (openingMove || [boardFocusCell])[0];
+      if (restoredGreenhouseNextOrder && openingMove.length === 2) {
+        idleHintCells = new Set(openingMove.map((cell) => `${cell.x},${cell.y}`));
+      }
+      if (preserveCompletedRoundTwoGuide) {
+        nextTargetMoveHint();
+        const target = plan.targets.find((candidate) => targetProgress(candidate) < candidate.needed);
+        const [a, b] = Array.from(idleHintCells, (key) => {
+          const [x, y] = key.split(",").map(Number);
+          return { x, y };
+        });
+        $("firstSwapCue").textContent = targetCueText(target, a, b);
+      }
+      const nextFocusCell = openingMove[0] || firstHintFocusCell() || boardFocusCell;
       boardFocusCell = clampBoardFocusCell(nextFocusCell);
       if (!retryingFailedBouquet) {
         $("firstSwapCue").textContent = roundStartCueText(plan, openingMove || []);
       }
       queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
-      if (restoredGreenhouseNextOrder) {
-        startRestoredGreenhouseHandoff();
-      } else if (secondUpgradeNextOrder) {
+      if (secondUpgradeNextOrder) {
         startRestoredGreenhouseHandoff(
           "Moonlit Upgrade · Bloodroot Compact · Match Bloodroot + Sol Rot"
         );
@@ -13078,7 +13117,7 @@
       if (restoredGreenhouseNextOrder || secondUpgradeNextOrder) {
         focusRestoredNextOrderViewport();
       }
-      if (!retryingFailedBouquet) {
+      if (!retryingFailedBouquet && !(restoredGreenhouseNextOrder && idleHintCells.size === 2)) {
         scheduleIdleHint();
       }
       playBloomSound(retryingFailedBouquet ? "retry" : "handoff");
@@ -13120,7 +13159,6 @@
       clearedCursedThorns = 0;
       ritualMessage = `<strong>First Bouquet:</strong> ${goalCopy(plan)} Match the glowing pair to begin another greenhouse run.`;
       build();
-      startRestoredGreenhouseHandoff("50 coins reinvested · First Bouquet begins", 3200);
       render();
       const firstMove = legalMoves()[0];
       if (firstMove) {
@@ -13572,7 +13610,7 @@
         if (!Number.isFinite(Number(state.restoredRoundTwoGuideMoves)) && isRestoredRoundTwoWindow() && hasMadeValidMove) {
           restoredRoundTwoGuideMoves = Math.min(RESTORED_ROUND_TWO_GUIDE_LIMIT, clearedCursedThorns > 0 ? 1 : 0);
         }
-        if (!isRestoredRoundTwoWindow()) {
+        if (!(roundOneRestored && currentRound === 2 && !roundComplete)) {
           restoredRoundTwoGuideMoves = 0;
         }
         if (shouldSaveMigratedProgress) {
@@ -13630,6 +13668,16 @@
       queuePostRenderFocus(focusedPayoffPrimaryButtonId());
     }
     ensureCursedThornsForPlan(activeRoundPlan());
+    if (isRestoredRoundTwoGuideActive() && thornGoalProgress(activeRoundPlan()) === 0) {
+      startThornTeachingCue(activeRoundPlan());
+      const openingMove = focusedOpeningGuideMove(activeRoundPlan());
+      if (openingMove.length === 2) {
+        idleHintCells = new Set(openingMove.map((cell) => `${cell.x},${cell.y}`));
+        boardFocusCell = clampBoardFocusCell(openingMove[0]);
+        $("firstSwapCue").textContent = roundStartCueText(activeRoundPlan(), openingMove);
+        queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
+      }
+    }
     if (armedLineRelic && !roundComplete && !isBouquetFailed()) {
       const relicPair = lineRelicActivationPair();
       if (relicPair) {
@@ -13654,7 +13702,9 @@
     }
     render();
     applyImageFallbacks(document);
-    scheduleIdleHint();
+    if (!isRestoredRoundTwoGuideActive() || idleHintCells.size !== 2) {
+      scheduleIdleHint();
+    }
     scheduleFreshTutorial();
   })();
   </script>

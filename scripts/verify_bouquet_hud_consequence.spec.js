@@ -166,7 +166,7 @@ LOW_MOVE_BOARD[3][3] = 2;
 const ACTIVE_VIEWPORT_CASES = [
   {
     ...HUD_CASES.find((fixture) => fixture.label === "r2-active"),
-    tutorialCopy: "Match beside thorns."
+    tutorialCopy: "Match beside the Thorn."
   },
   {
     ...HUD_CASES.find((fixture) => fixture.label === "r3-active"),
@@ -533,8 +533,13 @@ async function roundTwoHandoffReport(page) {
     return {
       handoffActive: document.body.classList.contains("restored-greenhouse-handoff"),
       instructionSurfaces,
+      nextCueNodes: document.querySelectorAll("#nextOrderCue, .next-order-cue").length,
       nextCueText: nextCue?.textContent.trim() || "",
       tutorialText: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
+      guideTiles: document.querySelectorAll(".tile.idle-hint").length,
+      thornTeachTiles: document.querySelectorAll(".tile.thorn-teach").length,
+      thornTargetTiles: document.querySelectorAll(".tile.thorn-teach-blocker").length,
+      guideOverlays: document.querySelectorAll(".swap-path-arrow, .first-action-swap-guide").length,
       cueOverlapsBoard: overlaps(rect(nextCue), boardRect),
       objectiveOverlapsBoard: overlaps(objectiveRect, boardRect),
       boardTop: boardRect?.top || 0,
@@ -1145,7 +1150,6 @@ for (const config of ROUND_TWO_HANDOFF_INPUTS) {
       `${BASE_URL}?round-two-handoff-idle=${config.label}`,
       { waitUntil: "networkidle" }
     );
-    await installInPageHandoffTimeline(idlePage, [0, 50, 150, 1700, 3500]);
     const idleAction = idlePage.locator("#nextOrderBtn");
     await expect(idleAction).toBeFocused();
     if (config.input === "keyboard") {
@@ -1156,28 +1160,24 @@ for (const config of ROUND_TWO_HANDOFF_INPUTS) {
       await idleAction.click();
     }
 
-    const timeline = await readInPageHandoffTimeline(idlePage);
-    for (const report of timeline) {
-      const sampleAt = report.sampleAt;
-      const label = `${config.label} ${sampleAt}ms`;
-      assertRoundTwoHandoffGeometry(report, config.viewport, label);
-      if (sampleAt < 2200) {
-        expect(report.handoffActive, `${label} handoff owns instruction`).toBe(true);
-        expect(report.cueOpacity, `${label} cue is readable from its first frame`).toBeGreaterThanOrEqual(0.7);
-        expect(report.instructionSurfaces, `${label} one instruction surface`).toEqual([{
-          id: "nextOrderCue",
-          text: "Restored Greenhouse · Moonlit Wreath · Match beside thorns"
-        }]);
-      } else {
-        expect(report.handoffActive, `${label} handoff yields`).toBe(false);
-        expect(report.instructionSurfaces, `${label} tutorial owns instruction`).toEqual([{
-          id: "tutorialPanel",
-          text: "✦ Match beside thorns. Skip"
-        }]);
-      }
-    }
+    await expect(idlePage.locator("#tutorialCopy")).toHaveText("Match beside the Thorn.");
+    await expect(idlePage.locator(".tile.thorn-teach")).toHaveCount(2);
+    const immediate = await roundTwoHandoffReport(idlePage);
+    assertRoundTwoHandoffGeometry(immediate, config.viewport, `${config.label} immediate lesson`);
+    expect(immediate.currentRound, `${config.label} authored second order`).toBe(2);
+    expect(immediate.moves, `${config.label} untouched move budget`).toBe(9);
+    expect(immediate.handoffActive, `${config.label} no duplicate shared handoff`).toBe(false);
+    expect(immediate.nextCueNodes, `${config.label} shared final-order node retained`).toBe(1);
+    expect(immediate.instructionSurfaces, `${config.label} one direct instruction`).toEqual([{
+      id: "tutorialPanel",
+      text: "✦ Match beside the Thorn. Skip"
+    }]);
+    expect(immediate.guideTiles, `${config.label} one adjacent highlighted pair`).toBe(2);
+    expect(immediate.thornTeachTiles, `${config.label} highlighted pair teaches cause`).toBe(2);
+    expect(immediate.thornTargetTiles, `${config.label} authored blockers teach target`).toBe(3);
+    expect(immediate.guideOverlays, `${config.label} one direct-manipulation guide`).toBe(1);
     await idlePage.screenshot({
-      path: `work/round-two-handoff-${config.label}-settled.png`,
+      path: `work/round-two-handoff-${config.label}-ready.png`,
       fullPage: true
     });
     expect(idleErrors, `${config.label} idle runtime errors`).toEqual([]);
@@ -1228,23 +1228,31 @@ for (const config of ROUND_TWO_HANDOFF_INPUTS) {
     assertRoundTwoHandoffGeometry(
       activeHandoff,
       config.viewport,
-      `${config.label} immediate handoff`
+      `${config.label} immediate lesson`
     );
-    expect(activeHandoff.handoffActive).toBe(true);
-    expect(activeHandoff.instructionSurfaces).toHaveLength(1);
+    expect(activeHandoff.handoffActive, `${config.label} shared handoff stays inactive`).toBe(false);
+    expect(activeHandoff.nextCueNodes, `${config.label} shared final-order node retained`).toBe(1);
+    expect(activeHandoff.instructionSurfaces, `${config.label} one literal lesson`).toEqual([{
+      id: "tutorialPanel",
+      text: "✦ Match beside the Thorn. Skip"
+    }]);
+    expect(activeHandoff.guideTiles, `${config.label} actionable highlighted pair`).toBe(2);
+    expect(activeHandoff.thornTeachTiles, `${config.label} pair teaches Thorn damage`).toBe(2);
+    expect(activeHandoff.thornTargetTiles, `${config.label} blocker highlights`).toBe(3);
 
-    const source = actionPage.locator('.tile[data-x="1"][data-y="2"]');
-    const destination = actionPage.locator('.tile[data-x="1"][data-y="3"]');
+    const tileAt = (x, y) => actionPage.locator(`.tile[data-x="${x}"][data-y="${y}"]`);
     if (config.input === "keyboard") {
-      await expect(source).toBeFocused();
+      await expect(tileAt(1, 2)).toBeFocused();
       await actionPage.keyboard.press("Enter");
       await actionPage.keyboard.press("ArrowDown");
     } else if (config.input === "touch") {
-      await source.tap();
-      await destination.tap();
+      await tileAt(1, 2).tap();
+      await expect(tileAt(1, 2)).toHaveClass(/\bsel\b/);
+      await tileAt(1, 3).tap();
     } else {
-      await source.click();
-      await destination.click();
+      await tileAt(1, 2).click();
+      await expect(tileAt(1, 2)).toHaveClass(/\bsel\b/);
+      await tileAt(1, 3).click();
     }
 
     await expect.poll(async () => (
@@ -1266,11 +1274,12 @@ for (const config of ROUND_TWO_HANDOFF_INPUTS) {
 
     const sealed = await roundTwoHandoffReport(actionPage);
     assertRoundTwoHandoffGeometry(sealed, config.viewport, `${config.label} sealed`);
-    expect(sealed.handoffActive, `${config.label} committed pair retires handoff`).toBe(false);
-    expect(sealed.instructionSurfaces, `${config.label} result owns instruction`).toEqual([{
-      id: "tutorialPanel",
-      text: "✦ Finish the Moonlit Wreath. Skip"
-    }]);
+    expect(sealed.handoffActive, `${config.label} shared handoff remains inactive`).toBe(false);
+    expect(sealed.instructionSurfaces, `${config.label} lesson retires after success`).toEqual([]);
+    expect(sealed.guideTiles, `${config.label} pair highlight retires`).toBe(0);
+    expect(sealed.thornTeachTiles, `${config.label} Thorn teaching retires`).toBe(0);
+    expect(sealed.thornTargetTiles, `${config.label} blocker teaching retires`).toBe(0);
+    expect(sealed.guideOverlays, `${config.label} direct guide retires`).toBe(0);
     expect(sealed.thornComplete, `${config.label} thorn goal retired`).toBe(true);
     expect(sealed.thornSeal, `${config.label} thorn goal seal`).toBe("Sealed");
     expect(sealed.thornAriaLabel, `${config.label} thorn goal semantics`).toBe(
@@ -1281,6 +1290,7 @@ for (const config of ROUND_TWO_HANDOFF_INPUTS) {
     const reloaded = await roundTwoHandoffReport(actionPage);
     assertRoundTwoHandoffGeometry(reloaded, config.viewport, `${config.label} reload`);
     expect(reloaded.handoffActive, `${config.label} reload does not replay handoff`).toBe(false);
+    expect(reloaded.instructionSurfaces, `${config.label} reload does not replay lesson`).toEqual([]);
     expect(reloaded.moves, `${config.label} reload move cost`).toBe(8);
     expect(reloaded.clearedCursedThorns, `${config.label} reload thorn credit`).toBe(3);
     expect(reloaded.cursedThorns, `${config.label} reload cleared thorns`).toBe(0);

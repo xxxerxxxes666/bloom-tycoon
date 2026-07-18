@@ -172,7 +172,7 @@ async function visibleReport(page) {
   });
 }
 
-async function clickGuidedSwap(page) {
+async function clickGuidedSwap(page, options = {}) {
   const hints = page.locator(".tile.idle-hint");
   await expect(hints).toHaveCount(2, { timeout: 5000 });
   const pair = await hints.evaluateAll((tiles) => tiles.map((tile) => ({
@@ -182,11 +182,19 @@ async function clickGuidedSwap(page) {
   await page.locator(`.tile[data-x="${pair[0].x}"][data-y="${pair[0].y}"]`).dispatchEvent("click");
   await page.locator(`.tile[data-x="${pair[1].x}"][data-y="${pair[1].y}"]`).dispatchEvent("click");
   await expect(page.locator(".tile")).toHaveCount(64);
-  await page.waitForFunction(() => {
+  await page.waitForFunction(({ retireGuide }) => {
     const payoff = document.querySelector("#roundOneRestoration");
     const payoffVisible = payoff && getComputedStyle(payoff).display !== "none";
+    if (retireGuide) {
+      const tiles = Array.from(document.querySelectorAll(".tile"));
+      return tiles.length === 64
+        && tiles.every((tile) => !tile.disabled)
+        && document.querySelectorAll(
+          ".tile.idle-hint, .tile.thorn-teach, .tile.thorn-teach-lane, .tile.thorn-teach-blocker, .swap-path-arrow, .first-action-swap-guide"
+        ).length === 0;
+    }
     return payoffVisible || document.querySelectorAll(".tile.idle-hint").length === 2;
-  }, null, { timeout: 7000 });
+  }, { retireGuide: Boolean(options.retireGuide) }, { timeout: 7000 });
 }
 
 async function dispatchGuidedSwap(page) {
@@ -316,6 +324,28 @@ async function settleGuidedSwap(page, requestedPair = null) {
       && tiles.every((tile) => !tile.disabled)
       && new Set(tiles.map((tile) => Math.round(tile.getBoundingClientRect().top))).size === 8
       && document.querySelectorAll(".tile.idle-hint").length === 2;
+  }, { key: SAVE_KEY, movesBefore }, { timeout: 10000 });
+}
+
+async function settleThornLessonSwap(page) {
+  await waitForSettledBoard(page);
+  const movesBefore = (await activeState(page)).moves;
+  const pair = await hintedPair(page);
+  await page.evaluate((pair) => {
+    pair.forEach(({ x, y }) => {
+      document.querySelector(`.tile[data-x="${x}"][data-y="${y}"]`).click();
+    });
+  }, pair);
+  await page.waitForFunction(({ key, movesBefore }) => {
+    const saved = JSON.parse(localStorage.getItem(key) || "{}");
+    const tiles = Array.from(document.querySelectorAll(".tile"));
+    return Number(saved.moves) === Number(movesBefore) - 1
+      && Number(saved.clearedCursedThorns) > 0
+      && tiles.length === 64
+      && tiles.every((tile) => !tile.disabled)
+      && document.querySelectorAll(
+        ".tile.idle-hint, .tile.thorn-teach, .tile.thorn-teach-lane, .tile.thorn-teach-blocker, .swap-path-arrow, .first-action-swap-guide"
+      ).length === 0;
   }, { key: SAVE_KEY, movesBefore }, { timeout: 10000 });
 }
 
@@ -2289,7 +2319,7 @@ test("accepted swaps reload from one authoritative settled state", async ({ brow
         overflowX: false
       });
 
-      await settleGuidedSwap(page);
+      await settleThornLessonSwap(page);
       await waitForSettledBoard(page);
       const thornSettled = await activeState(page);
       expect(thornSettled.moves).toBe(8);
@@ -3011,11 +3041,11 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
   } else {
     await expect(page.locator("#tutorialPanel")).toBeVisible();
   }
-  await expect(page.locator("#tutorialCopy")).toHaveText("Match beside thorns.");
+  await expect(page.locator("#tutorialCopy")).toHaveText("Match beside the Thorn.");
   report = await visibleReport(page);
   expect(report.round).toBe(2);
   expect(report.greenhouseText).toBe("Owned 1/3 · Next: Upgrade Greenhouse");
-  expect(report.tutorialPrompt).toBe("Match beside thorns.");
+  expect(report.tutorialPrompt).toBe("Match beside the Thorn.");
   expect(report.mobilePlinthVisible, "Round 2 mobile active play has no greenhouse footer").toBe(false);
   expect(report.ritualLogVisible, "Round 2 mobile active play has no ritual log footer").toBe(false);
   expect(report.visibleProgressText).not.toContain("First Bouquet:");
@@ -3025,27 +3055,24 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
   expect(report.ritualLogVisible).toBe(false);
   expect(report.visibleProgressText).not.toMatch(/\b(?:SAP|MANA|BLOOD)\b|\d[\d,]*\s*\/\s*\d[\d,]*\s*XP|Greenhouse \+\d+ XP|Apothecary \+\d+ XP/);
 
-  await clickGuidedSwap(page);
-  await expect(page.locator("#tutorialCopy")).toHaveText("Finish the Moonlit Wreath.");
+  await clickGuidedSwap(page, { retireGuide: true });
+  await expect(page.locator("#tutorialPanel")).toBeHidden();
+  await expect(page.locator(".tile.thorn-teach, .tile.thorn-teach-lane, .tile.thorn-teach-blocker")).toHaveCount(0);
+  await expect(page.locator(".tile.idle-hint, .swap-path-arrow, .first-action-swap-guide")).toHaveCount(0);
 
   await forceActiveBouquetFailure(page);
-  if (await page.locator("#tutorialHelpBtn").isVisible()) {
-    await page.locator("#tutorialHelpBtn").click();
-  } else {
-    await expect(page.locator("#tutorialPanel")).toBeVisible();
-  }
-  await expect(page.locator("#tutorialCopy")).toHaveText("Moves ended. Retry the bouquet.");
+  await expect(page.locator("#tutorialPanel")).toBeHidden();
   report = await visibleReport(page);
   expect(report.retryVisible).toBe(true);
-  expect(report.tutorialPrompt).toBe("Moves ended. Retry the bouquet.");
   await page.locator("#renewBtn.visible").click();
-  await expect(page.locator("#tutorialPanel")).toBeVisible();
-  await expect(page.locator("#tutorialCopy")).toHaveText("Match beside thorns.");
-  await expect(page.locator(".tile.thorn-teach")).toHaveCount(2, { timeout: 5000 });
-  await expect(page.locator(".tile.thorn-teach-blocker")).not.toHaveCount(0);
+  await expect(page.locator("#tutorialPanel")).toBeHidden();
+  await expect(page.locator(".tile.thorn-teach, .tile.thorn-teach-lane, .tile.thorn-teach-blocker")).toHaveCount(0);
+  await expect(page.locator(".tile.idle-hint")).toHaveCount(2);
+  await expect(page.locator(".swap-path-arrow, .first-action-swap-guide")).toHaveCount(0);
+  await expect(page.locator("#firstSwapCue")).toContainText("Nightshade next");
   report = await visibleReport(page);
   expect(report.tiles).toBe(64);
-  expect(report.tutorialSpotlights).toBeGreaterThanOrEqual(3);
+  expect(report.tutorialSpotlights, "Retry uses one useful target pair without replaying the Thorn lesson").toBe(2);
   expect(report.overflowX).toBe(false);
   expect(report.brokenImages).toEqual([]);
   expect(consoleErrors).toEqual([]);

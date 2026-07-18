@@ -45,8 +45,8 @@ const ROUND_FIXTURES = {
       '.objective-target[data-flower-id="5"].complete',
       '.objective-target[data-thorn-objective="true"].complete'
     ],
-    retryCue: /Crack the marked thorns/,
-    progressCheck: (before, after) => after.clearedCursedThorns > before.clearedCursedThorns
+    retryCue: /Nightshade next/,
+    progressCheck: (before, after) => after.counts[2] > before.counts[2]
   },
   3: {
     coins: 50,
@@ -264,7 +264,7 @@ for (const config of VIEWPORTS) {
         expect(retried.brokenImages).toEqual([]);
         if (round === 2) {
           expect(retried.cursedThornTiles).toBe(3);
-          expect(retried.thornTeachTiles).toBeGreaterThanOrEqual(2);
+          expect(retried.thornTeachTiles, "Retry does not replay a completed Thorn lesson").toBe(0);
         }
         await activePage.screenshot({ path: `work/failure-retry-${config.label}-r${round}-retried.png`, fullPage: true });
 

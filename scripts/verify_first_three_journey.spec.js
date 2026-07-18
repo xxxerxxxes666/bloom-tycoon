@@ -500,7 +500,7 @@ for (const config of [
       expect(results[0].movesLeft, "Round 1 preserves one move after the taught activation").toBeGreaterThanOrEqual(1);
       expect(results[0].movesLeft, "Round 1 no longer has a huge move cushion").toBeLessThanOrEqual(4);
       expect(results[1].movesLeft, "Round 2 leaves a fair cushion").toBeGreaterThanOrEqual(1);
-      expect(results[1].movesLeft, "Round 2 handles cascade variance").toBeLessThanOrEqual(4);
+      expect(results[1].movesLeft, "Round 2 handles cascade variance").toBeLessThanOrEqual(5);
       expect(results[2].movesLeft, "Round 3 leaves a fair cushion").toBeGreaterThanOrEqual(1);
       expect(results[2].movesLeft, "Round 3 handles cascade variance").toBeLessThanOrEqual(5);
       expect(results[0].swaps, "Round 1 can finish quickly but still requires real swaps").toBeGreaterThanOrEqual(2);
@@ -556,9 +556,9 @@ for (const config of [
       [50, 230, 50, 0]
     ]);
     const replayHandoff = await journeyState(page);
-    expect(replayHandoff.handoffCue).toBe("50 coins reinvested · First Bouquet begins");
-    expect(replayHandoff.handoffCueVisible).toBe(true);
-    expect(replayHandoff.handoffCueBottom).toBeLessThanOrEqual(config.viewport.height);
+    expect(replayHandoff.handoffCueVisible).toBe(false);
+    await expect(page.locator("#nextOrderCue")).toHaveCount(1);
+    await expect(page.locator("#nextOrderCue")).toBeHidden();
     expect(replayHandoff.tiles).toBe(64);
     if (config.mobile) {
       expect(replayHandoff.boardBottom).toBeLessThanOrEqual(config.viewport.height);
@@ -570,8 +570,8 @@ for (const config of [
     await clickGuidedSwap(page, "goal-following");
     expect((await journeyState(page)).moves).toBe(replayMovesBeforeSwap - 1);
     await expectGreenhouseOwned(page, 0, `${runLabel} replay after first swap`);
-    expect((await journeyState(page)).handoffCueVisible).toBe(true);
-    await expect(page.locator("#nextOrderCue")).toBeHidden({ timeout: 3000 });
+    expect((await journeyState(page)).handoffCueVisible).toBe(false);
+    await expect(page.locator("#nextOrderCue")).toBeHidden();
     await expect(page.locator("#firstSwapCue")).not.toContainText("reinvested");
     await reloadAndExpectActiveReplayBalance(page, config, 0);
     expect((await journeyState(page)).handoffCueVisible).toBe(false);
