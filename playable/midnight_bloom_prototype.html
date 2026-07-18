@@ -10432,9 +10432,9 @@
           title: "Bloodroot Compact Complete",
           state: spent ? "BLOODROOT CONSERVATORY RAISED" : "BLOODROOT CONSERVATORY READY",
           transaction: spent
-            ? `Raised for ${BLOODROOT_CONSERVATORY_COST}. Play Again reinvests the remaining ${coins} coins.`
+            ? `Raised for ${BLOODROOT_CONSERVATORY_COST}. ${coins} coins remain.`
             : `Earned ${roundThreePlan.reward.coins} coins. Conservatory costs ${BLOODROOT_CONSERVATORY_COST}.`,
-          copy: spent ? "Play Again reinvests the seed into a fresh First Bouquet run." : "Spend the Bloodroot payout to raise the conservatory.",
+          copy: spent ? "Begin a new growing cycle with your balance intact." : "Spend the Bloodroot payout to raise the conservatory.",
           spendText: coins >= BLOODROOT_CONSERVATORY_COST
             ? `Raise Conservatory · ${BLOODROOT_CONSERVATORY_COST} coins`
             : `Need ${BLOODROOT_CONSERVATORY_COST} coins`,
@@ -13589,8 +13589,6 @@
       thornClearedCells.clear();
       clearThornTeachingCue(false);
       currentRound = 1;
-      coins = 0;
-      pulseCoinBalance();
       restoredRoundTwoGuideMoves = 0;
       roundOneRestored = false;
       roundTwoGreenhouseUpgraded = false;
@@ -13606,15 +13604,17 @@
       clearedCursedThorns = 0;
       ritualMessage = `<strong>First Bouquet:</strong> ${goalCopy(plan)} Match the glowing pair to begin another greenhouse run.`;
       build();
-      render();
-      const firstMove = legalMoves()[0];
+      const firstMove = focusedOpeningGuideMove(plan);
       if (firstMove) {
         idleHintCells = new Set(firstMove.map((cell) => `${cell.x},${cell.y}`));
         boardFocusCell = clampBoardFocusCell(firstMove[0]);
         queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
-        $("firstSwapCue").textContent = firstSwapCueText(firstMove[0], firstMove[1]);
-        render();
+        $("firstSwapCue").textContent = roundStartCueText(plan, firstMove);
       }
+      startRestoredGreenhouseHandoff(
+        `Greenhouse Renewal · First Bouquet · ${coins} coins carried forward`
+      );
+      render();
       focusRestoredNextOrderViewport();
       scheduleIdleHint();
       playBloomSound("handoff");
@@ -14127,10 +14127,11 @@
         $("firstSwapCue").textContent = guidance.cue;
       }
     } else if (currentRound === 1 && !roundComplete && !hasMadeValidMove && !isBouquetFailed()) {
-      const firstMove = legalMoves()[0];
+      const firstMove = focusedOpeningGuideMove(activeRoundPlan());
       if (firstMove) {
         idleHintCells = new Set(firstMove.map((cell) => `${cell.x},${cell.y}`));
         boardFocusCell = clampBoardFocusCell(firstMove[0]);
+        $("firstSwapCue").textContent = roundStartCueText(activeRoundPlan(), firstMove);
       }
     } else if (currentRound === 1 && !roundComplete && hasMadeValidMove && !isBouquetFailed()) {
       seedRoundOneGuidedMove(activeRoundPlan());

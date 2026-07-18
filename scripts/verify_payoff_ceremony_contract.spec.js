@@ -452,7 +452,7 @@ async function expectCeremony(page, expectedButton, screenshotPath, expectedGuid
     expect(contract.coins).toBe(120);
   }
   if (expectedButton.includes("Next Order")) {
-    expect(contract.transactionText).toMatch(/coins remain\.|Play Again reinvests the remaining \d+ coins\.|spent$/);
+    expect(contract.transactionText).toMatch(/coins remain\.|spent$/);
     if (contract.text.includes("Greenhouse Restored")) {
       expect(contract.transactionText).toBe("Restored for 100. 20 coins remain.");
       expect(contract.trophyKicker).toBe("Greenhouse Relit");

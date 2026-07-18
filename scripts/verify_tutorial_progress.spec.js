@@ -65,16 +65,16 @@ const LEGACY_ECONOMY_CASES = [
     transaction: "Earned 180 coins. Conservatory costs 180.",
     spentCoins: 50,
     spentAction: "Play Again → First Bouquet",
-    spentTransaction: "Raised for 180. Play Again reinvests the remaining 50 coins."
+    spentTransaction: "Raised for 180. 50 coins remain."
   },
   {
     label: "round-three-raised",
     state: { currentRound: 3, roundComplete: true, roundOneRestored: true, roundTwoGreenhouseUpgraded: true, roundThreeConservatoryRaised: true, moves: 2, counts: [13, 0, 0, 14, 0, 0] },
     coins: 50,
     action: "Play Again → First Bouquet",
-    transaction: "Raised for 180. Play Again reinvests the remaining 50 coins.",
+    transaction: "Raised for 180. 50 coins remain.",
     enteredRound: 1,
-    enteredCoins: 0
+    enteredCoins: 50
   }
 ];
 
