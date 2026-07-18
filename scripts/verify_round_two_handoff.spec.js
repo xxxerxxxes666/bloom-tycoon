@@ -147,6 +147,10 @@ async function invalidPair(page, excludedCells = []) {
     const state = JSON.parse(localStorage.getItem(key) || "{}");
     const excluded = new Set(excludedCells);
     const board = state.board.map((row) => row.slice());
+    const selectedTile = document.querySelector("#board .tile.sel");
+    const selectedCell = selectedTile
+      ? { x: Number(selectedTile.dataset.x), y: Number(selectedTile.dataset.y) }
+      : null;
     const createsMatch = (a, b) => {
       const previous = board[a.y][a.x];
       board[a.y][a.x] = board[b.y][b.x];
@@ -173,6 +177,7 @@ async function invalidPair(page, excludedCells = []) {
           const source = { x, y };
           if (target.x < 0 || target.y < 0) continue;
           if (excluded.has(`${source.x},${source.y}`) || excluded.has(`${target.x},${target.y}`)) continue;
+          if (selectedCell && Math.abs(source.x - selectedCell.x) + Math.abs(source.y - selectedCell.y) === 1) continue;
           if (!createsMatch(source, target)) return [source, target];
         }
       }

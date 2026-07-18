@@ -7741,7 +7741,7 @@
         return "thorn-followup";
       }
       if (thornProgress >= 6 && moves > 3 && boneProgress < boneTarget.needed) {
-        return "bone-ordinary";
+        return "black-candle";
       }
       if (thornProgress >= thornTarget.needed && boneProgress < boneTarget.needed) {
         return "black-candle";
@@ -7763,12 +7763,16 @@
       const stage = roundOneGuidedStage(plan);
       const thornTarget = plan.targets[0];
       const boneTarget = plan.targets[1];
-      if ((stage === "thorn-opening" || stage === "thorn-followup") && thornTarget) {
+      if (stage === "thorn-opening" && thornTarget) {
         writeRoundOneThreeMatchPatch(0, 0, thornTarget.flowerId);
         return;
       }
+      if (stage === "thorn-followup" && thornTarget) {
+        writeRoundOneThreeMatchPatch(2, 0, thornTarget.flowerId);
+        return;
+      }
       if (stage === "bone-ordinary" && boneTarget) {
-        writeRoundOneThreeMatchPatch(4, 0, boneTarget.flowerId);
+        writeRoundOneThreeMatchPatch(0, 0, boneTarget.flowerId);
         return;
       }
       if (stage === "black-candle" && boneTarget && thornTarget) {
@@ -9165,6 +9169,9 @@
           cue.classList.remove("swap-refused");
           cue.textContent = returnCue;
           idleHintCells = new Set(returnHintCells);
+          if (!idleHintCells.size && currentRound === 1 && tutorialActive) {
+            nextTargetMoveHint();
+          }
         } else if (currentRound === 3 && !hasMadeValidMove && !roundComplete && !isBouquetFailed()) {
           scheduleIdleHint();
         }

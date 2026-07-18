@@ -576,6 +576,13 @@ async function hintedPair(page) {
   return pair;
 }
 
+function unorderedPairKey(pair) {
+  return pair
+    .map(({ x, y }) => `${x},${y}`)
+    .sort()
+    .join(" <-> ");
+}
+
 function guideDirection(pair) {
   const [source, destination] = pair;
   if (destination.x > source.x) return "right";
@@ -1718,7 +1725,10 @@ for (const viewport of [
     await expect(page.locator("#tutorialPanel")).toBeVisible({ timeout: 3000 });
 
     const trace = [await guidedRoundOneState(page, "initial")];
+    const guidedPairs = [trace[0].hints];
     assertActiveGuidedState(trace[0], viewport.mobile, `${viewport.label} initial`);
+    expect(unorderedPairKey(guidedPairs[0]), `${viewport.label} exact authored opening pair`)
+      .toBe("1,0 <-> 1,1");
     assertFirstActionGuide(
       await firstActionGuideReport(page),
       await hintedPair(page),
@@ -1735,7 +1745,8 @@ for (const viewport of [
       trace.push(await guidedRoundOneState(page, `after swap ${index}`));
       assertActiveGuidedState(trace[trace.length - 1], viewport.mobile, `${viewport.label} after swap ${index}`);
       const followupPair = await hintedPair(page);
-      const followupStage = index === 1 ? "thorn-followup" : "bone-ordinary";
+      guidedPairs.push(followupPair);
+      const followupStage = index === 1 ? "thorn-followup" : "black-candle";
       assertFirstActionGuide(
         await firstActionGuideReport(page),
         followupPair,
@@ -1743,6 +1754,14 @@ for (const viewport of [
         { mobile: viewport.mobile, stage: followupStage }
       );
       if (index === 1) {
+        expect(unorderedPairKey(followupPair), `${viewport.label} post-opening guide moves across the altar`)
+          .not.toBe(unorderedPairKey(guidedPairs[0]));
+        expect(
+          followupPair.every((cell) => !guidedPairs[0].some((openingCell) => (
+            openingCell.x === cell.x && openingCell.y === cell.y
+          ))),
+          `${viewport.label} post-opening guide has no opening endpoint overlap`
+        ).toBe(true);
         await page.screenshot({ path: `work/tutorial-guide-${viewport.label}-post-first-match3.png`, fullPage: true });
         await assertRepeatedTutorialRefusal(page, {
           label: `${viewport.label} Match 3 refusal`
@@ -1760,13 +1779,10 @@ for (const viewport of [
       await firstActionGuideReport(page),
       await hintedPair(page),
       `${viewport.label} reload guide`,
-      { mobile: viewport.mobile, stage: "bone-ordinary" }
+      { mobile: viewport.mobile, stage: "black-candle" }
     );
 
-    await clickHighlightedPair(page);
-    await expect(page.locator(".first-action-swap-guide")).toHaveCount(1, { timeout: 2500 });
-    const blackCandleCue = await guidedRoundOneState(page, "before Black Candle swap");
-    trace.push(blackCandleCue);
+    const blackCandleCue = reloaded;
     assertActiveGuidedState(blackCandleCue, viewport.mobile, `${viewport.label} before Black Candle`);
     expect(blackCandleCue.tutorial).toBe("Match 4 arms Black Candle Vine.");
     expect(blackCandleCue.cue).toBe("Make 4 Bone Stars - arm Black Candle Vine.");
@@ -1796,6 +1812,7 @@ for (const viewport of [
     await expect(page.locator(".first-action-swap-guide")).toHaveCount(1, { timeout: 2500 });
     const formed = await guidedRoundOneState(page, "Black Candle armed");
     trace.push(formed);
+    guidedPairs.push(formed.hints);
     expect(formed.roundComplete).toBe(false);
     expect(formed.payoffVisible).toBe(false);
     expect(formed.tiles).toBe(64);
@@ -1829,6 +1846,13 @@ for (const viewport of [
       { expectedArrows: 0 }
     );
     await page.screenshot({ path: "work/tutorial-guide-" + viewport.label + "-armed-activation.png", fullPage: true });
+
+    for (let index = 1; index < guidedPairs.length; index += 1) {
+      expect(
+        unorderedPairKey(guidedPairs[index]),
+        `${viewport.label} consecutive guided pairs ${index} and ${index + 1}`
+      ).not.toBe(unorderedPairKey(guidedPairs[index - 1]));
+    }
 
     for (let reloadIndex = 0; reloadIndex < 2; reloadIndex += 1) {
       await page.reload({ waitUntil: "networkidle" });
