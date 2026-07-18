@@ -8506,9 +8506,36 @@
       }
     }
 
+    function isAuthoritativeRoundTwoThornLesson(plan = activeRoundPlan()) {
+      return Boolean(plan.thornGoal)
+        && plan.round === 2
+        && tutorialActive
+        && isRestoredRoundTwoWindow()
+        && thornGoalProgress(plan) === 0
+        && !roundComplete;
+    }
+
+    function restoreAuthoritativeRoundTwoThornLesson({ resetSelection = false } = {}) {
+      const plan = activeRoundPlan();
+      if (!isAuthoritativeRoundTwoThornLesson(plan) || !hasRoundTwoThornTeachingMove()) {
+        return false;
+      }
+      startThornTeachingCue(plan);
+      const openingMove = roundTwoThornTeachingSwap();
+      idleHintCells = new Set(openingMove.map((cell) => `${cell.x},${cell.y}`));
+      $("firstSwapCue").textContent = roundStartCueText(plan, openingMove);
+      if (resetSelection) {
+        selected = null;
+        boardFocusCell = clampBoardFocusCell(openingMove[0]);
+        queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
+      }
+      return true;
+    }
+
     function startThornTeachingCue(plan = activeRoundPlan()) {
       clearThornTeachingCue(false);
-      if (!shouldSeedThornTeachingMove(plan) || !hasRoundTwoThornTeachingMove()) {
+      const authoritativeLesson = isAuthoritativeRoundTwoThornLesson(plan);
+      if ((!authoritativeLesson && !shouldSeedThornTeachingMove(plan)) || !hasRoundTwoThornTeachingMove()) {
         return;
       }
       const thornCells = cursedThorns.map((thorn) => [thorn.x, thorn.y]);
@@ -8517,7 +8544,7 @@
         ...roundTwoThornTeachingMatchCells()
       ]);
       thornTeachingCells = new Set(teachingCells.map((cell) => cell.join(",")));
-      if (window.setTimeout) {
+      if (!authoritativeLesson && window.setTimeout) {
         thornTeachingTimer = window.setTimeout(() => {
           clearThornTeachingCue(true);
         }, 9000);
@@ -8651,6 +8678,8 @@
         && hintCells.size === 2
         && !roundComplete
         && (
+          isAuthoritativeRoundTwoThornLesson()
+          ||
           (currentRound === 1 && tutorialActive)
           || (
             hintCells.has(`${cell.x},${cell.y}`)
@@ -8666,11 +8695,14 @@
     }
 
     function notePlayerInteraction() {
-      if (!postRecoveryGuideActive) {
+      const preserveThornLesson = isAuthoritativeRoundTwoThornLesson();
+      if (!postRecoveryGuideActive && !preserveThornLesson) {
         clearIdleHint();
       }
-      clearThornTeachingCue(false);
-      if (!postRecoveryGuideActive && (!hasMadeValidMove || isArmedLineRelicGuidanceActive())) {
+      if (!preserveThornLesson) {
+        clearThornTeachingCue(false);
+      }
+      if (!postRecoveryGuideActive && !preserveThornLesson && (!hasMadeValidMove || isArmedLineRelicGuidanceActive())) {
         scheduleIdleHint();
       }
     }
@@ -9089,7 +9121,8 @@
         window.clearTimeout(invalidSwapTimer);
       }
       const cue = $("firstSwapCue");
-      const focusedCueActive = (currentRound === 1 || isRestoredNextOrderFocus() || postRecoveryGuideActive) && !roundComplete && cue;
+      const authoritativeThornLesson = isAuthoritativeRoundTwoThornLesson();
+      const focusedCueActive = (currentRound === 1 || isRestoredNextOrderFocus() || authoritativeThornLesson || postRecoveryGuideActive) && !roundComplete && cue;
       const returnCue = continuingRefusal
         ? invalidSwapReturnCue
         : focusedCueActive ? cue.textContent : "";
@@ -9125,7 +9158,8 @@
         } else if (currentRound === 3 && !hasMadeValidMove && !roundComplete && !isBouquetFailed()) {
           scheduleIdleHint();
         }
-        selected = returnSelection ? { ...returnSelection } : null;
+        const restoredThornLesson = restoreAuthoritativeRoundTwoThornLesson({ resetSelection: true });
+        selected = restoredThornLesson ? null : returnSelection ? { ...returnSelection } : null;
         if (selected) {
           const selectedGuide = firstActionBoardGuidePair();
           boardFocusCell = clampBoardFocusCell(
@@ -10545,9 +10579,14 @@
     }
 
     function skipTutorial() {
+      const skippingThornLesson = isAuthoritativeRoundTwoThornLesson();
       tutorialSkipped = true;
       tutorialActive = false;
       blackCandleLessonComplete = true;
+      if (skippingThornLesson) {
+        clearIdleHint();
+        clearThornTeachingCue(false);
+      }
       queuePostRenderFocus("tutorialHelpBtn");
       render();
       saveProgress();
@@ -10833,6 +10872,7 @@
       retireCompletedInteractionFeedback();
       if (!isLegalSwap(selected, target)) {
         const source = selected;
+        const resetThornLessonAfterRefusal = isAuthoritativeRoundTwoThornLesson();
         selected = null;
         ritualMessage = "The garden refuses that graft.";
         boardFocusCell = source;
@@ -10841,7 +10881,7 @@
           source,
           target,
           selectedHintPair,
-          options.restoreSelectionOnRefusal === false ? null : source
+          options.restoreSelectionOnRefusal === false || resetThornLessonAfterRefusal ? null : source
         );
         return;
       }

@@ -49,12 +49,122 @@ async function activatePair(page, pair, input) {
   await tileAt(pair[1]).click();
 }
 
+async function selectCell(page, cell, input) {
+  const tile = page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`);
+  if (input === "touch") {
+    await tile.tap();
+    return;
+  }
+  if (input === "keyboard") {
+    await tile.focus();
+    await page.keyboard.press("Enter");
+    return;
+  }
+  await tile.click();
+}
+
+async function cancelBoardDrag(page, cell, input) {
+  const tile = page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`);
+  const box = await tile.boundingBox();
+  expect(box, `${input} cancel source geometry`).toBeTruthy();
+  const point = {
+    x: box.x + box.width / 2,
+    y: box.y + box.height / 2
+  };
+  if (input === "touch") {
+    await page.evaluate(({ cell, point }) => {
+      const tile = document.querySelector(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`);
+      const board = document.querySelector("#board");
+      const start = new Touch({
+        identifier: 71,
+        target: tile,
+        clientX: point.x,
+        clientY: point.y
+      });
+      const moved = new Touch({
+        identifier: 71,
+        target: tile,
+        clientX: point.x + 12,
+        clientY: point.y
+      });
+      tile.dispatchEvent(new TouchEvent("touchstart", {
+        touches: [start],
+        changedTouches: [start],
+        bubbles: true,
+        cancelable: true
+      }));
+      board.dispatchEvent(new TouchEvent("touchmove", {
+        touches: [moved],
+        changedTouches: [moved],
+        bubbles: true,
+        cancelable: true
+      }));
+      board.dispatchEvent(new TouchEvent("touchcancel", {
+        touches: [],
+        changedTouches: [moved],
+        bubbles: true,
+        cancelable: true
+      }));
+    }, { cell, point });
+    return;
+  }
+  if (input === "keyboard") {
+    await tile.focus();
+    await page.keyboard.press("ArrowRight");
+    return;
+  }
+  await page.mouse.move(point.x, point.y);
+  await page.mouse.down();
+  await page.mouse.move(point.x + 12, point.y);
+  await page.dispatchEvent("#board", "pointercancel", { pointerId: 1 });
+  await page.mouse.up();
+}
+
 async function guidedPair(page) {
   await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 7000 });
   return page.locator(".tile.idle-hint").evaluateAll((tiles) => tiles.map((tile) => ({
     x: Number(tile.dataset.x),
     y: Number(tile.dataset.y)
   })));
+}
+
+async function invalidPair(page, excludedCells = []) {
+  return page.evaluate(({ key, excludedCells }) => {
+    const state = JSON.parse(localStorage.getItem(key) || "{}");
+    const excluded = new Set(excludedCells);
+    const board = state.board.map((row) => row.slice());
+    const createsMatch = (a, b) => {
+      const previous = board[a.y][a.x];
+      board[a.y][a.x] = board[b.y][b.x];
+      board[b.y][b.x] = previous;
+      const hasRunAt = ({ x, y }) => {
+        const flowerId = board[y][x];
+        let horizontal = 1;
+        let vertical = 1;
+        for (let offset = x - 1; offset >= 0 && board[y][offset] === flowerId; offset -= 1) horizontal += 1;
+        for (let offset = x + 1; offset < 8 && board[y][offset] === flowerId; offset += 1) horizontal += 1;
+        for (let offset = y - 1; offset >= 0 && board[offset][x] === flowerId; offset -= 1) vertical += 1;
+        for (let offset = y + 1; offset < 8 && board[offset][x] === flowerId; offset += 1) vertical += 1;
+        return horizontal >= 3 || vertical >= 3;
+      };
+      const matched = hasRunAt(a) || hasRunAt(b);
+      board[b.y][b.x] = board[a.y][a.x];
+      board[a.y][a.x] = previous;
+      return matched;
+    };
+    for (let y = 7; y >= 0; y -= 1) {
+      for (let x = 7; x >= 0; x -= 1) {
+        for (const [dx, dy] of [[-1, 0], [0, -1]]) {
+          const target = { x: x + dx, y: y + dy };
+          const source = { x, y };
+          if (target.x < 0 || target.y < 0) continue;
+          if (excluded.has(`${source.x},${source.y}`) || excluded.has(`${target.x},${target.y}`)) continue;
+          if (!createsMatch(source, target)) return [source, target];
+        }
+      }
+    }
+    return [];
+  }, { key: SAVE_KEY, excludedCells });
 }
 
 async function completeNaturalRoundOne(page, input) {
@@ -155,9 +265,15 @@ async function handoffReport(page) {
       visibleBars: Array.from(document.querySelectorAll(".progress-meter, .restoration-dial-track"))
         .filter(visible).length,
       guideTiles: document.querySelectorAll(".tile.idle-hint").length,
+      guideCells: Array.from(document.querySelectorAll(".tile.idle-hint"))
+        .map((tile) => `${tile.dataset.x},${tile.dataset.y}`)
+        .sort(),
       thornSwapTiles: document.querySelectorAll(".tile.thorn-teach").length,
       thornTargets: document.querySelectorAll(".tile.thorn-teach-blocker").length,
       guideOverlays: document.querySelectorAll(".swap-path-arrow, .first-action-swap-guide").length,
+      selectedCells: Array.from(document.querySelectorAll(".tile.sel"))
+        .map((tile) => `${tile.dataset.x},${tile.dataset.y}`),
+      invalidTiles: document.querySelectorAll(".tile.invalid-swap").length,
       forbiddenGenericNarration: document.body.innerText.includes("Finish the Moonlit Wreath"),
       focusableTiles: document.querySelectorAll(".tile[tabindex='0']").length,
       focusedTile: document.activeElement?.classList.contains("tile") || false,
@@ -319,6 +435,19 @@ function expectReadyHandoff(report, testCase, label) {
   }
 }
 
+function expectAuthoritativeThornLesson(report, label, { selected = null } = {}) {
+  expect(report.state.moves, `${label} move budget`).toBe(9);
+  expect(report.state.counts, `${label} no flower credit`).toEqual([0, 0, 0, 0, 0, 0]);
+  expect(report.state.clearedCursedThorns, `${label} no thorn credit`).toBe(0);
+  expect(report.tutorialVisible, `${label} lesson visible`).toBe(true);
+  expect(report.tutorialCopy, `${label} literal Thorn copy`).toBe("Match beside the Thorn.");
+  expect(report.guideCells, `${label} authored pair`).toEqual(["1,2", "1,3"]);
+  expect(report.thornSwapTiles, `${label} two cause tiles`).toBe(2);
+  expect(report.thornTargets, `${label} three blocker targets`).toBe(3);
+  expect(report.guideOverlays, `${label} one guide overlay`).toBe(1);
+  expect(report.selectedCells, `${label} coherent selection`).toEqual(selected ? [selected] : []);
+}
+
 for (const testCase of CASES) {
   test(`Round 1 restoration hands off cleanly to Round 2 on ${testCase.label}`, async ({ browser }) => {
     const context = await browser.newContext({
@@ -377,6 +506,72 @@ for (const testCase of CASES) {
           path: `work/round-two-handoff-${testCase.label}-ready.png`
         });
       }
+
+      const savedLessonState = await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY);
+      await cancelBoardDrag(page, { x: 0, y: 0 }, testCase.input);
+      await page.waitForTimeout(380);
+      report = await handoffReport(page);
+      expectAuthoritativeThornLesson(report, `${testCase.label} canceled input`);
+
+      await selectCell(page, { x: 0, y: 0 }, testCase.input);
+      await page.waitForTimeout(60);
+      report = await handoffReport(page);
+      expectAuthoritativeThornLesson(report, `${testCase.label} wrong first selection`, { selected: "0,0" });
+
+      await selectCell(page, { x: 7, y: 7 }, testCase.input);
+      await page.waitForTimeout(60);
+      report = await handoffReport(page);
+      expectAuthoritativeThornLesson(report, `${testCase.label} nonadjacent reselection`, { selected: "7,7" });
+
+      const repeatedInvalidPair = await invalidPair(page, ["0,0", "1,0", "1,2", "1,3"]);
+      expect(repeatedInvalidPair, `${testCase.label} second refusal pair`).toHaveLength(2);
+      await selectCell(page, repeatedInvalidPair[0], testCase.input);
+      await selectCell(page, repeatedInvalidPair[1], testCase.input);
+      await page.waitForTimeout(120);
+      report = await handoffReport(page);
+      expect(report.tutorialCopy, `${testCase.label} refusal peak copy`).toBe("Use the glowing pair.");
+      expect(report.invalidTiles, `${testCase.label} refusal marks`).toBe(2);
+      expect(report.guideCells, `${testCase.label} refusal retains glowing pair`).toEqual(["1,2", "1,3"]);
+      expect(report.thornSwapTiles, `${testCase.label} refusal retains causes`).toBe(2);
+      expect(report.thornTargets, `${testCase.label} refusal retains blockers`).toBe(3);
+      expect(report.guideOverlays, `${testCase.label} refusal retains guide overlay`).toBe(1);
+      if (!testCase.reduced) {
+        await page.screenshot({
+          path: `work/round-two-thorn-mistake-${testCase.label}.png`
+        });
+      }
+
+      await selectCell(page, { x: 0, y: 0 }, testCase.input);
+      await selectCell(page, { x: 1, y: 0 }, testCase.input);
+      await page.waitForTimeout(120);
+      report = await handoffReport(page);
+      expect(report.tutorialCopy, `${testCase.label} repeated refusal peak copy`).toBe("Use the glowing pair.");
+      expect(report.invalidTiles, `${testCase.label} repeated refusal marks`).toBe(2);
+      expect(report.guideCells, `${testCase.label} repeated refusal retains pair`).toEqual(["1,2", "1,3"]);
+      expect(report.guideOverlays, `${testCase.label} repeated refusal retains guide overlay`).toBe(1);
+      await page.waitForTimeout(1040);
+      report = await handoffReport(page);
+      expectAuthoritativeThornLesson(report, `${testCase.label} refusal cleanup`);
+      expect(report.invalidTiles, `${testCase.label} refusal cleanup`).toBe(0);
+
+      if (testCase.input === "touch") await page.locator("#tutorialSkipBtn").tap();
+      else if (testCase.input === "keyboard") {
+        await page.locator("#tutorialSkipBtn").focus();
+        await page.keyboard.press("Enter");
+      } else await page.locator("#tutorialSkipBtn").click();
+      report = await handoffReport(page);
+      expect(report.tutorialVisible, `${testCase.label} Skip retires lesson copy`).toBe(false);
+      expect(report.guideTiles, `${testCase.label} Skip retires pair`).toBe(0);
+      expect(report.thornSwapTiles, `${testCase.label} Skip retires cause teaching`).toBe(0);
+      expect(report.thornTargets, `${testCase.label} Skip retires blocker teaching`).toBe(0);
+      await page.evaluate(({ key, value }) => localStorage.setItem(key, value), {
+        key: SAVE_KEY,
+        value: savedLessonState
+      });
+      await page.reload({ waitUntil: "networkidle" });
+      await expect(page.locator(".tile.thorn-teach")).toHaveCount(2, { timeout: 7000 });
+      report = await handoffReport(page);
+      expectAuthoritativeThornLesson(report, `${testCase.label} lesson restored after Skip fixture reset`);
 
       const authoritativeOpening = JSON.stringify(report.state);
       for (let reload = 1; reload <= 2; reload += 1) {
