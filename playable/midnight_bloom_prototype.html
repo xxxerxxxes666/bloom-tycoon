@@ -919,9 +919,9 @@
     }
 
     .progress {
-      width: min(672px, calc(100% - 16px));
+      width: min(760px, calc(100% - 16px));
       display: grid;
-      grid-template-columns: auto auto minmax(132px, auto) minmax(78px, 1fr) auto;
+      grid-template-columns: auto auto minmax(176px, 184px) minmax(70px, 1fr) auto;
       align-items: center;
       gap: 8px;
       min-height: 58px;
@@ -1018,22 +1018,27 @@
     .live-bouquet-assembly {
       --live-bouquet-fullness: 0;
       position: relative;
-      width: 154px;
-      height: 78px;
+      width: 184px;
+      height: 72px;
       display: block;
       align-self: center;
       justify-self: center;
       border: 1px solid #4a3320;
       background:
-        radial-gradient(ellipse at 50% 18%, #d7b16d2e 0, #0000 55%),
-        radial-gradient(ellipse at 50% 77%, #5f83382b 0, #0000 60%),
-        linear-gradient(180deg, #150d08, #050302);
+        radial-gradient(ellipse at 50% 17%, #d7b16d3d 0, #0000 58%),
+        radial-gradient(ellipse at 50% 76%, #6f944d32 0, #0000 64%),
+        linear-gradient(180deg, #1a1009, #060403);
       box-shadow:
         inset 0 0 0 1px #000,
         inset 0 0 12px #000,
         0 0 10px #0008;
       overflow: hidden;
       isolation: isolate;
+      pointer-events: none;
+    }
+
+    .live-bouquet-assembly * {
+      pointer-events: none;
     }
 
     .live-bouquet-assembly::before,
@@ -1045,28 +1050,30 @@
 
     .live-bouquet-assembly::before {
       left: 50%;
-      bottom: 8px;
-      width: calc(66px + var(--live-bouquet-fullness, 0) * 42px);
-      height: 17px;
+      bottom: 4px;
+      width: calc(62px + var(--live-bouquet-fullness, 0) * 20px);
+      height: 10px;
       transform: translateX(-50%);
-      border: 1px solid #744b2b;
-      background: linear-gradient(90deg, #431513, #b9874d, #431513);
-      box-shadow: inset 0 0 7px #000, 0 0 9px #000;
-      z-index: 8;
+      border: 1px solid #9b6535;
+      border-radius: 2px;
+      background:
+        linear-gradient(90deg, #4b1715, #8d3a27 22%, #d0a35e 50%, #8d3a27 78%, #4b1715);
+      box-shadow: inset 0 0 5px #000, 0 2px 5px #000;
+      z-index: 4;
     }
 
     .live-bouquet-assembly::after {
       left: 50%;
-      bottom: 10px;
-      width: calc(88px + var(--live-bouquet-fullness, 0) * 38px);
-      height: 40px;
+      bottom: 5px;
+      width: calc(122px + var(--live-bouquet-fullness, 0) * 24px);
+      height: 44px;
       transform: translateX(-50%);
       background:
-        repeating-linear-gradient(104deg, #0000 0 10px, #6f944d 11px 13px, #0000 14px 24px);
-      clip-path: polygon(0 40%, 18% 8%, 50% 34%, 82% 8%, 100% 40%, 88% 68%, 50% 50%, 12% 68%);
-      opacity: calc(.48 + var(--live-bouquet-fullness, 0) * .4);
+        repeating-linear-gradient(104deg, #0000 0 9px, #89a55d 10px 12px, #0000 13px 22px);
+      clip-path: polygon(0 42%, 15% 6%, 50% 35%, 85% 6%, 100% 42%, 88% 72%, 50% 52%, 12% 72%);
+      opacity: calc(.56 + var(--live-bouquet-fullness, 0) * .34);
       z-index: 1;
-      filter: drop-shadow(0 0 5px #000);
+      filter: drop-shadow(0 1px 3px #000);
     }
 
     .live-bouquet-stem {
@@ -1074,14 +1081,14 @@
       left: calc(50% + var(--live-stem-x, 0px));
       top: 35px;
       z-index: 2;
-      width: 2px;
-      height: 35px;
+      width: 3px;
+      height: 33px;
       border-radius: 999px;
       transform: rotate(var(--live-stem-rot, 0deg));
       transform-origin: 50% 100%;
-      opacity: calc(.48 + var(--live-bouquet-fullness, 0) * .36);
-      background: linear-gradient(180deg, #c29b62 0, #5f8338 52%, #24150d 100%);
-      box-shadow: 0 0 5px #000;
+      opacity: calc(.52 + var(--ingredient-progress, 0) * .4);
+      background: linear-gradient(90deg, #263916 0, #a9bd73 48%, #31451c 70%, #171008 100%);
+      box-shadow: 0 1px 3px #000;
     }
 
     .live-bouquet-leaf {
@@ -1089,14 +1096,49 @@
       left: calc(50% + var(--live-leaf-x, 0px));
       top: var(--live-leaf-y, 42px);
       z-index: 3;
-      width: 16px;
-      height: 7px;
-      border: 1px solid #6f944d66;
+      width: 18px;
+      height: 8px;
+      border: 1px solid #87a45c78;
       border-radius: 80% 14% 70% 18%;
       background: linear-gradient(90deg, #17230f, #6f944d 58%, #23190d);
       transform: rotate(var(--live-leaf-rot, -22deg));
-      opacity: calc(.4 + var(--live-bouquet-fullness, 0) * .42);
-      box-shadow: 0 0 5px #000;
+      opacity: calc(.44 + var(--ingredient-progress, 0) * .4);
+      box-shadow: 0 1px 3px #000;
+    }
+
+    .live-bouquet-knot {
+      position: absolute;
+      left: 50%;
+      bottom: 1px;
+      z-index: 11;
+      width: 15px;
+      height: 15px;
+      transform: translateX(-50%) rotate(45deg);
+      border: 1px solid #d4aa62;
+      background: radial-gradient(circle at 35% 30%, #edcf8c, #8c402a 42%, #2b0c0a 76%);
+      box-shadow: inset 0 0 5px #000, 0 0 5px #000;
+    }
+
+    .live-bouquet-knot::before,
+    .live-bouquet-knot::after {
+      content: "";
+      position: absolute;
+      top: 8px;
+      width: 7px;
+      height: 19px;
+      background: linear-gradient(180deg, #873324, #3b1311);
+      clip-path: polygon(0 0, 100% 0, 74% 100%, 50% 78%, 25% 100%);
+      z-index: -1;
+    }
+
+    .live-bouquet-knot::before {
+      left: -2px;
+      transform: rotate(17deg);
+    }
+
+    .live-bouquet-knot::after {
+      right: -2px;
+      transform: rotate(-17deg);
     }
 
     .live-bouquet-ingredient {
@@ -1111,22 +1153,22 @@
       place-items: center;
       color: var(--live-color, #d7b16d);
       opacity: 1;
-      transform: translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.72 + var(--ingredient-progress, 0) * .32));
-      filter: saturate(calc(.72 + var(--ingredient-progress, 0) * .62)) brightness(calc(.74 + var(--ingredient-progress, 0) * .34)) drop-shadow(0 4px 5px #000);
+      transform: translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.88 + var(--ingredient-progress, 0) * .17));
+      filter: saturate(calc(.68 + var(--ingredient-progress, 0) * .62)) brightness(calc(.78 + var(--ingredient-progress, 0) * .42)) drop-shadow(0 3px 4px #000);
       transition: opacity 220ms ease, transform 260ms ease, filter 260ms ease;
     }
 
     .live-bouquet-ingredient::before {
       content: "";
       position: absolute;
-      inset: 13%;
-      border: 1px solid color-mix(in srgb, currentColor 42%, #7b5634);
+      inset: 11%;
+      border: 1px dashed color-mix(in srgb, currentColor 50%, #9a7146);
       border-radius: 50%;
       background:
         radial-gradient(circle at 50% 45%, color-mix(in srgb, currentColor 14%, #0000) 0, #0000 58%),
         radial-gradient(circle, #050302 0, #100805 72%);
       box-shadow: inset 0 0 8px #000, 0 0 6px #000;
-      opacity: calc(.74 - var(--ingredient-progress, 0) * .34);
+      opacity: calc(.84 - var(--ingredient-progress, 0) * .7);
     }
 
     .live-bouquet-ingredient .icon-wrap,
@@ -1138,28 +1180,36 @@
     }
 
     .live-bouquet-ingredient .icon-wrap {
-      opacity: calc(.16 + var(--ingredient-progress, 0) * .84);
-      transform: scale(calc(.82 + var(--ingredient-progress, 0) * .18));
+      opacity: calc(.24 + var(--ingredient-progress, 0) * .76);
+      transform: scale(calc(.9 + var(--ingredient-progress, 0) * .1));
       transition: opacity 220ms ease, transform 260ms ease;
     }
 
     .live-bouquet-ingredient[data-filled="false"] .icon-wrap {
-      filter: grayscale(.55) brightness(.58) saturate(.72);
+      filter: grayscale(.62) brightness(.66) saturate(.68);
     }
 
     .live-bouquet-ingredient[data-filled="true"] .icon-wrap {
-      filter: none;
+      filter: brightness(1.12) saturate(1.12);
     }
 
     .live-bouquet-ingredient img {
       object-fit: contain;
       filter:
-        drop-shadow(0 0 7px #000)
-        drop-shadow(0 0 calc(4px + var(--ingredient-progress, 0) * 5px) currentColor);
+        drop-shadow(0 1px 4px #000)
+        drop-shadow(0 0 calc(3px + var(--ingredient-progress, 0) * 6px) currentColor);
     }
 
-    .live-bouquet-ingredient.order-pulse {
+    .live-bouquet-ingredient.order-pulse[data-receiver="true"] {
       animation: live-bouquet-harvest 520ms cubic-bezier(.12,.82,.18,1) both;
+    }
+
+    .live-bouquet-assembly:has(.live-bouquet-ingredient.order-pulse[data-receiver="true"]) {
+      animation: live-bouquet-accept 520ms cubic-bezier(.12,.82,.18,1) both;
+    }
+
+    .live-bouquet-assembly:has(.live-bouquet-ingredient.order-pulse[data-receiver="true"]) .live-bouquet-knot {
+      animation: live-bouquet-knot-tighten 520ms cubic-bezier(.12,.82,.18,1) both;
     }
 
     .live-bouquet-ingredient[data-receiver="true"]::after {
@@ -1168,7 +1218,7 @@
       inset: -4px;
       border: 1px solid color-mix(in srgb, currentColor 72%, #f4dfaa);
       border-radius: 50%;
-      opacity: .28;
+      opacity: .2;
       box-shadow: 0 0 10px currentColor;
       pointer-events: none;
     }
@@ -1179,6 +1229,10 @@
 
     .live-bouquet-assembly[data-assembly-complete="true"] {
       border-color: #b9874d;
+      background:
+        radial-gradient(ellipse at 50% 18%, #d7b16d55 0, #0000 61%),
+        radial-gradient(ellipse at 50% 76%, #6f944d3d 0, #0000 65%),
+        linear-gradient(180deg, #1d120b, #060403);
       box-shadow: inset 0 0 10px #000, 0 0 14px #d7b16d4a;
     }
 
@@ -5026,22 +5080,22 @@
       body.round-one-active .live-bouquet-assembly,
       body.restored-next-order-focus .live-bouquet-assembly,
       body.round-three-focus-active .live-bouquet-assembly {
-        width: 138px;
+        width: 184px;
         height: 58px;
       }
 
       body.round-one-active .live-bouquet-ingredient,
       body.restored-next-order-focus .live-bouquet-ingredient,
       body.round-three-focus-active .live-bouquet-ingredient {
-        width: calc(var(--live-size, 28px) * .74);
-        height: calc(var(--live-size, 28px) * .74);
+        width: var(--live-size, 28px);
+        height: var(--live-size, 28px);
       }
 
       body.round-one-active .live-bouquet-stem,
       body.restored-next-order-focus .live-bouquet-stem,
       body.round-three-focus-active .live-bouquet-stem {
-        top: 25px;
-        height: 27px;
+        top: 27px;
+        height: 25px;
       }
 
       body.restored-next-order-focus:not(.restored-greenhouse-handoff) .objective.compact-objective,
@@ -5749,9 +5803,17 @@
       100% { opacity:.82; clip-path:polygon(0 38%,18% 8%,50% 35%,82% 8%,100% 38%,88% 64%,50% 48%,12% 64%); filter:brightness(1); }
     }
     @keyframes live-bouquet-harvest {
-      0% { transform:translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.72 + var(--ingredient-progress, 0) * .32)); filter:brightness(1) saturate(1) drop-shadow(0 2px 5px #000); }
-      38% { transform:translate(-50%, -57%) rotate(var(--live-rot, 0deg)) scale(calc(.84 + var(--ingredient-progress, 0) * .38)); filter:brightness(1.36) saturate(1.22) drop-shadow(0 0 9px currentColor); }
-      100% { transform:translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.72 + var(--ingredient-progress, 0) * .32)); filter:brightness(1) saturate(1) drop-shadow(0 2px 5px #000); }
+      0% { transform:translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.88 + var(--ingredient-progress, 0) * .17)); filter:brightness(1) saturate(1) drop-shadow(0 2px 5px #000); }
+      38% { transform:translate(-50%, -58%) rotate(var(--live-rot, 0deg)) scale(calc(1 + var(--ingredient-progress, 0) * .2)); filter:brightness(1.38) saturate(1.24) drop-shadow(0 0 9px currentColor); }
+      100% { transform:translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.88 + var(--ingredient-progress, 0) * .17)); filter:brightness(1) saturate(1) drop-shadow(0 2px 5px #000); }
+    }
+    @keyframes live-bouquet-accept {
+      0%, 100% { transform:translateY(0); }
+      38% { transform:translateY(-1px); }
+    }
+    @keyframes live-bouquet-knot-tighten {
+      0%, 100% { transform:translateX(-50%) rotate(45deg) scale(1); filter:brightness(1); }
+      38% { transform:translateX(-50%) rotate(45deg) scale(1.18); filter:brightness(1.42); }
     }
     @keyframes live-bouquet-receiver-ring {
       0% { opacity:0; transform:scale(.7); }
@@ -6017,6 +6079,8 @@
       .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .crafted-stem,
       .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .crafted-binding,
       .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .crafted-vine,
+      .live-bouquet-assembly:has(.live-bouquet-ingredient.order-pulse[data-receiver="true"]),
+      .live-bouquet-assembly:has(.live-bouquet-ingredient.order-pulse[data-receiver="true"]) .live-bouquet-knot,
       .live-bouquet-ingredient.order-pulse,
       .round-one-restoration.next-order-ready .next-order-btn {
         animation:none !important;
@@ -6150,7 +6214,7 @@
       body.focused-payoff-active .live-bouquet-assembly {
         grid-column: 1 / -1;
         grid-row: 2;
-        width: 138px;
+        width: 184px;
         height: 58px;
       }
       body.restored-next-order-focus .live-bouquet-ingredient,
@@ -6158,16 +6222,16 @@
       body.round-three-focus-active .live-bouquet-ingredient,
       body.round-one-active .live-bouquet-ingredient,
       body.focused-payoff-active .live-bouquet-ingredient {
-        width: calc(var(--live-size, 28px) * .74);
-        height: calc(var(--live-size, 28px) * .74);
+        width: var(--live-size, 28px);
+        height: var(--live-size, 28px);
       }
       body.restored-next-order-focus .live-bouquet-stem,
       body.restored-greenhouse-handoff .live-bouquet-stem,
       body.round-three-focus-active .live-bouquet-stem,
       body.round-one-active .live-bouquet-stem,
       body.focused-payoff-active .live-bouquet-stem {
-        top: 25px;
-        height: 27px;
+        top: 27px;
+        height: 25px;
       }
       body.restored-next-order-focus .progress-next,
       body.restored-greenhouse-handoff .progress-next,
@@ -7323,12 +7387,12 @@
     function liveBouquetLayout(index) {
       const layout = craftedBouquetLayout(index);
       return {
-        x: Math.round(layout.x * 0.58),
-        y: Math.round(layout.y * 0.52),
-        size: Math.round(layout.size * 0.68),
+        x: Math.round(layout.x * 1.05),
+        y: Math.round((layout.y - 38) * 0.62 + 12),
+        size: Math.round(layout.size * 0.78),
         rot: layout.rot,
         z: layout.z,
-        stemX: Math.round(layout.stemX * 0.56),
+        stemX: Math.round(layout.stemX * 0.9),
         stemRot: layout.stemRot
       };
     }
@@ -7369,15 +7433,16 @@
           receivers.set(target.flowerId, receiver.index);
         }
       });
-      const stemsMarkup = slotDetails.map(({ layout, index }) => `
-        <span class="live-bouquet-stem" style="--live-stem-x:${layout.stemX}px;--live-stem-rot:${layout.stemRot}deg;"></span>
-        <span class="live-bouquet-leaf" style="--live-leaf-x:${layout.stemX + (index % 2 ? -11 : 5)}px;--live-leaf-y:${42 + (index % 3) * 4}px;--live-leaf-rot:${index % 2 ? 202 : -22}deg;"></span>
+      const stemsMarkup = slotDetails.map(({ layout, index, slotProgress }) => `
+        <span class="live-bouquet-stem" aria-hidden="true" data-filled="${slotProgress > 0 ? "true" : "false"}" style="--ingredient-progress:${slotProgress.toFixed(3)};--live-stem-x:${layout.stemX}px;--live-stem-rot:${layout.stemRot}deg;"></span>
+        <span class="live-bouquet-leaf" aria-hidden="true" data-filled="${slotProgress > 0 ? "true" : "false"}" style="--ingredient-progress:${slotProgress.toFixed(3)};--live-leaf-x:${layout.stemX + (index % 2 ? -11 : 5)}px;--live-leaf-y:${39 + (index % 3) * 3}px;--live-leaf-rot:${index % 2 ? 202 : -22}deg;"></span>
       `).join("");
       const flowersMarkup = slotDetails.map(({ target, flower, current, slotProgress, layout, index }) => {
         const pulse = orderPulseTargets.has(target.flowerId) ? "order-pulse" : "";
         const receiver = receivers.get(target.flowerId) === index;
         return `
           <span class="live-bouquet-ingredient live-bouquet-bloom ${pulse}"
+            aria-hidden="true"
             data-flower-id="${target.flowerId}"
             data-live-slot="${index}"
             data-slot-progress="${slotProgress.toFixed(2)}"
@@ -7399,7 +7464,7 @@
         fullness,
         complete,
         state: liveBouquetAssemblyState(fullness, complete),
-        markup: `${stemsMarkup}${flowersMarkup}${thornMarkup}`
+        markup: `${stemsMarkup}<span class="live-bouquet-knot" aria-hidden="true"></span>${flowersMarkup}${thornMarkup}`
       };
     }
 
@@ -12789,6 +12854,8 @@
       const seal = document.createElement("span");
       seal.className = "bouquet-bind-seal";
       seal.setAttribute("aria-hidden", "true");
+      seal.dataset.flowerId = String(target.flowerId);
+      seal.dataset.gainedAmount = String(gainedAmount);
       seal.style.left = `${targetRect.left + targetRect.width / 2}px`;
       seal.style.top = `${targetRect.top + targetRect.height / 2}px`;
       seal.innerHTML = `

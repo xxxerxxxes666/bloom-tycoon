@@ -1,5 +1,17 @@
 # Codex Build Notes
 
+## 2026-07-18 legible live bouquet binding
+
+- Files changed: `playable/midnight_bloom_prototype.html` and this note.
+- Player-visible result: the active order receiver is now a readable physical bouquet rather than a tiny dark trough. Its six authoritative ingredient slots use larger original flower heads, visible stems/leaves, restrained empty socket silhouettes, and one central ribbon knot. Earned flowers brighten and dominate unfilled positions; the receiving bloom and binding knot answer a positive objective gain with one bounded `520ms` acceptance beat. The full receiver uses the same deterministic six-slot composition as the reward trophy.
+- Geometry and hierarchy: the receiver grows from `138x58` to `184x58` in focused active play without increasing the progress strip height or pushing the altar down. Exact `390x844` screenshots retain all eight complete board rows in the first viewport, one compact guide, clear objective/moves, and zero visible clipping or horizontal overflow. Desktop `1280x720` retains the complete `480x480` altar and board-first hierarchy.
+- Authority/accessibility: slot progress still derives only from saved objective counts through the existing `liveBouquetAssembly()` path. Decorative bouquet nodes are `aria-hidden` and non-interactive; target flights and the self-cleaning bind seal remain presentation-only. Reload reconstructs empty/partial/full state from authority. Reduced motion disables the receiver, knot, and bloom animations while preserving the clear static filled state.
+- Visual evidence inspected: `work/live-bouquet-desktop-empty.png`, `work/live-bouquet-desktop-first-harvest.png`, `work/live-bouquet-desktop-mid-progress.png`, `work/live-bouquet-desktop-full-pre-ceremony.png`, plus the equivalent four exact-mobile `work/live-bouquet-mobile390-*.png` captures. The first harvest now shows a recognizable Thorn Rose; mixed/full states remain contained and ingredient-distinct.
+- Static verification: `python3 scripts/verify_project.py`, `python3 scripts/verify_html_match_shapes.py`, extracted inline JavaScript `node --check`, and `git diff --check` passed.
+- Focused browser verification: the desktop/mobile payoff ceremony contract passed `2/2` in `53.2s`. The tutorial plus runtime matrix passed `28/28` in `7.0m`, covering the authored first bouquet and Black Candle lesson, migration, atomic save/reload, Retry-adjacent state, pointer/touch/drag/keyboard, invalid interactions, reduced motion, feedback cleanup, 64 tiles/eight rows, runtime budgets, broken images, overflow, and console/page/request checks. Runtime remained `510` nodes and `84` images with no dormant prototype scaffold; mobile accepted swaps returned control in `535ms` and `860ms` under the serial run.
+- Security/scope scan: added lines contain zero credential assignments, private-key markers, trackers/analytics, external URLs, or private IPs. No dependency, asset, round, objective, move budget, RNG, economy, save schema, control, backend, account, ad, or cron change was made.
+- Known risk: no player-facing regression found locally. Vercel remains on the prior artifact until its independent deployment catches up; GitHub Pages must be verified after push.
+
 ## 2026-07-17 visible dead-board altar reweave
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_dead_board_reweave.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.
