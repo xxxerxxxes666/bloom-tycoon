@@ -7403,6 +7403,7 @@
     let thornPulseCells = new Set();
     let thornClearedCells = new Set();
     let thornTeachingCells = new Set();
+    let thornTeachingSwapCells = new Set();
     let thornTeachingTimer = null;
     let orderPulseTargets = new Set();
     let interactionFeedbackGeneration = 0;
@@ -8116,12 +8117,58 @@
       return [{ x: 1, y: 2 }, { x: 1, y: 3 }];
     }
 
-    function roundTwoThornTeachingMatchCells() {
-      return [[0, 2], [1, 2], [2, 2], [1, 3]];
+    function roundTwoThornTeachingMoveDetails(move = roundTwoThornTeachingSwap()) {
+      const [a, b] = move || [];
+      if (!a || !b || thornAt(a.x, a.y) || thornAt(b.x, b.y) || !isLegalSwap(a, b)) {
+        return null;
+      }
+      swapBoardCells(a, b);
+      const thornMatches = matches().filter((match) => cellsTouchCursedThorn(match.cells));
+      const matchCells = dedupeCells(thornMatches.flatMap((match) => match.cells));
+      const affectedThorns = cursedThorns.filter((thorn) => matchCells.some(([x, y]) => (
+        Math.abs(thorn.x - x) + Math.abs(thorn.y - y) <= 1
+      )));
+      swapBoardCells(a, b);
+      if (!thornMatches.length || !affectedThorns.length) {
+        return null;
+      }
+      return {
+        pair: [{ ...a }, { ...b }],
+        matchCells,
+        affectedThorns: affectedThorns.length
+      };
     }
 
-    function seedRoundTwoThornTeachingMove(plan = activeRoundPlan()) {
-      if (!shouldSeedThornTeachingMove(plan)) {
+    function authoritativeRoundTwoThornTeachingMove({ allowReauthor = false } = {}) {
+      const authored = roundTwoThornTeachingMoveDetails(roundTwoThornTeachingSwap());
+      if (authored && authored.affectedThorns >= cursedThorns.length) {
+        return authored;
+      }
+      const candidates = legalMoves()
+        .map((move) => roundTwoThornTeachingMoveDetails(move))
+        .filter(Boolean)
+        .sort((a, b) => b.affectedThorns - a.affectedThorns);
+      const strongest = candidates[0] || null;
+      if (authored && (!strongest || authored.affectedThorns >= strongest.affectedThorns)) {
+        return authored;
+      }
+      if (
+        allowReauthor
+        && isAuthoritativeRoundTwoThornLesson()
+        && (!strongest || strongest.affectedThorns < cursedThorns.length)
+      ) {
+        seedRoundTwoThornTeachingMove(activeRoundPlan(), { force: true });
+        return roundTwoThornTeachingMoveDetails(roundTwoThornTeachingSwap());
+      }
+      return strongest;
+    }
+
+    function roundTwoThornTeachingMatchCells(move = roundTwoThornTeachingSwap()) {
+      return roundTwoThornTeachingMoveDetails(move)?.matchCells || [];
+    }
+
+    function seedRoundTwoThornTeachingMove(plan = activeRoundPlan(), { force = false } = {}) {
+      if (!force && !shouldSeedThornTeachingMove(plan)) {
         return;
       }
       const flowerId = plan.targets[0]?.flowerId ?? 2;
@@ -8145,17 +8192,55 @@
       board[4][0] = fillerB;
       board[4][1] = fillerC;
       board[4][2] = fillerA;
+      if (force) {
+        stabilizeRoundTwoThornTeachingPatch();
+      }
+    }
+
+    function stabilizeRoundTwoThornTeachingPatch() {
+      const protectedCells = new Set([
+        "0,1", "1,1", "2,1", "3,1",
+        "0,2", "1,2", "2,2", "3,2",
+        "0,3", "1,3", "2,3", "3,3",
+        "0,4", "1,4", "2,4"
+      ]);
+      for (let attempt = 0; attempt < 24; attempt += 1) {
+        const immediateMatches = matches();
+        if (!immediateMatches.length) {
+          return true;
+        }
+        const repairCell = immediateMatches
+          .flatMap((match) => match.cells)
+          .map(([x, y]) => ({ x, y }))
+          .find((cell) => (
+            !protectedCells.has(`${cell.x},${cell.y}`)
+            && !thornAt(cell.x, cell.y)
+          ));
+        if (!repairCell) {
+          return false;
+        }
+        const previous = board[repairCell.y][repairCell.x];
+        const replacement = flowers
+          .map((_, flowerId) => flowerId)
+          .find((flowerId) => {
+            if (flowerId === previous) {
+              return false;
+            }
+            board[repairCell.y][repairCell.x] = flowerId;
+            const reducesImmediateMatches = matches().length < immediateMatches.length;
+            board[repairCell.y][repairCell.x] = previous;
+            return reducesImmediateMatches;
+          });
+        if (replacement === undefined) {
+          return false;
+        }
+        board[repairCell.y][repairCell.x] = replacement;
+      }
+      return matches().length === 0;
     }
 
     function hasRoundTwoThornTeachingMove() {
-      const [a, b] = roundTwoThornTeachingSwap();
-      if (!isLegalSwap(a, b)) {
-        return false;
-      }
-      swapBoardCells(a, b);
-      const createsAdjacentThornMatch = matches().some((match) => cellsTouchCursedThorn(match.cells));
-      swapBoardCells(a, b);
-      return createsAdjacentThornMatch;
+      return Boolean(roundTwoThornTeachingMoveDetails());
     }
 
     function cellsTouchCursedThorn(cells) {
@@ -8802,8 +8887,10 @@
         window.clearTimeout(thornTeachingTimer);
       }
       thornTeachingTimer = null;
-      if (thornTeachingCells.size) {
-        thornTeachingCells.clear();
+      const hadTeachingCue = thornTeachingCells.size || thornTeachingSwapCells.size;
+      thornTeachingCells.clear();
+      thornTeachingSwapCells.clear();
+      if (hadTeachingCue) {
         if (renderAfter) {
           render();
         }
@@ -8821,11 +8908,15 @@
 
     function restoreAuthoritativeRoundTwoThornLesson({ resetSelection = false } = {}) {
       const plan = activeRoundPlan();
-      if (!isAuthoritativeRoundTwoThornLesson(plan) || !hasRoundTwoThornTeachingMove()) {
+      if (!isAuthoritativeRoundTwoThornLesson(plan)) {
         return false;
       }
-      startThornTeachingCue(plan);
-      const openingMove = roundTwoThornTeachingSwap();
+      const teachingMove = authoritativeRoundTwoThornTeachingMove({ allowReauthor: true });
+      if (!teachingMove) {
+        return false;
+      }
+      const openingMove = teachingMove.pair;
+      startThornTeachingCue(plan, teachingMove);
       idleHintCells = new Set(openingMove.map((cell) => `${cell.x},${cell.y}`));
       $("firstSwapCue").textContent = roundStartCueText(plan, openingMove);
       if (resetSelection) {
@@ -8836,18 +8927,21 @@
       return true;
     }
 
-    function startThornTeachingCue(plan = activeRoundPlan()) {
+    function startThornTeachingCue(plan = activeRoundPlan(), teachingMove = null) {
       clearThornTeachingCue(false);
       const authoritativeLesson = isAuthoritativeRoundTwoThornLesson(plan);
-      if ((!authoritativeLesson && !shouldSeedThornTeachingMove(plan)) || !hasRoundTwoThornTeachingMove()) {
+      const activeTeachingMove = teachingMove || authoritativeRoundTwoThornTeachingMove();
+      if ((!authoritativeLesson && !shouldSeedThornTeachingMove(plan)) || !activeTeachingMove) {
         return;
       }
       const thornCells = cursedThorns.map((thorn) => [thorn.x, thorn.y]);
       const teachingCells = dedupeCells([
         ...thornCells,
-        ...roundTwoThornTeachingMatchCells()
+        ...activeTeachingMove.matchCells,
+        ...activeTeachingMove.pair.map((cell) => [cell.x, cell.y])
       ]);
       thornTeachingCells = new Set(teachingCells.map((cell) => cell.join(",")));
+      thornTeachingSwapCells = new Set(activeTeachingMove.pair.map((cell) => `${cell.x},${cell.y}`));
       if (!authoritativeLesson && window.setTimeout) {
         thornTeachingTimer = window.setTimeout(() => {
           clearThornTeachingCue(true);
@@ -8892,8 +8986,8 @@
     }
 
     function focusedOpeningGuideMove(plan = activeRoundPlan()) {
-      if (plan.round === 2 && roundTwoThornTeachingSwap().length) {
-        return roundTwoThornTeachingSwap();
+      if (plan.round === 2 && plan.thornGoal && thornGoalProgress(plan) === 0) {
+        return authoritativeRoundTwoThornTeachingMove()?.pair || roundTwoThornTeachingSwap();
       }
       const targetIndex = plan.targets.findIndex((target) => targetProgress(target) < target.needed);
       const target = plan.targets[targetIndex];
@@ -10527,7 +10621,7 @@
           const swapGlideClass = swapGlide ? "swap-glide" : "";
           const idleHintClass = idleHintCells.has(`${x},${y}`) ? "idle-hint" : "";
           const thornTeachingActive = !activeRelicGuidance && thornTeachingCells.has(`${x},${y}`);
-          const thornTeachingSwapCell = thornTeachingActive && roundTwoThornTeachingSwap().some((cell) => cell.x === x && cell.y === y);
+          const thornTeachingSwapCell = thornTeachingActive && thornTeachingSwapCells.has(`${x},${y}`);
           const transmuteClass = transmuteFlashCell === `${x},${y}` ? "transmute-flash" : "";
           const thorn = thornAt(x, y);
           const thornTeachClass = !thornTeachingActive
@@ -11077,7 +11171,7 @@
       if (
         !postRecoveryGuideActive
         && !isArmedLineRelicGuidanceActive()
-        && (currentRound !== 1 && !isRestoredRoundTwoGuideActive())
+        && (currentRound !== 1 && !isAuthoritativeRoundTwoThornLesson())
       ) {
         return;
       }
@@ -11099,7 +11193,7 @@
     }
 
     function thornObjectiveHintMarkup(plan = activeRoundPlan()) {
-      if (!plan.thornGoal || roundComplete || thornGoalComplete(plan) || isRestoredRoundTwoGuideActive()) {
+      if (!plan.thornGoal || roundComplete || thornGoalComplete(plan) || isAuthoritativeRoundTwoThornLesson()) {
         return "";
       }
       return '<span class="objective-boon thorn" id="thornObjectiveHint">Match beside Cursed Thorns</span>';
@@ -11206,7 +11300,7 @@
         : null;
       const isFirstValidMove = !hasMadeValidMove;
       const roundTwoOpeningBudgetActive = isRestoredRoundTwoOpeningBudgetActive();
-      const guidedRoundTwoLesson = isRestoredRoundTwoGuideActive()
+      const guidedRoundTwoLesson = isAuthoritativeRoundTwoThornLesson()
         && previewSwapMatches(source, target).some((match) => cellsTouchCursedThorn(match.cells));
       hasMadeValidMove = true;
       if (roundTwoOpeningBudgetActive) {
@@ -11287,6 +11381,11 @@
         }
       } finally {
         isResolving = false;
+        if (!roundComplete && !isBouquetFailed() && restoreAuthoritativeRoundTwoThornLesson({
+          resetSelection: true
+        })) {
+          schedulePostResolveIdleHint = false;
+        }
         if (!roundComplete && !isBouquetFailed()) {
           pulseMoveUrgency();
         }
@@ -14016,15 +14115,8 @@
       queuePostRenderFocus(focusedPayoffPrimaryButtonId());
     }
     ensureCursedThornsForPlan(activeRoundPlan());
-    if (isRestoredRoundTwoGuideActive() && thornGoalProgress(activeRoundPlan()) === 0) {
-      startThornTeachingCue(activeRoundPlan());
-      const openingMove = focusedOpeningGuideMove(activeRoundPlan());
-      if (openingMove.length === 2) {
-        idleHintCells = new Set(openingMove.map((cell) => `${cell.x},${cell.y}`));
-        boardFocusCell = clampBoardFocusCell(openingMove[0]);
-        $("firstSwapCue").textContent = roundStartCueText(activeRoundPlan(), openingMove);
-        queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
-      }
+    if (isAuthoritativeRoundTwoThornLesson()) {
+      restoreAuthoritativeRoundTwoThornLesson({ resetSelection: true });
     }
     if (armedLineRelic && !roundComplete && !isBouquetFailed()) {
       const relicPair = lineRelicActivationPair();

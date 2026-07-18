@@ -186,6 +186,69 @@ async function invalidPair(page, excludedCells = []) {
   }, { key: SAVE_KEY, excludedCells });
 }
 
+async function legalOffGuidePair(page, { changeTeachingColumn = false } = {}) {
+  return page.evaluate(({ key, changeTeachingColumn }) => {
+    const state = JSON.parse(localStorage.getItem(key) || "{}");
+    const board = state.board.map((row) => row.slice());
+    const hinted = new Set(Array.from(document.querySelectorAll(".tile.idle-hint"))
+      .map((tile) => `${tile.dataset.x},${tile.dataset.y}`));
+    const runsAfterSwap = (a, b) => {
+      const previous = board[a.y][a.x];
+      board[a.y][a.x] = board[b.y][b.x];
+      board[b.y][b.x] = previous;
+      const runs = [];
+      for (let y = 0; y < 8; y += 1) {
+        for (let start = 0, x = 1; x <= 8; x += 1) {
+          if (x === 8 || board[y][x] !== board[y][start]) {
+            if (x - start >= 3) {
+              runs.push(Array.from({ length: x - start }, (_, offset) => [start + offset, y]));
+            }
+            start = x;
+          }
+        }
+      }
+      for (let x = 0; x < 8; x += 1) {
+        for (let start = 0, y = 1; y <= 8; y += 1) {
+          if (y === 8 || board[y][x] !== board[start][x]) {
+            if (y - start >= 3) {
+              runs.push(Array.from({ length: y - start }, (_, offset) => [x, start + offset]));
+            }
+            start = y;
+          }
+        }
+      }
+      board[b.y][b.x] = board[a.y][a.x];
+      board[a.y][a.x] = previous;
+      const moved = new Set([`${a.x},${a.y}`, `${b.x},${b.y}`]);
+      return runs.filter((run) => run.some(([x, y]) => moved.has(`${x},${y}`)));
+    };
+    const candidates = [];
+    for (let y = 0; y < 8; y += 1) {
+      for (let x = 0; x < 8; x += 1) {
+        for (const [dx, dy] of [[1, 0], [0, 1]]) {
+          const a = { x, y };
+          const b = { x: x + dx, y: y + dy };
+          if (b.x >= 8 || b.y >= 8) continue;
+          if (hinted.has(`${a.x},${a.y}`) || hinted.has(`${b.x},${b.y}`)) continue;
+          const runs = runsAfterSwap(a, b);
+          if (!runs.length) continue;
+          const touchesThorn = runs.some((run) => run.some(([runX, runY]) => (
+            state.cursedThorns.some((thorn) => (
+              Math.abs(thorn.x - runX) + Math.abs(thorn.y - runY) <= 1
+            ))
+          )));
+          if (touchesThorn) continue;
+          const changesTeachingColumn = runs.some((run) => run.some(([runX]) => runX <= 2));
+          if (!changeTeachingColumn || changesTeachingColumn) {
+            candidates.push([a, b]);
+          }
+        }
+      }
+    }
+    return candidates[0] || [];
+  }, { key: SAVE_KEY, changeTeachingColumn });
+}
+
 async function completeNaturalRoundOne(page, input) {
   for (let move = 0; move < 7; move += 1) {
     if (await page.locator("#roundOneRestoration").isVisible()) break;
@@ -468,6 +531,30 @@ function expectAuthoritativeThornLesson(report, label, { selected = null } = {})
   expect(report.selectedCells, `${label} coherent selection`).toEqual(selected ? [selected] : []);
 }
 
+function expectRecoveredThornLesson(report, testCase, expectedState, expectedGuideCells, label) {
+  expect(report.state.moves, `${label} spent off-guide move retained`).toBe(expectedState.moves);
+  expect(report.state.counts, `${label} earned flower credit retained`).toEqual(expectedState.counts);
+  expect(report.state.clearedCursedThorns, `${label} untouched Thorn progress`).toBe(0);
+  expect(report.state.cursedThorns, `${label} all blockers remain`).toHaveLength(3);
+  expect(report.tutorialVisible, `${label} lesson visible`).toBe(true);
+  expect(report.tutorialCopy, `${label} literal Thorn copy`).toBe("Match beside the Thorn.");
+  expect(report.guideCells, `${label} deterministic recomputed pair`).toEqual(expectedGuideCells);
+  expect(report.thornSwapTiles, `${label} two recomputed cause tiles`).toBe(2);
+  expect(report.thornTargets, `${label} three blocker targets`).toBe(3);
+  expect(report.guideOverlays, `${label} one recomputed guide overlay`).toBe(1);
+  expect(report.selectedCells, `${label} settled selection cleared`).toEqual([]);
+  expect(report.focusedTile, `${label} recomputed source focused`).toBe(true);
+  expect(report.focusableTiles, `${label} one roving tile`).toBe(1);
+  expect(report.tiles, `${label} tile integrity`).toBe(64);
+  expect(report.rows, `${label} eight authoritative rows`).toBe(8);
+  expect(report.completeRows, `${label} eight visible rows`).toBe(8);
+  expect(report.completeColumns, `${label} eight visible columns`).toBe(8);
+  expect(report.disabledTiles, `${label} control returned`).toBe(0);
+  expect(report.boardBottom, `${label} board in first viewport`).toBeLessThanOrEqual(testCase.viewport.height);
+  expect(report.overflowX, `${label} no horizontal overflow`).toBe(false);
+  expect(report.brokenImages, `${label} no broken images`).toEqual([]);
+}
+
 for (const testCase of CASES) {
   test(`Round 1 restoration hands off cleanly to Round 2 on ${testCase.label}`, async ({ browser }) => {
     const context = await browser.newContext({
@@ -590,14 +677,55 @@ for (const testCase of CASES) {
       expectAuthoritativeThornLesson(report, `${testCase.label} replay refusal cleanup`);
       expect(report.invalidTiles, `${testCase.label} refusal cleanup`).toBe(0);
 
-      const authoritativeOpening = JSON.stringify(report.state);
+      const offGuidePair = testCase.reduced
+        ? await legalOffGuidePair(page, { changeTeachingColumn: true })
+        : [{ x: 4, y: 0 }, { x: 5, y: 0 }];
+      expect(offGuidePair, `${testCase.label} natural off-guide pair`).toHaveLength(2);
+      const beforeOffGuide = report.state;
+      await activatePair(page, offGuidePair, testCase.input);
+      await page.waitForFunction(({ key, moves }) => {
+        const state = JSON.parse(localStorage.getItem(key) || "{}");
+        return state.moves === moves - 1
+          && state.clearedCursedThorns === 0
+          && document.querySelectorAll(".tile").length === 64
+          && Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled);
+      }, { key: SAVE_KEY, moves: beforeOffGuide.moves }, { timeout: 12000 });
+      await expect(page.locator(".tile.thorn-teach")).toHaveCount(2, { timeout: 7000 });
+      report = await handoffReport(page);
+      const offGuideFlowerCredit = report.state.counts.reduce((sum, count) => sum + count, 0)
+        - beforeOffGuide.counts.reduce((sum, count) => sum + count, 0);
+      expect(report.state.moves, `${testCase.label} off-guide move spends once`).toBe(8);
+      expect(offGuideFlowerCredit, `${testCase.label} off-guide move earns real flowers`).toBeGreaterThan(0);
+      expect(report.state.clearedCursedThorns, `${testCase.label} off-guide move leaves Thorns untouched`).toBe(0);
+      guide = await usefulGuideReport(page);
+      expect(guide.legal, `${testCase.label} recovered guide is legal`).toBe(true);
+      expect(guide.useful, `${testCase.label} recovered guide damages a Thorn`).toBe(true);
+      const recoveredGuideCells = report.guideCells;
+      const recoveredState = JSON.stringify(report.state);
+      expectRecoveredThornLesson(
+        report,
+        testCase,
+        report.state,
+        recoveredGuideCells,
+        `${testCase.label} off-guide recovery`
+      );
+      await page.screenshot({
+        path: `work/round-two-thorn-off-guide-recovery-${testCase.label}.png`
+      });
+
       for (let reload = 1; reload <= 2; reload += 1) {
         await page.reload({ waitUntil: "networkidle" });
         await expect(page.locator(".tile.thorn-teach")).toHaveCount(2, { timeout: 7000 });
         await page.waitForTimeout(100);
         report = await handoffReport(page);
-        expectReadyHandoff(report, testCase, `${testCase.label} reload ${reload}`);
-        expect(JSON.stringify(report.state), `${testCase.label} authoritative reload ${reload}`).toBe(authoritativeOpening);
+        expectRecoveredThornLesson(
+          report,
+          testCase,
+          JSON.parse(recoveredState),
+          recoveredGuideCells,
+          `${testCase.label} recovered reload ${reload}`
+        );
+        expect(JSON.stringify(report.state), `${testCase.label} settled reload ${reload}`).toBe(recoveredState);
         guide = await usefulGuideReport(page);
         expect(guide.legal, `${testCase.label} reload ${reload} legal guide`).toBe(true);
         expect(guide.useful, `${testCase.label} reload ${reload} useful guide`).toBe(true);
@@ -622,7 +750,7 @@ for (const testCase of CASES) {
       const afterThornHp = after.state.cursedThorns.reduce((sum, thorn) => sum + thorn.hp, 0);
       expect(after.state.moves, `${testCase.label} one move spent`).toBe(before.moves - 1);
       expect(afterThornHp, `${testCase.label} thorn HP damaged`).toBeLessThan(beforeThornHp);
-      expect(after.state.clearedCursedThorns, `${testCase.label} thorn progress`).toBeGreaterThan(before.clearedCursedThorns);
+      expect(after.state.clearedCursedThorns, `${testCase.label} Thorn goal seals`).toBe(3);
       expect(after.state.counts[guide.targetFlowerId], `${testCase.label} flower progress`).toBeGreaterThan(before.counts[guide.targetFlowerId]);
       expect(thornEvents.some((event) => event === "CRACK" || event === "BREAK"), `${testCase.label} localized crack feedback`).toBe(true);
       expect(after.transitionNodeCount, `${testCase.label} shared transition surface retained`).toBe(1);
@@ -650,13 +778,17 @@ for (const testCase of CASES) {
       expect(completedLessonReplay.guideOverlays, `${testCase.label} completed lesson Help does not restore overlay`).toBe(0);
       await activateControl(page, "#tutorialSkipBtn", testCase.input);
 
-      await page.evaluate((key) => {
-        const state = JSON.parse(localStorage.getItem(key));
-        state.moves = 0;
-        state.roundComplete = false;
-        localStorage.setItem(key, JSON.stringify(state));
-      }, SAVE_KEY);
-      await page.reload({ waitUntil: "networkidle" });
+      await Promise.all([
+        page.waitForNavigation({ waitUntil: "networkidle" }),
+        page.evaluate((key) => {
+          const state = JSON.parse(localStorage.getItem(key));
+          state.moves = 0;
+          state.counts = [0, 0, 0, 0, 0, 0];
+          state.roundComplete = false;
+          localStorage.setItem(key, JSON.stringify(state));
+          window.location.reload();
+        }, SAVE_KEY)
+      ]);
       await expect(page.locator("#renewBtn.visible")).toHaveText("Retry Bouquet");
       if (testCase.input === "touch") await page.locator("#renewBtn.visible").tap();
       else await page.locator("#renewBtn.visible").click();
