@@ -1,5 +1,18 @@
 # Codex Build Notes
 
+## 2026-07-18 physically legible bouquet growth
+
+- Files changed by the complete slice: `playable/midnight_bloom_prototype.html`, `scripts/verify_payoff_ceremony_contract.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.
+- Player-visible result: the live bouquet receiver is wider and each objective gain now visibly grows the next physical flower head instead of targeting a dim or already-complete slot. The first authored Thorn Rose harvest leaves two formed heads, mixed Thorn Rose/Bone Star gains bind to separate blooms, and empty stems/heads stay subdued until earned.
+- Continuity and authority: slot fullness still derives only from objective counts. Presentation-only `--ingredient-visual-progress` makes partial gains readable without changing moves, objectives, coins, saves, rounds, or completion authority. Partial bouquet growth survives reload exactly, while objective flights and `+3 bound` seals clean up before the next interaction.
+- Desktop/mobile geometry: the active receiver is `220px` on desktop and up to `260px` in the focused mobile strip. Exact `390x844` mobile retains the complete eight-row board in the first viewport with no horizontal overflow. Simultaneous seals are compact and land on distinct growing Thorn Rose and Bone Star heads.
+- Visual evidence inspected: `work/live-bouquet-desktop-first-landing.png`, `work/live-bouquet-mobile390-first-landing.png`, `work/live-bouquet-desktop-mixed-simultaneous-landing.png`, and `work/live-bouquet-mobile390-mixed-simultaneous-landing.png`; deployed normal-player captures were also inspected after the first guided move and reload on desktop and exact mobile.
+- Local verification: `python3 scripts/verify_project.py`, changed spec and extracted inline JavaScript syntax, `git diff --check`, and the changed-line credential/tracker/network/private-IP scan passed. The focused payoff contract passed `7/7`. The pre-integration serial gameplay matrix passed `80/80` in `24.4m`, covering success/failure, both economy cycles, save/reload, Retry, desktop, exact mobile, reduced motion, input modes, runtime budgets, images, overflow, console/page/request errors, and fairness. After integrating the orthogonal Help-replay descendant, the complete affected payoff/Thorn/tutorial matrix passed `35/35` in `9.4m`.
+- Commit/deployment: gameplay commit `895bec6fb3070a3ace376dae9e7ad4b5a6ae8e11` was pushed to `main`. GitHub Pages is byte-identical to the committed playable at SHA-256 `4bc998c1031f02d24c2018eab488fe9bb4001eced5caa314bea6081b326d2a26`.
+- Public verification: a no-review normal-player smoke on GitHub Pages completed the real guided first swap on desktop and exact `390x844` mobile, advanced Moves `6 -> 5` and Bouquet `0/14 -> 3/14`, formed two visible heads, retained 64 tiles/eight rows, persisted the same state across reload, and reported zero broken images, overflow, console/page errors, or failed requests.
+- Security/scope status: no credentials, private keys/tokens, trackers, analytics, external network hooks, private IPs, dependencies, assets, backends, accounts, ads, permissions, save-schema changes, rounds, objectives, controls, currencies, economy values, or protected Diablo expression were added.
+- Known risk: canonical Vercel remained byte-identical to parent commit `24d8a15` during the bounded post-push check, while GitHub Pages was current and fully verified. No gameplay defect is known.
+
 ## 2026-07-18 replayable direct Thorn lesson geometry
 
 - Files changed by the complete slice: `playable/midnight_bloom_prototype.html`, `scripts/verify_round_two_handoff.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.
