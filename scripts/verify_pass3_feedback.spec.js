@@ -226,7 +226,110 @@ async function startThornFeedbackRecorder(page) {
   });
 }
 
+async function thornGoalPresentation(page) {
+  return page.evaluate(() => {
+    const visible = (node) => {
+      if (!node) return false;
+      const bounds = node.getBoundingClientRect();
+      const style = getComputedStyle(node);
+      return style.display !== "none"
+        && style.visibility !== "hidden"
+        && Number(style.opacity || 1) > 0
+        && bounds.width > 0
+        && bounds.height > 0;
+    };
+    const rect = (node) => {
+      const bounds = node?.getBoundingClientRect();
+      return bounds
+        ? {
+            left: bounds.left,
+            top: bounds.top,
+            right: bounds.right,
+            bottom: bounds.bottom,
+            width: bounds.width,
+            height: bounds.height
+          }
+        : null;
+    };
+    const contained = (inner, outer) => Boolean(
+      inner
+      && outer
+      && inner.left >= outer.left - 1
+      && inner.top >= outer.top - 1
+      && inner.right <= outer.right + 1
+      && inner.bottom <= outer.bottom + 1
+    );
+    const target = document.querySelector('[data-thorn-objective="true"]');
+    const seal = target?.querySelector(".objective-target-seal");
+    const count = target?.querySelector(".objective-target-count");
+    const targetRect = rect(target);
+    const sealRect = rect(seal);
+    const countRect = rect(count);
+    const objectiveRect = rect(document.querySelector("#objective"));
+    const boardRect = rect(document.querySelector("#board"));
+    return {
+      text: target?.textContent.replace(/\s+/g, " ").trim() || "",
+      className: target?.className || "",
+      complete: target?.classList.contains("complete") || false,
+      pulse: target?.classList.contains("order-pulse") || false,
+      sealCount: target?.querySelectorAll(".objective-target-seal").length || 0,
+      sealText: seal?.textContent.trim() || "",
+      ariaLabel: target?.getAttribute("aria-label") || "",
+      ariaLive: target?.getAttribute("aria-live"),
+      borderColor: target ? getComputedStyle(target).borderColor : "",
+      targetRect,
+      sealRect,
+      countRect,
+      objectiveRect,
+      boardRect,
+      sealContained: !seal || contained(sealRect, targetRect),
+      countContained: contained(countRect, targetRect),
+      thornLessonActive: document.body.classList.contains("thorn-lesson-active"),
+      thornHints: document.querySelectorAll(".tile.thorn-teach").length,
+      visibleThorns: Array.from(document.querySelectorAll(".thorn-seal")).filter(visible).length,
+      movesText: document.querySelector(".moves-counter")?.textContent.trim() || "",
+      tiles: document.querySelectorAll(".tile").length,
+      rows: new Set(Array.from(document.querySelectorAll(".tile")).map((tile) => tile.dataset.y)).size,
+      overflowX: document.documentElement.scrollWidth > window.innerWidth + 1,
+      brokenImages: Array.from(document.images)
+        .filter((image) => visible(image) && image.complete && image.naturalWidth === 0)
+        .map((image) => image.getAttribute("src"))
+    };
+  });
+}
+
+function expectOpenThornGoal(report, progress) {
+  expect(report.text).toContain(`${progress}/3`);
+  expect(report.complete).toBe(false);
+  expect(report.sealCount).toBe(0);
+  expect(report.ariaLabel).toBe(`Cursed Thorn goal, ${progress} of 3 cleared`);
+  expect(report.ariaLive).toBeNull();
+  expect(report.countContained).toBe(true);
+}
+
+function expectSealedThornGoal(report) {
+  expect(report.text).toContain("3/3");
+  expect(report.complete).toBe(true);
+  expect(report.sealCount).toBe(1);
+  expect(report.sealText).toBe("Sealed");
+  expect(report.ariaLabel).toBe("Cursed Thorn goal sealed, 3 of 3 cleared");
+  expect(report.ariaLive).toBeNull();
+  expect(report.sealContained).toBe(true);
+  expect(report.countContained).toBe(true);
+  expect(report.thornLessonActive).toBe(false);
+  expect(report.thornHints).toBe(0);
+  expect(report.tiles).toBe(64);
+  expect(report.rows).toBe(8);
+  expect(report.overflowX).toBe(false);
+  expect(report.brokenImages).toEqual([]);
+}
+
 async function playThornLesson(page, screenshotPath) {
+  const initialPresentation = await thornGoalPresentation(page);
+  expectOpenThornGoal(initialPresentation, 0);
+  expect(initialPresentation.thornLessonActive).toBe(true);
+  expect(initialPresentation.thornHints).toBe(2);
+
   const before = await page.evaluate((key) => {
     const state = JSON.parse(localStorage.getItem(key));
     return {
@@ -305,6 +408,78 @@ async function playThornLesson(page, screenshotPath) {
   expect(after.thorns).toBe(0);
   expect(after.tiles).toBe(64);
   expect(after.rows).toBe(8);
+
+  const sealedPresentation = await thornGoalPresentation(page);
+  expectSealedThornGoal(sealedPresentation);
+  expect(sealedPresentation.pulse).toBe(false);
+  expect(
+    sealedPresentation.objectiveRect.height,
+    "sealing the thorn goal does not increase the compact objective row"
+  ).toBeLessThanOrEqual(initialPresentation.objectiveRect.height + 1);
+  expect(
+    sealedPresentation.boardRect.top,
+    "sealing the thorn goal does not move the altar"
+  ).toBeLessThanOrEqual(initialPresentation.boardRect.top + 1);
+  await page.screenshot({
+    path: screenshotPath.replace("thorn-damage", "thorn-sealed"),
+    fullPage: true
+  });
+
+  for (let reloadIndex = 0; reloadIndex < 2; reloadIndex += 1) {
+    await page.reload({ waitUntil: "networkidle" });
+    await expect(page.locator(".tile")).toHaveCount(64);
+    const reloaded = await thornGoalPresentation(page);
+    expectSealedThornGoal(reloaded);
+    expect(reloaded.pulse, `reload ${reloadIndex + 1} does not replay the seal pulse`).toBe(false);
+  }
+
+  const sealedSave = await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY);
+  await Promise.all([
+    page.waitForNavigation({ waitUntil: "networkidle" }),
+    page.evaluate((key) => {
+      const state = JSON.parse(localStorage.getItem(key));
+      state.clearedCursedThorns = 2;
+      state.cursedThorns = [{ x: 2, y: 1, hp: 1 }];
+      localStorage.setItem(key, JSON.stringify(state));
+      location.reload();
+    }, SAVE_KEY)
+  ]);
+  await expect(page.locator(".tile")).toHaveCount(64);
+  expectOpenThornGoal(await thornGoalPresentation(page), 2);
+
+  await Promise.all([
+    page.waitForNavigation({ waitUntil: "networkidle" }),
+    page.evaluate(({ key, saved }) => {
+      localStorage.setItem(key, saved);
+      location.reload();
+    }, {
+      key: SAVE_KEY,
+      saved: sealedSave
+    })
+  ]);
+  await expect(page.locator(".tile")).toHaveCount(64);
+  expectSealedThornGoal(await thornGoalPresentation(page));
+
+  await Promise.all([
+    page.waitForNavigation({ waitUntil: "networkidle" }),
+    page.evaluate((key) => {
+      const state = JSON.parse(localStorage.getItem(key));
+      state.moves = 3;
+      localStorage.setItem(key, JSON.stringify(state));
+      location.reload();
+    }, SAVE_KEY)
+  ]);
+  const lowMovesSealed = await thornGoalPresentation(page);
+  expectSealedThornGoal(lowMovesSealed);
+  expect(lowMovesSealed.movesText).toContain("Moves 3");
+  expect(
+    lowMovesSealed.objectiveRect.height,
+    "Moves 3 and the sealed thorn goal share the existing compact objective row"
+  ).toBeLessThanOrEqual(initialPresentation.objectiveRect.height + 1);
+  expect(
+    lowMovesSealed.boardRect.bottom,
+    "the complete altar remains inside the first viewport"
+  ).toBeLessThanOrEqual(await page.evaluate(() => window.innerHeight - 4));
 }
 
 async function forceRoundTwoFailureAndRetry(page) {

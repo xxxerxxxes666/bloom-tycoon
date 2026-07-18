@@ -147,6 +147,8 @@ async function boardReport(page) {
       return style.display !== "none" && style.visibility !== "hidden" && Number(style.opacity || 1) !== 0 && rect.width > 0 && rect.height > 0;
     };
     const tiles = Array.from(document.querySelectorAll("#board .tile"));
+    const boardRect = document.querySelector("#board")?.getBoundingClientRect();
+    const cueRect = document.querySelector("#firstSwapCue")?.getBoundingClientRect();
     return {
       tiles: tiles.length,
       rows: new Set(tiles.map((tile) => tile.dataset.y)).size,
@@ -160,6 +162,17 @@ async function boardReport(page) {
       competing: document.querySelectorAll(".cascade-wave-label, .board-particle, .tile.invalid-swap, .first-action-swap-guide, .swap-path-arrow").length,
       brokenImages: Array.from(document.images).filter((image) => image.complete && image.naturalWidth === 0).map((image) => image.src),
       overflowX: document.documentElement.scrollWidth > innerWidth + 1,
+      boardTop: boardRect?.top || 0,
+      boardBottom: boardRect?.bottom || 0,
+      boardWidth: boardRect?.width || 0,
+      boardHeight: boardRect?.height || 0,
+      cueRight: cueRect?.right || 0,
+      cueOverlapsBoard: Boolean(
+        cueRect
+        && boardRect
+        && Math.min(cueRect.right, boardRect.right) - Math.max(cueRect.left, boardRect.left) > 1
+        && Math.min(cueRect.bottom, boardRect.bottom) - Math.max(cueRect.top, boardRect.top) > 1
+      ),
       completeRowsInViewport: new Set(tiles.filter((tile) => {
         const rect = tile.getBoundingClientRect();
         return rect.top >= -1 && rect.bottom <= innerHeight + 1;
@@ -194,6 +207,10 @@ test("desktop click recovery presents one reweave and an objective-useful contin
   const active = await boardReport(page);
   expect(active).toMatchObject({ tiles: 64, rows: 8, disabled: 64, cueVisible: true, phase: "active", sequence: 1, competing: 0, overflowX: false, brokenImages: [] });
   expect(active.cue).toBe("No moves — altar reweaving.");
+  expect(active.boardBottom, "desktop active reweave keeps the full altar in view").toBeLessThanOrEqual(716);
+  expect(active.boardWidth).toBeCloseTo(480, 0);
+  expect(active.boardHeight).toBeCloseTo(480, 0);
+  expect(active.cueOverlapsBoard, "desktop active reweave cue stays beside the altar").toBe(false);
   expect(activeSaved.moves).toBe(fixture.moves - 1);
   await page.screenshot({ path: "work/dead-board-reweave-desktop-active.png" });
   await waitForGuidedControl(page);
@@ -208,6 +225,10 @@ test("desktop click recovery presents one reweave and an objective-useful contin
   const settled = await boardReport(page);
   expect(settled).toMatchObject({ tiles: 64, rows: 8, disabled: 0, guideCount: 1, idleHints: 2, cueVisible: true, phase: "guided", sequence: 1, overflowX: false, brokenImages: [] });
   expect(settled.cue).toContain("Path restored");
+  expect(settled.boardBottom, "desktop guided reweave keeps the full altar in view").toBeLessThanOrEqual(716);
+  expect(settled.boardWidth).toBeCloseTo(480, 0);
+  expect(settled.boardHeight).toBeCloseTo(480, 0);
+  expect(settled.cueOverlapsBoard, "desktop guided cue stays beside the altar").toBe(false);
   expect(settledSaved).toMatchObject({
     moves: activeSaved.moves,
     coins: activeSaved.coins,
