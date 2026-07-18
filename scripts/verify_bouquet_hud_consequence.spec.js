@@ -551,6 +551,11 @@ async function roundTwoHandoffReport(page) {
       clearedCursedThorns: state.clearedCursedThorns || 0,
       cursedThorns: Array.isArray(state.cursedThorns) ? state.cursedThorns.length : 0,
       enabledTiles: document.querySelectorAll(".tile:not(:disabled)").length,
+      invalidTiles: document.querySelectorAll(".tile.invalid-swap").length,
+      idleHints: Array.from(document.querySelectorAll(".tile.idle-hint"), (tile) => ({
+        x: Number(tile.dataset.x),
+        y: Number(tile.dataset.y)
+      })),
       tabStops: document.querySelectorAll(".tile[tabindex='0']").length,
       focusedTile: document.activeElement?.classList.contains("tile") || false,
       thornComplete: thornGoal?.classList.contains("complete") || false,
@@ -1349,6 +1354,140 @@ for (const config of ROUND_TWO_HANDOFF_INPUTS) {
     }
     expect(idleErrors, `${config.label} final-order idle runtime errors`).toEqual([]);
     await idleContext.close();
+
+    const refusalContext = await browser.newContext(contextOptions);
+    const refusalPage = await refusalContext.newPage();
+    const refusalErrors = [];
+    refusalPage.on("console", (message) => {
+      if (message.type() === "error") refusalErrors.push(message.text());
+    });
+    refusalPage.on("pageerror", (error) => refusalErrors.push(error.message));
+    await refusalPage.addInitScript(({ key, state, marker }) => {
+      if (!sessionStorage.getItem(marker)) {
+        localStorage.setItem(key, JSON.stringify(state));
+        sessionStorage.setItem(marker, "1");
+      }
+    }, {
+      key: SAVE_KEY,
+      state: upgradedRoundTwoHandoffState(),
+      marker: `round-three-handoff-refusal-${config.label}`
+    });
+    await refusalPage.goto(
+      `${BASE_URL}?round-three-handoff-refusal=${config.label}`,
+      { waitUntil: "networkidle" }
+    );
+    const refusalAction = refusalPage.locator("#nextOrderBtn");
+    await expect(refusalAction).toBeFocused();
+    if (config.input === "keyboard") {
+      await refusalPage.keyboard.press("Enter");
+    } else if (config.input === "touch") {
+      await refusalAction.tap();
+    } else {
+      await refusalAction.click();
+    }
+    await refusalPage.waitForTimeout(150);
+
+    const performInvalidPair = async () => {
+      const source = refusalPage.locator('.tile[data-x="0"][data-y="0"]');
+      const destination = refusalPage.locator('.tile[data-x="0"][data-y="1"]');
+      if (config.input === "keyboard") {
+        await source.focus();
+        await refusalPage.keyboard.press("Enter");
+        await refusalPage.keyboard.press("ArrowDown");
+      } else if (config.input === "touch") {
+        const sourceBox = await source.boundingBox();
+        const destinationBox = await destination.boundingBox();
+        await refusalPage.touchscreen.tap(
+          sourceBox.x + sourceBox.width / 2,
+          sourceBox.y + sourceBox.height / 2
+        );
+        await refusalPage.touchscreen.tap(
+          destinationBox.x + destinationBox.width / 2,
+          destinationBox.y + destinationBox.height / 2
+        );
+      } else {
+        await source.click();
+        await destination.click();
+      }
+    };
+
+    for (let refusal = 0; refusal < 2; refusal += 1) {
+      await performInvalidPair();
+      await refusalPage.waitForTimeout(140);
+      const peak = await roundTwoHandoffReport(refusalPage);
+      assertRoundTwoHandoffGeometry(
+        peak,
+        config.viewport,
+        `${config.label} final-order refusal ${refusal + 1}`
+      );
+      if (refusal === 0) {
+        expect(peak.handoffActive, `${config.label} invalid pair preserves handoff`).toBe(true);
+        expect(peak.instructionSurfaces, `${config.label} handoff remains sole narrator`).toEqual([{
+          id: "nextOrderCue",
+          text: "Moonlit Upgrade · Bloodroot Compact · Match Bloodroot + Sol Rot"
+        }]);
+        await refusalPage.screenshot({
+          path: `work/round-three-handoff-refusal-${config.label}.png`,
+          fullPage: true
+        });
+      }
+      expect(peak.invalidTiles, `${config.label} refusal marks both tiles`).toBe(2);
+      expect(peak.moves, `${config.label} refusal spends no move`).toBe(8);
+      expect(peak.counts, `${config.label} refusal credits no flowers`).toEqual([0, 0, 0, 0, 0, 0]);
+      expect(peak.coins, `${config.label} refusal preserves coins`).toBe(50);
+    }
+
+    await expect(refusalPage.locator(".tile.invalid-swap")).toHaveCount(0, { timeout: 1800 });
+    await expect.poll(async () => (
+      (await roundTwoHandoffReport(refusalPage)).handoffActive
+    ), { timeout: 3500 }).toBe(false);
+    await expect(refusalPage.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 9000 });
+    const recoveredGuide = await roundTwoHandoffReport(refusalPage);
+    expect(
+      recoveredGuide.instructionSurfaces.some((surface) => surface.id === "nextOrderCue"),
+      `${config.label} final-order handoff does not replay`
+    ).toBe(false);
+    expect(recoveredGuide.idleHints, `${config.label} exactly one legal hint pair`).toHaveLength(2);
+
+    const [hintSourceCell, hintDestinationCell] = recoveredGuide.idleHints;
+    const hintSource = refusalPage.locator(
+      `.tile[data-x="${hintSourceCell.x}"][data-y="${hintSourceCell.y}"]`
+    );
+    const hintDestination = refusalPage.locator(
+      `.tile[data-x="${hintDestinationCell.x}"][data-y="${hintDestinationCell.y}"]`
+    );
+    if (config.input === "keyboard") {
+      await hintSource.focus();
+      await refusalPage.keyboard.press("Enter");
+      const dx = hintDestinationCell.x - hintSourceCell.x;
+      const dy = hintDestinationCell.y - hintSourceCell.y;
+      await refusalPage.keyboard.press(
+        dx === 1 ? "ArrowRight" : dx === -1 ? "ArrowLeft" : dy === 1 ? "ArrowDown" : "ArrowUp"
+      );
+    } else if (config.input === "touch") {
+      await hintSource.tap();
+      await hintDestination.tap();
+    } else {
+      await hintSource.click();
+      await hintDestination.click();
+    }
+    await expect.poll(async () => {
+      const report = await roundTwoHandoffReport(refusalPage);
+      return {
+        moves: report.moves,
+        enabledTiles: report.enabledTiles
+      };
+    }, { timeout: 10000 }).toEqual({
+      moves: 7,
+      enabledTiles: 64
+    });
+    const recoveredMove = await roundTwoHandoffReport(refusalPage);
+    expect(
+      recoveredMove.counts.reduce((sum, count) => sum + count, 0),
+      `${config.label} recovered hint credits flowers`
+    ).toBeGreaterThan(0);
+    expect(refusalErrors, `${config.label} final-order refusal runtime errors`).toEqual([]);
+    await refusalContext.close();
 
     const actionContext = await browser.newContext(contextOptions);
     const actionPage = await actionContext.newPage();

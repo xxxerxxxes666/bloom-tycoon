@@ -9112,6 +9112,8 @@
           cue.classList.remove("swap-refused");
           cue.textContent = returnCue;
           idleHintCells = new Set(returnHintCells);
+        } else if (currentRound === 3 && !hasMadeValidMove && !roundComplete && !isBouquetFailed()) {
+          scheduleIdleHint();
         }
         selected = returnSelection ? { ...returnSelection } : null;
         if (selected) {
@@ -10812,9 +10814,6 @@
 
       const target = { x, y };
       retireCompletedInteractionFeedback();
-      if (restoredGreenhouseHandoff && (currentRound === 2 || currentRound === 3)) {
-        finishRestoredGreenhouseHandoff();
-      }
       if (!isLegalSwap(selected, target)) {
         const source = selected;
         selected = null;
@@ -10828,6 +10827,9 @@
           options.restoreSelectionOnRefusal === false ? null : source
         );
         return;
+      }
+      if (restoredGreenhouseHandoff && (currentRound === 2 || currentRound === 3)) {
+        finishRestoredGreenhouseHandoff();
       }
 
       postRecoveryGuideActive = false;
