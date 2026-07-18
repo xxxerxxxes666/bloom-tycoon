@@ -778,17 +778,23 @@ for (const testCase of CASES) {
       expect(completedLessonReplay.guideOverlays, `${testCase.label} completed lesson Help does not restore overlay`).toBe(0);
       await activateControl(page, "#tutorialSkipBtn", testCase.input);
 
-      await Promise.all([
-        page.waitForNavigation({ waitUntil: "networkidle" }),
-        page.evaluate((key) => {
-          const state = JSON.parse(localStorage.getItem(key));
+      await page.addInitScript(({ key, fixtureKey }) => {
+        if (sessionStorage.getItem(fixtureKey)) {
+          return;
+        }
+        sessionStorage.setItem(fixtureKey, "1");
+        const state = JSON.parse(localStorage.getItem(key));
+        if (state) {
           state.moves = 0;
           state.counts = [0, 0, 0, 0, 0, 0];
           state.roundComplete = false;
           localStorage.setItem(key, JSON.stringify(state));
-          window.location.reload();
-        }, SAVE_KEY)
-      ]);
+        }
+      }, {
+        key: SAVE_KEY,
+        fixtureKey: `round-two-retry-${testCase.label}`
+      });
+      await page.reload({ waitUntil: "networkidle" });
       await expect(page.locator("#renewBtn.visible")).toHaveText("Retry Bouquet");
       if (testCase.input === "touch") await page.locator("#renewBtn.visible").tap();
       else await page.locator("#renewBtn.visible").click();
@@ -799,6 +805,248 @@ for (const testCase of CASES) {
       expect(retried.rows, `${testCase.label} Retry rows`).toBe(8);
       expect(retried.overflowX, `${testCase.label} Retry fit`).toBe(false);
       expect(retried.instructionCount, `${testCase.label} Retry does not duplicate the lesson`).toBeLessThanOrEqual(1);
+      expect(consoleErrors, `${testCase.label} console errors`).toEqual([]);
+      expect(pageErrors, `${testCase.label} page errors`).toEqual([]);
+      expect(failedRequests, `${testCase.label} request failures`).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+}
+
+async function roundTwoRelicReport(page) {
+  return page.evaluate((key) => {
+    const visible = (node) => {
+      if (!node) return false;
+      const rect = node.getBoundingClientRect();
+      const style = getComputedStyle(node);
+      return style.display !== "none"
+        && style.visibility !== "hidden"
+        && Number(style.opacity || 1) !== 0
+        && rect.width > 0
+        && rect.height > 0;
+    };
+    const state = JSON.parse(localStorage.getItem(key) || "{}");
+    const relic = state.armedLineRelic || null;
+    const focusedTile = document.activeElement?.classList.contains("tile")
+      ? `${document.activeElement.dataset.x},${document.activeElement.dataset.y}`
+      : "";
+    const tileRects = Array.from(document.querySelectorAll(".tile")).map((tile) => ({
+      y: tile.dataset.y,
+      rect: tile.getBoundingClientRect()
+    }));
+    return {
+      state,
+      tutorialCopy: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
+      tutorialIcon: document.querySelector("#tutorialPanel .tutorial-icon")?.textContent.trim() || "",
+      namedTutorial: document.querySelector("#tutorialPanel")?.classList.contains("black-candle-tutorial") || false,
+      instructionCount: [
+        document.querySelector("#tutorialPanel"),
+        document.querySelector("#firstSwapCue")
+      ].filter(visible).length,
+      hints: Array.from(document.querySelectorAll(".tile.idle-hint")).map((tile) => ({
+        x: Number(tile.dataset.x),
+        y: Number(tile.dataset.y),
+        relic: tile.classList.contains("black-candle-vine"),
+        destination: tile.classList.contains("line-relic-destination")
+      })),
+      laneTiles: document.querySelectorAll(".tile.line-relic-lane-preview").length,
+      destinations: document.querySelectorAll(".tile.line-relic-destination").length,
+      relicTiles: document.querySelectorAll('.tile[data-line-relic="black-candle-vine"]').length,
+      thornCauses: document.querySelectorAll(".tile.thorn-teach").length,
+      thornTargets: document.querySelectorAll(".tile.thorn-teach-blocker").length,
+      guideOverlays: document.querySelectorAll(".swap-path-arrow, .first-action-swap-guide").length,
+      focusedTile,
+      rovingTiles: document.querySelectorAll(".tile[tabindex='0']").length,
+      tiles: tileRects.length,
+      rows: new Set(tileRects.map(({ y }) => y)).size,
+      completeRows: new Set(tileRects
+        .filter(({ rect }) => rect.top >= -1 && rect.bottom <= innerHeight + 1)
+        .map(({ y }) => y)).size,
+      overflowX: document.documentElement.scrollWidth > innerWidth + 1,
+      brokenImages: Array.from(document.images)
+        .filter((image) => visible(image) && image.complete && image.naturalWidth === 0)
+        .map((image) => image.getAttribute("src"))
+    };
+  }, SAVE_KEY);
+}
+
+function expectRoundTwoRelicAuthority(report, testCase, expectedState, label) {
+  const relic = report.state.armedLineRelic;
+  expect(relic, `${label} persisted relic`).toMatchObject({
+    direction: "horizontal",
+    flowerId: 4
+  });
+  expect(report.state.currentRound, `${label} remains Round 2`).toBe(2);
+  expect(report.state.moves, `${label} exact move state`).toBe(expectedState.moves);
+  expect(report.state.counts, `${label} exact flower state`).toEqual(expectedState.counts);
+  expect(report.state.clearedCursedThorns, `${label} Thorn progress stays zero`).toBe(0);
+  expect(report.tutorialCopy, `${label} directional row action`).toBe("Swap right to burn this row.");
+  expect(report.tutorialIcon, `${label} visible category`).toBe("BLACK CANDLE");
+  expect(report.namedTutorial, `${label} named tutorial styling`).toBe(true);
+  expect(report.instructionCount, `${label} one narrator`).toBe(1);
+  expect(report.hints, `${label} exact activation pair`).toHaveLength(2);
+  expect(report.hints.filter((tile) => tile.relic), `${label} relic is hinted`).toHaveLength(1);
+  expect(report.hints.filter((tile) => tile.destination), `${label} destination is hinted`).toHaveLength(1);
+  expect(report.laneTiles, `${label} complete row preview`).toBe(8);
+  expect(report.destinations, `${label} one destination`).toBe(1);
+  expect(report.relicTiles, `${label} one rendered relic`).toBe(1);
+  expect(report.thornCauses, `${label} Thorn cause teaching yields`).toBe(0);
+  expect(report.thornTargets, `${label} Thorn target teaching yields`).toBe(0);
+  expect(report.focusedTile, `${label} DOM focus follows relic`).toBe(`${relic.x},${relic.y}`);
+  expect(report.rovingTiles, `${label} one roving tile`).toBe(1);
+  expect(report.tiles, `${label} tile integrity`).toBe(64);
+  expect(report.rows, `${label} eight rows`).toBe(8);
+  expect(report.completeRows, `${label} complete first viewport board`).toBe(8);
+  expect(report.overflowX, `${label} no overflow`).toBe(false);
+  expect(report.brokenImages, `${label} no broken images`).toEqual([]);
+  if (testCase.mobile) {
+    expect(report.completeRows, `${label} exact mobile rows`).toBe(8);
+  }
+}
+
+for (const testCase of CASES) {
+  test(`Black Candle outranks the active Round 2 Thorn lesson on ${testCase.label}`, async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: testCase.viewport,
+      hasTouch: Boolean(testCase.mobile),
+      isMobile: Boolean(testCase.mobile),
+      reducedMotion: testCase.reduced ? "reduce" : "no-preference"
+    });
+    const page = await context.newPage();
+    const consoleErrors = [];
+    const pageErrors = [];
+    const failedRequests = [];
+    page.on("console", (message) => {
+      if (message.type() === "error") consoleErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    page.on("requestfailed", (request) => failedRequests.push(
+      `${request.url()} ${request.failure()?.errorText || ""}`
+    ));
+
+    try {
+      await seedDeterministicMath(page, `round-two-relic-authority-${testCase.label}`);
+      await page.goto(`${BASE_URL}?round-two-relic-authority=${testCase.label}`, { waitUntil: "networkidle" });
+      await page.evaluate((key) => localStorage.removeItem(key), SAVE_KEY);
+      await page.reload({ waitUntil: "networkidle" });
+      await completeNaturalRoundOne(page, testCase.input);
+      await activateControl(page, "#restoreGreenhouseBtn", testCase.input);
+      await expect(page.locator("#nextOrderBtn")).toBeVisible({ timeout: 7000 });
+      await activateControl(page, "#nextOrderBtn", testCase.input);
+      await expect(page.locator("#tutorialCopy")).toHaveText("Match beside the Thorn.");
+
+      const beforeFormation = await page.evaluate((key) => (
+        JSON.parse(localStorage.getItem(key) || "{}")
+      ), SAVE_KEY);
+      const formationPair = [{ x: 5, y: 0 }, { x: 5, y: 1 }];
+      await activatePair(page, formationPair, testCase.input);
+      await expect(page.locator('.tile[data-line-relic="black-candle-vine"]')).toHaveCount(1, { timeout: 7000 });
+      await page.waitForFunction(({ key, moves }) => {
+        const state = JSON.parse(localStorage.getItem(key) || "{}");
+        return state.moves === moves - 1
+          && Boolean(state.armedLineRelic)
+          && document.querySelectorAll(".tile").length === 64
+          && Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled);
+      }, { key: SAVE_KEY, moves: beforeFormation.moves }, { timeout: 12000 });
+      let report = await roundTwoRelicReport(page);
+      expect(report.state.moves, `${testCase.label} formation spends once`).toBe(8);
+      expect(report.state.counts[4] - beforeFormation.counts[4], `${testCase.label} strict four credits Amber`).toBe(4);
+      expectRoundTwoRelicAuthority(report, testCase, report.state, `${testCase.label} formed`);
+      const armedState = JSON.stringify(report.state);
+      await page.screenshot({
+        path: `work/round-two-black-candle-authority-${testCase.label}.png`
+      });
+
+      for (let reload = 1; reload <= 2; reload += 1) {
+        await page.reload({ waitUntil: "networkidle" });
+        await expect(page.locator('.tile[data-line-relic="black-candle-vine"]')).toHaveCount(1, { timeout: 7000 });
+        report = await roundTwoRelicReport(page);
+        expect(JSON.stringify(report.state), `${testCase.label} reload ${reload} exact state`).toBe(armedState);
+        expectRoundTwoRelicAuthority(
+          report,
+          testCase,
+          JSON.parse(armedState),
+          `${testCase.label} reload ${reload}`
+        );
+      }
+
+      const beforeActivation = report.state;
+      const activationPair = report.hints.map(({ x, y }) => ({ x, y }));
+      await startThornFeedbackRecorder(page);
+      await activatePair(page, activationPair, testCase.input);
+      await page.waitForFunction(({ key, moves }) => {
+        const state = JSON.parse(localStorage.getItem(key) || "{}");
+        return state.moves === moves - 1
+          && !state.armedLineRelic
+          && document.querySelectorAll(".tile").length === 64
+          && Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled);
+      }, { key: SAVE_KEY, moves: beforeActivation.moves }, { timeout: 12000 });
+      const thornEvents = await stopThornFeedbackRecorder(page);
+      report = await roundTwoRelicReport(page);
+      expect(report.state.moves, `${testCase.label} activation spends once`).toBe(7);
+      expect(report.state.clearedCursedThorns, `${testCase.label} row burn seals Thorns`).toBe(3);
+      expect(report.relicTiles, `${testCase.label} relic retires`).toBe(0);
+      expect(report.namedTutorial, `${testCase.label} Black Candle narrator retires`).toBe(false);
+      expect(report.tutorialCopy, `${testCase.label} ordinary Round 2 guidance resumes`).toBe("Finish the Moonlit Wreath.");
+      expect(thornEvents.some((event) => event === "CRACK" || event === "BREAK"), `${testCase.label} Thorn feedback`).toBe(true);
+      expect(report.tiles, `${testCase.label} post-activation tiles`).toBe(64);
+      expect(report.rows, `${testCase.label} post-activation rows`).toBe(8);
+
+      await Promise.all([
+        page.waitForNavigation({ waitUntil: "networkidle" }),
+        page.evaluate((key) => {
+          const state = JSON.parse(localStorage.getItem(key));
+          state.currentRound = 2;
+          state.moves = 8;
+          state.counts = [0, 0, 0, 0, 4, 0];
+          state.coins = 20;
+          state.roundComplete = false;
+          state.roundOneRestored = true;
+          state.roundTwoGreenhouseUpgraded = false;
+          state.tutorialSkipped = false;
+          state.tutorialActive = true;
+          state.hasMadeValidMove = true;
+          state.restoredRoundTwoGuideMoves = 1;
+          state.clearedCursedThorns = 0;
+          state.cursedThorns = [
+            { x: 0, y: 1, hp: 9 },
+            { x: 1, y: 1, hp: 9 },
+            { x: 2, y: 1, hp: 9 }
+          ];
+          state.board = Array.from({ length: 8 }, (_, y) => (
+            Array.from({ length: 8 }, (_, x) => (x + 2 * y) % 6)
+          ));
+          state.board[0][3] = 4;
+          state.armedLineRelic = { x: 3, y: 0, direction: "horizontal", flowerId: 4 };
+          localStorage.setItem(key, JSON.stringify(state));
+          window.location.reload();
+        }, SAVE_KEY)
+      ]);
+      report = await roundTwoRelicReport(page);
+      const partialActivationPair = report.hints.map(({ x, y }) => ({ x, y }));
+      await activatePair(page, partialActivationPair, testCase.input);
+      await page.waitForFunction((key) => {
+        const state = JSON.parse(localStorage.getItem(key) || "{}");
+        return !state.armedLineRelic
+          && state.moves === 7
+          && state.cursedThorns.length === 3
+          && document.querySelectorAll(".tile").length === 64
+          && Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled);
+      }, SAVE_KEY, { timeout: 12000 });
+      report = await handoffReport(page);
+      expect(report.state.clearedCursedThorns, `${testCase.label} damaged Thorns remain incomplete`).toBe(0);
+      expect(report.state.cursedThorns, `${testCase.label} three damaged blockers remain`).toHaveLength(3);
+      expect(report.tutorialCopy, `${testCase.label} Thorn narrator resumes after relic`).toBe("Match beside the Thorn.");
+      expect(report.guideTiles, `${testCase.label} recomputed pair`).toBe(2);
+      expect(report.thornSwapTiles, `${testCase.label} recomputed causes`).toBe(2);
+      expect(report.thornTargets, `${testCase.label} remaining blocker targets`).toBe(3);
+      expect(report.guideOverlays, `${testCase.label} one recomputed overlay`).toBe(1);
+      expect(report.focusedTile, `${testCase.label} recovered source receives focus`).toBe(true);
+      expect(report.tiles, `${testCase.label} partial path tile integrity`).toBe(64);
+      expect(report.rows, `${testCase.label} partial path rows`).toBe(8);
+      expect(report.overflowX, `${testCase.label} partial path no overflow`).toBe(false);
+      expect(report.brokenImages, `${testCase.label} partial path images`).toEqual([]);
       expect(consoleErrors, `${testCase.label} console errors`).toEqual([]);
       expect(pageErrors, `${testCase.label} page errors`).toEqual([]);
       expect(failedRequests, `${testCase.label} request failures`).toEqual([]);

@@ -8139,7 +8139,10 @@
       };
     }
 
-    function authoritativeRoundTwoThornTeachingMove({ allowReauthor = false } = {}) {
+    function authoritativeRoundTwoThornTeachingMove({
+      allowReauthor = false,
+      allowPartialProgress = false
+    } = {}) {
       const authored = roundTwoThornTeachingMoveDetails(roundTwoThornTeachingSwap());
       if (authored && authored.affectedThorns >= cursedThorns.length) {
         return authored;
@@ -8154,7 +8157,10 @@
       }
       if (
         allowReauthor
-        && isAuthoritativeRoundTwoThornLesson()
+        && (
+          isAuthoritativeRoundTwoThornLesson()
+          || (allowPartialProgress && isRoundTwoThornLessonEligible({ allowPartialProgress: true }))
+        )
         && (!strongest || strongest.affectedThorns < cursedThorns.length)
       ) {
         seedRoundTwoThornTeachingMove(activeRoundPlan(), { force: true });
@@ -8897,26 +8903,45 @@
       }
     }
 
-    function isAuthoritativeRoundTwoThornLesson(plan = activeRoundPlan()) {
+    function isRoundTwoThornLessonEligible(
+      { allowPartialProgress = false } = {},
+      plan = activeRoundPlan()
+    ) {
       return Boolean(plan.thornGoal)
         && plan.round === 2
         && tutorialActive
         && isRestoredRoundTwoWindow()
-        && thornGoalProgress(plan) === 0
+        && !armedLineRelic
+        && !thornGoalComplete(plan)
+        && (
+          thornGoalProgress(plan) === 0
+          || allowPartialProgress
+          || thornTeachingSwapCells.size === 2
+        )
         && !roundComplete;
     }
 
-    function restoreAuthoritativeRoundTwoThornLesson({ resetSelection = false } = {}) {
+    function isAuthoritativeRoundTwoThornLesson(plan = activeRoundPlan()) {
+      return isRoundTwoThornLessonEligible({}, plan);
+    }
+
+    function restoreAuthoritativeRoundTwoThornLesson({
+      resetSelection = false,
+      allowPartialProgress = false
+    } = {}) {
       const plan = activeRoundPlan();
-      if (!isAuthoritativeRoundTwoThornLesson(plan)) {
+      if (!isRoundTwoThornLessonEligible({ allowPartialProgress }, plan)) {
         return false;
       }
-      const teachingMove = authoritativeRoundTwoThornTeachingMove({ allowReauthor: true });
+      const teachingMove = authoritativeRoundTwoThornTeachingMove({
+        allowReauthor: true,
+        allowPartialProgress
+      });
       if (!teachingMove) {
         return false;
       }
       const openingMove = teachingMove.pair;
-      startThornTeachingCue(plan, teachingMove);
+      startThornTeachingCue(plan, teachingMove, { allowPartialProgress });
       idleHintCells = new Set(openingMove.map((cell) => `${cell.x},${cell.y}`));
       $("firstSwapCue").textContent = roundStartCueText(plan, openingMove);
       if (resetSelection) {
@@ -8927,10 +8952,16 @@
       return true;
     }
 
-    function startThornTeachingCue(plan = activeRoundPlan(), teachingMove = null) {
+    function startThornTeachingCue(
+      plan = activeRoundPlan(),
+      teachingMove = null,
+      { allowPartialProgress = false } = {}
+    ) {
       clearThornTeachingCue(false);
-      const authoritativeLesson = isAuthoritativeRoundTwoThornLesson(plan);
-      const activeTeachingMove = teachingMove || authoritativeRoundTwoThornTeachingMove();
+      const authoritativeLesson = isRoundTwoThornLessonEligible({ allowPartialProgress }, plan);
+      const activeTeachingMove = teachingMove || authoritativeRoundTwoThornTeachingMove({
+        allowPartialProgress
+      });
       if ((!authoritativeLesson && !shouldSeedThornTeachingMove(plan)) || !activeTeachingMove) {
         return;
       }
@@ -10890,7 +10921,18 @@
       if (invalidSwapCells.size > 0) {
         return "Use the glowing pair.";
       }
-      if (plan.round === 2 && plan.thornGoal && thornGoalProgress(plan) === 0) {
+      if (armedLineRelic) {
+        const guidance = lineRelicGuidance();
+        return guidance
+          ? `Swap ${guidance.directionText} to burn this ${guidance.lane}.`
+          : "Swap the vine to clear its lane.";
+      }
+      if (
+        plan.round === 2
+        && plan.thornGoal
+        && !thornGoalComplete(plan)
+        && (thornGoalProgress(plan) === 0 || thornTeachingSwapCells.size === 2)
+      ) {
         return "Match beside the Thorn.";
       }
       if (plan.round === 2 && hasMadeValidMove) {
@@ -10898,12 +10940,6 @@
       }
       if (plan.round === 3 && !roundComplete) {
         return "Complete Bloodroot Compact.";
-      }
-      if (plan.round === 1 && armedLineRelic) {
-        const guidance = lineRelicGuidance();
-        return guidance
-          ? `Swap ${guidance.directionText} to burn this ${guidance.lane}.`
-          : "Swap the vine to clear its lane.";
       }
       if (plan.round === 1 && hasMadeValidMove && $("firstSwapCue").textContent.includes("Black Candle Vine")) {
         return "Match 4 arms Black Candle Vine.";
@@ -10926,7 +10962,7 @@
         return;
       }
       const refusedTutorial = tutorialActive && invalidSwapCells.size > 0;
-      const namedBlackCandle = tutorialActive && currentRound === 1 && Boolean(armedLineRelic) && !refusedTutorial;
+      const namedBlackCandle = tutorialActive && Boolean(armedLineRelic) && !refusedTutorial;
       panel.classList.toggle("black-candle-tutorial", namedBlackCandle);
       panel.classList.toggle("refused-tutorial", refusedTutorial);
       if (icon) {
@@ -11382,7 +11418,8 @@
       } finally {
         isResolving = false;
         if (!roundComplete && !isBouquetFailed() && restoreAuthoritativeRoundTwoThornLesson({
-          resetSelection: true
+          resetSelection: true,
+          allowPartialProgress: Boolean(activatingRelic)
         })) {
           schedulePostResolveIdleHint = false;
         }
@@ -14125,6 +14162,7 @@
         idleHintCells = new Set(guidance.pair.map((cell) => `${cell.x},${cell.y}`));
         boardFocusCell = clampBoardFocusCell(guidance.source);
         $("firstSwapCue").textContent = guidance.cue;
+        queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
       }
     } else if (currentRound === 1 && !roundComplete && !hasMadeValidMove && !isBouquetFailed()) {
       const firstMove = focusedOpeningGuideMove(activeRoundPlan());
