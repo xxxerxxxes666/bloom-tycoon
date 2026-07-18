@@ -8077,6 +8077,53 @@
       return { earned, thorns };
     }
 
+    function estimatedUsefulMoveProgress(move, plan = activeRoundPlan()) {
+      if (!move || !move[0] || !move[1]) {
+        return { earned: 0, thorns: 0, target: null };
+      }
+      const [a, b] = move;
+      swapBoardCells(a, b);
+      const found = matches();
+      let firstTarget = null;
+      const earned = found.reduce((sum, match) => {
+        const target = plan.targets.find((candidate) =>
+          candidate.flowerId === match.val && targetProgress(candidate) < candidate.needed
+        );
+        if (!target) {
+          return sum;
+        }
+        firstTarget ||= target;
+        const shape = analyzeMatchShape(match);
+        const remaining = Math.max(0, target.needed - targetProgress(target));
+        return sum + Math.min(remaining, match.cells.length * (shape.resourceMultiplier || 1));
+      }, 0);
+      const thorns = plan.thornGoal && !thornGoalComplete(plan)
+        ? found.filter((match) => cellsTouchCursedThorn(match.cells)).length
+        : 0;
+      const matchedCells = new Map();
+      found.forEach((match) => {
+        match.cells.forEach(([x, y]) => matchedCells.set(`${x},${y}`, match.val));
+      });
+      const targetFlowerIds = new Set(plan.targets.map((target) => target.flowerId));
+      const targetCells = [...matchedCells.values()]
+        .filter((flowerId) => targetFlowerIds.has(flowerId))
+        .length;
+      const thornCells = [...matchedCells.keys()]
+        .filter((key) => {
+          const [x, y] = key.split(",").map(Number);
+          return cursedThorns.some((thorn) =>
+            Math.abs(thorn.x - x) + Math.abs(thorn.y - y) <= 1
+          );
+        })
+        .length;
+      const strictFourBonus = found.some((match) =>
+        match.runs?.some((run) => run.len >= 4)
+      ) ? 3 : 0;
+      const score = targetCells * 10 + thornCells * 7 + strictFourBonus + matchedCells.size;
+      swapBoardCells(a, b);
+      return { earned, thorns, target: firstTarget, score };
+    }
+
     function roundOneTargetByFlower(flowerId, plan = activeRoundPlan()) {
       return (plan.targets || []).find((target) => target.flowerId === flowerId) || null;
     }
@@ -8738,7 +8785,8 @@
       if (
         plan.round !== 2
         || roundComplete
-        || moves !== 3
+        || moves < 3
+        || moves > 5
         || !thornGoalComplete(plan)
       ) {
         return null;
@@ -8751,7 +8799,7 @@
         }))
         .filter((entry) => entry.deficit > 0 && entry.deficit <= 4);
       const totalDeficit = remainingTargets.reduce((total, entry) => total + entry.deficit, 0);
-      if (remainingTargets.length !== 2 || totalDeficit > 7) {
+      if (remainingTargets.length !== 2 || totalDeficit > 8) {
         return null;
       }
       const original = boardSnapshot();
@@ -8791,7 +8839,20 @@
         return null;
       }
       const deficit = target.needed - targetProgress(target);
-      if (deficit <= 0 || deficit > 4) {
+      const roundThreeEarlyClosingDeficit = plan.round === 3
+        && moves >= 4
+        && moves <= 5
+        && deficit > 4
+        && deficit <= 8;
+      const roundTwoEarlyClosingDeficit = plan.round === 2
+        && moves >= 4
+        && moves <= 5
+        && deficit > 4
+        && deficit <= 8;
+      if (
+        deficit <= 0
+        || (deficit > 4 && !roundTwoEarlyClosingDeficit && !roundThreeEarlyClosingDeficit)
+      ) {
         return null;
       }
       const totalDeficit = focusedTargetDeficit(plan);
@@ -8804,21 +8865,34 @@
         && thornGoalComplete(plan)
         && totalDeficit > 0
         && totalDeficit <= 4;
+      const roundTwoEarlyClosingWindow = plan.round === 2
+        && moves >= 4
+        && moves <= 5
+        && thornGoalComplete(plan)
+        && totalDeficit > 0
+        && totalDeficit <= 8;
       const roundThreeThreeMoveClosingWindow = plan.round === 3
         && moves === 3
         && totalDeficit > 0
         && totalDeficit <= 4;
+      const roundThreeEarlyClosingWindow = plan.round === 3
+        && moves >= 4
+        && moves <= 5
+        && totalDeficit > 0
+        && totalDeficit <= 8;
       const roundThreeFinalFallback = plan.round === 3 && moves === 1;
       if (
         !twoMoveClosingWindow
         && !roundTwoThreeMoveClosingWindow
+        && !roundTwoEarlyClosingWindow
         && !roundThreeThreeMoveClosingWindow
+        && !roundThreeEarlyClosingWindow
         && !roundThreeFinalFallback
       ) {
         return null;
       }
       const preferredX = targetIndex === 1 ? 4 : 0;
-      const lineLength = deficit >= 4 ? 4 : 3;
+      const lineLength = deficit > 4 ? 3 : deficit === 4 ? 4 : 3;
       const original = boardSnapshot();
       const origins = [preferredX, preferredX === 0 ? 4 : 0]
         .flatMap((originX) => [0, 3, lineLength === 4 ? 6 : 5].map((originY) => ({ originX, originY })));
@@ -8835,6 +8909,27 @@
       }
       restoreBoard(original);
       return null;
+    }
+
+    function seedFocusedClosingPacingMove(plan = activeRoundPlan()) {
+      const closableTargets = plan.targets
+        .map((target, targetIndex) => ({
+          target,
+          targetIndex,
+          deficit: target.needed - targetProgress(target)
+        }))
+        .filter((entry) =>
+          entry.deficit > 0
+          && (
+            entry.deficit <= 4
+            || (plan.round === 2 && moves >= 4 && moves <= 5 && entry.deficit <= 8)
+            || (plan.round === 3 && moves >= 4 && moves <= 5 && entry.deficit <= 8)
+          )
+        );
+      return seedRoundTwoDualClosingTargetMove(plan)
+        || closableTargets.reduce((move, entry) => (
+          move || seedFocusedClosingTargetMove(entry.targetIndex, entry.target, plan)
+        ), null);
     }
 
     function nextTargetMoveHint() {
@@ -8886,8 +8981,7 @@
         }
         return "";
       }
-      let move = seedRoundTwoDualClosingTargetMove(plan)
-        || seedFocusedClosingTargetMove(remainingTargetIndex, remainingTarget, plan)
+      let move = seedFocusedClosingPacingMove(plan)
         || findTargetLegalMove(remainingTarget.flowerId, remainingTargetIndex);
       if (!move && isRestoredRoundTwoGuideActive()) {
         seedFocusedGuideMove(remainingTargetIndex, remainingTarget);
@@ -9106,6 +9200,20 @@
       return openingMove;
     }
 
+    function restoreFirstSwapCueAfterRefusal({ preserveCue = false } = {}) {
+      const plan = activeRoundPlan();
+      const openingMove = focusedOpeningGuideMove(plan);
+      const [a, b] = openingMove;
+      if (!a || !b) {
+        return false;
+      }
+      idleHintCells = new Set(openingMove.map((cell) => `${cell.x},${cell.y}`));
+      if (!preserveCue) {
+        $("firstSwapCue").textContent = roundStartCueText(plan, openingMove);
+      }
+      return true;
+    }
+
     function scheduleIdleHint() {
       clearIdleHint();
       const postOnboardingIdleHint = isPostOnboardingIdleHintActive();
@@ -9122,6 +9230,15 @@
         const postOnboardingIdleHintAfterDelay = isPostOnboardingIdleHintActive();
         const armedRelicHintAfterDelay = isArmedLineRelicGuidanceActive();
         if ((hasMadeValidMove && !postOnboardingIdleHintAfterDelay && !armedRelicHintAfterDelay) || roundComplete || isBouquetFailed() || isResolving) {
+          return;
+        }
+        if (
+          postOnboardingIdleHintAfterDelay
+          && (selected || tutorialActive || restoredGreenhouseHandoff || boardGuideTransientStateActive())
+        ) {
+          if (boardDragInputActive()) {
+            scheduleIdleHint();
+          }
           return;
         }
         if (boardDragInputActive()) {
@@ -9157,13 +9274,20 @@
         }
         const targetIndex = plan.targets.findIndex((target) => targetProgress(target) < target.needed);
         const target = plan.targets[targetIndex];
-        const [a, b] = (target ? findTargetLegalMove(target.flowerId, targetIndex) : null) || legalMoves()[0] || [];
+        const usefulMove = postOnboardingIdleHintAfterDelay
+          ? objectiveUsefulIdleMove(plan)
+          : null;
+        const [a, b] = usefulMove?.pair
+          || (target ? findTargetLegalMove(target.flowerId, targetIndex) : null)
+          || legalMoves()[0]
+          || [];
         if (!a || !b) {
           return;
         }
         idleHintCells = new Set([`${a.x},${a.y}`, `${b.x},${b.y}`]);
-        $("firstSwapCue").textContent = plan.round >= 3 && target
-          ? targetCueText(target, a, b)
+        const hintedTarget = usefulMove?.target || target;
+        $("firstSwapCue").textContent = plan.round >= 3 && hintedTarget
+          ? targetCueText(hintedTarget, a, b)
           : firstSwapCueText(a, b);
         render();
       }, hintDelay);
@@ -9182,7 +9306,6 @@
             && (
               (currentRound === 1 && !hasMadeValidMove)
               || isRestoredNextOrderFocus()
-              || isPostOnboardingIdleHintActive()
               || isArmedLineRelicGuidanceActive()
               || postRecoveryGuideActive
             )
@@ -9192,13 +9315,21 @@
 
     function notePlayerInteraction() {
       const preserveThornLesson = isAuthoritativeRoundTwoThornLesson();
+      const restartPostOnboardingHint = isPostOnboardingIdleHintActive();
       if (!postRecoveryGuideActive && !preserveThornLesson) {
         clearIdleHint();
+        document.querySelectorAll(".tile.idle-hint").forEach((tile) => {
+          tile.classList.remove("idle-hint");
+        });
       }
       if (!preserveThornLesson) {
         clearThornTeachingCue(false);
       }
-      if (!postRecoveryGuideActive && !preserveThornLesson && (!hasMadeValidMove || isArmedLineRelicGuidanceActive())) {
+      if (
+        !postRecoveryGuideActive
+        && !preserveThornLesson
+        && (!hasMadeValidMove || isArmedLineRelicGuidanceActive() || restartPostOnboardingHint)
+      ) {
         scheduleIdleHint();
       }
     }
@@ -9647,6 +9778,7 @@
       invalidSwapTimer = window.setTimeout(() => {
         invalidSwapCells.clear();
         invalidSwapTimer = null;
+        const restartPostOnboardingHint = isPostOnboardingIdleHintActive();
         if (focusedCueActive) {
           cue.classList.remove("swap-refused");
           cue.textContent = returnCue;
@@ -9654,8 +9786,6 @@
           if (!idleHintCells.size && currentRound === 1 && tutorialActive) {
             nextTargetMoveHint();
           }
-        } else if (currentRound === 3 && !hasMadeValidMove && !roundComplete && !isBouquetFailed()) {
-          scheduleIdleHint();
         }
         const restoredThornLesson = restoreAuthoritativeRoundTwoThornLesson({ resetSelection: true });
         selected = restoredThornLesson ? null : returnSelection ? { ...returnSelection } : null;
@@ -9670,6 +9800,12 @@
         invalidSwapReturnHintCells.clear();
         invalidSwapReturnSelection = null;
         render();
+        if (
+          (currentRound === 3 && !hasMadeValidMove && !roundComplete && !isBouquetFailed())
+          || (restartPostOnboardingHint && !selected)
+        ) {
+          scheduleIdleHint();
+        }
       }, INVALID_SWAP_FEEDBACK_MS);
     }
 
@@ -9769,6 +9905,9 @@
         return;
       }
 
+      if (!start.dragEstablished) {
+        notePlayerInteraction();
+      }
       start.dragEstablished = true;
       if (event.pointerType === "touch" && event.cancelable !== false && event.preventDefault) {
         event.preventDefault();
@@ -9983,6 +10122,7 @@
         tap(target.x, target.y);
         return;
       }
+      notePlayerInteraction();
       boardFocusCell = target;
       focusBoardCell(target.x, target.y);
     }
@@ -10038,6 +10178,10 @@
           queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
         }
         render();
+        return;
+      }
+      if (isPostOnboardingIdleHintActive()) {
+        scheduleIdleHint();
       }
     }
 
@@ -10175,6 +10319,22 @@
       }
       const fallback = legalMoves()[0] || null;
       return fallback ? { pair: fallback, kind: "fallback", target: null } : null;
+    }
+
+    function objectiveUsefulIdleMove(plan = activeRoundPlan()) {
+      const candidates = legalMoves()
+        .map((pair) => ({ pair, ...estimatedUsefulMoveProgress(pair, plan) }))
+        .filter((candidate) => candidate.thorns > 0 || candidate.earned > 0)
+        .sort((a, b) => (b.score - a.score));
+      const best = candidates[0] || null;
+      if (!best) {
+        return null;
+      }
+      return {
+        pair: best.pair,
+        kind: best.thorns > 0 ? "thorn" : "target",
+        target: best.target
+      };
     }
 
     function primePostRecoveryGuide() {
@@ -10328,9 +10488,19 @@
         && restoredRoundTwoGuideMoves < RESTORED_ROUND_TWO_GUIDE_LIMIT;
     }
 
-    function isPostOnboardingIdleHintActive() {
-      return isRestoredRoundTwoWindow()
-        && restoredRoundTwoGuideMoves >= RESTORED_ROUND_TWO_GUIDE_LIMIT;
+    function isPostOnboardingIdleHintActive(plan = activeRoundPlan()) {
+      return focusedSliceRound(plan)
+        && plan.round >= 2
+        && plan.round <= 3
+        && hasMadeValidMove
+        && !roundComplete
+        && !isBouquetFailed(plan)
+        && !tutorialActive
+        && !restoredGreenhouseHandoff
+        && !isAuthoritativeRoundTwoThornLesson(plan)
+        && !isArmedLineRelicGuidanceActive()
+        && !postRecoveryGuideActive
+        && !altarReweaveActive;
     }
 
     function isArmedLineRelicGuidanceActive() {
@@ -11119,6 +11289,9 @@
       if (tutorialSkipped && !replay) {
         return;
       }
+      if (isPostOnboardingIdleHintActive()) {
+        clearIdleHint();
+      }
       tutorialSkipped = false;
       tutorialActive = true;
       if (replay) {
@@ -11431,6 +11604,7 @@
       if (!isLegalSwap(selected, target)) {
         const source = selected;
         const resetThornLessonAfterRefusal = isAuthoritativeRoundTwoThornLesson();
+        const resetPostOnboardingHintAfterRefusal = isPostOnboardingIdleHintActive();
         selected = null;
         ritualMessage = "The garden refuses that graft.";
         boardFocusCell = source;
@@ -11439,7 +11613,11 @@
           source,
           target,
           selectedHintPair,
-          options.restoreSelectionOnRefusal === false || resetThornLessonAfterRefusal ? null : source
+          options.restoreSelectionOnRefusal === false
+            || resetThornLessonAfterRefusal
+            || resetPostOnboardingHintAfterRefusal
+            ? null
+            : source
         );
         return;
       }
@@ -11528,6 +11706,8 @@
           ritualMessage += nextTargetMoveHint();
         } else if (!resolvingMoveFailed && (guidedRoundTwoLesson || reachedRestoredGuideLimit)) {
           schedulePostResolveIdleHint = true;
+        } else if (!resolvingMoveFailed && isPostOnboardingIdleHintActive()) {
+          schedulePostResolveIdleHint = true;
         } else if (!resolvingMoveFailed) {
           const targetHintCopy = nextTargetMoveHint();
           ritualMessage += targetHintCopy;
@@ -11545,6 +11725,9 @@
         }
         if (!roundComplete && !isBouquetFailed()) {
           pulseMoveUrgency();
+        }
+        if (schedulePostResolveIdleHint && isPostOnboardingIdleHintActive()) {
+          seedFocusedClosingPacingMove();
         }
         const hintedFocus = firstHintFocusCell();
         if (hintedFocus && !roundComplete && !isBouquetFailed()) {

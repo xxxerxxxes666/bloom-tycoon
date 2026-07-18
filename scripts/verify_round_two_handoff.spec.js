@@ -404,11 +404,17 @@ async function usefulGuideReport(page) {
     }
     const moved = new Set([`${a.x},${a.y}`, `${b.x},${b.y}`]);
     const created = runs.filter((run) => run.cells.some(([x, y]) => moved.has(`${x},${y}`)));
+    const unfinishedTargetIds = new Set(Array.from(
+      document.querySelectorAll(".objective-target[data-flower-id]:not(.complete)")
+    ).map((node) => Number(node.dataset.flowerId)));
     const usefulRun = created.find((run) => (
-      [2, 4, 5].includes(run.flowerId)
-      && run.cells.some(([x, y]) => state.cursedThorns.some((thorn) => (
-        Math.abs(thorn.x - x) + Math.abs(thorn.y - y) <= 1
-      )))
+      unfinishedTargetIds.has(run.flowerId)
+      || (
+        [2, 4, 5].includes(run.flowerId)
+        && run.cells.some(([x, y]) => state.cursedThorns.some((thorn) => (
+          Math.abs(thorn.x - x) + Math.abs(thorn.y - y) <= 1
+        )))
+      )
     ));
     return {
       pair,
@@ -614,6 +620,51 @@ for (const testCase of CASES) {
         });
       }
 
+      const untouchedRoundTwoState = JSON.stringify(report.state);
+      const directLessonGuide = guide;
+      await activatePair(page, directLessonGuide.pair, testCase.input);
+      await page.waitForFunction((key) => {
+        const state = JSON.parse(localStorage.getItem(key) || "{}");
+        return state.moves === 8
+          && state.clearedCursedThorns === 3
+          && document.querySelectorAll(".tile").length === 64
+          && Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled);
+      }, SAVE_KEY, { timeout: 12000 });
+      const directLessonSettled = await handoffReport(page);
+      expect(directLessonSettled.state.restoredRoundTwoGuideMoves, `${testCase.label} direct lesson step`).toBe(1);
+      expect(directLessonSettled.state.moves, `${testCase.label} direct lesson spends once`).toBe(8);
+      expect(directLessonSettled.state.clearedCursedThorns, `${testCase.label} direct lesson seals Thorns`).toBe(3);
+      expect(directLessonSettled.thornSwapTiles, `${testCase.label} direct lesson retires causes`).toBe(0);
+      expect(directLessonSettled.thornTargets, `${testCase.label} direct lesson retires blockers`).toBe(0);
+      expect(directLessonSettled.guideOverlays, `${testCase.label} direct lesson retires overlay`).toBe(0);
+      const directLessonFocus = directLessonSettled.activeElementId;
+      await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 8500 });
+      const directAutonomyHint = await handoffReport(page);
+      const directAutonomyGuide = await usefulGuideReport(page);
+      expect(directAutonomyHint.state.moves, `${testCase.label} direct idle hint spends no move`).toBe(8);
+      expect(directAutonomyHint.state.clearedCursedThorns, `${testCase.label} direct idle hint keeps seal`).toBe(3);
+      expect(directAutonomyHint.instructionCount, `${testCase.label} direct idle hint adds no narrator`).toBe(0);
+      expect(directAutonomyHint.thornSwapTiles, `${testCase.label} direct idle hint does not restore causes`).toBe(0);
+      expect(directAutonomyHint.thornTargets, `${testCase.label} direct idle hint does not restore blockers`).toBe(0);
+      expect(directAutonomyHint.guideOverlays, `${testCase.label} direct idle hint adds no tutorial overlay`).toBe(0);
+      expect(directAutonomyHint.activeElementId, `${testCase.label} direct idle hint does not steal focus`).toBe(directLessonFocus);
+      expect(directAutonomyGuide.legal, `${testCase.label} direct idle hint pair is legal`).toBe(true);
+      expect(directAutonomyGuide.useful, `${testCase.label} direct idle hint advances an unfinished flower goal`).toBe(true);
+      await page.screenshot({
+        path: `work/round-two-direct-autonomy-hint-${testCase.label}.png`
+      });
+
+      await page.evaluate(({ key, state }) => {
+        localStorage.setItem(key, state);
+      }, { key: SAVE_KEY, state: untouchedRoundTwoState });
+      await page.reload({ waitUntil: "networkidle" });
+      await expect(page.locator(".tile.thorn-teach")).toHaveCount(2, { timeout: 7000 });
+      report = await handoffReport(page);
+      expectReadyHandoff(report, testCase, `${testCase.label} restored untouched lesson`);
+      guide = await usefulGuideReport(page);
+      expect(guide.legal, `${testCase.label} restored guide is legal`).toBe(true);
+      expect(guide.useful, `${testCase.label} restored guide advances a target beside a thorn`).toBe(true);
+
       await activateControl(page, "#tutorialSkipBtn", testCase.input);
       report = await handoffReport(page);
       expect(report.tutorialVisible, `${testCase.label} Skip retires lesson copy`).toBe(false);
@@ -767,6 +818,25 @@ for (const testCase of CASES) {
       expect(after.boardBottom, `${testCase.label} post-action board fit`).toBeLessThanOrEqual(testCase.viewport.height);
       await page.screenshot({
         path: `work/round-two-handoff-${testCase.label}-post-swap.png`
+      });
+
+      const postLessonFocus = after.activeElementId;
+      await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 8500 });
+      const autonomyHint = await handoffReport(page);
+      const autonomyGuide = await usefulGuideReport(page);
+      expect(autonomyHint.state.moves, `${testCase.label} idle hint spends no move`).toBe(after.state.moves);
+      expect(autonomyHint.state.counts, `${testCase.label} idle hint changes no objectives`).toEqual(after.state.counts);
+      expect(autonomyHint.thornSwapTiles, `${testCase.label} idle hint does not restore Thorn causes`).toBe(0);
+      expect(autonomyHint.thornTargets, `${testCase.label} idle hint does not restore Thorn targets`).toBe(0);
+      expect(autonomyHint.guideOverlays, `${testCase.label} idle hint adds no tutorial overlay`).toBe(0);
+      expect(autonomyHint.activeElementId, `${testCase.label} idle hint does not steal focus`).toBe(postLessonFocus);
+      expect(autonomyGuide.legal, `${testCase.label} idle hint pair is legal`).toBe(true);
+      expect(autonomyGuide.useful, `${testCase.label} idle hint advances an unfinished flower goal`).toBe(true);
+      expect(autonomyHint.tiles, `${testCase.label} idle hint tile integrity`).toBe(64);
+      expect(autonomyHint.rows, `${testCase.label} idle hint rows`).toBe(8);
+      expect(autonomyHint.overflowX, `${testCase.label} idle hint fit`).toBe(false);
+      await page.screenshot({
+        path: `work/round-two-autonomy-hint-${testCase.label}.png`
       });
 
       await activateControl(page, "#tutorialHelpBtn", testCase.input);

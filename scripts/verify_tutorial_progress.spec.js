@@ -2423,7 +2423,9 @@ test("vertical Black Candle Vine follows its anchor flower through gravity", asy
       const formationPair = [{ x: 3, y: 2 }, { x: 4, y: 2 }];
       const beforeFormation = await activeState(page);
       if (testCase.mobile) {
-        await dragTouchViaCdp(page, formationPair);
+        for (const cell of formationPair) {
+          await page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`).tap();
+        }
       } else {
         for (const cell of formationPair) {
           await page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`).dispatchEvent("click");
@@ -2431,7 +2433,7 @@ test("vertical Black Candle Vine follows its anchor flower through gravity", asy
       }
 
       const relic = page.locator('.tile[data-line-relic="black-candle-vine"]');
-      await expect(relic).toHaveCount(1);
+      await expect(relic, `${testCase.label} vertical formation creates one armed relic`).toHaveCount(1);
       await expect.poll(async () => (await activeState(page)).moves).toBe(beforeFormation.moves - 1);
       await waitForSettledBoard(page);
       await page.waitForTimeout(120);
@@ -2507,7 +2509,9 @@ test("vertical Black Candle Vine follows its anchor flower through gravity", asy
       }, { key: SAVE_KEY, pair: activationPair });
       const beforeActivation = await activeState(page);
       if (testCase.mobile) {
-        await dragTouchViaCdp(page, activationPair);
+        for (const cell of activationPair) {
+          await page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`).tap();
+        }
       } else {
         for (const cell of activationPair) {
           await page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`).dispatchEvent("click");
@@ -3750,6 +3754,7 @@ test("invalid, cancel, mobile touch, and reduced motion drag paths stay clean", 
   const invalidNeighbor = await findInvalidNeighborForCell(page, selectedSource, selectedDestination);
   expect(invalidNeighbor, "selected source has an invalid adjacent alternative").toBeTruthy();
   const selectedBeforeRefusal = await activeState(page);
+  await page.waitForTimeout(375);
   await page.locator(`.tile[data-x="${invalidNeighbor.x}"][data-y="${invalidNeighbor.y}"]`).click();
   await expect(page.locator(".tile.invalid-swap")).toHaveCount(2);
   expect((await firstActionGuideReport(page)).visible, "NO BLOOM owns the directional layer").toBe(false);
