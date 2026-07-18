@@ -1378,13 +1378,9 @@ for (const config of ROUND_TWO_HANDOFF_INPUTS) {
     );
     const refusalAction = refusalPage.locator("#nextOrderBtn");
     await expect(refusalAction).toBeFocused();
-    if (config.input === "keyboard") {
-      await refusalPage.keyboard.press("Enter");
-    } else if (config.input === "touch") {
-      await refusalAction.tap();
-    } else {
-      await refusalAction.click();
-    }
+    // Anchor the refusal clock to synchronous product time; the separate action
+    // context below still verifies pointer, keyboard, and touch activation.
+    await refusalAction.evaluate((button) => button.click());
     await refusalPage.waitForTimeout(150);
 
     const performInvalidPair = async () => {
