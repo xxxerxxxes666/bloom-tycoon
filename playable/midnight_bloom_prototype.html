@@ -5476,6 +5476,14 @@
     body.round-three-focus-active .controls,
     body.round-three-focus-active #roundCeremony { display:none!important; }
     body.restored-greenhouse-handoff .next-order-cue { display:flex; width:max-content; max-width:calc(100% - 20px); min-height:30px; margin:7px auto 0; padding:5px 11px; align-items:center; justify-content:center; border:1px solid #77944f; color:#e8ffc5; background:linear-gradient(90deg,#10170d,#25381c,#10170d); box-shadow:0 0 18px #7fcf6536,inset 0 0 10px #000; font:800 13px Georgia,serif; letter-spacing:.07em; text-align:center; text-transform:uppercase; animation:handoff-cue-rise 1.9s ease-out both; }
+    @media (min-width:761px) and (max-height:760px) {
+      body.round-three-focus-active.restored-greenhouse-handoff .next-order-cue {
+        min-height:24px;
+        margin-top:2px;
+        padding:2px 9px;
+        font-size:12px;
+      }
+    }
     body.restored-next-order-focus.restored-next-order-guide:not(.restored-greenhouse-handoff):not(.first-move-made) .first-swap-cue,
     body.restored-next-order-focus.round-two-followup-cue .first-swap-cue { display:flex; width:max-content; max-width:calc(100% - 20px); min-height:30px; margin:7px auto 0; padding:5px 10px; align-items:center; gap:8px; border:1px solid #6f944d; border-radius:999px; color:#e8ffc5; background:linear-gradient(90deg,#10170d,#25381c,#10170d); box-shadow:0 0 12px #7fcf6528,inset 0 0 9px #000; font:800 14px Georgia,serif; letter-spacing:.035em; text-align:center; }
     body.restored-next-order-focus.restored-next-order-guide:not(.restored-greenhouse-handoff) .first-swap-cue::before { content:"NEXT ORDER"; }
@@ -10804,7 +10812,7 @@
 
       const target = { x, y };
       retireCompletedInteractionFeedback();
-      if (restoredGreenhouseHandoff && currentRound === 2) {
+      if (restoredGreenhouseHandoff && (currentRound === 2 || currentRound === 3)) {
         finishRestoredGreenhouseHandoff();
       }
       if (!isLegalSwap(selected, target)) {
@@ -13054,8 +13062,12 @@
       queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
       if (restoredGreenhouseNextOrder) {
         startRestoredGreenhouseHandoff();
+      } else if (secondUpgradeNextOrder) {
+        startRestoredGreenhouseHandoff(
+          "Moonlit Upgrade · Bloodroot Compact · Match Bloodroot + Sol Rot"
+        );
       } else {
-        restoredGreenhouseHandoff = false;
+        finishRestoredGreenhouseHandoff();
       }
       if (secondUpgradeNextOrder) {
         concludeTutorial();

@@ -544,9 +544,15 @@ async function roundTwoHandoffReport(page) {
       tiles: document.querySelectorAll(".tile").length,
       rows: new Set(Array.from(document.querySelectorAll(".tile"), (tile) => tile.dataset.y)).size,
       completeRows: completeRows.size,
+      currentRound: state.currentRound,
       moves: state.moves,
+      counts: state.counts || [],
+      coins: state.coins,
       clearedCursedThorns: state.clearedCursedThorns || 0,
       cursedThorns: Array.isArray(state.cursedThorns) ? state.cursedThorns.length : 0,
+      enabledTiles: document.querySelectorAll(".tile:not(:disabled)").length,
+      tabStops: document.querySelectorAll(".tile[tabindex='0']").length,
+      focusedTile: document.activeElement?.classList.contains("tile") || false,
       thornComplete: thornGoal?.classList.contains("complete") || false,
       thornSeal: thornGoal?.querySelector(".objective-target-seal")?.textContent.trim() || "",
       thornAriaLabel: thornGoal?.getAttribute("aria-label") || "",
@@ -558,12 +564,130 @@ async function roundTwoHandoffReport(page) {
   }, SAVE_KEY);
 }
 
+async function installInPageHandoffTimeline(page, sampleTimes = [150, 1700, 3500]) {
+  await page.evaluate(({ key, sampleTimes: times }) => {
+    const timeline = {
+      samples: [],
+      startedAt: null
+    };
+    window.__bloomHandoffTimeline = timeline;
+
+    const visible = (node) => {
+      if (!node) return false;
+      const bounds = node.getBoundingClientRect();
+      const style = getComputedStyle(node);
+      return style.display !== "none"
+        && style.visibility !== "hidden"
+        && Number(style.opacity || 1) !== 0
+        && bounds.width > 0
+        && bounds.height > 0;
+    };
+    const rect = (node) => {
+      const bounds = node?.getBoundingClientRect();
+      return bounds
+        ? {
+            left: bounds.left,
+            top: bounds.top,
+            right: bounds.right,
+            bottom: bounds.bottom,
+            width: bounds.width,
+            height: bounds.height
+          }
+        : null;
+    };
+    const overlaps = (a, b) => Boolean(
+      a
+      && b
+      && Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1
+      && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1
+    );
+    const capture = (sampleAt) => {
+      const state = JSON.parse(localStorage.getItem(key) || "{}");
+      const board = document.querySelector("#board");
+      const boardRect = rect(board);
+      const nextCue = document.querySelector("#nextOrderCue");
+      const tutorialPanel = document.querySelector("#tutorialPanel");
+      const firstCue = document.querySelector("#firstSwapCue");
+      const instructionSurfaces = [nextCue, tutorialPanel, firstCue]
+        .filter(visible)
+        .map((node) => ({
+          id: node.id,
+          text: node.textContent.replace(/\s+/g, " ").trim()
+        }));
+      const tiles = Array.from(document.querySelectorAll(".tile"));
+      const completeRows = new Set(tiles
+        .filter((tile) => {
+          const bounds = tile.getBoundingClientRect();
+          return bounds.top >= 0 && bounds.bottom <= innerHeight;
+        })
+        .map((tile) => tile.dataset.y));
+      timeline.samples.push({
+        sampleAt,
+        elapsed: performance.now() - timeline.startedAt,
+        handoffActive: document.body.classList.contains("restored-greenhouse-handoff"),
+        instructionSurfaces,
+        cueOverlapsBoard: overlaps(rect(nextCue), boardRect),
+        objectiveOverlapsBoard: overlaps(rect(document.querySelector("#objective")), boardRect),
+        boardTop: boardRect?.top || 0,
+        boardBottom: boardRect?.bottom || 0,
+        boardWidth: boardRect?.width || 0,
+        boardHeight: boardRect?.height || 0,
+        tiles: tiles.length,
+        rows: new Set(tiles.map((tile) => tile.dataset.y)).size,
+        completeRows: completeRows.size,
+        currentRound: state.currentRound,
+        moves: state.moves,
+        coins: state.coins,
+        overflowX: document.documentElement.scrollWidth > innerWidth + 1,
+        brokenImages: Array.from(document.images)
+          .filter((image) => visible(image) && image.complete && image.naturalWidth === 0)
+          .map((image) => image.getAttribute("src"))
+      });
+    };
+    const start = () => {
+      if (timeline.startedAt !== null) return;
+      timeline.startedAt = performance.now();
+      observer.disconnect();
+      times.forEach((sampleAt) => {
+        window.setTimeout(() => capture(sampleAt), sampleAt);
+      });
+    };
+    const observer = new MutationObserver(() => {
+      if (document.body.classList.contains("restored-greenhouse-handoff")) {
+        start();
+      }
+    });
+    observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+    if (document.body.classList.contains("restored-greenhouse-handoff")) {
+      start();
+    }
+  }, { key: SAVE_KEY, sampleTimes });
+}
+
+async function readInPageHandoffTimeline(page, expectedSamples = 3) {
+  await expect.poll(
+    () => page.evaluate(() => window.__bloomHandoffTimeline?.samples.length || 0),
+    { timeout: 10000 }
+  ).toBe(expectedSamples);
+  return page.evaluate(() => window.__bloomHandoffTimeline.samples);
+}
+
 function restoredRoundOneHandoffState() {
   const restored = HUD_CASES.find((fixture) => fixture.label === "r1-restored");
   return {
     ...savedState(restored),
     tutorialSkipped: false,
     tutorialActive: true,
+    blackCandleLessonComplete: true
+  };
+}
+
+function upgradedRoundTwoHandoffState() {
+  const upgraded = HUD_CASES.find((fixture) => fixture.label === "r2-upgraded");
+  return {
+    ...savedState(upgraded),
+    tutorialSkipped: true,
+    tutorialActive: false,
     blackCandleLessonComplete: true
   };
 }
@@ -1015,6 +1139,7 @@ for (const config of ROUND_TWO_HANDOFF_INPUTS) {
       `${BASE_URL}?round-two-handoff-idle=${config.label}`,
       { waitUntil: "networkidle" }
     );
+    await installInPageHandoffTimeline(idlePage);
     const idleAction = idlePage.locator("#nextOrderBtn");
     await expect(idleAction).toBeFocused();
     if (config.input === "keyboard") {
@@ -1025,10 +1150,9 @@ for (const config of ROUND_TWO_HANDOFF_INPUTS) {
       await idleAction.click();
     }
 
-    const startedAt = Date.now();
-    for (const sampleAt of [150, 1700, 3500]) {
-      await idlePage.waitForTimeout(Math.max(0, sampleAt - (Date.now() - startedAt)));
-      const report = await roundTwoHandoffReport(idlePage);
+    const timeline = await readInPageHandoffTimeline(idlePage);
+    for (const report of timeline) {
+      const sampleAt = report.sampleAt;
       const label = `${config.label} ${sampleAt}ms`;
       assertRoundTwoHandoffGeometry(report, config.viewport, label);
       if (sampleAt < 2200) {
@@ -1156,6 +1280,208 @@ for (const config of ROUND_TWO_HANDOFF_INPUTS) {
     expect(reloaded.thornComplete, `${config.label} reload sealed state`).toBe(true);
     expect(runtimeErrors, `${config.label} runtime errors`).toEqual([]);
     expect(requestFailures, `${config.label} request failures`).toEqual([]);
+    await actionContext.close();
+  });
+}
+
+for (const config of ROUND_TWO_HANDOFF_INPUTS) {
+  test(`Round 2 to 3 handoff names the final order and stays immediately playable on ${config.label}`, async ({ browser }) => {
+    const contextOptions = {
+      viewport: { width: config.viewport.width, height: config.viewport.height }
+    };
+    if (config.input === "touch") {
+      contextOptions.hasTouch = true;
+      contextOptions.isMobile = true;
+    }
+
+    const idleContext = await browser.newContext(contextOptions);
+    const idlePage = await idleContext.newPage();
+    const idleErrors = [];
+    idlePage.on("console", (message) => {
+      if (message.type() === "error") idleErrors.push(message.text());
+    });
+    idlePage.on("pageerror", (error) => idleErrors.push(error.message));
+    await idlePage.addInitScript(({ key, state, marker }) => {
+      if (!sessionStorage.getItem(marker)) {
+        localStorage.setItem(key, JSON.stringify(state));
+        sessionStorage.setItem(marker, "1");
+      }
+    }, {
+      key: SAVE_KEY,
+      state: upgradedRoundTwoHandoffState(),
+      marker: `round-three-handoff-idle-${config.label}`
+    });
+    await idlePage.goto(
+      `${BASE_URL}?round-three-handoff-idle=${config.label}`,
+      { waitUntil: "networkidle" }
+    );
+    await installInPageHandoffTimeline(idlePage);
+    const idleAction = idlePage.locator("#nextOrderBtn");
+    await expect(idleAction).toBeFocused();
+    if (config.input === "keyboard") {
+      await idlePage.keyboard.press("Enter");
+    } else if (config.input === "touch") {
+      await idleAction.tap();
+    } else {
+      await idleAction.click();
+    }
+
+    const timeline = await readInPageHandoffTimeline(idlePage);
+    for (const report of timeline) {
+      const label = `${config.label} final-order ${report.sampleAt}ms`;
+      assertRoundTwoHandoffGeometry(report, config.viewport, label);
+      expect(report.currentRound, `${label} active round`).toBe(3);
+      expect(report.moves, `${label} final-order budget`).toBe(8);
+      expect(report.coins, `${label} retained economy`).toBe(50);
+      if (report.sampleAt < 2200) {
+        expect(report.handoffActive, `${label} handoff owns instruction`).toBe(true);
+        expect(report.instructionSurfaces, `${label} one final-order narrator`).toEqual([{
+          id: "nextOrderCue",
+          text: "Moonlit Upgrade · Bloodroot Compact · Match Bloodroot + Sol Rot"
+        }]);
+      } else {
+        expect(report.handoffActive, `${label} handoff yields`).toBe(false);
+        expect(
+          report.instructionSurfaces.some((surface) => surface.id === "nextOrderCue"),
+          `${label} transient cue retired`
+        ).toBe(false);
+      }
+    }
+    expect(idleErrors, `${config.label} final-order idle runtime errors`).toEqual([]);
+    await idleContext.close();
+
+    const actionContext = await browser.newContext(contextOptions);
+    const actionPage = await actionContext.newPage();
+    const runtimeErrors = [];
+    const requestFailures = [];
+    actionPage.on("console", (message) => {
+      if (message.type() === "error") runtimeErrors.push(message.text());
+    });
+    actionPage.on("pageerror", (error) => runtimeErrors.push(error.message));
+    actionPage.on("requestfailed", (request) => {
+      const errorText = request.failure()?.errorText || "failed";
+      const replacedGreenhouseImage = errorText === "net::ERR_ABORTED"
+        && request.url().includes("/assets/greenhouse/")
+        && request.url().endsWith(".jpg");
+      if (!replacedGreenhouseImage) {
+        requestFailures.push(`${request.url()} :: ${errorText}`);
+      }
+    });
+    await actionPage.addInitScript(({ key, state, marker }) => {
+      if (!sessionStorage.getItem(marker)) {
+        localStorage.setItem(key, JSON.stringify(state));
+        sessionStorage.setItem(marker, "1");
+      }
+    }, {
+      key: SAVE_KEY,
+      state: upgradedRoundTwoHandoffState(),
+      marker: `round-three-handoff-action-${config.label}`
+    });
+    await actionPage.goto(
+      `${BASE_URL}?round-three-handoff-action=${config.label}`,
+      { waitUntil: "networkidle" }
+    );
+    const action = actionPage.locator("#nextOrderBtn");
+    await expect(action).toBeFocused();
+    if (config.input === "keyboard") {
+      await actionPage.keyboard.press("Enter");
+    } else if (config.input === "touch") {
+      await action.tap();
+    } else {
+      await action.click();
+    }
+    await actionPage.waitForTimeout(150);
+    const activeHandoff = await roundTwoHandoffReport(actionPage);
+    assertRoundTwoHandoffGeometry(
+      activeHandoff,
+      config.viewport,
+      `${config.label} immediate final-order handoff`
+    );
+    expect(activeHandoff.handoffActive).toBe(true);
+    expect(activeHandoff.instructionSurfaces).toEqual([{
+      id: "nextOrderCue",
+      text: "Moonlit Upgrade · Bloodroot Compact · Match Bloodroot + Sol Rot"
+    }]);
+    expect(activeHandoff.tabStops, `${config.label} final-order roving tab stop`).toBe(1);
+    expect(activeHandoff.focusedTile, `${config.label} final-order board focus`).toBe(true);
+    await actionPage.screenshot({
+      path: `work/round-three-handoff-${config.label}.png`,
+      fullPage: true
+    });
+
+    const pair = await findLegalMatchPair(actionPage);
+    expect(pair, `${config.label} final-order legal opening pair`).toHaveLength(2);
+    const [sourceCell, destinationCell] = pair;
+    const source = actionPage.locator(
+      `.tile[data-x="${sourceCell.x}"][data-y="${sourceCell.y}"]`
+    );
+    const destination = actionPage.locator(
+      `.tile[data-x="${destinationCell.x}"][data-y="${destinationCell.y}"]`
+    );
+    if (config.input === "keyboard") {
+      await source.focus();
+      await actionPage.keyboard.press("Enter");
+      const dx = destinationCell.x - sourceCell.x;
+      const dy = destinationCell.y - sourceCell.y;
+      await actionPage.keyboard.press(
+        dx === 1 ? "ArrowRight" : dx === -1 ? "ArrowLeft" : dy === 1 ? "ArrowDown" : "ArrowUp"
+      );
+    } else if (config.input === "touch") {
+      await source.tap();
+      await destination.tap();
+    } else {
+      await source.click();
+      await destination.click();
+    }
+
+    await expect.poll(async () => (
+      actionPage.evaluate((key) => {
+        const state = JSON.parse(localStorage.getItem(key) || "{}");
+        return {
+          moves: state.moves,
+          credited: (state.counts || []).reduce((sum, count) => sum + count, 0),
+          enabledTiles: document.querySelectorAll(".tile:not(:disabled)").length
+        };
+      }, SAVE_KEY)
+    ), { timeout: 10000 }).toEqual({
+      moves: 7,
+      credited: expect.any(Number),
+      enabledTiles: 64
+    });
+
+    const settledState = await actionPage.evaluate((key) => {
+      const state = JSON.parse(localStorage.getItem(key) || "{}");
+      return {
+        counts: state.counts,
+        coins: state.coins
+      };
+    }, SAVE_KEY);
+    expect(
+      settledState.counts.reduce((sum, count) => sum + count, 0),
+      `${config.label} final-order flower credit`
+    ).toBeGreaterThan(0);
+    expect(settledState.coins, `${config.label} final-order coins`).toBe(50);
+
+    const settled = await roundTwoHandoffReport(actionPage);
+    assertRoundTwoHandoffGeometry(settled, config.viewport, `${config.label} final-order settled`);
+    expect(settled.handoffActive, `${config.label} committed pair retires final-order handoff`).toBe(false);
+    expect(
+      settled.instructionSurfaces.some((surface) => surface.id === "nextOrderCue"),
+      `${config.label} no stale final-order cue`
+    ).toBe(false);
+
+    await actionPage.reload({ waitUntil: "networkidle" });
+    const reloaded = await roundTwoHandoffReport(actionPage);
+    assertRoundTwoHandoffGeometry(reloaded, config.viewport, `${config.label} final-order reload`);
+    expect(reloaded.handoffActive, `${config.label} reload does not replay final-order cue`).toBe(false);
+    expect(reloaded.currentRound, `${config.label} reload round`).toBe(3);
+    expect(reloaded.moves, `${config.label} reload move cost`).toBe(7);
+    expect(reloaded.counts, `${config.label} reload flower credit`).toEqual(settledState.counts);
+    expect(reloaded.coins, `${config.label} reload retained economy`).toBe(50);
+    expect(reloaded.enabledTiles, `${config.label} reload enabled board`).toBe(64);
+    expect(reloaded.tabStops, `${config.label} reload roving tab stop`).toBe(1);
+    expect(runtimeErrors, `${config.label} final-order runtime errors`).toEqual([]);
+    expect(requestFailures, `${config.label} final-order request failures`).toEqual([]);
     await actionContext.close();
   });
 }
