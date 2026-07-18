@@ -14152,8 +14152,11 @@
       queuePostRenderFocus(focusedPayoffPrimaryButtonId());
     }
     ensureCursedThornsForPlan(activeRoundPlan());
-    if (isAuthoritativeRoundTwoThornLesson()) {
-      restoreAuthoritativeRoundTwoThornLesson({ resetSelection: true });
+    if (isRoundTwoThornLessonEligible({ allowPartialProgress: true })) {
+      restoreAuthoritativeRoundTwoThornLesson({
+        resetSelection: true,
+        allowPartialProgress: true
+      });
     }
     if (armedLineRelic && !roundComplete && !isBouquetFailed()) {
       const relicPair = lineRelicActivationPair();

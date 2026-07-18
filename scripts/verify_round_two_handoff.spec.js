@@ -1010,7 +1010,7 @@ for (const testCase of CASES) {
           state.restoredRoundTwoGuideMoves = 1;
           state.clearedCursedThorns = 0;
           state.cursedThorns = [
-            { x: 0, y: 1, hp: 9 },
+            { x: 0, y: 1, hp: 1 },
             { x: 1, y: 1, hp: 9 },
             { x: 2, y: 1, hp: 9 }
           ];
@@ -1030,23 +1030,91 @@ for (const testCase of CASES) {
         const state = JSON.parse(localStorage.getItem(key) || "{}");
         return !state.armedLineRelic
           && state.moves === 7
-          && state.cursedThorns.length === 3
+          && state.clearedCursedThorns === 1
+          && state.cursedThorns.length === 2
           && document.querySelectorAll(".tile").length === 64
           && Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled);
       }, SAVE_KEY, { timeout: 12000 });
       report = await handoffReport(page);
-      expect(report.state.clearedCursedThorns, `${testCase.label} damaged Thorns remain incomplete`).toBe(0);
-      expect(report.state.cursedThorns, `${testCase.label} three damaged blockers remain`).toHaveLength(3);
+      expect(report.state.clearedCursedThorns, `${testCase.label} one Thorn clears`).toBe(1);
+      expect(report.state.cursedThorns, `${testCase.label} two damaged blockers remain`).toHaveLength(2);
       expect(report.tutorialCopy, `${testCase.label} Thorn narrator resumes after relic`).toBe("Match beside the Thorn.");
       expect(report.guideTiles, `${testCase.label} recomputed pair`).toBe(2);
       expect(report.thornSwapTiles, `${testCase.label} recomputed causes`).toBe(2);
-      expect(report.thornTargets, `${testCase.label} remaining blocker targets`).toBe(3);
+      expect(report.thornTargets, `${testCase.label} remaining blocker targets`).toBe(2);
       expect(report.guideOverlays, `${testCase.label} one recomputed overlay`).toBe(1);
       expect(report.focusedTile, `${testCase.label} recovered source receives focus`).toBe(true);
       expect(report.tiles, `${testCase.label} partial path tile integrity`).toBe(64);
       expect(report.rows, `${testCase.label} partial path rows`).toBe(8);
       expect(report.overflowX, `${testCase.label} partial path no overflow`).toBe(false);
       expect(report.brokenImages, `${testCase.label} partial path images`).toEqual([]);
+      const partialGuideCells = report.guideCells;
+      const partialState = JSON.stringify(report.state);
+      let partialGuide = await usefulGuideReport(page);
+      expect(partialGuide.legal, `${testCase.label} partial guide is legal`).toBe(true);
+      expect(partialGuide.useful, `${testCase.label} partial guide damages a Thorn`).toBe(true);
+
+      for (let reload = 1; reload <= 2; reload += 1) {
+        await page.reload({ waitUntil: "networkidle" });
+        await expect(page.locator(".tile.thorn-teach")).toHaveCount(2, { timeout: 7000 });
+        report = await handoffReport(page);
+        expect(JSON.stringify(report.state), `${testCase.label} partial reload ${reload} exact state`).toBe(partialState);
+        expect(report.state.clearedCursedThorns, `${testCase.label} partial reload ${reload} progress`).toBe(1);
+        expect(report.state.cursedThorns, `${testCase.label} partial reload ${reload} blockers`).toHaveLength(2);
+        expect(report.tutorialCopy, `${testCase.label} partial reload ${reload} narrator`).toBe("Match beside the Thorn.");
+        expect(report.guideCells, `${testCase.label} partial reload ${reload} pair`).toEqual(partialGuideCells);
+        expect(report.thornSwapTiles, `${testCase.label} partial reload ${reload} causes`).toBe(2);
+        expect(report.thornTargets, `${testCase.label} partial reload ${reload} targets`).toBe(2);
+        expect(report.guideOverlays, `${testCase.label} partial reload ${reload} overlay`).toBe(1);
+        expect(report.focusedTile, `${testCase.label} partial reload ${reload} focus`).toBe(true);
+        expect(report.focusableTiles, `${testCase.label} partial reload ${reload} roving tile`).toBe(1);
+        expect(report.tiles, `${testCase.label} partial reload ${reload} tiles`).toBe(64);
+        expect(report.rows, `${testCase.label} partial reload ${reload} rows`).toBe(8);
+        expect(report.overflowX, `${testCase.label} partial reload ${reload} no overflow`).toBe(false);
+        expect(report.brokenImages, `${testCase.label} partial reload ${reload} images`).toEqual([]);
+        partialGuide = await usefulGuideReport(page);
+        expect(partialGuide.legal, `${testCase.label} partial reload ${reload} legal guide`).toBe(true);
+        expect(partialGuide.useful, `${testCase.label} partial reload ${reload} useful guide`).toBe(true);
+      }
+      await page.screenshot({
+        path: `work/round-two-partial-thorn-reload-${testCase.label}.png`,
+        fullPage: true
+      });
+
+      const beforeRecoveredMove = report.state;
+      const beforeRemainingKeys = new Set(
+        beforeRecoveredMove.cursedThorns.map((thorn) => `${thorn.x},${thorn.y}`)
+      );
+      const beforeRemainingHp = beforeRecoveredMove.cursedThorns
+        .reduce((sum, thorn) => sum + thorn.hp, 0);
+      await startThornFeedbackRecorder(page);
+      await activatePair(page, partialGuide.pair, testCase.input);
+      await page.waitForFunction(({ key, moves }) => {
+        const state = JSON.parse(localStorage.getItem(key) || "{}");
+        return state.moves === moves - 1
+          && !state.armedLineRelic
+          && document.querySelectorAll(".tile").length === 64
+          && Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled);
+      }, { key: SAVE_KEY, moves: beforeRecoveredMove.moves }, { timeout: 12000 });
+      const recoveredThornEvents = await stopThornFeedbackRecorder(page);
+      report = await handoffReport(page);
+      const afterRemainingHp = report.state.cursedThorns
+        .reduce((sum, thorn) => sum + thorn.hp, 0);
+      expect(report.state.moves, `${testCase.label} recovered pair spends once`).toBe(6);
+      expect(afterRemainingHp, `${testCase.label} recovered pair damages remaining blockers`).toBeLessThan(beforeRemainingHp);
+      expect(
+        report.state.cursedThorns.every((thorn) => beforeRemainingKeys.has(`${thorn.x},${thorn.y}`)),
+        `${testCase.label} recovered pair never resurrects stale blocker coordinates`
+      ).toBe(true);
+      expect(
+        recoveredThornEvents.some((event) => event === "CRACK" || event === "BREAK"),
+        `${testCase.label} recovered pair emits Thorn feedback`
+      ).toBe(true);
+      expect(report.tiles, `${testCase.label} recovered pair tiles`).toBe(64);
+      expect(report.rows, `${testCase.label} recovered pair rows`).toBe(8);
+      expect(report.disabledTiles, `${testCase.label} recovered pair returns control`).toBe(0);
+      expect(report.overflowX, `${testCase.label} recovered pair no overflow`).toBe(false);
+      expect(report.brokenImages, `${testCase.label} recovered pair images`).toEqual([]);
       expect(consoleErrors, `${testCase.label} console errors`).toEqual([]);
       expect(pageErrors, `${testCase.label} page errors`).toEqual([]);
       expect(failedRequests, `${testCase.label} request failures`).toEqual([]);
