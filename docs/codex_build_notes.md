@@ -1,5 +1,18 @@
 # Codex Build Notes
 
+## 2026-07-18 replayable direct Thorn lesson geometry
+
+- Files changed by the complete slice: `playable/midnight_bloom_prototype.html`, `scripts/verify_round_two_handoff.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.
+- Selected weakness: Skip correctly retired the untouched direct Round 2 Thorn lesson, but activating the existing Help control restored only `Match beside the Thorn.` and the tutorial pill. The authored two cause tiles, three blocker targets, two hint tiles, and one swap-guide overlay remained absent, so replay copy described a relationship the board no longer showed.
+- Player-visible result: Help replay now invokes the established `restoreAuthoritativeRoundTwoThornLesson()` authority after tutorial state is active and before rendering. The untouched lesson returns as the exact existing `2/3/2/1` cause/blocker/hint/overlay composition, with Skip focused and no new copy, node, row, panel, control, timer, save field, mechanic, round, currency, or progression surface.
+- Strict boundary: the existing helper still requires active Round 2, the restored-greenhouse window, zero Thorn progress, an incomplete bouquet, and the authored Thorn move. Help therefore does not resurrect the lesson after CRACK/BREAK progress, in Round 3, or after the valid teaching move. Round 1 and Black Candle tutorial replay continue through their existing paths.
+- Permanent browser contract: `scripts/verify_round_two_handoff.spec.js` now drives natural Round 1 completion/restoration into the direct lesson, activates Skip, activates Help by desktop pointer, exact-mobile touch, keyboard plus reduced motion, and reduced-motion mobile, verifies exact `2/3/2/1` geometry and Skip focus, then runs canceled input, wrong selection, nonadjacent reselection, repeated NO BLOOM refusal, cleanup, two reloads, the intended `9 -> 8` Thorn swap, CRACK/BREAK, sealed progress, and a second Help activation that must not restore completed teaching.
+- Visual evidence inspected: `work/round-two-thorn-help-replay-desktop-pointer.png` and `work/round-two-thorn-help-replay-mobile390-touch.png` show one literal Thorn instruction, the restored cause/target relationship and directional guide, Skip as the focused non-tile action, and the complete desktop/mobile altar.
+- Verification: the focused post-replay Thorn matrix passed `4/4`. `python3 scripts/verify_project.py`, `python3 scripts/verify_html_match_shapes.py`, changed spec and extracted inline JavaScript syntax, `git diff --check`, and the changed-line credential/tracker/network scan passed. The exact serial integrated Chromium gate passed `103/103` in `21.3m`.
+- Integrated runtime: baseline remains `510` nodes, `84` images, 64 tiles/eight complete rows, three animated elements, two meaningful progress bars, no dormant prototype scaffold, no horizontal overflow, and no visible broken images. Exact-mobile guided swaps returned control in `378ms` and `505ms`; both economy cycles and the authored `6 -> 5 -> 4 -> 3 -> 2 -> 1` Round 1 route remained exact.
+- Security/scope status: added lines contain no credentials, private-key/token markers, tracker/analytics identifiers, or external network hooks. No dependency, asset, backend, account, analytics, ad, cron, permission, save schema, economy, objective, move budget, or progression change was introduced.
+- Commit/deployment: pending final commit, Vercel production deployment, GitHub Pages publication, public matrix, and byte-parity verification.
+
 ## 2026-07-18 authoritative direct Thorn lesson recovery
 
 - Files changed by the complete slice: `playable/midnight_bloom_prototype.html`, `scripts/verify_round_two_handoff.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.

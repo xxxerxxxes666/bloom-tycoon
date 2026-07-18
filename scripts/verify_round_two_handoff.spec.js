@@ -63,6 +63,20 @@ async function selectCell(page, cell, input) {
   await tile.click();
 }
 
+async function activateControl(page, selector, input) {
+  const control = page.locator(selector);
+  if (input === "touch") {
+    await control.tap();
+    return;
+  }
+  if (input === "keyboard") {
+    await control.focus();
+    await page.keyboard.press("Enter");
+    return;
+  }
+  await control.click();
+}
+
 async function cancelBoardDrag(page, cell, input) {
   const tile = page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`);
   const box = await tile.boundingBox();
@@ -248,6 +262,7 @@ async function handoffReport(page) {
       brokenImages: Array.from(document.images)
         .filter((image) => visible(image) && image.complete && image.naturalWidth === 0)
         .map((image) => image.getAttribute("src")),
+      activeElementId: document.activeElement?.id || "",
       transitionNodeCount: document.querySelectorAll("#nextOrderCue, .next-order-cue").length,
       transitionClass: document.body.classList.contains("restored-greenhouse-handoff"),
       instructionCount: [
@@ -507,21 +522,37 @@ for (const testCase of CASES) {
         });
       }
 
-      const savedLessonState = await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY);
+      await activateControl(page, "#tutorialSkipBtn", testCase.input);
+      report = await handoffReport(page);
+      expect(report.tutorialVisible, `${testCase.label} Skip retires lesson copy`).toBe(false);
+      expect(report.guideTiles, `${testCase.label} Skip retires pair`).toBe(0);
+      expect(report.thornSwapTiles, `${testCase.label} Skip retires cause teaching`).toBe(0);
+      expect(report.thornTargets, `${testCase.label} Skip retires blocker teaching`).toBe(0);
+      expect(report.guideOverlays, `${testCase.label} Skip retires guide overlay`).toBe(0);
+
+      await activateControl(page, "#tutorialHelpBtn", testCase.input);
+      await expect(page.locator(".tile.thorn-teach")).toHaveCount(2, { timeout: 7000 });
+      report = await handoffReport(page);
+      expectAuthoritativeThornLesson(report, `${testCase.label} Help replay`);
+      expect(report.activeElementId, `${testCase.label} Help focuses Skip`).toBe("tutorialSkipBtn");
+      await page.screenshot({
+        path: `work/round-two-thorn-help-replay-${testCase.label}.png`
+      });
+
       await cancelBoardDrag(page, { x: 0, y: 0 }, testCase.input);
       await page.waitForTimeout(380);
       report = await handoffReport(page);
-      expectAuthoritativeThornLesson(report, `${testCase.label} canceled input`);
+      expectAuthoritativeThornLesson(report, `${testCase.label} replay canceled input`);
 
       await selectCell(page, { x: 0, y: 0 }, testCase.input);
       await page.waitForTimeout(60);
       report = await handoffReport(page);
-      expectAuthoritativeThornLesson(report, `${testCase.label} wrong first selection`, { selected: "0,0" });
+      expectAuthoritativeThornLesson(report, `${testCase.label} replay wrong first selection`, { selected: "0,0" });
 
       await selectCell(page, { x: 7, y: 7 }, testCase.input);
       await page.waitForTimeout(60);
       report = await handoffReport(page);
-      expectAuthoritativeThornLesson(report, `${testCase.label} nonadjacent reselection`, { selected: "7,7" });
+      expectAuthoritativeThornLesson(report, `${testCase.label} replay nonadjacent reselection`, { selected: "7,7" });
 
       const repeatedInvalidPair = await invalidPair(page, ["0,0", "1,0", "1,2", "1,3"]);
       expect(repeatedInvalidPair, `${testCase.label} second refusal pair`).toHaveLength(2);
@@ -551,27 +582,8 @@ for (const testCase of CASES) {
       expect(report.guideOverlays, `${testCase.label} repeated refusal retains guide overlay`).toBe(1);
       await page.waitForTimeout(1040);
       report = await handoffReport(page);
-      expectAuthoritativeThornLesson(report, `${testCase.label} refusal cleanup`);
+      expectAuthoritativeThornLesson(report, `${testCase.label} replay refusal cleanup`);
       expect(report.invalidTiles, `${testCase.label} refusal cleanup`).toBe(0);
-
-      if (testCase.input === "touch") await page.locator("#tutorialSkipBtn").tap();
-      else if (testCase.input === "keyboard") {
-        await page.locator("#tutorialSkipBtn").focus();
-        await page.keyboard.press("Enter");
-      } else await page.locator("#tutorialSkipBtn").click();
-      report = await handoffReport(page);
-      expect(report.tutorialVisible, `${testCase.label} Skip retires lesson copy`).toBe(false);
-      expect(report.guideTiles, `${testCase.label} Skip retires pair`).toBe(0);
-      expect(report.thornSwapTiles, `${testCase.label} Skip retires cause teaching`).toBe(0);
-      expect(report.thornTargets, `${testCase.label} Skip retires blocker teaching`).toBe(0);
-      await page.evaluate(({ key, value }) => localStorage.setItem(key, value), {
-        key: SAVE_KEY,
-        value: savedLessonState
-      });
-      await page.reload({ waitUntil: "networkidle" });
-      await expect(page.locator(".tile.thorn-teach")).toHaveCount(2, { timeout: 7000 });
-      report = await handoffReport(page);
-      expectAuthoritativeThornLesson(report, `${testCase.label} lesson restored after Skip fixture reset`);
 
       const authoritativeOpening = JSON.stringify(report.state);
       for (let reload = 1; reload <= 2; reload += 1) {
@@ -623,6 +635,15 @@ for (const testCase of CASES) {
       await page.screenshot({
         path: `work/round-two-handoff-${testCase.label}-post-swap.png`
       });
+
+      await activateControl(page, "#tutorialHelpBtn", testCase.input);
+      await page.waitForTimeout(100);
+      const completedLessonReplay = await handoffReport(page);
+      expect(completedLessonReplay.thornSwapTiles, `${testCase.label} completed lesson Help does not restore causes`).toBe(0);
+      expect(completedLessonReplay.thornTargets, `${testCase.label} completed lesson Help does not restore blockers`).toBe(0);
+      expect(completedLessonReplay.guideTiles, `${testCase.label} completed lesson Help does not restore hints`).toBe(0);
+      expect(completedLessonReplay.guideOverlays, `${testCase.label} completed lesson Help does not restore overlay`).toBe(0);
+      await activateControl(page, "#tutorialSkipBtn", testCase.input);
 
       await page.evaluate((key) => {
         const state = JSON.parse(localStorage.getItem(key));

@@ -10565,6 +10565,7 @@
       tutorialSkipped = false;
       tutorialActive = true;
       if (replay) {
+        restoreAuthoritativeRoundTwoThornLesson();
         queuePostRenderFocus("tutorialSkipBtn");
       }
       render();

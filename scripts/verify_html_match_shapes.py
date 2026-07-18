@@ -475,6 +475,7 @@ def verify_source_hooks():
         ".tutorial-panel.refused-tutorial {",
         "function isAuthoritativeRoundTwoThornLesson",
         "function restoreAuthoritativeRoundTwoThornLesson",
+        "if (replay) {\n        restoreAuthoritativeRoundTwoThornLesson();\n        queuePostRenderFocus(\"tutorialSkipBtn\");",
         "const focusedCueActive = (currentRound === 1 || isRestoredNextOrderFocus() || authoritativeThornLesson || postRecoveryGuideActive)",
         "if (!authoritativeLesson && window.setTimeout)",
         "swap-refused",
