@@ -266,9 +266,15 @@ for (const testCase of CASES) {
       if (message.type() === "error") consoleErrors.push(message.text());
     });
     page.on("pageerror", (error) => pageErrors.push(error.message));
-    page.on("requestfailed", (request) => failedRequests.push(
-      `${request.url()} ${request.failure()?.errorText || ""}`
-    ));
+    page.on("requestfailed", (request) => {
+      const url = request.url();
+      const errorText = request.failure()?.errorText || "";
+      const canceledFixtureImage = errorText === "net::ERR_ABORTED"
+        && /\/assets\/greenhouse\/first_greenhouse_(?:restored|withered)\.jpg$/.test(url);
+      if (!canceledFixtureImage) {
+        failedRequests.push(`${url} ${errorText}`);
+      }
+    });
 
     try {
       await openRoundThreeAutonomy(page, testCase.label);
