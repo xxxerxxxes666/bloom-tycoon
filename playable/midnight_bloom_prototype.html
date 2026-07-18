@@ -10358,6 +10358,26 @@
       return 0;
     }
 
+    function firstFocusedCycleClosingBalance() {
+      return roundTemplates[0].reward.coins - FIRST_GREENHOUSE_RESTORE_COST
+        + roundTemplates[1].reward.coins - MOONLIT_GREENHOUSE_UPGRADE_COST
+        + roundTemplates[2].reward.coins - BLOODROOT_CONSERVATORY_COST;
+    }
+
+    function isOwnedRestorationReplay() {
+      if (!roundOneRestored || !roundTwoGreenhouseUpgraded || !roundThreeConservatoryRaised) {
+        return false;
+      }
+      if (!roundComplete || currentRound < FOCUSED_LEVEL_COUNT) {
+        return true;
+      }
+      return coins > firstFocusedCycleClosingBalance();
+    }
+
+    function ownedRestorationTransaction(plan) {
+      return `Already owned · +${plan.reward.coins} coins · ${coins} coins balance.`;
+    }
+
     function greenhouseOwnedProgress() {
       const stage = greenhouseOwnedStage();
       const pct = stage >= 3 ? 100 : Math.round((stage / 3) * 100);
@@ -10367,7 +10387,9 @@
           ? "Next: Upgrade Greenhouse"
           : stage === 2
             ? "Next: Raise Conservatory"
-            : "Complete: Play Again";
+            : isOwnedRestorationReplay()
+              ? "Permanent through replay"
+              : "Complete: Play Again";
       return {
         stage,
         pct,
@@ -10454,6 +10476,7 @@
       const roundOnePlan = buildRoundPlan(1);
       const roundTwoPlan = buildRoundPlan(2);
       const roundThreePlan = buildRoundPlan(3);
+      const ownedReplay = isOwnedRestorationReplay();
       if (currentRound === 3 && roundComplete) {
         const spent = roundThreeConservatoryRaised;
         return {
@@ -10461,11 +10484,17 @@
           artKey: "bloodroot",
           payoffState: "bloodroot",
           title: "Bloodroot Compact Complete",
-          state: spent ? "BLOODROOT CONSERVATORY RAISED" : "BLOODROOT CONSERVATORY READY",
+          state: ownedReplay
+            ? "BLOODROOT CONSERVATORY OWNED"
+            : spent ? "BLOODROOT CONSERVATORY RAISED" : "BLOODROOT CONSERVATORY READY",
           transaction: spent
-            ? `Raised for ${BLOODROOT_CONSERVATORY_COST}. ${coins} coins remain.`
+            ? ownedReplay
+              ? ownedRestorationTransaction(roundThreePlan)
+              : `Raised for ${BLOODROOT_CONSERVATORY_COST}. ${coins} coins remain.`
             : `Earned ${roundThreePlan.reward.coins} coins. Conservatory costs ${BLOODROOT_CONSERVATORY_COST}.`,
-          copy: spent ? "Begin a new growing cycle with your balance intact." : "Spend the Bloodroot payout to raise the conservatory.",
+          copy: ownedReplay
+            ? "Raised conservatory kept. Reward carried forward."
+            : spent ? "Begin a new growing cycle with your balance intact." : "Spend the Bloodroot payout to raise the conservatory.",
           spendText: coins >= BLOODROOT_CONSERVATORY_COST
             ? `Raise Conservatory · ${BLOODROOT_CONSERVATORY_COST} coins`
             : `Need ${BLOODROOT_CONSERVATORY_COST} coins`,
@@ -10480,11 +10509,17 @@
           artKey: "moonlit",
           payoffState: "moonlit",
           title: "Moonlit Wreath Complete",
-          state: spent ? "MOONLIT GREENHOUSE UPGRADED" : "MOONLIT UPGRADE READY",
+          state: ownedReplay
+            ? "MOONLIT GREENHOUSE OWNED"
+            : spent ? "MOONLIT GREENHOUSE UPGRADED" : "MOONLIT UPGRADE READY",
           transaction: spent
-            ? `Upgraded for ${MOONLIT_GREENHOUSE_UPGRADE_COST}. ${coins} coins remain.`
+            ? ownedReplay
+              ? ownedRestorationTransaction(roundTwoPlan)
+              : `Upgraded for ${MOONLIT_GREENHOUSE_UPGRADE_COST}. ${coins} coins remain.`
             : `Earned ${roundTwoPlan.reward.coins} coins. Upgrade costs ${MOONLIT_GREENHOUSE_UPGRADE_COST}.`,
-          copy: spent ? "Bloodroot Compact is ready." : "Spend the Moonlit payout to raise the night glass.",
+          copy: ownedReplay
+            ? "Moonlit glass kept. Reward carried forward."
+            : spent ? "Bloodroot Compact is ready." : "Spend the Moonlit payout to raise the night glass.",
           spendText: coins >= MOONLIT_GREENHOUSE_UPGRADE_COST
             ? `Upgrade Greenhouse · ${MOONLIT_GREENHOUSE_UPGRADE_COST} coins`
             : `Need ${MOONLIT_GREENHOUSE_UPGRADE_COST} coins`,
@@ -10498,11 +10533,17 @@
         artKey: "first",
         payoffState: spent ? "restored" : "sealed",
         title: spent ? "Greenhouse Restored" : "First Bouquet Bound",
-        state: spent ? "RESTORED GREENHOUSE" : "WITHERED GLASSHOUSE",
+        state: ownedReplay
+          ? "RESTORED GREENHOUSE OWNED"
+          : spent ? "RESTORED GREENHOUSE" : "WITHERED GLASSHOUSE",
         transaction: spent
-          ? `Restored for ${FIRST_GREENHOUSE_RESTORE_COST}. ${coins} coins remain.`
+          ? ownedReplay
+            ? ownedRestorationTransaction(roundOnePlan)
+            : `Restored for ${FIRST_GREENHOUSE_RESTORE_COST}. ${coins} coins remain.`
           : `Earned ${roundOnePlan.reward.coins} coins. Restore costs ${FIRST_GREENHOUSE_RESTORE_COST}.`,
-        copy: spent ? "Moonlit Wreath is ready." : "Thorn Rose and Bone Star are bound; spend 100 to relight the greenhouse.",
+        copy: ownedReplay
+          ? "Restored greenhouse kept. Reward carried forward."
+          : spent ? "Moonlit Wreath is ready." : "Thorn Rose and Bone Star are bound; spend 100 to relight the greenhouse.",
         spendText: `Restore Greenhouse · ${FIRST_GREENHOUSE_RESTORE_COST} coins`,
         nextText: "Next Order → Moonlit Wreath",
         primary: spent ? "next" : "spend"
@@ -10861,6 +10902,9 @@
     function compactBouquetConsequenceLabel(plan = activeRoundPlan()) {
       if (isBouquetFailed(plan)) {
         return "Retry Bouquet";
+      }
+      if (!roundComplete && isOwnedRestorationReplay()) {
+        return "Owned: Conservatory Raised";
       }
       if (roundComplete) {
         if (plan.round === 1) {
@@ -12920,11 +12964,6 @@
         return false;
       }
       roundComplete = true;
-      if (plan.round === 1) {
-        roundOneRestored = false;
-        roundTwoGreenhouseUpgraded = false;
-        roundThreeConservatoryRaised = false;
-      }
       const streakPayout = completionCoinPayout(plan);
       coins += streakPayout.total;
       pulseCoinBalance();
@@ -12953,6 +12992,14 @@
     }
 
     function focusedSliceCompletionMessage(plan, payout) {
+      if (isOwnedRestorationReplay()) {
+        const ownedStage = plan.round === 1
+          ? "Greenhouse restoration"
+          : plan.round === 2
+            ? "Moonlit upgrade"
+            : "Raised conservatory";
+        return `<strong>${plan.name} fulfilled.</strong> +${payout.total} coins. ${ownedStage} already owned.`;
+      }
       if (plan.round === 1) {
         return `<strong>${plan.name} fulfilled.</strong> +${payout.total} coins. Restore the greenhouse.`;
       }
@@ -13540,9 +13587,6 @@
       thornClearedCells.clear();
       clearThornTeachingCue(false);
       currentRound = nextRound;
-      if (currentRound === 2 && !roundComplete) {
-        roundTwoGreenhouseUpgraded = false;
-      }
       if (!preserveCompletedRoundTwoGuide) {
         restoredRoundTwoGuideMoves = 0;
       }
@@ -13627,9 +13671,6 @@
       clearThornTeachingCue(false);
       currentRound = 1;
       restoredRoundTwoGuideMoves = 0;
-      roundOneRestored = false;
-      roundTwoGreenhouseUpgraded = false;
-      roundThreeConservatoryRaised = false;
       hasMadeValidMove = false;
       blackCandleLessonComplete = true;
       roundComplete = false;
