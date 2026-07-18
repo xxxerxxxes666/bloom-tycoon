@@ -1496,6 +1496,67 @@
       opacity: 0.82;
     }
 
+    .altar-reweave-veil {
+      position: absolute;
+      inset: 5px;
+      z-index: 18;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      pointer-events: none;
+      border: 1px solid #b9874d99;
+      background:
+        radial-gradient(circle at 50% 50%, #d7b16d26 0 8%, #692d8638 26%, #050404e8 72%),
+        repeating-conic-gradient(from 12deg at 50% 50%, #0000 0 8deg, #b9874d24 9deg 10deg, #0000 11deg 22deg);
+      box-shadow: inset 0 0 34px #000, inset 0 0 70px #692d8642, 0 0 24px #b9874d55;
+    }
+
+    .altar-reweave-veil::before {
+      content: "";
+      position: absolute;
+      inset: -28% -55%;
+      background: linear-gradient(104deg, #0000 35%, #d7b16d10 42%, #fff0b47d 49%, #692d865c 55%, #0000 64%);
+      transform: translateX(-48%) rotate(-4deg);
+      animation: altar-reweave-sweep 680ms cubic-bezier(.2,.72,.18,1) both;
+    }
+
+    .altar-reweave-seal {
+      position: relative;
+      z-index: 1;
+      padding: 7px 12px;
+      border: 1px solid #d7b16d;
+      color: #fff0b4;
+      background: #090505e8;
+      box-shadow: inset 0 0 12px #000, 0 0 18px #692d86aa, 0 0 26px #b9874d66;
+      font: 900 11px/1 system-ui, sans-serif;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      text-shadow: 0 1px 4px #000;
+      animation: altar-reweave-seal 680ms ease-out both;
+    }
+
+    body.altar-reweave-active .board .tile {
+      animation: altar-reweave-tile 560ms cubic-bezier(.2,.72,.18,1) var(--reweave-delay, 0ms) both;
+    }
+
+    @keyframes altar-reweave-sweep {
+      0% { opacity: 0; transform: translateX(-48%) rotate(-4deg); }
+      28% { opacity: 1; }
+      100% { opacity: .2; transform: translateX(48%) rotate(4deg); }
+    }
+
+    @keyframes altar-reweave-seal {
+      0% { opacity: 0; transform: scale(.82); }
+      34% { opacity: 1; transform: scale(1.04); }
+      100% { opacity: .92; transform: scale(1); }
+    }
+
+    @keyframes altar-reweave-tile {
+      0% { opacity: .94; transform: scale(1); filter: brightness(1); }
+      42% { opacity: .22; transform: scale(.86); filter: brightness(.58) saturate(.72); }
+      100% { opacity: .9; transform: scale(.98); filter: brightness(.92); }
+    }
+
     .tile {
       --tile-color: #b9874d;
       aspect-ratio: 1;
@@ -5610,6 +5671,29 @@
       text-shadow:0 0 12px #9b1d22;
       animation:cue-refused 420ms ease-out both;
     }
+    body.altar-reweave-active .first-swap-cue,
+    body.post-recovery-guide .first-swap-cue {
+      display:flex;
+      width:max-content;
+      max-width:calc(100% - 20px);
+      min-height:30px;
+      margin:7px auto 0;
+      padding:5px 10px;
+      align-items:center;
+      gap:8px;
+      border:1px solid #b9874d;
+      border-radius:999px;
+      color:#fff0b4;
+      background:linear-gradient(90deg,#100908,#2a1728,#100908);
+      box-shadow:0 0 15px #692d8655,inset 0 0 9px #000;
+      font:800 14px Georgia,serif;
+      letter-spacing:.035em;
+      text-align:center;
+    }
+    body.altar-reweave-active .first-swap-cue::before,
+    body.post-recovery-guide .first-swap-cue::before { content:"ALTAR"; }
+    body.altar-reweave-active .first-swap-cue::before { content:"ALTAR"!important; }
+    body.post-recovery-guide.armed-line-relic-cue .first-swap-cue::before { content:"BLACK CANDLE"; }
     @media (max-width:760px) {
       .payoff-stage { grid-template-columns:1fr; }
       .greenhouse-upgrade-ladder { grid-template-columns:repeat(3,minmax(0,1fr)); gap:4px; }
@@ -5946,6 +6030,12 @@
       .first-action-swap-guide.selected-continuation .first-action-destination-halo {
         animation:none !important;
         transform:translate(-50%, -50%);
+      }
+      body.altar-reweave-active .board .tile,
+      .altar-reweave-veil::before,
+      .altar-reweave-seal {
+        animation:none !important;
+        transform:none !important;
       }
       .first-action-track::before {
         left: 20%;
@@ -6853,6 +6943,8 @@
     const DRAG_MAX_TRAVEL_RATIO = 0.78;
     const DRAG_NEIGHBOR_YIELD_RATIO = 0.36;
     const INVALID_SWAP_FEEDBACK_MS = 1120;
+    const ALTAR_REWEAVE_MS = 720;
+    const ALTAR_REWEAVE_REDUCED_MS = 520;
 
     let board = [];
     let selected = null;
@@ -6908,6 +7000,10 @@
     let orderPulseTargets = new Set();
     let interactionFeedbackGeneration = 0;
     let isResolving = false;
+    let altarReweaveActive = false;
+    let altarReweaveSequence = 0;
+    let postRecoveryGuideActive = false;
+    let qaPostCascadeDeadBoardFixture = false;
     let supremeChargeActive = false;
     let hasMadeValidMove = false;
     let restoredRoundTwoGuideMoves = 0;
@@ -7073,6 +7169,10 @@
 
     function isBouquetFailed(plan = activeRoundPlan()) {
       return !roundComplete && !isResolving && moves <= 0 && !roundObjectivesComplete(plan);
+    }
+
+    function resolvingMoveWillFail(plan = activeRoundPlan()) {
+      return !roundComplete && moves <= 0 && !roundObjectivesComplete(plan);
     }
 
     function targetMarkup(flowerId, current, needed) {
@@ -8440,15 +8540,23 @@
           (currentRound === 1 && tutorialActive)
           || (
             hintCells.has(`${cell.x},${cell.y}`)
-            && ((currentRound === 1 && !hasMadeValidMove) || isRestoredNextOrderFocus() || isPostOnboardingIdleHintActive() || isArmedLineRelicGuidanceActive())
+            && (
+              (currentRound === 1 && !hasMadeValidMove)
+              || isRestoredNextOrderFocus()
+              || isPostOnboardingIdleHintActive()
+              || isArmedLineRelicGuidanceActive()
+              || postRecoveryGuideActive
+            )
           )
         );
     }
 
     function notePlayerInteraction() {
-      clearIdleHint();
+      if (!postRecoveryGuideActive) {
+        clearIdleHint();
+      }
       clearThornTeachingCue(false);
-      if (!hasMadeValidMove || isArmedLineRelicGuidanceActive()) {
+      if (!postRecoveryGuideActive && (!hasMadeValidMove || isArmedLineRelicGuidanceActive())) {
         scheduleIdleHint();
       }
     }
@@ -8867,7 +8975,7 @@
         window.clearTimeout(invalidSwapTimer);
       }
       const cue = $("firstSwapCue");
-      const focusedCueActive = (currentRound === 1 || isRestoredNextOrderFocus()) && !roundComplete && cue;
+      const focusedCueActive = (currentRound === 1 || isRestoredNextOrderFocus() || postRecoveryGuideActive) && !roundComplete && cue;
       const returnCue = continuingRefusal
         ? invalidSwapReturnCue
         : focusedCueActive ? cue.textContent : "";
@@ -9375,8 +9483,13 @@
     }
 
     function ensurePlayableBoardAfterCascade() {
-      if (!matches().length && hasLegalMoves()) {
-        return false;
+      const lingeringMatches = matches().length > 0;
+      const legalHarvestMove = armedLineRelic
+        ? legalMoves().some((move) => move.every((cell) => !lineRelicAt(cell)))
+        : hasLegalMoves();
+      const deadBoard = !lingeringMatches && !legalHarvestMove;
+      if (!lingeringMatches && !deadBoard) {
+        return { recovered: false, deadBoard: false, lingeringMatches: false };
       }
       const preservedLineRelic = normalizeArmedLineRelic(armedLineRelic);
       fallAnimations.clear();
@@ -9387,7 +9500,93 @@
         armedLineRelic = preservedLineRelic;
         board[preservedLineRelic.y][preservedLineRelic.x] = preservedLineRelic.flowerId;
       }
-      return true;
+      return { recovered: true, deadBoard, lingeringMatches };
+    }
+
+    function objectiveUsefulRecoveryMove(plan = activeRoundPlan()) {
+      const relicGuidance = lineRelicGuidance();
+      if (relicGuidance?.pair) {
+        return { pair: relicGuidance.pair, kind: "relic", target: null };
+      }
+      if (plan.thornGoal && !thornGoalComplete(plan) && cursedThorns.length) {
+        const thornMove = legalMoves().find((move) => estimatedMoveProgress(move, plan).thorns > 0);
+        if (thornMove) {
+          return { pair: thornMove, kind: "thorn", target: null };
+        }
+      }
+      for (let targetIndex = 0; targetIndex < plan.targets.length; targetIndex += 1) {
+        const target = plan.targets[targetIndex];
+        if (targetProgress(target) >= target.needed) {
+          continue;
+        }
+        const targetMove = findTargetLegalMove(target.flowerId, targetIndex);
+        if (targetMove) {
+          return { pair: targetMove, kind: "target", target };
+        }
+      }
+      const fallback = legalMoves()[0] || null;
+      return fallback ? { pair: fallback, kind: "fallback", target: null } : null;
+    }
+
+    function primePostRecoveryGuide() {
+      const usefulMove = objectiveUsefulRecoveryMove();
+      const [a, b] = usefulMove?.pair || [];
+      if (!a || !b || !isLegalSwap(a, b)) {
+        postRecoveryGuideActive = false;
+        idleHintCells.clear();
+        return null;
+      }
+      idleHintCells = new Set([`${a.x},${a.y}`, `${b.x},${b.y}`]);
+      boardFocusCell = clampBoardFocusCell(a);
+      if (usefulMove.kind === "relic") {
+        $("firstSwapCue").textContent = lineRelicGuidance()?.cue || "Black Candle Vine ready — burn its lane.";
+      } else if (usefulMove.kind === "thorn") {
+        $("firstSwapCue").textContent = `Path restored — crack a Cursed Thorn ${a.x === b.x ? "↑↓" : "↔"}`;
+      } else if (usefulMove.kind === "target") {
+        $("firstSwapCue").textContent = `Path restored — ${targetCueText(usefulMove.target, a, b)}`;
+      } else {
+        $("firstSwapCue").textContent = `Path restored — swap the glowing pair ${a.x === b.x ? "↑↓" : "↔"}`;
+      }
+      postRecoveryGuideActive = true;
+      return usefulMove;
+    }
+
+    function clearCompetingReweaveFeedback() {
+      clearIdleHint();
+      clearThornTeachingCue(false);
+      clearTransientGameFeel();
+      cancelFxTimers();
+      boardParticles = [];
+      harvestFlashCells.clear();
+      superBloomCells.clear();
+      thornPulseCells.clear();
+      thornClearedCells.clear();
+      transmuteFlashCell = "";
+      selected = null;
+      $("firstSwapCue").classList.remove("swap-refused");
+    }
+
+    async function presentAltarReweave() {
+      if (roundComplete || isBouquetFailed()) {
+        altarReweaveActive = false;
+        postRecoveryGuideActive = false;
+        return false;
+      }
+      clearCompetingReweaveFeedback();
+      postRecoveryGuideActive = false;
+      altarReweaveActive = true;
+      altarReweaveSequence += 1;
+      $("firstSwapCue").textContent = "No moves — altar reweaving.";
+      pulseHaptic([12, 28, 12]);
+      playBloomSound("settle", { cascade: 0, drops: BOARD_SIZE });
+      render();
+      await delay(prefersReducedMotion() ? ALTAR_REWEAVE_REDUCED_MS : ALTAR_REWEAVE_MS);
+      altarReweaveActive = false;
+      if (roundComplete || isBouquetFailed()) {
+        postRecoveryGuideActive = false;
+        return false;
+      }
+      return Boolean(primePostRecoveryGuide());
     }
 
     function prepareAltarDriftRefill(options = {}) {
@@ -9780,6 +9979,8 @@
       document.body.classList.toggle("round-three-final-complete", roundThreeFinalComplete);
       document.body.classList.toggle("round-three-focus-active", currentRound === 3 && !roundComplete && roundOneRestored && roundTwoGreenhouseUpgraded);
       document.body.classList.toggle("focused-active-play", focusedSliceRound(activePlan) && !roundComplete);
+      document.body.classList.toggle("altar-reweave-active", altarReweaveActive && !roundComplete && !isBouquetFailed(activePlan));
+      document.body.classList.toggle("post-recovery-guide", postRecoveryGuideActive && !roundComplete && !isBouquetFailed(activePlan));
       document.body.classList.toggle("armed-line-relic-cue", Boolean(activeRelicGuidance));
       document.body.classList.toggle("focused-slice-failed", activePlan.round <= 3 && isBouquetFailed(activePlan));
       document.body.classList.toggle("focused-payoff-active", focusedSliceRound(activePlan) && roundComplete);
@@ -9792,6 +9993,11 @@
       document.body.classList.toggle("round-one-followup-cue", roundOneFollowupCue);
       document.body.classList.toggle("round-one-refused", roundOneActive && !roundComplete && $("firstSwapCue").classList.contains("swap-refused"));
       document.body.classList.toggle("tutorial-active", tutorialActive);
+      document.body.dataset.altarReweavePhase = altarReweaveActive
+        ? "active"
+        : postRecoveryGuideActive ? "guided" : "settled";
+      document.body.dataset.altarReweaveSequence = String(altarReweaveSequence);
+      document.body.dataset.altarReweaveMotion = prefersReducedMotion() ? "reduced" : "full";
       document.body.dataset.tutorialPrompt = tutorialActive ? tutorialCopy() : "";
       $("roundOneRestoration").classList.toggle("restored", (roundOneActive && roundOneRestored) || roundTwoUpgradeComplete || roundThreeFinalComplete);
       $("roundOneRestoration").classList.toggle("second-greenhouse-upgrade", roundTwoUpgradePending || roundTwoUpgradeComplete);
@@ -9816,6 +10022,10 @@
       boardEl.dataset.lastWildChainCascades = String(lastWildChain?.cascades || 0);
       boardEl.dataset.refillColumns = String(refillColumns.size);
       boardEl.dataset.armedRelicDirection = activeRelicGuidance?.direction || "";
+      boardEl.dataset.reweavePhase = altarReweaveActive
+        ? "active"
+        : postRecoveryGuideActive ? "guided" : "settled";
+      boardEl.dataset.reweaveSequence = String(altarReweaveSequence);
       boardEl.classList.toggle("supreme-charge", supremeChargeActive);
       boardEl.classList.toggle("cascade-wave", currentCascadeWave > 0);
       boardEl.classList.toggle("swap-accepted", validSwapCells.size > 0);
@@ -9883,6 +10093,7 @@
           tile.disabled = isResolving || roundComplete || isBouquetFailed();
           tile.tabIndex = !tile.disabled && boardFocusCell.x === x && boardFocusCell.y === y ? 0 : -1;
           tile.style.setProperty("--tile-color", flowers[value][4]);
+          tile.style.setProperty("--reweave-delay", `${Math.min(126, (x + y) * 9)}ms`);
           if (invalidFeedback) {
             tile.style.setProperty("--invalid-x", `${invalidFeedback.dx * 18}%`);
             tile.style.setProperty("--invalid-y", `${invalidFeedback.dy * 18}%`);
@@ -9935,6 +10146,13 @@
           `;
           boardEl.appendChild(tile);
         }
+      }
+      if (altarReweaveActive && !roundComplete && !isBouquetFailed(activePlan)) {
+        const veil = document.createElement("span");
+        veil.className = "altar-reweave-veil";
+        veil.setAttribute("aria-hidden", "true");
+        veil.innerHTML = '<span class="altar-reweave-seal">Altar Reweaves</span>';
+        boardEl.appendChild(veil);
       }
       renderFirstSwapArrow(boardEl);
       applyImageFallbacks(boardEl);
@@ -10383,10 +10601,14 @@
       if (renderFirstActionSwapGuide(boardEl, tutorialGuide)) {
         return;
       }
-      if (currentRound === 1 && !roundComplete && (tutorialActive || tutorialSkipped)) {
+      if (currentRound === 1 && !roundComplete && (tutorialActive || tutorialSkipped) && !postRecoveryGuideActive) {
         return;
       }
-      if (!isArmedLineRelicGuidanceActive() && (currentRound !== 1 && !isRestoredRoundTwoGuideActive())) {
+      if (
+        !postRecoveryGuideActive
+        && !isArmedLineRelicGuidanceActive()
+        && (currentRound !== 1 && !isRestoredRoundTwoGuideActive())
+      ) {
         return;
       }
       if (roundComplete || idleHintCells.size !== 2) {
@@ -10501,6 +10723,7 @@
         return;
       }
 
+      postRecoveryGuideActive = false;
       clearIdleHint();
       clearMoveUrgencyPulse();
       const source = { ...selected };
@@ -10562,12 +10785,18 @@
         if (maybeCompleteRound(harvestMessage)) {
           return;
         }
-        ritualMessage = isBouquetFailed()
+        const resolvingMoveFailed = resolvingMoveWillFail();
+        ritualMessage = resolvingMoveFailed
           ? `${harvestMessage} ${failedBouquetRitualMessage()}`
           : harvestMessage;
-        if (!isBouquetFailed() && reachedRestoredGuideLimit) {
+        if (result.deadBoardRecovered && !resolvingMoveFailed) {
+          // The recovered board is authoritative before its presentation begins;
+          // the presentation itself is deliberately absent from saved state.
+          saveProgress({ allowDuringResolve: true });
+          await presentAltarReweave();
+        } else if (!resolvingMoveFailed && reachedRestoredGuideLimit) {
           schedulePostResolveIdleHint = true;
-        } else if (!isBouquetFailed()) {
+        } else if (!resolvingMoveFailed) {
           const targetHintCopy = nextTargetMoveHint();
           ritualMessage += targetHintCopy;
           if (!targetHintCopy) {
@@ -10788,7 +11017,8 @@
         thornsCleared: 0,
         thornCells: [],
         wildChain: null,
-        reshuffled: false
+        reshuffled: false,
+        deadBoardRecovered: false
       };
     }
 
@@ -11103,8 +11333,17 @@
       if (!result.matched) {
         return result;
       }
-      const rebuilt = ensurePlayableBoardAfterCascade();
-      result.reshuffled = rebuilt && !options.quietReseed;
+      if (QA_REVIEW_HOOKS_ENABLED && qaPostCascadeDeadBoardFixture && options.playerSwap) {
+        board = Array.from({ length: BOARD_SIZE }, (_, y) => (
+          Array.from({ length: BOARD_SIZE }, (_, x) => (x + y * 2) % flowers.length)
+        ));
+        qaPostCascadeDeadBoardFixture = false;
+      }
+      const recovery = ensurePlayableBoardAfterCascade();
+      result.reshuffled = recovery.recovered && !options.quietReseed;
+      result.deadBoardRecovered = recovery.deadBoard
+        && Boolean(options.playerSwap)
+        && !options.quietReseed;
       result.rareCells = dedupeCells(result.rareCells);
       result.shapeCells = dedupeCells(result.shapeCells);
       result.lineRelicCells = dedupeCells(result.lineRelicCells);
@@ -11854,7 +12093,6 @@
     function harvestSummary(result) {
       const orderText = orderGainMessage(result.gained);
       const cascadeText = result.cascades > 1 ? ` across ${result.cascades} cascades` : "";
-      const reshuffleText = result.reshuffled ? " The board re-seeded itself with a legal move." : "";
       const shapeText = shapeBonusMessage(result);
       const lineRelicText = lineRelicMessage(result);
       const seedRuneText = rareSeedRuneMessage(result);
@@ -11866,9 +12104,9 @@
       const bonusText = [shapeText, lineRelicText, seedRuneText].filter(Boolean).join(" ");
       const shapePrefix = bonusText ? `<strong>${bonusText}</strong> ` : "";
       if (orderText) {
-        return `${shapePrefix}<strong>${orderText}</strong>${thornText} ${coinText}${cascadeText}.${chainText}${gainMarkup(result.gained)}${reshuffleText}`;
+        return `${shapePrefix}<strong>${orderText}</strong>${thornText} ${coinText}${cascadeText}.${chainText}${gainMarkup(result.gained)}`;
       }
-      return `${shapePrefix}<strong>${result.cleared}</strong> tiles harvested${cascadeText}.${thornText} ${coinText}.${chainText}${gainMarkup(result.gained)}${reshuffleText}`;
+      return `${shapePrefix}<strong>${result.cleared}</strong> tiles harvested${cascadeText}.${thornText} ${coinText}.${chainText}${gainMarkup(result.gained)}`;
     }
 
     function focusedRoundTwoHarvestSummary(result) {
@@ -12880,6 +13118,77 @@
       }
       let shapeDemoIndex = 0;
 
+      window.__bloomDeadBoardRecoveryFixture = (options = {}) => {
+        if (isResolving || roundComplete || isBouquetFailed()) {
+          return null;
+        }
+        clearCompetingReweaveFeedback();
+        altarReweaveActive = false;
+        postRecoveryGuideActive = false;
+        qaPostCascadeDeadBoardFixture = false;
+        const plan = activeRoundPlan();
+        const legal = legalMoves();
+        const targetIndex = plan.targets.findIndex((target) => targetProgress(target) < target.needed);
+        const target = plan.targets[targetIndex] || plan.targets[0];
+        const targetMove = target ? findTargetLegalMove(target.flowerId, targetIndex) : null;
+        const ordinaryTargetMove = legal.find((pair) => {
+          const preview = previewSwapMatches(...pair);
+          return preview.length > 0
+            && preview.every((match) => match.len !== 4)
+            && (!target || preview.some((match) => match.val === target.flowerId));
+        });
+        const ordinaryMove = legal.find((pair) => {
+          const preview = previewSwapMatches(...pair);
+          return preview.length > 0 && preview.every((match) => match.len !== 4);
+        });
+        let triggerPair = ordinaryTargetMove || ordinaryMove || targetMove || legal[0] || null;
+        if (options.preserveArmedRelic && armedLineRelic) {
+          triggerPair = legal.find((pair) => pair.every((cell) => !lineRelicAt(cell))) || triggerPair;
+        }
+        if (options.preserveThorns && cursedThorns.length) {
+          triggerPair = legal.find((pair) => previewSwapMatches(...pair).every((match) => (
+            !cellsTouchCursedThorn(match.cells)
+          ))) || triggerPair;
+        }
+        if (!triggerPair) {
+          return null;
+        }
+        if (options.precedence === "complete") {
+          plan.targets.forEach((goal) => {
+            counts[goal.flowerId] = goal.needed;
+          });
+          const completingMatch = previewSwapMatches(...triggerPair)
+            .find((match) => plan.targets.some((goal) => goal.flowerId === match.val));
+          const completingTarget = plan.targets.find((goal) => goal.flowerId === completingMatch?.val) || target;
+          if (completingTarget) {
+            counts[completingTarget.flowerId] = Math.max(0, completingTarget.needed - 1);
+          }
+          if (plan.thornGoal) {
+            clearedCursedThorns = thornGoalNeeded(plan);
+            cursedThorns = [];
+          }
+          moves = Math.max(2, moves);
+        } else if (options.precedence === "fail") {
+          plan.targets.forEach((goal) => {
+            counts[goal.flowerId] = 0;
+          });
+          clearedCursedThorns = 0;
+          moves = 1;
+        }
+        qaPostCascadeDeadBoardFixture = true;
+        idleHintCells = new Set(triggerPair.map((cell) => `${cell.x},${cell.y}`));
+        boardFocusCell = clampBoardFocusCell(triggerPair[0]);
+        $("firstSwapCue").textContent = "Fixture ready — make the glowing accepted swap.";
+        render();
+        return {
+          triggerPair: triggerPair.map((cell) => ({ ...cell })),
+          moves,
+          counts: counts.slice(),
+          cursedThorns: cursedThorns.map((thorn) => ({ ...thorn })),
+          armedLineRelic: armedLineRelic ? { ...armedLineRelic } : null
+        };
+      };
+
       function completeBouquetForReview() {
         if (isResolving || roundComplete) {
           return;
@@ -13038,9 +13347,9 @@
       return roundThreeConservatoryRaised ? 50 : 50 + roundTemplates[2].reward.coins;
     }
 
-    function saveProgress() {
+    function saveProgress(options = {}) {
       // Accepted swaps render several animated frames; only settled states are authoritative.
-      if (typeof localStorage === "undefined" || isResolving) {
+      if (typeof localStorage === "undefined" || (isResolving && !options.allowDuringResolve)) {
         return;
       }
       const state = {
