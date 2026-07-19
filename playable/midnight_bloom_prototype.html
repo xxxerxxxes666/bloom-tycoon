@@ -1326,7 +1326,8 @@
     }
 
     .tutorial-panel.black-candle-tutorial .tutorial-icon,
-    .tutorial-panel.refused-tutorial .tutorial-icon {
+    .tutorial-panel.refused-tutorial .tutorial-icon,
+    .tutorial-panel.failed-tutorial .tutorial-icon {
       padding-right: 7px;
       border-right: 1px solid #76582e;
       color: #b9965f;
@@ -1351,7 +1352,8 @@
 
     @media (max-width: 600px) {
       .tutorial-panel.black-candle-tutorial,
-      .tutorial-panel.refused-tutorial {
+      .tutorial-panel.refused-tutorial,
+      .tutorial-panel.failed-tutorial {
         gap: 5px;
         padding-right: 4px;
         padding-left: 6px;
@@ -1359,13 +1361,15 @@
         letter-spacing: 0;
       }
       .tutorial-panel.black-candle-tutorial .tutorial-icon,
-      .tutorial-panel.refused-tutorial .tutorial-icon {
+      .tutorial-panel.refused-tutorial .tutorial-icon,
+      .tutorial-panel.failed-tutorial .tutorial-icon {
         padding-right: 5px;
         font-size: 8px;
         letter-spacing: .045em;
       }
       .tutorial-panel.black-candle-tutorial .tutorial-skip,
-      .tutorial-panel.refused-tutorial .tutorial-skip {
+      .tutorial-panel.refused-tutorial .tutorial-skip,
+      .tutorial-panel.failed-tutorial .tutorial-skip {
         padding-right: 6px;
         padding-left: 6px;
         font-size: 9px;
@@ -11083,9 +11087,10 @@
     }
 
     function updateFocusedPayoffLiveRegionOwnership(plan = activeRoundPlan()) {
-      const payoffOwnsNarration = focusedSliceRound(plan) && roundComplete;
-      $("coinBalance")?.setAttribute("aria-live", payoffOwnsNarration ? "off" : "polite");
-      $("roundOneRestoration")?.setAttribute("aria-live", payoffOwnsNarration ? "off" : "polite");
+      const tutorialOwnsNarration = focusedSliceRound(plan)
+        && (roundComplete || isBouquetFailed(plan));
+      $("coinBalance")?.setAttribute("aria-live", tutorialOwnsNarration ? "off" : "polite");
+      $("roundOneRestoration")?.setAttribute("aria-live", tutorialOwnsNarration ? "off" : "polite");
       $("tutorialPanel")?.setAttribute("aria-live", "polite");
     }
 
@@ -11534,12 +11539,25 @@
         return;
       }
       const refusedTutorial = tutorialActive && invalidSwapCells.size > 0;
-      const namedBlackCandle = tutorialActive && !roundComplete && Boolean(armedLineRelic) && !refusedTutorial;
+      const failedTutorial = tutorialActive && isBouquetFailed();
+      const namedBlackCandle = tutorialActive
+        && !roundComplete
+        && !failedTutorial
+        && Boolean(armedLineRelic)
+        && !refusedTutorial;
       panel.classList.toggle("black-candle-tutorial", namedBlackCandle);
       panel.classList.toggle("refused-tutorial", refusedTutorial);
+      panel.classList.toggle("failed-tutorial", failedTutorial);
       if (icon) {
-        icon.textContent = refusedTutorial ? "NO BLOOM" : namedBlackCandle ? "BLACK CANDLE" : "✦";
-        icon.setAttribute("aria-hidden", refusedTutorial || namedBlackCandle ? "false" : "true");
+        icon.textContent = refusedTutorial
+          ? "NO BLOOM"
+          : failedTutorial
+            ? "RETRY"
+            : namedBlackCandle ? "BLACK CANDLE" : "✦";
+        icon.setAttribute(
+          "aria-hidden",
+          refusedTutorial || failedTutorial || namedBlackCandle ? "false" : "true"
+        );
       }
       if (skip) {
         skip.hidden = roundComplete;

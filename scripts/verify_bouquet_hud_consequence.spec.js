@@ -153,6 +153,11 @@ const VIEWPORTS = [
   { label: "mobile390", width: 390, height: 844 }
 ];
 
+const FAILURE_VIEWPORTS = [
+  ...VIEWPORTS,
+  { label: "mobile390-reduced", width: 390, height: 844, reducedMotion: "reduce" }
+];
+
 const LOW_MOVE_BOARD = Array.from(
   { length: 8 },
   (_, y) => Array.from({ length: 8 }, (_, x) => (x + (2 * y)) % 6)
@@ -282,9 +287,10 @@ async function movePressureReport(page) {
   });
 }
 
-async function findLegalMatchPair(page) {
-  return page.evaluate(() => {
+async function findLegalMatchPair(page, excludedCells = []) {
+  return page.evaluate((excludedCells) => {
     const size = 8;
+    const excluded = new Set(excludedCells.map((cell) => `${cell.x},${cell.y}`));
     const grid = Array.from({ length: size }, () => Array(size).fill(-1));
     document.querySelectorAll(".tile").forEach((tile) => {
       grid[Number(tile.dataset.y)][Number(tile.dataset.x)] = Number(tile.dataset.flowerId);
@@ -315,7 +321,13 @@ async function findLegalMatchPair(page) {
         for (const [dx, dy] of [[1, 0], [0, 1]]) {
           const nx = x + dx;
           const ny = y + dy;
-          if (nx >= size || ny >= size || grid[y][x] === grid[ny][nx]) {
+          if (
+            nx >= size
+            || ny >= size
+            || excluded.has(`${x},${y}`)
+            || excluded.has(`${nx},${ny}`)
+            || grid[y][x] === grid[ny][nx]
+          ) {
             continue;
           }
           [grid[y][x], grid[ny][nx]] = [grid[ny][nx], grid[y][x]];
@@ -328,7 +340,7 @@ async function findLegalMatchPair(page) {
       }
     }
     return [];
-  });
+  }, excludedCells);
 }
 
 async function hudReport(page) {
@@ -991,19 +1003,24 @@ for (const viewport of VIEWPORTS) {
   });
 }
 
-for (const viewport of VIEWPORTS) {
+for (const viewport of FAILURE_VIEWPORTS) {
   test(`failed bouquets focus Retry and preserve keyboard recovery on ${viewport.label}`, async ({ browser }) => {
     for (const round of [1, 2, 3]) {
       const failedFixture = HUD_CASES.find((fixture) => fixture.label === `r${round}-failed`);
       const context = await browser.newContext({
-        viewport: { width: viewport.width, height: viewport.height }
+        viewport: { width: viewport.width, height: viewport.height },
+        ...(viewport.reducedMotion ? { reducedMotion: viewport.reducedMotion } : {})
       });
       const page = await context.newPage();
       const runtimeErrors = [];
+      const requestFailures = [];
       page.on("console", (message) => {
         if (message.type() === "error") runtimeErrors.push(message.text());
       });
       page.on("pageerror", (error) => runtimeErrors.push(error.message));
+      page.on("requestfailed", (request) => {
+        requestFailures.push(`${request.url()} ${request.failure()?.errorText || ""}`);
+      });
 
       const naturalFailureState = savedState(failedFixture);
       naturalFailureState.moves = 1;
@@ -1022,7 +1039,53 @@ for (const viewport of VIEWPORTS) {
         { waitUntil: "networkidle" }
       );
 
-      const pair = await findLegalMatchPair(page);
+      const armedBeforeFailure = await page.evaluate((key) => {
+        const state = JSON.parse(localStorage.getItem(key) || "{}");
+        const relicCell = { x: 0, y: 0 };
+        state.tutorialSkipped = false;
+        state.tutorialActive = true;
+        state.armedLineRelic = {
+          ...relicCell,
+          direction: "horizontal",
+          flowerId: state.board[relicCell.y][relicCell.x]
+        };
+        localStorage.setItem(key, JSON.stringify(state));
+        return state.armedLineRelic;
+      }, SAVE_KEY);
+
+      for (let reload = 0; reload < 2; reload += 1) {
+        await page.reload({ waitUntil: "networkidle" });
+        await expect(page.locator("#tutorialPanel")).toBeVisible();
+        await expect(page.locator("#tutorialPanel")).toHaveClass(/black-candle-tutorial/);
+        await expect(page.locator("#tutorialPanel .tutorial-icon")).toHaveText("BLACK CANDLE");
+        await expect(page.locator("#tutorialPanel .tutorial-icon")).toHaveAttribute("aria-hidden", "false");
+        await expect(page.locator("#tutorialCopy")).toHaveText(
+          /^Swap (left|right) to burn this row\.$/
+        );
+        await expect(page.locator('.tile[data-line-relic="black-candle-vine"]')).toHaveCount(1);
+        await expect(page.locator(".line-relic-lane-preview")).toHaveCount(8);
+        await expect(page.locator(".line-relic-destination")).toHaveCount(1);
+        const activeRelic = await page.evaluate((key) => {
+          const state = JSON.parse(localStorage.getItem(key) || "{}");
+          return {
+            armedLineRelic: state.armedLineRelic,
+            focusedId: document.activeElement?.id || ""
+          };
+        }, SAVE_KEY);
+        expect(
+          activeRelic.armedLineRelic,
+          `${viewport.label} Round ${round} active reload ${reload + 1} relic`
+        ).toEqual(armedBeforeFailure);
+        expect(
+          activeRelic.focusedId,
+          `${viewport.label} Round ${round} active reload ${reload + 1} focus`
+        ).toBe(`tile-${armedBeforeFailure.x}-${armedBeforeFailure.y}`);
+      }
+
+      const pair = await findLegalMatchPair(page, [
+        armedBeforeFailure,
+        { x: armedBeforeFailure.x + 1, y: armedBeforeFailure.y }
+      ]);
       expect(pair, `${viewport.label} Round ${round} natural final move`).toHaveLength(2);
       for (const cell of pair) {
         await page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`).click();
@@ -1036,15 +1099,104 @@ for (const viewport of VIEWPORTS) {
       ), SAVE_KEY);
       expect(failedState.moves, `${viewport.label} Round ${round} final move spent once`).toBe(0);
       expect(failedState.currentRound, `${viewport.label} Round ${round} authored order`).toBe(round);
+      expect(
+        failedState.armedLineRelic,
+        `${viewport.label} Round ${round} natural final failure retains relic`
+      ).toMatchObject({
+        direction: armedBeforeFailure.direction,
+        flowerId: armedBeforeFailure.flowerId
+      });
+      const failedRelic = failedState.armedLineRelic;
+
+      const assertRetryNarratorOwnsFailure = async (
+        contextLabel,
+        expectedRelic = failedRelic
+      ) => {
+        await expect(page.locator("#tutorialPanel")).toBeVisible();
+        await expect(page.locator("#tutorialCopy")).toHaveText("Moves ended. Retry the bouquet.");
+        await expect(page.locator("#tutorialPanel .tutorial-icon")).toHaveText("RETRY");
+        await expect(page.locator("#tutorialPanel .tutorial-icon")).toHaveAttribute("aria-hidden", "false");
+        await expect(page.locator("#tutorialPanel")).toHaveClass(/failed-tutorial/);
+        await expect(page.locator("#tutorialPanel")).not.toHaveClass(/black-candle-tutorial/);
+        await expect(page.locator("body")).not.toHaveClass(/armed-line-relic-cue/);
+        await expect(retry).toBeVisible();
+        await expect(retry).toBeFocused();
+        const report = await page.evaluate((key) => {
+          const state = JSON.parse(localStorage.getItem(key) || "{}");
+          const visible = (node) => {
+            if (!node) return false;
+            const rect = node.getBoundingClientRect();
+            const style = getComputedStyle(node);
+            return style.display !== "none"
+              && style.visibility !== "hidden"
+              && Number(style.opacity || 1) !== 0
+              && rect.width > 0
+              && rect.height > 0;
+          };
+          return {
+            armedLineRelic: state.armedLineRelic,
+            liveRegions: Array.from(document.querySelectorAll("[aria-live]"))
+              .filter(visible)
+              .map((node) => ({
+                id: node.id,
+                live: node.getAttribute("aria-live"),
+                text: node.innerText.trim()
+              })),
+            coinLive: document.querySelector("#coinBalance")?.getAttribute("aria-live") || "",
+            ceremonyLive: document.querySelector("#roundOneRestoration")?.getAttribute("aria-live") || "",
+            tutorialLive: document.querySelector("#tutorialPanel")?.getAttribute("aria-live") || "",
+            visibleButtons: Array.from(document.querySelectorAll("button"))
+              .filter(visible)
+              .filter((button) => !button.classList.contains("tile"))
+              .map((button) => button.textContent.trim()),
+            lanePreview: document.querySelectorAll(".line-relic-lane-preview").length,
+            destinations: document.querySelectorAll(".line-relic-destination").length,
+            tiles: document.querySelectorAll(".tile").length,
+            rows: new Set(Array.from(document.querySelectorAll(".tile"), (tile) => tile.dataset.y)).size,
+            overflowX: document.documentElement.scrollWidth > innerWidth + 1
+          };
+        }, SAVE_KEY);
+        expect(report.armedLineRelic, `${contextLabel} retains relic gameplay state`).toEqual(
+          expectedRelic
+        );
+        const liveOwners = report.liveRegions.filter(({ live }) => (
+          live === "polite" || live === "assertive"
+        ));
+        expect(liveOwners, `${contextLabel} has one visible live owner`).toEqual([{
+          id: "tutorialPanel",
+          live: "polite",
+          text: "RETRY\nMoves ended. Retry the bouquet."
+        }]);
+        expect(report.coinLive, `${contextLabel} quiet coin balance`).toBe("off");
+        expect(report.ceremonyLive, `${contextLabel} quiet ceremony subtree`).toBe("off");
+        expect(report.tutorialLive, `${contextLabel} polite Retry narrator`).toBe("polite");
+        expect(report.visibleButtons, `${contextLabel} has one recovery action`).toEqual(["Retry Bouquet"]);
+        expect(report.lanePreview, `${contextLabel} hides stale relic lane`).toBe(0);
+        expect(report.destinations, `${contextLabel} hides stale relic destination`).toBe(0);
+        expect(report.tiles, `${contextLabel} tiles`).toBe(64);
+        expect(report.rows, `${contextLabel} rows`).toBe(8);
+        expect(report.overflowX, `${contextLabel} overflow`).toBe(false);
+      };
 
       for (let reload = 0; reload < 2; reload += 1) {
         await page.reload({ waitUntil: "networkidle" });
-        await expect(retry).toBeVisible();
-        await expect(retry).toBeFocused();
+        await assertRetryNarratorOwnsFailure(
+          `${viewport.label} Round ${round} failed relic reload ${reload + 1}`
+        );
+        if (round === 3 && reload === 0) {
+          await page.screenshot({
+            path: `work/failure-retry-category-${viewport.label}.png`,
+            fullPage: true
+          });
+        }
       }
 
       const assertRecoveredRound = async (key) => {
         await expect(retry).toBeHidden();
+        await expect(page.locator("#tutorialPanel")).not.toHaveClass(/failed-tutorial/);
+        await expect(page.locator("#tutorialPanel")).not.toHaveClass(/black-candle-tutorial/);
+        await expect(page.locator("#tutorialPanel .tutorial-icon")).not.toHaveText("RETRY");
+        await expect(page.locator('.tile[data-line-relic="black-candle-vine"]')).toHaveCount(0);
         await expect(page.locator(".tile")).toHaveCount(64);
         const recovered = await page.evaluate((saveKey) => {
           const state = JSON.parse(localStorage.getItem(saveKey) || "{}");
@@ -1056,6 +1208,8 @@ for (const viewport of VIEWPORTS) {
             coins: state.coins,
             roundOneRestored: Boolean(state.roundOneRestored),
             roundTwoGreenhouseUpgraded: Boolean(state.roundTwoGreenhouseUpgraded),
+            coinLive: document.querySelector("#coinBalance")?.getAttribute("aria-live") || "",
+            ceremonyLive: document.querySelector("#roundOneRestoration")?.getAttribute("aria-live") || "",
             tiles: document.querySelectorAll(".tile").length,
             rows: new Set(Array.from(document.querySelectorAll(".tile"), (tile) => tile.dataset.y)).size,
             tabStops: tabStops.length,
@@ -1083,6 +1237,8 @@ for (const viewport of VIEWPORTS) {
           recovered.roundTwoGreenhouseUpgraded,
           `${viewport.label} Round ${round} ${key} R2 upgrade`
         ).toBe(round > 2);
+        expect(recovered.coinLive, `${viewport.label} Round ${round} ${key} coin live`).toBe("polite");
+        expect(recovered.ceremonyLive, `${viewport.label} Round ${round} ${key} ceremony live`).toBe("polite");
         expect(recovered.tiles, `${viewport.label} Round ${round} ${key} tiles`).toBe(64);
         expect(recovered.rows, `${viewport.label} Round ${round} ${key} rows`).toBe(8);
         expect(recovered.tabStops, `${viewport.label} Round ${round} ${key} tab stop`).toBe(1);
@@ -1099,15 +1255,31 @@ for (const viewport of VIEWPORTS) {
         state.moves = 0;
         state.counts = [0, 0, 0, 0, 0, 0];
         state.roundComplete = false;
+        state.tutorialSkipped = false;
+        state.tutorialActive = true;
+        state.armedLineRelic = {
+          x: 3,
+          y: 3,
+          direction: "vertical",
+          flowerId: state.board[3][3]
+        };
         localStorage.setItem(key, JSON.stringify(state));
       }, SAVE_KEY);
       await page.reload({ waitUntil: "networkidle" });
-      await expect(retry).toBeVisible();
-      await expect(retry).toBeFocused();
+      await assertRetryNarratorOwnsFailure(`${viewport.label} Round ${round} Space failure`, {
+        x: 3,
+        y: 3,
+        direction: "vertical",
+        flowerId: await page.evaluate(() => (
+          JSON.parse(localStorage.getItem("bloomTycoonPlayableStateV1") || "{}")
+            .armedLineRelic?.flowerId
+        ))
+      });
       await page.keyboard.press("Space");
       await assertRecoveredRound("Space");
 
       expect(runtimeErrors, `${viewport.label} Round ${round} runtime errors`).toEqual([]);
+      expect(requestFailures, `${viewport.label} Round ${round} request failures`).toEqual([]);
       await context.close();
     }
   });
