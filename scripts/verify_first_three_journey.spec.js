@@ -393,6 +393,7 @@ async function installOwnedRenewalRecorder(page) {
       const ingredients = Array.from(renewal?.querySelectorAll(".owned-renewal-ingredient") || []);
       samples.push({
         at: performance.now(),
+        roundComplete: Boolean(JSON.parse(localStorage.getItem("bloomTycoonPlayableStateV1") || "{}").roundComplete),
         phase: panel?.dataset.ownedRenewalPhase || "",
         renewalPhase: renewal?.dataset.renewalPhase || "",
         topCue: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
@@ -415,7 +416,7 @@ async function installOwnedRenewalRecorder(page) {
     const panel = document.querySelector("#roundOneRestoration");
     const observer = new MutationObserver(sample);
     observer.observe(panel, { attributes: true, childList: true, subtree: true });
-    const interval = setInterval(sample, 45);
+    const interval = setInterval(sample, 16);
     window.__ownedRenewalRecorder = { observer, interval, samples, sample };
     sample();
   });
@@ -755,7 +756,33 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
     expect(ingredientSamples.some((sample) => sample.responseVisible), "owned greenhouse gives one visible renewal response").toBe(true);
     const firstTransientAt = transientSamples[0].at;
     const settledSample = phaseSamples.find((sample) => sample.phase === "settled");
-    expect(settledSample.at - firstTransientAt, "owned renewal remains bounded").toBeLessThan(4500);
+    const completionSample = renewalSamples.find((sample) => sample.roundComplete);
+    expect(completionSample, `${runLabel} round ${round} records authoritative completion`).toBeTruthy();
+    const completionToAction = settledSample.at - completionSample.at;
+    expect(
+      completionToAction,
+      `${runLabel} round ${round} completion-to-action stays inside the focused pacing contract`
+    ).toBeLessThanOrEqual(config.reducedMotion ? 700 : 2400);
+    if (!config.reducedMotion) {
+      const transferSample = phaseSamples.find((sample) => sample.phase === "transfer");
+      const intakeDuration = settledSample.at - transferSample.at;
+      expect(
+        intakeDuration,
+        `${runLabel} round ${round} ingredient transfer and greenhouse response remain readable`
+      ).toBeGreaterThanOrEqual(900);
+      expect(
+        intakeDuration,
+        `${runLabel} round ${round} ingredient transfer and greenhouse response stay concise`
+      ).toBeLessThanOrEqual(1300);
+      result.ownedRenewalTiming = {
+        completionToAction: Math.round(completionToAction),
+        intakeDuration: Math.round(intakeDuration)
+      };
+    } else {
+      result.ownedRenewalTiming = {
+        completionToAction: Math.round(completionToAction)
+      };
+    }
     expect(settledSample.topCue, `${runLabel} round ${round} settled action cue returns`).toBe(expectedSettledCues[round - 1]);
     expect(settledSample.transientNodes, "settled ceremony removes all transient descendants").toBe(0);
     expect(settledSample.renewalHidden, "settled ceremony hides transient host").toBe(true);
@@ -840,6 +867,61 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
     }
   }
   return results;
+}
+
+async function completeOwnedRoundAndReloadDuringPhase(page, config, runLabel, round, phase, strategy) {
+  const start = await journeyState(page);
+  const startMoves = start.moves;
+  let attempts = 0;
+  while (!(await journeyState(page)).roundComplete) {
+    expect((await journeyState(page)).moves, `${runLabel} round ${round} has moves remaining`).toBeGreaterThan(0);
+    await clickGuidedSwap(page, strategy);
+    attempts += 1;
+    expect(attempts, `${runLabel} round ${round} interruption path should not drag`).toBeLessThanOrEqual(10);
+  }
+
+  await page.waitForFunction((expectedPhase) => (
+    document.querySelector("#roundOneRestoration")?.dataset.ownedRenewalPhase === expectedPhase
+  ), phase, { timeout: 2500 });
+  await page.waitForTimeout(32);
+  const interrupted = await journeyState(page);
+  expect(interrupted.roundComplete).toBe(true);
+  expect(interrupted.ownedRenewalPhase).toBe(phase);
+  expect(interrupted.visibleButtons, `${runLabel} round ${round} ${phase} withholds action`).toEqual([]);
+  expect(interrupted.payoffTransaction).toBe(`Reward added · +${[120, 150, 180][round - 1]} coins · ${interrupted.coins} coins balance.`);
+  await page.screenshot({
+    path: `work/replay-renewal-${config.label}-round${round}-${phase}-interrupted.png`,
+    fullPage: true
+  });
+
+  const interruptedCoins = interrupted.coins;
+  await page.reload({ waitUntil: "networkidle" });
+  await expect(page.locator(".tile")).toHaveCount(64);
+  const reloaded = await journeyState(page);
+  expect(reloaded.round).toBe(round);
+  expect(reloaded.roundComplete).toBe(true);
+  expect(reloaded.coins, `${runLabel} round ${round} ${phase} reload does not duplicate reward`).toBe(interruptedCoins);
+  expect(reloaded.ownedRenewalPhase).toBe("settled");
+  expect(reloaded.ownedRenewalHidden).toBe(true);
+  expect(reloaded.ownedRenewalTransientNodes).toBe(0);
+  expect(reloaded.visibleButtons).toEqual([
+    round === 1
+      ? "Next Order → Moonlit Wreath"
+      : round === 2
+        ? "Next Order → Bloodroot Compact"
+        : "Play Again → First Bouquet"
+  ]);
+  expect(reloaded.brokenImages).toEqual([]);
+  expect(reloaded.overflowX).toBe(false);
+  await expect(page.locator("#roundOneRestoration button:not([hidden])")).toBeFocused();
+  await expectPermanentRaisedGreenhouse(page, `${runLabel} round ${round} ${phase} settled reload`);
+  return {
+    round,
+    phase,
+    startMoves,
+    movesLeft: reloaded.moves,
+    coins: interruptedCoins
+  };
 }
 
 async function assertActiveBoard(page, mobile) {
@@ -989,10 +1071,70 @@ for (const config of [
       const secondReplayReady = await journeyState(page);
       expect(secondReplayReady.coins).toBe(500);
       await page.screenshot({ path: `work/replay-second-active-reload-${config.label}.png`, fullPage: true });
-      console.log(`${runLabel} balance traces: ${JSON.stringify({ firstCycle: firstCycle.map((round) => round.balances), secondCycle: secondCycle.map((round) => round.balances) })}`);
+      console.log(`${runLabel} balance and renewal traces: ${JSON.stringify({
+        firstCycle: firstCycle.map((round) => round.balances),
+        secondCycle: secondCycle.map((round) => round.balances),
+        renewalTiming: secondCycle.map((round) => round.ownedRenewalTiming)
+      })}`);
       expect(consoleMessages).toEqual([]);
       expect(pageErrors).toEqual([]);
       expect(failedRequests).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+
+  test(`owned replay transient reloads settle atomically on ${config.label}`, async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: config.viewport,
+      hasTouch: config.mobile,
+      isMobile: config.mobile,
+      reducedMotion: "no-preference"
+    });
+    const page = await context.newPage();
+    const consoleMessages = [];
+    const pageErrors = [];
+    page.on("console", (message) => {
+      if (message.type() === "error" || message.type() === "warning") {
+        consoleMessages.push(`${message.type()}: ${message.text()}`);
+      }
+    });
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+
+    try {
+      const runLabel = `${config.label}-owned-replay-transient-reload`;
+      await openFresh(page, "vesper-thorn", runLabel);
+      const firstCycle = await playFocusedCycle(page, config, `${runLabel}-cycle1`, "goal-following", {
+        replayActivation: config.mobile ? "touch" : "pointer"
+      });
+      expect(firstCycle.map((round) => round.balances)).toEqual([
+        [0, 120, 20, 20],
+        [20, 170, 50, 50],
+        [50, 230, 50, 50]
+      ]);
+
+      const phases = ["binding", "transfer", "renewal"];
+      const expectedBalances = [170, 320, 500];
+      const interruptions = [];
+      for (let round = 1; round <= 3; round += 1) {
+        const interrupted = await completeOwnedRoundAndReloadDuringPhase(
+          page,
+          config,
+          runLabel,
+          round,
+          phases[round - 1],
+          "goal-following"
+        );
+        expect(interrupted.coins).toBe(expectedBalances[round - 1]);
+        interruptions.push(interrupted);
+        if (round < 3) {
+          await spendPrimaryCeremonyAction(page, config.mobile ? "touch" : "pointer");
+          await assertActiveBoard(page, config.mobile);
+        }
+      }
+      console.log(`${runLabel} interruption trace: ${JSON.stringify(interruptions)}`);
+      expect(consoleMessages).toEqual([]);
+      expect(pageErrors).toEqual([]);
     } finally {
       await context.close();
     }
@@ -1077,6 +1219,7 @@ test("reduced-motion exact-mobile replay boundary preserves the owned wallet", a
       [170, 320, 320],
       [320, 500, 500]
     ]);
+    console.log(`mobile390-reduced renewal timing: ${JSON.stringify(reducedReplay.map((round) => round.ownedRenewalTiming))}`);
     const secondFinal = await journeyState(page);
     expect(secondFinal.coins).toBe(500);
     expect(secondFinal.payoffTransaction).toBe("Reward added · +180 coins · 500 coins balance.");

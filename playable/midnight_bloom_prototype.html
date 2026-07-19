@@ -6143,7 +6143,7 @@
     .owned-renewal-ingredient img { width:44px; height:44px; }
     .owned-renewal-ingredient img { object-fit:contain; filter:drop-shadow(0 3px 5px #000) drop-shadow(0 0 7px currentColor); }
     .owned-replay-renewal[data-renewal-phase="transfer"] .owned-renewal-ingredient {
-      animation:owned-ingredient-tend 820ms cubic-bezier(.18,.76,.22,1) var(--renew-delay,0ms) both;
+      animation:owned-ingredient-tend 500ms cubic-bezier(.18,.76,.22,1) var(--renew-delay,0ms) both;
     }
     .owned-replay-renewal[data-renewal-phase="renewal"] .owned-renewal-ingredient,
     .owned-replay-renewal[data-renewal-phase="acknowledgment"] .owned-renewal-ingredient {
@@ -6153,7 +6153,7 @@
       transform:translate(-50%,-50%) scale(.88);
     }
     .owned-replay-renewal[data-renewal-phase="renewal"] .owned-renewal-ingredient {
-      animation:owned-ingredient-land 620ms ease-out var(--renew-delay,0ms) both;
+      animation:owned-ingredient-land 360ms ease-out var(--renew-delay,0ms) both;
     }
     .owned-renewal-response { position:absolute; right:0; top:0; width:58%; height:100%; z-index:2; display:none; overflow:hidden; }
     .owned-replay-renewal[data-renewal-phase="renewal"] .owned-renewal-response,
@@ -6197,9 +6197,9 @@
       opacity:.82;
       transform:skewX(var(--renew-window-skew,0deg));
     }
-    .owned-replay-renewal[data-renewal-phase="renewal"] .owned-renewal-response::before { animation:owned-greenhouse-renew 820ms ease-out both; }
+    .owned-replay-renewal[data-renewal-phase="renewal"] .owned-renewal-response::before { animation:owned-greenhouse-renew 500ms ease-out both; }
     .owned-replay-renewal[data-renewal-phase="renewal"] .owned-renewal-response::after,
-    .owned-replay-renewal[data-renewal-phase="renewal"] .owned-renewal-window { animation:owned-greenhouse-live 720ms ease-out both; }
+    .owned-replay-renewal[data-renewal-phase="renewal"] .owned-renewal-window { animation:owned-greenhouse-live 480ms ease-out both; }
     .first-swap-cue.swap-refused {
       color:#f0b0a5;
       text-shadow:0 0 12px #9b1d22;
@@ -10939,7 +10939,7 @@
         const flower = flowers[target.flowerId] || flowers[0];
         const position = positions[index % positions.length];
         return `
-          <span class="owned-renewal-ingredient" data-flower-id="${target.flowerId}" data-renewal-slot="${index}" data-required-count="${target.needed}" style="--renew-color:${flower[4]};--renew-delay:${index * 55}ms;--renew-start-x:${position.sx}%;--renew-start-y:${position.sy}%;--renew-end-x:${position.ex}%;--renew-end-y:${position.ey}%;--renew-mobile-start-x:${position.msx}%;--renew-mobile-start-y:${position.msy}%;--renew-mobile-end-x:${position.mex}%;--renew-mobile-end-y:${position.mey}%;" title="${flower[0]}">
+          <span class="owned-renewal-ingredient" data-flower-id="${target.flowerId}" data-renewal-slot="${index}" data-required-count="${target.needed}" style="--renew-color:${flower[4]};--renew-delay:${index * 30}ms;--renew-start-x:${position.sx}%;--renew-start-y:${position.sy}%;--renew-end-x:${position.ex}%;--renew-end-y:${position.ey}%;--renew-mobile-start-x:${position.msx}%;--renew-mobile-start-y:${position.msy}%;--renew-mobile-end-x:${position.mex}%;--renew-mobile-end-y:${position.mey}%;" title="${flower[0]}">
             ${iconMarkup(target.flowerId, "owned-renewal-icon", "", "owned-renewal-wrap")}
           </span>
         `;
@@ -11006,8 +11006,8 @@
         }
         ownedReplayRenewalPhase = "renewal";
         render();
-        ownedReplayRenewalTimer = window.setTimeout(settleOwnedReplayRenewal, 920);
-      }, 1120);
+        ownedReplayRenewalTimer = window.setTimeout(settleOwnedReplayRenewal, 520);
+      }, 660);
     }
 
     function renderFocusedPayoffCeremony(ceremony) {
@@ -13745,7 +13745,7 @@
             render();
           }
         }
-      }, prefersReducedMotion() ? 40 : 1420);
+      }, prefersReducedMotion() ? 40 : 820);
     }
 
     function pulseNextOrderReady() {
