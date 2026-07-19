@@ -7517,6 +7517,7 @@
     const BLOODROOT_CONSERVATORY_COST = 180;
     const FIRST_GREENHOUSE_RESTORE_COST = 100;
     const RESTORED_ROUND_TWO_GUIDE_LIMIT = 2;
+    const ROUND_ONE_AGENCY_HINT_DELAY_MS = 4000;
     const FOCUSED_LEVEL_COUNT = 3;
     const WILD_CHAIN_CASCADE_BONUS = 8;
     const WILD_CHAIN_SHAPE_BONUS = 12;
@@ -8299,7 +8300,7 @@
         return;
       }
       if (stage === "thorn-followup" && thornTarget) {
-        writeRoundOneThreeMatchPatch(2, 0, thornTarget.flowerId);
+        writeRoundOneThreeMatchPatch(2, 0, thornTarget.flowerId, { safeBoard: true });
         return;
       }
       if (stage === "bone-ordinary" && boneTarget) {
@@ -8319,7 +8320,7 @@
         .filter((flowerId) => flowerId !== targetFlowerId && !blockedTargets.has(flowerId));
     }
 
-    function writeRoundOneThreeMatchPatch(originX, originY, flowerId) {
+    function writeRoundOneThreeMatchPatch(originX, originY, flowerId, { safeBoard = false } = {}) {
       if (originX + 3 >= BOARD_SIZE || originY + 3 >= BOARD_SIZE) {
         return;
       }
@@ -8329,11 +8330,13 @@
       const rowPatternB = [fillerC, fillerD, fillerA, fillerB, fillerC, fillerD, fillerA, fillerB];
       const rowPatternC = [fillerB, fillerC, fillerD, fillerA, fillerB, fillerC, fillerD, fillerA];
       const rowPatternD = [fillerD, fillerA, fillerB, fillerC, fillerD, fillerA, fillerB, fillerC];
-      for (let x = 0; x < BOARD_SIZE; x += 1) {
-        board[originY][x] = rowPatternA[x];
-        board[originY + 1][x] = rowPatternB[x];
-        board[originY + 2][x] = rowPatternC[x];
-        board[originY + 3][x] = rowPatternD[x];
+      const rowPatterns = [rowPatternA, rowPatternB, rowPatternC, rowPatternD];
+      const firstRow = safeBoard ? 0 : originY;
+      const lastRow = safeBoard ? BOARD_SIZE : originY + rowPatterns.length;
+      for (let y = firstRow; y < lastRow; y += 1) {
+        for (let x = 0; x < BOARD_SIZE; x += 1) {
+          board[y][x] = rowPatterns[(y - originY + rowPatterns.length) % rowPatterns.length][x];
+        }
       }
       board[originY][originX] = flowerId;
       board[originY][originX + 1] = fillerA;
@@ -9343,24 +9346,33 @@
     function scheduleIdleHint() {
       clearIdleHint();
       const postOnboardingIdleHint = isPostOnboardingIdleHintActive();
+      const roundOneAgencyHint = isRoundOneAgencyHandoffActive();
       const armedRelicHint = isArmedLineRelicGuidanceActive();
       if ((hasMadeValidMove && !postOnboardingIdleHint && !armedRelicHint) || roundComplete || isBouquetFailed() || isResolving) {
         return;
       }
-      const hintDelay = currentRound === 1
+      const hintDelay = roundOneAgencyHint
+        ? ROUND_ONE_AGENCY_HINT_DELAY_MS
+        : currentRound === 1
         ? 350
         : isRestoredRoundTwoGuideActive()
           ? 650
           : 7000;
       idleHintTimer = window.setTimeout(() => {
         const postOnboardingIdleHintAfterDelay = isPostOnboardingIdleHintActive();
+        const roundOneAgencyHintAfterDelay = isRoundOneAgencyHandoffActive();
         const armedRelicHintAfterDelay = isArmedLineRelicGuidanceActive();
         if ((hasMadeValidMove && !postOnboardingIdleHintAfterDelay && !armedRelicHintAfterDelay) || roundComplete || isBouquetFailed() || isResolving) {
           return;
         }
         if (
           postOnboardingIdleHintAfterDelay
-          && (selected || tutorialActive || restoredGreenhouseHandoff || boardGuideTransientStateActive())
+          && (
+            selected
+            || (!roundOneAgencyHintAfterDelay && tutorialActive)
+            || restoredGreenhouseHandoff
+            || boardGuideTransientStateActive()
+          )
         ) {
           if (boardDragInputActive()) {
             scheduleIdleHint();
@@ -9380,7 +9392,9 @@
           return;
         }
         const plan = activeRoundPlan();
-        seedRoundOneGuidedMove(plan);
+        if (!roundOneAgencyHintAfterDelay) {
+          seedRoundOneGuidedMove(plan);
+        }
         const roundOneStage = roundOneGuidedStage(plan);
         if (roundOneStage === "black-candle" && hasRoundOneBlackCandleLessonMove(plan)) {
           const move = roundOneBlackCandleLessonSwap();
@@ -9400,7 +9414,7 @@
         }
         const targetIndex = plan.targets.findIndex((target) => targetProgress(target) < target.needed);
         const target = plan.targets[targetIndex];
-        const usefulMove = postOnboardingIdleHintAfterDelay
+        const usefulMove = postOnboardingIdleHintAfterDelay && !roundOneAgencyHintAfterDelay
           ? objectiveUsefulIdleMove(plan)
           : null;
         const [a, b] = usefulMove?.pair
@@ -9875,13 +9889,14 @@
       }
       const cue = $("firstSwapCue");
       const authoritativeThornLesson = isAuthoritativeRoundTwoThornLesson();
+      const roundOneAgencyHandoff = isRoundOneAgencyHandoffActive();
       const focusedCueActive = (currentRound === 1 || isRestoredNextOrderFocus() || authoritativeThornLesson || postRecoveryGuideActive) && !roundComplete && cue;
       const returnCue = continuingRefusal
         ? invalidSwapReturnCue
         : focusedCueActive ? cue.textContent : "";
       const returnHintCells = continuingRefusal
         ? new Set(invalidSwapReturnHintCells)
-        : focusedCueActive ? new Set(hintSnapshot) : new Set();
+        : focusedCueActive && !roundOneAgencyHandoff ? new Set(hintSnapshot) : new Set();
       const returnSelection = continuingRefusal
         ? invalidSwapReturnSelection
         : selectionSnapshot ? { ...selectionSnapshot } : null;
@@ -9892,7 +9907,9 @@
       pulseHaptic([10, 35, 18]);
       playBloomSound("invalid");
       if (focusedCueActive) {
-        cue.textContent = "No bloom — follow the glowing pair.";
+        cue.textContent = roundOneAgencyHandoff
+          ? "No bloom — try another adjacent swap."
+          : "No bloom — follow the glowing pair.";
         cue.classList.add("swap-refused");
         idleHintCells = new Set(returnHintCells);
       }
@@ -9909,7 +9926,12 @@
           cue.classList.remove("swap-refused");
           cue.textContent = returnCue;
           idleHintCells = new Set(returnHintCells);
-          if (!idleHintCells.size && currentRound === 1 && tutorialActive) {
+          if (
+            !idleHintCells.size
+            && currentRound === 1
+            && tutorialActive
+            && !isRoundOneAgencyHandoffActive()
+          ) {
             nextTargetMoveHint();
           }
         }
@@ -10614,14 +10636,25 @@
         && restoredRoundTwoGuideMoves < RESTORED_ROUND_TWO_GUIDE_LIMIT;
     }
 
+    function isRoundOneAgencyHandoffActive(plan = activeRoundPlan()) {
+      return plan.round === 1
+        && hasMadeValidMove
+        && roundOneGuidedStage(plan) === "thorn-followup"
+        && !roundComplete
+        && !isBouquetFailed(plan)
+        && !isArmedLineRelicGuidanceActive()
+        && !postRecoveryGuideActive
+        && !altarReweaveActive;
+    }
+
     function isPostOnboardingIdleHintActive(plan = activeRoundPlan()) {
+      const roundOneAgencyHandoff = isRoundOneAgencyHandoffActive(plan);
       return focusedSliceRound(plan)
-        && plan.round >= 2
         && plan.round <= 3
         && hasMadeValidMove
         && !roundComplete
         && !isBouquetFailed(plan)
-        && !tutorialActive
+        && (roundOneAgencyHandoff || (plan.round >= 2 && !tutorialActive))
         && !restoredGreenhouseHandoff
         && !isAuthoritativeRoundTwoThornLesson(plan)
         && !isArmedLineRelicGuidanceActive()
@@ -11453,7 +11486,9 @@
         return "Tap Next Order.";
       }
       if (invalidSwapCells.size > 0) {
-        return "Use the glowing pair.";
+        return isRoundOneAgencyHandoffActive()
+          ? "Try another adjacent swap."
+          : "Use the glowing pair.";
       }
       if (armedLineRelic) {
         const guidance = lineRelicGuidance();
@@ -11477,6 +11512,9 @@
       }
       if (plan.round === 1 && hasMadeValidMove && $("firstSwapCue").textContent.includes("Black Candle Vine")) {
         return "Match 4 arms Black Candle Vine.";
+      }
+      if (isRoundOneAgencyHandoffActive(plan) && idleHintCells.size === 2) {
+        return "Match Thorn Rose.";
       }
       if (plan.round === 1 && hasMadeValidMove) {
         return "Match 3 fills the bouquet.";
@@ -11533,6 +11571,7 @@
       if (tutorialSkipped && !replay) {
         return;
       }
+      const restartRoundOneAgencyHint = isRoundOneAgencyHandoffActive();
       if (isPostOnboardingIdleHintActive()) {
         clearIdleHint();
       }
@@ -11551,6 +11590,9 @@
         }
       }
       saveProgress();
+      if (restartRoundOneAgencyHint) {
+        scheduleIdleHint();
+      }
     }
 
     function skipTutorial() {
@@ -11911,7 +11953,8 @@
       let schedulePostResolveIdleHint = false;
       try {
         const authoredRoundOneLesson = currentRound === 1 && (
-          isFirstValidMove || $("firstSwapCue").textContent.includes("Black Candle Vine")
+          isFirstValidMove
+          || $("firstSwapCue").textContent.includes("Black Candle Vine")
         );
         result = await resolveAnimated(activatingRelic
           ? {
@@ -11949,6 +11992,11 @@
         } else if (!resolvingMoveFailed && isArmedLineRelicGuidanceActive()) {
           ritualMessage += nextTargetMoveHint();
         } else if (!resolvingMoveFailed && (guidedRoundTwoLesson || reachedRestoredGuideLimit)) {
+          schedulePostResolveIdleHint = true;
+        } else if (!resolvingMoveFailed && isRoundOneAgencyHandoffActive()) {
+          // Author the existing useful follow-up as part of the settled board,
+          // then leave it unmarked until the player's quiet window expires.
+          seedRoundOneGuidedMove(activeRoundPlan());
           schedulePostResolveIdleHint = true;
         } else if (!resolvingMoveFailed && isPostOnboardingIdleHintActive()) {
           schedulePostResolveIdleHint = true;
@@ -14731,10 +14779,12 @@
       }
     } else if (currentRound === 1 && !roundComplete && hasMadeValidMove && !isBouquetFailed()) {
       seedRoundOneGuidedMove(activeRoundPlan());
-      nextTargetMoveHint();
-      const hintedFocus = firstHintFocusCell();
-      if (hintedFocus) {
-        boardFocusCell = hintedFocus;
+      if (!isRoundOneAgencyHandoffActive()) {
+        nextTargetMoveHint();
+        const hintedFocus = firstHintFocusCell();
+        if (hintedFocus) {
+          boardFocusCell = hintedFocus;
+        }
       }
     }
     render();

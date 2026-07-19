@@ -567,13 +567,73 @@ async function legalFourBoneStarPreview(page) {
 }
 
 async function hintedPair(page) {
-  await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 5000 });
+  await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 6500 });
   const pair = await page.locator(".tile.idle-hint").evaluateAll((tiles) => tiles.map((tile) => ({
     x: Number(tile.dataset.x),
     y: Number(tile.dataset.y)
   })));
   expect(Math.abs(pair[0].x - pair[1].x) + Math.abs(pair[0].y - pair[1].y)).toBe(1);
   return pair;
+}
+
+async function objectiveUsefulPairs(page) {
+  return page.evaluate(() => {
+    const board = Array.from({ length: 8 }, () => Array(8).fill(-1));
+    Array.from(document.querySelectorAll(".tile")).forEach((tile) => {
+      board[Number(tile.dataset.y)][Number(tile.dataset.x)] = Number(tile.dataset.flowerId);
+    });
+    const unfinished = new Set(Array.from(
+      document.querySelectorAll(".objective-target[data-flower-id]:not(.complete)")
+    ).map((node) => Number(node.dataset.flowerId)));
+    const createdRuns = (next, a, b) => {
+      const moved = new Set([`${a.x},${a.y}`, `${b.x},${b.y}`]);
+      const runs = [];
+      for (let y = 0; y < 8; y += 1) {
+        for (let start = 0, x = 1; x <= 8; x += 1) {
+          if (x === 8 || next[y][x] !== next[y][start]) {
+            if (x - start >= 3) {
+              runs.push({
+                flowerId: next[y][start],
+                cells: Array.from({ length: x - start }, (_, offset) => [start + offset, y])
+              });
+            }
+            start = x;
+          }
+        }
+      }
+      for (let x = 0; x < 8; x += 1) {
+        for (let start = 0, y = 1; y <= 8; y += 1) {
+          if (y === 8 || next[y][x] !== next[start][x]) {
+            if (y - start >= 3) {
+              runs.push({
+                flowerId: next[start][x],
+                cells: Array.from({ length: y - start }, (_, offset) => [x, start + offset])
+              });
+            }
+            start = y;
+          }
+        }
+      }
+      return runs.filter((run) => run.cells.some(([x, y]) => moved.has(`${x},${y}`)));
+    };
+    const pairs = [];
+    for (let y = 0; y < 8; y += 1) {
+      for (let x = 0; x < 8; x += 1) {
+        for (const [dx, dy] of [[1, 0], [0, 1]]) {
+          const a = { x, y };
+          const b = { x: x + dx, y: y + dy };
+          if (b.x >= 8 || b.y >= 8 || board[a.y][a.x] === board[b.y][b.x]) continue;
+          const next = board.map((row) => row.slice());
+          [next[a.y][a.x], next[b.y][b.x]] = [next[b.y][b.x], next[a.y][a.x]];
+          const usefulRuns = createdRuns(next, a, b).filter((run) => unfinished.has(run.flowerId));
+          if (usefulRuns.length) {
+            pairs.push({ pair: [a, b], flowerIds: [...new Set(usefulRuns.map((run) => run.flowerId))] });
+          }
+        }
+      }
+    }
+    return pairs;
+  });
 }
 
 function unorderedPairKey(pair) {
@@ -1414,9 +1474,11 @@ function assertPassiveInputPreservesFeedback(before, after, label) {
   expect(after.brokenImages, `${label} no broken images`).toEqual([]);
 }
 
-function assertRefusalOwnsFeedback(state, label) {
+function assertRefusalOwnsFeedback(state, label, { agency = false } = {}) {
   expect(state.tutorialIcon, `${label} refusal category`).toBe("NO BLOOM");
-  expect(state.tutorialCopy, `${label} refusal copy`).toBe("Use the glowing pair.");
+  expect(state.tutorialCopy, `${label} refusal copy`).toBe(
+    agency ? "Try another adjacent swap." : "Use the glowing pair."
+  );
   expect(state.invalidTiles, `${label} two refusal marks`).toHaveLength(2);
   expect(state.positiveFeedback, `${label} no prior positive feedback`).toEqual([]);
   expect(state.positiveFeedbackIntersections, `${label} no positive/refusal intersections`).toBe(0);
@@ -1741,19 +1803,41 @@ for (const viewport of [
 
     for (let index = 1; index <= 2; index += 1) {
       await clickHighlightedPair(page);
-      await expect(page.locator(".first-action-swap-guide")).toHaveCount(1, { timeout: 2500 });
-      trace.push(await guidedRoundOneState(page, `after swap ${index}`));
-      assertActiveGuidedState(trace[trace.length - 1], viewport.mobile, `${viewport.label} after swap ${index}`);
-      const followupPair = await hintedPair(page);
-      guidedPairs.push(followupPair);
-      const followupStage = index === 1 ? "thorn-followup" : "black-candle";
-      assertFirstActionGuide(
-        await firstActionGuideReport(page),
-        followupPair,
-        `${viewport.label} after swap ${index} guide`,
-        { mobile: viewport.mobile, stage: followupStage }
-      );
       if (index === 1) {
+        const discovery = await guidedRoundOneState(page, "post-opening discovery");
+        trace.push(discovery);
+        assertActiveGuidedState(discovery, viewport.mobile, `${viewport.label} post-opening discovery`);
+        expect(discovery.moves, `${viewport.label} opening spends once`).toBe(5);
+        expect(discovery.counts, `${viewport.label} opening fills Thorn Rose`).toEqual([0, 0, 0, 0, 0, 3]);
+        expect(discovery.tutorial, `${viewport.label} truthful Match 3 acknowledgment`).toBe("Match 3 fills the bouquet.");
+        expect(discovery.hints, `${viewport.label} no immediate prescribed pair`).toEqual([]);
+        await expect(page.locator(
+          ".tile.idle-hint, .swap-path-arrow, .first-action-swap-guide, .tile.sel, .tile.drag-preview-source, .tile.drag-preview-neighbor, .tile.drag-preview-ready"
+        )).toHaveCount(0);
+        await page.screenshot({
+          path: `work/round-one-agency-${viewport.label}-discovery.png`,
+          fullPage: true
+        });
+
+        await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 6500 });
+        await expect(page.locator(".first-action-swap-guide")).toHaveCount(1);
+        const delayed = await guidedRoundOneState(page, "post-opening delayed rescue");
+        expect(delayed.moves, `${viewport.label} delayed hint spends no move`).toBe(discovery.moves);
+        expect(delayed.counts, `${viewport.label} delayed hint changes no objective`).toEqual(discovery.counts);
+        expect(delayed.tutorial, `${viewport.label} delayed copy is literal`).toBe("Match Thorn Rose.");
+        const followupPair = delayed.hints;
+        const usefulPairs = await objectiveUsefulPairs(page);
+        expect(
+          usefulPairs.some((candidate) => unorderedPairKey(candidate.pair) === unorderedPairKey(followupPair)),
+          `${viewport.label} delayed pair is a legal objective-useful swap`
+        ).toBe(true);
+        guidedPairs.push(followupPair);
+        assertFirstActionGuide(
+          await firstActionGuideReport(page),
+          followupPair,
+          `${viewport.label} delayed agency rescue`,
+          { mobile: viewport.mobile, stage: "thorn-followup" }
+        );
         expect(unorderedPairKey(followupPair), `${viewport.label} post-opening guide moves across the altar`)
           .not.toBe(unorderedPairKey(guidedPairs[0]));
         expect(
@@ -1762,10 +1846,22 @@ for (const viewport of [
           ))),
           `${viewport.label} post-opening guide has no opening endpoint overlap`
         ).toBe(true);
-        await page.screenshot({ path: `work/tutorial-guide-${viewport.label}-post-first-match3.png`, fullPage: true });
-        await assertRepeatedTutorialRefusal(page, {
-          label: `${viewport.label} Match 3 refusal`
+        await page.screenshot({
+          path: `work/round-one-agency-${viewport.label}-delayed-hint.png`,
+          fullPage: true
         });
+      } else {
+        await expect(page.locator(".first-action-swap-guide")).toHaveCount(1, { timeout: 2500 });
+        trace.push(await guidedRoundOneState(page, `after swap ${index}`));
+        assertActiveGuidedState(trace[trace.length - 1], viewport.mobile, `${viewport.label} after swap ${index}`);
+        const followupPair = await hintedPair(page);
+        guidedPairs.push(followupPair);
+        assertFirstActionGuide(
+          await firstActionGuideReport(page),
+          followupPair,
+          `${viewport.label} after swap ${index} guide`,
+          { mobile: viewport.mobile, stage: "black-candle" }
+        );
       }
     }
 
@@ -1999,6 +2095,189 @@ for (const viewport of [
     expect(failedRequests).toEqual([]);
   });
 }
+
+test("Round 1 agency retires and restores guidance across real input boundaries", async ({ browser }) => {
+  const cases = [
+    { label: "desktop-pointer", viewport: { width: 1280, height: 720 }, input: "pointer" },
+    { label: "mobile390-touch", viewport: { width: 390, height: 844 }, input: "touch", mobile: true },
+    { label: "desktop-keyboard-reduced", viewport: { width: 1280, height: 720 }, input: "keyboard", reduced: true },
+    { label: "mobile390-touch-reduced", viewport: { width: 390, height: 844 }, input: "touch", mobile: true, reduced: true }
+  ];
+
+  const activatePair = async (page, pair, input) => {
+    const tile = (cell) => page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`);
+    if (input === "touch") {
+      await tile(pair[0]).tap();
+      await tile(pair[1]).tap();
+      return;
+    }
+    if (input === "keyboard") {
+      await tile(pair[0]).focus();
+      await page.keyboard.press("Enter");
+      await tile(pair[1]).focus();
+      await page.keyboard.press("Enter");
+      return;
+    }
+    await tile(pair[0]).click();
+    await tile(pair[1]).click();
+  };
+
+  for (const testCase of cases) {
+    const context = await browser.newContext({
+      viewport: testCase.viewport,
+      hasTouch: Boolean(testCase.mobile),
+      isMobile: Boolean(testCase.mobile),
+      reducedMotion: testCase.reduced ? "reduce" : "no-preference"
+    });
+    const page = await context.newPage();
+    const consoleErrors = [];
+    const pageErrors = [];
+    const failedRequests = [];
+    page.on("console", (message) => {
+      if (message.type() === "error") consoleErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    page.on("requestfailed", (request) => failedRequests.push(
+      `${request.url()} ${request.failure()?.errorText || ""}`
+    ));
+
+    try {
+      await openFreshNoReview(page, `round-one-agency-${testCase.label}`);
+      await expect(page.locator("#tutorialPanel")).toBeVisible({ timeout: 3000 });
+      const opening = await hintedPair(page);
+      if (testCase.input === "pointer") {
+        await previewDelta(page, opening);
+        await releaseMouseAndWaitIdle(page);
+      } else if (testCase.input === "touch") {
+        await dragTouchViaCdp(page, opening);
+      } else {
+        await keyboardGuidedSwap(page);
+      }
+      await waitForSettledBoard(page);
+      const discovery = await guidedRoundOneState(page, `${testCase.label} discovery`);
+      expect(discovery.moves, `${testCase.label} opening spends once`).toBe(5);
+      expect(discovery.counts, `${testCase.label} opening objective`).toEqual([0, 0, 0, 0, 0, 3]);
+      expect(discovery.hints, `${testCase.label} discovery has no hint`).toEqual([]);
+      expect(discovery.tutorial, `${testCase.label} Match 3 acknowledgment`).toBe("Match 3 fills the bouquet.");
+      await expect(page.locator(
+        ".tile.idle-hint, .swap-path-arrow, .first-action-swap-guide, .tile.sel, .tile.drag-preview-source, .tile.drag-preview-neighbor, .tile.drag-preview-ready"
+      )).toHaveCount(0);
+
+      if (testCase.input === "keyboard") {
+        await page.locator(".tile[tabindex='0']").focus();
+        await page.keyboard.press("ArrowRight");
+      } else {
+        const cancelCell = page.locator('.tile[data-x="0"][data-y="0"]');
+        const box = await cancelCell.boundingBox();
+        expect(box).toBeTruthy();
+        const start = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+        if (testCase.input === "touch") {
+          const client = await context.newCDPSession(page);
+          await client.send("Input.dispatchTouchEvent", {
+            type: "touchStart",
+            touchPoints: [{ x: start.x, y: start.y, id: 71 }]
+          });
+          await client.send("Input.dispatchTouchEvent", {
+            type: "touchMove",
+            touchPoints: [{ x: start.x + 32, y: start.y, id: 71 }]
+          });
+          await client.send("Input.dispatchTouchEvent", { type: "touchCancel", touchPoints: [] });
+        } else {
+          await page.mouse.move(start.x, start.y);
+          await page.mouse.down();
+          await page.mouse.move(start.x + 32, start.y, { steps: 4 });
+          await page.dispatchEvent("#board", "pointercancel", {
+            pointerId: 1,
+            bubbles: true,
+            cancelable: true,
+            isPrimary: true,
+            clientX: start.x + 32,
+            clientY: start.y
+          });
+          await page.mouse.up();
+        }
+      }
+      await expect(page.locator(".tile.drag-preview-source, .tile.drag-preview-neighbor, .tile.drag-preview-ready")).toHaveCount(0);
+      await page.waitForTimeout(900);
+      await expect(page.locator(".tile.idle-hint")).toHaveCount(0);
+
+      const invalidPair = await findInvalidAdjacentPair(page);
+      expect(invalidPair, `${testCase.label} invalid pair`).toHaveLength(2);
+      await activatePair(page, invalidPair, testCase.input);
+      await expect(page.locator(".tile.invalid-swap")).toHaveCount(2, { timeout: 1600 });
+      await expect(page.locator(".tile.idle-hint, .swap-path-arrow, .first-action-swap-guide")).toHaveCount(0);
+      await expect(page.locator("#tutorialCopy")).toHaveText("Try another adjacent swap.");
+      await expect(page.locator(".tile.invalid-swap")).toHaveCount(0, { timeout: 2200 });
+      await page.waitForTimeout(900);
+      await expect(page.locator(".tile.idle-hint")).toHaveCount(0);
+
+      const focusBeforeHint = await page.evaluate(() => document.activeElement?.id || "");
+      await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 6500 });
+      const delayedPair = await hintedPair(page);
+      const usefulPairs = await objectiveUsefulPairs(page);
+      expect(
+        usefulPairs.some((candidate) => unorderedPairKey(candidate.pair) === unorderedPairKey(delayedPair)),
+        `${testCase.label} rescue is objective-useful`
+      ).toBe(true);
+      expect(await page.evaluate(() => document.activeElement?.id || ""), `${testCase.label} hint does not steal focus`)
+        .toBe(focusBeforeHint);
+      expect((await activeState(page)).moves, `${testCase.label} hint spends no move`).toBe(5);
+      if (testCase.reduced) {
+        const reducedCue = await page.locator(".tile.idle-hint").first().evaluate((tile) => ({
+          outline: getComputedStyle(tile).outlineStyle,
+          animationDuration: getComputedStyle(tile).animationDuration
+        }));
+        expect(reducedCue.outline, `${testCase.label} keeps a static outline`).toBe("solid");
+        expect(Number.parseFloat(reducedCue.animationDuration), `${testCase.label} suppresses pulsing motion`).toBeLessThanOrEqual(0.001);
+      }
+
+      if (testCase.label === "desktop-pointer") {
+        await page.locator("#tutorialSkipBtn").click();
+        await page.locator("#tutorialHelpBtn").click();
+        await expect(page.locator(".tile.idle-hint, .swap-path-arrow, .first-action-swap-guide")).toHaveCount(0);
+      }
+
+      await page.reload({ waitUntil: "networkidle" });
+      await waitForSettledBoard(page);
+      const reloadedDiscovery = await guidedRoundOneState(page, `${testCase.label} agency reload`);
+      expect(reloadedDiscovery.moves).toBe(5);
+      expect(reloadedDiscovery.counts).toEqual([0, 0, 0, 0, 0, 3]);
+      expect(reloadedDiscovery.hints).toEqual([]);
+      const ordinaryMove = (await objectiveUsefulPairs(page))[0]?.pair;
+      expect(ordinaryMove, `${testCase.label} discoverable useful move`).toHaveLength(2);
+      await activatePair(page, ordinaryMove, testCase.input);
+      await waitForSettledBoard(page);
+      await expect(page.locator("#firstSwapCue")).toContainText("Black Candle Vine");
+      await expect(page.locator(".tile.idle-hint")).toHaveCount(2);
+      const afterOrdinaryMove = await guidedRoundOneState(page, `${testCase.label} Black Candle boundary`);
+      expect(afterOrdinaryMove.moves, `${testCase.label} ordinary move spends once`).toBe(4);
+      expect(afterOrdinaryMove.counts[5], `${testCase.label} ordinary move advances Thorn Rose`).toBeGreaterThan(3);
+      expect(unorderedPairKey(afterOrdinaryMove.hints), `${testCase.label} stale rescue does not return`)
+        .not.toBe(unorderedPairKey(delayedPair));
+
+      await page.reload({ waitUntil: "networkidle" });
+      await waitForSettledBoard(page);
+      const reloadedLesson = await guidedRoundOneState(page, `${testCase.label} Black Candle reload`);
+      expect(reloadedLesson.moves).toBe(afterOrdinaryMove.moves);
+      expect(reloadedLesson.counts).toEqual(afterOrdinaryMove.counts);
+      expect(reloadedLesson.cue).toContain("Black Candle Vine");
+      expect(reloadedLesson.hints).toHaveLength(2);
+      expect(reloadedLesson.tiles).toBe(64);
+      expect(reloadedLesson.rows).toBe(8);
+      expect(reloadedLesson.overflowX).toBe(false);
+      expect(reloadedLesson.brokenImages).toEqual([]);
+      if (testCase.mobile) {
+        expect(reloadedLesson.completeRows).toBe(8);
+        expect(reloadedLesson.boardBottom).toBeLessThanOrEqual(844);
+      }
+      expect(consoleErrors).toEqual([]);
+      expect(pageErrors).toEqual([]);
+      expect(failedRequests).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  }
+});
 
 test("guided Round 1 payoff keeps one dominant action", async ({ page }) => {
   const consoleErrors = [];
@@ -2941,7 +3220,7 @@ test("Round 1 tutorial protects moves until Skip restores Shuffle", async ({ pag
   await clickGuidedSwap(page);
 
   const movesDuringLesson = Number((await page.locator(".moves-counter").textContent()).match(/\d+/)?.[0]);
-  await expect(page.locator("#tutorialCopy")).toContainText(/Match 3 fills|Match 4 arms/);
+  await expect(page.locator("#tutorialCopy")).toContainText(/Match 3 fills|Match Thorn Rose|Match 4 arms/);
   await expect(page.locator("#shuffleBtn")).toBeHidden();
   await expect(page.locator("#shuffleBtn")).toBeDisabled();
   await expect(page.locator("#tutorialSkipBtn")).toBeVisible();
@@ -3013,7 +3292,7 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
   expect(report.visibleNonTileButtons).toEqual(["Skip"]);
   await clickGuidedSwap(page);
   await expect(page.locator("#bouquetProgressLabel")).toContainText(/Bouquet [1-9]/);
-  await expect(page.locator("#tutorialCopy")).toContainText(/Match 3 fills|Match 4 makes/);
+  await expect(page.locator("#tutorialCopy")).toContainText(/Match 3 fills|Match Thorn Rose|Match 4 makes/);
   report = await visibleReport(page);
   expect(report.tutorialInViewport, "post-swap tutorial panel stays in viewport").toBe(true);
   expect(report.visibleButtons, "post-swap tutorial button cap").toEqual(["Skip"]);
@@ -3529,7 +3808,7 @@ for (const viewport of [
 
     await waitForRefusalAge(140);
     const peak140 = await invalidFeedbackState(page);
-    assertRefusalOwnsFeedback(peak140, `${viewport.label} 140ms`);
+    assertRefusalOwnsFeedback(peak140, `${viewport.label} 140ms`, { agency: true });
     expect(peak140.moves).toBe(settledStage.moves);
     expect(peak140.counts).toEqual(settledStage.counts);
     expect(peak140.board).toBe(settledStage.board);
@@ -3537,14 +3816,14 @@ for (const viewport of [
 
     await waitForRefusalAge(500);
     const peak500 = await invalidFeedbackState(page);
-    assertRefusalOwnsFeedback(peak500, `${viewport.label} 500ms`);
+    assertRefusalOwnsFeedback(peak500, `${viewport.label} 500ms`, { agency: true });
     expect(peak500.moves).toBe(settledStage.moves);
     expect(peak500.counts).toEqual(settledStage.counts);
     expect(peak500.board).toBe(settledStage.board);
 
     await waitForRefusalAge(800);
     const peak800 = await invalidFeedbackState(page);
-    assertRefusalOwnsFeedback(peak800, `${viewport.label} 800ms`);
+    assertRefusalOwnsFeedback(peak800, `${viewport.label} 800ms`, { agency: true });
     expect(peak800.moves).toBe(settledStage.moves);
     expect(peak800.counts).toEqual(settledStage.counts);
     expect(peak800.board).toBe(settledStage.board);
@@ -3558,6 +3837,7 @@ for (const viewport of [
 
     await openFreshNoReview(page, `feedback-owner-valid-${viewport.label}`);
     const first = await commitGuidedSwapAtControlReturn(page);
+    await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 6500 });
     const second = await commitGuidedSwapAtControlReturn(page, { sampleImpact: true });
     expect(second.after.moves, `${viewport.label} rapid second valid move`).toBe(first.after.moves - 1);
     expect(
@@ -3598,7 +3878,7 @@ test("rapid keyboard refusal retires the prior success generation", async ({ pag
   await expect(page.locator(".tile.invalid-swap")).toHaveCount(2);
   await page.waitForTimeout(140);
   const peak = await invalidFeedbackState(page);
-  assertRefusalOwnsFeedback(peak, "keyboard 140ms");
+  assertRefusalOwnsFeedback(peak, "keyboard 140ms", { agency: true });
   expect(peak.moves).toBe(firstValid.after.moves);
   expect(peak.counts).toEqual(firstValid.after.counts);
   expect(peak.board).toBe(firstValid.after.board);
@@ -3643,11 +3923,13 @@ test("drag preview moves the hinted pair before one authoritative release", asyn
   expect(after.moves, "valid drag spends exactly one move").toBe(before.moves - 1);
   expect(after.counts.reduce((sum, value) => sum + value, 0), "valid drag advances objective counts").toBeGreaterThan(before.counts.reduce((sum, value) => sum + value, 0));
   expect(await page.locator(".tile.drag-preview-source, .tile.drag-preview-neighbor, .tile.drag-preview-ready").count()).toBe(0);
-  await expect(page.locator(".first-action-swap-guide")).toHaveCount(1, { timeout: 2500 });
+  await expect(page.locator(".tile.idle-hint, .first-action-swap-guide, .swap-path-arrow")).toHaveCount(0);
+  await expect(page.locator("#tutorialCopy")).toHaveText("Match 3 fills the bouquet.");
+  await expect(page.locator(".first-action-swap-guide")).toHaveCount(1, { timeout: 6500 });
   assertFirstActionGuide(
     await firstActionGuideReport(page),
     await hintedPair(page),
-    "post-drag settled Match 3 guide",
+    "post-drag delayed agency rescue",
     { stage: "thorn-followup" }
   );
   expect(consoleErrors).toEqual([]);
@@ -3823,7 +4105,7 @@ test("invalid, cancel, mobile touch, and reduced motion drag paths stay clean", 
     expect(mobileInvalidPeak.moves, "mobile invalid drag spends no move").toBe(mobileInvalidBefore.moves);
     expect(mobileInvalidPeak.board, "mobile invalid drag preserves board").toBe(mobileInvalidBefore.board);
     expect(mobileInvalidPeak.tutorialIcon).toBe("NO BLOOM");
-    expect(mobileInvalidPeak.tutorialCopy).toBe("Use the glowing pair.");
+    expect(mobileInvalidPeak.tutorialCopy).toBe("Try another adjacent swap.");
     expect(mobileInvalidPeak.invalidTiles).toHaveLength(2);
     expect(mobileInvalidPeak.positiveFeedback).toEqual([]);
     expect(mobileInvalidPeak.positiveFeedbackIntersections).toBe(0);
@@ -3865,7 +4147,7 @@ test("invalid, cancel, mobile touch, and reduced motion drag paths stay clean", 
   const reducedInvalidPeak = await invalidFeedbackState(page);
   expect(reducedInvalidPeak.moves, "reduced motion invalid swap spends no move").toBe(reducedAfter.moves);
   expect(reducedInvalidPeak.board, "reduced motion invalid swap preserves board").toBe(reducedAfter.board);
-  expect(reducedInvalidPeak.tutorialCopy).toBe("Use the glowing pair.");
+  expect(reducedInvalidPeak.tutorialCopy).toBe("Try another adjacent swap.");
   expect(reducedInvalidPeak.positiveFeedback).toEqual([]);
   expect(reducedInvalidPeak.positiveFeedbackIntersections).toBe(0);
   await expect(page.locator(".tile.invalid-swap")).toHaveCount(0, { timeout: 1600 });
