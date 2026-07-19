@@ -11488,7 +11488,7 @@
         return;
       }
       const refusedTutorial = tutorialActive && invalidSwapCells.size > 0;
-      const namedBlackCandle = tutorialActive && Boolean(armedLineRelic) && !refusedTutorial;
+      const namedBlackCandle = tutorialActive && !roundComplete && Boolean(armedLineRelic) && !refusedTutorial;
       panel.classList.toggle("black-candle-tutorial", namedBlackCandle);
       panel.classList.toggle("refused-tutorial", refusedTutorial);
       if (icon) {

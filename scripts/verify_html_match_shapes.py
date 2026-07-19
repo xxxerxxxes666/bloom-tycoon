@@ -305,7 +305,7 @@ def verify_source_hooks():
         "BLACK CANDLE",
         'icon.textContent = refusedTutorial ? "NO BLOOM" : namedBlackCandle ? "BLACK CANDLE" : "✦"',
         'panel.classList.toggle("black-candle-tutorial", namedBlackCandle)',
-        "const namedBlackCandle = tutorialActive && Boolean(armedLineRelic) && !refusedTutorial;",
+        "const namedBlackCandle = tutorialActive && !roundComplete && Boolean(armedLineRelic) && !refusedTutorial;",
         "allowPartialProgress: Boolean(activatingRelic)",
         "queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);",
         ".tutorial-panel.black-candle-tutorial .tutorial-icon,",

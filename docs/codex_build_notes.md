@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-07-18 completed-order narrator ownership
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_first_three_journey.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.
+- Selected weakness: a naturally retained armed Black Candle could keep the existing tutorial icon in its `BLACK CANDLE` category after the final match, producing the contradictory completed-order cue `BLACK CANDLE · Nourishing conservatory.` while the bouquet and owned greenhouse response owned the screen.
+- Player-visible result: completed-order presentation now outranks any saved armed relic. `BLACK CANDLE` remains unchanged throughout active Round 1-3 formation, reload, direction/lane guidance, and activation, but the category and special palette retire as soon as `roundComplete` becomes authoritative. The existing binding, nourishment, settled action, wallet, owned art, save, and ceremony timing are unchanged.
+- Permanent contract: the natural desktop `1280x720`, exact-mobile `390x844`, and reduced-motion owned replay journeys sample the existing icon/class alongside every ceremony phase. They require no `BLACK CANDLE` category during binding, transfer, greenhouse response, acknowledgment, settlement, or two reloads, and require the natural route to retain an armed relic into at least one completed ceremony so the regression is exercised rather than bypassed with a relic-free fixture.
+- Verification and visual evidence: project/HTML verifiers, all spec and extracted inline JavaScript syntax, `git diff --check`, and the changed-line credential/tracker/network scan passed. The natural narrator/timing matrix passed `3/3`: desktop full motion measured `2014–2027ms` completion-to-action and `1197–1205ms` intake, exact mobile measured `2015–2026ms` and `1197–1203ms`, and reduced motion measured `566–585ms`. Refreshed `work/replay-renewal-desktop-round3-peak.png`, `work/replay-renewal-mobile390-round3-peak.png`, and `work/replay-renewal-mobile390-reduced-round3-acknowledgment.png` visibly replace the contradictory category with the neutral, accessibility-hidden icon while preserving the complete bouquet/conservatory composition. The Black Candle-focused matrix passed all nine mechanic cases; the two natural tutorial cases passed `2/2` with the repository-proven Playwright `1.61.1` runtime. The full serial gate passed every changed/product assertion (`115/116` in `26.2m`); its sole fixed-window Round 2-to-3 handoff sample passed unchanged in an isolated `1/1` rerun.
+
 ## 2026-07-18 owned-replay ceremony pacing correction
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_first_three_journey.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.

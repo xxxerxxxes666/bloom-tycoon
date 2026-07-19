@@ -127,6 +127,9 @@ async function journeyState(page) {
       hintedTiles: document.querySelectorAll(".tile.idle-hint").length,
       reducedMotion: matchMedia("(prefers-reduced-motion: reduce)").matches,
       tutorial: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
+      tutorialIcon: document.querySelector("#tutorialPanel .tutorial-icon")?.textContent.trim() || "",
+      tutorialIconAriaHidden: document.querySelector("#tutorialPanel .tutorial-icon")?.getAttribute("aria-hidden") || "",
+      blackCandleTutorial: document.querySelector("#tutorialPanel")?.classList.contains("black-candle-tutorial") || false,
       tiles: document.querySelectorAll(".tile").length,
       tileRows,
       boardBottom: boardRect ? boardRect.bottom : 0,
@@ -391,12 +394,20 @@ async function installOwnedRenewalRecorder(page) {
       const renewal = document.querySelector("#ownedReplayRenewal");
       const scene = document.querySelector(".restoration-scene");
       const ingredients = Array.from(renewal?.querySelectorAll(".owned-renewal-ingredient") || []);
+      const savedState = JSON.parse(localStorage.getItem("bloomTycoonPlayableStateV1") || "{}");
+      const narratorCount = Array.from(document.querySelectorAll("#tutorialPanel, #firstSwapCue, #nextOrderCue, #ritualLog"))
+        .filter(visible).length;
       samples.push({
         at: performance.now(),
-        roundComplete: Boolean(JSON.parse(localStorage.getItem("bloomTycoonPlayableStateV1") || "{}").roundComplete),
+        roundComplete: Boolean(savedState.roundComplete),
+        armedRelic: Boolean(savedState.armedLineRelic),
         phase: panel?.dataset.ownedRenewalPhase || "",
         renewalPhase: renewal?.dataset.renewalPhase || "",
         topCue: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
+        tutorialIcon: document.querySelector("#tutorialPanel .tutorial-icon")?.textContent.trim() || "",
+        tutorialIconAriaHidden: document.querySelector("#tutorialPanel .tutorial-icon")?.getAttribute("aria-hidden") || "",
+        blackCandleTutorial: document.querySelector("#tutorialPanel")?.classList.contains("black-candle-tutorial") || false,
+        narratorCount,
         actionCount: Array.from(panel?.querySelectorAll("button") || []).filter(visible).length,
         transactionVisible: visible(document.querySelector("#payoffTransaction")),
         state: document.querySelector("#restorationState")?.textContent.trim() || "",
@@ -745,6 +756,18 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
         .every((sample) => sample.topCue === "Nourishing conservatory."),
       `${runLabel} round ${round} tending cue follows the greenhouse`
     ).toBe(true);
+    expect(
+      phaseSamples.every((sample) => (
+        sample.tutorialIcon !== "BLACK CANDLE"
+        && sample.tutorialIconAriaHidden === "true"
+        && !sample.blackCandleTutorial
+      )),
+      `${runLabel} round ${round} completed bouquet outranks retained Black Candle narration`
+    ).toBe(true);
+    expect(
+      phaseSamples.every((sample) => sample.narratorCount === 1),
+      `${runLabel} round ${round} ceremony keeps one visible narrator`
+    ).toBe(true);
     expect(transientSamples.every((sample) => sample.actionCount === 0), "no action during binding/renewal").toBe(true);
     expect(transientSamples.every((sample) => !sample.transactionVisible), "reward display waits for renewal").toBe(true);
     expect(transientSamples.every((sample) => sample.raisedArtVisible && !sample.lowerArtVisible), "raised art remains truthful").toBe(true);
@@ -783,6 +806,7 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
         completionToAction: Math.round(completionToAction)
       };
     }
+    result.retainedArmedRelicAtCompletion = phaseSamples.some((sample) => sample.armedRelic);
     expect(settledSample.topCue, `${runLabel} round ${round} settled action cue returns`).toBe(expectedSettledCues[round - 1]);
     expect(settledSample.transientNodes, "settled ceremony removes all transient descendants").toBe(0);
     expect(settledSample.renewalHidden, "settled ceremony hides transient host").toBe(true);
@@ -793,6 +817,9 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
     expect(ceremony.payoffCopy).toBe(expectedCopies[round - 1]);
     expect(ceremony.payoffMode).toBe("owned-replay");
     expect(ceremony.tutorial).toBe(expectedSettledCues[round - 1]);
+    expect(ceremony.tutorialIcon).not.toBe("BLACK CANDLE");
+    expect(ceremony.tutorialIconAriaHidden).toBe("true");
+    expect(ceremony.blackCandleTutorial).toBe(false);
     expect(ceremony.ownedRenewalPhase).toBe("settled");
     expect(ceremony.ownedRenewalHidden).toBe(true);
     expect(ceremony.ownedRenewalTransientNodes).toBe(0);
@@ -827,6 +854,9 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
       expect(reloaded.payoffCopy).toBe(expectedCopies[round - 1]);
       expect(reloaded.payoffMode).toBe("owned-replay");
       expect(reloaded.tutorial).toBe(expectedSettledCues[round - 1]);
+      expect(reloaded.tutorialIcon).not.toBe("BLACK CANDLE");
+      expect(reloaded.tutorialIconAriaHidden).toBe("true");
+      expect(reloaded.blackCandleTutorial).toBe(false);
       expect(reloaded.ownedRenewalPhase).toBe("settled");
       expect(reloaded.ownedRenewalHidden).toBe(true);
       expect(reloaded.ownedRenewalTransientNodes).toBe(0);
@@ -866,6 +896,10 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
       await assertActiveBoard(page, config.mobile);
     }
   }
+  expect(
+    results.some((result) => result.retainedArmedRelicAtCompletion),
+    `${runLabel} naturally retains an armed relic through at least one completed-order ceremony`
+  ).toBe(true);
   return results;
 }
 
