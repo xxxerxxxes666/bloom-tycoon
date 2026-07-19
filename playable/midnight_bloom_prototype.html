@@ -11049,6 +11049,13 @@
       renderOwnedReplayRenewal(ceremony, ownedRenewalPhase);
     }
 
+    function updateFocusedPayoffLiveRegionOwnership(plan = activeRoundPlan()) {
+      const payoffOwnsNarration = focusedSliceRound(plan) && roundComplete;
+      $("coinBalance")?.setAttribute("aria-live", payoffOwnsNarration ? "off" : "polite");
+      $("roundOneRestoration")?.setAttribute("aria-live", payoffOwnsNarration ? "off" : "polite");
+      $("tutorialPanel")?.setAttribute("aria-live", "polite");
+    }
+
     function render() {
       clearDragPreview({ resetInputs: true });
       const roundOneActive = currentRound === 1;
@@ -11109,6 +11116,7 @@
       $("roundOneRestoration").classList.toggle("third-greenhouse-finale", roundThreeFinalPayoff);
       $("roundOneRestoration").classList.toggle("bouquet-sealed", bouquetSealPulseActive && roundComplete);
       $("roundOneRestoration").classList.toggle("next-order-ready", nextOrderPulseActive && roundComplete);
+      updateFocusedPayoffLiveRegionOwnership(activePlan);
       renderFocusedPayoffCeremony(payoffCeremony);
       renderTutorialPanel();
       const boardEl = $("board");

@@ -61,6 +61,17 @@ async function journeyState(page) {
     const boardRect = document.querySelector(".board")?.getBoundingClientRect();
     const progressRect = document.querySelector("#bouquetProgress")?.getBoundingClientRect();
     const coinRect = document.querySelector("#coinBalance")?.getBoundingClientRect();
+    const visibleLiveRegions = Array.from(document.querySelectorAll("[aria-live]"))
+      .filter(visible)
+      .map((node) => {
+        const clone = node.cloneNode(true);
+        clone.querySelectorAll("[aria-hidden='true'], [hidden]").forEach((hiddenNode) => hiddenNode.remove());
+        return {
+          id: node.id,
+          live: node.getAttribute("aria-live"),
+          text: clone.textContent.replace(/\s+/g, " ").trim()
+        };
+      });
     return {
       round: state.currentRound || 1,
       moves: state.moves,
@@ -130,6 +141,9 @@ async function journeyState(page) {
       tutorialIcon: document.querySelector("#tutorialPanel .tutorial-icon")?.textContent.trim() || "",
       tutorialIconAriaHidden: document.querySelector("#tutorialPanel .tutorial-icon")?.getAttribute("aria-hidden") || "",
       blackCandleTutorial: document.querySelector("#tutorialPanel")?.classList.contains("black-candle-tutorial") || false,
+      visibleLiveRegions,
+      liveRegionOwners: visibleLiveRegions.filter((region) => ["polite", "assertive"].includes(region.live)),
+      activeElementId: document.activeElement?.id || "",
       tiles: document.querySelectorAll(".tile").length,
       tileRows,
       boardBottom: boardRect ? boardRect.bottom : 0,
@@ -196,6 +210,21 @@ async function expectGreenhouseOwned(page, expectedStage, context) {
   expect(state.greenhouseText, `${context} greenhouse note`).toContain(expected.note);
   expect(state.greenhouseGoalCounts, `${context} greenhouse target counts removed`).toBe(0);
   return state;
+}
+
+function expectFocusedPayoffNarration(state, context, expectedCue = state.tutorial) {
+  expect(state.liveRegionOwners, `${context} has one concise live owner`).toEqual([{
+    id: "tutorialPanel",
+    live: "polite",
+    text: expectedCue
+  }]);
+  const visibleLiveById = Object.fromEntries(
+    state.visibleLiveRegions.map((region) => [region.id, region])
+  );
+  expect(visibleLiveById.coinBalance?.live, `${context} coin balance is quiet`).toBe("off");
+  expect(visibleLiveById.roundOneRestoration?.live, `${context} ceremony subtree is quiet`).toBe("off");
+  expect(state.liveRegionOwners[0].text.length, `${context} live narration stays concise`).toBeLessThanOrEqual(48);
+  expect(state.liveRegionOwners[0].text, `${context} has no stale Black Candle category`).not.toMatch(/BLACK CANDLE/i);
 }
 
 async function expectPermanentRaisedGreenhouse(page, context) {
@@ -395,8 +424,18 @@ async function installOwnedRenewalRecorder(page) {
       const scene = document.querySelector(".restoration-scene");
       const ingredients = Array.from(renewal?.querySelectorAll(".owned-renewal-ingredient") || []);
       const savedState = JSON.parse(localStorage.getItem("bloomTycoonPlayableStateV1") || "{}");
-      const narratorCount = Array.from(document.querySelectorAll("#tutorialPanel, #firstSwapCue, #nextOrderCue, #ritualLog"))
-        .filter(visible).length;
+      const liveRegions = Array.from(document.querySelectorAll("[aria-live]"))
+        .filter(visible)
+        .map((node) => {
+          const clone = node.cloneNode(true);
+          clone.querySelectorAll("[aria-hidden='true'], [hidden]").forEach((hiddenNode) => hiddenNode.remove());
+          return {
+            id: node.id,
+            live: node.getAttribute("aria-live"),
+            text: clone.textContent.replace(/\s+/g, " ").trim()
+          };
+        });
+      const liveRegionOwners = liveRegions.filter((region) => ["polite", "assertive"].includes(region.live));
       samples.push({
         at: performance.now(),
         roundComplete: Boolean(savedState.roundComplete),
@@ -407,7 +446,8 @@ async function installOwnedRenewalRecorder(page) {
         tutorialIcon: document.querySelector("#tutorialPanel .tutorial-icon")?.textContent.trim() || "",
         tutorialIconAriaHidden: document.querySelector("#tutorialPanel .tutorial-icon")?.getAttribute("aria-hidden") || "",
         blackCandleTutorial: document.querySelector("#tutorialPanel")?.classList.contains("black-candle-tutorial") || false,
-        narratorCount,
+        liveRegions,
+        liveRegionOwners,
         actionCount: Array.from(panel?.querySelectorAll("button") || []).filter(visible).length,
         transactionVisible: visible(document.querySelector("#payoffTransaction")),
         state: document.querySelector("#restorationState")?.textContent.trim() || "",
@@ -552,10 +592,13 @@ async function playFocusedCycle(page, config, runLabel, strategy, options = {}) 
     await expectGreenhouseOwned(page, expectedOwnedBeforeSpend, `${runLabel} round ${round} active start`);
     const result = await playCurrentRound(page, runLabel, round, strategy, expectedOwnedBeforeSpend);
     await expectGreenhouseOwned(page, expectedOwnedBeforeSpend, `${runLabel} round ${round} pending reward`);
-    const earnedCoins = (await journeyState(page)).coins;
+    const pendingState = await journeyState(page);
+    expectFocusedPayoffNarration(pendingState, `${runLabel} round ${round} pending spend`);
+    const earnedCoins = pendingState.coins;
     await expectVisibleCoinBalance(page, earnedCoins, { pulsing: true });
     const firstAction = await spendPrimaryCeremonyAction(page);
     const spentState = await journeyState(page);
+    expectFocusedPayoffNarration(spentState, `${runLabel} round ${round} spent ceremony`);
     await expectGreenhouseOwned(page, round, `${runLabel} round ${round} immediately after spend`);
     await expectVisibleCoinBalance(page, spentState.coins, { pulsing: true });
     result.balances = [startCoins, earnedCoins, spentState.coins];
@@ -577,6 +620,7 @@ async function playFocusedCycle(page, config, runLabel, strategy, options = {}) 
         await page.reload({ waitUntil: "networkidle" });
         await expect(page.locator(".tile")).toHaveCount(64);
         const reloaded = await journeyState(page);
+        expectFocusedPayoffNarration(reloaded, `${runLabel} round 1 restored reload ${reload + 1}`);
         expect(reloaded.coins, `replayed Round 1 reload ${reload + 1}`).toBe(expectedRestoredCoins);
         expect(reloaded.focusedEconomyVersion).toBe(2);
         expect(reloaded.payoffTransaction).toBe(`Restored for 100. ${expectedRestoredCoins} coins remain.`);
@@ -765,8 +809,20 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
       `${runLabel} round ${round} completed bouquet outranks retained Black Candle narration`
     ).toBe(true);
     expect(
-      phaseSamples.every((sample) => sample.narratorCount === 1),
-      `${runLabel} round ${round} ceremony keeps one visible narrator`
+      phaseSamples.every((sample) => (
+        sample.liveRegionOwners.length === 1
+        && sample.liveRegionOwners[0].id === "tutorialPanel"
+        && sample.liveRegionOwners[0].live === "polite"
+        && sample.liveRegionOwners[0].text === sample.topCue
+      )),
+      `${runLabel} round ${round} ceremony keeps one concise live narrator`
+    ).toBe(true);
+    expect(
+      phaseSamples.every((sample) => (
+        sample.liveRegions.find((region) => region.id === "coinBalance")?.live === "off"
+        && sample.liveRegions.find((region) => region.id === "roundOneRestoration")?.live === "off"
+      )),
+      `${runLabel} round ${round} coin and ceremony subtree stay quiet`
     ).toBe(true);
     expect(transientSamples.every((sample) => sample.actionCount === 0), "no action during binding/renewal").toBe(true);
     expect(transientSamples.every((sample) => !sample.transactionVisible), "reward display waits for renewal").toBe(true);
@@ -812,6 +868,12 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
     expect(settledSample.renewalHidden, "settled ceremony hides transient host").toBe(true);
     const rewardBalance = startCoins + expectedRewards[round - 1];
     const ceremony = await journeyState(page);
+    expectFocusedPayoffNarration(
+      ceremony,
+      `${runLabel} round ${round} owned settled ceremony`,
+      expectedSettledCues[round - 1]
+    );
+    expect(ceremony.activeElementId, `${runLabel} round ${round} sole action owns focus`).toBe("nextOrderBtn");
     expect(ceremony.coins, `${runLabel} round ${round} reward credited once`).toBe(rewardBalance);
     expect(ceremony.payoffTransaction).toBe(`Reward added · +${expectedRewards[round - 1]} coins · ${rewardBalance} coins balance.`);
     expect(ceremony.payoffCopy).toBe(expectedCopies[round - 1]);
@@ -849,6 +911,11 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
       await page.reload({ waitUntil: "networkidle" });
       await expect(page.locator(".tile")).toHaveCount(64);
       const reloaded = await journeyState(page);
+      expectFocusedPayoffNarration(
+        reloaded,
+        `${runLabel} round ${round} owned ceremony reload ${reload + 1}`,
+        expectedSettledCues[round - 1]
+      );
       expect(reloaded.coins, `${runLabel} round ${round} reward reload ${reload + 1}`).toBe(rewardBalance);
       expect(reloaded.payoffTransaction).toBe(`Reward added · +${expectedRewards[round - 1]} coins · ${rewardBalance} coins balance.`);
       expect(reloaded.payoffCopy).toBe(expectedCopies[round - 1]);
@@ -919,6 +986,7 @@ async function completeOwnedRoundAndReloadDuringPhase(page, config, runLabel, ro
   ), phase, { timeout: 2500 });
   await page.waitForTimeout(32);
   const interrupted = await journeyState(page);
+  expectFocusedPayoffNarration(interrupted, `${runLabel} round ${round} ${phase} interruption`);
   expect(interrupted.roundComplete).toBe(true);
   expect(interrupted.ownedRenewalPhase).toBe(phase);
   expect(interrupted.visibleButtons, `${runLabel} round ${round} ${phase} withholds action`).toEqual([]);
@@ -932,6 +1000,7 @@ async function completeOwnedRoundAndReloadDuringPhase(page, config, runLabel, ro
   await page.reload({ waitUntil: "networkidle" });
   await expect(page.locator(".tile")).toHaveCount(64);
   const reloaded = await journeyState(page);
+  expectFocusedPayoffNarration(reloaded, `${runLabel} round ${round} ${phase} settled reload`);
   expect(reloaded.round).toBe(round);
   expect(reloaded.roundComplete).toBe(true);
   expect(reloaded.coins, `${runLabel} round ${round} ${phase} reload does not duplicate reward`).toBe(interruptedCoins);

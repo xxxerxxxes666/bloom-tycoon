@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-07-18 focused payoff live-region ownership
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_first_three_journey.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.
+- Selected weakness: focused completed orders visually used one concise tutorial narrator, but the visible coin balance and the entire changing payoff ceremony subtree also remained `aria-live="polite"`. Binding, greenhouse intake, reward settlement, and primary-action focus could therefore produce three competing polite announcements.
+- Player-facing result: focused Round 1-3 completion now transfers live-region ownership to the existing concise tutorial pill before payoff DOM updates. The visible coin token and full ceremony remain available to accessibility APIs but are explicitly `aria-live="off"` until active play resumes; no visible copy, timing, focus, economy, save, or gameplay state changes.
+- Permanent contract: the natural first-cycle spend path and owned replay path enumerate every visible `[aria-live]` element rather than a hand-picked narrator list. Binding, transfer/renewal or reduced acknowledgment, settlement, interruptions, two reloads, and every first-cycle pending/spent ceremony require exactly one polite owner (`#tutorialPanel`), concise phase copy, quiet coin/ceremony regions, no stale Black Candle category, and the existing focused sole action.
+- Verification: project and HTML shape verifiers, all changed and extracted inline JavaScript syntax, `git diff --check`, and the changed-line credential/tracker/network scan passed. The focused desktop/mobile full-motion, transient-reload, and reduced-motion matrix passed `5/5` in `2.7m`; desktop completion-to-action measured `2015-2025ms` with `1197-1204ms` intake, exact mobile measured `2027-2028ms` with `1199-1204ms` intake, and reduced motion measured `579-604ms`. The complete serial Chromium gate passed `116/116` in `26.4m`. Active-play inspection retained its useful polite coin/tutorial owners, 64 tiles/eight rows, no overflow, and no broken images.
+
 ## 2026-07-18 completed-order narrator ownership
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_first_three_journey.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.
