@@ -7642,6 +7642,7 @@
     let qaPostCascadeDeadBoardFixture = false;
     let supremeChargeActive = false;
     let hasMadeValidMove = false;
+    let roundOneLastSwapMissedOrder = false;
     let restoredRoundTwoGuideMoves = 0;
     let tutorialSkipped = false;
     let tutorialActive = false;
@@ -9486,6 +9487,7 @@
       idleHintTimer = window.setTimeout(() => {
         const postOnboardingIdleHintAfterDelay = isPostOnboardingIdleHintActive();
         const roundOneAgencyHintAfterDelay = isRoundOneAgencyHandoffActive();
+        const roundOneOrderCorrectionAfterDelay = isRoundOneOrderCorrectionActive();
         const armedRelicHintAfterDelay = isArmedLineRelicGuidanceActive();
         if ((hasMadeValidMove && !postOnboardingIdleHintAfterDelay && !armedRelicHintAfterDelay) || roundComplete || isBouquetFailed() || isResolving) {
           return;
@@ -9496,7 +9498,9 @@
             selected
             || (!roundOneAgencyHintAfterDelay && tutorialActive)
             || restoredGreenhouseHandoff
-            || boardGuideTransientStateActive()
+            || boardDragInputActive()
+            || invalidSwapCells.size > 0
+            || (!roundOneOrderCorrectionAfterDelay && boardGuideTransientStateActive())
           )
         ) {
           if (boardDragInputActive()) {
@@ -9524,12 +9528,13 @@
         const roundOneStage = roundOneGuidedStage(plan);
         if (
           roundOneStage === "black-candle"
-          && !isRoundOneSecondTargetDiscoveryActive(plan)
           && hasRoundOneBlackCandleLessonMove(plan)
         ) {
           const move = roundOneBlackCandleLessonSwap();
           idleHintCells = new Set(move.map((cell) => `${cell.x},${cell.y}`));
-          $("firstSwapCue").textContent = "Make 4 Bone Stars - arm Black Candle Vine.";
+          $("firstSwapCue").textContent = isRoundOneSecondTargetDiscoveryActive(plan)
+            ? "Match Bone Star with the glowing pair."
+            : "Make 4 Bone Stars - arm Black Candle Vine.";
           render();
           return;
         }
@@ -10814,7 +10819,23 @@
 
     function isRoundOneOrderCorrectionActive(plan = activeRoundPlan()) {
       return isRoundOneAgencyHandoffActive(plan)
-        && roundProgress(plan).earned === 0;
+        && tutorialActive
+        && roundOneLastSwapMissedOrder;
+    }
+
+    function roundOneSwapGainedOrderFlowers(result, plan = activeRoundPlan()) {
+      return plan.round === 1 && plan.targets.some((target) => (
+        Number(result?.gained?.[target.flowerId]) > 0
+      ));
+    }
+
+    function roundOneHasExploratoryHarvest(plan = activeRoundPlan()) {
+      const targetIds = new Set(plan.targets.map((target) => target.flowerId));
+      return plan.round === 1
+        && roundOneGuidedStage(plan) === "thorn-followup"
+        && counts.some((count, flowerId) => (
+          count > 0 && !targetIds.has(flowerId)
+        ));
     }
 
     function isPostOnboardingIdleHintActive(plan = activeRoundPlan()) {
@@ -12151,6 +12172,7 @@
       const roundTwoOpeningBudgetActive = isRestoredRoundTwoOpeningBudgetActive();
       const guidedRoundTwoLesson = isAuthoritativeRoundTwoThornLesson()
         && previewSwapMatches(source, target).some((match) => cellsTouchCursedThorn(match.cells));
+      roundOneLastSwapMissedOrder = false;
       hasMadeValidMove = true;
       if (roundTwoOpeningBudgetActive) {
         restoredRoundTwoGuideMoves = Math.min(
@@ -12216,6 +12238,9 @@
         if (maybeCompleteRound(harvestMessage)) {
           return;
         }
+        roundOneLastSwapMissedOrder = currentRound === 1
+          && tutorialActive
+          && !roundOneSwapGainedOrderFlowers(result);
         const resolvingMoveFailed = resolvingMoveWillFail();
         ritualMessage = resolvingMoveFailed
           ? `${harvestMessage} ${failedBouquetRitualMessage()}`
@@ -14396,6 +14421,7 @@
       }
       moves = plan.moves;
       counts = [0, 0, 0, 0, 0, 0];
+      roundOneLastSwapMissedOrder = false;
       hasMadeValidMove = false;
       blackCandleLessonComplete = currentRound !== 1 || tutorialSkipped;
       roundComplete = false;
@@ -14476,6 +14502,7 @@
       clearThornTeachingCue(false);
       currentRound = 1;
       restoredRoundTwoGuideMoves = 0;
+      roundOneLastSwapMissedOrder = false;
       hasMadeValidMove = false;
       blackCandleLessonComplete = true;
       roundComplete = false;
@@ -15023,7 +15050,13 @@
       }
     } else if (currentRound === 1 && !roundComplete && hasMadeValidMove && !isBouquetFailed()) {
       seedRoundOneGuidedMove(activeRoundPlan());
-      if (isRoundOneSecondTargetDiscoveryActive()) {
+      if (roundOneHasExploratoryHarvest()) {
+        nextTargetMoveHint();
+        const hintedFocus = firstHintFocusCell();
+        if (hintedFocus) {
+          boardFocusCell = hintedFocus;
+        }
+      } else if (isRoundOneSecondTargetDiscoveryActive()) {
         beginRoundOneSecondTargetDiscovery({ showLiteracy: false });
       } else if (isRoundOneAgencyHandoffActive()) {
         beginRoundOneAgencyDiscovery();
@@ -15037,7 +15070,11 @@
     }
     render();
     applyImageFallbacks(document);
-    if (!isRestoredRoundTwoGuideActive() || idleHintCells.size !== 2) {
+    const restoredRoundOneExplorationGuide = currentRound === 1
+      && hasMadeValidMove
+      && roundOneHasExploratoryHarvest()
+      && idleHintCells.size === 2;
+    if ((!isRestoredRoundTwoGuideActive() || idleHintCells.size !== 2) && !restoredRoundOneExplorationGuide) {
       scheduleIdleHint();
     }
     scheduleFreshTutorial();

@@ -2324,21 +2324,37 @@ test("Round 1 agency retires and restores guidance across real input boundaries"
       expect(ordinaryMove, `${testCase.label} discoverable useful move`).toHaveLength(2);
       await activatePair(page, ordinaryMove, testCase.input);
       await waitForSettledBoard(page);
-      await expect(page.locator("#firstSwapCue")).toContainText("Black Candle Vine");
-      await expect(page.locator(".tile.idle-hint")).toHaveCount(2);
-      const afterOrdinaryMove = await guidedRoundOneState(page, `${testCase.label} Black Candle boundary`);
+      const afterOrdinaryMove = await guidedRoundOneState(page, `${testCase.label} post-agency boundary`);
       expect(afterOrdinaryMove.moves, `${testCase.label} ordinary move spends once`).toBe(4);
       expect(afterOrdinaryMove.counts[5], `${testCase.label} ordinary move advances Thorn Rose`).toBeGreaterThan(3);
-      expect(unorderedPairKey(afterOrdinaryMove.hints), `${testCase.label} stale rescue does not return`)
-        .not.toBe(unorderedPairKey(delayedPair));
+      const reachedBoneDiscovery = afterOrdinaryMove.counts[5] >= 8
+        && afterOrdinaryMove.counts[1] < 6;
+      if (reachedBoneDiscovery) {
+        expect(afterOrdinaryMove.cue).toBe("Find Bone Stars.");
+        expect(afterOrdinaryMove.hints).toEqual([]);
+      } else {
+        expect(afterOrdinaryMove.cue).toContain("Black Candle Vine");
+        expect(afterOrdinaryMove.hints).toHaveLength(2);
+      }
 
       await page.reload({ waitUntil: "networkidle" });
       await waitForSettledBoard(page);
-      const reloadedLesson = await guidedRoundOneState(page, `${testCase.label} Black Candle reload`);
+      let reloadedLesson = await guidedRoundOneState(page, `${testCase.label} post-agency reload`);
+      if (reachedBoneDiscovery) {
+        expect(reloadedLesson.cue).toBe("Find Bone Stars.");
+        expect(reloadedLesson.hints).toEqual([]);
+        await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 9500 });
+        reloadedLesson = await guidedRoundOneState(page, `${testCase.label} Bone Star fallback`);
+        expect(reloadedLesson.cue).toContain("Bone Star");
+        expect(reloadedLesson.tutorial).toBe("Match Bone Star.");
+      } else {
+        expect(reloadedLesson.cue).toContain("Black Candle Vine");
+      }
       expect(reloadedLesson.moves).toBe(afterOrdinaryMove.moves);
       expect(reloadedLesson.counts).toEqual(afterOrdinaryMove.counts);
-      expect(reloadedLesson.cue).toContain("Black Candle Vine");
       expect(reloadedLesson.hints).toHaveLength(2);
+      expect(unorderedPairKey(reloadedLesson.hints), `${testCase.label} stale Thorn rescue does not return`)
+        .not.toBe(unorderedPairKey(delayedPair));
       expect(reloadedLesson.tiles).toBe(64);
       expect(reloadedLesson.rows).toBe(8);
       expect(reloadedLesson.overflowX).toBe(false);
@@ -2518,6 +2534,195 @@ test("off-order opening success redirects the player to real bouquet progress", 
       await context.close();
     }
   }
+});
+
+test("later off-order success uses the settled swap outcome instead of cumulative progress", async ({ browser }) => {
+  test.setTimeout(420000);
+  const cases = [
+    { label: "desktop-pointer", viewport: { width: 1280, height: 720 }, input: "pointer" },
+    { label: "mobile390-touch", viewport: { width: 390, height: 844 }, input: "touch", mobile: true },
+    { label: "desktop-keyboard-reduced", viewport: { width: 1280, height: 720 }, input: "keyboard", reduced: true },
+    { label: "mobile390-touch-reduced", viewport: { width: 390, height: 844 }, input: "touch", mobile: true, reduced: true }
+  ];
+  const openingOffOrderPair = [{ x: 3, y: 2 }, { x: 4, y: 2 }];
+  const laterOffOrderPair = [{ x: 6, y: 1 }, { x: 6, y: 2 }];
+
+  const activatePair = async (page, pair, input) => {
+    const tile = (cell) => page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`);
+    if (input === "touch") {
+      await tile(pair[0]).tap();
+      await tile(pair[1]).tap();
+      return;
+    }
+    if (input === "keyboard") {
+      await tile(pair[0]).focus();
+      await page.keyboard.press("Enter");
+      await tile(pair[1]).focus();
+      await page.keyboard.press("Enter");
+      return;
+    }
+    await tile(pair[0]).click();
+    await tile(pair[1]).click();
+  };
+
+  for (const testCase of cases) {
+    const context = await browser.newContext({
+      viewport: testCase.viewport,
+      hasTouch: Boolean(testCase.mobile),
+      isMobile: Boolean(testCase.mobile),
+      reducedMotion: testCase.reduced ? "reduce" : "no-preference"
+    });
+    const page = await context.newPage();
+    const consoleErrors = [];
+    const pageErrors = [];
+    const failedRequests = [];
+    page.on("console", (message) => {
+      if (message.type() === "error") consoleErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    page.on("requestfailed", (request) => failedRequests.push(
+      `${request.url()} ${request.failure()?.errorText || ""}`
+    ));
+
+    try {
+      await seedDeterministicMath(page, "later-off-order-seed-5");
+      await openFreshNoReview(page, "later-off-order-seed-5");
+      await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 3000 });
+      await activatePair(page, openingOffOrderPair, testCase.input);
+      await waitForSettledBoard(page);
+      await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 4000 });
+      const openingRecoveryPair = await hintedPair(page);
+
+      await activatePair(page, openingRecoveryPair, testCase.input);
+      await waitForSettledBoard(page);
+      const targetProgress = await guidedRoundOneState(page, `${testCase.label} established order progress`);
+      expect(targetProgress.moves).toBe(4);
+      expect(targetProgress.bouquet).toContain("Bouquet 3/14");
+      expect(targetProgress.counts[5]).toBe(3);
+      expect(targetProgress.tutorial).toBe("Find 3 Thorn Roses.");
+
+      await activatePair(page, laterOffOrderPair, testCase.input);
+      await waitForSettledBoard(page);
+      const correction = await guidedRoundOneState(page, `${testCase.label} later off-order correction`);
+      expect(correction.moves, `${testCase.label} later off-order match spends once`).toBe(3);
+      expect(correction.counts[5], `${testCase.label} later off-order match keeps Thorn Rose progress`).toBe(3);
+      expect(correction.counts[1], `${testCase.label} later off-order match keeps Bone Star progress`).toBe(0);
+      expect(correction.counts[4], `${testCase.label} Amber Seed harvest remains authoritative`)
+        .toBeGreaterThan(targetProgress.counts[4]);
+      expect(correction.bouquet, `${testCase.label} later off-order match adds no order progress`)
+        .toContain("Bouquet 3/14");
+      expect(correction.tutorial, `${testCase.label} narrator reflects this swap's zero order gain`)
+        .toBe("Match the order flowers.");
+      expect(correction.hints, `${testCase.label} correction frame precedes the guide`).toEqual([]);
+      expect(correction.visibleInstructionSurfaces, `${testCase.label} keeps one narrator`).toBe(1);
+      expect(correction.visibleButtons, `${testCase.label} Skip remains the sole non-tile action`).toEqual(["Skip"]);
+      expect(correction.tiles).toBe(64);
+      expect(correction.rows).toBe(8);
+      expect(correction.overflowX).toBe(false);
+      expect(correction.brokenImages).toEqual([]);
+      if (testCase.mobile) {
+        expect(correction.completeRows).toBe(8);
+        expect(correction.boardBottom).toBeLessThanOrEqual(844);
+      }
+      if (!testCase.reduced) {
+        await page.screenshot({
+          path: `work/round-one-later-off-order-${testCase.label}-correction.png`,
+          fullPage: true
+        });
+      }
+
+      if (testCase.label === "desktop-pointer") {
+        await page.reload({ waitUntil: "networkidle" });
+        await waitForSettledBoard(page);
+        await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 1500 });
+        const transientReload = await guidedRoundOneState(page, `${testCase.label} transient correction reload`);
+        expect(transientReload.moves).toBe(3);
+        expect(transientReload.counts).toEqual(correction.counts);
+        expect(transientReload.bouquet).toContain("Bouquet 3/14");
+        expect(transientReload.tutorial).toBe("Match Thorn Rose.");
+        await expect(page.locator(".impact-sigil, .objective-flight, .order-pulse")).toHaveCount(0);
+      }
+
+      const focusBeforeGuide = await page.evaluate(() => document.activeElement?.id || "");
+      await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 4000 });
+      await expect(page.locator(".first-action-swap-guide")).toHaveCount(1);
+      const recovered = await guidedRoundOneState(page, `${testCase.label} later recovered order guide`);
+      expect(recovered.tutorial).toBe("Match Thorn Rose.");
+      expect(recovered.moves).toBe(3);
+      expect(recovered.counts).toEqual(correction.counts);
+      expect(await page.evaluate(() => document.activeElement?.id || ""), `${testCase.label} later guide does not steal focus`)
+        .toBe(focusBeforeGuide);
+      const recoveredPair = recovered.hints;
+      const usefulPairs = await objectiveUsefulPairs(page);
+      expect(
+        usefulPairs.some((candidate) => unorderedPairKey(candidate.pair) === unorderedPairKey(recoveredPair)),
+        `${testCase.label} later recovered pair is legal and objective-useful`
+      ).toBe(true);
+      assertFirstActionGuide(
+        await firstActionGuideReport(page),
+        recoveredPair,
+        `${testCase.label} later recovered order guide`,
+        { mobile: testCase.mobile, reducedMotion: testCase.reduced, stage: "thorn-followup" }
+      );
+      if (!testCase.reduced) {
+        await page.screenshot({
+          path: `work/round-one-later-off-order-${testCase.label}-guide.png`,
+          fullPage: true
+        });
+      }
+
+      for (let reload = 0; reload < 2; reload += 1) {
+        await page.reload({ waitUntil: "networkidle" });
+        await waitForSettledBoard(page);
+        await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 5000 });
+        const persisted = await guidedRoundOneState(page, `${testCase.label} later correction reload ${reload + 1}`);
+        expect(persisted.moves).toBe(3);
+        expect(persisted.counts).toEqual(correction.counts);
+        expect(persisted.bouquet).toContain("Bouquet 3/14");
+        expect(persisted.tutorial).toBe("Match Thorn Rose.");
+        expect(unorderedPairKey(persisted.hints)).toBe(unorderedPairKey(recoveredPair));
+        await expect(page.locator(".impact-sigil, .objective-flight, .order-pulse")).toHaveCount(0);
+      }
+
+      expect(consoleErrors).toEqual([]);
+      expect(pageErrors).toEqual([]);
+      expect(failedRequests).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  }
+});
+
+test("later off-order primary match stays truthful when its cascade advances the order", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await seedDeterministicMath(page, "later-off-order-seed-0");
+  await openFreshNoReview(page, "later-off-order-target-cascade");
+
+  const activatePair = async (pair) => {
+    for (const cell of pair) {
+      await page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`).click();
+    }
+    await waitForSettledBoard(page);
+  };
+
+  await activatePair([{ x: 3, y: 2 }, { x: 4, y: 2 }]);
+  await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 4000 });
+  await activatePair(await hintedPair(page));
+  const beforeCascade = await guidedRoundOneState(page, "later off-order target cascade before");
+  expect(beforeCascade.bouquet).toContain("Bouquet 3/14");
+
+  await activatePair([{ x: 6, y: 1 }, { x: 6, y: 2 }]);
+  const afterCascade = await guidedRoundOneState(page, "later off-order target cascade after");
+  expect(afterCascade.moves).toBe(3);
+  expect(afterCascade.counts[4]).toBeGreaterThan(beforeCascade.counts[4]);
+  expect(afterCascade.counts[5]).toBeGreaterThan(beforeCascade.counts[5]);
+  expect(afterCascade.bouquet).not.toBe(beforeCascade.bouquet);
+  expect(afterCascade.tutorial).toBe("Match 3 fills the bouquet.");
+  expect(afterCascade.visibleInstructionSurfaces).toBe(1);
+  expect(afterCascade.tiles).toBe(64);
+  expect(afterCascade.rows).toBe(8);
+  expect(afterCascade.overflowX).toBe(false);
+  expect(afterCascade.brokenImages).toEqual([]);
 });
 
 test("guided Round 1 payoff keeps one dominant action", async ({ page }) => {
