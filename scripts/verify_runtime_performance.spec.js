@@ -88,7 +88,7 @@ async function runtimeReport(page) {
 
 async function timedGuidedSwap(page) {
   const hints = page.locator(".tile.idle-hint");
-  await expect(hints).toHaveCount(2, { timeout: 5000 });
+  await expect(hints).toHaveCount(2, { timeout: 9500 });
   const pair = await hints.evaluateAll((tiles) => tiles.map((tile) => ({
     x: tile.dataset.x,
     y: tile.dataset.y

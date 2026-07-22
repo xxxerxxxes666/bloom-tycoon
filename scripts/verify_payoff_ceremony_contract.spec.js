@@ -33,7 +33,7 @@ async function clickGuidedSwap(page) {
     return saved.roundComplete === true
       || (payoff && getComputedStyle(payoff).display !== "none")
       || document.querySelectorAll(".tile.idle-hint").length === 2;
-  }, SAVE_KEY, { timeout: 5000 });
+  }, SAVE_KEY, { timeout: 9500 });
   if (await hints.count() !== 2) {
     return false;
   }
@@ -53,7 +53,7 @@ async function clickGuidedSwap(page) {
 
 async function clickGuidedSwapNoWait(page) {
   const hints = page.locator(".tile.idle-hint");
-  await expect(hints).toHaveCount(2, { timeout: 5000 });
+  await expect(hints).toHaveCount(2, { timeout: 9500 });
   const pair = await hints.evaluateAll((tiles) => tiles.slice(0, 2).map((tile) => ({
     x: tile.dataset.x,
     y: tile.dataset.y
@@ -68,7 +68,7 @@ async function clickGuidedSwapNoWait(page) {
 
 async function clickGuidedSwapAndSampleFlight(page, label) {
   const hints = page.locator(".tile.idle-hint");
-  await expect(hints).toHaveCount(2, { timeout: 5000 });
+  await expect(hints).toHaveCount(2, { timeout: 9500 });
   const pair = await hints.evaluateAll((tiles) => tiles.slice(0, 2).map((tile) => ({
     x: tile.dataset.x,
     y: tile.dataset.y

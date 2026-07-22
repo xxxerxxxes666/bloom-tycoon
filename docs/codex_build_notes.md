@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-07-22 Round 1 Bone Star target literacy
+
+- Files changed: `playable/midnight_bloom_prototype.html`, new `scripts/verify_second_target_literacy.spec.js`, the established seven-second waits in `scripts/verify_payoff_ceremony_contract.spec.js` and `scripts/verify_runtime_performance.spec.js`, and this note.
+- Player-visible result: when authoritative Round 1 progress completes Thorn Rose while Bone Star remains unfinished, the existing narrator and target-literacy surface echo the Bone Star HUD objective and every current Bone Star tile once, with no simultaneous exact guide. Input stays enabled through a genuine discovery window; after seven quiet seconds, the existing idle system reveals one legal objective-useful Bone Star pair.
+- Ownership/persistence: ordinary and invalid input, Help/Skip, Black Candle formation and activation, completion, failure/Retry, phase handoffs, and reload retire stale literacy classes, attributes, and timers. Reload reconstructs settled counts/board/moves/economy without replaying the transient, then preserves the fair eventual guidance path. No board, RNG, focus, economy, save field, control, objective, budget, round, or system was added or changed.
+- Browser evidence: the focused desktop `1280x720` and exact-mobile `390x844`, full/reduced-motion contract passes `6/6`, including a preinstalled MutationObserver/interval recorder, natural production swaps, no-hint agency, delayed fallback, two reloads, invalid input, Help/Skip, Black Candle precedence, failure/Retry, 64 tiles/eight rows, geometry, overflow, images, and browser errors. The complete first-three journey passes `29/29`; affected payoff/runtime waits pass `11/11`; project/HTML, syntax, diff, and scoped security checks pass.
+- Delivery boundary: verified locally only. No commit, push, deployment, remote, or cron action was performed; Hermes owns acceptance and delivery.
+
 ## 2026-07-21 off-order opening recovery
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_tutorial_progress.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.

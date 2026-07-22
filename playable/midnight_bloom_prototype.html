@@ -7627,6 +7627,7 @@
     let swapGlideCells = new Map();
     let idleHintCells = new Set();
     let targetLiteracyFlowerId = null;
+    let roundOneSecondTargetDiscoveryActive = false;
     let thornPulseCells = new Set();
     let thornClearedCells = new Set();
     let thornTeachingCells = new Set();
@@ -7919,7 +7920,7 @@
       }
       selected = null;
       clearIdleHint();
-      clearTargetLiteracy(false);
+      retireRoundOneSecondTargetDiscovery();
       ritualMessage = failedBouquetRitualMessage(plan);
       queuePostRenderFocus("renewBtn");
       return true;
@@ -8319,6 +8320,9 @@
         return "bone-ordinary";
       }
       if (thornProgress < thornTarget.needed || boneProgress < boneTarget.needed) {
+        return "black-candle";
+      }
+      if (!blackCandleLessonComplete) {
         return "black-candle";
       }
       return "";
@@ -9230,12 +9234,16 @@
       }
     }
 
+    function roundOneAgencyTarget(plan = activeRoundPlan()) {
+      return roundOneSecondTargetDiscoveryActive ? plan.targets[1] : plan.targets[0];
+    }
+
     function startRoundOneTargetLiteracy(plan = activeRoundPlan()) {
       clearTargetLiteracy(false);
       if (!isRoundOneAgencyHandoffActive(plan)) {
         return false;
       }
-      const target = plan.targets[0];
+      const target = roundOneAgencyTarget(plan);
       if (!target) {
         return false;
       }
@@ -9251,9 +9259,12 @@
     }
 
     function roundOneAgencyDiscoveryCue(plan = activeRoundPlan()) {
-      const target = plan.targets[0];
+      const target = roundOneAgencyTarget(plan);
       if (!target) {
         return "Find the target flowers.";
+      }
+      if (roundOneSecondTargetDiscoveryActive) {
+        return `Find ${flowers[target.flowerId][0]}s.`;
       }
       const matchCount = Math.min(3, Math.max(1, target.needed - targetProgress(target)));
       return `Find ${matchCount} ${flowers[target.flowerId][0]}${matchCount === 1 ? "" : "s"}.`;
@@ -9271,6 +9282,24 @@
         startRoundOneTargetLiteracy(plan);
       }
       return true;
+    }
+
+    function beginRoundOneSecondTargetDiscovery({ showLiteracy = true } = {}) {
+      if (!isRoundOneSecondTargetAuthorityReady()) {
+        roundOneSecondTargetDiscoveryActive = false;
+        clearTargetLiteracy(false);
+        return false;
+      }
+      roundOneSecondTargetDiscoveryActive = true;
+      return beginRoundOneAgencyDiscovery({ showLiteracy });
+    }
+
+    function retireRoundOneSecondTargetDiscovery({ clearHint = false } = {}) {
+      roundOneSecondTargetDiscoveryActive = false;
+      clearTargetLiteracy(false);
+      if (clearHint) {
+        clearIdleHint();
+      }
     }
 
     function clearThornTeachingCue(renderAfter = false) {
@@ -9493,7 +9522,11 @@
           seedRoundOneGuidedMove(plan);
         }
         const roundOneStage = roundOneGuidedStage(plan);
-        if (roundOneStage === "black-candle" && hasRoundOneBlackCandleLessonMove(plan)) {
+        if (
+          roundOneStage === "black-candle"
+          && !isRoundOneSecondTargetDiscoveryActive(plan)
+          && hasRoundOneBlackCandleLessonMove(plan)
+        ) {
           const move = roundOneBlackCandleLessonSwap();
           idleHintCells = new Set(move.map((cell) => `${cell.x},${cell.y}`));
           $("firstSwapCue").textContent = "Make 4 Bone Stars - arm Black Candle Vine.";
@@ -10617,7 +10650,7 @@
 
     function clearCompetingReweaveFeedback() {
       clearIdleHint();
-      clearTargetLiteracy(false);
+      retireRoundOneSecondTargetDiscovery();
       clearThornTeachingCue(false);
       clearTransientGameFeel();
       cancelFxTimers();
@@ -10745,6 +10778,11 @@
     }
 
     function isRoundOneAgencyHandoffActive(plan = activeRoundPlan()) {
+      return isRoundOneFirstTargetAgencyHandoffActive(plan)
+        || isRoundOneSecondTargetDiscoveryActive(plan);
+    }
+
+    function isRoundOneFirstTargetAgencyHandoffActive(plan = activeRoundPlan()) {
       return plan.round === 1
         && hasMadeValidMove
         && roundOneGuidedStage(plan) === "thorn-followup"
@@ -10753,6 +10791,25 @@
         && !isArmedLineRelicGuidanceActive()
         && !postRecoveryGuideActive
         && !altarReweaveActive;
+    }
+
+    function isRoundOneSecondTargetAuthorityReady(plan = activeRoundPlan()) {
+      const firstTarget = plan.targets[0];
+      const secondTarget = plan.targets[1];
+      return plan.round === 1
+        && Boolean(firstTarget && secondTarget)
+        && targetProgress(firstTarget) >= firstTarget.needed
+        && targetProgress(secondTarget) < secondTarget.needed
+        && !roundComplete
+        && !isBouquetFailed(plan)
+        && !isArmedLineRelicGuidanceActive()
+        && !postRecoveryGuideActive
+        && !altarReweaveActive;
+    }
+
+    function isRoundOneSecondTargetDiscoveryActive(plan = activeRoundPlan()) {
+      return roundOneSecondTargetDiscoveryActive
+        && isRoundOneSecondTargetAuthorityReady(plan);
     }
 
     function isRoundOneOrderCorrectionActive(plan = activeRoundPlan()) {
@@ -11213,6 +11270,9 @@
       const roundThreeFinalPayoff = roundThreeFinalPending || roundThreeFinalComplete;
       const payoffCeremony = focusedPayoffCeremony();
       const activePlan = activeRoundPlan();
+      if (roundOneSecondTargetDiscoveryActive && !isRoundOneSecondTargetAuthorityReady(activePlan)) {
+        roundOneSecondTargetDiscoveryActive = false;
+      }
       if (targetLiteracyFlowerId !== null && !isRoundOneAgencyHandoffActive(activePlan)) {
         clearTargetLiteracy(false);
       }
@@ -11637,7 +11697,11 @@
         return "Match 4 arms Black Candle Vine.";
       }
       if (isRoundOneAgencyHandoffActive(plan) && idleHintCells.size === 2) {
-        return "Match Thorn Rose.";
+        const target = roundOneAgencyTarget(plan);
+        if (target?.flowerId === 5) {
+          return "Match Thorn Rose.";
+        }
+        return target ? `Match ${flowers[target.flowerId][0]}.` : "Match the order flowers.";
       }
       if (isRoundOneOrderCorrectionActive(plan)) {
         return "Match the order flowers.";
@@ -11743,9 +11807,14 @@
 
     function skipTutorial() {
       const skippingThornLesson = isAuthoritativeRoundTwoThornLesson();
+      const skippingRoundOneAgency = isRoundOneAgencyHandoffActive();
       tutorialSkipped = true;
       tutorialActive = false;
       blackCandleLessonComplete = true;
+      if (skippingRoundOneAgency) {
+        clearTargetLiteracy(false);
+        clearIdleHint();
+      }
       if (skippingThornLesson) {
         clearIdleHint();
         clearThornTeachingCue(false);
@@ -11753,6 +11822,9 @@
       queuePostRenderFocus("tutorialHelpBtn");
       render();
       saveProgress();
+      if (skippingRoundOneAgency) {
+        scheduleIdleHint();
+      }
     }
 
     function concludeTutorial() {
@@ -11763,6 +11835,7 @@
       tutorialSkipped = true;
       tutorialActive = false;
       blackCandleLessonComplete = true;
+      clearTargetLiteracy(false);
     }
 
     function scheduleFreshTutorial() {
@@ -12053,6 +12126,16 @@
         );
         return;
       }
+      const roundOnePlanBeforeSwap = activeRoundPlan();
+      const roundOneFirstTargetBeforeSwap = roundOnePlanBeforeSwap.targets[0];
+      const roundOneSecondTargetBeforeSwap = roundOnePlanBeforeSwap.targets[1];
+      const pendingRoundOneSecondTargetHandoff = roundOnePlanBeforeSwap.round === 1
+        && Boolean(roundOneFirstTargetBeforeSwap && roundOneSecondTargetBeforeSwap)
+        && targetProgress(roundOneFirstTargetBeforeSwap) < roundOneFirstTargetBeforeSwap.needed
+        && targetProgress(roundOneSecondTargetBeforeSwap) < roundOneSecondTargetBeforeSwap.needed;
+      if (isRoundOneSecondTargetDiscoveryActive(roundOnePlanBeforeSwap)) {
+        retireRoundOneSecondTargetDiscovery({ clearHint: true });
+      }
       if (restoredGreenhouseHandoff && (currentRound === 2 || currentRound === 3)) {
         finishRestoredGreenhouseHandoff();
       }
@@ -12123,6 +12206,13 @@
           ? focusedRoundTwoHarvestSummary(result)
           : harvestSummary(result) + rareDropMessage);
         pulseOrderCounts(result.gained, result.gainedCells);
+        let beganRoundOneSecondTargetDiscovery = false;
+        if (pendingRoundOneSecondTargetHandoff && isRoundOneSecondTargetAuthorityReady()) {
+          // Keep the existing authored Bone Star opportunity as settled gameplay
+          // authority, but withhold its exact pair while the family is introduced.
+          seedRoundOneGuidedMove(activeRoundPlan());
+          beganRoundOneSecondTargetDiscovery = beginRoundOneSecondTargetDiscovery();
+        }
         if (maybeCompleteRound(harvestMessage)) {
           return;
         }
@@ -12137,6 +12227,8 @@
           await presentAltarReweave();
         } else if (!resolvingMoveFailed && isArmedLineRelicGuidanceActive()) {
           ritualMessage += nextTargetMoveHint();
+        } else if (!resolvingMoveFailed && beganRoundOneSecondTargetDiscovery) {
+          schedulePostResolveIdleHint = true;
         } else if (!resolvingMoveFailed && (guidedRoundTwoLesson || reachedRestoredGuideLimit)) {
           schedulePostResolveIdleHint = true;
         } else if (!resolvingMoveFailed && isRoundOneAgencyHandoffActive()) {
@@ -13667,6 +13759,7 @@
         return false;
       }
       roundComplete = true;
+      retireRoundOneSecondTargetDiscovery({ clearHint: true });
       const streakPayout = completionCoinPayout(plan);
       coins += streakPayout.total;
       pulseCoinBalance();
@@ -14238,6 +14331,7 @@
         return;
       }
       retireCompletedInteractionFeedback();
+      retireRoundOneSecondTargetDiscovery({ clearHint: true });
       harvestFlashCells.clear();
       fallAnimations.clear();
       refillBornCells.clear();
@@ -14282,7 +14376,7 @@
       const secondUpgradeNextOrder = currentRound === 2 && roundComplete && roundOneRestored && roundTwoGreenhouseUpgraded && nextRound === 3;
       const plan = buildRoundPlan(nextRound);
       clearIdleHint();
-      clearTargetLiteracy(false);
+      retireRoundOneSecondTargetDiscovery();
       selected = null;
       armedLineRelic = null;
       clearTransientGameFeel();
@@ -14366,7 +14460,7 @@
         return;
       }
       clearIdleHint();
-      clearTargetLiteracy(false);
+      retireRoundOneSecondTargetDiscovery();
       selected = null;
       armedLineRelic = null;
       clearTransientGameFeel();
@@ -14904,6 +14998,7 @@
       queuePostRenderFocus(focusedPayoffPrimaryButtonId());
     }
     ensureCursedThornsForPlan(activeRoundPlan());
+    roundOneSecondTargetDiscoveryActive = isRoundOneSecondTargetAuthorityReady();
     if (isRoundTwoThornLessonEligible({ allowPartialProgress: true })) {
       restoreAuthoritativeRoundTwoThornLesson({
         resetSelection: true,
@@ -14928,7 +15023,9 @@
       }
     } else if (currentRound === 1 && !roundComplete && hasMadeValidMove && !isBouquetFailed()) {
       seedRoundOneGuidedMove(activeRoundPlan());
-      if (isRoundOneAgencyHandoffActive()) {
+      if (isRoundOneSecondTargetDiscoveryActive()) {
+        beginRoundOneSecondTargetDiscovery({ showLiteracy: false });
+      } else if (isRoundOneAgencyHandoffActive()) {
         beginRoundOneAgencyDiscovery();
       } else {
         nextTargetMoveHint();
