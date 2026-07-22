@@ -251,6 +251,15 @@ async function legalOffGuidePair(page, { changeTeachingColumn = false } = {}) {
 
 async function completeNaturalRoundOne(page, input) {
   for (let move = 0; move < 7; move += 1) {
+    const authority = await page.evaluate((key) => (
+      JSON.parse(localStorage.getItem(key) || "{}").roundComplete === true
+    ), SAVE_KEY);
+    if (authority) {
+      await expect(page.locator("body")).not.toHaveAttribute("data-black-candle-activation-phase", /.+/, {
+        timeout: 7000
+      });
+      break;
+    }
     if (await page.locator("#roundOneRestoration").isVisible()) break;
     const pair = await guidedPair(page);
     const beforeMoves = await page.evaluate((key) => (

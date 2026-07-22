@@ -6156,6 +6156,10 @@
     .round-one-restoration.owned-replay[data-owned-renewal-phase]:not([data-owned-renewal-phase="settled"]) .restoration-copy {
       visibility:hidden;
     }
+    .round-one-restoration[data-assembly-ready="false"] .payoff-transaction,
+    .round-one-restoration[data-assembly-ready="false"] .restoration-copy {
+      visibility:hidden !important;
+    }
     .owned-replay-renewal { position:absolute; inset:0; z-index:14; overflow:hidden; pointer-events:none; }
     .owned-replay-renewal[hidden] { display:none; }
     .owned-renewal-ingredient {
@@ -7274,6 +7278,285 @@
       body.round-two-upgrade-complete .restoration-step,
       body.round-three-final-complete .restoration-step { min-height:34px; }
     }
+
+    /* Authoritative Black Candle clears keep the altar visible long enough to
+       prove source -> lane -> extinguish -> refill before bouquet binding. */
+    body.black-candle-activation-active .round-one-restoration,
+    body.black-candle-activation-active #restoreGreenhouseBtn,
+    body.black-candle-activation-active #nextOrderBtn,
+    body.black-candle-activation-active .tutorial-help,
+    body.black-candle-activation-active .tutorial-skip,
+    body.black-candle-activation-active .controls {
+      display: none !important;
+    }
+
+    body.black-candle-activation-active .progress-next {
+      display: none !important;
+    }
+
+    body.black-candle-activation-active:not([data-black-candle-activation-phase="refill"]) .coin-balance {
+      visibility: hidden;
+    }
+
+    body.black-candle-activation-active.round-one-active.round-one-complete .objective,
+    body.black-candle-activation-active.round-one-active.round-one-complete .active-greenhouse-stage,
+    body.black-candle-activation-active.round-one-active.round-one-complete .board,
+    body.black-candle-activation-active.round-one-active.round-one-complete .progress {
+      display: grid !important;
+    }
+
+    body.black-candle-activation-active.round-one-active.round-one-complete .objective {
+      display: flex !important;
+    }
+
+    body.black-candle-activation-active:not(.tutorial-active) .first-swap-cue {
+      display: flex !important;
+      position: relative;
+      z-index: 12;
+    }
+
+    body.black-candle-activation-active .first-swap-cue {
+      border-color: #8e6b35 !important;
+      color: #fff0b4 !important;
+      background: linear-gradient(90deg, #17100c, #2b1d0d, #17100c) !important;
+      box-shadow: 0 0 14px #9b1d224f, inset 0 0 9px #000 !important;
+    }
+
+    body.black-candle-activation-active .first-swap-cue::before {
+      content: "BLACK CANDLE" !important;
+      border-color: #76582e !important;
+      color: #d7b16d !important;
+    }
+
+    .board.black-candle-activation {
+      isolation: isolate;
+      box-shadow:
+        inset 0 0 34px #000,
+        inset 0 0 0 4px #080504,
+        0 0 0 1px #8e6b35,
+        0 0 28px #9b1d2259,
+        0 18px 42px #000c !important;
+    }
+
+    .tile.black-candle-burn-cell {
+      z-index: 5;
+      outline: 1px solid #b9874d;
+      outline-offset: -2px;
+      box-shadow:
+        inset 0 0 18px #000,
+        inset 0 0 0 2px #35120e,
+        0 0 0 1px #130a07,
+        0 0 13px #9b1d2266,
+        0 0 19px #d7b16d3d;
+    }
+
+    .black-candle-burn-echo {
+      position: absolute;
+      inset: 3px;
+      z-index: 7;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      border-radius: 2px;
+      background:
+        radial-gradient(circle at 50% 48%, #5a1b164f 0, #140706e8 58%, #030202f5 100%);
+      pointer-events: none;
+      opacity: .88;
+      transition: opacity 110ms ease, filter 110ms ease, transform 110ms ease;
+    }
+
+    .black-candle-burn-echo .icon-wrap {
+      width: 88%;
+      height: 88%;
+      filter: brightness(1.06) saturate(.94) drop-shadow(0 0 6px #d7b16d42);
+    }
+
+    .black-candle-burn-echo img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    body[data-black-candle-activation-phase="sweep"] .tile.black-candle-burn-cell {
+      animation: black-candle-cell-catch 190ms ease-out calc(var(--burn-step, 0) * 11ms) both;
+    }
+
+    .tile.black-candle-burn-source {
+      z-index: 9;
+      outline: 2px solid #fff0b4;
+      box-shadow:
+        inset 0 0 22px #000,
+        inset 0 0 0 2px #6b1c14,
+        0 0 0 1px #130a07,
+        0 0 20px #ef6b2fb8,
+        0 0 32px #d7b16d8f;
+    }
+
+    .black-candle-mark.black-candle-activation-source {
+      z-index: 10;
+      filter: brightness(1.28) saturate(1.2);
+      animation: black-candle-ignite 180ms ease-out both;
+    }
+
+    .tile.black-candle-burn-extinguished .black-candle-burn-echo {
+      opacity: .12;
+      filter: grayscale(.8) brightness(.36);
+      transform: scale(.9);
+    }
+
+    .tile.black-candle-burn-extinguished::after {
+      opacity: .94;
+      background:
+        radial-gradient(circle, #050303 0 42%, #0000 72%),
+        linear-gradient(90deg, #0000 0 44%, #9b1d2266 49% 51%, #0000 56%);
+    }
+
+    body[data-black-candle-activation-phase="sweep"] .tile.black-candle-burn-cell::after,
+    body[data-black-candle-activation-phase="hold"] .tile.black-candle-burn-cell::after {
+      opacity: .96;
+      background:
+        radial-gradient(circle at 50% 50%, #d7b16d2e 0, #0000 62%),
+        linear-gradient(var(--burn-lane-angle, 0deg), #0000 0 42%, #9b1d22b8 46%, #fff0b4d9 50%, #b9874dbc 54%, #0000 58%);
+      filter: drop-shadow(0 0 5px #9b1d22) drop-shadow(0 0 7px #d7b16d);
+    }
+
+    .tile.black-candle-burn-refill {
+      outline-color: #d7b16d8a;
+      box-shadow:
+        inset 0 0 15px #000,
+        inset 0 0 0 1px #d7b16d3d,
+        0 0 0 1px #130a07,
+        0 0 12px #5f83384a;
+      animation: black-candle-refill-reveal 90ms ease-out both;
+    }
+
+    .tile.black-candle-burn-refill .black-candle-burn-echo,
+    .tile.black-candle-burn-refill .black-candle-activation-source {
+      opacity: 0;
+      animation: none;
+    }
+
+    .black-candle-burn-sweep {
+      position: absolute;
+      z-index: 12;
+      pointer-events: none;
+      overflow: visible;
+      filter: drop-shadow(0 0 7px #d7b16d) drop-shadow(0 0 13px #9b1d22);
+    }
+
+    .black-candle-burn-sweep::before,
+    .black-candle-burn-sweep::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      transform-origin: var(--burn-origin, left) center;
+    }
+
+    .black-candle-burn-sweep::before {
+      background: linear-gradient(90deg, #9b1d2200, #9b1d22d9 18%, #fff0b4 52%, #b9874de0 78%, #0000);
+      box-shadow: 0 0 10px #d7b16d, 0 0 20px #9b1d22;
+      animation: black-candle-directional-sweep 260ms cubic-bezier(.16,.82,.2,1) both;
+    }
+
+    .black-candle-burn-sweep::after {
+      opacity: .48;
+      background: repeating-linear-gradient(90deg, #0000 0 9%, #d7b16d85 10%, #0000 11% 18%);
+      animation: black-candle-directional-sweep 260ms cubic-bezier(.16,.82,.2,1) 12ms both;
+    }
+
+    .black-candle-burn-sweep.horizontal {
+      left: 0;
+      top: calc((var(--burn-fixed) + .5) * 12.5%);
+      width: 100%;
+      height: 7px;
+      transform: translateY(-50%);
+    }
+
+    .black-candle-burn-sweep.vertical {
+      left: calc((var(--burn-fixed) + .5) * 12.5%);
+      top: 0;
+      width: 7px;
+      height: 100%;
+      transform: translateX(-50%);
+    }
+
+    .black-candle-burn-sweep.vertical::before,
+    .black-candle-burn-sweep.vertical::after {
+      background: linear-gradient(180deg, #9b1d2200, #9b1d22d9 18%, #fff0b4 52%, #b9874de0 78%, #0000);
+      transform-origin: center var(--burn-origin, top);
+      animation-name: black-candle-directional-sweep-vertical;
+    }
+
+    @keyframes black-candle-ignite {
+      0% { opacity: .4; transform: scale(.72); filter: brightness(.7); }
+      42% { opacity: 1; transform: scale(1.12); filter: brightness(1.5); }
+      100% { opacity: 1; transform: scale(1); filter: brightness(1.2); }
+    }
+
+    @keyframes black-candle-cell-catch {
+      0% { filter: brightness(.72); }
+      45% { filter: brightness(1.35) saturate(1.2); }
+      100% { filter: brightness(.9); }
+    }
+
+    @keyframes black-candle-directional-sweep {
+      0% { opacity: 0; transform: scaleX(.04); }
+      18% { opacity: 1; }
+      82% { opacity: 1; transform: scaleX(1); }
+      100% { opacity: .72; transform: scaleX(1); }
+    }
+
+    @keyframes black-candle-directional-sweep-vertical {
+      0% { opacity: 0; transform: scaleY(.04); }
+      18% { opacity: 1; }
+      82% { opacity: 1; transform: scaleY(1); }
+      100% { opacity: .72; transform: scaleY(1); }
+    }
+
+    @keyframes black-candle-refill-reveal {
+      0% { filter: brightness(.5) saturate(.7); }
+      55% { filter: brightness(1.2) saturate(1.08); }
+      100% { filter: brightness(1); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .black-candle-burn-sweep {
+        display: none !important;
+      }
+      .black-candle-mark.black-candle-activation-source,
+      .tile.black-candle-burn-cell,
+      .tile.black-candle-burn-refill {
+        animation: none !important;
+      }
+      .tile.black-candle-burn-cell {
+        outline-width: 2px;
+        box-shadow:
+          inset 0 0 19px #000,
+          inset 0 0 0 2px #6b1c14,
+          0 0 0 1px #130a07,
+          0 0 14px #9b1d226b,
+          0 0 21px #d7b16d52;
+      }
+    }
+
+    @media (min-width: 761px) {
+      body.black-candle-activation-active .board {
+        width: min(650px, calc(100vh - 240px), calc(100vw - 470px));
+        max-width: none;
+        gap: 4px;
+        margin: 3px auto 6px;
+        padding: 7px;
+      }
+    }
+
+    @media (max-width: 760px) {
+      body.black-candle-activation-active .board {
+        box-sizing: border-box;
+        width: calc(100vw - 24px);
+        max-width: 366px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -7577,10 +7860,20 @@
     const INVALID_SWAP_FEEDBACK_MS = 1120;
     const ALTAR_REWEAVE_MS = 720;
     const ALTAR_REWEAVE_REDUCED_MS = 520;
+    const BLACK_CANDLE_IGNITION_MS = 100;
+    const BLACK_CANDLE_SWEEP_MS = 280;
+    const BLACK_CANDLE_EXTINGUISH_MS = 150;
+    const BLACK_CANDLE_REFILL_MS = 100;
+    const BLACK_CANDLE_REDUCED_HOLD_MS = 190;
+    const BLACK_CANDLE_REDUCED_REFILL_MS = 70;
 
     let board = [];
     let selected = null;
     let armedLineRelic = null;
+    let blackCandleActivationPresentation = null;
+    let blackCandleActivationTimer = null;
+    let blackCandleActivationDelayResolve = null;
+    let blackCandleActivationGeneration = 0;
     let boardFocusCell = { x: 0, y: 0 };
     let postRenderFocusTarget = "";
     let moves = roundTemplates[0].moves;
@@ -10692,6 +10985,117 @@
       return Boolean(primePostRecoveryGuide());
     }
 
+    function clearBlackCandleActivationPresentation({ renderAfter = false } = {}) {
+      blackCandleActivationGeneration += 1;
+      if (blackCandleActivationTimer && window.clearTimeout) {
+        window.clearTimeout(blackCandleActivationTimer);
+      }
+      blackCandleActivationTimer = null;
+      if (blackCandleActivationDelayResolve) {
+        const resolveDelay = blackCandleActivationDelayResolve;
+        blackCandleActivationDelayResolve = null;
+        resolveDelay(false);
+      }
+      blackCandleActivationPresentation = null;
+      if ($("firstSwapCue")) {
+        $("firstSwapCue").textContent = "";
+      }
+      document.body.classList.remove("black-candle-activation-active");
+      document.body.removeAttribute("data-black-candle-activation-phase");
+      document.body.removeAttribute("data-black-candle-activation-motion");
+      document.body.removeAttribute("data-black-candle-activation-direction");
+      document.body.removeAttribute("data-black-candle-activation-lane");
+      const boardEl = $("board");
+      if (boardEl) {
+        boardEl.classList.remove("black-candle-activation");
+        boardEl.removeAttribute("data-black-candle-activation-phase");
+        boardEl.removeAttribute("data-black-candle-activation-source");
+        boardEl.removeAttribute("data-black-candle-activation-lane");
+      }
+      if (renderAfter) {
+        render();
+      }
+    }
+
+    function waitForBlackCandleActivation(ms, generation) {
+      return new Promise((resolve) => {
+        blackCandleActivationDelayResolve = resolve;
+        blackCandleActivationTimer = window.setTimeout(() => {
+          blackCandleActivationTimer = null;
+          blackCandleActivationDelayResolve = null;
+          resolve(generation === blackCandleActivationGeneration);
+        }, ms);
+      });
+    }
+
+    function setBlackCandleActivationPhase(phase, generation) {
+      if (!blackCandleActivationPresentation || generation !== blackCandleActivationGeneration) {
+        return false;
+      }
+      blackCandleActivationPresentation.phase = phase;
+      render();
+      return true;
+    }
+
+    async function presentBlackCandleActivation(activation, options = {}) {
+      if (!activation || !Array.isArray(activation.cells) || activation.cells.length !== BOARD_SIZE) {
+        return false;
+      }
+      clearBlackCandleActivationPresentation();
+      const generation = ++blackCandleActivationGeneration;
+      const motion = prefersReducedMotion() ? "reduced" : "full";
+      const lane = activation.direction === "vertical" ? "column" : "row";
+      blackCandleActivationPresentation = {
+        ...activation,
+        lane,
+        motion,
+        phase: motion === "reduced" ? "hold" : "ignition",
+        sourceKey: `${activation.source.x},${activation.source.y}`,
+        cellsByKey: new Map(activation.cells.map((cell, index) => [
+          `${cell.x},${cell.y}`,
+          { ...cell, index }
+        ]))
+      };
+      clearIdleHint();
+      clearThornTeachingCue(false);
+      selected = null;
+      boardParticles = [];
+      harvestFlashCells.clear();
+      superBloomCells.clear();
+      $("firstSwapCue").classList.remove("swap-refused");
+      $("firstSwapCue").textContent = `Burning the full ${lane}.`;
+      saveProgress({ allowDuringResolve: true });
+      pulseHaptic(motion === "reduced" ? 12 : [18, 22, 28]);
+      playBloomSound("match", { cascade: 0, lineRelic: true, cleared: BOARD_SIZE });
+      render();
+
+      try {
+        if (motion === "reduced") {
+          if (!await waitForBlackCandleActivation(BLACK_CANDLE_REDUCED_HOLD_MS, generation)) return false;
+          if (!setBlackCandleActivationPhase("refill", generation)) return false;
+          if (typeof options.onRefill === "function") {
+            options.onRefill();
+          }
+          return await waitForBlackCandleActivation(BLACK_CANDLE_REDUCED_REFILL_MS, generation);
+        }
+        if (!await waitForBlackCandleActivation(BLACK_CANDLE_IGNITION_MS, generation)) return false;
+        if (!setBlackCandleActivationPhase("sweep", generation)) return false;
+        if (!await waitForBlackCandleActivation(BLACK_CANDLE_SWEEP_MS, generation)) return false;
+        if (!setBlackCandleActivationPhase("extinguish", generation)) return false;
+        if (!await waitForBlackCandleActivation(BLACK_CANDLE_EXTINGUISH_MS, generation)) return false;
+        if (!setBlackCandleActivationPhase("refill", generation)) return false;
+        if (typeof options.onRefill === "function") {
+          options.onRefill();
+        }
+        return await waitForBlackCandleActivation(BLACK_CANDLE_REFILL_MS, generation);
+      } finally {
+        if (generation === blackCandleActivationGeneration) {
+          clearBlackCandleActivationPresentation();
+          render();
+        }
+      }
+    }
+
     function prepareAltarDriftRefill(options = {}) {
       altarDriftRefillBudget = 0;
       altarDriftTargetIds = [];
@@ -11238,7 +11642,8 @@
       const panel = $("roundOneRestoration");
       const ownedRenewalPhase = ownedReplayPresentationPhase(ceremony);
       const presentationPending = focusedSliceRound(ceremony.plan)
-        && ((ceremony.primary === "spend" && bouquetSealPulseActive)
+        && (Boolean(blackCandleActivationPresentation)
+          || (ceremony.primary === "spend" && bouquetSealPulseActive)
           || (ceremony.ownedReplay && Boolean(ownedRenewalPhase)));
       panel.dataset.payoffRound = String(ceremony.plan.round);
       panel.dataset.payoffPrimary = ceremony.primary;
@@ -11256,6 +11661,8 @@
             : ceremony.state;
       $("payoffTransaction").textContent = ceremony.transaction;
       $("restorationCopy").textContent = ceremony.copy;
+      $("payoffTransaction").style.visibility = presentationPending ? "hidden" : "";
+      $("restorationCopy").style.visibility = presentationPending ? "hidden" : "";
       $("restoreGreenhouseBtn").textContent = ceremony.spendText;
       $("nextOrderBtn").textContent = ceremony.nextText;
       $("restoreGreenhouseBtn").hidden = ceremony.primary !== "spend" || presentationPending;
@@ -11291,6 +11698,7 @@
       const roundThreeFinalPayoff = roundThreeFinalPending || roundThreeFinalComplete;
       const payoffCeremony = focusedPayoffCeremony();
       const activePlan = activeRoundPlan();
+      const blackCandleActivation = blackCandleActivationPresentation;
       if (roundOneSecondTargetDiscoveryActive && !isRoundOneSecondTargetAuthorityReady(activePlan)) {
         roundOneSecondTargetDiscoveryActive = false;
       }
@@ -11298,7 +11706,7 @@
         clearTargetLiteracy(false);
       }
       const progress = roundProgress(activePlan);
-      const activeRelicGuidance = !roundComplete && !isBouquetFailed()
+      const activeRelicGuidance = !blackCandleActivation && !roundComplete && !isBouquetFailed()
         ? lineRelicGuidance()
         : null;
       const failedFocusedRestoredOrder = roundOneRestored
@@ -11321,6 +11729,7 @@
       document.body.classList.toggle("round-three-final-complete", roundThreeFinalComplete);
       document.body.classList.toggle("round-three-focus-active", currentRound === 3 && !roundComplete && roundOneRestored && roundTwoGreenhouseUpgraded);
       document.body.classList.toggle("reduced-motion", prefersReducedMotion());
+      document.body.classList.toggle("black-candle-activation-active", Boolean(blackCandleActivation));
       document.body.classList.toggle("focused-active-play", focusedSliceRound(activePlan) && !roundComplete);
       document.body.classList.toggle("altar-reweave-active", altarReweaveActive && !roundComplete && !isBouquetFailed(activePlan));
       document.body.classList.toggle("post-recovery-guide", postRecoveryGuideActive && !roundComplete && !isBouquetFailed(activePlan));
@@ -11347,6 +11756,17 @@
       document.body.dataset.altarReweaveSequence = String(altarReweaveSequence);
       document.body.dataset.altarReweaveMotion = prefersReducedMotion() ? "reduced" : "full";
       document.body.dataset.tutorialPrompt = tutorialActive ? tutorialCopy() : "";
+      if (blackCandleActivation) {
+        document.body.dataset.blackCandleActivationPhase = blackCandleActivation.phase;
+        document.body.dataset.blackCandleActivationMotion = blackCandleActivation.motion;
+        document.body.dataset.blackCandleActivationDirection = blackCandleActivation.travelDirection;
+        document.body.dataset.blackCandleActivationLane = blackCandleActivation.lane;
+      } else {
+        document.body.removeAttribute("data-black-candle-activation-phase");
+        document.body.removeAttribute("data-black-candle-activation-motion");
+        document.body.removeAttribute("data-black-candle-activation-direction");
+        document.body.removeAttribute("data-black-candle-activation-lane");
+      }
       $("roundOneRestoration").classList.toggle("restored", (roundOneActive && roundOneRestored) || roundTwoUpgradeComplete || roundThreeFinalComplete);
       $("roundOneRestoration").classList.toggle("second-greenhouse-upgrade", roundTwoUpgradePending || roundTwoUpgradeComplete);
       $("roundOneRestoration").classList.toggle("third-greenhouse-finale", roundThreeFinalPayoff);
@@ -11371,6 +11791,15 @@
       boardEl.dataset.lastWildChainCascades = String(lastWildChain?.cascades || 0);
       boardEl.dataset.refillColumns = String(refillColumns.size);
       boardEl.dataset.armedRelicDirection = activeRelicGuidance?.direction || "";
+      if (blackCandleActivation) {
+        boardEl.dataset.blackCandleActivationPhase = blackCandleActivation.phase;
+        boardEl.dataset.blackCandleActivationSource = blackCandleActivation.sourceKey;
+        boardEl.dataset.blackCandleActivationLane = `${blackCandleActivation.lane}-${blackCandleActivation.fixed + 1}`;
+      } else {
+        boardEl.removeAttribute("data-black-candle-activation-phase");
+        boardEl.removeAttribute("data-black-candle-activation-source");
+        boardEl.removeAttribute("data-black-candle-activation-lane");
+      }
       boardEl.dataset.reweavePhase = altarReweaveActive
         ? "active"
         : postRecoveryGuideActive ? "guided" : "settled";
@@ -11379,6 +11808,7 @@
       boardEl.classList.toggle("cascade-wave", currentCascadeWave > 0);
       boardEl.classList.toggle("swap-accepted", validSwapCells.size > 0);
       boardEl.classList.toggle("line-relic-guidance", Boolean(activeRelicGuidance));
+      boardEl.classList.toggle("black-candle-activation", Boolean(blackCandleActivation));
       boardEl.classList.toggle("bloom-hit", harvestFlashCells.size > 0 || boardParticles.some((particle) => particle.type === "petal-pop" || particle.type === "coin-pop"));
       boardEl.classList.toggle("line-relic-hit", boardParticles.some((particle) => particle.type === "line-relic"));
       boardEl.classList.toggle("chain-payoff", boardParticles.some((particle) => particle.type === "wild-chain-banner" || particle.type === "chain-bonus"));
@@ -11434,16 +11864,39 @@
           const settleClass = settledCells.has(fallKey) ? "settle-pop" : "";
           const lineRelicLaneClass = activeRelicGuidance?.laneKeys.has(fallKey) ? "line-relic-lane-preview" : "";
           const lineRelicDestinationClass = activeRelicGuidance?.destinationKey === fallKey ? "line-relic-destination" : "";
+          const blackCandleBurnCell = blackCandleActivation?.cellsByKey.get(fallKey) || null;
+          const blackCandleBurnCellClass = blackCandleBurnCell ? "black-candle-burn-cell" : "";
+          const blackCandleBurnSourceClass = blackCandleActivation?.sourceKey === fallKey
+            ? "black-candle-burn-source"
+            : "";
+          const blackCandleBurnExtinguishedClass = blackCandleBurnCell
+            && ["hold", "extinguish"].includes(blackCandleActivation.phase)
+            ? "black-candle-burn-extinguished"
+            : "";
+          const blackCandleBurnRefillClass = blackCandleBurnCell
+            && blackCandleActivation.phase === "refill"
+            ? "black-candle-burn-refill"
+            : "";
           const previewClass = harvestPreview.cells.has(fallKey) ? "match-preview" : "";
           const previewAnchorClass = harvestPreview.anchors.has(fallKey) ? "match-preview-anchor" : "";
           const relicPreviewClass = harvestPreview.relicCells.has(fallKey) ? "relic-preview" : "";
           const armedRelic = lineRelicAt({ x, y }) ? armedLineRelic : null;
           const armedRelicClass = armedRelic ? "black-candle-vine" : "";
-          tile.className = `tile ${selectedClass} ${legalClass} ${lineRelicLaneClass} ${lineRelicDestinationClass} ${previewClass} ${previewAnchorClass} ${relicPreviewClass} ${armedRelicClass} ${harvestClass} ${superClass} ${invalidClass} ${validSwapClass} ${swapClass} ${swapGlideClass} ${idleHintClass} ${targetLiteracyClass} ${thornTeachClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass} ${refillBornClass} ${settleClass}`;
+          tile.className = `tile ${selectedClass} ${legalClass} ${lineRelicLaneClass} ${lineRelicDestinationClass} ${blackCandleBurnCellClass} ${blackCandleBurnSourceClass} ${blackCandleBurnExtinguishedClass} ${blackCandleBurnRefillClass} ${previewClass} ${previewAnchorClass} ${relicPreviewClass} ${armedRelicClass} ${harvestClass} ${superClass} ${invalidClass} ${validSwapClass} ${swapClass} ${swapGlideClass} ${idleHintClass} ${targetLiteracyClass} ${thornTeachClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass} ${refillBornClass} ${settleClass}`;
           tile.disabled = isResolving || roundComplete || isBouquetFailed();
           tile.tabIndex = !tile.disabled && boardFocusCell.x === x && boardFocusCell.y === y ? 0 : -1;
           tile.style.setProperty("--tile-color", flowers[value][4]);
           tile.style.setProperty("--reweave-delay", `${Math.min(126, (x + y) * 9)}ms`);
+          if (blackCandleBurnCell) {
+            const directionalIndex = ["left", "up"].includes(blackCandleActivation.travelDirection)
+              ? BOARD_SIZE - 1 - blackCandleBurnCell.index
+              : blackCandleBurnCell.index;
+            tile.style.setProperty("--burn-step", String(directionalIndex));
+            tile.style.setProperty(
+              "--burn-lane-angle",
+              blackCandleActivation.direction === "vertical" ? "90deg" : "0deg"
+            );
+          }
           if (invalidFeedback) {
             tile.style.setProperty("--invalid-x", `${invalidFeedback.dx * 18}%`);
             tile.style.setProperty("--invalid-y", `${invalidFeedback.dy * 18}%`);
@@ -11490,6 +11943,8 @@
           tile.innerHTML = `
             ${iconMarkup(value, "", flowers[value][0], "tile-icon-wrap")}
             ${armedRelic ? '<span class="black-candle-mark" aria-hidden="true"></span>' : ""}
+            ${blackCandleBurnCell ? `<span class="black-candle-burn-echo" aria-hidden="true">${iconMarkup(blackCandleBurnCell.flowerId, "", "", "tile-icon-wrap")}</span>` : ""}
+            ${blackCandleBurnSourceClass ? '<span class="black-candle-mark black-candle-activation-source" aria-hidden="true"></span>' : ""}
             ${lineRelicDestinationClass ? '<span class="line-relic-destination-mark" aria-hidden="true"></span>' : ""}
             ${thornTeachingActive && thorn ? '<span class="thorn-teach-marker blocker" aria-hidden="true">×</span>' : ""}
             ${thorn || thornClearedClass ? `<span class="cursed-thorn-overlay" aria-hidden="true"><span class="thorn-root"></span>${thornSealMarkup("cursed-thorn-art", "")}${thornHitClass ? `<span class="thorn-event ${thornEventOffsetClass}">${thornClearedClass ? "BREAK" : "CRACK"}</span>` : ""}</span>` : ""}
@@ -11503,6 +11958,19 @@
         veil.setAttribute("aria-hidden", "true");
         veil.innerHTML = '<span class="altar-reweave-seal">Altar Reweaves</span>';
         boardEl.appendChild(veil);
+      }
+      if (blackCandleActivation?.motion === "full" && blackCandleActivation.phase === "sweep") {
+        const sweep = document.createElement("span");
+        sweep.className = `black-candle-burn-sweep ${blackCandleActivation.direction}`;
+        sweep.setAttribute("aria-hidden", "true");
+        sweep.style.setProperty("--burn-fixed", String(blackCandleActivation.fixed));
+        sweep.style.setProperty(
+          "--burn-origin",
+          ["left", "up"].includes(blackCandleActivation.travelDirection)
+            ? blackCandleActivation.direction === "vertical" ? "bottom" : "right"
+            : blackCandleActivation.direction === "vertical" ? "top" : "left"
+        );
+        boardEl.appendChild(sweep);
       }
       renderFirstSwapArrow(boardEl);
       applyImageFallbacks(boardEl);
@@ -11664,6 +12132,9 @@
 
     function tutorialCopy() {
       const plan = activeRoundPlan();
+      if (blackCandleActivationPresentation) {
+        return `Burning the full ${blackCandleActivationPresentation.lane}.`;
+      }
       if (isBouquetFailed(plan)) {
         return "Moves ended. Retry the bouquet.";
       }
@@ -11750,9 +12221,8 @@
       const refusedTutorial = tutorialActive && invalidSwapCells.size > 0;
       const failedTutorial = tutorialActive && isBouquetFailed();
       const namedBlackCandle = tutorialActive
-        && !roundComplete
         && !failedTutorial
-        && Boolean(armedLineRelic)
+        && (Boolean(blackCandleActivationPresentation) || (!roundComplete && Boolean(armedLineRelic)))
         && !refusedTutorial;
       panel.classList.toggle("black-candle-tutorial", namedBlackCandle);
       panel.classList.toggle("refused-tutorial", refusedTutorial);
@@ -11769,7 +12239,7 @@
         );
       }
       if (skip) {
-        skip.hidden = roundComplete;
+        skip.hidden = roundComplete || Boolean(blackCandleActivationPresentation);
       }
       if (!tutorialActive) {
         panel.hidden = true;
@@ -11791,6 +12261,9 @@
     }
 
     function startTutorial({ replay = false } = {}) {
+      if (blackCandleActivationPresentation) {
+        clearBlackCandleActivationPresentation();
+      }
       if (tutorialStartTimer && window.clearTimeout) {
         window.clearTimeout(tutorialStartTimer);
         tutorialStartTimer = null;
@@ -11827,6 +12300,9 @@
     }
 
     function skipTutorial() {
+      if (blackCandleActivationPresentation) {
+        clearBlackCandleActivationPresentation();
+      }
       const skippingThornLesson = isAuthoritativeRoundTwoThornLesson();
       const skippingRoundOneAgency = isRoundOneAgencyHandoffActive();
       tutorialSkipped = true;
@@ -11849,6 +12325,9 @@
     }
 
     function concludeTutorial() {
+      if (blackCandleActivationPresentation) {
+        clearBlackCandleActivationPresentation();
+      }
       if (tutorialStartTimer && window.clearTimeout) {
         window.clearTimeout(tutorialStartTimer);
         tutorialStartTimer = null;
@@ -12168,6 +12647,9 @@
       const activatingRelic = lineRelicAt(source) || lineRelicAt(target)
         ? { ...armedLineRelic }
         : null;
+      const activatingRelicOrigin = activatingRelic
+        ? { x: activatingRelic.x, y: activatingRelic.y }
+        : null;
       const isFirstValidMove = !hasMadeValidMove;
       const roundTwoOpeningBudgetActive = isRestoredRoundTwoOpeningBudgetActive();
       const guidedRoundTwoLesson = isAuthoritativeRoundTwoThornLesson()
@@ -12187,7 +12669,19 @@
       swapBoardCells(selected, target);
       if (activatingRelic) {
         const destination = lineRelicAt(source) ? target : source;
-        armedLineRelic = { ...activatingRelic, x: destination.x, y: destination.y };
+        const travelDirection = destination.x > activatingRelicOrigin.x
+          ? "right"
+          : destination.x < activatingRelicOrigin.x
+            ? "left"
+            : destination.y > activatingRelicOrigin.y
+              ? "down"
+              : "up";
+        armedLineRelic = {
+          ...activatingRelic,
+          x: destination.x,
+          y: destination.y,
+          travelDirection
+        };
       }
       boardFocusCell = clampBoardFocusCell(target);
       pulseHaptic(18);
@@ -12227,7 +12721,28 @@
         const harvestMessage = firstMoveCopy + (roundTwoOpeningBudgetActive
           ? focusedRoundTwoHarvestSummary(result)
           : harvestSummary(result) + rareDropMessage);
-        pulseOrderCounts(result.gained, result.gainedCells);
+        const blackCandleActivation = result.blackCandleActivation || null;
+        const completedDuringBlackCandle = blackCandleActivation
+          ? maybeCompleteRound(harvestMessage, { deferFeedback: true })
+          : false;
+        let blackCandleConsequencePresented = false;
+        if (blackCandleActivation) {
+          saveProgress({ allowDuringResolve: true });
+          await presentBlackCandleActivation(blackCandleActivation, {
+            onRefill: () => {
+              blackCandleConsequencePresented = true;
+              pulseOrderCounts(result.gained, result.gainedCells);
+              render();
+            }
+          });
+        }
+        if (!blackCandleConsequencePresented) {
+          pulseOrderCounts(result.gained, result.gainedCells);
+        }
+        if (completedDuringBlackCandle) {
+          beginRoundCompletionFeedback(activeRoundPlan());
+          return;
+        }
         let beganRoundOneSecondTargetDiscovery = false;
         if (pendingRoundOneSecondTargetHandoff && isRoundOneSecondTargetAuthorityReady()) {
           // Keep the existing authored Bone Star opportunity as settled gameplay
@@ -12235,7 +12750,7 @@
           seedRoundOneGuidedMove(activeRoundPlan());
           beganRoundOneSecondTargetDiscovery = beginRoundOneSecondTargetDiscovery();
         }
-        if (maybeCompleteRound(harvestMessage)) {
+        if (!blackCandleActivation && maybeCompleteRound(harvestMessage)) {
           return;
         }
         roundOneLastSwapMissedOrder = currentRound === 1
@@ -12488,6 +13003,7 @@
         lineRelics: [],
         armedLineRelics: [],
         lineRelicCells: [],
+        blackCandleActivation: null,
         rareSeedRunes: [],
         rareSeedRuneCells: [],
         thornsDamaged: 0,
@@ -12666,6 +13182,13 @@
           if (currentRound === 1 && tutorialActive) {
             blackCandleLessonComplete = true;
           }
+          result.blackCandleActivation = wave.blackCandleActivation
+            ? {
+                ...wave.blackCandleActivation,
+                source: { ...wave.blackCandleActivation.source },
+                cells: wave.blackCandleActivation.cells.map((cell) => ({ ...cell }))
+              }
+            : null;
           queueLineRelicBurst(wave.lineRelics, cascadeIndex);
         } else if (wave.createdLineRelic) {
           armedLineRelic = normalizeArmedLineRelic(wave.createdLineRelic);
@@ -12774,6 +13297,11 @@
       const clearCells = Array.from({ length: BOARD_SIZE }, (_, index) => (
         relic.direction === "vertical" ? [fixed, index] : [index, fixed]
       ));
+      const activationCells = clearCells.map(([x, y]) => ({
+        x,
+        y,
+        flowerId: board[y][x]
+      }));
       const activationRelic = {
         ...relic,
         name: "Black Candle Vine",
@@ -12795,6 +13323,15 @@
         matchRuns: [{ direction: relic.direction, len: BOARD_SIZE, cells: clearCells, shapeKind: "line" }],
         lineRelics: [activationRelic],
         activatingLineRelic: true,
+        blackCandleActivation: {
+          source: { x: relic.x, y: relic.y },
+          direction: relic.direction,
+          travelDirection: ["left", "right", "up", "down"].includes(relic.travelDirection)
+            ? relic.travelDirection
+            : relic.direction === "vertical" ? "down" : "right",
+          fixed,
+          cells: activationCells
+        },
         createdLineRelic: null,
         lineRelicCells: clearCells,
         lineRelicKeys: new Set(clearCells.map((cell) => cell.join(","))),
@@ -12898,6 +13435,9 @@
     }
 
     function clearTransientGameFeel() {
+      if (blackCandleActivationPresentation || blackCandleActivationTimer) {
+        clearBlackCandleActivationPresentation();
+      }
       clearMoveUrgencyPulse();
       if (validSwapTimer && window.clearTimeout) {
         window.clearTimeout(validSwapTimer);
@@ -13022,6 +13562,9 @@
       let pendingActivation = options.activationRelic
         ? normalizeArmedLineRelic(options.activationRelic)
         : null;
+      if (pendingActivation && options.activationRelic?.travelDirection) {
+        pendingActivation.travelDirection = options.activationRelic.travelDirection;
+      }
 
       while (result.cascades < maxCascades) {
         const wave = pendingActivation
@@ -13049,6 +13592,13 @@
         const cascadeIndex = result.cascades;
         const fastCascade = cascadeIndex >= 2;
         collectWaveRewards(wave, result, result.cascades, forcedRareCells);
+        if (wave.activatingLineRelic) {
+          // The activation result is already authoritative. Its dedicated
+          // source/lane presentation owns the next visible frame, so the
+          // generic cascade HIT cannot flash stale instructional grammar.
+          clearWaveCells(wave);
+          continue;
+        }
         currentCascadeWave = cascadeIndex + 1;
         queueCascadeImpact(wave, cascadeIndex);
         playBloomSound("match", {
@@ -13774,7 +14324,7 @@
       `;
     }
 
-    function maybeCompleteRound(carryMessage = "") {
+    function maybeCompleteRound(carryMessage = "", options = {}) {
       const plan = activeRoundPlan();
       const targetsComplete = plan.targets.every((target) => counts[target.flowerId] >= target.needed);
       const authoredLessonPending = plan.round === 1
@@ -13787,12 +14337,19 @@
       retireRoundOneSecondTargetDiscovery({ clearHint: true });
       const streakPayout = completionCoinPayout(plan);
       coins += streakPayout.total;
-      pulseCoinBalance();
       const completionMessage = focusedSliceCompletionMessage(plan, streakPayout);
       ritualMessage = carryMessage ? `${carryMessage} ${completionMessage}` : completionMessage;
       if (focusedSliceRound(plan)) {
         tutorialActive = true;
       }
+      if (!options.deferFeedback) {
+        beginRoundCompletionFeedback(plan);
+      }
+      return true;
+    }
+
+    function beginRoundCompletionFeedback(plan = activeRoundPlan()) {
+      pulseCoinBalance();
       pulseBouquetSealFeedback();
       if (plan.round >= 2) {
         pulseNextOrderReady();
@@ -13801,7 +14358,6 @@
       if (!focusedSliceRound(plan)) {
         queuePostRenderFocus("renewBtn");
       }
-      return true;
     }
 
     function focusedSliceRound(plan = activeRoundPlan()) {

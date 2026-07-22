@@ -1,4 +1,5 @@
 const { test, expect } = require("@playwright/test");
+const fs = require("fs");
 
 const BASE_URL = process.env.BLOOM_TEST_URL || "http://127.0.0.1:4173/playable/midnight_bloom_prototype.html";
 const SAVE_KEY = "bloomTycoonPlayableStateV1";
@@ -529,7 +530,7 @@ async function clickHighlightedPair(page) {
   await page.waitForFunction(({ key, movesBefore }) => {
     const saved = JSON.parse(localStorage.getItem(key) || "{}");
     const boardSettled = Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled);
-    return Boolean(saved.roundComplete)
+    return (Boolean(saved.roundComplete) && !document.body.dataset.blackCandleActivationPhase)
       || (Number(saved.moves) < Number(movesBefore) && boardSettled);
   }, { key: SAVE_KEY, movesBefore }, { timeout: 10000 });
   await page.waitForTimeout(350);
@@ -1126,6 +1127,232 @@ async function blackCandleThornFeedbackFrames(page) {
   return page.evaluate(() => window.__blackCandleThornFeedbackFrames || []);
 }
 
+async function startBlackCandleActivationRecorder(page) {
+  await page.evaluate((key) => {
+    window.__blackCandleActivationFrames = [];
+    window.__blackCandleActivationDone = new Promise((resolve) => {
+      let sawActivation = false;
+      let settledFrames = 0;
+      const visible = (node) => {
+        if (!node) return false;
+        const bounds = node.getBoundingClientRect();
+        const style = getComputedStyle(node);
+        return style.display !== "none"
+          && style.visibility !== "hidden"
+          && Number(style.opacity || 1) !== 0
+          && bounds.width > 0
+          && bounds.height > 0;
+      };
+      const rect = (node) => {
+        if (!node) return null;
+        const bounds = node.getBoundingClientRect();
+        return {
+          left: bounds.left,
+          top: bounds.top,
+          right: bounds.right,
+          bottom: bounds.bottom,
+          width: bounds.width,
+          height: bounds.height
+        };
+      };
+      const tick = () => {
+        const phase = document.body.dataset.blackCandleActivationPhase || "";
+        const laneTiles = Array.from(document.querySelectorAll(".tile.black-candle-burn-cell"));
+        const sourceTiles = laneTiles.filter((tile) => tile.classList.contains("black-candle-burn-source"));
+        const saved = JSON.parse(localStorage.getItem(key) || "{}");
+        const visibleInstructionText = [
+          document.querySelector("#tutorialPanel"),
+          document.querySelector("#firstSwapCue")
+        ].filter(visible).map((node) => node.textContent.replace(/\s+/g, " ").trim());
+        const visibleActions = Array.from(document.querySelectorAll("button:not(.tile)"))
+          .filter(visible)
+          .map((button) => button.textContent.replace(/\s+/g, " ").trim());
+        const visibleHudText = [
+          document.querySelector("#objective"),
+          document.querySelector("#bouquetProgressLabel"),
+          document.querySelector("#coinBalance"),
+          document.querySelector("#bouquetProgressNext")
+        ].filter(visible).map((node) => node.textContent.replace(/\s+/g, " ").trim());
+        const frame = {
+          phase,
+          reduced: document.body.dataset.blackCandleActivationMotion || "",
+          direction: document.body.dataset.blackCandleActivationDirection || "",
+          lane: document.body.dataset.blackCandleActivationLane || "",
+          savedMoves: Number(saved.moves),
+          savedCounts: saved.counts || [],
+          laneTiles: laneTiles.map((tile) => ({
+            x: Number(tile.dataset.x),
+            y: Number(tile.dataset.y),
+            rect: rect(tile)
+          })),
+          sourceCount: sourceTiles.length,
+          sourceRect: rect(sourceTiles[0]),
+          boardRect: rect(document.querySelector("#board")),
+          boardVisible: visible(document.querySelector("#board")),
+          payoffVisible: visible(document.querySelector("#roundOneRestoration")),
+          restoreOrNextVisible: visible(document.querySelector("#restoreGreenhouseBtn"))
+            || visible(document.querySelector("#nextOrderBtn")),
+          tiles: document.querySelectorAll("#board .tile").length,
+          rows: new Set(Array.from(document.querySelectorAll("#board .tile"))
+            .map((tile) => Math.round(tile.getBoundingClientRect().top))).size,
+          armedPreview: document.querySelectorAll(
+            ".tile.line-relic-lane-preview, .tile.line-relic-destination, .tile[data-line-relic='black-candle-vine']"
+          ).length,
+          sweepCount: document.querySelectorAll(".black-candle-burn-sweep").length,
+          extinguished: document.querySelectorAll(".tile.black-candle-burn-extinguished").length,
+          refill: document.querySelectorAll(".tile.black-candle-burn-refill").length,
+          visibleInstructionText,
+          visibleHudText,
+          visibleActions,
+          overflowX: document.documentElement.scrollWidth > innerWidth + 1
+        };
+        window.__blackCandleActivationFrames.push(frame);
+        if (phase) {
+          sawActivation = true;
+          settledFrames = 0;
+        } else if (sawActivation) {
+          settledFrames += 1;
+        }
+        if ((sawActivation && settledFrames >= 4) || window.__blackCandleActivationFrames.length >= 240) {
+          clearInterval(interval);
+          resolve(window.__blackCandleActivationFrames);
+        }
+      };
+      const interval = setInterval(tick, 16);
+      tick();
+    });
+  }, SAVE_KEY);
+}
+
+async function blackCandleActivationFrames(page) {
+  return page.evaluate(() => window.__blackCandleActivationDone);
+}
+
+async function runAtFrozenBlackCandlePhase(page, phase, trigger, { path = "", reload = false } = {}) {
+  const client = await page.context().newCDPSession(page);
+  await client.send("Debugger.enable");
+  const paused = new Promise((resolve) => client.once("Debugger.paused", resolve));
+  await page.evaluate((targetPhase) => {
+    window.__blackCandlePeakObserver?.disconnect();
+    window.clearTimeout(window.__blackCandlePeakPauseTimer);
+    const pauseAtPeak = () => {
+      if (document.body.dataset.blackCandleActivationPhase !== targetPhase) return;
+      window.__blackCandlePeakObserver?.disconnect();
+      window.__blackCandlePeakObserver = null;
+      window.__blackCandlePeakPauseTimer = window.setTimeout(() => {
+        if (document.body.dataset.blackCandleActivationPhase === targetPhase) debugger;
+      }, targetPhase === "sweep" ? 120 : 35);
+    };
+    window.__blackCandlePeakObserver = new MutationObserver(pauseAtPeak);
+    window.__blackCandlePeakObserver.observe(document.body, {
+      attributes: true,
+      attributeFilter: ["data-black-candle-activation-phase"]
+    });
+    pauseAtPeak();
+  }, phase);
+  const triggerPromise = trigger();
+  await Promise.race([
+    paused,
+    new Promise((_, reject) => setTimeout(() => reject(new Error(`Black Candle ${phase} phase was not observed`)), 3000))
+  ]);
+  if (path) {
+    const capture = await client.send("Page.captureScreenshot", {
+      format: "png",
+      fromSurface: true,
+      captureBeyondViewport: false
+    });
+    fs.writeFileSync(path, Buffer.from(capture.data, "base64"));
+  }
+  await client.send("Debugger.resume");
+  if (reload) {
+    const reloadPromise = page.reload({ waitUntil: "networkidle" });
+    await Promise.allSettled([triggerPromise]);
+    await reloadPromise;
+  } else {
+    await triggerPromise;
+  }
+  await client.send("Debugger.disable").catch(() => {});
+  await client.detach().catch(() => {});
+}
+
+async function activateBlackCandleInput(page, testCase, pair) {
+  if (testCase.input === "touch") {
+    await dragTouchViaCdp(page, pair, 0.62, { waitForSettlement: false });
+  } else {
+    await keyboardGuidedSwap(page);
+  }
+}
+
+function assertBlackCandleActivationFrames(frames, testCase, persisted) {
+  const active = frames.filter((frame) => frame.phase);
+  expect(active.length, `${testCase.label} explicit activation was sampled`).toBeGreaterThan(5);
+  const phaseNames = [...new Set(active.map((frame) => frame.phase))];
+  expect(phaseNames, `${testCase.label} activation reaches refill`).toContain("refill");
+  if (testCase.mobile) {
+    expect(phaseNames, `${testCase.label} reduced motion uses one static burn hold`).toContain("hold");
+    expect(phaseNames, `${testCase.label} reduced motion has no spatial sweep phase`).not.toContain("sweep");
+    expect(active.every((frame) => frame.reduced === "reduced"), `${testCase.label} reduced marker`).toBe(true);
+  } else {
+    expect(phaseNames, `${testCase.label} full motion ignition`).toContain("ignition");
+    expect(phaseNames, `${testCase.label} full motion sweep`).toContain("sweep");
+    expect(phaseNames, `${testCase.label} full motion extinguish`).toContain("extinguish");
+    expect(active.every((frame) => frame.reduced === "full"), `${testCase.label} full-motion marker`).toBe(true);
+  }
+  for (const frame of active) {
+    expect(frame.direction, `${testCase.label} authored burn direction`).toBe("right");
+    expect(frame.lane, `${testCase.label} affected lane kind`).toBe("row");
+    expect(frame.savedMoves, `${testCase.label} saved Moves decremented exactly once`).toBe(persisted.moves - 1);
+    expect(frame.laneTiles, `${testCase.label} full eight-cell lane treatment`).toHaveLength(8);
+    expect(new Set(frame.laneTiles.map((tile) => tile.y)).size, `${testCase.label} one authored row`).toBe(1);
+    expect(frame.sourceCount, `${testCase.label} one visible ignition source`).toBe(1);
+    expect(frame.armedPreview, `${testCase.label} armed preview is retired`).toBe(0);
+    expect(frame.tiles, `${testCase.label} 64 settled tile controls remain`).toBe(64);
+    expect(frame.rows, `${testCase.label} eight complete rows remain`).toBe(8);
+    expect(frame.boardVisible, `${testCase.label} board remains visible`).toBe(true);
+    expect(frame.payoffVisible, `${testCase.label} ceremony waits`).toBe(false);
+    expect(frame.restoreOrNextVisible, `${testCase.label} no reward action starts early`).toBe(false);
+    expect(frame.overflowX, `${testCase.label} no horizontal overflow`).toBe(false);
+    expect(
+      frame.visibleInstructionText.join(" "),
+      `${testCase.label} present-tense event acknowledgment`
+    ).toMatch(/BLACK CANDLE.*Burning the full row/i);
+    expect(
+      frame.visibleInstructionText.join(" "),
+      `${testCase.label} no stale/future action language`
+    ).not.toMatch(/\bSwap\b|\bTap\b|glowing pair|destination/i);
+    expect(
+      frame.visibleHudText.join(" "),
+      `${testCase.label} HUD has no future reward action`
+    ).not.toMatch(/\bSwap\b|\bTap\b|\bRestore\b|\bNext\b/i);
+    expect(frame.sourceRect.top, `${testCase.label} source on screen`).toBeGreaterThanOrEqual(0);
+    expect(frame.sourceRect.bottom, `${testCase.label} source on screen`).toBeLessThanOrEqual(testCase.viewport.height);
+    expect(frame.sourceRect.left, `${testCase.label} source inside board`).toBeGreaterThanOrEqual(frame.boardRect.left - 1);
+    expect(frame.sourceRect.right, `${testCase.label} source inside board`).toBeLessThanOrEqual(frame.boardRect.right + 1);
+    for (const laneTile of frame.laneTiles) {
+      expect(laneTile.rect.left, `${testCase.label} lane cell left on screen`).toBeGreaterThanOrEqual(0);
+      expect(laneTile.rect.right, `${testCase.label} lane cell right on screen`).toBeLessThanOrEqual(testCase.viewport.width);
+      expect(laneTile.rect.top, `${testCase.label} lane cell top on screen`).toBeGreaterThanOrEqual(0);
+      expect(laneTile.rect.bottom, `${testCase.label} lane cell bottom on screen`).toBeLessThanOrEqual(testCase.viewport.height);
+    }
+    const orderedLane = frame.laneTiles.slice().sort((a, b) => a.x - b.x || a.y - b.y);
+    for (let index = 1; index < orderedLane.length; index += 1) {
+      expect(
+        orderedLane[index].rect.left >= orderedLane[index - 1].rect.right - 1
+          || orderedLane[index].rect.top >= orderedLane[index - 1].rect.bottom - 1,
+        `${testCase.label} lane cells do not overlap`
+      ).toBe(true);
+    }
+  }
+  expect(
+    active.some((frame) => frame.phase === (testCase.mobile ? "hold" : "extinguish") && frame.extinguished === 8),
+    `${testCase.label} real eight-cell extinguish peak`
+  ).toBe(true);
+  expect(
+    active.some((frame) => frame.phase === "refill" && frame.refill === 8),
+    `${testCase.label} settled refill reveal`
+  ).toBe(true);
+}
+
 function assertArmedRelicGuidance(report, expectedDirection, label, mobile = false, options = {}) {
   const expectedArrows = options.expectedArrows ?? (report.bodyClasses.includes("round-one-active") ? 0 : 1);
   expect(report.relic, `${label} saved relic`).toMatchObject({ direction: expectedDirection });
@@ -1582,7 +1809,12 @@ async function assertRepeatedTutorialRefusal(page, { label, touch = false } = {}
 
 let cdpTouchSequence = 7;
 
-async function dragTouchViaCdp(page, pair, scale = 0.62, { expectInvalid = false } = {}) {
+async function dragTouchViaCdp(
+  page,
+  pair,
+  scale = 0.62,
+  { expectInvalid = false, waitForSettlement = true } = {}
+) {
   const beforeGeometry = await tileGeometry(page, pair);
   const movesBefore = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}").moves, SAVE_KEY);
   const vector = dragVector(pair, beforeGeometry, scale);
@@ -1608,15 +1840,17 @@ async function dragTouchViaCdp(page, pair, scale = 0.62, { expectInvalid = false
     touchPoints: [],
     changedTouchPoints: [{ x: vector.endX, y: vector.endY, id: touchId }]
   });
-  await page.waitForFunction(({ key, movesBefore, expectInvalid }) => {
-    if (expectInvalid) {
-      return document.querySelectorAll(".tile.invalid-swap").length === 2;
-    }
-    const saved = JSON.parse(localStorage.getItem(key) || "{}");
-    const boardSettled = Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled);
-    const payoffVisible = getComputedStyle(document.querySelector("#roundOneRestoration")).display !== "none";
-    return Number(saved.moves) === Number(movesBefore) - 1 && (boardSettled || payoffVisible);
-  }, { key: SAVE_KEY, movesBefore, expectInvalid }, { timeout: 10000 });
+  if (waitForSettlement) {
+    await page.waitForFunction(({ key, movesBefore, expectInvalid }) => {
+      if (expectInvalid) {
+        return document.querySelectorAll(".tile.invalid-swap").length === 2;
+      }
+      const saved = JSON.parse(localStorage.getItem(key) || "{}");
+      const boardSettled = Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled);
+      const payoffVisible = getComputedStyle(document.querySelector("#roundOneRestoration")).display !== "none";
+      return Number(saved.moves) === Number(movesBefore) - 1 && (boardSettled || payoffVisible);
+    }, { key: SAVE_KEY, movesBefore, expectInvalid }, { timeout: 10000 });
+  }
   await client.detach();
   return { beforeGeometry, afterGeometry, vector };
 }
@@ -2877,6 +3111,10 @@ test("Black Candle Vine forms, persists, and activates as a deliberate lane spec
       await page.reload({ waitUntil: "networkidle" });
       await expect(relic).toHaveCount(1);
       const persisted = await activeState(page);
+      const persistedSnapshot = await page.evaluate(
+        (key) => JSON.parse(localStorage.getItem(key) || "{}"),
+        SAVE_KEY
+      );
       expect(persisted.armedLineRelic).toEqual(formed.armedLineRelic);
       expect(persisted.moves).toBe(formed.moves);
       expect(persisted.counts).toEqual(formed.counts);
@@ -2905,13 +3143,20 @@ test("Black Candle Vine forms, persists, and activates as a deliberate lane spec
       const expectedLaneGain = Array(6).fill(0);
       laneValues.forEach((flowerId) => { expectedLaneGain[flowerId] += 1; });
 
-      if (testCase.input === "touch") {
-        await dragTouchViaCdp(page, activationPair);
-      } else {
-        await keyboardGuidedSwap(page);
-      }
+      await startBlackCandleActivationRecorder(page);
+
+      const peakPhase = testCase.mobile ? "hold" : "sweep";
+      const peakPath = `work/black-candle-${testCase.label}-${testCase.mobile ? "reduced-static" : "full-peak"}.png`;
+      await runAtFrozenBlackCandlePhase(
+        page,
+        peakPhase,
+        () => activateBlackCandleInput(page, testCase, activationPair),
+        { path: peakPath }
+      );
+      const activationFrames = await blackCandleActivationFrames(page);
+      assertBlackCandleActivationFrames(activationFrames, testCase, persisted);
+      await expect(page.locator("body")).not.toHaveAttribute("data-black-candle-activation-phase", /.+/);
       await expect(relic).toHaveCount(0);
-      await page.waitForTimeout(700);
       const activated = await activeState(page);
       expect(activated.moves, "activation spends exactly one move").toBe(persisted.moves - 1);
       expect(activated.armedLineRelic).toBeNull();
@@ -2935,6 +3180,55 @@ test("Black Candle Vine forms, persists, and activates as a deliberate lane spec
       expect(completed.moves).toBeGreaterThanOrEqual(0);
       await expect(page.locator("#restoreGreenhouseBtn")).toHaveText("Restore Greenhouse · 100 coins");
       expect(await page.evaluate((key) => JSON.parse(localStorage.getItem(key)).coins, SAVE_KEY)).toBe(120);
+
+      await page.evaluate(({ key, snapshot }) => {
+        localStorage.setItem(key, JSON.stringify(snapshot));
+      }, { key: SAVE_KEY, snapshot: persistedSnapshot });
+      await page.reload({ waitUntil: "networkidle" });
+      await expect(relic).toHaveCount(1);
+      const reloadPair = await hintedPair(page);
+      await runAtFrozenBlackCandlePhase(
+        page,
+        testCase.mobile ? "hold" : "sweep",
+        () => activateBlackCandleInput(page, testCase, reloadPair),
+        { reload: true }
+      );
+      await expect(page.locator("body")).not.toHaveAttribute("data-black-candle-activation-phase", /.+/);
+      await expect(page.locator(
+        ".black-candle-burn-cell, .black-candle-burn-sweep, .line-relic-lane-preview, .line-relic-destination"
+      )).toHaveCount(0);
+      await expect(page.locator("#restoreGreenhouseBtn")).toBeVisible({ timeout: 3000 });
+      const reloadedActivation = await page.evaluate((key) => {
+        const state = JSON.parse(localStorage.getItem(key) || "{}");
+        return {
+          moves: state.moves,
+          counts: state.counts,
+          coins: state.coins,
+          roundComplete: state.roundComplete,
+          armedLineRelic: state.armedLineRelic,
+          tiles: document.querySelectorAll("#board .tile").length,
+          bodyPhase: document.body.dataset.blackCandleActivationPhase || ""
+        };
+      }, SAVE_KEY);
+      expect(reloadedActivation).toMatchObject({
+        moves: persisted.moves - 1,
+        coins: 120,
+        roundComplete: true,
+        armedLineRelic: null,
+        tiles: 64,
+        bodyPhase: ""
+      });
+      expectedLaneGain.forEach((gain, flowerId) => {
+        expect(reloadedActivation.counts[flowerId] - persisted.counts[flowerId]).toBe(gain);
+      });
+      await page.reload({ waitUntil: "networkidle" });
+      const secondReload = await page.evaluate(
+        (key) => JSON.parse(localStorage.getItem(key) || "{}"),
+        SAVE_KEY
+      );
+      expect(secondReload.coins, `${testCase.label} reload does not duplicate reward`).toBe(120);
+      expect(secondReload.moves, `${testCase.label} reload does not spend another move`).toBe(persisted.moves - 1);
+      expect(secondReload.counts, `${testCase.label} reload preserves authoritative counts`).toEqual(reloadedActivation.counts);
       expect(consoleErrors).toEqual([]);
       expect(pageErrors).toEqual([]);
     } finally {

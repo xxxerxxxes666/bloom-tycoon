@@ -440,6 +440,7 @@ async function installOwnedRenewalRecorder(page) {
         at: performance.now(),
         roundComplete: Boolean(savedState.roundComplete),
         armedRelic: Boolean(savedState.armedLineRelic),
+        blackCandleActivationPhase: document.body.dataset.blackCandleActivationPhase || "",
         phase: panel?.dataset.ownedRenewalPhase || "",
         renewalPhase: renewal?.dataset.renewalPhase || "",
         topCue: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
@@ -449,7 +450,8 @@ async function installOwnedRenewalRecorder(page) {
         liveRegions,
         liveRegionOwners,
         actionCount: Array.from(panel?.querySelectorAll("button") || []).filter(visible).length,
-        transactionVisible: visible(document.querySelector("#payoffTransaction")),
+        transactionVisible: document.querySelector("#payoffTransaction")?.style.visibility !== "hidden"
+          && visible(document.querySelector("#payoffTransaction")),
         state: document.querySelector("#restorationState")?.textContent.trim() || "",
         ingredientIds: ingredients.map((node) => Number(node.dataset.flowerId)),
         targetCounts: ingredients.map((node) => Number(node.dataset.requiredCount)),
@@ -521,12 +523,15 @@ async function playCurrentRound(page, label, round, strategy = "optimized", expe
           document.querySelector("#roundOneRestoration")?.dataset.ownedRenewalPhase === "settled"
         ), null, { timeout: 2500 });
       }
-      // Round 1 now requires a deliberate Black Candle activation before the
-      // normal coin ceremony. Sample completion economy where the player can
-      // act on it rather than during the activation resolution.
-      if (round === 1) {
-        await page.locator("#roundOneRestoration").waitFor({ state: "visible", timeout: 3000 });
-      }
+      // Any focused round may naturally finish on a Black Candle. Sample
+      // completion economy only after its presentation-only burn/refill has
+      // yielded to the existing one-action ceremony.
+      await page.locator("#roundOneRestoration").waitFor({ state: "visible", timeout: 4000 });
+      await expect(page.locator("body")).not.toHaveAttribute(
+        "data-black-candle-activation-phase",
+        /.+/,
+        { timeout: 4000 }
+      );
       const settledState = await journeyState(page);
       const summary = {
         round,
@@ -817,13 +822,19 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
       )),
       `${runLabel} round ${round} ceremony keeps one concise live narrator`
     ).toBe(true);
+    const nonQuietPayoffSamples = phaseSamples.filter((sample) => {
+      const coinRegion = sample.liveRegions.find((region) => region.id === "coinBalance");
+      const ceremonyRegion = sample.liveRegions.find((region) => region.id === "roundOneRestoration");
+      return (coinRegion && coinRegion.live !== "off") || ceremonyRegion?.live !== "off";
+    });
     expect(
-      phaseSamples.every((sample) => (
-        sample.liveRegions.find((region) => region.id === "coinBalance")?.live === "off"
-        && sample.liveRegions.find((region) => region.id === "roundOneRestoration")?.live === "off"
-      )),
+      nonQuietPayoffSamples.map((sample) => ({
+        phase: sample.phase,
+        blackCandleActivationPhase: sample.blackCandleActivationPhase,
+        liveRegions: sample.liveRegions
+      })),
       `${runLabel} round ${round} coin and ceremony subtree stay quiet`
-    ).toBe(true);
+    ).toEqual([]);
     expect(transientSamples.every((sample) => sample.actionCount === 0), "no action during binding/renewal").toBe(true);
     expect(transientSamples.every((sample) => !sample.transactionVisible), "reward display waits for renewal").toBe(true);
     expect(transientSamples.every((sample) => sample.raisedArtVisible && !sample.lowerArtVisible), "raised art remains truthful").toBe(true);
@@ -838,10 +849,14 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
     const completionSample = renewalSamples.find((sample) => sample.roundComplete);
     expect(completionSample, `${runLabel} round ${round} records authoritative completion`).toBeTruthy();
     const completionToAction = settledSample.at - completionSample.at;
+    const blackCandlePresentationObserved = renewalSamples.some((sample) => sample.blackCandleActivationPhase);
+    const completionPacingLimit = config.reducedMotion
+      ? blackCandlePresentationObserved ? 1000 : 700
+      : blackCandlePresentationObserved ? 3150 : 2400;
     expect(
       completionToAction,
       `${runLabel} round ${round} completion-to-action stays inside the focused pacing contract`
-    ).toBeLessThanOrEqual(config.reducedMotion ? 700 : 2400);
+    ).toBeLessThanOrEqual(completionPacingLimit);
     if (!config.reducedMotion) {
       const transferSample = phaseSamples.find((sample) => sample.phase === "transfer");
       const intakeDuration = settledSample.at - transferSample.at;
