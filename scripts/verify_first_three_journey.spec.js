@@ -236,7 +236,7 @@ async function expectPermanentRaisedGreenhouse(page, context) {
   ], `${context} persisted ownership flags`).toEqual([true, true, true]);
   expect(state.greenhouseText, `${context} permanent replay progress`).toContain("Permanent through replay");
   if (!state.roundComplete && !state.visibleButtons.includes("Retry Bouquet")) {
-    expect(state.bouquetNext, `${context} compact ownership consequence`).toBe("Owned: Conservatory Raised");
+    expect(state.bouquetNext, `${context} replay bouquet keeps order authority`).toMatch(/^Order Progress · \d+\/\d+$/);
   }
   return state;
 }

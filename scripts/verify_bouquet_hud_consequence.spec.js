@@ -6,18 +6,18 @@ const SAVE_KEY = "bloomTycoonPlayableStateV1";
 const HUD_CASES = [
   {
     label: "r1-active",
-    expected: "Next: Restore Glass",
+    expected: "Order Progress · 0/14",
     state: { currentRound: 1, moves: 6, counts: [0, 0, 0, 0, 0, 0], coins: 0 }
   },
   {
     label: "r1-failed",
-    expected: "Retry Bouquet",
+    expected: "Order Paused · 0/14",
     retry: true,
     state: { currentRound: 1, moves: 0, counts: [0, 0, 0, 0, 0, 0], coins: 0 }
   },
   {
     label: "r1-pending",
-    expected: "Ready: Restore Glass",
+    expected: "Order Complete · 14/14",
     action: { id: "restoreGreenhouseBtn", text: "Restore Greenhouse · 100 coins" },
     state: {
       currentRound: 1,
@@ -29,7 +29,7 @@ const HUD_CASES = [
   },
   {
     label: "r1-restored",
-    expected: "Next: Moonlit Wreath",
+    expected: "Order Complete · 14/14",
     action: { id: "nextOrderBtn", text: "Next Order → Moonlit Wreath" },
     state: {
       currentRound: 1,
@@ -42,7 +42,7 @@ const HUD_CASES = [
   },
   {
     label: "r2-active",
-    expected: "Next: Bloodroot Compact",
+    expected: "Order Progress · 0/29",
     state: {
       currentRound: 2,
       moves: 9,
@@ -53,7 +53,7 @@ const HUD_CASES = [
   },
   {
     label: "r2-failed",
-    expected: "Retry Bouquet",
+    expected: "Order Paused · 0/29",
     retry: true,
     state: {
       currentRound: 2,
@@ -65,7 +65,7 @@ const HUD_CASES = [
   },
   {
     label: "r2-pending",
-    expected: "Ready: Upgrade Glass",
+    expected: "Order Complete · 29/29",
     action: { id: "restoreGreenhouseBtn", text: "Upgrade Greenhouse · 120 coins" },
     state: {
       currentRound: 2,
@@ -79,7 +79,7 @@ const HUD_CASES = [
   },
   {
     label: "r2-upgraded",
-    expected: "Next: Bloodroot Compact",
+    expected: "Order Complete · 29/29",
     action: { id: "nextOrderBtn", text: "Next Order → Bloodroot Compact" },
     state: {
       currentRound: 2,
@@ -94,7 +94,7 @@ const HUD_CASES = [
   },
   {
     label: "r3-active",
-    expected: "Next: Raise Conservatory",
+    expected: "Order Progress · 0/27",
     state: {
       currentRound: 3,
       moves: 8,
@@ -106,7 +106,7 @@ const HUD_CASES = [
   },
   {
     label: "r3-failed",
-    expected: "Retry Bouquet",
+    expected: "Order Paused · 0/27",
     retry: true,
     state: {
       currentRound: 3,
@@ -119,7 +119,7 @@ const HUD_CASES = [
   },
   {
     label: "r3-pending",
-    expected: "Ready: Raise Conservatory",
+    expected: "Order Complete · 27/27",
     action: { id: "restoreGreenhouseBtn", text: "Raise Conservatory · 180 coins" },
     state: {
       currentRound: 3,
@@ -133,7 +133,7 @@ const HUD_CASES = [
   },
   {
     label: "r3-raised",
-    expected: "Next: First Bouquet",
+    expected: "Order Complete · 27/27",
     action: { id: "nextOrderBtn", text: "Play Again → First Bouquet" },
     state: {
       currentRound: 3,
@@ -360,6 +360,9 @@ async function hudReport(page) {
     const board = document.querySelector("#board");
     const boardRect = board?.getBoundingClientRect();
     const activeAction = document.activeElement;
+    const saved = JSON.parse(localStorage.getItem("bloomTycoonPlayableStateV1") || "{}");
+    const orderProgress = document.querySelector("#bouquetOrderProgress");
+    const dial = document.querySelector("#heroRestorationDial");
     return {
       text: label.textContent.trim(),
       visible: visible(label),
@@ -369,6 +372,31 @@ async function hudReport(page) {
       scrollHeight: label.scrollHeight,
       textOverflow: labelStyle.textOverflow,
       whiteSpace: labelStyle.whiteSpace,
+      bouquetSurfaceText: document.querySelector("#bouquetProgress")?.textContent.replace(/\s+/g, " ").trim() || "",
+      orderAuthority: orderProgress?.dataset.progressAuthority || "",
+      orderState: orderProgress?.dataset.orderState || "",
+      orderAriaLabel: orderProgress?.getAttribute("aria-label") || "",
+      orderValueNow: orderProgress?.getAttribute("aria-valuenow") || "",
+      orderValueMax: orderProgress?.getAttribute("aria-valuemax") || "",
+      bouquetBarWidth: document.querySelector("#bar")?.style.width || "",
+      assemblyProgress: document.querySelector("#liveBouquetAssembly")?.dataset.progress || "",
+      savedMoves: saved.moves,
+      savedCounts: saved.counts || [],
+      savedCoins: saved.coins,
+      savedOwnership: {
+        roundOneRestored: Boolean(saved.roundOneRestored),
+        roundTwoGreenhouseUpgraded: Boolean(saved.roundTwoGreenhouseUpgraded),
+        roundThreeConservatoryRaised: Boolean(saved.roundThreeConservatoryRaised)
+      },
+      greenhouse: {
+        stage: dial?.dataset.restorationDialStage || "",
+        ownedStage: dial?.dataset.ownedStage || "",
+        pct: dial?.dataset.restorationDialPct || "",
+        bodyStage: document.body.dataset.activeGreenhouseStage || "",
+        bodyPct: document.body.dataset.greenhouseRevivalPct || "",
+        art: document.querySelector("#activeGreenhouseStageArt")?.getAttribute("src") || "",
+        text: dial?.textContent.replace(/\s+/g, " ").trim() || ""
+      },
       activeActionId: activeAction?.id || "",
       activeActionText: activeAction?.textContent.trim() || "",
       visiblePayoffActions: [
@@ -386,6 +414,19 @@ async function hudReport(page) {
         .map((image) => image.getAttribute("src"))
     };
   });
+}
+
+function expectedGreenhouseOwnership(fixture) {
+  const state = savedState(fixture);
+  const stage = state.roundThreeConservatoryRaised
+    ? 3
+    : state.roundTwoGreenhouseUpgraded ? 2 : state.roundOneRestored ? 1 : 0;
+  return [
+    { key: "withered", pct: "0", art: "first_greenhouse_withered.jpg" },
+    { key: "restored", pct: "33", art: "first_greenhouse_restored.jpg" },
+    { key: "moonlit", pct: "67", art: "moonlit_wreath_greenhouse.jpg" },
+    { key: "bloodroot", pct: "100", art: "bloodroot_compact_greenhouse.jpg" }
+  ][stage];
 }
 
 async function assertHudState(page, fixture, viewport, reload) {
@@ -406,19 +447,43 @@ async function assertHudState(page, fixture, viewport, reload) {
   const report = await hudReport(page);
   const label = `${viewport.label} ${fixture.label} reload ${reload}`;
   expect(report.text, `${label} exact consequence`).toBe(fixture.expected);
+  expect(report.bouquetSurfaceText, `${label} bouquet surface never narrates greenhouse work`)
+    .not.toMatch(/restore|upgrade|raise|greenhouse|conservatory/i);
+  expect(report.orderAuthority, `${label} explicit order authority`).toBe("bouquet-order");
+  expect(report.orderAriaLabel, `${label} accessible order authority`).toMatch(/^Bouquet order \d+ of \d+; reward \d+ coins$/);
+  expect(report.orderValueNow, `${label} progressbar value follows order text`).toBe(
+    report.text.match(/(\d+)\/(\d+)$/)?.[1]
+  );
+  expect(report.orderValueMax, `${label} progressbar maximum follows order text`).toBe(
+    report.text.match(/(\d+)\/(\d+)$/)?.[2]
+  );
+  expect(report.assemblyProgress, `${label} live bouquet and order track agree`).toBe(
+    report.text.match(/(\d+\/\d+)$/)?.[1]
+  );
+  const expectedOwned = expectedGreenhouseOwnership(fixture);
+  const savedOwnedStage = report.savedOwnership.roundThreeConservatoryRaised
+    ? 3
+    : report.savedOwnership.roundTwoGreenhouseUpgraded ? 2 : report.savedOwnership.roundOneRestored ? 1 : 0;
+  expect(report.greenhouse.stage, `${label} owned stage key`).toBe(expectedOwned.key);
+  expect(report.greenhouse.bodyStage, `${label} owned artwork stage`).toBe(expectedOwned.key);
+  expect(report.greenhouse.ownedStage, `${label} owned stage count`).toBe(String(savedOwnedStage));
+  expect(report.greenhouse.pct, `${label} owned dial percentage`).toBe(expectedOwned.pct);
+  expect(report.greenhouse.bodyPct, `${label} owned material percentage`).toBe(expectedOwned.pct);
+  expect(report.greenhouse.art, `${label} owned art`).toContain(expectedOwned.art);
   expect(report.tiles, `${label} tile integrity`).toBe(64);
   expect(report.rows, `${label} board rows`).toBe(8);
   expect(report.overflowX, `${label} no page overflow`).toBe(false);
   expect(report.brokenImages, `${label} no broken images`).toEqual([]);
 
+  expect(report.visible, `${label} order progress label visible`).toBe(true);
   if (viewport.label === "desktop") {
-    expect(report.visible, `${label} consequence visible`).toBe(true);
     expect(report.scrollWidth, `${label} horizontal fit`).toBeLessThanOrEqual(report.clientWidth + 1);
     expect(report.scrollHeight, `${label} vertical fit`).toBeLessThanOrEqual(report.clientHeight + 1);
     expect(report.textOverflow, `${label} no ellipsis`).toBe("clip");
-    expect(report.whiteSpace, `${label} bounded wrapping`).toBe("normal");
+    expect(report.whiteSpace, `${label} compact single line`).toBe("nowrap");
   } else {
-    expect(report.visible, `${label} desktop-only label stays hidden`).toBe(false);
+    expect(report.scrollWidth, `${label} mobile order label horizontal fit`).toBeLessThanOrEqual(report.clientWidth + 1);
+    expect(report.scrollHeight, `${label} mobile order label vertical fit`).toBeLessThanOrEqual(report.clientHeight + 1);
     if (!fixture.action) {
       expect(report.boardVisible, `${label} active board visible`).toBe(true);
       expect(report.boardBottom, `${label} board remains in first viewport`).toBeLessThanOrEqual(844);
@@ -1922,7 +1987,8 @@ test("active hierarchy scales the roomy altar without moving the accepted short 
       screenshot: "work/active-hierarchy-r1-mobile390.png",
       expectedBoard: 378,
       expectedTile: 42.875,
-      mobileBaseline: true
+      mobileBaseline: true,
+      exerciseOpening: true
     },
     {
       label: "r2-thorn-roomy1440",
@@ -2116,14 +2182,22 @@ test("active hierarchy scales the roomy altar without moving the accepted short 
     await page.screenshot({ path: capture.screenshot, fullPage: false });
 
     if (capture.exerciseOpening) {
+      const beforeAuthority = await hudReport(page);
       const hints = page.locator("#board .tile.idle-hint");
       await expect(hints).toHaveCount(2);
       const pair = await hints.evaluateAll((tiles) => tiles.map((tile) => ({
         x: tile.dataset.x,
         y: tile.dataset.y
       })));
-      await page.locator(`.tile[data-x="${pair[0].x}"][data-y="${pair[0].y}"]`).click();
-      await page.locator(`.tile[data-x="${pair[1].x}"][data-y="${pair[1].y}"]`).click();
+      const first = page.locator(`.tile[data-x="${pair[0].x}"][data-y="${pair[0].y}"]`);
+      const second = page.locator(`.tile[data-x="${pair[1].x}"][data-y="${pair[1].y}"]`);
+      if (capture.mobile) {
+        await first.tap();
+        await second.tap();
+      } else {
+        await first.click();
+        await second.click();
+      }
       await expect.poll(() => page.evaluate((key) => {
         const state = JSON.parse(localStorage.getItem(key) || "{}");
         return {
@@ -2144,7 +2218,22 @@ test("active hierarchy scales the roomy altar without moving the accepted short 
         const state = JSON.parse(localStorage.getItem(key) || "{}");
         return (state.counts?.[1] || 0) + (state.counts?.[5] || 0);
       }, SAVE_KEY);
-      expect(opening, `${capture.label} instructed swap advances target objectives`).toBeGreaterThan(0);
+      expect(opening, `${capture.label} instructed swap advances target objectives`).toBe(3);
+      const afterAuthority = await hudReport(page);
+      expect(afterAuthority.savedMoves, `${capture.label} opening move`).toBe(5);
+      expect(afterAuthority.savedCounts, `${capture.label} exact Thorn Rose harvest`).toEqual([0, 0, 0, 0, 0, 3]);
+      expect(afterAuthority.savedCoins, `${capture.label} no pre-completion coins`).toBe(0);
+      expect(afterAuthority.text, `${capture.label} order-owned label`).toBe("Order Progress · 3/14");
+      expect(afterAuthority.assemblyProgress, `${capture.label} bouquet assembly advances`).toBe("3/14");
+      expect(afterAuthority.bouquetBarWidth, `${capture.label} bouquet track advances`).not.toBe(beforeAuthority.bouquetBarWidth);
+      expect(afterAuthority.bouquetSurfaceText, `${capture.label} no greenhouse claim in bouquet HUD`)
+        .not.toMatch(/restore|upgrade|raise|greenhouse|conservatory/i);
+      expect(afterAuthority.savedOwnership, `${capture.label} saved ownership unchanged`).toEqual(beforeAuthority.savedOwnership);
+      expect(afterAuthority.greenhouse, `${capture.label} greenhouse bytes and semantics unchanged`).toEqual(beforeAuthority.greenhouse);
+      await page.screenshot({
+        path: `work/progress-authority-${capture.label}-after-opening.png`,
+        fullPage: false
+      });
     }
 
     expect(runtimeErrors, `${capture.label} runtime errors`).toEqual([]);

@@ -921,7 +921,7 @@
     .progress {
       width: min(760px, calc(100% - 16px));
       display: grid;
-      grid-template-columns: auto auto minmax(210px, 220px) minmax(70px, 1fr) auto;
+      grid-template-columns: auto auto minmax(210px, 220px) minmax(112px, 1fr);
       align-items: center;
       gap: 8px;
       min-height: 58px;
@@ -943,15 +943,23 @@
     }
 
     .progress-next {
-      color: #a89070;
+      color: #d5b97e;
       font-size: 9px;
       line-height: 1.15;
       overflow: hidden;
       text-overflow: clip;
       max-width: none;
-      letter-spacing: 0.025em;
-      text-align: right;
-      white-space: normal;
+      letter-spacing: 0.08em;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    .bouquet-order-progress {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 5px;
+      min-width: 0;
+      align-content: center;
     }
 
     .coin-balance {
@@ -999,9 +1007,9 @@
       display: block;
       height: 10px;
       min-width: 86px;
-      border: 1px solid #5b3f27;
-      background: #050302;
-      box-shadow: inset 0 0 8px #000;
+      border: 1px solid #754027;
+      background: #070202;
+      box-shadow: inset 0 0 8px #000, 0 0 8px #5e121733;
       overflow: hidden;
     }
 
@@ -1010,8 +1018,8 @@
       height: 100%;
       width: 0%;
       position: relative;
-      background: linear-gradient(90deg, #5f8338, #d7b16d);
-      box-shadow: none;
+      background: linear-gradient(90deg, #7f1820, #bd4938 58%, #d7b16d);
+      box-shadow: 0 0 10px #9b1d225c;
       transition: width 260ms ease;
     }
 
@@ -6826,6 +6834,16 @@
       body.focused-payoff-active .progress-label {
         grid-column: 1;
         grid-row: 1;
+        font-size: 0;
+      }
+      body.restored-next-order-focus .progress-label::after,
+      body.restored-greenhouse-handoff .progress-label::after,
+      body.round-three-focus-active .progress-label::after,
+      body.round-one-active .progress-label::after,
+      body.focused-payoff-active .progress-label::after {
+        content: attr(data-compact-label);
+        font-size: 9px;
+        line-height: 1.1;
       }
       body.restored-next-order-focus .coin-balance,
       body.restored-greenhouse-handoff .coin-balance,
@@ -6838,6 +6856,16 @@
         padding: 1px 4px;
         gap: 3px;
         font-size: 7px;
+      }
+      body.restored-next-order-focus .bouquet-order-progress,
+      body.restored-greenhouse-handoff .bouquet-order-progress,
+      body.round-three-focus-active .bouquet-order-progress,
+      body.round-one-active .bouquet-order-progress,
+      body.focused-payoff-active .bouquet-order-progress {
+        grid-column: 2;
+        grid-row: 1;
+        gap: 2px;
+        align-self: center;
       }
       body.restored-next-order-focus .live-bouquet-assembly,
       body.restored-greenhouse-handoff .live-bouquet-assembly,
@@ -6870,15 +6898,28 @@
       body.round-three-focus-active .progress-next,
       body.round-one-active .progress-next,
       body.focused-payoff-active .progress-next {
-        display: none;
+        display: block;
+        min-width: 0;
+        font-size: 0;
+        line-height: 1;
+        letter-spacing: .04em;
+      }
+      body.restored-next-order-focus .progress-next::after,
+      body.restored-greenhouse-handoff .progress-next::after,
+      body.round-three-focus-active .progress-next::after,
+      body.round-one-active .progress-next::after,
+      body.focused-payoff-active .progress-next::after {
+        content: attr(data-compact-label);
+        font-size: 6.5px;
+        line-height: 1;
       }
       body.restored-next-order-focus .progress-meter,
       body.restored-greenhouse-handoff .progress-meter,
       body.round-three-focus-active .progress-meter,
       body.round-one-active .progress-meter,
       body.focused-payoff-active .progress-meter {
-        grid-column: 2;
-        grid-row: 1;
+        grid-column: 1;
+        grid-row: 2;
         height: 8px;
         min-width: 50px;
       }
@@ -7682,15 +7723,17 @@
         Match Thorn Rose and Bone Star to complete Round 1: First Bouquet.
       </div>
       <div class="progress bouquet-progress" id="bouquetProgress" aria-label="Bouquet progress">
-        <span class="progress-label" id="bouquetProgressLabel">Bouquet -> 120 coins</span>
+        <span class="progress-label" id="bouquetProgressLabel" data-compact-label="Bouquet 0/14 · +120">Bouquet 0/14 -> Reward 120 coins</span>
         <span class="coin-balance" id="coinBalance" aria-label="Current coin balance" aria-live="polite" hidden>
           <span class="coin-balance-sigil" aria-hidden="true">✪</span>
           <span>Coins</span>
           <strong id="coins">0</strong>
         </span>
         <span class="live-bouquet-assembly" id="liveBouquetAssembly" aria-hidden="true" data-assembly-hook="authoritative-target-progress"></span>
-        <span class="progress-meter" aria-hidden="true"><span class="bar" id="bar"></span></span>
-        <span class="progress-next" id="bouquetProgressNext">Complete the order to restore the greenhouse.</span>
+        <span class="bouquet-order-progress" id="bouquetOrderProgress" role="progressbar" aria-label="Bouquet order progress" aria-valuemin="0" aria-valuemax="14" aria-valuenow="0" data-progress-authority="bouquet-order">
+          <span class="progress-next" id="bouquetProgressNext" data-compact-label="Order 0/14">Order Progress · 0/14</span>
+          <span class="progress-meter" aria-hidden="true"><span class="bar" id="bar"></span></span>
+        </span>
       </div>
       <div class="mobile-greenhouse-progress" id="mobileGreenhouseProgress" aria-label="Greenhouse progress">
         <span class="greenhouse-restoration-dial" id="mobileRestorationDial"></span>
@@ -12175,31 +12218,14 @@
       saveProgress();
     }
 
-    function compactBouquetConsequenceLabel(plan = activeRoundPlan()) {
+    function compactBouquetOrderLabel(plan = activeRoundPlan(), progress = roundProgress(plan)) {
       if (isBouquetFailed(plan)) {
-        return "Retry Bouquet";
-      }
-      if (!roundComplete && isOwnedRestorationReplay()) {
-        return "Owned: Conservatory Raised";
+        return `Order Paused · ${progress.earned}/${progress.needed}`;
       }
       if (roundComplete) {
-        if (plan.round === 1) {
-          return roundOneRestored ? "Next: Moonlit Wreath" : "Ready: Restore Glass";
-        }
-        if (plan.round === 2) {
-          return roundTwoGreenhouseUpgraded ? "Next: Bloodroot Compact" : "Ready: Upgrade Glass";
-        }
-        return roundThreeConservatoryRaised
-          ? "Next: First Bouquet"
-          : "Ready: Raise Conservatory";
+        return `Order Complete · ${progress.earned}/${progress.needed}`;
       }
-      if (plan.round === 1) {
-        return "Next: Restore Glass";
-      }
-      if (plan.round === 2) {
-        return "Next: Bloodroot Compact";
-      }
-      return "Next: Raise Conservatory";
+      return `Order Progress · ${progress.earned}/${progress.needed}`;
     }
 
     function updateBouquetProgress(plan = activeRoundPlan(), progress = roundProgress(plan)) {
@@ -12209,11 +12235,22 @@
       }
       const label = $("bouquetProgressLabel");
       const next = $("bouquetProgressNext");
+      const orderProgress = $("bouquetOrderProgress");
       if (label) {
-        label.textContent = `Bouquet ${progress.earned}/${progress.needed} -> +${plan.reward.coins} coins`;
+        label.textContent = `Bouquet ${progress.earned}/${progress.needed} -> Reward ${plan.reward.coins} coins`;
+        label.dataset.compactLabel = `Bouquet ${progress.earned}/${progress.needed} · +${plan.reward.coins}`;
       }
       if (next) {
-        next.textContent = compactBouquetConsequenceLabel(plan);
+        next.textContent = compactBouquetOrderLabel(plan, progress);
+        next.dataset.compactLabel = `Order ${progress.earned}/${progress.needed}`;
+      }
+      if (orderProgress) {
+        orderProgress.setAttribute("aria-label", `Bouquet order ${progress.earned} of ${progress.needed}; reward ${plan.reward.coins} coins`);
+        orderProgress.setAttribute("aria-valuemax", String(progress.needed));
+        orderProgress.setAttribute("aria-valuenow", String(progress.earned));
+        orderProgress.dataset.orderState = roundComplete
+          ? "complete"
+          : isBouquetFailed(plan) ? "paused" : "active";
       }
       renderLiveBouquetAssembly(plan, progress);
     }

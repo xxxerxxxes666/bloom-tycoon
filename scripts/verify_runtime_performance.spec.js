@@ -149,7 +149,7 @@ for (const config of [
     expect(report.greenhouseIntakeTargetId, "intake feedback retains a visible destination").toBe(config.mobile
       ? "mobileRestorationDial"
       : "heroRestorationDial");
-    expect(report.bouquetProgressText).toMatch(/Bouquet .* -> \+\d+ coins/);
+    expect(report.bouquetProgressText).toMatch(/Bouquet .* -> Reward \d+ coins/);
     expect(report.greenhouseNextText).toMatch(/Restore|Unlock|Raise|Replay/);
     expect(report.visibleProgressText).not.toMatch(/\b(?:SAP|MANA|BLOOD)\b|\d[\d,]*\s*\/\s*\d[\d,]*\s*XP|Greenhouse \+\d+ XP|Apothecary \+\d+ XP/);
     expect(report.visibleButtons.length, "Round 1 non-tile controls").toBeLessThanOrEqual(2);

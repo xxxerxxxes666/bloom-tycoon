@@ -128,6 +128,7 @@ async function visibleReport(page) {
     const brokenImages = Array.from(document.images)
       .filter((image) => visible(image) && image.complete && image.naturalWidth === 0)
       .map((image) => image.getAttribute("src"));
+    const saved = JSON.parse(localStorage.getItem("bloomTycoonPlayableStateV1") || "{}");
     return {
       tiles: document.querySelectorAll(".tile").length,
       idleHints: document.querySelectorAll(".tile.idle-hint").length,
@@ -157,7 +158,16 @@ async function visibleReport(page) {
       greenhouseText: document.querySelector(".restoration-owned-note")?.textContent.trim() || "",
       payoffTransaction: document.querySelector("#payoffTransaction")?.textContent.trim() || "",
       restorationState: document.querySelector("#restorationState")?.textContent.trim() || "",
-      coins: JSON.parse(localStorage.getItem("bloomTycoonPlayableStateV1") || "{}").coins ?? 0,
+      coins: saved.coins ?? 0,
+      greenhouseOwnedStage: document.querySelector("#heroRestorationDial")?.dataset.ownedStage || "",
+      greenhousePct: document.querySelector("#heroRestorationDial")?.dataset.restorationDialPct || "",
+      greenhouseBodyStage: document.body.dataset.activeGreenhouseStage || "",
+      greenhouseArt: document.querySelector("#activeGreenhouseStageArt")?.getAttribute("src") || "",
+      savedOwnership: {
+        roundOneRestored: Boolean(saved.roundOneRestored),
+        roundTwoGreenhouseUpgraded: Boolean(saved.roundTwoGreenhouseUpgraded),
+        roundThreeConservatoryRaised: Boolean(saved.roundThreeConservatoryRaised)
+      },
       mobileGreenhousePlinthVisible: visible(document.querySelector("#mobileGreenhousePlinth")),
       ritualLogVisible: visible(document.querySelector("#ritualLog")),
       visibleProgressText: document.body.innerText,
@@ -166,7 +176,7 @@ async function visibleReport(page) {
         .filter((button) => visible(button) && !button.closest(".board"))
         .map((button) => button.textContent.trim())
         .filter(Boolean),
-      round: JSON.parse(localStorage.getItem("bloomTycoonPlayableStateV1") || "{}").currentRound || 1,
+      round: saved.currentRound || 1,
       overflowX: document.documentElement.scrollWidth > innerWidth + 1,
       brokenImages
     };
@@ -425,6 +435,20 @@ async function guidedRoundOneState(page, tag) {
       roundComplete: Boolean(saved.roundComplete),
       coins: saved.coins,
       bouquet: document.querySelector("#bouquetProgressLabel")?.textContent.trim() || "",
+      bouquetOrder: document.querySelector("#bouquetProgressNext")?.textContent.trim() || "",
+      bouquetBarWidth: document.querySelector("#bar")?.style.width || "",
+      liveBouquetProgress: document.querySelector("#liveBouquetAssembly")?.dataset.progress || "",
+      greenhouseAuthority: {
+        roundOneRestored: Boolean(saved.roundOneRestored),
+        roundTwoGreenhouseUpgraded: Boolean(saved.roundTwoGreenhouseUpgraded),
+        roundThreeConservatoryRaised: Boolean(saved.roundThreeConservatoryRaised),
+        stage: document.querySelector("#heroRestorationDial")?.dataset.restorationDialStage || "",
+        ownedStage: document.querySelector("#heroRestorationDial")?.dataset.ownedStage || "",
+        pct: document.querySelector("#heroRestorationDial")?.dataset.restorationDialPct || "",
+        bodyStage: document.body.dataset.activeGreenhouseStage || "",
+        bodyPct: document.body.dataset.greenhouseRevivalPct || "",
+        art: document.querySelector("#activeGreenhouseStageArt")?.getAttribute("src") || ""
+      },
       cue: firstSwapCue?.textContent.trim() || "",
       tutorial: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
       tutorialPanelText: tutorialPanel?.innerText.trim() || "",
@@ -2418,7 +2442,7 @@ for (const viewport of [
     const activated = await guidedRoundOneState(page, "Black Candle activated");
     trace.push(activated);
     expect(activated.roundComplete).toBe(true);
-    expect(activated.bouquet).toBe("Bouquet 14/14 -> +120 coins");
+    expect(activated.bouquet).toBe("Bouquet 14/14 -> Reward 120 coins");
     expect(activated.moves).toBe(formed.moves - 1);
     expect(activated.tiles).toBe(64);
     expect(activated.overflowX).toBe(false);
@@ -2436,7 +2460,7 @@ for (const viewport of [
     expect(ceremony.boardVisible).toBe(false);
     expect(ceremony.payoffVisible).toBe(true);
     expect(ceremony.coins).toBe(120);
-    expect(ceremony.bouquet).toBe("Bouquet 14/14 -> +120 coins");
+    expect(ceremony.bouquet).toBe("Bouquet 14/14 -> Reward 120 coins");
     expect(ceremony.tutorial).toBe("Coins restore the greenhouse.");
     expect(ceremony.visibleButtons).toEqual(["Restore Greenhouse · 100 coins"]);
     expect(ceremony.visibleButtons.filter((label) => label.startsWith("Restore"))).toHaveLength(1);
@@ -2758,6 +2782,20 @@ test("off-order opening success redirects the player to real bouquet progress", 
       expect(correction.counts, `${testCase.label} only Nightshade is harvested`).toEqual([0, 0, 3, 0, 0, 0]);
       expect(correction.bouquet, `${testCase.label} off-order flowers do not fill the bouquet`)
         .toContain("Bouquet 0/14");
+      expect(correction.bouquetOrder).toBe("Order Progress · 0/14");
+      expect(correction.liveBouquetProgress).toBe("0/14");
+      expect(correction.bouquetBarWidth).toBe("0%");
+      expect(correction.greenhouseAuthority).toEqual({
+        roundOneRestored: false,
+        roundTwoGreenhouseUpgraded: false,
+        roundThreeConservatoryRaised: false,
+        stage: "withered",
+        ownedStage: "0",
+        pct: "0",
+        bodyStage: "withered",
+        bodyPct: "0",
+        art: "../assets/greenhouse/first_greenhouse_withered.jpg"
+      });
       expect(correction.tutorial, `${testCase.label} names the missing order rule`)
         .toBe("Match the order flowers.");
       expect(correction.hints, `${testCase.label} correction first acknowledges the result`).toEqual([]);
@@ -2815,6 +2853,8 @@ test("off-order opening success redirects the player to real bouquet progress", 
         expect(persisted.moves).toBe(5);
         expect(persisted.counts).toEqual(correction.counts);
         expect(persisted.bouquet).toContain("Bouquet 0/14");
+        expect(persisted.bouquetOrder).toBe("Order Progress · 0/14");
+        expect(persisted.greenhouseAuthority).toEqual(correction.greenhouseAuthority);
         expect(persisted.tutorial).toBe("Match Thorn Rose.");
         expect(unorderedPairKey(persisted.hints)).toBe(unorderedPairKey(recoveredPair));
         await expect(page.locator(".impact-sigil, .objective-flight, .order-pulse")).toHaveCount(0);
@@ -2826,6 +2866,8 @@ test("off-order opening success redirects the player to real bouquet progress", 
       expect(targetProgress.moves, `${testCase.label} recovered pair spends once`).toBe(4);
       expect(targetProgress.counts[5], `${testCase.label} recovered pair fills Thorn Rose`).toBeGreaterThan(0);
       expect(targetProgress.bouquet, `${testCase.label} bouquet now advances`).not.toContain("Bouquet 0/14");
+      expect(targetProgress.liveBouquetProgress).not.toBe("0/14");
+      expect(targetProgress.greenhouseAuthority).toEqual(correction.greenhouseAuthority);
       expect(
         ["Find 3 Thorn Roses.", "Match 3 fills the bouquet.", "Match 4 arms Black Candle Vine."],
         `${testCase.label} truthful target-progressing lesson resumes`
@@ -2924,6 +2966,8 @@ test("later off-order success uses the settled swap outcome instead of cumulativ
       const targetProgress = await guidedRoundOneState(page, `${testCase.label} established order progress`);
       expect(targetProgress.moves).toBe(4);
       expect(targetProgress.bouquet).toContain("Bouquet 3/14");
+      expect(targetProgress.bouquetOrder).toBe("Order Progress · 3/14");
+      expect(targetProgress.liveBouquetProgress).toBe("3/14");
       expect(targetProgress.counts[5]).toBe(3);
       expect(targetProgress.tutorial).toBe("Find 3 Thorn Roses.");
 
@@ -2937,6 +2981,10 @@ test("later off-order success uses the settled swap outcome instead of cumulativ
         .toBeGreaterThan(targetProgress.counts[4]);
       expect(correction.bouquet, `${testCase.label} later off-order match adds no order progress`)
         .toContain("Bouquet 3/14");
+      expect(correction.bouquetOrder).toBe(targetProgress.bouquetOrder);
+      expect(correction.bouquetBarWidth).toBe(targetProgress.bouquetBarWidth);
+      expect(correction.liveBouquetProgress).toBe(targetProgress.liveBouquetProgress);
+      expect(correction.greenhouseAuthority).toEqual(targetProgress.greenhouseAuthority);
       expect(correction.tutorial, `${testCase.label} narrator reflects this swap's zero order gain`)
         .toBe("Match the order flowers.");
       expect(correction.hints, `${testCase.label} correction frame precedes the guide`).toEqual([]);
@@ -3005,6 +3053,10 @@ test("later off-order success uses the settled swap outcome instead of cumulativ
         expect(persisted.moves).toBe(3);
         expect(persisted.counts).toEqual(correction.counts);
         expect(persisted.bouquet).toContain("Bouquet 3/14");
+        expect(persisted.bouquetOrder).toBe("Order Progress · 3/14");
+        expect(persisted.bouquetBarWidth).toBe(correction.bouquetBarWidth);
+        expect(persisted.liveBouquetProgress).toBe("3/14");
+        expect(persisted.greenhouseAuthority).toEqual(correction.greenhouseAuthority);
         expect(persisted.tutorial).toBe("Match Thorn Rose.");
         expect(unorderedPairKey(persisted.hints)).toBe(unorderedPairKey(recoveredPair));
         await expect(page.locator(".impact-sigil, .objective-flight, .order-pulse")).toHaveCount(0);
@@ -3067,7 +3119,7 @@ test("guided Round 1 payoff keeps one dominant action", async ({ page }) => {
   await expect(page.locator("#tutorialPanel")).toBeVisible({ timeout: 3000 });
   await completeGuidedRoundOne(page);
 
-  await expect(page.locator("#bouquetProgressLabel")).toHaveText("Bouquet 14/14 -> +120 coins");
+  await expect(page.locator("#bouquetProgressLabel")).toHaveText("Bouquet 14/14 -> Reward 120 coins");
   await expect(page.locator("#tutorialCopy")).toHaveText("Coins restore the greenhouse.");
   await expectReadyPrimaryAction(page, "Restore Greenhouse · 100 coins");
   await expect(page.locator("#restoreGreenhouseBtn")).toBeFocused();
@@ -3081,6 +3133,15 @@ test("guided Round 1 payoff keeps one dominant action", async ({ page }) => {
     overflowX: false,
     brokenImages: []
   });
+  expect(report.savedOwnership).toEqual({
+    roundOneRestored: false,
+    roundTwoGreenhouseUpgraded: false,
+    roundThreeConservatoryRaised: false
+  });
+  expect(report.greenhouseOwnedStage).toBe("0");
+  expect(report.greenhousePct).toBe("0");
+  expect(report.greenhouseBodyStage).toBe("withered");
+  expect(report.greenhouseArt).toContain("first_greenhouse_withered.jpg");
   expect(report.visibleNonTileButtons).toEqual(["Restore Greenhouse · 100 coins"]);
 
   await page.reload({ waitUntil: "networkidle" });
@@ -3094,6 +3155,11 @@ test("guided Round 1 payoff keeps one dominant action", async ({ page }) => {
   expect(report.visibleProgressText).not.toContain("+120 coins -> Restore -100 coins");
   expect(report.visibleNonTileButtons).toEqual(["Restore Greenhouse · 100 coins"]);
   expect(report.visibleProgressText).not.toContain("Swap the glowing flowers.");
+  expect(report.savedOwnership.roundOneRestored).toBe(false);
+  expect(report.greenhouseOwnedStage).toBe("0");
+  expect(report.greenhousePct).toBe("0");
+  expect(report.greenhouseBodyStage).toBe("withered");
+  expect(report.greenhouseArt).toContain("first_greenhouse_withered.jpg");
 
   await page.locator("#restoreGreenhouseBtn").click();
   await expect(page.locator("#tutorialCopy")).toHaveText("Tap Next Order.");
@@ -3105,6 +3171,11 @@ test("guided Round 1 payoff keeps one dominant action", async ({ page }) => {
   expect(report.restorationState).toBe("RESTORED GREENHOUSE");
   expect(report.visibleNonTileButtons).toEqual(["Next Order → Moonlit Wreath"]);
   expect(report.tutorialInViewport).toBe(true);
+  expect(report.savedOwnership.roundOneRestored).toBe(true);
+  expect(report.greenhouseOwnedStage).toBe("1");
+  expect(report.greenhousePct).toBe("33");
+  expect(report.greenhouseBodyStage).toBe("restored");
+  expect(report.greenhouseArt).toContain("first_greenhouse_restored.jpg");
   await page.waitForFunction(() => {
     const artwork = document.querySelector(".greenhouse-art-restored");
     return artwork?.complete && artwork.naturalWidth > 0;
@@ -3122,6 +3193,11 @@ test("guided Round 1 payoff keeps one dominant action", async ({ page }) => {
   expect(report.restorationState).toBe("RESTORED GREENHOUSE");
   expect(report.visibleNonTileButtons).toEqual(["Next Order → Moonlit Wreath"]);
   expect(report.visibleProgressText).not.toContain("Swap the glowing flowers.");
+  expect(report.savedOwnership.roundOneRestored).toBe(true);
+  expect(report.greenhouseOwnedStage).toBe("1");
+  expect(report.greenhousePct).toBe("33");
+  expect(report.greenhouseBodyStage).toBe("restored");
+  expect(report.greenhouseArt).toContain("first_greenhouse_restored.jpg");
 
   await page.locator("#nextOrderBtn").click();
   await expect(page.locator(".tile")).toHaveCount(64);
@@ -3135,6 +3211,13 @@ test("guided Round 1 payoff keeps one dominant action", async ({ page }) => {
   await expect(page.locator(".tile[tabindex='0']")).toBeFocused();
   report = await visibleReport(page);
   expect(report.round).toBe(2);
+  expect(report.bouquetText).toContain("Bouquet 0/29");
+  expect(report.bouquetNext).toBe("Order Progress · 0/29");
+  expect(report.savedOwnership.roundOneRestored).toBe(true);
+  expect(report.greenhouseOwnedStage).toBe("1");
+  expect(report.greenhousePct).toBe("33");
+  expect(report.greenhouseBodyStage).toBe("restored");
+  expect(report.greenhouseArt).toContain("first_greenhouse_restored.jpg");
   expect(report.tiles).toBe(64);
   expect(report.overflowX).toBe(false);
   expect(report.brokenImages).toEqual([]);
@@ -4244,7 +4327,7 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
     tutorialVisible: true,
     tutorialInViewport: true,
     visibleInstructionCues: 1,
-    bouquetText: "Bouquet 0/14 -> +120 coins",
+    bouquetText: "Bouquet 0/14 -> Reward 120 coins",
     greenhouseText: "Owned 0/3 · Next: Restore Greenhouse",
     mobileGreenhousePlinthVisible: false,
     ritualLogVisible: false,
@@ -4308,7 +4391,7 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
   await expectReadyPrimaryAction(page, "Restore Greenhouse · 100 coins");
   report = await visibleReport(page);
   expect(report.visibleButtons).toEqual(["Restore Greenhouse · 100 coins"]);
-  await expect(page.locator("#bouquetProgressNext")).toHaveText("Ready: Restore Glass");
+  await expect(page.locator("#bouquetProgressNext")).toHaveText("Order Complete · 14/14");
   report = await visibleReport(page);
   expect(report.visibleNonTileButtons).toEqual(["Restore Greenhouse · 100 coins"]);
   await page.locator("#restoreGreenhouseBtn").click();
