@@ -13071,12 +13071,33 @@
           : minLeft >= 76 ? minLeft - 38 : boardRect.width - 44;
         const verb = document.createElement("span");
         verb.className = "target-match-causal-verb";
-        verb.style.setProperty("--forecast-verb-left", `${Math.max(42, Math.min(boardRect.width - 42, verbX))}px`);
+        verb.style.setProperty("--forecast-verb-left", `${verbX}px`);
         verb.style.setProperty("--forecast-verb-top", `${Math.max(12, Math.min(boardRect.height - 12, centerY))}px`);
         verb.innerHTML = "<span>SWAP</span><span>GATHER</span>";
         guideEl.appendChild(verb);
       }
       boardEl.appendChild(guideEl);
+      const causalVerb = guideEl.querySelector(".target-match-causal-verb");
+      if (causalVerb) {
+        const guideRect = guideEl.getBoundingClientRect();
+        const verbRect = causalVerb.getBoundingClientRect();
+        const containmentLeft = Math.max(boardRect.left, guideRect.left) + 1;
+        const containmentRight = Math.min(boardRect.right, guideRect.right) - 1;
+        const availableWidth = containmentRight - containmentLeft;
+        if (verbRect.width <= availableWidth) {
+          const clampedLeft = Math.max(
+            containmentLeft,
+            Math.min(containmentRight - verbRect.width, verbRect.left)
+          );
+          const initialLeft = Number.parseFloat(
+            causalVerb.style.getPropertyValue("--forecast-verb-left")
+          ) || 0;
+          causalVerb.style.setProperty(
+            "--forecast-verb-left",
+            `${initialLeft + clampedLeft - verbRect.left}px`
+          );
+        }
+      }
       return true;
     }
 

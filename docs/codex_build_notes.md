@@ -1,5 +1,14 @@
 # Codex Build Notes
 
+## 2026-07-22 target forecast edge containment
+
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_target_match_forecast.spec.js`, and this note.
+- Selected weakness: exact-mobile Round 1 recovery correctly returned a legal Thorn Rose forecast, but the existing `SWAP -> GATHER` plate was centered with a hard-coded `42px` half-width while its rendered width was about `98.7px`. At the right altar edge, `GATHER` exceeded the 378px board and was silently clipped by the forecast guide.
+- Player-visible result: the existing renderer now measures the complete causal plate after insertion, intersects the forecast-guide and altar bounds, reserves a one-pixel inset, and shifts only the existing plate position when needed. Copy, arrow, result cells, timing, pointer transparency, board input, objectives, saves, and economy are unchanged.
+- Permanent browser contract: the natural desktop pointer, exact `390x844` touch, and desktop keyboard/reduced-motion paths assert the plate plus both word rects are contained, then commit the real legal useful pair through the unchanged endpoints. A black-box desktop/mobile matrix reloads the same authoritative legal forecast and supplies left/right horizontal/vertical tile geometry before production rendering, proving the measured clamp at all altar edges without exporting a test-only product API.
+- Verification: `scripts/verify_target_match_forecast.spec.js` passes `5/5`, including lifecycle, input retirement, 64 tiles/eight rows, no focus or pointer interception, no horizontal overflow, loaded images, and no console/page/request errors. The exact-mobile capture `work/target-match-forecast-mobile390-touch.png` shows both words fully readable inside the full altar.
+- Scope/security: no node, copy, row, narrator, panel, control, timer, save field/schema, dependency, asset, mechanic, currency, round, or progression surface was added. Changed executable lines add no credential-shaped data, tracker/analytics hook, external request, or private network reference.
+
 ## 2026-07-21 outcome-aware Round 1 recovery
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_tutorial_progress.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.

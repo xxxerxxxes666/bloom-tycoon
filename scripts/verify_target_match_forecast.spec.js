@@ -96,6 +96,9 @@ async function forecastReport(page) {
     const cells = Array.from(document.querySelectorAll("#board .tile.target-match-result"));
     const endpoints = Array.from(document.querySelectorAll("#board .tile.target-match-swap-endpoint"));
     const guide = document.querySelector("#board .target-match-forecast-guide");
+    const causalVerb = guide?.querySelector(".target-match-causal-verb");
+    const guideRect = guide?.getBoundingClientRect();
+    const verbRect = causalVerb?.getBoundingClientRect();
     const receiver = document.querySelector(
       '.live-bouquet-ingredient[data-flower-id="5"][data-receiver="true"]'
     ) || document.querySelector('.live-bouquet-ingredient[data-flower-id="5"]');
@@ -111,6 +114,15 @@ async function forecastReport(page) {
         endpoints: guide.dataset.swapEndpoints.split(" ").filter(Boolean).sort(),
         orientation: guide.dataset.orientation,
         text: guide.textContent.trim()
+      } : null,
+      geometry: guideRect && verbRect ? {
+        board: boardRect.toJSON(),
+        guide: guideRect.toJSON(),
+        plate: verbRect.toJSON(),
+        words: Array.from(causalVerb.querySelectorAll("span"), (word) => ({
+          text: word.textContent.trim(),
+          rect: word.getBoundingClientRect().toJSON()
+        }))
       } : null,
       endpoints: endpoints.map((tile) => ({
         key: `${tile.dataset.x},${tile.dataset.y}`,
@@ -149,6 +161,7 @@ async function expectForecast(page, label) {
   expect(report.cue, `${label} concise truthful cue`).toBe("Match Thorn Rose.");
   expect(report.bodyTarget).toBe("Thorn Rose");
   expect(report.guide).toMatchObject({ pointerEvents: "none", target: "5", text: "SWAPGATHER" });
+  expectForecastPlateContained(report.geometry, `${label} causal plate`);
   expect(report.guide.cells, `${label} guide exact result identity`).toEqual(expected);
   expect(report.guide.endpoints, `${label} guide exact endpoints`).toEqual(
     pair.map((cell) => `${cell.x},${cell.y}`).sort()
@@ -167,6 +180,19 @@ async function expectForecast(page, label) {
   expect(report.overflowX).toBe(false);
   expect(report.brokenImages).toEqual([]);
   return { pair, expected, report };
+}
+
+function expectForecastPlateContained(geometry, label) {
+  expect(geometry, `${label} geometry exists`).not.toBeNull();
+  const left = Math.max(geometry.board.left, geometry.guide.left);
+  const right = Math.min(geometry.board.right, geometry.guide.right);
+  expect(geometry.plate.left, `${label} clears left altar edge`).toBeGreaterThanOrEqual(left + .9);
+  expect(geometry.plate.right, `${label} clears right altar edge`).toBeLessThanOrEqual(right - .9);
+  expect(geometry.words.map((word) => word.text), `${label} keeps both words`).toEqual(["SWAP", "GATHER"]);
+  geometry.words.forEach((word) => {
+    expect(word.rect.left, `${label} ${word.text} left edge`).toBeGreaterThanOrEqual(geometry.plate.left);
+    expect(word.rect.right, `${label} ${word.text} right edge`).toBeLessThanOrEqual(geometry.plate.right);
+  });
 }
 
 async function tileRects(page, keys) {
@@ -317,4 +343,87 @@ test("Round 1 forecast lifecycle retires and restores only the agency phase", as
   await expect(page.locator(".target-match-forecast-guide, .tile.target-match-result, .target-match-receiver")).toHaveCount(0);
   await expect(page.locator(".tile.invalid-swap")).toHaveCount(0, { timeout: 2200 });
   await expect(page.locator("#board .tile")).toHaveCount(64);
+});
+
+test("target forecast plate contains every edge placement and match orientation", async ({ browser }) => {
+  const seedContext = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+  const seedPage = await seedContext.newPage();
+  await openFresh(seedPage, "edge-geometry-seed");
+  await completeOpening(seedPage, "pointer");
+  const seededForecast = await expectForecast(seedPage, "edge geometry seed");
+  const savedState = await seedPage.evaluate((key) => localStorage.getItem(key), SAVE_KEY);
+  const resultKeys = seededForecast.report.guide.cells;
+  await seedContext.close();
+
+  const viewports = [
+    { label: "desktop", viewport: { width: 1280, height: 720 } },
+    { label: "mobile390", viewport: { width: 390, height: 844 }, mobile: true }
+  ];
+  const fixtures = [
+    {
+      label: "left-vertical",
+      cells: ["0,0", "0,1", "0,2"]
+    },
+    {
+      label: "right-vertical",
+      cells: ["7,0", "7,1", "7,2"]
+    },
+    {
+      label: "left-horizontal",
+      cells: ["0,4", "1,4", "2,4"]
+    },
+    {
+      label: "right-horizontal",
+      cells: ["5,4", "6,4", "7,4"]
+    }
+  ];
+
+  for (const config of viewports) {
+    for (const fixture of fixtures) {
+      const context = await browser.newContext({
+        viewport: config.viewport,
+        hasTouch: Boolean(config.mobile),
+        isMobile: Boolean(config.mobile)
+      });
+      const page = await context.newPage();
+      try {
+        await page.addInitScript(({ saveKey, savedState, resultKeys, fixtureCells }) => {
+          localStorage.setItem(saveKey, savedState);
+          const mappedCells = Object.fromEntries(resultKeys.map((key, index) => [key, fixtureCells[index]]));
+          const nativeRect = Element.prototype.getBoundingClientRect;
+          Element.prototype.getBoundingClientRect = function targetForecastEdgeRect() {
+            if (this.matches?.("#board .tile")) {
+              const key = `${this.dataset.x},${this.dataset.y}`;
+              const mapped = mappedCells[key];
+              if (mapped && mapped !== key) {
+                const [x, y] = mapped.split(",");
+                const proxy = document.querySelector(`#board .tile[data-x="${x}"][data-y="${y}"]`);
+                if (proxy) return nativeRect.call(proxy);
+              }
+            }
+            return nativeRect.call(this);
+          };
+        }, {
+          saveKey: SAVE_KEY,
+          savedState,
+          resultKeys,
+          fixtureCells: fixture.cells
+        });
+        await page.goto(`${BASE_URL}?target-match-forecast=edge-${config.label}-${fixture.label}`, {
+          waitUntil: "networkidle"
+        });
+        await expect(page.locator("#board .target-match-forecast-guide")).toHaveCount(1, { timeout: 10000 });
+        const geometry = (await forecastReport(page)).geometry;
+        expectForecastPlateContained(geometry, `${config.label} ${fixture.label}`);
+        const report = await forecastReport(page);
+        expect(report.guide.pointerEvents).toBe("none");
+        expect(report.tiles).toBe(64);
+        expect(report.rows).toBe(8);
+        expect(report.overflowX).toBe(false);
+        expect(report.brokenImages).toEqual([]);
+      } finally {
+        await context.close();
+      }
+    }
+  }
 });
