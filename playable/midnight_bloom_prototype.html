@@ -1064,9 +1064,9 @@
       justify-self: center;
       border: 1px solid #4a3320;
       background:
-        radial-gradient(ellipse at 50% 17%, #d7b16d3d 0, #0000 58%),
-        radial-gradient(ellipse at 50% 76%, #6f944d32 0, #0000 64%),
-        linear-gradient(180deg, #1a1009, #060403);
+        radial-gradient(ellipse at 50% 14%, #d7b16d50 0, #0000 60%),
+        radial-gradient(ellipse at 50% 76%, #6f944d42 0, #0000 66%),
+        linear-gradient(180deg, #21150c, #080504);
       box-shadow:
         inset 0 0 0 1px #000,
         inset 0 0 12px #000,
@@ -1128,10 +1128,10 @@
       border-radius: 999px;
       transform: rotate(var(--live-stem-rot, 0deg));
       transform-origin: 50% 100%;
-      opacity: calc(.34 + var(--ingredient-visual-progress, 0) * .64);
+      opacity: calc(.48 + var(--ingredient-visual-progress, 0) * .5);
       background: linear-gradient(90deg, #263916 0, #a9bd73 48%, #31451c 70%, #171008 100%);
       box-shadow: 0 1px 3px #000;
-      filter: brightness(calc(.58 + var(--ingredient-visual-progress, 0) * .58));
+      filter: brightness(calc(.76 + var(--ingredient-visual-progress, 0) * .42));
     }
 
     .live-bouquet-leaf {
@@ -1145,9 +1145,9 @@
       border-radius: 80% 14% 70% 18%;
       background: linear-gradient(90deg, #17230f, #6f944d 58%, #23190d);
       transform: rotate(var(--live-leaf-rot, -22deg));
-      opacity: calc(.27 + var(--ingredient-visual-progress, 0) * .68);
+      opacity: calc(.4 + var(--ingredient-visual-progress, 0) * .58);
       box-shadow: 0 1px 3px #000;
-      filter: brightness(calc(.56 + var(--ingredient-visual-progress, 0) * .62));
+      filter: brightness(calc(.72 + var(--ingredient-visual-progress, 0) * .48));
     }
 
     .live-bouquet-knot {
@@ -1197,8 +1197,8 @@
       place-items: center;
       color: var(--live-color, #d7b16d);
       opacity: 1;
-      transform: translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.8 + var(--ingredient-visual-progress, 0) * .22));
-      filter: saturate(calc(.22 + var(--ingredient-visual-progress, 0) * 1.02)) brightness(calc(.52 + var(--ingredient-visual-progress, 0) * .64)) drop-shadow(0 2px 3px #000);
+      transform: translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.7 + var(--ingredient-visual-progress, 0) * .4));
+      filter: saturate(calc(.3 + var(--ingredient-visual-progress, 0) * .9)) brightness(calc(.7 + var(--ingredient-visual-progress, 0) * .52)) drop-shadow(0 2px 3px #000);
       transition: opacity 220ms ease, transform 260ms ease, filter 260ms ease;
     }
 
@@ -1212,6 +1212,16 @@
       opacity: 0;
     }
 
+    .live-bouquet-ingredient[data-slot-state="partial"]::before,
+    .live-bouquet-ingredient[data-slot-state="filled"]::before {
+      inset: 8%;
+      border-radius: 50%;
+      background: radial-gradient(circle, color-mix(in srgb, currentColor 66%, #fff0b4) 0 8%, currentColor 34%, #0000 72%);
+      box-shadow: 0 0 9px currentColor;
+      opacity: calc(.34 + var(--ingredient-visual-progress, 0) * .28);
+      filter: blur(2px);
+    }
+
     .live-bouquet-ingredient .icon-wrap,
     .live-bouquet-ingredient img {
       position: relative;
@@ -1222,25 +1232,25 @@
 
     .live-bouquet-ingredient .icon-wrap {
       opacity: calc(.34 + var(--ingredient-visual-progress, 0) * .66);
-      transform: scale(calc(.94 + var(--ingredient-visual-progress, 0) * .06));
+      transform: scale(calc(.92 + var(--ingredient-visual-progress, 0) * .08));
       transition: opacity 220ms ease, transform 260ms ease;
     }
 
     .live-bouquet-ingredient[data-slot-state="empty"] .icon-wrap {
-      filter: grayscale(.82) brightness(1.02) saturate(.34) drop-shadow(0 0 3px #8e744e99);
+      filter: grayscale(.76) brightness(1.12) saturate(.4) drop-shadow(0 0 4px #b9874daa);
     }
 
     .live-bouquet-ingredient[data-slot-state="empty"][data-next-objective="true"] .icon-wrap {
-      opacity: .44;
-      filter: grayscale(.5) brightness(1) saturate(.56) drop-shadow(0 0 4px #b9874d77);
+      opacity: .46;
+      filter: grayscale(.48) brightness(1.18) saturate(.58) drop-shadow(0 0 5px #b9874d99);
     }
 
     .live-bouquet-ingredient[data-slot-state="partial"] .icon-wrap {
-      filter: grayscale(calc(1 - var(--ingredient-progress, 0))) brightness(.9) saturate(.9);
+      filter: grayscale(calc(.28 - var(--ingredient-progress, 0) * .2)) brightness(1.3) saturate(1.24);
     }
 
     .live-bouquet-ingredient[data-slot-state="filled"] .icon-wrap {
-      filter: brightness(1.12) saturate(1.12);
+      filter: brightness(1.3) saturate(1.18);
     }
 
     .live-bouquet-ingredient img {
@@ -1250,15 +1260,15 @@
         drop-shadow(0 0 calc(3px + var(--ingredient-progress, 0) * 6px) currentColor);
     }
 
-    .live-bouquet-ingredient.order-pulse[data-receiver="true"] {
+    .live-bouquet-ingredient.order-pulse[data-gain-receiver="true"] {
       animation: live-bouquet-harvest 520ms cubic-bezier(.12,.82,.18,1) both;
     }
 
-    .live-bouquet-assembly:has(.live-bouquet-ingredient.order-pulse[data-receiver="true"]) {
+    .live-bouquet-assembly:has(.live-bouquet-ingredient.order-pulse[data-gain-receiver="true"]) {
       animation: live-bouquet-accept 520ms cubic-bezier(.12,.82,.18,1) both;
     }
 
-    .live-bouquet-assembly:has(.live-bouquet-ingredient.order-pulse[data-receiver="true"]) .live-bouquet-knot {
+    .live-bouquet-assembly:has(.live-bouquet-ingredient.order-pulse[data-gain-receiver="true"]) .live-bouquet-knot {
       animation: live-bouquet-knot-tighten 520ms cubic-bezier(.12,.82,.18,1) both;
     }
 
@@ -1273,7 +1283,7 @@
       pointer-events: none;
     }
 
-    .live-bouquet-ingredient.order-pulse[data-receiver="true"]::after {
+    .live-bouquet-ingredient.order-pulse[data-gain-receiver="true"]::after {
       content: "";
       position: absolute;
       inset: -5px;
@@ -6287,6 +6297,7 @@
     .crafted-bloom .icon-wrap,
     .crafted-bloom img { width:100%; height:100%; }
     .crafted-bloom img { object-fit:contain; filter:drop-shadow(0 0 9px #000) drop-shadow(0 0 8px currentColor); }
+    .crafted-bloom.order-pulse[data-gain-receiver="true"] { filter:brightness(1.16) drop-shadow(0 0 12px currentColor) drop-shadow(0 7px 7px #000); }
     .crafted-bloom.thorn-charm { width:36px; height:36px; border:1px solid #8a332a; border-radius:50%; background:radial-gradient(circle,#240707,#050302 72%); box-shadow:inset 0 0 10px #000,0 0 9px #9b1d2255; }
     .crafted-bloom.thorn-charm .thorn-seal-icon { width:34px; height:34px; }
     .crafted-binding { position:absolute; left:50%; bottom:13px; z-index:9; width:122px; height:28px; transform:translateX(-50%); border:1px solid #d7b16d; background:linear-gradient(90deg,#431513,#b9874d 50%,#431513); box-shadow:inset 0 0 9px #000,0 0 12px #000; }
@@ -6670,12 +6681,12 @@
       100% { opacity:0; transform:scale(1.36); }
     }
     @keyframes crafted-bloom-bind {
-      0% { opacity:.15; transform:translate(-50%, -76%) rotate(var(--bloom-rot, 0deg)) scale(.58); filter:brightness(.72) drop-shadow(0 7px 7px #000); }
+      0% { opacity:.78; transform:translate(-50%, -56%) rotate(var(--bloom-rot, 0deg)) scale(.84); filter:brightness(.9) drop-shadow(0 7px 7px #000); }
       42% { opacity:1; transform:translate(-50%, -50%) rotate(var(--bloom-rot, 0deg)) scale(1.12); filter:brightness(1.38) saturate(1.2) drop-shadow(0 0 12px currentColor); }
       100% { opacity:1; transform:translate(-50%, -50%) rotate(var(--bloom-rot, 0deg)) scale(1); filter:brightness(1) drop-shadow(0 7px 7px #000); }
     }
     @keyframes crafted-stem-bind {
-      0% { opacity:.2; transform:rotate(var(--stem-rot, 0deg)) translateY(22px) scaleY(.7); }
+      0% { opacity:.64; transform:rotate(var(--stem-rot, 0deg)) translateY(8px) scaleY(.88); }
       48% { opacity:1; transform:rotate(var(--stem-rot, 0deg)) translateY(-3px) scaleY(1.08); }
       100% { opacity:1; transform:rotate(var(--stem-rot, 0deg)) translateY(0) scaleY(1); }
     }
@@ -6957,8 +6968,8 @@
       .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .crafted-stem,
       .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .crafted-binding,
       .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .crafted-vine,
-      .live-bouquet-assembly:has(.live-bouquet-ingredient.order-pulse[data-receiver="true"]),
-      .live-bouquet-assembly:has(.live-bouquet-ingredient.order-pulse[data-receiver="true"]) .live-bouquet-knot,
+      .live-bouquet-assembly:has(.live-bouquet-ingredient.order-pulse[data-gain-receiver="true"]),
+      .live-bouquet-assembly:has(.live-bouquet-ingredient.order-pulse[data-gain-receiver="true"]) .live-bouquet-knot,
       .live-bouquet-ingredient.order-pulse,
       .round-one-restoration.next-order-ready .next-order-btn {
         animation:none !important;
@@ -7135,7 +7146,7 @@
         grid-column: 1 / -1;
         grid-row: 2;
         width: min(240px, 100%);
-        height: 60px;
+        height: 66px;
       }
       body.restored-next-order-focus .live-bouquet-ingredient,
       body.restored-greenhouse-handoff .live-bouquet-ingredient,
@@ -7145,7 +7156,7 @@
         width: var(--live-size, 28px);
         height: var(--live-size, 28px);
         top: calc(var(--live-y, 20px) - 3px);
-        transform: translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(.82) scale(calc(.8 + var(--ingredient-visual-progress, 0) * .22));
+        transform: translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.68 + var(--ingredient-visual-progress, 0) * .34));
       }
       body.restored-next-order-focus .live-bouquet-stem,
       body.restored-greenhouse-handoff .live-bouquet-stem,
@@ -8268,6 +8279,7 @@
     let thornTeachingSwapCells = new Set();
     let thornTeachingTimer = null;
     let orderPulseTargets = new Set();
+    let orderPulseSlots = new Map();
     let interactionFeedbackGeneration = 0;
     let isResolving = false;
     let altarReweaveActive = false;
@@ -8579,35 +8591,48 @@
       return needed ? Math.max(0, Math.min(1, current / needed)) : 0;
     }
 
-    function craftedBouquetEntries(plan = activeRoundPlan()) {
-      return Array.from(
-        { length: CRAFTED_BOUQUET_BLOOM_COUNT },
-        (_, index) => plan.targets[index % plan.targets.length]
-      );
-    }
-
-    function craftedBouquetLayout(index) {
+    function bouquetCompositionLayout(index) {
       const layouts = [
-        { x: -40, y: 58, size: 62, rot: -16, z: 6, stemX: -25, stemRot: -19 },
-        { x: 34, y: 55, size: 64, rot: 13, z: 7, stemX: 22, stemRot: 17 },
-        { x: -4, y: 38, size: 74, rot: -4, z: 10, stemX: -5, stemRot: -4 },
-        { x: -64, y: 77, size: 54, rot: 18, z: 5, stemX: -38, stemRot: -27 },
-        { x: 64, y: 75, size: 54, rot: -19, z: 5, stemX: 38, stemRot: 26 },
-        { x: 10, y: 82, size: 58, rot: 9, z: 8, stemX: 7, stemRot: 6 }
+        { x: -45, y: 58, size: 62, rot: -16, z: 7, stemX: -27, stemRot: -20 },
+        { x: 45, y: 58, size: 64, rot: 13, z: 8, stemX: 27, stemRot: 20 },
+        { x: 0, y: 38, size: 74, rot: -4, z: 10, stemX: 0, stemRot: 0 },
+        { x: -68, y: 80, size: 54, rot: 18, z: 5, stemX: -40, stemRot: -29 },
+        { x: 68, y: 80, size: 54, rot: -19, z: 5, stemX: 40, stemRot: 29 },
+        { x: 20, y: 90, size: 58, rot: 9, z: 6, stemX: 12, stemRot: 9 }
       ];
       return layouts[index % layouts.length];
     }
 
+    function bouquetComposition(plan = activeRoundPlan()) {
+      return Array.from(
+        { length: CRAFTED_BOUQUET_BLOOM_COUNT },
+        (_, index) => ({
+          index,
+          target: plan.targets[index % plan.targets.length],
+          layout: bouquetCompositionLayout(index)
+        })
+      );
+    }
+
+    function bouquetCompositionKey(plan = activeRoundPlan()) {
+      return bouquetComposition(plan)
+        .map(({ target, index }) => `${index}:${target.flowerId}:${target.needed}`)
+        .join("|");
+    }
+
+    function craftedBouquetEntries(plan = activeRoundPlan()) {
+      return bouquetComposition(plan).map(({ target }) => target);
+    }
+
     function liveBouquetLayout(index) {
-      const layouts = [
-        { x: -40, y: 33, size: 38, rot: -16, z: 7 },
-        { x: 35, y: 31, size: 39, rot: 13, z: 8 },
-        { x: -3, y: 25, size: 46, rot: -4, z: 10 },
-        { x: -63, y: 43, size: 30, rot: 18, z: 6 },
-        { x: 63, y: 42, size: 30, rot: -19, z: 6 },
-        { x: 15, y: 47, size: 32, rot: 9, z: 9 }
-      ];
-      const layout = layouts[index % layouts.length];
+      const crafted = bouquetCompositionLayout(index);
+      const layout = {
+        x: crafted.x,
+        y: Math.round(10 + crafted.y * .42) + (index === 2 ? 2 : index >= 3 && index <= 4 ? -2 : index === 5 ? -5 : 0),
+        size: Math.round(crafted.size * .62),
+        rot: crafted.rot,
+        z: crafted.z
+      };
       const knotY = 59;
       const stemTargetY = layout.y + layout.size * .08;
       const stemRise = Math.max(10, knotY - stemTargetY);
@@ -8631,7 +8656,8 @@
     function liveBouquetAssemblyMarkup(plan = activeRoundPlan(), progress = roundProgress(plan)) {
       const fullness = progressRatio(progress.earned, progress.needed);
       const complete = roundObjectivesComplete(plan);
-      const entries = craftedBouquetEntries(plan);
+      const composition = bouquetComposition(plan);
+      const entries = composition.map(({ target }) => target);
       const slotsPerFlower = entries.reduce((map, target) => {
         map.set(target.flowerId, (map.get(target.flowerId) || 0) + 1);
         return map;
@@ -8645,7 +8671,7 @@
         seenSlots.set(target.flowerId, localSlot + 1);
         const slotProgress = Math.max(0, Math.min(1, ratio * (slotsPerFlower.get(target.flowerId) || 1) - localSlot));
         const visualProgress = slotProgress > 0
-          ? Math.min(1, .42 + slotProgress * .58)
+          ? Math.min(1, .72 + slotProgress * .28)
           : 0;
         const layout = liveBouquetLayout(index);
         return { target, flower, current, ratio, slotProgress, visualProgress, layout, index };
@@ -8667,7 +8693,8 @@
         <span class="live-bouquet-leaf" aria-hidden="true" data-filled="${slotProgress >= 1 ? "true" : "false"}" style="--ingredient-progress:${slotProgress.toFixed(3)};--ingredient-visual-progress:${visualProgress.toFixed(3)};--live-leaf-x:${layout.leafX}px;--live-leaf-y:${layout.leafY}px;--live-leaf-rot:${index % 2 ? 202 : -22}deg;"></span>
       `).join("");
       const flowersMarkup = slotDetails.map(({ target, flower, current, slotProgress, visualProgress, layout, index }) => {
-        const pulse = orderPulseTargets.has(target.flowerId) && slotProgress > 0 ? "order-pulse" : "";
+        const gainReceiver = orderPulseSlots.get(target.flowerId)?.has(index) || false;
+        const pulse = gainReceiver ? "order-pulse" : "";
         const receiver = receivers.get(target.flowerId) === index;
         const slotState = slotProgress >= 1 ? "filled" : slotProgress > 0 ? "partial" : "empty";
         return `
@@ -8679,6 +8706,7 @@
             data-slot-state="${slotState}"
             data-filled="${slotProgress >= 1 ? "true" : "false"}"
             data-receiver="${receiver}"
+            data-gain-receiver="${gainReceiver}"
             data-next-objective="${nextObjectiveSlot === index}"
             data-progress="${current}/${target.needed}"
             style="--ingredient-progress:${slotProgress.toFixed(3)};--ingredient-visual-progress:${visualProgress.toFixed(3)};--live-x:calc(50% + ${layout.x}px);--live-y:${layout.y}px;--live-size:${layout.size}px;--live-rot:${layout.rot}deg;--live-z:${layout.z};--live-color:${flower[4]};"
@@ -8713,6 +8741,7 @@
       assembly.dataset.assemblyComplete = String(rendered.complete);
       assembly.dataset.assemblyState = rendered.state;
       assembly.dataset.visibleBlooms = String(rendered.visibleBlooms);
+      assembly.dataset.compositionKey = bouquetCompositionKey(plan);
       assembly.innerHTML = rendered.markup;
       applyImageFallbacks(assembly);
     }
@@ -10355,6 +10384,7 @@
       thornClearedCells.clear();
       transmuteFlashCell = "";
       orderPulseTargets.clear();
+      orderPulseSlots.clear();
       document.querySelectorAll(
         ".objective-flight, .bouquet-bind-seal, .greenhouse-intake-flight"
       ).forEach((effect) => effect.remove());
@@ -12610,7 +12640,7 @@
           : isBouquetFailed(plan) ? "paused" : "active";
       }
       const bouquetProgress = $("bouquetProgress");
-      const receiverHandedOff = roundComplete && !bouquetSealPulseActive;
+      const receiverHandedOff = roundComplete;
       if (bouquetProgress) {
         bouquetProgress.hidden = false;
         bouquetProgress.classList.toggle("receiver-handed-off", receiverHandedOff);
@@ -15010,19 +15040,19 @@
     }
 
     function craftedBouquetMarkup(plan = activeRoundPlan()) {
-      const entries = craftedBouquetEntries(plan);
-      const stems = entries.map((target, index) => {
-        const layout = craftedBouquetLayout(index);
+      const composition = bouquetComposition(plan);
+      const entries = composition.map(({ target }) => target);
+      const stems = composition.map(({ target, index, layout }) => {
         return `
           <span class="crafted-stem" data-crafted-stem-flower="${target.flowerId}" style="--stem-x:${layout.stemX}px;--stem-rot:${layout.stemRot}deg;"></span>
           <span class="crafted-leaf" data-crafted-leaf-flower="${target.flowerId}" style="--leaf-x:${layout.stemX + (index % 2 ? -20 : 7)}px;--leaf-y:${88 + (index % 3) * 9}px;--leaf-rot:${index % 2 ? 202 : -22}deg;"></span>
         `;
       }).join("");
-      const blooms = entries.map((target, index) => {
+      const blooms = composition.map(({ target, index, layout }) => {
         const flower = flowers[target.flowerId] || flowers[0];
-        const layout = craftedBouquetLayout(index);
+        const gainReceiver = orderPulseSlots.get(target.flowerId)?.has(index) || false;
         return `
-          <span class="crafted-bloom crafted-flower-bloom" data-crafted-flower="${target.flowerId}" data-crafted-slot="${index}" data-required-count="${target.needed}" data-flower-name="${flower[0]}" style="--bloom-x:calc(50% + ${layout.x}px);--bloom-y:${layout.y}px;--bloom-size:${layout.size}px;--bloom-rot:${layout.rot}deg;--bloom-z:${layout.z};--bloom-color:${flower[4]};--bloom-delay:${index * 86}ms;" title="${flower[0]}">
+          <span class="crafted-bloom crafted-flower-bloom ${gainReceiver ? "order-pulse" : ""}" data-crafted-flower="${target.flowerId}" data-crafted-slot="${index}" data-gain-receiver="${gainReceiver}" data-required-count="${target.needed}" data-flower-name="${flower[0]}" style="--bloom-x:calc(50% + ${layout.x}px);--bloom-y:${layout.y}px;--bloom-size:${layout.size}px;--bloom-rot:${layout.rot}deg;--bloom-z:${layout.z};--bloom-color:${flower[4]};--bloom-delay:${index * 86}ms;" title="${flower[0]}">
             ${iconMarkup(target.flowerId, "crafted-bouquet-icon", flower[0], "crafted-bouquet-wrap")}
           </span>
         `;
@@ -15033,7 +15063,7 @@
         </span>
       ` : "";
       return `
-        <span class="crafted-bouquet" data-crafted-bouquet="true" data-crafted-bloom-count="${entries.length}" data-crafted-target-counts="${plan.targets.map((target) => `${target.flowerId}:${target.needed}`).join(",")}">
+        <span class="crafted-bouquet" data-crafted-bouquet="true" data-composition-key="${bouquetCompositionKey(plan)}" data-crafted-bloom-count="${entries.length}" data-crafted-target-counts="${plan.targets.map((target) => `${target.flowerId}:${target.needed}`).join(",")}">
           ${stems}
           ${blooms}
           ${thornCharm}
@@ -15259,19 +15289,39 @@
 
     function pulseOrderCounts(gained, gainedCells = []) {
       orderPulseTargets.clear();
+      orderPulseSlots.clear();
       activeRoundPlan().targets.forEach((target) => {
         if (gained[target.flowerId] > 0) {
           orderPulseTargets.add(target.flowerId);
+          const slots = bouquetComposition(activeRoundPlan())
+            .filter(({ target: slotTarget }) => slotTarget.flowerId === target.flowerId);
+          const previous = Math.max(0, targetProgress(target) - gained[target.flowerId]);
+          const previousRatio = progressRatio(previous, target.needed);
+          const currentRatio = progressRatio(targetProgress(target), target.needed);
+          const changed = new Set();
+          slots.forEach(({ index }, localSlot) => {
+            const previousSlot = Math.max(0, Math.min(1, previousRatio * slots.length - localSlot));
+            const currentSlot = Math.max(0, Math.min(1, currentRatio * slots.length - localSlot));
+            if (currentSlot > previousSlot) changed.add(index);
+          });
+          orderPulseSlots.set(target.flowerId, changed);
         }
       });
       if (orderPulseTargets.size) {
-        launchObjectiveFlights(gained, gainedCells);
+        const launchRound = currentRound;
+        const launchGeneration = interactionFeedbackGeneration;
+        const sourceBoardRect = $("board").getBoundingClientRect().toJSON();
+        window.requestAnimationFrame(() => {
+          if (currentRound === launchRound && interactionFeedbackGeneration === launchGeneration) {
+            launchObjectiveFlights(gained, gainedCells, sourceBoardRect);
+          }
+        });
         scheduleOrderPulseClear();
       }
     }
 
     function launchObjectiveFlights(gained, gainedCells = []) {
-      const boardRect = $("board").getBoundingClientRect();
+      const boardRect = arguments[2] || $("board").getBoundingClientRect();
       const launchRound = currentRound;
       const launchGeneration = interactionFeedbackGeneration;
       const reducedMotion = prefersReducedMotion();
@@ -15280,17 +15330,21 @@
         const destination = document.querySelector(`.objective-target[data-flower-id="${target.flowerId}"]`);
         if (!destination) return;
         const targetRect = destination.getBoundingClientRect();
-        const liveTargetRect = visibleLiveBouquetTargetRect(target.flowerId);
-        const destinationRect = liveTargetRect || targetRect;
+        const growthRects = visibleBouquetGrowthRects(target.flowerId);
+        const destinationRects = growthRects.length ? growthRects : [targetRect];
         const origins = gainedCells[target.flowerId] || [];
-        const flightOrigins = origins.length
-          ? origins.slice(0, 1)
-          : [[BOARD_SIZE / 2 - 0.5, BOARD_SIZE / 2 - 0.5]];
+        const flightOrigins = destinationRects.map((_, destinationIndex) => (
+          origins[destinationIndex % Math.max(1, origins.length)]
+            || [BOARD_SIZE / 2 - 0.5, BOARD_SIZE / 2 - 0.5]
+        ));
         flightOrigins.forEach((origin, flightIndex) => {
+          const destinationRect = destinationRects[flightIndex];
           const originX = boardRect.left + ((origin[0] + 0.5) / BOARD_SIZE) * boardRect.width;
           const originY = boardRect.top + ((origin[1] + 0.5) / BOARD_SIZE) * boardRect.height;
           const flight = document.createElement("img");
           flight.className = "objective-flight";
+          flight.dataset.flowerId = String(target.flowerId);
+          flight.dataset.growthSlot = String(growthRects[flightIndex]?.slot ?? "");
           flight.alt = "";
           flight.setAttribute("aria-hidden", "true");
           flight.src = flowers[target.flowerId][1];
@@ -15324,24 +15378,34 @@
           if (currentRound !== launchRound || interactionFeedbackGeneration !== launchGeneration) {
             return;
           }
-          const currentLiveTargetRect = visibleLiveBouquetTargetRect(target.flowerId);
-          queueBouquetBindingSeal(target, gained[target.flowerId], currentLiveTargetRect || destinationRect);
+          const currentGrowthRects = visibleBouquetGrowthRects(target.flowerId);
+          const currentTargetRect = currentGrowthRects.at(-1)
+            || visibleLiveBouquetTargetRect(target.flowerId)
+            || destinationRects.at(-1);
+          queueBouquetBindingSeal(target, gained[target.flowerId], currentTargetRect);
         }, reducedMotion ? 70 : 220);
       });
     }
 
+    function visibleBouquetGrowthRects(flowerId) {
+      const liveTargets = Array.from(document.querySelectorAll(
+        `.live-bouquet-ingredient[data-flower-id="${flowerId}"][data-gain-receiver="true"]`
+      ));
+      const craftedTargets = Array.from(document.querySelectorAll(
+        `.crafted-flower-bloom[data-crafted-flower="${flowerId}"][data-gain-receiver="true"]`
+      ));
+      return [...liveTargets, ...craftedTargets].flatMap((target) => {
+        const rect = target.getBoundingClientRect();
+        const style = window.getComputedStyle(target);
+        if (!rect.width || !rect.height || style.display === "none" || style.visibility === "hidden") {
+          return [];
+        }
+        return [{ ...rect.toJSON(), slot: Number(target.dataset.liveSlot ?? target.dataset.craftedSlot) }];
+      });
+    }
+
     function visibleLiveBouquetTargetRect(flowerId) {
-      const target = document.querySelector(`.live-bouquet-ingredient[data-flower-id="${flowerId}"][data-receiver="true"]`)
-        || document.querySelector(`.live-bouquet-ingredient[data-flower-id="${flowerId}"]`);
-      if (!target) {
-        return null;
-      }
-      const rect = target.getBoundingClientRect();
-      const style = window.getComputedStyle(target);
-      if (!rect.width || !rect.height || style.display === "none" || style.visibility === "hidden") {
-        return null;
-      }
-      return rect;
+      return visibleBouquetGrowthRects(flowerId)[0] || null;
     }
 
     function visibleGreenhouseIntakeTarget() {
@@ -15448,6 +15512,7 @@
           return;
         }
         orderPulseTargets.clear();
+        orderPulseSlots.clear();
         render();
       }, delay);
     }
