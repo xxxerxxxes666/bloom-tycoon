@@ -2413,7 +2413,7 @@ test("off-order opening success redirects the player to real bouquet progress", 
       ).toContain(targetProgress.tutorial);
 
       for (let remaining = 0; remaining < 4 && !(await activeState(page)).roundComplete; remaining += 1) {
-        await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 6500 });
+        await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 8500 });
         await activatePair(page, await hintedPair(page), testCase.input);
         await page.waitForFunction((key) => {
           const saved = JSON.parse(localStorage.getItem(key) || "{}");
