@@ -1833,6 +1833,34 @@
       animation: idle-hint-pulse 1.35s ease-in-out infinite;
     }
 
+    .tile.target-literacy {
+      outline: 1px solid color-mix(in srgb, var(--tile-color) 58%, #d7b16d);
+      outline-offset: -2px;
+    }
+
+    .tile.target-literacy::after {
+      opacity: 0;
+      background: radial-gradient(circle, #fff0b438 0 22%, color-mix(in srgb, var(--tile-color) 26%, transparent) 48%, #0000 72%);
+      animation: target-literacy-echo 1.25s ease-out both;
+    }
+
+    .objective-target.target-literacy .icon-wrap {
+      filter: brightness(1.12) saturate(1.06);
+      animation: target-literacy-icon-echo 1.25s ease-out both;
+    }
+
+    @keyframes target-literacy-echo {
+      0% { opacity: 0; transform: scale(.92); }
+      28% { opacity: .68; transform: scale(1); }
+      100% { opacity: 0; transform: scale(1.04); }
+    }
+
+    @keyframes target-literacy-icon-echo {
+      0% { filter: brightness(1) saturate(1); transform: scale(1); }
+      30% { filter: brightness(1.28) saturate(1.12); transform: scale(1.07); }
+      100% { filter: brightness(1.12) saturate(1.06); transform: scale(1); }
+    }
+
     body.focused-active-play:not(.round-one-active) .tile.idle-hint {
       z-index: 7;
       outline-color: #f0c477;
@@ -7521,7 +7549,8 @@
     const BLOODROOT_CONSERVATORY_COST = 180;
     const FIRST_GREENHOUSE_RESTORE_COST = 100;
     const RESTORED_ROUND_TWO_GUIDE_LIMIT = 2;
-    const ROUND_ONE_AGENCY_HINT_DELAY_MS = 4000;
+    const ROUND_ONE_AGENCY_HINT_DELAY_MS = 7000;
+    const TARGET_LITERACY_DURATION_MS = 1500;
     const FOCUSED_LEVEL_COUNT = 3;
     const WILD_CHAIN_CASCADE_BONUS = 8;
     const WILD_CHAIN_SHAPE_BONUS = 12;
@@ -7574,6 +7603,7 @@
     let orderPulseTimer = null;
     let supremeChargeTimer = null;
     let idleHintTimer = null;
+    let targetLiteracyTimer = null;
     let invalidSwapTimer = null;
     let invalidSwapReturnCue = "";
     let invalidSwapReturnHintCells = new Set();
@@ -7596,6 +7626,7 @@
     let activeSwapCells = new Set();
     let swapGlideCells = new Map();
     let idleHintCells = new Set();
+    let targetLiteracyFlowerId = null;
     let thornPulseCells = new Set();
     let thornClearedCells = new Set();
     let thornTeachingCells = new Set();
@@ -7785,10 +7816,11 @@
       const flower = flowers[flowerId];
       const displayCount = Math.min(current, needed);
       const pulseClass = orderPulseTargets.has(flowerId) ? "order-pulse" : "";
+      const literacyClass = targetLiteracyFlowerId === flowerId ? "target-literacy" : "";
       const completeClass = displayCount >= needed ? "complete" : "";
       const pct = needed ? Math.min(100, (displayCount / needed) * 100) : 0;
       return `
-        <span class="objective-target ${pulseClass} ${completeClass}" data-flower-id="${flowerId}" style="--target-pct:${pct}%">
+        <span class="objective-target ${pulseClass} ${literacyClass} ${completeClass}" data-flower-id="${flowerId}" style="--target-pct:${pct}%">
           <span class="objective-target-fill" aria-hidden="true"></span>
           ${iconMarkup(flowerId, "objective-icon", flower[0])}
           <span class="objective-target-name" data-compact-label="${compactFlowerLabel(flowerId)}">${flower[0]}</span>
@@ -7887,6 +7919,7 @@
       }
       selected = null;
       clearIdleHint();
+      clearTargetLiteracy(false);
       ritualMessage = failedBouquetRitualMessage(plan);
       queuePostRenderFocus("renewBtn");
       return true;
@@ -9182,6 +9215,64 @@
       }
     }
 
+    function clearTargetLiteracy(renderAfter = false) {
+      if (targetLiteracyTimer && window.clearTimeout) {
+        window.clearTimeout(targetLiteracyTimer);
+      }
+      targetLiteracyTimer = null;
+      targetLiteracyFlowerId = null;
+      document.body.removeAttribute("data-target-literacy");
+      document.querySelectorAll(".target-literacy").forEach((node) => {
+        node.classList.remove("target-literacy");
+      });
+      if (renderAfter) {
+        render();
+      }
+    }
+
+    function startRoundOneTargetLiteracy(plan = activeRoundPlan()) {
+      clearTargetLiteracy(false);
+      if (!isRoundOneAgencyHandoffActive(plan)) {
+        return false;
+      }
+      const target = plan.targets[0];
+      if (!target) {
+        return false;
+      }
+      targetLiteracyFlowerId = target.flowerId;
+      document.body.dataset.targetLiteracy = flowers[target.flowerId][0];
+      targetLiteracyTimer = window.setTimeout(() => {
+        targetLiteracyTimer = null;
+        if (targetLiteracyFlowerId === target.flowerId) {
+          clearTargetLiteracy(true);
+        }
+      }, TARGET_LITERACY_DURATION_MS);
+      return true;
+    }
+
+    function roundOneAgencyDiscoveryCue(plan = activeRoundPlan()) {
+      const target = plan.targets[0];
+      if (!target) {
+        return "Find the target flowers.";
+      }
+      const matchCount = Math.min(3, Math.max(1, target.needed - targetProgress(target)));
+      return `Find ${matchCount} ${flowers[target.flowerId][0]}${matchCount === 1 ? "" : "s"}.`;
+    }
+
+    function beginRoundOneAgencyDiscovery({ showLiteracy = true } = {}) {
+      const plan = activeRoundPlan();
+      if (!isRoundOneAgencyHandoffActive(plan)) {
+        clearTargetLiteracy(false);
+        return false;
+      }
+      clearIdleHint();
+      $("firstSwapCue").textContent = roundOneAgencyDiscoveryCue(plan);
+      if (showLiteracy) {
+        startRoundOneTargetLiteracy(plan);
+      }
+      return true;
+    }
+
     function clearThornTeachingCue(renderAfter = false) {
       if (thornTeachingTimer && window.clearTimeout) {
         window.clearTimeout(thornTeachingTimer);
@@ -9389,6 +9480,7 @@
           return;
         }
         if (armedRelicHintAfterDelay) {
+          clearTargetLiteracy(false);
           const guidance = lineRelicGuidance();
           idleHintCells = new Set(guidance.pair.map((cell) => `${cell.x},${cell.y}`));
           boardFocusCell = clampBoardFocusCell(guidance.source);
@@ -9429,11 +9521,14 @@
         if (!a || !b) {
           return;
         }
+        clearTargetLiteracy(false);
         idleHintCells = new Set([`${a.x},${a.y}`, `${b.x},${b.y}`]);
         const hintedTarget = usefulMove?.target || target;
-        $("firstSwapCue").textContent = plan.round >= 3 && hintedTarget
-          ? targetCueText(hintedTarget, a, b)
-          : firstSwapCueText(a, b);
+        $("firstSwapCue").textContent = roundOneAgencyHintAfterDelay && hintedTarget
+          ? `Match ${flowers[hintedTarget.flowerId][0]} with the glowing pair.`
+          : plan.round >= 3 && hintedTarget
+            ? targetCueText(hintedTarget, a, b)
+            : firstSwapCueText(a, b);
         render();
       }, hintDelay);
     }
@@ -9445,7 +9540,7 @@
         && (
           isAuthoritativeRoundTwoThornLesson()
           ||
-          (currentRound === 1 && tutorialActive)
+          (currentRound === 1 && tutorialActive && !isRoundOneAgencyHandoffActive())
           || (
             hintCells.has(`${cell.x},${cell.y}`)
             && (
@@ -9461,6 +9556,7 @@
     function notePlayerInteraction() {
       const preserveThornLesson = isAuthoritativeRoundTwoThornLesson();
       const restartPostOnboardingHint = isPostOnboardingIdleHintActive();
+      clearTargetLiteracy(false);
       if (!postRecoveryGuideActive && !preserveThornLesson) {
         clearIdleHint();
         document.querySelectorAll(".tile.idle-hint").forEach((tile) => {
@@ -10288,6 +10384,9 @@
       if (!cell || !canBeginBoardDrag(cell)) {
         return;
       }
+      if (isPostOnboardingIdleHintActive()) {
+        notePlayerInteraction();
+      }
       boardFocusCell = { x: cell.x, y: cell.y };
       tileSwipeStart = {
         pointerId: event.pointerId,
@@ -10356,6 +10455,9 @@
       if (!cell || !canBeginBoardDrag(cell)) {
         touchSwipeStart = null;
         return;
+      }
+      if (isPostOnboardingIdleHintActive()) {
+        notePlayerInteraction();
       }
       boardFocusCell = { x: cell.x, y: cell.y };
       touchSwipeStart = {
@@ -10515,6 +10617,7 @@
 
     function clearCompetingReweaveFeedback() {
       clearIdleHint();
+      clearTargetLiteracy(false);
       clearThornTeachingCue(false);
       clearTransientGameFeel();
       cancelFxTimers();
@@ -11110,6 +11213,9 @@
       const roundThreeFinalPayoff = roundThreeFinalPending || roundThreeFinalComplete;
       const payoffCeremony = focusedPayoffCeremony();
       const activePlan = activeRoundPlan();
+      if (targetLiteracyFlowerId !== null && !isRoundOneAgencyHandoffActive(activePlan)) {
+        clearTargetLiteracy(false);
+      }
       const progress = roundProgress(activePlan);
       const activeRelicGuidance = !roundComplete && !isBouquetFailed()
         ? lineRelicGuidance()
@@ -11149,6 +11255,11 @@
       document.body.classList.toggle("round-one-followup-cue", roundOneFollowupCue);
       document.body.classList.toggle("round-one-refused", roundOneActive && !roundComplete && $("firstSwapCue").classList.contains("swap-refused"));
       document.body.classList.toggle("tutorial-active", tutorialActive);
+      if (targetLiteracyFlowerId !== null) {
+        document.body.dataset.targetLiteracy = flowers[targetLiteracyFlowerId][0];
+      } else {
+        document.body.removeAttribute("data-target-literacy");
+      }
       document.body.dataset.altarReweavePhase = altarReweaveActive
         ? "active"
         : postRecoveryGuideActive ? "guided" : "settled";
@@ -11219,6 +11330,7 @@
           const swapGlide = swapGlideCells.get(`${x},${y}`);
           const swapGlideClass = swapGlide ? "swap-glide" : "";
           const idleHintClass = idleHintCells.has(`${x},${y}`) ? "idle-hint" : "";
+          const targetLiteracyClass = targetLiteracyFlowerId === value ? "target-literacy" : "";
           const thornTeachingActive = !activeRelicGuidance && thornTeachingCells.has(`${x},${y}`);
           const thornTeachingSwapCell = thornTeachingActive && thornTeachingSwapCells.has(`${x},${y}`);
           const transmuteClass = transmuteFlashCell === `${x},${y}` ? "transmute-flash" : "";
@@ -11246,7 +11358,7 @@
           const relicPreviewClass = harvestPreview.relicCells.has(fallKey) ? "relic-preview" : "";
           const armedRelic = lineRelicAt({ x, y }) ? armedLineRelic : null;
           const armedRelicClass = armedRelic ? "black-candle-vine" : "";
-          tile.className = `tile ${selectedClass} ${legalClass} ${lineRelicLaneClass} ${lineRelicDestinationClass} ${previewClass} ${previewAnchorClass} ${relicPreviewClass} ${armedRelicClass} ${harvestClass} ${superClass} ${invalidClass} ${validSwapClass} ${swapClass} ${swapGlideClass} ${idleHintClass} ${thornTeachClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass} ${refillBornClass} ${settleClass}`;
+          tile.className = `tile ${selectedClass} ${legalClass} ${lineRelicLaneClass} ${lineRelicDestinationClass} ${previewClass} ${previewAnchorClass} ${relicPreviewClass} ${armedRelicClass} ${harvestClass} ${superClass} ${invalidClass} ${validSwapClass} ${swapClass} ${swapGlideClass} ${idleHintClass} ${targetLiteracyClass} ${thornTeachClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass} ${refillBornClass} ${settleClass}`;
           tile.disabled = isResolving || roundComplete || isBouquetFailed();
           tile.tabIndex = !tile.disabled && boardFocusCell.x === x && boardFocusCell.y === y ? 0 : -1;
           tile.style.setProperty("--tile-color", flowers[value][4]);
@@ -11530,6 +11642,9 @@
       if (isRoundOneOrderCorrectionActive(plan)) {
         return "Match the order flowers.";
       }
+      if (isRoundOneAgencyHandoffActive(plan)) {
+        return roundOneAgencyDiscoveryCue(plan);
+      }
       if (plan.round === 1 && hasMadeValidMove) {
         return "Match 3 fills the bouquet.";
       }
@@ -11602,8 +11717,12 @@
       if (isPostOnboardingIdleHintActive()) {
         clearIdleHint();
       }
+      clearTargetLiteracy(false);
       tutorialSkipped = false;
       tutorialActive = true;
+      if (restartRoundOneAgencyHint) {
+        beginRoundOneAgencyDiscovery();
+      }
       if (replay) {
         restoreAuthoritativeRoundTwoThornLesson();
         queuePostRenderFocus("tutorialSkipBtn");
@@ -12024,6 +12143,7 @@
           // Author the existing useful follow-up as part of the settled board,
           // then leave it unmarked until the player's quiet window expires.
           seedRoundOneGuidedMove(activeRoundPlan());
+          beginRoundOneAgencyDiscovery();
           schedulePostResolveIdleHint = true;
         } else if (!resolvingMoveFailed && isPostOnboardingIdleHintActive()) {
           schedulePostResolveIdleHint = true;
@@ -14162,6 +14282,7 @@
       const secondUpgradeNextOrder = currentRound === 2 && roundComplete && roundOneRestored && roundTwoGreenhouseUpgraded && nextRound === 3;
       const plan = buildRoundPlan(nextRound);
       clearIdleHint();
+      clearTargetLiteracy(false);
       selected = null;
       armedLineRelic = null;
       clearTransientGameFeel();
@@ -14245,6 +14366,7 @@
         return;
       }
       clearIdleHint();
+      clearTargetLiteracy(false);
       selected = null;
       armedLineRelic = null;
       clearTransientGameFeel();
@@ -14806,7 +14928,9 @@
       }
     } else if (currentRound === 1 && !roundComplete && hasMadeValidMove && !isBouquetFailed()) {
       seedRoundOneGuidedMove(activeRoundPlan());
-      if (!isRoundOneAgencyHandoffActive()) {
+      if (isRoundOneAgencyHandoffActive()) {
+        beginRoundOneAgencyDiscovery();
+      } else {
         nextTargetMoveHint();
         const hintedFocus = firstHintFocusCell();
         if (hintedFocus) {

@@ -194,7 +194,7 @@ async function clickGuidedSwap(page, options = {}) {
         ).length === 0;
     }
     return payoffVisible || document.querySelectorAll(".tile.idle-hint").length === 2;
-  }, { retireGuide: Boolean(options.retireGuide) }, { timeout: 7000 });
+  }, { retireGuide: Boolean(options.retireGuide) }, { timeout: 9500 });
 }
 
 async function dispatchGuidedSwap(page) {
@@ -207,7 +207,7 @@ async function dispatchGuidedSwap(page) {
     document.querySelectorAll('.tile[data-line-relic="black-candle-vine"]').length === 1
     || document.querySelectorAll(".tile.idle-hint").length === 2
     || getComputedStyle(document.querySelector("#roundOneRestoration")).display !== "none"
-  ), null, { timeout: 7000 });
+  ), null, { timeout: 9500 });
 }
 
 async function completeGuidedRoundOne(page) {
@@ -409,6 +409,13 @@ async function guidedRoundOneState(page, tag) {
       flowerId: Number(tile.dataset.flowerId),
       label: tile.getAttribute("aria-label") || ""
     }));
+    const literacyTiles = Array.from(document.querySelectorAll(".tile.target-literacy")).map((tile) => ({
+      x: Number(tile.dataset.x),
+      y: Number(tile.dataset.y),
+      flowerId: Number(tile.dataset.flowerId),
+      outline: getComputedStyle(tile).outlineStyle,
+      animationDuration: getComputedStyle(tile, "::after").animationDuration
+    }));
     return {
       tag,
       round: saved.currentRound || 1,
@@ -445,6 +452,11 @@ async function guidedRoundOneState(page, tag) {
         copyRight: Math.round(tutorialCopyRect?.right || 0)
       } : null,
       hints,
+      targetLiteracy: document.body.dataset.targetLiteracy || "",
+      literacyTiles,
+      targetFamilyTiles: document.querySelectorAll('.tile[data-flower-id="5"]').length,
+      nonTargetLiteracyTiles: document.querySelectorAll('.tile.target-literacy:not([data-flower-id="5"])').length,
+      objectiveLiteracyTargets: document.querySelectorAll('.objective-target.target-literacy[data-flower-id="5"]').length,
       tiles: document.querySelectorAll(".tile").length,
       rows: [...new Set(tileRects.map((rect) => Math.round(rect.top)))].length,
       completeRows: [...new Set(tileRects
@@ -1462,7 +1474,12 @@ async function commitGuidedSwapAtControlReturn(page, { keyboard = false, sampleI
 function assertPassiveInputPreservesFeedback(before, after, label) {
   expect(before.orderPulseCount, `${label} starts with order feedback`).toBe(4);
   expect(after.orderPulseCount, `${label} preserves order feedback`).toBe(before.orderPulseCount);
-  const orderPulses = (state) => state.positiveFeedback.filter((node) => node.className.includes("order-pulse"));
+  const orderPulses = (state) => state.positiveFeedback
+    .filter((node) => node.className.includes("order-pulse"))
+    .map((node) => ({
+      ...node,
+      className: node.className.replace(/\btarget-literacy\b/g, "").replace(/\s+/g, " ").trim()
+    }));
   expect(orderPulses(after), `${label} preserves the completed order feedback`).toEqual(orderPulses(before));
   expect(after.moves, `${label} spends no move`).toBe(before.moves);
   expect(after.counts, `${label} preserves objective counts`).toEqual(before.counts);
@@ -1563,30 +1580,44 @@ async function assertRepeatedTutorialRefusal(page, { label, touch = false } = {}
   return refusal;
 }
 
-async function dragTouchViaCdp(page, pair, scale = 0.62) {
+let cdpTouchSequence = 7;
+
+async function dragTouchViaCdp(page, pair, scale = 0.62, { expectInvalid = false } = {}) {
   const beforeGeometry = await tileGeometry(page, pair);
+  const movesBefore = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}").moves, SAVE_KEY);
   const vector = dragVector(pair, beforeGeometry, scale);
   const client = await page.context().newCDPSession(page);
+  const touchId = cdpTouchSequence++;
   await client.send("Input.dispatchTouchEvent", {
     type: "touchStart",
-    touchPoints: [{ x: vector.startX, y: vector.startY, id: 7 }]
+    touchPoints: [{ x: vector.startX, y: vector.startY, id: touchId }]
   });
   await client.send("Input.dispatchTouchEvent", {
     type: "touchMove",
-    touchPoints: [{ x: vector.endX, y: vector.endY, id: 7 }]
+    touchPoints: [{ x: vector.endX, y: vector.endY, id: touchId }]
   });
-  await page.waitForFunction(() => document.querySelectorAll(".tile.drag-preview-ready").length === 2);
+  await page.waitForFunction(
+    () => document.querySelectorAll(".tile.drag-preview-ready").length === 2,
+    null,
+    { timeout: 3000 }
+  );
   const afterGeometry = await tileGeometry(page, pair);
   await page.screenshot({ path: "work/drag-preview-mobile-ready.png", fullPage: true });
   await client.send("Input.dispatchTouchEvent", {
     type: "touchEnd",
     touchPoints: [],
-    changedTouchPoints: [{ x: vector.endX, y: vector.endY, id: 7 }]
+    changedTouchPoints: [{ x: vector.endX, y: vector.endY, id: touchId }]
   });
-  await page.waitForFunction(() => (
-    Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled)
-    || getComputedStyle(document.querySelector("#roundOneRestoration")).display !== "none"
-  ), null, { timeout: 10000 });
+  await page.waitForFunction(({ key, movesBefore, expectInvalid }) => {
+    if (expectInvalid) {
+      return document.querySelectorAll(".tile.invalid-swap").length === 2;
+    }
+    const saved = JSON.parse(localStorage.getItem(key) || "{}");
+    const boardSettled = Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled);
+    const payoffVisible = getComputedStyle(document.querySelector("#roundOneRestoration")).display !== "none";
+    return Number(saved.moves) === Number(movesBefore) - 1 && (boardSettled || payoffVisible);
+  }, { key: SAVE_KEY, movesBefore, expectInvalid }, { timeout: 10000 });
+  await client.detach();
   return { beforeGeometry, afterGeometry, vector };
 }
 
@@ -1804,13 +1835,20 @@ for (const viewport of [
     for (let index = 1; index <= 2; index += 1) {
       await clickHighlightedPair(page);
       if (index === 1) {
+        const discoveryStartedAt = Date.now();
         const discovery = await guidedRoundOneState(page, "post-opening discovery");
         trace.push(discovery);
         assertActiveGuidedState(discovery, viewport.mobile, `${viewport.label} post-opening discovery`);
         expect(discovery.moves, `${viewport.label} opening spends once`).toBe(5);
         expect(discovery.counts, `${viewport.label} opening fills Thorn Rose`).toEqual([0, 0, 0, 0, 0, 3]);
-        expect(discovery.tutorial, `${viewport.label} truthful Match 3 acknowledgment`).toBe("Match 3 fills the bouquet.");
+        expect(discovery.tutorial, `${viewport.label} literal target discovery cue`).toBe("Find 3 Thorn Roses.");
+        expect(discovery.cue, `${viewport.label} hidden cue shares target language`).toBe("Find 3 Thorn Roses.");
         expect(discovery.hints, `${viewport.label} no immediate prescribed pair`).toEqual([]);
+        expect(discovery.targetLiteracy, `${viewport.label} family identity state`).toBe("Thorn Rose");
+        expect(discovery.literacyTiles, `${viewport.label} every visible Thorn Rose echoes`).toHaveLength(discovery.targetFamilyTiles);
+        expect(discovery.literacyTiles.every((tile) => tile.flowerId === 5), `${viewport.label} treatment stays on target family`).toBe(true);
+        expect(discovery.nonTargetLiteracyTiles, `${viewport.label} no non-target treatment`).toBe(0);
+        expect(discovery.objectiveLiteracyTargets, `${viewport.label} objective icon echoes once`).toBe(1);
         await expect(page.locator(
           ".tile.idle-hint, .swap-path-arrow, .first-action-swap-guide, .tile.sel, .tile.drag-preview-source, .tile.drag-preview-neighbor, .tile.drag-preview-ready"
         )).toHaveCount(0);
@@ -1819,12 +1857,22 @@ for (const viewport of [
           fullPage: true
         });
 
-        await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 6500 });
+        await page.waitForTimeout(1300);
+        await expect(page.locator(".tile.target-literacy, .objective-target.target-literacy")).toHaveCount(0);
+        await expect(page.locator(".tile.idle-hint, .swap-path-arrow, .first-action-swap-guide")).toHaveCount(0);
+        await page.waitForTimeout(4500);
+        await expect(page.locator(".tile.idle-hint, .swap-path-arrow, .first-action-swap-guide")).toHaveCount(0);
+        await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 3000 });
+        const rescueElapsed = Date.now() - discoveryStartedAt;
+        expect(rescueElapsed, `${viewport.label} rescue waits about seven seconds`).toBeGreaterThanOrEqual(6200);
+        expect(rescueElapsed, `${viewport.label} rescue remains bounded`).toBeLessThan(9500);
         await expect(page.locator(".first-action-swap-guide")).toHaveCount(1);
         const delayed = await guidedRoundOneState(page, "post-opening delayed rescue");
         expect(delayed.moves, `${viewport.label} delayed hint spends no move`).toBe(discovery.moves);
         expect(delayed.counts, `${viewport.label} delayed hint changes no objective`).toEqual(discovery.counts);
         expect(delayed.tutorial, `${viewport.label} delayed copy is literal`).toBe("Match Thorn Rose.");
+        expect(delayed.cue, `${viewport.label} delayed hidden cue names target`).toBe("Match Thorn Rose with the glowing pair.");
+        expect(delayed.literacyTiles, `${viewport.label} family echo retires before exact rescue`).toEqual([]);
         const followupPair = delayed.hints;
         const usefulPairs = await objectiveUsefulPairs(page);
         expect(
@@ -2158,7 +2206,19 @@ test("Round 1 agency retires and restores guidance across real input boundaries"
       expect(discovery.moves, `${testCase.label} opening spends once`).toBe(5);
       expect(discovery.counts, `${testCase.label} opening objective`).toEqual([0, 0, 0, 0, 0, 3]);
       expect(discovery.hints, `${testCase.label} discovery has no hint`).toEqual([]);
-      expect(discovery.tutorial, `${testCase.label} Match 3 acknowledgment`).toBe("Match 3 fills the bouquet.");
+      expect(discovery.tutorial, `${testCase.label} target-literal discovery`).toBe("Find 3 Thorn Roses.");
+      expect(discovery.targetLiteracy, `${testCase.label} target family is named`).toBe("Thorn Rose");
+      expect(discovery.literacyTiles, `${testCase.label} uniform family echo`).toHaveLength(discovery.targetFamilyTiles);
+      expect(discovery.literacyTiles.every((tile) => tile.flowerId === 5), `${testCase.label} family-only echo`).toBe(true);
+      expect(discovery.nonTargetLiteracyTiles, `${testCase.label} non-target tiles stay quiet`).toBe(0);
+      expect(discovery.objectiveLiteracyTargets, `${testCase.label} objective identity echoes`).toBe(1);
+      if (testCase.reduced) {
+        expect(discovery.literacyTiles.every((tile) => tile.outline === "solid"), `${testCase.label} static family outline`).toBe(true);
+        expect(
+          discovery.literacyTiles.every((tile) => Number.parseFloat(tile.animationDuration) <= 0.001),
+          `${testCase.label} family echo suppresses motion`
+        ).toBe(true);
+      }
       await expect(page.locator(
         ".tile.idle-hint, .swap-path-arrow, .first-action-swap-guide, .tile.sel, .tile.drag-preview-source, .tile.drag-preview-neighbor, .tile.drag-preview-ready"
       )).toHaveCount(0);
@@ -2212,7 +2272,7 @@ test("Round 1 agency retires and restores guidance across real input boundaries"
       await expect(page.locator(".tile.idle-hint")).toHaveCount(0);
 
       const focusBeforeHint = await page.evaluate(() => document.activeElement?.id || "");
-      await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 6500 });
+      await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 9000 });
       const delayedPair = await hintedPair(page);
       const usefulPairs = await objectiveUsefulPairs(page);
       expect(
@@ -2235,6 +2295,21 @@ test("Round 1 agency retires and restores guidance across real input boundaries"
         await page.locator("#tutorialSkipBtn").click();
         await page.locator("#tutorialHelpBtn").click();
         await expect(page.locator(".tile.idle-hint, .swap-path-arrow, .first-action-swap-guide")).toHaveCount(0);
+        await expect(page.locator('.tile.target-literacy[data-flower-id="5"]')).toHaveCount(3);
+        await expect(page.locator('.objective-target.target-literacy[data-flower-id="5"]')).toHaveCount(1);
+        await expect(page.locator("#tutorialCopy")).toHaveText("Find 3 Thorn Roses.");
+      } else {
+        const rescueSource = page.locator(`.tile[data-x="${delayedPair[0].x}"][data-y="${delayedPair[0].y}"]`);
+        if (testCase.input === "keyboard") {
+          await rescueSource.focus();
+          await page.keyboard.press("Enter");
+        } else {
+          await rescueSource.tap();
+        }
+        await expect(page.locator(".tile.idle-hint, .swap-path-arrow, .first-action-swap-guide")).toHaveCount(0);
+        await expect(page.locator(".tile.sel")).toHaveCount(1);
+        await expect(page.locator(".tile.target-literacy, .objective-target.target-literacy")).toHaveCount(0);
+        expect((await activeState(page)).moves, `${testCase.label} rescue selection spends no move`).toBe(5);
       }
 
       await page.reload({ waitUntil: "networkidle" });
@@ -2243,6 +2318,8 @@ test("Round 1 agency retires and restores guidance across real input boundaries"
       expect(reloadedDiscovery.moves).toBe(5);
       expect(reloadedDiscovery.counts).toEqual([0, 0, 0, 0, 0, 3]);
       expect(reloadedDiscovery.hints).toEqual([]);
+      expect(reloadedDiscovery.tutorial).toBe("Find 3 Thorn Roses.");
+      expect(reloadedDiscovery.targetLiteracy).toBe("Thorn Rose");
       const ordinaryMove = (await objectiveUsefulPairs(page))[0]?.pair;
       expect(ordinaryMove, `${testCase.label} discoverable useful move`).toHaveLength(2);
       await activatePair(page, ordinaryMove, testCase.input);
@@ -2408,7 +2485,7 @@ test("off-order opening success redirects the player to real bouquet progress", 
       expect(targetProgress.counts[5], `${testCase.label} recovered pair fills Thorn Rose`).toBeGreaterThan(0);
       expect(targetProgress.bouquet, `${testCase.label} bouquet now advances`).not.toContain("Bouquet 0/14");
       expect(
-        ["Match 3 fills the bouquet.", "Match 4 arms Black Candle Vine."],
+        ["Find 3 Thorn Roses.", "Match 3 fills the bouquet.", "Match 4 arms Black Candle Vine."],
         `${testCase.label} truthful target-progressing lesson resumes`
       ).toContain(targetProgress.tutorial);
 
@@ -3086,7 +3163,9 @@ test("Black Candle cue semantics outrank every focused-round category", async ({
 
         if (!scenario.preArmed) {
           if (viewport.mobile) {
-            await dragTouchViaCdp(page, formationPair);
+            for (const cell of formationPair) {
+              await page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`).tap();
+            }
           } else {
             for (const cell of formationPair) {
               await page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`).dispatchEvent("click");
@@ -3151,7 +3230,9 @@ test("Black Candle cue semantics outrank every focused-round category", async ({
 
         const activationPair = await hintedPair(page);
         if (viewport.mobile) {
-          await dragTouchViaCdp(page, activationPair);
+          for (const cell of activationPair) {
+            await page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`).tap();
+          }
         } else {
           for (const cell of activationPair) {
             await page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`).dispatchEvent("click");
@@ -3468,7 +3549,7 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
   await expect(page.locator("#tutorialHelpBtn")).toBeVisible();
   await page.locator("#tutorialHelpBtn").click();
   await expect(page.locator("#tutorialPanel")).toBeVisible();
-  await expect(page.locator("#tutorialCopy")).toContainText(/Match 3 fills|Match 4 makes/);
+  await expect(page.locator("#tutorialCopy")).toContainText(/Find 3 Thorn Roses|Match 4 makes/);
   report = await visibleReport(page);
   expect(report.tutorialInViewport, "post-swap replay panel stays in viewport").toBe(true);
   expect(report.visibleButtons, "post-swap replay button cap").toEqual(["Skip"]);
@@ -4001,7 +4082,7 @@ for (const viewport of [
 
     await openFreshNoReview(page, `feedback-owner-valid-${viewport.label}`);
     const first = await commitGuidedSwapAtControlReturn(page);
-    await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 6500 });
+    await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 9000 });
     const second = await commitGuidedSwapAtControlReturn(page, { sampleImpact: true });
     expect(second.after.moves, `${viewport.label} rapid second valid move`).toBe(first.after.moves - 1);
     expect(
@@ -4088,8 +4169,8 @@ test("drag preview moves the hinted pair before one authoritative release", asyn
   expect(after.counts.reduce((sum, value) => sum + value, 0), "valid drag advances objective counts").toBeGreaterThan(before.counts.reduce((sum, value) => sum + value, 0));
   expect(await page.locator(".tile.drag-preview-source, .tile.drag-preview-neighbor, .tile.drag-preview-ready").count()).toBe(0);
   await expect(page.locator(".tile.idle-hint, .first-action-swap-guide, .swap-path-arrow")).toHaveCount(0);
-  await expect(page.locator("#tutorialCopy")).toHaveText("Match 3 fills the bouquet.");
-  await expect(page.locator(".first-action-swap-guide")).toHaveCount(1, { timeout: 6500 });
+  await expect(page.locator("#tutorialCopy")).toHaveText("Find 3 Thorn Roses.");
+  await expect(page.locator(".first-action-swap-guide")).toHaveCount(1, { timeout: 9000 });
   assertFirstActionGuide(
     await firstActionGuideReport(page),
     await hintedPair(page),
@@ -4261,9 +4342,12 @@ test("invalid, cancel, mobile touch, and reduced motion drag paths stay clean", 
     expect(mobileAfter.rows).toBe(8);
     expect(mobileAfter.overflowX).toBe(false);
 
+    await mobile.reload({ waitUntil: "networkidle" });
+    await waitForSettledBoard(mobile);
+    await expect(mobile.locator(".tile.idle-hint, .first-action-swap-guide, .swap-path-arrow")).toHaveCount(0);
     const mobileInvalidPair = await findInvalidAdjacentPair(mobile);
     const mobileInvalidBefore = await activeState(mobile);
-    await dragTouchViaCdp(mobile, mobileInvalidPair);
+    await dragTouchViaCdp(mobile, mobileInvalidPair, 0.62, { expectInvalid: true });
     await expect(mobile.locator(".tile.invalid-swap")).toHaveCount(2);
     const mobileInvalidPeak = await invalidFeedbackState(mobile);
     expect(mobileInvalidPeak.moves, "mobile invalid drag spends no move").toBe(mobileInvalidBefore.moves);
