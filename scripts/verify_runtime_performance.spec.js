@@ -67,6 +67,7 @@ async function runtimeReport(page) {
       ritualLogVisible: visible(document.querySelector("#ritualLog")),
       greenhouseIntakeTargetId: greenhouseIntakeTarget?.id || "",
       meaningfulBars,
+      visibleSemanticProgressbars: Array.from(document.querySelectorAll('[role="progressbar"]')).filter(visible).length,
       bouquetProgressText: document.querySelector("#bouquetProgressLabel")?.textContent.trim() || "",
       bouquetRewardText: document.querySelector("#bouquetRewardPromise")?.textContent.trim() || "",
       greenhouseNextText: document.querySelector(".restoration-owned-note")?.textContent.trim() || "",
@@ -143,8 +144,9 @@ for (const config of [
     expect(report.shadowedElements, "focused shadow budget").toBeLessThanOrEqual(95);
     expect(report.animatedElements, "focused idle animation budget").toBeLessThanOrEqual(4);
     expect(report.meaningfulBars, config.mobile
-      ? "mobile active play keeps one bouquet bar plus one greenhouse bar"
-      : "desktop keeps one bouquet bar plus one greenhouse bar").toHaveLength(2);
+      ? "mobile retires the linear bouquet fill and keeps one greenhouse bar"
+      : "desktop retires the linear bouquet fill and keeps one greenhouse bar").toHaveLength(1);
+    expect(report.visibleSemanticProgressbars, "the physical bouquet retains one semantic progressbar").toBe(1);
     expect(report.mobileGreenhousePlinthVisible, "mobile greenhouse plinth stays out of active play").toBe(false);
     expect(report.ritualLogVisible, "ritual log stays out of focused active play").toBe(false);
     expect(report.greenhouseIntakeTargetId, "intake feedback retains a visible destination").toBe(config.mobile

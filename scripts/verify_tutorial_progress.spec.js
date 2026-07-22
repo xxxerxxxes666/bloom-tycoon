@@ -438,6 +438,15 @@ async function guidedRoundOneState(page, tag) {
       bouquetOrder: document.querySelector("#bouquetProgressLabel")?.textContent.trim() || "",
       bouquetBarWidth: document.querySelector("#bar")?.style.width || "",
       liveBouquetProgress: document.querySelector("#liveBouquetAssembly")?.dataset.progress || "",
+      liveBouquetComposition: Array.from(document.querySelectorAll(
+        "#liveBouquetAssembly .live-bouquet-ingredient"
+      )).map((ingredient) => ({
+        flowerId: Number(ingredient.dataset.flowerId),
+        slotProgress: ingredient.dataset.slotProgress,
+        slotState: ingredient.dataset.slotState,
+        receiver: ingredient.dataset.receiver,
+        nextObjective: ingredient.dataset.nextObjective
+      })),
       greenhouseAuthority: {
         roundOneRestored: Boolean(saved.roundOneRestored),
         roundTwoGreenhouseUpgraded: Boolean(saved.roundTwoGreenhouseUpgraded),
@@ -2869,7 +2878,7 @@ test("off-order opening success redirects the player to real bouquet progress", 
       expect(targetProgress.liveBouquetProgress).not.toBe("0/14");
       expect(targetProgress.greenhouseAuthority).toEqual(correction.greenhouseAuthority);
       expect(
-        ["Find 3 Thorn Roses.", "Match 3 fills the bouquet.", "Match 4 arms Black Candle Vine."],
+        ["Find 3 Thorn Roses.", "Find Bone Stars.", "Match 3 fills the bouquet.", "Match 4 arms Black Candle Vine."],
         `${testCase.label} truthful target-progressing lesson resumes`
       ).toContain(targetProgress.tutorial);
 
@@ -2984,6 +2993,8 @@ test("later off-order success uses the settled swap outcome instead of cumulativ
       expect(correction.bouquetOrder).toBe(targetProgress.bouquetOrder);
       expect(correction.bouquetBarWidth).toBe(targetProgress.bouquetBarWidth);
       expect(correction.liveBouquetProgress).toBe(targetProgress.liveBouquetProgress);
+      expect(correction.liveBouquetComposition, `${testCase.label} zero-gain swap leaves the physical bouquet unchanged`)
+        .toEqual(targetProgress.liveBouquetComposition);
       expect(correction.greenhouseAuthority).toEqual(targetProgress.greenhouseAuthority);
       expect(correction.tutorial, `${testCase.label} narrator reflects this swap's zero order gain`)
         .toMatch(/^(?:Match the order flowers|Match Thorn Rose)\.$/);
@@ -3061,6 +3072,7 @@ test("later off-order success uses the settled swap outcome instead of cumulativ
         expect(persisted.bouquetOrder).toBe("Bouquet · 3/14");
         expect(persisted.bouquetBarWidth).toBe(correction.bouquetBarWidth);
         expect(persisted.liveBouquetProgress).toBe("3/14");
+        expect(persisted.liveBouquetComposition).toEqual(correction.liveBouquetComposition);
         expect(persisted.greenhouseAuthority).toEqual(correction.greenhouseAuthority);
         expect(persisted.tutorial).toBe("Match Thorn Rose.");
         expect(unorderedPairKey(persisted.hints)).toBe(unorderedPairKey(recoveredPair));
@@ -4339,7 +4351,7 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
     overflowX: false,
     brokenImages: []
   });
-  expect(report.bars, "mobile active play keeps one bouquet bar plus one greenhouse bar").toHaveLength(2);
+  expect(report.bars, "mobile active play retires the duplicate bouquet fill and keeps one greenhouse bar").toHaveLength(1);
   expect(report.visibleButtons, "fresh tutorial button cap").toEqual(["Skip"]);
   expect(report.visibleProgressText).not.toMatch(/\b(?:SAP|MANA|BLOOD)\b|\d[\d,]*\s*\/\s*\d[\d,]*\s*XP|Greenhouse \+\d+ XP|Apothecary \+\d+ XP/);
 
@@ -4423,7 +4435,7 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
   expect(report.ritualLogVisible, "Round 2 mobile active play has no ritual log footer").toBe(false);
   expect(report.visibleProgressText).not.toContain("First Bouquet:");
   expect(report.tutorialSpotlights).toBeGreaterThanOrEqual(3);
-  expect(report.bars, "Round 2 mobile active play keeps one bouquet bar plus one greenhouse bar").toHaveLength(2);
+  expect(report.bars, "Round 2 mobile keeps the physical bouquet plus one greenhouse bar").toHaveLength(1);
   expect(report.mobileGreenhousePlinthVisible).toBe(false);
   expect(report.ritualLogVisible).toBe(false);
   expect(report.visibleProgressText).not.toMatch(/\b(?:SAP|MANA|BLOOD)\b|\d[\d,]*\s*\/\s*\d[\d,]*\s*XP|Greenhouse \+\d+ XP|Apothecary \+\d+ XP/);

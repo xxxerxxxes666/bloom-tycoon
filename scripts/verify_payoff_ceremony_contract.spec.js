@@ -74,6 +74,35 @@ async function clickGuidedSwapAndSampleFlight(page, label) {
     y: tile.dataset.y
   })));
   expect(pair).toHaveLength(2);
+  await page.evaluate(() => {
+    const records = [];
+    const limit = 24;
+    const record = (node) => {
+      if (!(node instanceof Element) || records.length >= limit) return;
+      const descendants = node.querySelectorAll
+        ? Array.from(node.querySelectorAll(".objective-flight, .bouquet-bind-seal"))
+        : [];
+      [node, ...descendants].forEach((candidate) => {
+        if (records.length >= limit || !candidate.matches(".objective-flight, .bouquet-bind-seal")) return;
+        records.push({
+          type: candidate.classList.contains("objective-flight") ? "flight" : "seal",
+          flowerId: Number(candidate.dataset.flowerId || -1),
+          at: Math.round(performance.now())
+        });
+      });
+    };
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => mutation.addedNodes.forEach(record));
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    window.__boundedBouquetFlightRecorder = {
+      limit,
+      records,
+      stop() {
+        observer.disconnect();
+      }
+    };
+  });
   await page.locator(`.tile[data-x="${pair[0].x}"][data-y="${pair[0].y}"]`).click();
   await page.locator(`.tile[data-x="${pair[1].x}"][data-y="${pair[1].y}"]`).click();
   await page.waitForFunction(() => (
@@ -123,11 +152,26 @@ async function clickGuidedSwapAndSampleFlight(page, label) {
   ), null, { timeout: 2500 });
   await page.waitForTimeout(450);
   landing.remainingTransients = await page.locator(".objective-flight, .bouquet-bind-seal").count();
+  landing.recorder = await page.evaluate(() => {
+    const recorder = window.__boundedBouquetFlightRecorder;
+    recorder?.stop();
+    return recorder ? { limit: recorder.limit, records: recorder.records } : null;
+  });
   return landing;
 }
 
 async function activeBouquetAssemblyState(page) {
   return page.evaluate(() => {
+    const visible = (node) => {
+      if (!node) return false;
+      const bounds = node.getBoundingClientRect();
+      const style = getComputedStyle(node);
+      return style.display !== "none"
+        && style.visibility !== "hidden"
+        && Number(style.opacity || 1) !== 0
+        && bounds.width > 0
+        && bounds.height > 0;
+    };
     const assembly = document.querySelector("#liveBouquetAssembly");
     const rect = assembly?.getBoundingClientRect();
     const bindingStyle = assembly ? getComputedStyle(assembly, "::before") : null;
@@ -142,13 +186,28 @@ async function activeBouquetAssemblyState(page) {
           flowerId: Number(ingredient.dataset.flowerId),
           progress: ingredient.dataset.progress,
           slotProgress: Number(ingredient.dataset.slotProgress || 0),
+          slotState: ingredient.dataset.slotState || "",
           visualProgress: Number(style.getPropertyValue("--ingredient-visual-progress") || 0),
           filled: ingredient.dataset.filled === "true",
           receiver: ingredient.dataset.receiver === "true",
+          nextObjective: ingredient.dataset.nextObjective === "true",
           opacity: Number(style.opacity),
           transform: style.transform,
+          left: rect.left,
+          top: rect.top,
+          right: rect.right,
+          bottom: rect.bottom,
           width: rect.width,
           height: rect.height,
+          contained: Boolean(assembly && rect.left >= assembly.getBoundingClientRect().left - 1
+            && rect.right <= assembly.getBoundingClientRect().right + 1
+            && rect.top >= assembly.getBoundingClientRect().top - 1
+            && rect.bottom <= assembly.getBoundingClientRect().bottom + 1),
+          imageContained: Boolean(imageRect
+            && imageRect.left >= rect.left - 1
+            && imageRect.right <= rect.right + 1
+            && imageRect.top >= rect.top - 1
+            && imageRect.bottom <= rect.bottom + 1),
           imageWidth: imageRect?.width || 0,
           imageHeight: imageRect?.height || 0,
           imageOpacity: Number(getComputedStyle(ingredient.querySelector(".icon-wrap")).opacity),
@@ -180,9 +239,44 @@ async function activeBouquetAssemblyState(page) {
       stems: document.querySelectorAll("#liveBouquetAssembly .live-bouquet-stem").length,
       leaves: document.querySelectorAll("#liveBouquetAssembly .live-bouquet-leaf").length,
       boardBottom: board?.bottom || 0,
-      overflowX: document.documentElement.scrollWidth > innerWidth + 1
+      overflowX: document.documentElement.scrollWidth > innerWidth + 1,
+      visibleLinearMeter: visible(document.querySelector("#bouquetOrderProgress .progress-meter")),
+      visibleProgressbars: Array.from(document.querySelectorAll('[role="progressbar"]')).filter(visible).length
     };
   });
+}
+
+function maxIngredientOverlapRatio(ingredients) {
+  let maximum = 0;
+  for (let index = 0; index < ingredients.length; index += 1) {
+    for (let compare = index + 1; compare < ingredients.length; compare += 1) {
+      const first = ingredients[index];
+      const second = ingredients[compare];
+      const overlapWidth = Math.max(0, Math.min(first.right, second.right) - Math.max(first.left, second.left));
+      const overlapHeight = Math.max(0, Math.min(first.bottom, second.bottom) - Math.max(first.top, second.top));
+      const smallerArea = Math.min(first.width * first.height, second.width * second.height);
+      maximum = Math.max(maximum, smallerArea ? (overlapWidth * overlapHeight) / smallerArea : 0);
+    }
+  }
+  return maximum;
+}
+
+function expectPhysicalBouquetGeometry(assembly, composition) {
+  expect(assembly.ingredients.map((ingredient) => ingredient.flowerId), "live composition follows trophy order")
+    .toEqual(composition);
+  expect(assembly.ingredients, "all six authoritative capacity slots remain present").toHaveLength(6);
+  expect(assembly.stems, "every capacity slot retains its physical stem").toBe(6);
+  expect(assembly.leaves, "every capacity slot retains its physical leaf").toBe(6);
+  expect(assembly.ingredients.every((ingredient) => ingredient.contained), "heads stay inside the receiver").toBe(true);
+  expect(assembly.ingredients.every((ingredient) => ingredient.imageContained), "icons stay inside their head geometry").toBe(true);
+  expect(assembly.ingredients.every((ingredient) => (
+    ingredient.image.complete
+    && ingredient.image.naturalWidth > 0
+    && ingredient.image.naturalHeight > 0
+  )), "every ingredient silhouette is a complete repo-local image").toBe(true);
+  expect(maxIngredientOverlapRatio(assembly.ingredients), "ingredient heads remain individually legible").toBeLessThan(.08);
+  expect(assembly.visibleLinearMeter, "the generic linear fill is visually retired").toBe(false);
+  expect(assembly.visibleProgressbars, "one semantic bouquet progressbar remains").toBe(1);
 }
 
 async function sampleElementVisual(page, selector) {
@@ -619,13 +713,18 @@ async function runJourney(page, label, includeRetry) {
   expect(initialAssembly.height, "fresh live bouquet has bouquet silhouette height").toBeGreaterThanOrEqual(compactReceiver ? 54 : 70);
   expect(initialAssembly.bindingWidth, "fresh live bouquet shows a physical binding").toBeGreaterThanOrEqual(compactReceiver ? 60 : 64);
   expect(initialAssembly.vineWidth, "fresh live bouquet shows empty vine slots").toBeGreaterThanOrEqual(compactReceiver ? 74 : 84);
-  expect(initialAssembly.ingredients).toHaveLength(0);
-  expect(initialAssembly.stems).toBe(0);
-  expect(initialAssembly.leaves).toBe(0);
+  expectPhysicalBouquetGeometry(initialAssembly, [5, 1, 5, 1, 5, 1]);
+  expect(initialAssembly.ingredients.every((ingredient) => ingredient.slotState === "empty")).toBe(true);
+  expect(initialAssembly.ingredients.every((ingredient) => ingredient.slotProgress === 0)).toBe(true);
+  expect(initialAssembly.ingredients.filter((ingredient) => ingredient.nextObjective)).toHaveLength(1);
+  expect(initialAssembly.ingredients.find((ingredient) => ingredient.nextObjective)?.flowerId).toBe(5);
   expect(initialAssembly.visibleBlooms).toBe(0);
-  expect(initialAssembly.emptyText).toBe("Empty Bouquet Match targets to build");
+  expect(initialAssembly.emptyText).toBe("");
   const initialVisual = await sampleElementVisual(page, "#liveBouquetAssembly");
-  expect(initialVisual.samples).toHaveLength(0);
+  expect(initialVisual.samples).toHaveLength(6);
+  expect(initialVisual.samples.every((sample) => sample.complete && sample.naturalWidth > 0 && sample.naturalHeight > 0)).toBe(true);
+  expect(initialVisual.samples.every((sample) => sample.sampledPixels > 0 && sample.coloredPixels > 0),
+    "all six slot silhouettes contain rendered source pixels").toBe(true);
   expect(initialAssembly.overflowX).toBe(false);
   if (label.includes("mobile390")) {
     expect(initialAssembly.boardBottom, "mobile active board stays in viewport with live bouquet").toBeLessThanOrEqual(844);
@@ -634,9 +733,9 @@ async function runJourney(page, label, includeRetry) {
   await page.reload({ waitUntil: "networkidle" });
   const reloadedEmptyAssembly = await activeBouquetAssemblyState(page);
   expect(reloadedEmptyAssembly.progress).toBe(initialAssembly.progress);
-  expect(reloadedEmptyAssembly.ingredients).toHaveLength(0);
-  expect(reloadedEmptyAssembly.stems).toBe(0);
-  expect(reloadedEmptyAssembly.leaves).toBe(0);
+  expectPhysicalBouquetGeometry(reloadedEmptyAssembly, [5, 1, 5, 1, 5, 1]);
+  expect(reloadedEmptyAssembly.ingredients.map((ingredient) => ingredient.slotState))
+    .toEqual(initialAssembly.ingredients.map((ingredient) => ingredient.slotState));
   expect(reloadedEmptyAssembly.emptyText).toBe(initialAssembly.emptyText);
   const landing = await clickGuidedSwapAndSampleFlight(page, label);
   expect(landing.inAssembly, "positive target flight lands inside the live bouquet assembly").toBe(true);
@@ -647,7 +746,12 @@ async function runJourney(page, label, includeRetry) {
   expect(landing.receiverSlotProgress, "landing chooses the next growing head, not an already-full head").toBeLessThan(1);
   expect(landing.pulsingReceivers, "one bounded receiver owns the acceptance beat").toBe(1);
   expect(landing.remainingTransients, "flight and seal self-clean before the next authoritative swap").toBe(0);
+  expect(landing.recorder?.records.length, "preinstalled recorder observes the complete bounded landing lifecycle")
+    .toBeGreaterThanOrEqual(2);
+  expect(landing.recorder?.records.length).toBeLessThanOrEqual(landing.recorder?.limit || 0);
+  expect(new Set(landing.recorder?.records.map((record) => record.type))).toEqual(new Set(["flight", "seal"]));
   const firstAssembly = await activeBouquetAssemblyState(page);
+  expectPhysicalBouquetGeometry(firstAssembly, [5, 1, 5, 1, 5, 1]);
   expect(firstAssembly.progress).not.toBe(initialAssembly.progress);
   expect(["mid", "nearly", "complete"]).toContain(firstAssembly.state);
   expect(firstAssembly.ingredients.some((ingredient) => ingredient.slotProgress > 0)).toBe(true);
@@ -661,15 +765,25 @@ async function runJourney(page, label, includeRetry) {
   expect(Math.max(...firstAssembly.ingredients
     .filter((ingredient) => ingredient.flowerId === 5)
     .map((ingredient) => ingredient.imageOpacity))).toBeGreaterThan(.75);
-  expect(firstAssembly.ingredients.filter((ingredient) => ingredient.receiver)).toHaveLength(1);
-  expect(new Set(firstAssembly.ingredients.map((ingredient) => ingredient.flowerId))).toEqual(new Set([5]));
-  expect(firstAssembly.visibleBlooms).toBe(firstAssembly.ingredients.length);
+  expect(firstAssembly.ingredients.filter((ingredient) => ingredient.receiver)).toHaveLength(2);
+  expect(new Set(firstAssembly.ingredients
+    .filter((ingredient) => ingredient.receiver)
+    .map((ingredient) => ingredient.flowerId))).toEqual(new Set([5, 1]));
+  expect(new Set(firstAssembly.ingredients
+    .filter((ingredient) => ingredient.slotProgress > 0)
+    .map((ingredient) => ingredient.flowerId))).toEqual(new Set([5]));
+  expect(firstAssembly.visibleBlooms).toBe(firstAssembly.ingredients.filter((ingredient) => ingredient.slotProgress > 0).length);
+  expect(firstAssembly.ingredients.some((ingredient) => ingredient.slotState === "partial")).toBe(true);
+  expect(firstAssembly.ingredients.some((ingredient) => ingredient.slotState === "empty")).toBe(true);
+  expect(firstAssembly.ingredients.find((ingredient) => ingredient.nextObjective)?.flowerId).toBe(5);
   expect(firstAssembly.emptyText).toBe("");
   expect(firstAssembly.width).toBeGreaterThanOrEqual(initialAssembly.width - 1);
   expect(firstAssembly.height).toBeGreaterThanOrEqual(initialAssembly.height - 1);
   await page.screenshot({ path: `work/live-bouquet-${label}-first-harvest.png`, fullPage: true });
   await page.reload({ waitUntil: "networkidle" });
   const partialReloadAssembly = await activeBouquetAssemblyState(page);
+  await page.reload({ waitUntil: "networkidle" });
+  const twiceReloadedPartialAssembly = await activeBouquetAssemblyState(page);
   expect(partialReloadAssembly.progress).toBe(firstAssembly.progress);
   expect(partialReloadAssembly.ingredients.filter((ingredient) => ingredient.filled)).toHaveLength(
     firstAssembly.ingredients.filter((ingredient) => ingredient.filled).length
@@ -678,7 +792,20 @@ async function runJourney(page, label, includeRetry) {
     firstAssembly.ingredients.map((ingredient) => ingredient.visualProgress)
   );
   expect(partialReloadAssembly.ingredients).toHaveLength(firstAssembly.ingredients.length);
-  let secondAssembly = partialReloadAssembly;
+  expect(twiceReloadedPartialAssembly.ingredients.map((ingredient) => ({
+    flowerId: ingredient.flowerId,
+    slotProgress: ingredient.slotProgress,
+    slotState: ingredient.slotState,
+    receiver: ingredient.receiver,
+    nextObjective: ingredient.nextObjective
+  }))).toEqual(partialReloadAssembly.ingredients.map((ingredient) => ({
+    flowerId: ingredient.flowerId,
+    slotProgress: ingredient.slotProgress,
+    slotState: ingredient.slotState,
+    receiver: ingredient.receiver,
+    nextObjective: ingredient.nextObjective
+  })));
+  let secondAssembly = twiceReloadedPartialAssembly;
   for (let attempt = 0; attempt < 4; attempt += 1) {
     const speciesWithProgress = new Set(secondAssembly.ingredients
       .filter((ingredient) => ingredient.slotProgress > 0)
@@ -697,6 +824,7 @@ async function runJourney(page, label, includeRetry) {
     .map((ingredient) => ingredient.flowerId));
   expect(speciesWithProgress.has(5), "mid-progress contains earned Thorn Rose heads").toBe(true);
   expect(speciesWithProgress.has(1), "mid-progress contains earned Bone Star heads").toBe(true);
+  expectPhysicalBouquetGeometry(secondAssembly, [5, 1, 5, 1, 5, 1]);
   await page.screenshot({ path: `work/live-bouquet-${label}-mid-progress.png`, fullPage: true });
   await completeRoundWithReviewKey(page);
   const fullPreCeremonyAssembly = await activeBouquetAssemblyState(page);
@@ -705,6 +833,8 @@ async function runJourney(page, label, includeRetry) {
   expect(fullPreCeremonyAssembly.ingredients).toHaveLength(6);
   expect(fullPreCeremonyAssembly.visibleBlooms).toBe(6);
   expect(fullPreCeremonyAssembly.ingredients.every((ingredient) => ingredient.visualProgress === 1)).toBe(true);
+  expect(fullPreCeremonyAssembly.ingredients.every((ingredient) => ingredient.slotState === "filled")).toBe(true);
+  expectPhysicalBouquetGeometry(fullPreCeremonyAssembly, [5, 1, 5, 1, 5, 1]);
   await page.screenshot({ path: `work/live-bouquet-${label}-full-pre-ceremony.png`, fullPage: true });
   const roundOneCeremony = await expectCeremony(page, "Restore Greenhouse", `work/pass2-${label}-round1-pending.png`, "Coins restore the greenhouse.");
   expect(roundOneCeremony.craftedComposition).toEqual(fullPreCeremonyAssembly.liveComposition);
@@ -1013,8 +1143,9 @@ for (const config of [
     });
     await clickGuidedSwap(page);
     const active = await activeBouquetAssemblyState(page);
-    expect(active.ingredients.length).toBeGreaterThan(0);
-    expect(active.visibleBlooms).toBe(active.ingredients.length);
+    expectPhysicalBouquetGeometry(active, [5, 1, 5, 1, 5, 1]);
+    expect(active.ingredients.some((ingredient) => ingredient.slotProgress > 0)).toBe(true);
+    expect(active.visibleBlooms).toBe(active.ingredients.filter((ingredient) => ingredient.slotProgress > 0).length);
     expect(active.width).toBeGreaterThanOrEqual(config.minWidth);
     expect(active.height).toBeGreaterThanOrEqual(config.minHeight);
     await completeRoundWithReviewKey(page);

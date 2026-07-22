@@ -52,6 +52,18 @@ const HUD_CASES = [
     }
   },
   {
+    label: "r2-partial",
+    expected: "Bouquet · 9/29",
+    state: {
+      currentRound: 2,
+      moves: 6,
+      counts: [0, 0, 4, 0, 3, 2],
+      coins: 20,
+      clearedCursedThorns: 1,
+      roundOneRestored: true
+    }
+  },
+  {
     label: "r2-failed",
     expected: "Bouquet Paused · 0/29",
     retry: true,
@@ -99,6 +111,18 @@ const HUD_CASES = [
       currentRound: 3,
       moves: 8,
       counts: [0, 0, 0, 0, 0, 0],
+      coins: 50,
+      roundOneRestored: true,
+      roundTwoGreenhouseUpgraded: true
+    }
+  },
+  {
+    label: "r3-partial",
+    expected: "Bouquet · 12/27",
+    state: {
+      currentRound: 3,
+      moves: 5,
+      counts: [5, 0, 0, 7, 0, 0],
       coins: 50,
       roundOneRestored: true,
       roundTwoGreenhouseUpgraded: true
@@ -395,10 +419,17 @@ async function hudReport(page) {
       rewardPromise: document.querySelector("#bouquetRewardPromise")?.textContent.trim() || "",
       bouquetBarWidth: document.querySelector("#bar")?.style.width || "",
       assemblyProgress: document.querySelector("#liveBouquetAssembly")?.dataset.progress || "",
+      assemblyState: document.querySelector("#liveBouquetAssembly")?.dataset.assemblyState || "",
       visibleBlooms: Number(document.querySelector("#liveBouquetAssembly")?.dataset.visibleBlooms || 0),
       emptyReceiverVisible: visible(document.querySelector("#liveBouquetAssembly .live-bouquet-empty")),
       assembledSpecies: Array.from(document.querySelectorAll("#liveBouquetAssembly .live-bouquet-ingredient"))
         .map((ingredient) => Number(ingredient.dataset.flowerId)),
+      earnedAssemblySpecies: Array.from(document.querySelectorAll(
+        '#liveBouquetAssembly .live-bouquet-ingredient:not([data-slot-state="empty"])'
+      )).map((ingredient) => Number(ingredient.dataset.flowerId)),
+      assemblySlotStates: Array.from(document.querySelectorAll("#liveBouquetAssembly .live-bouquet-ingredient"))
+        .map((ingredient) => ingredient.dataset.slotState || ""),
+      linearMeterVisible: visible(document.querySelector("#bouquetOrderProgress .progress-meter")),
       savedMoves: saved.moves,
       savedCounts: saved.counts || [],
       savedCoins: saved.coins,
@@ -515,9 +546,25 @@ async function assertHudState(page, fixture, viewport, reload) {
       .toBeLessThanOrEqual(report.receiverCopyWidth + 1);
     expect(report.receiverCopyScrollHeight, `${label} receiver copy vertical fit`)
       .toBeLessThanOrEqual(report.receiverCopyHeight + 1);
-    expect(report.emptyReceiverVisible, `${label} zero progress explains the empty bouquet`).toBe(true);
-    expect(report.visibleBlooms, `${label} zero progress creates no target heads`).toBe(0);
-    expect(report.assembledSpecies, `${label} zero progress has no decorative target species`).toEqual([]);
+    const expectedComposition = {
+      1: [5, 1, 5, 1, 5, 1],
+      2: [2, 4, 5, 2, 4, 5],
+      3: [3, 0, 3, 0, 3, 0]
+    }[savedState(fixture).currentRound];
+    expect(report.assembledSpecies, `${label} empty capacity follows trophy composition`).toEqual(expectedComposition);
+    expect(report.linearMeterVisible, `${label} generic linear bouquet fill stays retired`).toBe(false);
+    expect(report.emptyReceiverVisible, `${label} capacity needs no competing prose`).toBe(false);
+    if (Number(earned) === 0) {
+      expect(report.assemblyState, `${label} six empty sockets are the fresh bouquet state`).toBe("fresh");
+      expect(report.visibleBlooms, `${label} zero progress creates no earned heads`).toBe(0);
+      expect(report.assemblySlotStates, `${label} fresh order exposes six restrained empty sockets`)
+        .toEqual(Array(6).fill("empty"));
+    } else {
+      expect(report.assemblyState, `${label} partial objective counts grow the physical bouquet`).toMatch(/mid|nearly/);
+      expect(report.visibleBlooms, `${label} partial objective counts expose earned heads`).toBeGreaterThan(0);
+      expect(report.assemblySlotStates, `${label} partial order retains incomplete capacity`).toContain("empty");
+      expect(report.assemblySlotStates, `${label} partial order exposes proportional heads`).toContain("partial");
+    }
     if (viewport.label !== "desktop") {
       expect(report.boardVisible, `${label} active board visible`).toBe(true);
       expect(report.boardBottom, `${label} board remains in first viewport`).toBeLessThanOrEqual(844);
@@ -1307,6 +1354,14 @@ for (const viewport of FAILURE_VIEWPORTS) {
             coins: state.coins,
             roundOneRestored: Boolean(state.roundOneRestored),
             roundTwoGreenhouseUpgraded: Boolean(state.roundTwoGreenhouseUpgraded),
+            bouquetProgress: document.querySelector("#liveBouquetAssembly")?.dataset.progress || "",
+            bouquetComposition: Array.from(document.querySelectorAll(
+              "#liveBouquetAssembly .live-bouquet-ingredient"
+            )).map((ingredient) => ({
+              flowerId: Number(ingredient.dataset.flowerId),
+              slotProgress: Number(ingredient.dataset.slotProgress),
+              slotState: ingredient.dataset.slotState
+            })),
             coinLive: document.querySelector("#coinBalance")?.getAttribute("aria-live") || "",
             ceremonyLive: document.querySelector("#roundOneRestoration")?.getAttribute("aria-live") || "",
             tiles: document.querySelectorAll(".tile").length,
@@ -1336,6 +1391,19 @@ for (const viewport of FAILURE_VIEWPORTS) {
           recovered.roundTwoGreenhouseUpgraded,
           `${viewport.label} Round ${round} ${key} R2 upgrade`
         ).toBe(round > 2);
+        const expectedComposition = {
+          1: [5, 1, 5, 1, 5, 1],
+          2: [2, 4, 5, 2, 4, 5],
+          3: [3, 0, 3, 0, 3, 0]
+        }[round];
+        expect(recovered.bouquetProgress, `${viewport.label} Round ${round} ${key} fresh bouquet`)
+          .toBe(`0/${[14, 29, 27][round - 1]}`);
+        expect(recovered.bouquetComposition.map((slot) => slot.flowerId), `${viewport.label} Round ${round} ${key} ingredient order`)
+          .toEqual(expectedComposition);
+        expect(recovered.bouquetComposition.map((slot) => slot.slotProgress), `${viewport.label} Round ${round} ${key} empty slot progress`)
+          .toEqual(Array(6).fill(0));
+        expect(recovered.bouquetComposition.map((slot) => slot.slotState), `${viewport.label} Round ${round} ${key} empty slot state`)
+          .toEqual(Array(6).fill("empty"));
         expect(recovered.coinLive, `${viewport.label} Round ${round} ${key} coin live`).toBe("polite");
         expect(recovered.ceremonyLive, `${viewport.label} Round ${round} ${key} ceremony live`).toBe("polite");
         expect(recovered.tiles, `${viewport.label} Round ${round} ${key} tiles`).toBe(64);
@@ -2261,7 +2329,7 @@ test("active hierarchy scales the roomy altar without moving the accepted short 
       expect(afterAuthority.assemblyProgress, `${capture.label} bouquet assembly advances`).toBe("3/14");
       expect(afterAuthority.emptyReceiverVisible, `${capture.label} empty state retires after gain`).toBe(false);
       expect(afterAuthority.visibleBlooms, `${capture.label} only earned heads assemble`).toBeGreaterThan(0);
-      expect(new Set(afterAuthority.assembledSpecies), `${capture.label} first assembly is Thorn Rose only`)
+      expect(new Set(afterAuthority.earnedAssemblySpecies), `${capture.label} first assembly is Thorn Rose only`)
         .toEqual(new Set([5]));
       expect(
         (afterAuthority.visibleBouquetSurfaceText.match(/3\/14/g) || []).length,

@@ -957,11 +957,12 @@
 
     .bouquet-order-progress {
       display: grid;
-      grid-template-columns: minmax(210px, 220px) minmax(0, 1fr);
-      grid-template-rows: minmax(28px, 1fr) 10px;
-      gap: 5px 9px;
+      grid-template-columns: minmax(300px, 330px) minmax(170px, 1fr);
+      grid-template-rows: 66px;
+      gap: 8px;
       min-width: 0;
       align-content: center;
+      justify-content: center;
     }
 
     .bouquet-order-progress[hidden] {
@@ -971,9 +972,9 @@
     .bouquet-receiver-copy {
       grid-column: 2;
       grid-row: 1;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      display: grid;
+      align-content: center;
+      gap: 5px;
       min-width: 0;
       padding-right: 76px;
       color: #f0d39a;
@@ -1038,15 +1039,7 @@
     }
 
     .progress-meter {
-      grid-column: 2;
-      grid-row: 2;
-      display: block;
-      height: 10px;
-      min-width: 86px;
-      border: 1px solid #754027;
-      background: #070202;
-      box-shadow: inset 0 0 8px #000, 0 0 8px #5e121733;
-      overflow: hidden;
+      display: none !important;
     }
 
     .bar {
@@ -1062,10 +1055,10 @@
     .live-bouquet-assembly {
       --live-bouquet-fullness: 0;
       grid-column: 1;
-      grid-row: 1 / 3;
+      grid-row: 1;
       position: relative;
-      width: 220px;
-      height: 72px;
+      width: 330px;
+      height: 66px;
       display: block;
       align-self: center;
       justify-self: center;
@@ -1083,31 +1076,6 @@
       pointer-events: none;
     }
 
-    .live-bouquet-empty {
-      position: absolute;
-      inset: 7px 14px 16px;
-      z-index: 10;
-      display: grid;
-      place-content: center;
-      gap: 3px;
-      color: #d7b16d;
-      text-align: center;
-      text-shadow: 0 1px 4px #000;
-    }
-
-    .live-bouquet-empty b {
-      font: 900 10px/1 Georgia, serif;
-      letter-spacing: .16em;
-      text-transform: uppercase;
-    }
-
-    .live-bouquet-empty span {
-      color: #9f8a65;
-      font: 800 7px/1 system-ui, sans-serif;
-      letter-spacing: .1em;
-      text-transform: uppercase;
-    }
-
     .live-bouquet-assembly * {
       pointer-events: none;
     }
@@ -1122,7 +1090,7 @@
     .live-bouquet-assembly::before {
       left: 50%;
       bottom: 4px;
-      width: calc(62px + var(--live-bouquet-fullness, 0) * 20px);
+      width: calc(76px + var(--live-bouquet-fullness, 0) * 24px);
       height: 10px;
       transform: translateX(-50%);
       border: 1px solid #9b6535;
@@ -1136,8 +1104,8 @@
     .live-bouquet-assembly::after {
       left: 50%;
       bottom: 5px;
-      width: calc(122px + var(--live-bouquet-fullness, 0) * 24px);
-      height: 44px;
+      width: calc(254px + var(--live-bouquet-fullness, 0) * 28px);
+      height: 48px;
       transform: translateX(-50%);
       background:
         repeating-linear-gradient(104deg, #0000 0 9px, #89a55d 10px 12px, #0000 13px 22px);
@@ -1150,14 +1118,14 @@
     .live-bouquet-stem {
       position: absolute;
       left: calc(50% + var(--live-stem-x, 0px));
-      top: 35px;
+      top: var(--live-stem-top, 30px);
       z-index: 2;
       width: 3px;
-      height: 33px;
+      height: var(--live-stem-height, 34px);
       border-radius: 999px;
       transform: rotate(var(--live-stem-rot, 0deg));
       transform-origin: 50% 100%;
-      opacity: calc(.28 + var(--ingredient-visual-progress, 0) * .7);
+      opacity: calc(.22 + var(--ingredient-visual-progress, 0) * .76);
       background: linear-gradient(90deg, #263916 0, #a9bd73 48%, #31451c 70%, #171008 100%);
       box-shadow: 0 1px 3px #000;
       filter: brightness(calc(.58 + var(--ingredient-visual-progress, 0) * .58));
@@ -1166,7 +1134,7 @@
     .live-bouquet-leaf {
       position: absolute;
       left: calc(50% + var(--live-leaf-x, 0px));
-      top: var(--live-leaf-y, 42px);
+      top: var(--live-leaf-y, 43px);
       z-index: 3;
       width: 18px;
       height: 8px;
@@ -1226,22 +1194,22 @@
       place-items: center;
       color: var(--live-color, #d7b16d);
       opacity: 1;
-      transform: translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.64 + var(--ingredient-visual-progress, 0) * .46));
-      filter: saturate(calc(.34 + var(--ingredient-visual-progress, 0) * .92)) brightness(calc(.58 + var(--ingredient-visual-progress, 0) * .58)) drop-shadow(0 3px 4px #000);
+      transform: translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.84 + var(--ingredient-visual-progress, 0) * .16));
+      filter: saturate(calc(.24 + var(--ingredient-visual-progress, 0) * .94)) brightness(calc(.42 + var(--ingredient-visual-progress, 0) * .7)) drop-shadow(0 2px 3px #000);
       transition: opacity 220ms ease, transform 260ms ease, filter 260ms ease;
     }
 
     .live-bouquet-ingredient::before {
       content: "";
       position: absolute;
-      inset: 11%;
+      inset: 5%;
       border: 1px dashed color-mix(in srgb, currentColor 50%, #9a7146);
       border-radius: 50%;
       background:
         radial-gradient(circle at 50% 45%, color-mix(in srgb, currentColor 14%, #0000) 0, #0000 58%),
         radial-gradient(circle, #050302 0, #100805 72%);
       box-shadow: inset 0 0 8px #000, 0 0 6px #000;
-      opacity: calc(.9 - var(--ingredient-visual-progress, 0) * .84);
+      opacity: calc(.82 - var(--ingredient-visual-progress, 0) * .68);
     }
 
     .live-bouquet-ingredient .icon-wrap,
@@ -1253,16 +1221,25 @@
     }
 
     .live-bouquet-ingredient .icon-wrap {
-      opacity: calc(.08 + var(--ingredient-visual-progress, 0) * .92);
-      transform: scale(calc(.78 + var(--ingredient-visual-progress, 0) * .22));
+      opacity: calc(.12 + var(--ingredient-visual-progress, 0) * .88);
+      transform: scale(calc(.9 + var(--ingredient-visual-progress, 0) * .1));
       transition: opacity 220ms ease, transform 260ms ease;
     }
 
-    .live-bouquet-ingredient[data-filled="false"] .icon-wrap {
+    .live-bouquet-ingredient[data-slot-state="empty"] .icon-wrap {
       filter: grayscale(.82) brightness(.5) saturate(.4);
     }
 
-    .live-bouquet-ingredient[data-filled="true"] .icon-wrap {
+    .live-bouquet-ingredient[data-slot-state="empty"][data-next-objective="true"] .icon-wrap {
+      opacity: .22;
+      filter: grayscale(.5) brightness(.72) saturate(.58);
+    }
+
+    .live-bouquet-ingredient[data-slot-state="partial"] .icon-wrap {
+      filter: grayscale(calc(1 - var(--ingredient-progress, 0))) brightness(.9) saturate(.9);
+    }
+
+    .live-bouquet-ingredient[data-slot-state="filled"] .icon-wrap {
       filter: brightness(1.12) saturate(1.12);
     }
 
@@ -1285,18 +1262,24 @@
       animation: live-bouquet-knot-tighten 520ms cubic-bezier(.12,.82,.18,1) both;
     }
 
-    .live-bouquet-ingredient[data-receiver="true"]::after {
+    .live-bouquet-ingredient[data-next-objective="true"]::after {
       content: "";
       position: absolute;
-      inset: -4px;
-      border: 1px solid color-mix(in srgb, currentColor 72%, #f4dfaa);
+      inset: -3px;
+      border: 1px dashed color-mix(in srgb, currentColor 58%, #d7b16d);
       border-radius: 50%;
-      opacity: .2;
-      box-shadow: 0 0 10px currentColor;
+      opacity: .42;
+      box-shadow: 0 0 7px #b9874d55;
       pointer-events: none;
     }
 
     .live-bouquet-ingredient.order-pulse[data-receiver="true"]::after {
+      content: "";
+      position: absolute;
+      inset: -5px;
+      border: 1px solid color-mix(in srgb, currentColor 72%, #f4dfaa);
+      border-radius: 50%;
+      box-shadow: 0 0 10px currentColor;
       animation: live-bouquet-receiver-ring 520ms ease-out both;
     }
 
@@ -1325,8 +1308,10 @@
 
     .live-bouquet-thorn {
       position: absolute;
-      right: 9px;
-      top: 8px;
+      left: calc(50% + 24px);
+      right: auto;
+      top: auto;
+      bottom: 2px;
       z-index: 9;
       width: 18px;
       height: 18px;
@@ -5469,8 +5454,8 @@
       body.round-one-active .live-bouquet-assembly,
       body.restored-next-order-focus .live-bouquet-assembly,
       body.round-three-focus-active .live-bouquet-assembly {
-        width: 220px;
-        height: 58px;
+        width: 330px;
+        height: 66px;
       }
 
       body.round-one-active .live-bouquet-ingredient,
@@ -5483,8 +5468,8 @@
       body.round-one-active .live-bouquet-stem,
       body.restored-next-order-focus .live-bouquet-stem,
       body.round-three-focus-active .live-bouquet-stem {
-        top: 27px;
-        height: 25px;
+        top: var(--live-stem-top, 30px);
+        height: var(--live-stem-height, 34px);
       }
 
       body.restored-next-order-focus .objective.compact-objective,
@@ -5915,8 +5900,8 @@
       }
 
       body.focused-active-play:not(.focused-slice-failed) .live-bouquet-assembly {
-        width: 220px;
-        height: 58px;
+        width: 330px;
+        height: 66px;
       }
 
       body.focused-active-play:not(.focused-slice-failed) .live-bouquet-ingredient {
@@ -5925,8 +5910,8 @@
       }
 
       body.focused-active-play:not(.focused-slice-failed) .live-bouquet-stem {
-        top: 27px;
-        height: 25px;
+        top: var(--live-stem-top, 30px);
+        height: var(--live-stem-height, 34px);
       }
 
       body.focused-active-play:not(.focused-slice-failed) .tutorial-panel,
@@ -6665,9 +6650,9 @@
       100% { opacity:.82; clip-path:polygon(0 38%,18% 8%,50% 35%,82% 8%,100% 38%,88% 64%,50% 48%,12% 64%); filter:brightness(1); }
     }
     @keyframes live-bouquet-harvest {
-      0% { transform:translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.64 + var(--ingredient-visual-progress, 0) * .46)); filter:brightness(1) saturate(1) drop-shadow(0 2px 5px #000); }
-      38% { transform:translate(-50%, -60%) rotate(var(--live-rot, 0deg)) scale(calc(.86 + var(--ingredient-visual-progress, 0) * .52)); filter:brightness(1.48) saturate(1.3) drop-shadow(0 0 11px currentColor); }
-      100% { transform:translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.64 + var(--ingredient-visual-progress, 0) * .46)); filter:brightness(1) saturate(1) drop-shadow(0 2px 5px #000); }
+      0% { transform:translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.84 + var(--ingredient-visual-progress, 0) * .16)); filter:brightness(1) saturate(1) drop-shadow(0 2px 5px #000); }
+      38% { transform:translate(-50%, -58%) rotate(var(--live-rot, 0deg)) scale(calc(.98 + var(--ingredient-visual-progress, 0) * .16)); filter:brightness(1.48) saturate(1.3) drop-shadow(0 0 11px currentColor); }
+      100% { transform:translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.84 + var(--ingredient-visual-progress, 0) * .16)); filter:brightness(1) saturate(1) drop-shadow(0 2px 5px #000); }
     }
     @keyframes live-bouquet-accept {
       0%, 100% { transform:translateY(0); box-shadow:inset 0 0 0 1px #000,inset 0 0 12px #000,0 0 10px #0008; }
@@ -7109,7 +7094,7 @@
       body.round-one-active .bouquet-order-progress,
       body.focused-payoff-active .bouquet-order-progress {
         grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: 20px 58px;
+        grid-template-rows: 18px 60px;
         gap: 0;
       }
       body.restored-next-order-focus .bouquet-receiver-copy,
@@ -7119,6 +7104,8 @@
       body.focused-payoff-active .bouquet-receiver-copy {
         grid-column: 1;
         grid-row: 1;
+        display: flex;
+        align-items: center;
         gap: 5px;
         padding: 0 66px 6px 1px;
       }
@@ -7145,8 +7132,8 @@
       body.focused-payoff-active .live-bouquet-assembly {
         grid-column: 1 / -1;
         grid-row: 2;
-        width: min(260px, 100%);
-        height: 58px;
+        width: min(342px, 100%);
+        height: 60px;
       }
       body.restored-next-order-focus .live-bouquet-ingredient,
       body.restored-greenhouse-handoff .live-bouquet-ingredient,
@@ -7161,20 +7148,8 @@
       body.round-three-focus-active .live-bouquet-stem,
       body.round-one-active .live-bouquet-stem,
       body.focused-payoff-active .live-bouquet-stem {
-        top: 27px;
-        height: 25px;
-      }
-      body.restored-next-order-focus .progress-meter,
-      body.restored-greenhouse-handoff .progress-meter,
-      body.round-three-focus-active .progress-meter,
-      body.round-one-active .progress-meter,
-      body.focused-payoff-active .progress-meter {
-        grid-column: 1;
-        grid-row: 1;
-        align-self: end;
-        width: calc(100% - 72px);
-        height: 6px;
-        min-width: 0;
+        top: var(--live-stem-top, 28px);
+        height: var(--live-stem-height, 31px);
       }
       body.restored-next-order-focus .objective .objective-text,
       body.restored-greenhouse-handoff .objective .objective-text,
@@ -8619,15 +8594,22 @@
     }
 
     function liveBouquetLayout(index) {
-      const layout = craftedBouquetLayout(index);
+      const layouts = [
+        { x: -116, y: 25, size: 38, rot: -9, z: 7, stemRot: -18 },
+        { x: 24, y: 22, size: 40, rot: 7, z: 9, stemRot: 5 },
+        { x: -68, y: 23, size: 40, rot: -5, z: 8, stemRot: -13 },
+        { x: 68, y: 22, size: 40, rot: 6, z: 8, stemRot: 13 },
+        { x: -24, y: 31, size: 40, rot: -7, z: 10, stemRot: -5 },
+        { x: 116, y: 30, size: 38, rot: 9, z: 7, stemRot: 18 }
+      ];
+      const layout = layouts[index % layouts.length];
       return {
-        x: Math.round(layout.x * 1.25),
-        y: Math.round((layout.y - 38) * 0.54 + 15),
-        size: Math.round(layout.size * 0.78),
-        rot: layout.rot,
-        z: layout.z,
-        stemX: Math.round(layout.stemX * 0.9),
-        stemRot: layout.stemRot
+        ...layout,
+        stemX: layout.x,
+        stemTop: Math.round(layout.y + layout.size * .26),
+        stemHeight: Math.max(25, Math.round(61 - layout.y)),
+        leafX: Math.round(layout.x + (index % 2 ? -7 : 5)),
+        leafY: Math.round(41 + (index % 3) * 3)
       };
     }
 
@@ -8664,28 +8646,32 @@
       plan.targets.forEach((target) => {
         const targetSlots = slotDetails.filter((slot) => slot.target.flowerId === target.flowerId);
         const receiver = targetSlots.find((slot) => slot.slotProgress > 0 && slot.slotProgress < 1)
-          || targetSlots.slice().reverse().find((slot) => slot.slotProgress >= 1)
-          || targetSlots[0];
+          || targetSlots.find((slot) => slot.slotProgress < 1)
+          || targetSlots[targetSlots.length - 1];
         if (receiver) {
           receivers.set(target.flowerId, receiver.index);
         }
       });
-      const visibleSlots = slotDetails.filter(({ slotProgress }) => slotProgress > 0);
-      const stemsMarkup = visibleSlots.map(({ layout, index, slotProgress, visualProgress }) => `
-        <span class="live-bouquet-stem" aria-hidden="true" data-filled="${slotProgress > 0 ? "true" : "false"}" style="--ingredient-progress:${slotProgress.toFixed(3)};--ingredient-visual-progress:${visualProgress.toFixed(3)};--live-stem-x:${layout.stemX}px;--live-stem-rot:${layout.stemRot}deg;"></span>
-        <span class="live-bouquet-leaf" aria-hidden="true" data-filled="${slotProgress > 0 ? "true" : "false"}" style="--ingredient-progress:${slotProgress.toFixed(3)};--ingredient-visual-progress:${visualProgress.toFixed(3)};--live-leaf-x:${layout.stemX + (index % 2 ? -11 : 5)}px;--live-leaf-y:${39 + (index % 3) * 3}px;--live-leaf-rot:${index % 2 ? 202 : -22}deg;"></span>
+      const nextIncompleteTarget = plan.targets.find((target) => targetProgress(target) < target.needed) || null;
+      const nextObjectiveSlot = nextIncompleteTarget ? receivers.get(nextIncompleteTarget.flowerId) : -1;
+      const stemsMarkup = slotDetails.map(({ layout, index, slotProgress, visualProgress }) => `
+        <span class="live-bouquet-stem" aria-hidden="true" data-filled="${slotProgress >= 1 ? "true" : "false"}" style="--ingredient-progress:${slotProgress.toFixed(3)};--ingredient-visual-progress:${visualProgress.toFixed(3)};--live-stem-x:${layout.stemX}px;--live-stem-top:${layout.stemTop}px;--live-stem-height:${layout.stemHeight}px;--live-stem-rot:${layout.stemRot}deg;"></span>
+        <span class="live-bouquet-leaf" aria-hidden="true" data-filled="${slotProgress >= 1 ? "true" : "false"}" style="--ingredient-progress:${slotProgress.toFixed(3)};--ingredient-visual-progress:${visualProgress.toFixed(3)};--live-leaf-x:${layout.leafX}px;--live-leaf-y:${layout.leafY}px;--live-leaf-rot:${index % 2 ? 202 : -22}deg;"></span>
       `).join("");
-      const flowersMarkup = visibleSlots.map(({ target, flower, current, slotProgress, visualProgress, layout, index }) => {
-        const pulse = orderPulseTargets.has(target.flowerId) ? "order-pulse" : "";
+      const flowersMarkup = slotDetails.map(({ target, flower, current, slotProgress, visualProgress, layout, index }) => {
+        const pulse = orderPulseTargets.has(target.flowerId) && slotProgress > 0 ? "order-pulse" : "";
         const receiver = receivers.get(target.flowerId) === index;
+        const slotState = slotProgress >= 1 ? "filled" : slotProgress > 0 ? "partial" : "empty";
         return `
           <span class="live-bouquet-ingredient live-bouquet-bloom ${pulse}"
             aria-hidden="true"
             data-flower-id="${target.flowerId}"
             data-live-slot="${index}"
             data-slot-progress="${slotProgress.toFixed(2)}"
-            data-filled="${slotProgress > 0 ? "true" : "false"}"
+            data-slot-state="${slotState}"
+            data-filled="${slotProgress >= 1 ? "true" : "false"}"
             data-receiver="${receiver}"
+            data-next-objective="${nextObjectiveSlot === index}"
             data-progress="${current}/${target.needed}"
             style="--ingredient-progress:${slotProgress.toFixed(3)};--ingredient-visual-progress:${visualProgress.toFixed(3)};--live-x:calc(50% + ${layout.x}px);--live-y:${layout.y}px;--live-size:${layout.size}px;--live-rot:${layout.rot}deg;--live-z:${layout.z};--live-color:${flower[4]};"
             title="${flower[0]} ${current}/${target.needed}">
@@ -8698,18 +8684,12 @@
           ${thornSealMarkup("", "")}
         </span>
       ` : "";
-      const emptyMarkup = progress.earned === 0 ? `
-        <span class="live-bouquet-empty">
-          <b>Empty Bouquet</b>
-          <span>Match targets to build</span>
-        </span>
-      ` : "";
       return {
         fullness,
         complete,
         state: liveBouquetAssemblyState(fullness, complete),
-        visibleBlooms: visibleSlots.length,
-        markup: `${stemsMarkup}<span class="live-bouquet-knot" aria-hidden="true"></span>${flowersMarkup}${thornMarkup}${emptyMarkup}`
+        visibleBlooms: slotDetails.filter(({ slotProgress }) => slotProgress > 0).length,
+        markup: `${stemsMarkup}<span class="live-bouquet-knot" aria-hidden="true"></span>${flowersMarkup}${thornMarkup}`
       };
     }
 
