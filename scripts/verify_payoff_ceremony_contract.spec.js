@@ -180,6 +180,7 @@ async function activeBouquetAssemblyState(page) {
       .map((ingredient) => {
         const style = getComputedStyle(ingredient);
         const rect = ingredient.getBoundingClientRect();
+        const capacityStyle = getComputedStyle(ingredient, "::before");
         const image = ingredient.querySelector("img");
         const imageRect = image?.getBoundingClientRect();
         return {
@@ -197,8 +198,13 @@ async function activeBouquetAssemblyState(page) {
           top: rect.top,
           right: rect.right,
           bottom: rect.bottom,
+          centerX: rect.left + rect.width / 2,
+          centerY: rect.top + rect.height / 2,
           width: rect.width,
           height: rect.height,
+          capacityBackgroundImage: capacityStyle.backgroundImage,
+          capacityBackgroundColor: capacityStyle.backgroundColor,
+          capacityBorderStyle: capacityStyle.borderStyle,
           contained: Boolean(assembly && rect.left >= assembly.getBoundingClientRect().left - 1
             && rect.right <= assembly.getBoundingClientRect().right + 1
             && rect.top >= assembly.getBoundingClientRect().top - 1
@@ -221,6 +227,16 @@ async function activeBouquetAssemblyState(page) {
       });
     const liveComposition = ingredients.map((ingredient) => ingredient.flowerId);
     const board = document.querySelector(".board")?.getBoundingClientRect();
+    const knotRect = assembly?.querySelector(".live-bouquet-knot")?.getBoundingClientRect();
+    const thorn = assembly?.querySelector(".live-bouquet-thorn");
+    const thornRect = thorn?.getBoundingClientRect();
+    const stemDetails = Array.from(assembly?.querySelectorAll(".live-bouquet-stem") || []).map((stem) => {
+      const origin = getComputedStyle(stem).transformOrigin.split(" ").map(Number.parseFloat);
+      return {
+        anchorX: (rect?.left || 0) + stem.offsetLeft + (origin[0] || 0),
+        anchorY: (rect?.top || 0) + stem.offsetTop + (origin[1] || 0)
+      };
+    });
     return {
       progress: assembly?.dataset.progress || "",
       complete: assembly?.dataset.assemblyComplete || "",
@@ -236,8 +252,24 @@ async function activeBouquetAssemblyState(page) {
       vineHeight: Number.parseFloat(vineStyle?.height || "0"),
       ingredients,
       liveComposition,
-      stems: document.querySelectorAll("#liveBouquetAssembly .live-bouquet-stem").length,
+      stems: stemDetails.length,
+      stemDetails,
       leaves: document.querySelectorAll("#liveBouquetAssembly .live-bouquet-leaf").length,
+      knot: knotRect ? {
+        centerX: knotRect.left + knotRect.width / 2,
+        centerY: knotRect.top + knotRect.height / 2,
+        width: knotRect.width,
+        height: knotRect.height
+      } : null,
+      thorn: thornRect ? {
+        progress: thorn.dataset.thornProgress || "",
+        left: thornRect.left,
+        right: thornRect.right,
+        top: thornRect.top,
+        bottom: thornRect.bottom,
+        width: thornRect.width,
+        height: thornRect.height
+      } : null,
       boardBottom: board?.bottom || 0,
       overflowX: document.documentElement.scrollWidth > innerWidth + 1,
       visibleLinearMeter: visible(document.querySelector("#bouquetOrderProgress .progress-meter")),
@@ -261,20 +293,64 @@ function maxIngredientOverlapRatio(ingredients) {
   return maximum;
 }
 
+function overlapRatio(first, second) {
+  const overlapWidth = Math.max(0, Math.min(first.right, second.right) - Math.max(first.left, second.left));
+  const overlapHeight = Math.max(0, Math.min(first.bottom, second.bottom) - Math.max(first.top, second.top));
+  const smallerArea = Math.min(first.width * first.height, second.width * second.height);
+  return smallerArea ? (overlapWidth * overlapHeight) / smallerArea : 0;
+}
+
 function expectPhysicalBouquetGeometry(assembly, composition) {
   expect(assembly.ingredients.map((ingredient) => ingredient.flowerId), "live composition follows trophy order")
     .toEqual(composition);
   expect(assembly.ingredients, "all six authoritative capacity slots remain present").toHaveLength(6);
   expect(assembly.stems, "every capacity slot retains its physical stem").toBe(6);
   expect(assembly.leaves, "every capacity slot retains its physical leaf").toBe(6);
-  expect(assembly.ingredients.every((ingredient) => ingredient.contained), "heads stay inside the receiver").toBe(true);
+  expect(assembly.ingredients.filter((ingredient) => !ingredient.contained).map((ingredient) => ({
+    slot: assembly.ingredients.indexOf(ingredient),
+    left: ingredient.left,
+    right: ingredient.right,
+    top: ingredient.top,
+    bottom: ingredient.bottom
+  })), "heads stay inside the receiver").toEqual([]);
   expect(assembly.ingredients.every((ingredient) => ingredient.imageContained), "icons stay inside their head geometry").toBe(true);
   expect(assembly.ingredients.every((ingredient) => (
     ingredient.image.complete
     && ingredient.image.naturalWidth > 0
     && ingredient.image.naturalHeight > 0
   )), "every ingredient silhouette is a complete repo-local image").toBe(true);
-  expect(maxIngredientOverlapRatio(assembly.ingredients), "ingredient heads remain individually legible").toBeLessThan(.08);
+  const crownLeft = Math.min(...assembly.ingredients.map((ingredient) => ingredient.left));
+  const crownRight = Math.max(...assembly.ingredients.map((ingredient) => ingredient.right));
+  const crownWidth = crownRight - crownLeft;
+  const crownYSpread = Math.max(...assembly.ingredients.map((ingredient) => ingredient.centerY))
+    - Math.min(...assembly.ingredients.map((ingredient) => ingredient.centerY));
+  const overlap = maxIngredientOverlapRatio(assembly.ingredients);
+  expect(crownWidth, "six heads form a compact crown instead of spanning the rail")
+    .toBeLessThan(assembly.width * .7);
+  expect(crownWidth, "compact crown remains visually substantial")
+    .toBeGreaterThan(assembly.width * .4);
+  expect(crownYSpread, "bouquet crown has vertical tiers instead of a flat row").toBeGreaterThan(14);
+  expect(overlap, "bouquet heads cluster with natural overlap").toBeGreaterThan(.1);
+  expect(overlap, "ingredient heads remain individually legible").toBeLessThan(.55);
+  expect(assembly.ingredients.every((ingredient) => (
+    ingredient.capacityBackgroundImage === "none"
+      && ingredient.capacityBackgroundColor === "rgba(0, 0, 0, 0)"
+      && ingredient.capacityBorderStyle === "none"
+  )), "empty capacity uses botanical silhouettes, not dark inventory sockets").toBe(true);
+  expect(assembly.knot, "one binding knot remains visible").not.toBeNull();
+  expect(assembly.knot.width, "binding knot remains materially legible").toBeGreaterThan(14);
+  expect(assembly.knot.centerY, "binding knot sits below the crown")
+    .toBeGreaterThan(assembly.ingredients.reduce((sum, ingredient) => sum + ingredient.centerY, 0) / 6 + 14);
+  const stemXSpread = Math.max(...assembly.stemDetails.map((stem) => stem.anchorX))
+    - Math.min(...assembly.stemDetails.map((stem) => stem.anchorX));
+  const stemYSpread = Math.max(...assembly.stemDetails.map((stem) => stem.anchorY))
+    - Math.min(...assembly.stemDetails.map((stem) => stem.anchorY));
+  expect(stemXSpread, "all stems converge horizontally at the binding").toBeLessThanOrEqual(2);
+  expect(stemYSpread, "all stems converge vertically at the binding").toBeLessThanOrEqual(2);
+  expect(Math.abs(assembly.stemDetails[0].anchorX - assembly.knot.centerX), "stem bundle meets the knot")
+    .toBeLessThanOrEqual(4);
+  expect(Math.abs(assembly.stemDetails[0].anchorY - assembly.knot.centerY), "stem bundle meets the knot")
+    .toBeLessThanOrEqual(4);
   expect(assembly.visibleLinearMeter, "the generic linear fill is visually retired").toBe(false);
   expect(assembly.visibleProgressbars, "one semantic bouquet progressbar remains").toBe(1);
 }
@@ -711,7 +787,7 @@ async function runJourney(page, label, includeRetry) {
   expect(initialAssembly.state).toBe("fresh");
   expect(initialAssembly.width, "fresh live bouquet is readable in the progress strip").toBeGreaterThanOrEqual(compactReceiver ? 220 : 210);
   expect(initialAssembly.height, "fresh live bouquet has bouquet silhouette height").toBeGreaterThanOrEqual(compactReceiver ? 54 : 70);
-  expect(initialAssembly.bindingWidth, "fresh live bouquet shows a physical binding").toBeGreaterThanOrEqual(compactReceiver ? 60 : 64);
+  expect(initialAssembly.bindingWidth, "fresh live bouquet shows a physical binding").toBeGreaterThanOrEqual(50);
   expect(initialAssembly.vineWidth, "fresh live bouquet shows empty vine slots").toBeGreaterThanOrEqual(compactReceiver ? 74 : 84);
   expectPhysicalBouquetGeometry(initialAssembly, [5, 1, 5, 1, 5, 1]);
   expect(initialAssembly.ingredients.every((ingredient) => ingredient.slotState === "empty")).toBe(true);
@@ -765,6 +841,14 @@ async function runJourney(page, label, includeRetry) {
   expect(Math.max(...firstAssembly.ingredients
     .filter((ingredient) => ingredient.flowerId === 5)
     .map((ingredient) => ingredient.imageOpacity))).toBeGreaterThan(.75);
+  const earnedHeadOpacity = Math.min(...firstAssembly.ingredients
+    .filter((ingredient) => ingredient.slotProgress > 0)
+    .map((ingredient) => ingredient.imageOpacity));
+  const emptyHeadOpacity = Math.max(...firstAssembly.ingredients
+    .filter((ingredient) => ingredient.slotProgress === 0)
+    .map((ingredient) => ingredient.imageOpacity));
+  expect(earnedHeadOpacity, "earned flower heads visually dominate blueprint capacity")
+    .toBeGreaterThan(emptyHeadOpacity + .2);
   expect(firstAssembly.ingredients.filter((ingredient) => ingredient.receiver)).toHaveLength(2);
   expect(new Set(firstAssembly.ingredients
     .filter((ingredient) => ingredient.receiver)
@@ -1004,6 +1088,121 @@ test("simultaneous target gains bind to distinct growing blooms and persist", as
       .filter((ingredient) => ingredient.slotProgress > 0)
       .map((ingredient) => ingredient.flowerId))).toEqual(new Set([1, 5]));
     expect(await page.locator(".objective-flight, .bouquet-bind-seal").count()).toBe(0);
+  }
+
+  expect(consoleMessages).toEqual([]);
+  expect(pageErrors).toEqual([]);
+  expect(failedRequests).toEqual([]);
+});
+
+test("nearly complete and mixed Round 2/3 progress stays legible in the physical bouquet", async ({ page }) => {
+  const consoleMessages = [];
+  const pageErrors = [];
+  const failedRequests = [];
+  page.on("console", (message) => consoleMessages.push(`${message.type()}: ${message.text()}`));
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("requestfailed", (request) => failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`));
+
+  const board = Array.from({ length: 8 }, (_, y) => (
+    Array.from({ length: 8 }, (_, x) => (x + y * 2) % 6)
+  ));
+  const fixtures = [
+    {
+      label: "round1-nearly",
+      round: 1,
+      counts: [0, 5, 0, 0, 0, 8],
+      clearedCursedThorns: 0,
+      cursedThorns: [],
+      expectedProgress: "13/14",
+      expectedState: "nearly",
+      composition: [5, 1, 5, 1, 5, 1],
+      species: [1, 5],
+      thornProgress: ""
+    },
+    {
+      label: "round2-mixed",
+      round: 2,
+      counts: [0, 0, 5, 0, 4, 3],
+      clearedCursedThorns: 2,
+      cursedThorns: [{ x: 2, y: 1, hp: 1 }],
+      expectedProgress: "14/29",
+      expectedState: "mid",
+      composition: [2, 4, 5, 2, 4, 5],
+      species: [2, 4, 5],
+      thornProgress: "2/3"
+    },
+    {
+      label: "round3-mixed",
+      round: 3,
+      counts: [8, 0, 0, 7, 0, 0],
+      clearedCursedThorns: 0,
+      cursedThorns: [],
+      expectedProgress: "15/27",
+      expectedState: "mid",
+      composition: [3, 0, 3, 0, 3, 0],
+      species: [0, 3],
+      thornProgress: ""
+    }
+  ];
+
+  for (const viewport of [
+    { label: "desktop", size: { width: 1280, height: 720 } },
+    { label: "mobile390", size: { width: 390, height: 844 } }
+  ]) {
+    await page.setViewportSize(viewport.size);
+    for (const fixture of fixtures) {
+      await page.goto(`${BASE_URL}?physical-bouquet-${viewport.label}-${fixture.label}`, { waitUntil: "networkidle" });
+      await page.evaluate(({ key, state }) => {
+        localStorage.setItem(key, JSON.stringify(state));
+      }, {
+        key: SAVE_KEY,
+        state: {
+          focusedEconomyVersion: 2,
+          board,
+          moves: fixture.round === 1 ? 1 : fixture.round === 2 ? 5 : 4,
+          coins: fixture.round === 2 ? 20 : 30,
+          counts: fixture.counts,
+          cursedThorns: fixture.cursedThorns,
+          clearedCursedThorns: fixture.clearedCursedThorns,
+          currentRound: fixture.round,
+          roundComplete: false,
+          roundOneRestored: fixture.round > 1,
+          roundTwoGreenhouseUpgraded: fixture.round === 3,
+          roundThreeConservatoryRaised: false,
+          hasMadeValidMove: true,
+          restoredRoundTwoGuideMoves: 2,
+          tutorialSkipped: true,
+          tutorialActive: false,
+          blackCandleLessonComplete: true
+        }
+      });
+      await page.reload({ waitUntil: "networkidle" });
+      await expect(page.locator(".tile")).toHaveCount(64);
+      const assembly = await activeBouquetAssemblyState(page);
+      expect(assembly.progress).toBe(fixture.expectedProgress);
+      expect(assembly.state).toBe(fixture.expectedState);
+      expectPhysicalBouquetGeometry(assembly, fixture.composition);
+      expect(new Set(assembly.ingredients
+        .filter((ingredient) => ingredient.slotProgress > 0)
+        .map((ingredient) => ingredient.flowerId))).toEqual(new Set(fixture.species));
+      expect(assembly.ingredients.filter((ingredient) => ingredient.slotProgress > 0).length)
+        .toBeGreaterThanOrEqual(fixture.species.length);
+      if (fixture.thornProgress) {
+        expect(assembly.thorn?.progress, "Round 2 bouquet carries the authoritative Thorn seal").toBe(fixture.thornProgress);
+        expect(Math.max(...assembly.ingredients.map((ingredient) => overlapRatio(ingredient, assembly.thorn))),
+          "Thorn seal does not obscure an ingredient head").toBeLessThan(.2);
+      } else {
+        expect(assembly.thorn).toBeNull();
+      }
+      expect(assembly.overflowX).toBe(false);
+      if (viewport.label === "mobile390") {
+        expect(assembly.boardBottom, "all eight mobile rows remain in the first viewport").toBeLessThanOrEqual(844);
+      }
+      await page.screenshot({
+        path: `work/live-bouquet-${viewport.label}-${fixture.label}.png`,
+        fullPage: true
+      });
+    }
   }
 
   expect(consoleMessages).toEqual([]);

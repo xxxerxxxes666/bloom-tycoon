@@ -919,7 +919,7 @@
     }
 
     .progress {
-      width: min(760px, calc(100% - 16px));
+      width: min(620px, calc(100% - 16px));
       display: block;
       min-height: 58px;
       margin: 7px auto 0;
@@ -957,7 +957,7 @@
 
     .bouquet-order-progress {
       display: grid;
-      grid-template-columns: minmax(300px, 330px) minmax(170px, 1fr);
+      grid-template-columns: minmax(220px, 240px) minmax(230px, 1fr);
       grid-template-rows: 66px;
       gap: 8px;
       min-width: 0;
@@ -1057,7 +1057,7 @@
       grid-column: 1;
       grid-row: 1;
       position: relative;
-      width: 330px;
+      width: 240px;
       height: 66px;
       display: block;
       align-self: center;
@@ -1089,28 +1089,30 @@
 
     .live-bouquet-assembly::before {
       left: 50%;
-      bottom: 4px;
-      width: calc(76px + var(--live-bouquet-fullness, 0) * 24px);
-      height: 10px;
+      bottom: 3px;
+      width: calc(52px + var(--live-bouquet-fullness, 0) * 10px);
+      height: 9px;
       transform: translateX(-50%);
       border: 1px solid #9b6535;
-      border-radius: 2px;
+      border-radius: 48% 48% 28% 28%;
       background:
         linear-gradient(90deg, #4b1715, #8d3a27 22%, #d0a35e 50%, #8d3a27 78%, #4b1715);
       box-shadow: inset 0 0 5px #000, 0 2px 5px #000;
+      clip-path: polygon(0 32%, 16% 8%, 50% 24%, 84% 8%, 100% 32%, 90% 78%, 50% 100%, 10% 78%);
       z-index: 4;
     }
 
     .live-bouquet-assembly::after {
       left: 50%;
-      bottom: 5px;
-      width: calc(254px + var(--live-bouquet-fullness, 0) * 28px);
-      height: 48px;
+      bottom: 4px;
+      width: calc(148px + var(--live-bouquet-fullness, 0) * 18px);
+      height: 56px;
       transform: translateX(-50%);
       background:
-        repeating-linear-gradient(104deg, #0000 0 9px, #89a55d 10px 12px, #0000 13px 22px);
-      clip-path: polygon(0 42%, 15% 6%, 50% 35%, 85% 6%, 100% 42%, 88% 72%, 50% 52%, 12% 72%);
-      opacity: calc(.56 + var(--live-bouquet-fullness, 0) * .34);
+        radial-gradient(ellipse at 50% 24%, #9fb96b28 0 44%, #0000 66%),
+        repeating-linear-gradient(112deg, #0000 0 12px, #89a55d66 13px 15px, #0000 16px 27px);
+      clip-path: polygon(4% 22%, 24% 2%, 50% 22%, 76% 2%, 96% 22%, 76% 50%, 60% 66%, 54% 100%, 46% 100%, 40% 66%, 24% 50%);
+      opacity: calc(.34 + var(--live-bouquet-fullness, 0) * .34);
       z-index: 1;
       filter: drop-shadow(0 1px 3px #000);
     }
@@ -1118,14 +1120,15 @@
     .live-bouquet-stem {
       position: absolute;
       left: calc(50% + var(--live-stem-x, 0px));
-      top: var(--live-stem-top, 30px);
+      top: auto;
+      bottom: 7px;
       z-index: 2;
       width: 3px;
       height: var(--live-stem-height, 34px);
       border-radius: 999px;
       transform: rotate(var(--live-stem-rot, 0deg));
       transform-origin: 50% 100%;
-      opacity: calc(.22 + var(--ingredient-visual-progress, 0) * .76);
+      opacity: calc(.34 + var(--ingredient-visual-progress, 0) * .64);
       background: linear-gradient(90deg, #263916 0, #a9bd73 48%, #31451c 70%, #171008 100%);
       box-shadow: 0 1px 3px #000;
       filter: brightness(calc(.58 + var(--ingredient-visual-progress, 0) * .58));
@@ -1142,7 +1145,7 @@
       border-radius: 80% 14% 70% 18%;
       background: linear-gradient(90deg, #17230f, #6f944d 58%, #23190d);
       transform: rotate(var(--live-leaf-rot, -22deg));
-      opacity: calc(.2 + var(--ingredient-visual-progress, 0) * .72);
+      opacity: calc(.27 + var(--ingredient-visual-progress, 0) * .68);
       box-shadow: 0 1px 3px #000;
       filter: brightness(calc(.56 + var(--ingredient-visual-progress, 0) * .62));
     }
@@ -1194,22 +1197,19 @@
       place-items: center;
       color: var(--live-color, #d7b16d);
       opacity: 1;
-      transform: translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.84 + var(--ingredient-visual-progress, 0) * .16));
-      filter: saturate(calc(.24 + var(--ingredient-visual-progress, 0) * .94)) brightness(calc(.42 + var(--ingredient-visual-progress, 0) * .7)) drop-shadow(0 2px 3px #000);
+      transform: translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.8 + var(--ingredient-visual-progress, 0) * .22));
+      filter: saturate(calc(.22 + var(--ingredient-visual-progress, 0) * 1.02)) brightness(calc(.52 + var(--ingredient-visual-progress, 0) * .64)) drop-shadow(0 2px 3px #000);
       transition: opacity 220ms ease, transform 260ms ease, filter 260ms ease;
     }
 
     .live-bouquet-ingredient::before {
       content: "";
       position: absolute;
-      inset: 5%;
-      border: 1px dashed color-mix(in srgb, currentColor 50%, #9a7146);
-      border-radius: 50%;
-      background:
-        radial-gradient(circle at 50% 45%, color-mix(in srgb, currentColor 14%, #0000) 0, #0000 58%),
-        radial-gradient(circle, #050302 0, #100805 72%);
-      box-shadow: inset 0 0 8px #000, 0 0 6px #000;
-      opacity: calc(.82 - var(--ingredient-visual-progress, 0) * .68);
+      inset: 0;
+      border: 0;
+      background: none;
+      box-shadow: none;
+      opacity: 0;
     }
 
     .live-bouquet-ingredient .icon-wrap,
@@ -1221,18 +1221,18 @@
     }
 
     .live-bouquet-ingredient .icon-wrap {
-      opacity: calc(.12 + var(--ingredient-visual-progress, 0) * .88);
-      transform: scale(calc(.9 + var(--ingredient-visual-progress, 0) * .1));
+      opacity: calc(.34 + var(--ingredient-visual-progress, 0) * .66);
+      transform: scale(calc(.94 + var(--ingredient-visual-progress, 0) * .06));
       transition: opacity 220ms ease, transform 260ms ease;
     }
 
     .live-bouquet-ingredient[data-slot-state="empty"] .icon-wrap {
-      filter: grayscale(.82) brightness(.5) saturate(.4);
+      filter: grayscale(.82) brightness(1.02) saturate(.34) drop-shadow(0 0 3px #8e744e99);
     }
 
     .live-bouquet-ingredient[data-slot-state="empty"][data-next-objective="true"] .icon-wrap {
-      opacity: .22;
-      filter: grayscale(.5) brightness(.72) saturate(.58);
+      opacity: .44;
+      filter: grayscale(.5) brightness(1) saturate(.56) drop-shadow(0 0 4px #b9874d77);
     }
 
     .live-bouquet-ingredient[data-slot-state="partial"] .icon-wrap {
@@ -1308,7 +1308,7 @@
 
     .live-bouquet-thorn {
       position: absolute;
-      left: calc(50% + 24px);
+      left: calc(50% + 82px);
       right: auto;
       top: auto;
       bottom: 2px;
@@ -5454,7 +5454,7 @@
       body.round-one-active .live-bouquet-assembly,
       body.restored-next-order-focus .live-bouquet-assembly,
       body.round-three-focus-active .live-bouquet-assembly {
-        width: 330px;
+        width: 240px;
         height: 66px;
       }
 
@@ -5468,7 +5468,8 @@
       body.round-one-active .live-bouquet-stem,
       body.restored-next-order-focus .live-bouquet-stem,
       body.round-three-focus-active .live-bouquet-stem {
-        top: var(--live-stem-top, 30px);
+        top: auto;
+        bottom: 7px;
         height: var(--live-stem-height, 34px);
       }
 
@@ -5893,14 +5894,14 @@
       }
 
       body.focused-active-play:not(.focused-slice-failed) .progress {
-        width: min(790px, 100%);
+        width: min(620px, 100%);
         min-height: 23px;
         margin-top: 4px;
         padding: 3px 7px;
       }
 
       body.focused-active-play:not(.focused-slice-failed) .live-bouquet-assembly {
-        width: 330px;
+        width: 240px;
         height: 66px;
       }
 
@@ -5910,7 +5911,8 @@
       }
 
       body.focused-active-play:not(.focused-slice-failed) .live-bouquet-stem {
-        top: var(--live-stem-top, 30px);
+        top: auto;
+        bottom: 7px;
         height: var(--live-stem-height, 34px);
       }
 
@@ -7132,7 +7134,7 @@
       body.focused-payoff-active .live-bouquet-assembly {
         grid-column: 1 / -1;
         grid-row: 2;
-        width: min(342px, 100%);
+        width: min(240px, 100%);
         height: 60px;
       }
       body.restored-next-order-focus .live-bouquet-ingredient,
@@ -7142,13 +7144,16 @@
       body.focused-payoff-active .live-bouquet-ingredient {
         width: var(--live-size, 28px);
         height: var(--live-size, 28px);
+        top: calc(var(--live-y, 20px) - 3px);
+        transform: translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(.82) scale(calc(.8 + var(--ingredient-visual-progress, 0) * .22));
       }
       body.restored-next-order-focus .live-bouquet-stem,
       body.restored-greenhouse-handoff .live-bouquet-stem,
       body.round-three-focus-active .live-bouquet-stem,
       body.round-one-active .live-bouquet-stem,
       body.focused-payoff-active .live-bouquet-stem {
-        top: var(--live-stem-top, 28px);
+        top: auto;
+        bottom: 7px;
         height: var(--live-stem-height, 31px);
       }
       body.restored-next-order-focus .objective .objective-text,
@@ -8595,21 +8600,24 @@
 
     function liveBouquetLayout(index) {
       const layouts = [
-        { x: -116, y: 25, size: 38, rot: -9, z: 7, stemRot: -18 },
-        { x: 24, y: 22, size: 40, rot: 7, z: 9, stemRot: 5 },
-        { x: -68, y: 23, size: 40, rot: -5, z: 8, stemRot: -13 },
-        { x: 68, y: 22, size: 40, rot: 6, z: 8, stemRot: 13 },
-        { x: -24, y: 31, size: 40, rot: -7, z: 10, stemRot: -5 },
-        { x: 116, y: 30, size: 38, rot: 9, z: 7, stemRot: 18 }
+        { x: -40, y: 33, size: 38, rot: -16, z: 7 },
+        { x: 35, y: 31, size: 39, rot: 13, z: 8 },
+        { x: -3, y: 25, size: 46, rot: -4, z: 10 },
+        { x: -63, y: 43, size: 30, rot: 18, z: 6 },
+        { x: 63, y: 42, size: 30, rot: -19, z: 6 },
+        { x: 15, y: 47, size: 32, rot: 9, z: 9 }
       ];
       const layout = layouts[index % layouts.length];
+      const knotY = 59;
+      const stemTargetY = layout.y + layout.size * .08;
+      const stemRise = Math.max(10, knotY - stemTargetY);
       return {
         ...layout,
-        stemX: layout.x,
-        stemTop: Math.round(layout.y + layout.size * .26),
-        stemHeight: Math.max(25, Math.round(61 - layout.y)),
-        leafX: Math.round(layout.x + (index % 2 ? -7 : 5)),
-        leafY: Math.round(41 + (index % 3) * 3)
+        stemX: 0,
+        stemHeight: Math.round(Math.hypot(layout.x, stemRise)),
+        stemRot: Math.round(Math.atan2(layout.x, stemRise) * 180 / Math.PI),
+        leafX: Math.round(layout.x * .48 + (index % 2 ? -5 : 4)),
+        leafY: Math.round(knotY - stemRise * .48)
       };
     }
 
