@@ -664,6 +664,13 @@ function guideDirection(pair) {
   return "up";
 }
 
+function activationPairFromForecast(forecast) {
+  return [forecast.source, forecast.destination].map((key) => {
+    const [x, y] = key.split(",").map(Number);
+    return { x, y };
+  });
+}
+
 async function firstActionGuideReport(page) {
   return page.evaluate(() => {
     const visible = (node) => {
@@ -977,15 +984,39 @@ async function armedRelicGuidance(page) {
       x: Number(tile.dataset.x),
       y: Number(tile.dataset.y),
       armed: tile.classList.contains("black-candle-vine"),
+      destination: tile.classList.contains("line-relic-destination"),
+      forecastRole: tile.dataset.lineRelicForecast || "",
+      laneIndex: Number(tile.dataset.lineRelicLaneIndex),
+      markerDirection: tile.querySelector(".line-relic-lane-mark")?.classList.contains("vertical")
+        ? "vertical"
+        : tile.querySelector(".line-relic-lane-mark")?.classList.contains("horizontal") ? "horizontal" : "",
+      outlineWidth: getComputedStyle(tile).outlineWidth,
+      outlineColor: getComputedStyle(tile).outlineColor,
       thornTeach: tile.classList.contains("thorn-teach")
         || tile.classList.contains("thorn-teach-lane")
         || tile.classList.contains("thorn-teach-blocker")
     }));
-    const boardRect = document.querySelector("#board")?.getBoundingClientRect();
+    const board = document.querySelector("#board");
+    const boardRect = board?.getBoundingClientRect();
+    const source = board?.dataset.armedRelicSource || "";
+    const destination = board?.dataset.armedRelicDestination || "";
+    const directionText = (() => {
+      const [sx, sy] = source.split(",").map(Number);
+      const [dx, dy] = destination.split(",").map(Number);
+      if (dx > sx) return "right";
+      if (dx < sx) return "left";
+      if (dy > sy) return "down";
+      return "up";
+    })();
     return {
       relic,
       hints,
       laneTiles,
+      source,
+      destination,
+      directionText,
+      laneCoordinates: (board?.dataset.armedRelicLane || "").split(" ").filter(Boolean),
+      laneMarkers: document.querySelectorAll(".line-relic-lane-mark").length,
       cue: cueNode?.textContent.trim() || "",
       cuePrefix,
       cuePresentation: cueStyle ? {
@@ -1185,6 +1216,12 @@ async function startBlackCandleActivationRecorder(page) {
             y: Number(tile.dataset.y),
             rect: rect(tile)
           })),
+          activationOrigin: document.querySelector("#board")?.dataset.blackCandleActivationOrigin || "",
+          activationDestination: document.querySelector("#board")?.dataset.blackCandleActivationDestination || "",
+          activationCells: (document.querySelector("#board")?.dataset.blackCandleActivationCells || "")
+            .split(" ")
+            .filter(Boolean),
+          activationSource: document.querySelector("#board")?.dataset.blackCandleActivationSource || "",
           sourceCount: sourceTiles.length,
           sourceRect: rect(sourceTiles[0]),
           boardRect: rect(document.querySelector("#board")),
@@ -1279,12 +1316,27 @@ async function activateBlackCandleInput(page, testCase, pair) {
   if (testCase.input === "touch") {
     await dragTouchViaCdp(page, pair, 0.62, { waitForSettlement: false });
   } else {
-    await keyboardGuidedSwap(page);
+    const [source, destination] = pair;
+    const sourceTile = page.locator(`.tile[data-x="${source.x}"][data-y="${source.y}"]`);
+    await sourceTile.focus();
+    await page.keyboard.press("Enter");
+    const directionKey = destination.x > source.x
+      ? "ArrowRight"
+      : destination.x < source.x
+        ? "ArrowLeft"
+        : destination.y > source.y ? "ArrowDown" : "ArrowUp";
+    const destinationTile = page.locator(`.tile[data-x="${destination.x}"][data-y="${destination.y}"]`);
+    if (await destinationTile.evaluate((tile) => document.activeElement === tile)) {
+      await page.keyboard.press("Enter");
+    } else {
+      await page.keyboard.press(directionKey);
+    }
   }
 }
 
-function assertBlackCandleActivationFrames(frames, testCase, persisted) {
+function assertBlackCandleActivationFrames(frames, testCase, persisted, forecast) {
   const active = frames.filter((frame) => frame.phase);
+  const forecastCells = forecast.laneCoordinates.slice().sort();
   expect(active.length, `${testCase.label} explicit activation was sampled`).toBeGreaterThan(5);
   const phaseNames = [...new Set(active.map((frame) => frame.phase))];
   expect(phaseNames, `${testCase.label} activation reaches refill`).toContain("refill");
@@ -1299,11 +1351,24 @@ function assertBlackCandleActivationFrames(frames, testCase, persisted) {
     expect(active.every((frame) => frame.reduced === "full"), `${testCase.label} full-motion marker`).toBe(true);
   }
   for (const frame of active) {
-    expect(frame.direction, `${testCase.label} authored burn direction`).toBe("right");
-    expect(frame.lane, `${testCase.label} affected lane kind`).toBe("row");
+    expect(frame.direction, `${testCase.label} authored burn direction`).toBe(forecast.directionText);
+    expect(frame.lane, `${testCase.label} affected lane kind`).toBe(
+      forecast.laneDirection === "vertical" ? "column" : "row"
+    );
+    expect(frame.activationOrigin, `${testCase.label} commit retains the forecast origin`).toBe(forecast.source);
+    expect(frame.activationDestination, `${testCase.label} commit retains the forecast destination`).toBe(forecast.destination);
+    expect(frame.activationSource, `${testCase.label} relic ignites after reaching the forecast destination`).toBe(forecast.destination);
+    expect(frame.activationCells.slice().sort(), `${testCase.label} commit authority equals the armed forecast`).toEqual(forecastCells);
     expect(frame.savedMoves, `${testCase.label} saved Moves decremented exactly once`).toBe(persisted.moves - 1);
     expect(frame.laneTiles, `${testCase.label} full eight-cell lane treatment`).toHaveLength(8);
-    expect(new Set(frame.laneTiles.map((tile) => tile.y)).size, `${testCase.label} one authored row`).toBe(1);
+    expect(
+      frame.laneTiles.map((tile) => `${tile.x},${tile.y}`).sort(),
+      `${testCase.label} every rendered activation cell equals the armed forecast`
+    ).toEqual(forecastCells);
+    expect(
+      new Set(frame.laneTiles.map((tile) => tile[forecast.laneDirection === "vertical" ? "x" : "y"])).size,
+      `${testCase.label} one authored lane`
+    ).toBe(1);
     expect(frame.sourceCount, `${testCase.label} one visible ignition source`).toBe(1);
     expect(frame.armedPreview, `${testCase.label} armed preview is retired`).toBe(0);
     expect(frame.tiles, `${testCase.label} 64 settled tile controls remain`).toBe(64);
@@ -1315,7 +1380,7 @@ function assertBlackCandleActivationFrames(frames, testCase, persisted) {
     expect(
       frame.visibleInstructionText.join(" "),
       `${testCase.label} present-tense event acknowledgment`
-    ).toMatch(/BLACK CANDLE.*Burning the full row/i);
+    ).toMatch(new RegExp(`Burning the full ${forecast.laneDirection === "vertical" ? "column" : "row"}`, "i"));
     expect(
       frame.visibleInstructionText.join(" "),
       `${testCase.label} no stale/future action language`
@@ -1376,7 +1441,32 @@ function assertArmedRelicGuidance(report, expectedDirection, label, mobile = fal
   expect(report.bodyClasses, `${label} armed semantic state`).toContain("armed-line-relic-cue");
   expect(report.laneDirection, `${label} board lane direction`).toBe(expectedDirection);
   expect(report.laneTiles, `${label} complete lane preview`).toHaveLength(8);
+  expect(report.laneMarkers, `${label} eight visible lane rail segments`).toBe(8);
+  expect(report.laneCoordinates.slice().sort(), `${label} board authority names the rendered lane`).toEqual(
+    report.laneTiles.map((tile) => `${tile.x},${tile.y}`).sort()
+  );
+  expect(report.source, `${label} board names the relic origin`).toBe(`${report.relic.x},${report.relic.y}`);
+  expect(report.laneTiles.filter((tile) => tile.forecastRole === "source"), `${label} one strongest source role`).toHaveLength(1);
+  expect(report.laneTiles.filter((tile) => tile.forecastRole === "destination"), `${label} one obvious destination role`).toHaveLength(1);
+  expect(report.laneTiles.filter((tile) => tile.forecastRole === "affected"), `${label} six quieter affected roles`).toHaveLength(6);
+  expect(report.laneTiles.map((tile) => tile.laneIndex).sort((a, b) => a - b), `${label} exact edge-to-edge indices`).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
+  expect(report.laneTiles.every((tile) => tile.markerDirection === expectedDirection), `${label} rail orientation`).toBe(true);
   expect(report.laneTiles.filter((tile) => tile.armed), `${label} lane contains relic`).toHaveLength(1);
+  expect(report.laneTiles.filter((tile) => tile.destination), `${label} lane contains destination`).toHaveLength(1);
+  expect(
+    report.laneTiles.filter((tile) => tile.forecastRole === "source")[0],
+    `${label} source uses the strongest bright frame`
+  ).toMatchObject({ armed: true, outlineWidth: "2px" });
+  expect(
+    report.laneTiles.filter((tile) => tile.forecastRole === "destination")[0].outlineWidth,
+    `${label} destination uses a stronger frame than affected cells`
+  ).toBe("2px");
+  expect(
+    report.laneTiles.filter((tile) => tile.forecastRole === "affected").every((tile) => (
+      tile.outlineColor === "rgb(185, 135, 77)" && tile.outlineWidth === "1px"
+    )),
+    `${label} remaining lane stays quieter aged gold`
+  ).toBe(true);
   expect(report.laneTiles.some((tile) => tile.thornTeach), `${label} thorn accents subordinate`).toBe(false);
   expect(report.tiles, `${label} tile count`).toBe(64);
   expect(report.rows, `${label} board rows`).toBe(8);
@@ -1463,8 +1553,9 @@ async function releaseMouseAndWaitIdle(page) {
   ), null, { timeout: 10000 });
 }
 
-async function findInvalidAdjacentPair(page) {
-  return page.evaluate(() => {
+async function findInvalidAdjacentPair(page, excludedCells = []) {
+  return page.evaluate((excludedCells) => {
+    const excluded = new Set(excludedCells.map(({ x, y }) => `${x},${y}`));
     const board = Array.from({ length: 8 }, () => Array(8).fill(-1));
     Array.from(document.querySelectorAll(".tile")).forEach((tile) => {
       board[Number(tile.dataset.y)][Number(tile.dataset.x)] = Number(tile.dataset.flowerId);
@@ -1503,12 +1594,13 @@ async function findInvalidAdjacentPair(page) {
           const a = { x, y };
           const b = { x: x + dx, y: y + dy };
           if (b.x >= 8 || b.y >= 8 || board[a.y][a.x] === board[b.y][b.x]) continue;
+          if (excluded.has(`${a.x},${a.y}`) || excluded.has(`${b.x},${b.y}`)) continue;
           if (!hasMatch(swap(a, b))) return [a, b];
         }
       }
     }
     return null;
-  });
+  }, excludedCells);
 }
 
 async function findInvalidNeighborForCell(page, cell, excluded = null) {
@@ -3068,10 +3160,14 @@ test("Black Candle Vine forms, persists, and activates as a deliberate lane spec
     const page = await context.newPage();
     const consoleErrors = [];
     const pageErrors = [];
+    const failedRequests = [];
     page.on("console", (message) => {
       if (message.type() === "error") consoleErrors.push(message.text());
     });
     page.on("pageerror", (error) => pageErrors.push(error.message));
+    page.on("requestfailed", (request) => failedRequests.push(
+      `${request.url()} ${request.failure()?.errorText || ""}`
+    ));
 
     try {
       await seedDeterministicMath(page, `persistent-black-candle-${testCase.label}`);
@@ -3097,14 +3193,15 @@ test("Black Candle Vine forms, persists, and activates as a deliberate lane spec
       expect(formed.tiles).toBe(64);
       expect(formed.rows).toBe(8);
       expect(formed.overflowX).toBe(false);
+      await page.waitForTimeout(850);
+      const formedForecast = await armedRelicGuidance(page);
       assertArmedRelicGuidance(
-        await armedRelicGuidance(page),
+        formedForecast,
         "horizontal",
         `${testCase.label} horizontal formed special`,
         Boolean(testCase.mobile),
         { expectedArrows: 0 }
       );
-      await page.waitForTimeout(850);
       await page.screenshot({ path: `work/black-candle-formed-${testCase.label}.png`, fullPage: true });
 
       await page.reload({ waitUntil: "networkidle" });
@@ -3118,15 +3215,123 @@ test("Black Candle Vine forms, persists, and activates as a deliberate lane spec
       expect(persisted.armedLineRelic).toEqual(formed.armedLineRelic);
       expect(persisted.moves).toBe(formed.moves);
       expect(persisted.counts).toEqual(formed.counts);
+      const activationForecast = await armedRelicGuidance(page);
       assertArmedRelicGuidance(
-        await armedRelicGuidance(page),
+        activationForecast,
         "horizontal",
         `${testCase.label} horizontal persisted special`,
         Boolean(testCase.mobile),
         { expectedArrows: 0 }
       );
+      expect(activationForecast.laneCoordinates, `${testCase.label} reload lane coordinates`).toEqual(
+        formedForecast.laneCoordinates
+      );
+      expect(activationForecast.source, `${testCase.label} reload source`).toBe(formedForecast.source);
+      expect(activationForecast.destination, `${testCase.label} reload destination`).toBe(formedForecast.destination);
+      const armedGeometry = await stableTileGeometryReport(page);
+      expect(armedGeometry.tileCounts, `${testCase.label} armed forecast keeps 64 hit targets`).toEqual(Array(10).fill(64));
+      expect(armedGeometry.completeRows, `${testCase.label} armed forecast keeps eight rows`).toEqual(Array(10).fill(8));
+      expect(armedGeometry.maxTileDelta, `${testCase.label} armed forecast keeps tile bounds stable`).toBeLessThan(0.05);
+      expect(armedGeometry.movingTransforms, `${testCase.label} armed forecast never transforms tile buttons`).toEqual([]);
+      if (testCase.mobile) {
+        expect(Math.max(...armedGeometry.boardBottoms), `${testCase.label} armed board stays in the exact viewport`).toBeLessThanOrEqual(844);
+      }
 
-      const activationPair = await hintedPair(page);
+      const forecastSnapshot = {
+        laneCoordinates: activationForecast.laneCoordinates,
+        source: activationForecast.source,
+        destination: activationForecast.destination,
+        moves: persisted.moves,
+        counts: persisted.counts
+      };
+      const assertForecastStable = async (context, { fullPresentation = true } = {}) => {
+        const report = await armedRelicGuidance(page);
+        expect(report.laneCoordinates, `${testCase.label} ${context} lane`).toEqual(forecastSnapshot.laneCoordinates);
+        expect(report.source, `${testCase.label} ${context} source`).toBe(forecastSnapshot.source);
+        expect(report.destination, `${testCase.label} ${context} destination`).toBe(forecastSnapshot.destination);
+        expect(report.laneTiles, `${testCase.label} ${context} eight affected cells`).toHaveLength(8);
+        expect(report.laneMarkers, `${testCase.label} ${context} eight rail segments`).toBe(8);
+        expect(report.destinationCount, `${testCase.label} ${context} one destination`).toBe(1);
+        expect(report.relicCount, `${testCase.label} ${context} one source relic`).toBe(1);
+        expect((await activeState(page)).moves, `${testCase.label} ${context} spends no move`).toBe(forecastSnapshot.moves);
+        expect((await activeState(page)).counts, `${testCase.label} ${context} changes no counts`).toEqual(forecastSnapshot.counts);
+        if (fullPresentation) {
+          assertArmedRelicGuidance(report, "horizontal", `${testCase.label} ${context}`, Boolean(testCase.mobile), { expectedArrows: 0 });
+        }
+      };
+
+      const passiveCells = await page.evaluate(({ source, destination }) => {
+        const excluded = new Set([source, destination]);
+        const cells = Array.from(document.querySelectorAll(".tile"))
+          .map((tile) => ({ x: Number(tile.dataset.x), y: Number(tile.dataset.y) }))
+          .filter((cell) => !excluded.has(`${cell.x},${cell.y}`));
+        const first = cells[0];
+        const second = cells.find((cell) => Math.abs(cell.x - first.x) + Math.abs(cell.y - first.y) > 1);
+        return [first, second];
+      }, { source: activationForecast.source, destination: activationForecast.destination });
+      for (const cell of passiveCells) {
+        const tile = page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`);
+        if (testCase.mobile) await tile.tap();
+        else await tile.click();
+      }
+      await assertForecastStable("wrong and nonadjacent selection");
+
+      const invalidPair = await findInvalidAdjacentPair(page, [
+        persisted.armedLineRelic,
+        ...activationPairFromForecast(activationForecast)
+      ]);
+      expect(invalidPair, `${testCase.label} unrelated invalid adjacent pair`).toHaveLength(2);
+      for (const cell of invalidPair) {
+        const tile = page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`);
+        if (testCase.mobile) await tile.tap();
+        else await tile.click();
+      }
+      await expect(page.locator(".tile.invalid-swap")).toHaveCount(2);
+      await assertForecastStable("invalid adjacent refusal", { fullPresentation: false });
+      await expect(page.locator(".tile.invalid-swap")).toHaveCount(0, { timeout: 2200 });
+      await assertForecastStable("invalid adjacent cleanup");
+
+      const cancelSource = activationPairFromForecast(activationForecast)[0];
+      const cancelBox = await page.locator(`.tile[data-x="${cancelSource.x}"][data-y="${cancelSource.y}"]`).boundingBox();
+      expect(cancelBox, `${testCase.label} cancel source geometry`).toBeTruthy();
+      const cancelPoint = { x: cancelBox.x + cancelBox.width / 2, y: cancelBox.y + cancelBox.height / 2 };
+      if (testCase.mobile) {
+        const client = await context.newCDPSession(page);
+        await client.send("Input.dispatchTouchEvent", {
+          type: "touchStart",
+          touchPoints: [{ x: cancelPoint.x, y: cancelPoint.y, id: 91 }]
+        });
+        await client.send("Input.dispatchTouchEvent", {
+          type: "touchMove",
+          touchPoints: [{ x: cancelPoint.x + 22, y: cancelPoint.y, id: 91 }]
+        });
+        await client.send("Input.dispatchTouchEvent", { type: "touchCancel", touchPoints: [] });
+        await client.detach();
+      } else {
+        await page.mouse.move(cancelPoint.x, cancelPoint.y);
+        await page.mouse.down();
+        await page.mouse.move(cancelPoint.x + 22, cancelPoint.y, { steps: 3 });
+        await page.dispatchEvent("#board", "pointercancel", {
+          pointerId: 1,
+          bubbles: true,
+          cancelable: true,
+          isPrimary: true,
+          clientX: cancelPoint.x + 22,
+          clientY: cancelPoint.y
+        });
+        await page.mouse.up();
+      }
+      await expect(page.locator(".tile.drag-preview-source, .tile.drag-preview-neighbor, .tile.drag-preview-ready")).toHaveCount(0);
+      await assertForecastStable("canceled drag or touch", { fullPresentation: false });
+
+      if (!testCase.mobile) {
+        await page.locator("#tutorialSkipBtn").click();
+        await assertForecastStable("Skip", { fullPresentation: false });
+        await page.locator("#tutorialHelpBtn").click();
+        await assertForecastStable("Help replay", { fullPresentation: false });
+      }
+
+      const activationPair = activationPairFromForecast(activationForecast);
       const activationIncludesRelic = activationPair.some((cell) => (
         cell.x === persisted.armedLineRelic.x && cell.y === persisted.armedLineRelic.y
       ));
@@ -3154,7 +3359,7 @@ test("Black Candle Vine forms, persists, and activates as a deliberate lane spec
         { path: peakPath }
       );
       const activationFrames = await blackCandleActivationFrames(page);
-      assertBlackCandleActivationFrames(activationFrames, testCase, persisted);
+      assertBlackCandleActivationFrames(activationFrames, testCase, persisted, activationForecast);
       await expect(page.locator("body")).not.toHaveAttribute("data-black-candle-activation-phase", /.+/);
       await expect(relic).toHaveCount(0);
       const activated = await activeState(page);
@@ -3195,8 +3400,9 @@ test("Black Candle Vine forms, persists, and activates as a deliberate lane spec
       );
       await expect(page.locator("body")).not.toHaveAttribute("data-black-candle-activation-phase", /.+/);
       await expect(page.locator(
-        ".black-candle-burn-cell, .black-candle-burn-sweep, .line-relic-lane-preview, .line-relic-destination"
+        ".black-candle-burn-cell, .black-candle-burn-sweep, .line-relic-lane-preview, .line-relic-lane-mark, .line-relic-destination"
       )).toHaveCount(0);
+      await expect(page.locator("#board")).not.toHaveAttribute("data-black-candle-activation-cells", /.+/);
       await expect(page.locator("#restoreGreenhouseBtn")).toBeVisible({ timeout: 3000 });
       const reloadedActivation = await page.evaluate((key) => {
         const state = JSON.parse(localStorage.getItem(key) || "{}");
@@ -3231,6 +3437,7 @@ test("Black Candle Vine forms, persists, and activates as a deliberate lane spec
       expect(secondReload.counts, `${testCase.label} reload preserves authoritative counts`).toEqual(reloadedActivation.counts);
       expect(consoleErrors).toEqual([]);
       expect(pageErrors).toEqual([]);
+      expect(failedRequests).toEqual([]);
     } finally {
       await context.close();
     }
@@ -3387,23 +3594,28 @@ test("accepted swaps reload from one authoritative settled state", async ({ brow
 
 test("vertical Black Candle Vine follows its anchor flower through gravity", async ({ browser }) => {
   const cases = [
-    { label: "desktop", viewport: { width: 1280, height: 720 } },
-    { label: "mobile390", viewport: { width: 390, height: 844 }, mobile: true }
+    { label: "desktop", viewport: { width: 1280, height: 720 }, input: "pointer" },
+    { label: "mobile390", viewport: { width: 390, height: 844 }, input: "touch", mobile: true }
   ];
 
   for (const testCase of cases) {
     const context = await browser.newContext({
       viewport: testCase.viewport,
       hasTouch: Boolean(testCase.mobile),
-      isMobile: Boolean(testCase.mobile)
+      isMobile: Boolean(testCase.mobile),
+      reducedMotion: testCase.mobile ? "reduce" : "no-preference"
     });
     const page = await context.newPage();
     const consoleErrors = [];
     const pageErrors = [];
+    const failedRequests = [];
     page.on("console", (message) => {
       if (message.type() === "error") consoleErrors.push(message.text());
     });
     page.on("pageerror", (error) => pageErrors.push(error.message));
+    page.on("requestfailed", (request) => failedRequests.push(
+      `${request.url()} ${request.failure()?.errorText || ""}`
+    ));
 
     try {
       await seedDeterministicMath(page, `vertical-black-candle-${testCase.label}`);
@@ -3447,7 +3659,7 @@ test("vertical Black Candle Vine follows its anchor flower through gravity", asy
         }
       } else {
         for (const cell of formationPair) {
-          await page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`).dispatchEvent("click");
+          await page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`).click();
         }
       }
 
@@ -3489,8 +3701,10 @@ test("vertical Black Candle Vine follows its anchor flower through gravity", asy
       expect(formed.brokenImages).toEqual([]);
       expect((await activeState(page)).moves).toBe(beforeFormation.moves - 1);
       expect((await activeState(page)).counts[1] - beforeFormation.counts[1]).toBe(4);
+      await page.waitForTimeout(850);
+      const formedForecast = await armedRelicGuidance(page);
       assertArmedRelicGuidance(
-        await armedRelicGuidance(page),
+        formedForecast,
         "vertical",
         `${testCase.label} vertical formed special`,
         Boolean(testCase.mobile)
@@ -3505,12 +3719,18 @@ test("vertical Black Candle Vine follows its anchor flower through gravity", asy
       await expect(relic).toHaveAttribute("data-x", "3");
       await expect(relic).toHaveAttribute("data-y", "3");
       await expect(relic).toHaveAttribute("data-line-relic-direction", "vertical");
+      const activationForecast = await armedRelicGuidance(page);
       assertArmedRelicGuidance(
-        await armedRelicGuidance(page),
+        activationForecast,
         "vertical",
         `${testCase.label} vertical persisted special`,
         Boolean(testCase.mobile)
       );
+      expect(activationForecast.laneCoordinates, `${testCase.label} gravity/reload recomputes the same column`).toEqual(
+        formedForecast.laneCoordinates
+      );
+      expect(activationForecast.source, `${testCase.label} gravity/reload source`).toBe(formedForecast.source);
+      expect(activationForecast.destination, `${testCase.label} gravity/reload destination`).toBe(formedForecast.destination);
 
       const activationPair = await hintedPair(page);
       const expectedLaneGain = await page.evaluate(({ key, pair }) => {
@@ -3527,15 +3747,24 @@ test("vertical Black Candle Vine follows its anchor flower through gravity", asy
         return gained;
       }, { key: SAVE_KEY, pair: activationPair });
       const beforeActivation = await activeState(page);
-      if (testCase.mobile) {
+      await startBlackCandleActivationRecorder(page);
+      const triggerActivation = async () => {
         for (const cell of activationPair) {
-          await page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`).tap();
+          const tile = page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`);
+          if (testCase.mobile) await tile.tap();
+          else await tile.click();
         }
-      } else {
-        for (const cell of activationPair) {
-          await page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`).dispatchEvent("click");
+      };
+      await runAtFrozenBlackCandlePhase(
+        page,
+        testCase.mobile ? "hold" : "sweep",
+        triggerActivation,
+        {
+          path: `work/black-candle-vertical-${testCase.label}-${testCase.mobile ? "reduced-static" : "full-peak"}.png`
         }
-      }
+      );
+      const activationFrames = await blackCandleActivationFrames(page);
+      assertBlackCandleActivationFrames(activationFrames, testCase, beforeActivation, activationForecast);
       await expect.poll(async () => (await activeState(page)).moves).toBe(beforeActivation.moves - 1);
       await waitForSettledBoard(page);
       await expect(relic).toHaveCount(0);
@@ -3551,8 +3780,13 @@ test("vertical Black Candle Vine follows its anchor flower through gravity", asy
       expect(activated.tiles).toBe(64);
       expect(activated.rows).toBe(8);
       expect(activated.overflowX).toBe(false);
+      await expect(page.locator(
+        ".line-relic-lane-mark, .line-relic-lane-preview, .line-relic-destination, .black-candle-burn-cell, .black-candle-burn-sweep"
+      )).toHaveCount(0);
+      await expect(page.locator("#board")).not.toHaveAttribute("data-black-candle-activation-cells", /.+/);
       expect(consoleErrors).toEqual([]);
       expect(pageErrors).toEqual([]);
+      expect(failedRequests).toEqual([]);
     } finally {
       await context.close();
     }

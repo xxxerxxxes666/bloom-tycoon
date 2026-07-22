@@ -1878,19 +1878,70 @@
     .tile.line-relic-lane-preview {
       z-index: 2;
       outline: 1px solid #b9874d;
+      outline-offset: -2px;
+      background:
+        linear-gradient(#1708068f, #1708068f),
+        radial-gradient(circle at 50% 43%, color-mix(in srgb, var(--tile-color) 20%, #fff0b4) 0 9%, #0000 33%),
+        radial-gradient(circle at 50% 52%, color-mix(in srgb, var(--tile-color) 10%, #0000) 0 27%, #0000 60%),
+        linear-gradient(#000b, #000b),
+        url("../assets/board/occult_altar_socket.svg") center / 100% 100% no-repeat,
+        radial-gradient(circle at 50% 52%, #100906 0, #050303 68%, #010101 100%),
+        linear-gradient(145deg, #6f4526 0 5%, #0b0605 7% 93%, #4b2d19 95%),
+        linear-gradient(180deg, #24170f, #040202);
       box-shadow:
         inset 0 0 16px #000,
-        inset 0 0 0 1px #2a140e,
+        inset 0 0 0 2px #4b1a12,
         0 0 0 1px #160f0c,
-        0 0 11px #9b1d224f,
-        0 0 15px #d7b16d28;
+        0 0 10px #9b1d2266,
+        0 0 16px #d7b16d38;
     }
 
     .tile.line-relic-lane-preview::after {
-      opacity: .84;
+      opacity: .94;
       background:
-        radial-gradient(circle at 50% 50%, #d7b16d20 0, #0000 62%),
-        linear-gradient(var(--lane-angle, 90deg), #0000 0 43%, #f0c47788 48% 52%, #0000 57%);
+        radial-gradient(circle at 50% 50%, #d7b16d22 0, #0000 62%),
+        linear-gradient(var(--lane-angle, 90deg), #0000 0 44%, #9b1d227d 47%, #f0c477a8 49% 51%, #9b1d227d 53%, #0000 56%);
+    }
+
+    .line-relic-lane-mark {
+      position: absolute;
+      inset: 3px;
+      z-index: 2;
+      overflow: visible;
+      pointer-events: none;
+    }
+
+    .line-relic-lane-mark::before,
+    .line-relic-lane-mark::after {
+      content: "";
+      position: absolute;
+      background: linear-gradient(90deg, #9b1d22b8, #d7b16de0 20% 80%, #9b1d22b8);
+      box-shadow: 0 0 4px #9b1d2285, 0 0 6px #d7b16d52;
+    }
+
+    .line-relic-lane-mark.horizontal::before,
+    .line-relic-lane-mark.horizontal::after {
+      left: -7px;
+      right: -7px;
+      height: 2px;
+    }
+
+    .line-relic-lane-mark.horizontal::before { top: 9%; }
+    .line-relic-lane-mark.horizontal::after { bottom: 9%; }
+
+    .line-relic-lane-mark.vertical::before,
+    .line-relic-lane-mark.vertical::after {
+      top: -7px;
+      bottom: -7px;
+      width: 2px;
+      background: linear-gradient(180deg, #9b1d22b8, #d7b16de0 20% 80%, #9b1d22b8);
+    }
+
+    .line-relic-lane-mark.vertical::before { left: 9%; }
+    .line-relic-lane-mark.vertical::after { right: 9%; }
+
+    .tile.line-relic-lane-preview:not(.black-candle-vine):not(.line-relic-destination) .tile-icon-wrap {
+      filter: brightness(1.05) saturate(.98);
     }
 
     .tile.line-relic-destination {
@@ -1902,6 +1953,18 @@
         0 0 0 1px #160f0c,
         0 0 18px #d7b16dcc,
         0 0 20px #9b1d226e;
+    }
+
+    .tile.black-candle-vine.line-relic-lane-preview {
+      z-index: 7;
+      outline: 2px solid #fff0b4;
+      outline-offset: -1px;
+      box-shadow:
+        inset 0 0 22px #000,
+        inset 0 0 0 3px #6b1c14,
+        0 0 0 1px #160f0c,
+        0 0 22px #ef6b2fc4,
+        0 0 34px #d7b16d9c;
     }
 
     .line-relic-destination-mark {
@@ -11010,6 +11073,9 @@
         boardEl.classList.remove("black-candle-activation");
         boardEl.removeAttribute("data-black-candle-activation-phase");
         boardEl.removeAttribute("data-black-candle-activation-source");
+        boardEl.removeAttribute("data-black-candle-activation-origin");
+        boardEl.removeAttribute("data-black-candle-activation-destination");
+        boardEl.removeAttribute("data-black-candle-activation-cells");
         boardEl.removeAttribute("data-black-candle-activation-lane");
       }
       if (renderAfter) {
@@ -11047,6 +11113,8 @@
       const lane = activation.direction === "vertical" ? "column" : "row";
       blackCandleActivationPresentation = {
         ...activation,
+        origin: activation.origin ? { ...activation.origin } : { ...activation.source },
+        destination: activation.destination ? { ...activation.destination } : { ...activation.source },
         lane,
         motion,
         phase: motion === "reduced" ? "hold" : "ignition",
@@ -11791,13 +11859,26 @@
       boardEl.dataset.lastWildChainCascades = String(lastWildChain?.cascades || 0);
       boardEl.dataset.refillColumns = String(refillColumns.size);
       boardEl.dataset.armedRelicDirection = activeRelicGuidance?.direction || "";
+      boardEl.dataset.armedRelicSource = activeRelicGuidance?.sourceKey || "";
+      boardEl.dataset.armedRelicDestination = activeRelicGuidance?.destinationKey || "";
+      boardEl.dataset.armedRelicLane = activeRelicGuidance
+        ? activeRelicGuidance.laneCells.map((cell) => `${cell.x},${cell.y}`).join(" ")
+        : "";
       if (blackCandleActivation) {
         boardEl.dataset.blackCandleActivationPhase = blackCandleActivation.phase;
         boardEl.dataset.blackCandleActivationSource = blackCandleActivation.sourceKey;
+        boardEl.dataset.blackCandleActivationOrigin = `${blackCandleActivation.origin.x},${blackCandleActivation.origin.y}`;
+        boardEl.dataset.blackCandleActivationDestination = `${blackCandleActivation.destination.x},${blackCandleActivation.destination.y}`;
+        boardEl.dataset.blackCandleActivationCells = blackCandleActivation.cells
+          .map((cell) => `${cell.x},${cell.y}`)
+          .join(" ");
         boardEl.dataset.blackCandleActivationLane = `${blackCandleActivation.lane}-${blackCandleActivation.fixed + 1}`;
       } else {
         boardEl.removeAttribute("data-black-candle-activation-phase");
         boardEl.removeAttribute("data-black-candle-activation-source");
+        boardEl.removeAttribute("data-black-candle-activation-origin");
+        boardEl.removeAttribute("data-black-candle-activation-destination");
+        boardEl.removeAttribute("data-black-candle-activation-cells");
         boardEl.removeAttribute("data-black-candle-activation-lane");
       }
       boardEl.dataset.reweavePhase = altarReweaveActive
@@ -11907,6 +11988,12 @@
           }
           if (lineRelicLaneClass) {
             tile.style.setProperty("--lane-angle", activeRelicGuidance.direction === "vertical" ? "0deg" : "90deg");
+            tile.dataset.lineRelicForecast = activeRelicGuidance.sourceKey === fallKey
+              ? "source"
+              : activeRelicGuidance.destinationKey === fallKey ? "destination" : "affected";
+            tile.dataset.lineRelicLaneIndex = String(
+              activeRelicGuidance.laneCells.findIndex((cell) => cell.x === x && cell.y === y)
+            );
           }
           if (armedRelic) {
             tile.style.setProperty("--relic-angle", armedRelic.direction === "vertical" ? "0deg" : "90deg");
@@ -11942,6 +12029,7 @@
           tile.setAttribute("aria-label", `${flowers[value][0]} tile${relicLabel}${legalLabel}${destinationLabel}${laneLabel}${previewLabel}${thornTeachLabel}${thornLabel}`);
           tile.innerHTML = `
             ${iconMarkup(value, "", flowers[value][0], "tile-icon-wrap")}
+            ${lineRelicLaneClass ? `<span class="line-relic-lane-mark ${activeRelicGuidance.direction}" aria-hidden="true"></span>` : ""}
             ${armedRelic ? '<span class="black-candle-mark" aria-hidden="true"></span>' : ""}
             ${blackCandleBurnCell ? `<span class="black-candle-burn-echo" aria-hidden="true">${iconMarkup(blackCandleBurnCell.flowerId, "", "", "tile-icon-wrap")}</span>` : ""}
             ${blackCandleBurnSourceClass ? '<span class="black-candle-mark black-candle-activation-source" aria-hidden="true"></span>' : ""}
@@ -12650,6 +12738,9 @@
       const activatingRelicOrigin = activatingRelic
         ? { x: activatingRelic.x, y: activatingRelic.y }
         : null;
+      const activatingRelicGuidance = activatingRelic
+        ? lineRelicGuidance(activatingRelic)
+        : null;
       const isFirstValidMove = !hasMadeValidMove;
       const roundTwoOpeningBudgetActive = isRestoredRoundTwoOpeningBudgetActive();
       const guidedRoundTwoLesson = isAuthoritativeRoundTwoThornLesson()
@@ -12703,7 +12794,11 @@
         );
         result = await resolveAnimated(activatingRelic
           ? {
-              activationRelic: { ...armedLineRelic },
+              activationRelic: {
+                ...armedLineRelic,
+                forecastSource: activatingRelicGuidance?.source || activatingRelicOrigin,
+                forecastDestination: { x: armedLineRelic.x, y: armedLineRelic.y }
+              },
               playerSwap: { a: source, b: target },
               ...(currentRound === 1 && tutorialActive ? { maxCascades: 1, quietReseed: true } : {})
             }
@@ -13325,6 +13420,12 @@
         activatingLineRelic: true,
         blackCandleActivation: {
           source: { x: relic.x, y: relic.y },
+          origin: relic.forecastSource
+            ? { ...relic.forecastSource }
+            : { x: relic.x, y: relic.y },
+          destination: relic.forecastDestination
+            ? { ...relic.forecastDestination }
+            : { x: relic.x, y: relic.y },
           direction: relic.direction,
           travelDirection: ["left", "right", "up", "down"].includes(relic.travelDirection)
             ? relic.travelDirection
@@ -13564,6 +13665,12 @@
         : null;
       if (pendingActivation && options.activationRelic?.travelDirection) {
         pendingActivation.travelDirection = options.activationRelic.travelDirection;
+      }
+      if (pendingActivation && options.activationRelic?.forecastSource) {
+        pendingActivation.forecastSource = { ...options.activationRelic.forecastSource };
+      }
+      if (pendingActivation && options.activationRelic?.forecastDestination) {
+        pendingActivation.forecastDestination = { ...options.activationRelic.forecastDestination };
       }
 
       while (result.cascades < maxCascades) {
