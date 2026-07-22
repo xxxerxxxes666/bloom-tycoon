@@ -93,7 +93,7 @@ async function journeyState(page) {
         && coinRect.top >= progressRect.top - 1
         && coinRect.bottom <= progressRect.bottom + 1),
       bouquet: document.querySelector("#bouquetProgressLabel")?.textContent.trim() || "",
-      bouquetNext: document.querySelector("#bouquetProgressNext")?.textContent.trim() || "",
+      bouquetNext: document.querySelector("#bouquetProgressLabel")?.textContent.trim() || "",
       greenhouse: document.querySelector(".restoration-dial-phase")?.textContent.trim() || "",
       greenhouseStage: document.querySelector("#heroRestorationDial")?.dataset.restorationDialStage || "",
       greenhouseOwnedStage: document.querySelector("#heroRestorationDial")?.dataset.ownedStage || "",
@@ -236,7 +236,7 @@ async function expectPermanentRaisedGreenhouse(page, context) {
   ], `${context} persisted ownership flags`).toEqual([true, true, true]);
   expect(state.greenhouseText, `${context} permanent replay progress`).toContain("Permanent through replay");
   if (!state.roundComplete && !state.visibleButtons.includes("Retry Bouquet")) {
-    expect(state.bouquetNext, `${context} replay bouquet keeps order authority`).toMatch(/^Order Progress · \d+\/\d+$/);
+    expect(state.bouquetNext, `${context} replay bouquet keeps order authority`).toMatch(/^Bouquet · \d+\/\d+$/);
   }
   return state;
 }

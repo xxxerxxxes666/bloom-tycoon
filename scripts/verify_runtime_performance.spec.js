@@ -68,6 +68,7 @@ async function runtimeReport(page) {
       greenhouseIntakeTargetId: greenhouseIntakeTarget?.id || "",
       meaningfulBars,
       bouquetProgressText: document.querySelector("#bouquetProgressLabel")?.textContent.trim() || "",
+      bouquetRewardText: document.querySelector("#bouquetRewardPromise")?.textContent.trim() || "",
       greenhouseNextText: document.querySelector(".restoration-owned-note")?.textContent.trim() || "",
       visibleProgressText: document.body.innerText,
       visibleButtons: Array.from(document.querySelectorAll("button"))
@@ -149,7 +150,8 @@ for (const config of [
     expect(report.greenhouseIntakeTargetId, "intake feedback retains a visible destination").toBe(config.mobile
       ? "mobileRestorationDial"
       : "heroRestorationDial");
-    expect(report.bouquetProgressText).toMatch(/Bouquet .* -> Reward \d+ coins/);
+    expect(report.bouquetProgressText).toBe("Bouquet · 0/14");
+    expect(report.bouquetRewardText).toBe("Complete for 120 coins");
     expect(report.greenhouseNextText).toMatch(/Restore|Unlock|Raise|Replay/);
     expect(report.visibleProgressText).not.toMatch(/\b(?:SAP|MANA|BLOOD)\b|\d[\d,]*\s*\/\s*\d[\d,]*\s*XP|Greenhouse \+\d+ XP|Apothecary \+\d+ XP/);
     expect(report.visibleButtons.length, "Round 1 non-tile controls").toBeLessThanOrEqual(2);

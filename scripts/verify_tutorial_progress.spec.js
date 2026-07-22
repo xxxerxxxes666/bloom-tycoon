@@ -154,7 +154,7 @@ async function visibleReport(page) {
         ".tile.idle-hint, .tile.thorn-teach, .tile.thorn-teach-blocker"
       ).length,
       bouquetText: document.querySelector("#bouquetProgressLabel")?.textContent.trim() || "",
-      bouquetNext: document.querySelector("#bouquetProgressNext")?.textContent.trim() || "",
+      bouquetNext: document.querySelector("#bouquetProgressLabel")?.textContent.trim() || "",
       greenhouseText: document.querySelector(".restoration-owned-note")?.textContent.trim() || "",
       payoffTransaction: document.querySelector("#payoffTransaction")?.textContent.trim() || "",
       restorationState: document.querySelector("#restorationState")?.textContent.trim() || "",
@@ -435,7 +435,7 @@ async function guidedRoundOneState(page, tag) {
       roundComplete: Boolean(saved.roundComplete),
       coins: saved.coins,
       bouquet: document.querySelector("#bouquetProgressLabel")?.textContent.trim() || "",
-      bouquetOrder: document.querySelector("#bouquetProgressNext")?.textContent.trim() || "",
+      bouquetOrder: document.querySelector("#bouquetProgressLabel")?.textContent.trim() || "",
       bouquetBarWidth: document.querySelector("#bar")?.style.width || "",
       liveBouquetProgress: document.querySelector("#liveBouquetAssembly")?.dataset.progress || "",
       greenhouseAuthority: {
@@ -1225,8 +1225,8 @@ async function startBlackCandleActivationRecorder(page) {
         const visibleHudText = [
           document.querySelector("#objective"),
           document.querySelector("#bouquetProgressLabel"),
+          document.querySelector("#bouquetRewardPromise"),
           document.querySelector("#coinBalance"),
-          document.querySelector("#bouquetProgressNext")
         ].filter(visible).map((node) => node.textContent.replace(/\s+/g, " ").trim());
         const frame = {
           phase,
@@ -1815,7 +1815,7 @@ async function commitGuidedSwapAtControlReturn(page, { keyboard = false, sampleI
 }
 
 function assertPassiveInputPreservesFeedback(before, after, label) {
-  expect(before.orderPulseCount, `${label} starts with order feedback`).toBe(4);
+  expect(before.orderPulseCount, `${label} starts with objective plus earned receiver feedback`).toBe(3);
   expect(after.orderPulseCount, `${label} preserves order feedback`).toBe(before.orderPulseCount);
   const orderPulses = (state) => state.positiveFeedback
     .filter((node) => node.className.includes("order-pulse"))
@@ -2442,7 +2442,7 @@ for (const viewport of [
     const activated = await guidedRoundOneState(page, "Black Candle activated");
     trace.push(activated);
     expect(activated.roundComplete).toBe(true);
-    expect(activated.bouquet).toBe("Bouquet 14/14 -> Reward 120 coins");
+    expect(activated.bouquet).toBe("Bouquet Complete · 14/14");
     expect(activated.moves).toBe(formed.moves - 1);
     expect(activated.tiles).toBe(64);
     expect(activated.overflowX).toBe(false);
@@ -2460,7 +2460,7 @@ for (const viewport of [
     expect(ceremony.boardVisible).toBe(false);
     expect(ceremony.payoffVisible).toBe(true);
     expect(ceremony.coins).toBe(120);
-    expect(ceremony.bouquet).toBe("Bouquet 14/14 -> Reward 120 coins");
+    expect(ceremony.bouquet).toBe("Bouquet Complete · 14/14");
     expect(ceremony.tutorial).toBe("Coins restore the greenhouse.");
     expect(ceremony.visibleButtons).toEqual(["Restore Greenhouse · 100 coins"]);
     expect(ceremony.visibleButtons.filter((label) => label.startsWith("Restore"))).toHaveLength(1);
@@ -2781,8 +2781,8 @@ test("off-order opening success redirects the player to real bouquet progress", 
       expect(correction.moves, `${testCase.label} legal off-order match spends once`).toBe(5);
       expect(correction.counts, `${testCase.label} only Nightshade is harvested`).toEqual([0, 0, 3, 0, 0, 0]);
       expect(correction.bouquet, `${testCase.label} off-order flowers do not fill the bouquet`)
-        .toContain("Bouquet 0/14");
-      expect(correction.bouquetOrder).toBe("Order Progress · 0/14");
+        .toBe("Bouquet · 0/14");
+      expect(correction.bouquetOrder).toBe("Bouquet · 0/14");
       expect(correction.liveBouquetProgress).toBe("0/14");
       expect(correction.bouquetBarWidth).toBe("0%");
       expect(correction.greenhouseAuthority).toEqual({
@@ -2852,8 +2852,8 @@ test("off-order opening success redirects the player to real bouquet progress", 
         const persisted = await guidedRoundOneState(page, `${testCase.label} correction reload ${reload + 1}`);
         expect(persisted.moves).toBe(5);
         expect(persisted.counts).toEqual(correction.counts);
-        expect(persisted.bouquet).toContain("Bouquet 0/14");
-        expect(persisted.bouquetOrder).toBe("Order Progress · 0/14");
+        expect(persisted.bouquet).toBe("Bouquet · 0/14");
+        expect(persisted.bouquetOrder).toBe("Bouquet · 0/14");
         expect(persisted.greenhouseAuthority).toEqual(correction.greenhouseAuthority);
         expect(persisted.tutorial).toBe("Match Thorn Rose.");
         expect(unorderedPairKey(persisted.hints)).toBe(unorderedPairKey(recoveredPair));
@@ -2865,7 +2865,7 @@ test("off-order opening success redirects the player to real bouquet progress", 
       const targetProgress = await guidedRoundOneState(page, `${testCase.label} target progress`);
       expect(targetProgress.moves, `${testCase.label} recovered pair spends once`).toBe(4);
       expect(targetProgress.counts[5], `${testCase.label} recovered pair fills Thorn Rose`).toBeGreaterThan(0);
-      expect(targetProgress.bouquet, `${testCase.label} bouquet now advances`).not.toContain("Bouquet 0/14");
+      expect(targetProgress.bouquet, `${testCase.label} bouquet now advances`).not.toBe("Bouquet · 0/14");
       expect(targetProgress.liveBouquetProgress).not.toBe("0/14");
       expect(targetProgress.greenhouseAuthority).toEqual(correction.greenhouseAuthority);
       expect(
@@ -2965,8 +2965,8 @@ test("later off-order success uses the settled swap outcome instead of cumulativ
       await waitForSettledBoard(page);
       const targetProgress = await guidedRoundOneState(page, `${testCase.label} established order progress`);
       expect(targetProgress.moves).toBe(4);
-      expect(targetProgress.bouquet).toContain("Bouquet 3/14");
-      expect(targetProgress.bouquetOrder).toBe("Order Progress · 3/14");
+      expect(targetProgress.bouquet).toBe("Bouquet · 3/14");
+      expect(targetProgress.bouquetOrder).toBe("Bouquet · 3/14");
       expect(targetProgress.liveBouquetProgress).toBe("3/14");
       expect(targetProgress.counts[5]).toBe(3);
       expect(targetProgress.tutorial).toBe("Find 3 Thorn Roses.");
@@ -2980,14 +2980,19 @@ test("later off-order success uses the settled swap outcome instead of cumulativ
       expect(correction.counts[4], `${testCase.label} Amber Seed harvest remains authoritative`)
         .toBeGreaterThan(targetProgress.counts[4]);
       expect(correction.bouquet, `${testCase.label} later off-order match adds no order progress`)
-        .toContain("Bouquet 3/14");
+        .toBe("Bouquet · 3/14");
       expect(correction.bouquetOrder).toBe(targetProgress.bouquetOrder);
       expect(correction.bouquetBarWidth).toBe(targetProgress.bouquetBarWidth);
       expect(correction.liveBouquetProgress).toBe(targetProgress.liveBouquetProgress);
       expect(correction.greenhouseAuthority).toEqual(targetProgress.greenhouseAuthority);
       expect(correction.tutorial, `${testCase.label} narrator reflects this swap's zero order gain`)
-        .toBe("Match the order flowers.");
-      expect(correction.hints, `${testCase.label} correction frame precedes the guide`).toEqual([]);
+        .toMatch(/^(?:Match the order flowers|Match Thorn Rose)\.$/);
+      if (correction.tutorial === "Match the order flowers.") {
+        expect(correction.hints, `${testCase.label} correction frame precedes the guide`).toEqual([]);
+      } else {
+        expect(correction.hints, `${testCase.label} reduced motion may settle directly on the useful guide`)
+          .toHaveLength(2);
+      }
       expect(correction.visibleInstructionSurfaces, `${testCase.label} keeps one narrator`).toBe(1);
       expect(correction.visibleButtons, `${testCase.label} Skip remains the sole non-tile action`).toEqual(["Skip"]);
       expect(correction.tiles).toBe(64);
@@ -3012,7 +3017,7 @@ test("later off-order success uses the settled swap outcome instead of cumulativ
         const transientReload = await guidedRoundOneState(page, `${testCase.label} transient correction reload`);
         expect(transientReload.moves).toBe(3);
         expect(transientReload.counts).toEqual(correction.counts);
-        expect(transientReload.bouquet).toContain("Bouquet 3/14");
+        expect(transientReload.bouquet).toBe("Bouquet · 3/14");
         expect(transientReload.tutorial).toBe("Match Thorn Rose.");
         await expect(page.locator(".impact-sigil, .objective-flight, .order-pulse")).toHaveCount(0);
       }
@@ -3052,8 +3057,8 @@ test("later off-order success uses the settled swap outcome instead of cumulativ
         const persisted = await guidedRoundOneState(page, `${testCase.label} later correction reload ${reload + 1}`);
         expect(persisted.moves).toBe(3);
         expect(persisted.counts).toEqual(correction.counts);
-        expect(persisted.bouquet).toContain("Bouquet 3/14");
-        expect(persisted.bouquetOrder).toBe("Order Progress · 3/14");
+        expect(persisted.bouquet).toBe("Bouquet · 3/14");
+        expect(persisted.bouquetOrder).toBe("Bouquet · 3/14");
         expect(persisted.bouquetBarWidth).toBe(correction.bouquetBarWidth);
         expect(persisted.liveBouquetProgress).toBe("3/14");
         expect(persisted.greenhouseAuthority).toEqual(correction.greenhouseAuthority);
@@ -3087,7 +3092,7 @@ test("later off-order primary match stays truthful when its cascade advances the
   await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 4000 });
   await activatePair(await hintedPair(page));
   const beforeCascade = await guidedRoundOneState(page, "later off-order target cascade before");
-  expect(beforeCascade.bouquet).toContain("Bouquet 3/14");
+  expect(beforeCascade.bouquet).toBe("Bouquet · 3/14");
 
   await activatePair([{ x: 6, y: 1 }, { x: 6, y: 2 }]);
   const afterCascade = await guidedRoundOneState(page, "later off-order target cascade after");
@@ -3119,7 +3124,7 @@ test("guided Round 1 payoff keeps one dominant action", async ({ page }) => {
   await expect(page.locator("#tutorialPanel")).toBeVisible({ timeout: 3000 });
   await completeGuidedRoundOne(page);
 
-  await expect(page.locator("#bouquetProgressLabel")).toHaveText("Bouquet 14/14 -> Reward 120 coins");
+  await expect(page.locator("#bouquetProgressLabel")).toHaveText("Bouquet Complete · 14/14");
   await expect(page.locator("#tutorialCopy")).toHaveText("Coins restore the greenhouse.");
   await expectReadyPrimaryAction(page, "Restore Greenhouse · 100 coins");
   await expect(page.locator("#restoreGreenhouseBtn")).toBeFocused();
@@ -3211,8 +3216,8 @@ test("guided Round 1 payoff keeps one dominant action", async ({ page }) => {
   await expect(page.locator(".tile[tabindex='0']")).toBeFocused();
   report = await visibleReport(page);
   expect(report.round).toBe(2);
-  expect(report.bouquetText).toContain("Bouquet 0/29");
-  expect(report.bouquetNext).toBe("Order Progress · 0/29");
+  expect(report.bouquetText).toBe("Bouquet · 0/29");
+  expect(report.bouquetNext).toBe("Bouquet · 0/29");
   expect(report.savedOwnership.roundOneRestored).toBe(true);
   expect(report.greenhouseOwnedStage).toBe("1");
   expect(report.greenhousePct).toBe("33");
@@ -4327,7 +4332,7 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
     tutorialVisible: true,
     tutorialInViewport: true,
     visibleInstructionCues: 1,
-    bouquetText: "Bouquet 0/14 -> Reward 120 coins",
+    bouquetText: "Bouquet · 0/14",
     greenhouseText: "Owned 0/3 · Next: Restore Greenhouse",
     mobileGreenhousePlinthVisible: false,
     ritualLogVisible: false,
@@ -4352,7 +4357,7 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
   expect(report.visibleButtons, "fresh replay button cap").toEqual(["Skip"]);
   expect(report.visibleNonTileButtons).toEqual(["Skip"]);
   await clickGuidedSwap(page);
-  await expect(page.locator("#bouquetProgressLabel")).toContainText(/Bouquet [1-9]/);
+  await expect(page.locator("#bouquetProgressLabel")).toContainText(/Bouquet · [1-9]/);
   await expect(page.locator("#tutorialCopy")).toContainText(/Match 3 fills|Match Thorn Rose|Match 4 makes/);
   report = await visibleReport(page);
   expect(report.tutorialInViewport, "post-swap tutorial panel stays in viewport").toBe(true);
@@ -4391,7 +4396,7 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
   await expectReadyPrimaryAction(page, "Restore Greenhouse · 100 coins");
   report = await visibleReport(page);
   expect(report.visibleButtons).toEqual(["Restore Greenhouse · 100 coins"]);
-  await expect(page.locator("#bouquetProgressNext")).toHaveText("Order Complete · 14/14");
+  await expect(page.locator("#bouquetProgressLabel")).toHaveText("Bouquet Complete · 14/14");
   report = await visibleReport(page);
   expect(report.visibleNonTileButtons).toEqual(["Restore Greenhouse · 100 coins"]);
   await page.locator("#restoreGreenhouseBtn").click();
@@ -4724,7 +4729,7 @@ test("passive selection and canceled input preserve completed order feedback", a
     const opening = await commitGuidedSwapAtControlReturn(targetPage);
     expect(opening.after.moves, `${label} opening move`).toBe(5);
     expect(opening.after.counts, `${label} opening objective`).toEqual([0, 0, 0, 0, 0, 3]);
-    expect(opening.after.orderPulseCount, `${label} opening pulses`).toBe(4);
+    expect(opening.after.orderPulseCount, `${label} objective plus earned receiver heads pulse`).toBe(3);
     return opening.after;
   };
 
@@ -5269,7 +5274,7 @@ test("keyboard play follows the board and payoff focus", async ({ page }) => {
   await expect(page.locator("#board")).toHaveAttribute("role", "grid");
   await expect(page.locator(".tile[tabindex='0']")).toHaveCount(1);
   await keyboardGuidedSwap(page);
-  await expect(page.locator("#bouquetProgressLabel")).toContainText(/Bouquet [1-9]/);
+  await expect(page.locator("#bouquetProgressLabel")).toContainText(/Bouquet · [1-9]/);
   await expect(page.locator(".tile[tabindex='0']")).toHaveCount(1);
 
   await completeRoundWithReviewKey(page);

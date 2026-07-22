@@ -6,18 +6,18 @@ const SAVE_KEY = "bloomTycoonPlayableStateV1";
 const HUD_CASES = [
   {
     label: "r1-active",
-    expected: "Order Progress · 0/14",
+    expected: "Bouquet · 0/14",
     state: { currentRound: 1, moves: 6, counts: [0, 0, 0, 0, 0, 0], coins: 0 }
   },
   {
     label: "r1-failed",
-    expected: "Order Paused · 0/14",
+    expected: "Bouquet Paused · 0/14",
     retry: true,
     state: { currentRound: 1, moves: 0, counts: [0, 0, 0, 0, 0, 0], coins: 0 }
   },
   {
     label: "r1-pending",
-    expected: "Order Complete · 14/14",
+    expected: "Bouquet Complete · 14/14",
     action: { id: "restoreGreenhouseBtn", text: "Restore Greenhouse · 100 coins" },
     state: {
       currentRound: 1,
@@ -29,7 +29,7 @@ const HUD_CASES = [
   },
   {
     label: "r1-restored",
-    expected: "Order Complete · 14/14",
+    expected: "Bouquet Complete · 14/14",
     action: { id: "nextOrderBtn", text: "Next Order → Moonlit Wreath" },
     state: {
       currentRound: 1,
@@ -42,7 +42,7 @@ const HUD_CASES = [
   },
   {
     label: "r2-active",
-    expected: "Order Progress · 0/29",
+    expected: "Bouquet · 0/29",
     state: {
       currentRound: 2,
       moves: 9,
@@ -53,7 +53,7 @@ const HUD_CASES = [
   },
   {
     label: "r2-failed",
-    expected: "Order Paused · 0/29",
+    expected: "Bouquet Paused · 0/29",
     retry: true,
     state: {
       currentRound: 2,
@@ -65,7 +65,7 @@ const HUD_CASES = [
   },
   {
     label: "r2-pending",
-    expected: "Order Complete · 29/29",
+    expected: "Bouquet Complete · 29/29",
     action: { id: "restoreGreenhouseBtn", text: "Upgrade Greenhouse · 120 coins" },
     state: {
       currentRound: 2,
@@ -79,7 +79,7 @@ const HUD_CASES = [
   },
   {
     label: "r2-upgraded",
-    expected: "Order Complete · 29/29",
+    expected: "Bouquet Complete · 29/29",
     action: { id: "nextOrderBtn", text: "Next Order → Bloodroot Compact" },
     state: {
       currentRound: 2,
@@ -94,7 +94,7 @@ const HUD_CASES = [
   },
   {
     label: "r3-active",
-    expected: "Order Progress · 0/27",
+    expected: "Bouquet · 0/27",
     state: {
       currentRound: 3,
       moves: 8,
@@ -106,7 +106,7 @@ const HUD_CASES = [
   },
   {
     label: "r3-failed",
-    expected: "Order Paused · 0/27",
+    expected: "Bouquet Paused · 0/27",
     retry: true,
     state: {
       currentRound: 3,
@@ -119,7 +119,7 @@ const HUD_CASES = [
   },
   {
     label: "r3-pending",
-    expected: "Order Complete · 27/27",
+    expected: "Bouquet Complete · 27/27",
     action: { id: "restoreGreenhouseBtn", text: "Raise Conservatory · 180 coins" },
     state: {
       currentRound: 3,
@@ -133,7 +133,7 @@ const HUD_CASES = [
   },
   {
     label: "r3-raised",
-    expected: "Order Complete · 27/27",
+    expected: "Bouquet Complete · 27/27",
     action: { id: "nextOrderBtn", text: "Play Again → First Bouquet" },
     state: {
       currentRound: 3,
@@ -355,8 +355,10 @@ async function hudReport(page) {
         && rect.width > 0
         && rect.height > 0;
     };
-    const label = document.querySelector("#bouquetProgressNext");
+    const label = document.querySelector("#bouquetProgressLabel");
     const labelStyle = getComputedStyle(label);
+    const receiverCopy = document.querySelector(".bouquet-receiver-copy");
+    const receiverCopyStyle = getComputedStyle(receiverCopy);
     const board = document.querySelector("#board");
     const boardRect = board?.getBoundingClientRect();
     const activeAction = document.activeElement;
@@ -372,14 +374,31 @@ async function hudReport(page) {
       scrollHeight: label.scrollHeight,
       textOverflow: labelStyle.textOverflow,
       whiteSpace: labelStyle.whiteSpace,
+      receiverCopyWidth: receiverCopy.clientWidth,
+      receiverCopyScrollWidth: receiverCopy.scrollWidth,
+      receiverCopyHeight: receiverCopy.clientHeight,
+      receiverCopyScrollHeight: receiverCopy.scrollHeight,
+      receiverCopyWhiteSpace: receiverCopyStyle.whiteSpace,
       bouquetSurfaceText: document.querySelector("#bouquetProgress")?.textContent.replace(/\s+/g, " ").trim() || "",
+      bouquetSurfaceVisible: visible(document.querySelector("#bouquetProgress")),
+      bouquetReceiverVisible: visible(orderProgress),
+      visibleBouquetSurfaceText: visible(document.querySelector("#bouquetProgress"))
+        ? document.querySelector("#bouquetProgress")?.innerText.replace(/\s+/g, " ").trim() || ""
+        : "",
       orderAuthority: orderProgress?.dataset.progressAuthority || "",
       orderState: orderProgress?.dataset.orderState || "",
+      orderAriaLabelledBy: orderProgress?.getAttribute("aria-labelledby") || "",
       orderAriaLabel: orderProgress?.getAttribute("aria-label") || "",
       orderValueNow: orderProgress?.getAttribute("aria-valuenow") || "",
       orderValueMax: orderProgress?.getAttribute("aria-valuemax") || "",
+      visibleProgressbars: Array.from(document.querySelectorAll('[role="progressbar"]')).filter(visible).length,
+      rewardPromise: document.querySelector("#bouquetRewardPromise")?.textContent.trim() || "",
       bouquetBarWidth: document.querySelector("#bar")?.style.width || "",
       assemblyProgress: document.querySelector("#liveBouquetAssembly")?.dataset.progress || "",
+      visibleBlooms: Number(document.querySelector("#liveBouquetAssembly")?.dataset.visibleBlooms || 0),
+      emptyReceiverVisible: visible(document.querySelector("#liveBouquetAssembly .live-bouquet-empty")),
+      assembledSpecies: Array.from(document.querySelectorAll("#liveBouquetAssembly .live-bouquet-ingredient"))
+        .map((ingredient) => Number(ingredient.dataset.flowerId)),
       savedMoves: saved.moves,
       savedCounts: saved.counts || [],
       savedCoins: saved.coins,
@@ -450,7 +469,10 @@ async function assertHudState(page, fixture, viewport, reload) {
   expect(report.bouquetSurfaceText, `${label} bouquet surface never narrates greenhouse work`)
     .not.toMatch(/restore|upgrade|raise|greenhouse|conservatory/i);
   expect(report.orderAuthority, `${label} explicit order authority`).toBe("bouquet-order");
-  expect(report.orderAriaLabel, `${label} accessible order authority`).toMatch(/^Bouquet order \d+ of \d+; reward \d+ coins$/);
+  expect(report.orderAriaLabelledBy, `${label} one accessible receiver name`).toBe(
+    "bouquetProgressLabel bouquetRewardPromise"
+  );
+  expect(report.orderAriaLabel, `${label} no competing progressbar narration`).toBe("");
   expect(report.orderValueNow, `${label} progressbar value follows order text`).toBe(
     report.text.match(/(\d+)\/(\d+)$/)?.[1]
   );
@@ -475,16 +497,28 @@ async function assertHudState(page, fixture, viewport, reload) {
   expect(report.overflowX, `${label} no page overflow`).toBe(false);
   expect(report.brokenImages, `${label} no broken images`).toEqual([]);
 
-  expect(report.visible, `${label} order progress label visible`).toBe(true);
-  if (viewport.label === "desktop") {
-    expect(report.scrollWidth, `${label} horizontal fit`).toBeLessThanOrEqual(report.clientWidth + 1);
-    expect(report.scrollHeight, `${label} vertical fit`).toBeLessThanOrEqual(report.clientHeight + 1);
-    expect(report.textOverflow, `${label} no ellipsis`).toBe("clip");
-    expect(report.whiteSpace, `${label} compact single line`).toBe("nowrap");
-  } else {
-    expect(report.scrollWidth, `${label} mobile order label horizontal fit`).toBeLessThanOrEqual(report.clientWidth + 1);
-    expect(report.scrollHeight, `${label} mobile order label vertical fit`).toBeLessThanOrEqual(report.clientHeight + 1);
-    if (!fixture.action) {
+  expect(report.visible, `${label} label visibility follows receiver handoff`).toBe(!fixture.action);
+  expect(report.bouquetSurfaceVisible, `${label} compact bouquet/wallet rail remains present`).toBe(true);
+  expect(report.bouquetReceiverVisible, `${label} receiver visibility follows ceremony ownership`).toBe(!fixture.action);
+  expect(report.visibleProgressbars, `${label} one active total progressbar or ceremony handoff`).toBe(fixture.action ? 0 : 1);
+  if (!fixture.action) {
+    const [earned, needed] = fixture.expected.match(/(\d+)\/(\d+)$/).slice(1);
+    expect(
+      (report.visibleBouquetSurfaceText.match(new RegExp(`${earned}/${needed}`, "g")) || []).length,
+      `${label} one visible total narration`
+    ).toBe(1);
+    expect(
+      (report.visibleBouquetSurfaceText.match(/Complete for \d+ coins/gi) || []).length,
+      `${label} one visible completion promise`
+    ).toBe(1);
+    expect(report.receiverCopyScrollWidth, `${label} receiver copy horizontal fit`)
+      .toBeLessThanOrEqual(report.receiverCopyWidth + 1);
+    expect(report.receiverCopyScrollHeight, `${label} receiver copy vertical fit`)
+      .toBeLessThanOrEqual(report.receiverCopyHeight + 1);
+    expect(report.emptyReceiverVisible, `${label} zero progress explains the empty bouquet`).toBe(true);
+    expect(report.visibleBlooms, `${label} zero progress creates no target heads`).toBe(0);
+    expect(report.assembledSpecies, `${label} zero progress has no decorative target species`).toEqual([]);
+    if (viewport.label !== "desktop") {
       expect(report.boardVisible, `${label} active board visible`).toBe(true);
       expect(report.boardBottom, `${label} board remains in first viewport`).toBeLessThanOrEqual(844);
     }
@@ -2223,8 +2257,16 @@ test("active hierarchy scales the roomy altar without moving the accepted short 
       expect(afterAuthority.savedMoves, `${capture.label} opening move`).toBe(5);
       expect(afterAuthority.savedCounts, `${capture.label} exact Thorn Rose harvest`).toEqual([0, 0, 0, 0, 0, 3]);
       expect(afterAuthority.savedCoins, `${capture.label} no pre-completion coins`).toBe(0);
-      expect(afterAuthority.text, `${capture.label} order-owned label`).toBe("Order Progress · 3/14");
+      expect(afterAuthority.text, `${capture.label} order-owned label`).toBe("Bouquet · 3/14");
       expect(afterAuthority.assemblyProgress, `${capture.label} bouquet assembly advances`).toBe("3/14");
+      expect(afterAuthority.emptyReceiverVisible, `${capture.label} empty state retires after gain`).toBe(false);
+      expect(afterAuthority.visibleBlooms, `${capture.label} only earned heads assemble`).toBeGreaterThan(0);
+      expect(new Set(afterAuthority.assembledSpecies), `${capture.label} first assembly is Thorn Rose only`)
+        .toEqual(new Set([5]));
+      expect(
+        (afterAuthority.visibleBouquetSurfaceText.match(/3\/14/g) || []).length,
+        `${capture.label} one authoritative total after opening`
+      ).toBe(1);
       expect(afterAuthority.bouquetBarWidth, `${capture.label} bouquet track advances`).not.toBe(beforeAuthority.bouquetBarWidth);
       expect(afterAuthority.bouquetSurfaceText, `${capture.label} no greenhouse claim in bouquet HUD`)
         .not.toMatch(/restore|upgrade|raise|greenhouse|conservatory/i);

@@ -167,6 +167,8 @@ async function activeBouquetAssemblyState(page) {
       complete: assembly?.dataset.assemblyComplete || "",
       state: assembly?.dataset.assemblyState || "",
       round: assembly?.dataset.round || "",
+      visibleBlooms: Number(assembly?.dataset.visibleBlooms || 0),
+      emptyText: assembly?.querySelector(".live-bouquet-empty")?.textContent.replace(/\s+/g, " ").trim() || "",
       width: rect?.width || 0,
       height: rect?.height || 0,
       bindingWidth: Number.parseFloat(bindingStyle?.width || "0"),
@@ -617,17 +619,13 @@ async function runJourney(page, label, includeRetry) {
   expect(initialAssembly.height, "fresh live bouquet has bouquet silhouette height").toBeGreaterThanOrEqual(compactReceiver ? 54 : 70);
   expect(initialAssembly.bindingWidth, "fresh live bouquet shows a physical binding").toBeGreaterThanOrEqual(compactReceiver ? 60 : 64);
   expect(initialAssembly.vineWidth, "fresh live bouquet shows empty vine slots").toBeGreaterThanOrEqual(compactReceiver ? 74 : 84);
-  expect(initialAssembly.ingredients).toHaveLength(6);
-  expect(initialAssembly.stems).toBe(6);
-  expect(initialAssembly.leaves).toBe(6);
-  expect(initialAssembly.ingredients.map((ingredient) => ingredient.flowerId)).toEqual([5, 1, 5, 1, 5, 1]);
-  expect(initialAssembly.ingredients.every((ingredient) => ingredient.filled === false)).toBe(true);
-  expect(initialAssembly.ingredients.every((ingredient) => ingredient.visualProgress === 0)).toBe(true);
-  expect(initialAssembly.ingredients.every((ingredient) => ingredient.image.complete && ingredient.image.naturalWidth >= 48)).toBe(true);
-  expect(Math.min(...initialAssembly.ingredients.map((ingredient) => ingredient.imageWidth))).toBeGreaterThanOrEqual(compactReceiver ? 18 : 24);
+  expect(initialAssembly.ingredients).toHaveLength(0);
+  expect(initialAssembly.stems).toBe(0);
+  expect(initialAssembly.leaves).toBe(0);
+  expect(initialAssembly.visibleBlooms).toBe(0);
+  expect(initialAssembly.emptyText).toBe("Empty Bouquet Match targets to build");
   const initialVisual = await sampleElementVisual(page, "#liveBouquetAssembly");
-  expect(initialVisual.samples).toHaveLength(6);
-  expect(initialVisual.samples.every((sample) => sample.complete && sample.naturalWidth >= 48 && sample.coloredPixels > 20)).toBe(true);
+  expect(initialVisual.samples).toHaveLength(0);
   expect(initialAssembly.overflowX).toBe(false);
   if (label.includes("mobile390")) {
     expect(initialAssembly.boardBottom, "mobile active board stays in viewport with live bouquet").toBeLessThanOrEqual(844);
@@ -636,9 +634,10 @@ async function runJourney(page, label, includeRetry) {
   await page.reload({ waitUntil: "networkidle" });
   const reloadedEmptyAssembly = await activeBouquetAssemblyState(page);
   expect(reloadedEmptyAssembly.progress).toBe(initialAssembly.progress);
-  expect(reloadedEmptyAssembly.ingredients).toHaveLength(6);
-  expect(reloadedEmptyAssembly.stems).toBe(6);
-  expect(reloadedEmptyAssembly.leaves).toBe(6);
+  expect(reloadedEmptyAssembly.ingredients).toHaveLength(0);
+  expect(reloadedEmptyAssembly.stems).toBe(0);
+  expect(reloadedEmptyAssembly.leaves).toBe(0);
+  expect(reloadedEmptyAssembly.emptyText).toBe(initialAssembly.emptyText);
   const landing = await clickGuidedSwapAndSampleFlight(page, label);
   expect(landing.inAssembly, "positive target flight lands inside the live bouquet assembly").toBe(true);
   expect(landing.inBloom, "positive target flight lands on the actively growing bloom").toBe(true);
@@ -662,8 +661,10 @@ async function runJourney(page, label, includeRetry) {
   expect(Math.max(...firstAssembly.ingredients
     .filter((ingredient) => ingredient.flowerId === 5)
     .map((ingredient) => ingredient.imageOpacity))).toBeGreaterThan(.75);
-  expect(firstAssembly.ingredients.filter((ingredient) => ingredient.receiver)).toHaveLength(2);
-  expect(firstAssembly.ingredients.map((ingredient) => ingredient.flowerId)).toEqual([5, 1, 5, 1, 5, 1]);
+  expect(firstAssembly.ingredients.filter((ingredient) => ingredient.receiver)).toHaveLength(1);
+  expect(new Set(firstAssembly.ingredients.map((ingredient) => ingredient.flowerId))).toEqual(new Set([5]));
+  expect(firstAssembly.visibleBlooms).toBe(firstAssembly.ingredients.length);
+  expect(firstAssembly.emptyText).toBe("");
   expect(firstAssembly.width).toBeGreaterThanOrEqual(initialAssembly.width - 1);
   expect(firstAssembly.height).toBeGreaterThanOrEqual(initialAssembly.height - 1);
   await page.screenshot({ path: `work/live-bouquet-${label}-first-harvest.png`, fullPage: true });
@@ -676,7 +677,7 @@ async function runJourney(page, label, includeRetry) {
   expect(partialReloadAssembly.ingredients.map((ingredient) => ingredient.visualProgress)).toEqual(
     firstAssembly.ingredients.map((ingredient) => ingredient.visualProgress)
   );
-  expect(partialReloadAssembly.ingredients).toHaveLength(6);
+  expect(partialReloadAssembly.ingredients).toHaveLength(firstAssembly.ingredients.length);
   let secondAssembly = partialReloadAssembly;
   for (let attempt = 0; attempt < 4; attempt += 1) {
     const speciesWithProgress = new Set(secondAssembly.ingredients
@@ -697,11 +698,12 @@ async function runJourney(page, label, includeRetry) {
   expect(speciesWithProgress.has(5), "mid-progress contains earned Thorn Rose heads").toBe(true);
   expect(speciesWithProgress.has(1), "mid-progress contains earned Bone Star heads").toBe(true);
   await page.screenshot({ path: `work/live-bouquet-${label}-mid-progress.png`, fullPage: true });
-  const liveCompositionBeforeComplete = secondAssembly.liveComposition;
   await completeRoundWithReviewKey(page);
   const fullPreCeremonyAssembly = await activeBouquetAssemblyState(page);
   expect(fullPreCeremonyAssembly.complete).toBe("true");
-  expect(fullPreCeremonyAssembly.liveComposition).toEqual(liveCompositionBeforeComplete);
+  expect(fullPreCeremonyAssembly.liveComposition).toEqual([5, 1, 5, 1, 5, 1]);
+  expect(fullPreCeremonyAssembly.ingredients).toHaveLength(6);
+  expect(fullPreCeremonyAssembly.visibleBlooms).toBe(6);
   expect(fullPreCeremonyAssembly.ingredients.every((ingredient) => ingredient.visualProgress === 1)).toBe(true);
   await page.screenshot({ path: `work/live-bouquet-${label}-full-pre-ceremony.png`, fullPage: true });
   const roundOneCeremony = await expectCeremony(page, "Restore Greenhouse", `work/pass2-${label}-round1-pending.png`, "Coins restore the greenhouse.");
@@ -1011,7 +1013,8 @@ for (const config of [
     });
     await clickGuidedSwap(page);
     const active = await activeBouquetAssemblyState(page);
-    expect(active.ingredients).toHaveLength(6);
+    expect(active.ingredients.length).toBeGreaterThan(0);
+    expect(active.visibleBlooms).toBe(active.ingredients.length);
     expect(active.width).toBeGreaterThanOrEqual(config.minWidth);
     expect(active.height).toBeGreaterThanOrEqual(config.minHeight);
     await completeRoundWithReviewKey(page);
