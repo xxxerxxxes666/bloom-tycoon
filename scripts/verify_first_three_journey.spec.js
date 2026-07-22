@@ -7,6 +7,30 @@ const ROUND_TARGETS = {
   2: [2, 4, 5],
   3: [3, 0]
 };
+
+function expectedUnitComposition(targetCounts) {
+  const placement = targetCounts.map(([flowerId, needed], targetIndex) => ({
+    flowerId, needed, targetIndex, placed: 0
+  }));
+  const composition = [];
+  while (composition.length < targetCounts.reduce((sum, [, needed]) => sum + needed, 0)) {
+    const candidate = placement
+      .filter((entry) => entry.placed < entry.needed)
+      .sort((first, second) => (
+        (first.placed / first.needed) - (second.placed / second.needed)
+          || first.targetIndex - second.targetIndex
+      ))[0];
+    composition.push(candidate.flowerId);
+    candidate.placed += 1;
+  }
+  return composition;
+}
+
+const ROUND_COMPOSITIONS = [
+  expectedUnitComposition([[5, 8], [1, 6]]),
+  expectedUnitComposition([[2, 10], [4, 9], [5, 7]]),
+  expectedUnitComposition([[3, 14], [0, 13]])
+];
 const JOURNEY_SEEDS = [
   "altar-rose",
   "amber-vesper",
@@ -752,11 +776,7 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
     "Bloodroot Compact Complete"
   ];
   const expectedNames = ["First Bouquet", "Moonlit Wreath", "Bloodroot Compact"];
-  const expectedCompositions = [
-    [5, 1, 5, 1, 5, 1],
-    [2, 4, 5, 2, 4, 5],
-    [3, 0, 3, 0, 3, 0]
-  ];
+  const expectedCompositions = ROUND_COMPOSITIONS;
   const expectedTargetCounts = ["5:8,1:6", "2:10,4:9,5:7", "3:14,0:13"];
   const expectedCopies = [
     "Bouquet complete. The raised conservatory remains yours.",
@@ -842,7 +862,11 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
     expect(ingredientSamples.length, `${runLabel} round ${round} sampled authoritative ingredient transfer`).toBeGreaterThan(0);
     expect(ingredientSamples.every((sample) => JSON.stringify(sample.ingredientIds) === JSON.stringify(expectedCompositions[round - 1])), "transfer follows trophy composition").toBe(true);
     expect(ingredientSamples.every((sample) => sample.ingredientImagesLoaded), "transfer images load local pixels").toBe(true);
-    expect(ingredientSamples.every((sample) => sample.transientNodes === 10), "renewal node count stays fixed and bounded").toBe(true);
+    const expectedTransientNodes = expectedCompositions[round - 1].length + 4;
+    expect(
+      ingredientSamples.every((sample) => sample.transientNodes === expectedTransientNodes),
+      "renewal node count stays fixed at one ingredient per earned unit plus four response nodes"
+    ).toBe(true);
     expect(ingredientSamples.some((sample) => sample.responseVisible), "owned greenhouse gives one visible renewal response").toBe(true);
     const firstTransientAt = transientSamples[0].at;
     const settledSample = phaseSamples.find((sample) => sample.phase === "settled");

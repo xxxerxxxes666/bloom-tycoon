@@ -3,6 +3,39 @@ const { test, expect } = require("@playwright/test");
 const BASE_URL = process.env.BLOOM_TEST_URL || "http://127.0.0.1:4173/playable/midnight_bloom_prototype.html";
 const SAVE_KEY = "bloomTycoonPlayableStateV1";
 
+function expectedUnitComposition(targetCounts) {
+  const placement = targetCounts.map(([flowerId, needed], targetIndex) => ({
+    flowerId, needed, targetIndex, placed: 0
+  }));
+  const composition = [];
+  while (composition.length < targetCounts.reduce((sum, [, needed]) => sum + needed, 0)) {
+    const candidate = placement
+      .filter((entry) => entry.placed < entry.needed)
+      .sort((first, second) => (
+        (first.placed / first.needed) - (second.placed / second.needed)
+          || first.targetIndex - second.targetIndex
+      ))[0];
+    composition.push(candidate.flowerId);
+    candidate.placed += 1;
+  }
+  return composition;
+}
+
+const ROUND_COMPOSITIONS = {
+  1: expectedUnitComposition([[5, 8], [1, 6]]),
+  2: expectedUnitComposition([[2, 10], [4, 9], [5, 7]]),
+  3: expectedUnitComposition([[3, 14], [0, 13]])
+};
+
+function expectedEarnedHeadCount(round, counts) {
+  const objectives = {
+    1: [[5, 8], [1, 6]],
+    2: [[2, 10], [4, 9], [5, 7]],
+    3: [[3, 14], [0, 13]]
+  }[round];
+  return objectives.reduce((sum, [flowerId, needed]) => sum + Math.min(counts[flowerId] || 0, needed), 0);
+}
+
 const HUD_CASES = [
   {
     label: "r1-active",
@@ -265,9 +298,11 @@ async function movePressureReport(page) {
     const counter = document.querySelector(".moves-counter");
     const objective = document.querySelector("#objective");
     const board = document.querySelector("#board");
+    const guide = document.querySelector("#firstSwapCue");
     const counterStyle = getComputedStyle(counter);
     const objectiveRect = objective.getBoundingClientRect();
     const boardRect = board.getBoundingClientRect();
+    const guideRect = guide?.getBoundingClientRect();
     const active = document.activeElement;
     return {
       text: counter.textContent.trim(),
@@ -285,6 +320,9 @@ async function movePressureReport(page) {
       boardBottom: boardRect.bottom,
       boardWidth: boardRect.width,
       boardHeight: boardRect.height,
+      guideVisible: visible(guide),
+      guideHeight: guideRect?.height || 0,
+      guideBottom: guideRect?.bottom || 0,
       objectiveLow: objective.classList.contains("low-moves"),
       retryVisible: visible(document.querySelector("#renewBtn.visible")),
       retryFocused: active?.id === "renewBtn",
@@ -546,24 +584,22 @@ async function assertHudState(page, fixture, viewport, reload) {
       .toBeLessThanOrEqual(report.receiverCopyWidth + 1);
     expect(report.receiverCopyScrollHeight, `${label} receiver copy vertical fit`)
       .toBeLessThanOrEqual(report.receiverCopyHeight + 1);
-    const expectedComposition = {
-      1: [5, 1, 5, 1, 5, 1],
-      2: [2, 4, 5, 2, 4, 5],
-      3: [3, 0, 3, 0, 3, 0]
-    }[savedState(fixture).currentRound];
+    const round = savedState(fixture).currentRound;
+    const expectedComposition = ROUND_COMPOSITIONS[round];
     expect(report.assembledSpecies, `${label} empty capacity follows trophy composition`).toEqual(expectedComposition);
     expect(report.linearMeterVisible, `${label} generic linear bouquet fill stays retired`).toBe(false);
     expect(report.emptyReceiverVisible, `${label} capacity needs no competing prose`).toBe(false);
     if (Number(earned) === 0) {
-      expect(report.assemblyState, `${label} six empty sockets are the fresh bouquet state`).toBe("fresh");
+      expect(report.assemblyState, `${label} restrained future positions are the fresh bouquet state`).toBe("fresh");
       expect(report.visibleBlooms, `${label} zero progress creates no earned heads`).toBe(0);
-      expect(report.assemblySlotStates, `${label} fresh order exposes six restrained empty sockets`)
-        .toEqual(Array(6).fill("empty"));
+      expect(report.assemblySlotStates, `${label} fresh order exposes every restrained future position`)
+        .toEqual(Array(expectedComposition.length).fill("empty"));
     } else {
       expect(report.assemblyState, `${label} partial objective counts grow the physical bouquet`).toMatch(/mid|nearly/);
-      expect(report.visibleBlooms, `${label} partial objective counts expose earned heads`).toBeGreaterThan(0);
+      expect(report.visibleBlooms, `${label} one earned unit equals one visible head`)
+        .toBe(expectedEarnedHeadCount(round, report.savedCounts));
       expect(report.assemblySlotStates, `${label} partial order retains incomplete capacity`).toContain("empty");
-      expect(report.assemblySlotStates, `${label} partial order exposes proportional heads`).toContain("partial");
+      expect(report.assemblySlotStates, `${label} unit slots are only earned or unearned`).not.toContain("partial");
     }
     if (viewport.label !== "desktop") {
       expect(report.boardVisible, `${label} active board visible`).toBe(true);
@@ -1006,14 +1042,25 @@ for (const viewport of VIEWPORTS) {
         before.objectiveHeight,
         1
       );
-      expect(peak.boardTop, `${viewport.label} ${fromMoves}->${remaining} board top`).toBeCloseTo(
-        before.boardTop,
-        1
-      );
-      expect(peak.boardBottom, `${viewport.label} ${fromMoves}->${remaining} board bottom`).toBeCloseTo(
-        before.boardBottom,
-        1
-      );
+      if (peak.guideVisible && !before.guideVisible) {
+        expect(
+          peak.boardTop - before.boardTop,
+          `${viewport.label} ${fromMoves}->${remaining} guide row is the only vertical shift`
+        ).toBeLessThanOrEqual(peak.guideHeight + 10);
+        expect(peak.guideBottom, `${viewport.label} ${fromMoves}->${remaining} guide clears board`)
+          .toBeLessThanOrEqual(peak.boardTop);
+      } else {
+        expect(peak.boardTop, `${viewport.label} ${fromMoves}->${remaining} board top`).toBeCloseTo(
+          before.boardTop,
+          1
+        );
+        expect(peak.boardBottom, `${viewport.label} ${fromMoves}->${remaining} board bottom`).toBeCloseTo(
+          before.boardBottom,
+          1
+        );
+      }
+      expect(peak.boardBottom, `${viewport.label} ${fromMoves}->${remaining} board stays in viewport`)
+        .toBeLessThanOrEqual(viewport.height - 4);
       expect(peak.boardWidth, `${viewport.label} ${fromMoves}->${remaining} board width`).toBeCloseTo(
         before.boardWidth,
         1
@@ -1391,19 +1438,15 @@ for (const viewport of FAILURE_VIEWPORTS) {
           recovered.roundTwoGreenhouseUpgraded,
           `${viewport.label} Round ${round} ${key} R2 upgrade`
         ).toBe(round > 2);
-        const expectedComposition = {
-          1: [5, 1, 5, 1, 5, 1],
-          2: [2, 4, 5, 2, 4, 5],
-          3: [3, 0, 3, 0, 3, 0]
-        }[round];
+        const expectedComposition = ROUND_COMPOSITIONS[round];
         expect(recovered.bouquetProgress, `${viewport.label} Round ${round} ${key} fresh bouquet`)
           .toBe(`0/${[14, 29, 27][round - 1]}`);
         expect(recovered.bouquetComposition.map((slot) => slot.flowerId), `${viewport.label} Round ${round} ${key} ingredient order`)
           .toEqual(expectedComposition);
         expect(recovered.bouquetComposition.map((slot) => slot.slotProgress), `${viewport.label} Round ${round} ${key} empty slot progress`)
-          .toEqual(Array(6).fill(0));
+          .toEqual(Array(expectedComposition.length).fill(0));
         expect(recovered.bouquetComposition.map((slot) => slot.slotState), `${viewport.label} Round ${round} ${key} empty slot state`)
-          .toEqual(Array(6).fill("empty"));
+          .toEqual(Array(expectedComposition.length).fill("empty"));
         expect(recovered.coinLive, `${viewport.label} Round ${round} ${key} coin live`).toBe("polite");
         expect(recovered.ceremonyLive, `${viewport.label} Round ${round} ${key} ceremony live`).toBe("polite");
         expect(recovered.tiles, `${viewport.label} Round ${round} ${key} tiles`).toBe(64);

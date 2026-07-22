@@ -312,6 +312,7 @@ async function activeBouquetAssemblyState(page) {
         const imageRect = image?.getBoundingClientRect();
         return {
           flowerId: Number(ingredient.dataset.flowerId),
+          unitIndex: Number(ingredient.dataset.unitIndex),
           progress: ingredient.dataset.progress,
           slotProgress: Number(ingredient.dataset.slotProgress || 0),
           slotState: ingredient.dataset.slotState || "",
@@ -337,14 +338,14 @@ async function activeBouquetAssemblyState(page) {
             && rect.right <= assembly.getBoundingClientRect().right + 1
             && rect.top >= assembly.getBoundingClientRect().top - 1
             && rect.bottom <= assembly.getBoundingClientRect().bottom + 1),
-          imageContained: Boolean(imageRect
+          imageContained: !image && ingredient.dataset.slotState === "empty" ? true : Boolean(imageRect
             && imageRect.left >= rect.left - 1
             && imageRect.right <= rect.right + 1
             && imageRect.top >= rect.top - 1
             && imageRect.bottom <= rect.bottom + 1),
           imageWidth: imageRect?.width || 0,
           imageHeight: imageRect?.height || 0,
-          imageOpacity: Number(getComputedStyle(ingredient.querySelector(".icon-wrap")).opacity),
+          imageOpacity: image ? Number(getComputedStyle(ingredient.querySelector(".icon-wrap")).opacity) : 0,
           image: {
             src: image?.getAttribute("src") || "",
             complete: image?.complete || false,
@@ -384,6 +385,7 @@ async function activeBouquetAssemblyState(page) {
       stems: stemDetails.length,
       stemDetails,
       leaves: document.querySelectorAll("#liveBouquetAssembly .live-bouquet-leaf").length,
+      buds: document.querySelectorAll("#liveBouquetAssembly .live-bouquet-bud").length,
       knot: knotRect ? {
         centerX: knotRect.left + knotRect.width / 2,
         centerY: knotRect.top + knotRect.height / 2,
@@ -409,6 +411,7 @@ async function activeBouquetAssemblyState(page) {
 
 function maxIngredientOverlapRatio(ingredients) {
   let maximum = 0;
+  let pair = [];
   for (let index = 0; index < ingredients.length; index += 1) {
     for (let compare = index + 1; compare < ingredients.length; compare += 1) {
       const first = ingredients[index];
@@ -416,10 +419,14 @@ function maxIngredientOverlapRatio(ingredients) {
       const overlapWidth = Math.max(0, Math.min(first.right, second.right) - Math.max(first.left, second.left));
       const overlapHeight = Math.max(0, Math.min(first.bottom, second.bottom) - Math.max(first.top, second.top));
       const smallerArea = Math.min(first.width * first.height, second.width * second.height);
-      maximum = Math.max(maximum, smallerArea ? (overlapWidth * overlapHeight) / smallerArea : 0);
+      const ratio = smallerArea ? (overlapWidth * overlapHeight) / smallerArea : 0;
+      if (ratio > maximum) {
+        maximum = ratio;
+        pair = [index, compare];
+      }
     }
   }
-  return maximum;
+  return { maximum, pair };
 }
 
 function overlapRatio(first, second) {
@@ -429,12 +436,46 @@ function overlapRatio(first, second) {
   return smallerArea ? (overlapWidth * overlapHeight) / smallerArea : 0;
 }
 
+function expectedUnitComposition(targetCounts) {
+  const placement = targetCounts.map(([flowerId, needed], targetIndex) => ({
+    flowerId,
+    needed,
+    targetIndex,
+    placed: 0
+  }));
+  const composition = [];
+  while (composition.length < targetCounts.reduce((sum, [, needed]) => sum + needed, 0)) {
+    const candidate = placement
+      .filter((entry) => entry.placed < entry.needed)
+      .sort((first, second) => (
+        (first.placed / first.needed) - (second.placed / second.needed)
+          || first.targetIndex - second.targetIndex
+      ))[0];
+    composition.push(candidate.flowerId);
+    candidate.placed += 1;
+  }
+  return composition;
+}
+
+const ROUND_ONE_COMPOSITION = expectedUnitComposition([[5, 8], [1, 6]]);
+const ROUND_TWO_COMPOSITION = expectedUnitComposition([[2, 10], [4, 9], [5, 7]]);
+const ROUND_THREE_COMPOSITION = expectedUnitComposition([[3, 14], [0, 13]]);
+
+function earnedHeadCounts(assembly) {
+  return assembly.ingredients.reduce((counts, ingredient) => {
+    if (ingredient.slotState === "filled") {
+      counts[ingredient.flowerId] = (counts[ingredient.flowerId] || 0) + 1;
+    }
+    return counts;
+  }, {});
+}
+
 function expectPhysicalBouquetGeometry(assembly, composition) {
   expect(assembly.ingredients.map((ingredient) => ingredient.flowerId), "live composition follows trophy order")
     .toEqual(composition);
-  expect(assembly.ingredients, "all six authoritative capacity slots remain present").toHaveLength(6);
-  expect(assembly.stems, "every capacity slot retains its physical stem").toBe(6);
-  expect(assembly.leaves, "every capacity slot retains its physical leaf").toBe(6);
+  expect(assembly.ingredients, "every authoritative flower unit owns one capacity slot").toHaveLength(composition.length);
+  expect(assembly.stems, "every capacity slot retains its physical stem").toBe(composition.length);
+  expect(assembly.leaves, "every capacity slot retains its physical leaf").toBe(composition.length);
   expect(assembly.ingredients.filter((ingredient) => !ingredient.contained).map((ingredient) => ({
     slot: assembly.ingredients.indexOf(ingredient),
     left: ingredient.left,
@@ -443,24 +484,25 @@ function expectPhysicalBouquetGeometry(assembly, composition) {
     bottom: ingredient.bottom
   })), "heads stay inside the receiver").toEqual([]);
   expect(assembly.ingredients.every((ingredient) => ingredient.imageContained), "icons stay inside their head geometry").toBe(true);
-  expect(assembly.ingredients.every((ingredient) => (
+  expect(assembly.ingredients.filter((ingredient) => ingredient.slotState === "filled").every((ingredient) => (
     ingredient.image.complete
     && ingredient.image.naturalWidth > 0
     && ingredient.image.naturalHeight > 0
-  )), "every ingredient silhouette is a complete repo-local image").toBe(true);
+  )), "every earned ingredient head is a complete repo-local image").toBe(true);
   const crownLeft = Math.min(...assembly.ingredients.map((ingredient) => ingredient.left));
   const crownRight = Math.max(...assembly.ingredients.map((ingredient) => ingredient.right));
   const crownWidth = crownRight - crownLeft;
   const crownYSpread = Math.max(...assembly.ingredients.map((ingredient) => ingredient.centerY))
     - Math.min(...assembly.ingredients.map((ingredient) => ingredient.centerY));
   const overlap = maxIngredientOverlapRatio(assembly.ingredients);
-  expect(crownWidth, "six heads form a compact crown instead of spanning the rail")
+  expect(crownWidth, "all heads form a compact crown instead of spanning the rail")
     .toBeLessThan(assembly.width * .78);
   expect(crownWidth, "compact crown remains visually substantial")
     .toBeGreaterThan(assembly.width * .4);
   expect(crownYSpread, "bouquet crown has vertical tiers instead of a flat row").toBeGreaterThan(14);
-  expect(overlap, "bouquet heads cluster with natural overlap").toBeGreaterThan(.1);
-  expect(overlap, "ingredient heads remain individually legible").toBeLessThan(.7);
+  expect(overlap.maximum, "bouquet heads cluster with natural overlap").toBeGreaterThan(.08);
+  expect(overlap.maximum, `ingredient heads remain individually legible; closest slots ${overlap.pair.join("/")}`)
+    .toBeLessThan(.82);
   expect(assembly.ingredients.filter((ingredient) => ingredient.slotProgress === 0).every((ingredient) => (
     ingredient.capacityBackgroundImage === "none"
       && ingredient.capacityBackgroundColor === "rgba(0, 0, 0, 0)"
@@ -469,7 +511,7 @@ function expectPhysicalBouquetGeometry(assembly, composition) {
   expect(assembly.knot, "one binding knot remains visible").not.toBeNull();
   expect(assembly.knot.width, "binding knot remains materially legible").toBeGreaterThan(14);
   expect(assembly.knot.centerY, "binding knot sits below the crown")
-    .toBeGreaterThan(assembly.ingredients.reduce((sum, ingredient) => sum + ingredient.centerY, 0) / 6 + 14);
+    .toBeGreaterThan(assembly.ingredients.reduce((sum, ingredient) => sum + ingredient.centerY, 0) / composition.length + 14);
   const stemXSpread = Math.max(...assembly.stemDetails.map((stem) => stem.anchorX))
     - Math.min(...assembly.stemDetails.map((stem) => stem.anchorX));
   const stemYSpread = Math.max(...assembly.stemDetails.map((stem) => stem.anchorY))
@@ -597,6 +639,8 @@ async function visibleContract(page) {
         .map((node) => node.dataset.flowerName || ""),
       craftedBloomSlots: Array.from(document.querySelectorAll(".crafted-flower-bloom"))
         .map((node) => Number(node.dataset.craftedSlot)),
+      craftedUnitIndices: Array.from(document.querySelectorAll(".crafted-flower-bloom"))
+        .map((node) => Number(node.dataset.unitIndex)),
       craftedBloomSizes: Array.from(document.querySelectorAll(".crafted-flower-bloom"))
         .map((node) => {
           const rect = node.getBoundingClientRect();
@@ -693,28 +737,37 @@ async function expectCeremony(page, expectedButton, screenshotPath, expectedGuid
   const contract = await visibleContract(page);
   expect(contract.trophies, "one visible bouquet trophy").toBe(1);
   expect(contract.craftedBouquets, "one crafted bouquet object").toBe(1);
-  expect(contract.craftedBlooms, "six overlapping bouquet bloom heads").toBe(6);
-  expect(contract.craftedStems, "six bouquet stems").toBe(6);
-  expect(contract.craftedLeaves, "six bouquet leaves").toBe(6);
-  expect(contract.craftedBloomCount).toBe("6");
+  const expectedBloomCount = contract.trophyName.includes("Moonlit Wreath") ? 26
+    : contract.trophyName.includes("Bloodroot Compact") ? 27 : 14;
+  expect(contract.craftedBlooms, "every objective flower becomes one trophy head").toBe(expectedBloomCount);
+  expect(contract.craftedStems, "every trophy head keeps its converging stem").toBe(expectedBloomCount);
+  expect(contract.craftedLeaves, "every trophy head keeps botanical foliage").toBe(expectedBloomCount);
+  expect(contract.craftedBloomCount).toBe(String(expectedBloomCount));
   const expectedComposition = contract.trophyName.includes("Moonlit Wreath")
-    ? [2, 4, 5, 2, 4, 5]
+    ? ROUND_TWO_COMPOSITION
     : contract.trophyName.includes("Bloodroot Compact")
-      ? [3, 0, 3, 0, 3, 0]
-      : [5, 1, 5, 1, 5, 1];
+      ? ROUND_THREE_COMPOSITION
+      : ROUND_ONE_COMPOSITION;
   const expectedCounts = contract.trophyName.includes("Moonlit Wreath")
     ? "2:10,4:9,5:7"
     : contract.trophyName.includes("Bloodroot Compact")
       ? "3:14,0:13"
       : "5:8,1:6";
-  expect(contract.craftedComposition, "ceremony uses the exact six-slot target ingredient sequence").toEqual(expectedComposition);
+  expect(contract.craftedComposition, "ceremony uses the exact one-unit target ingredient sequence").toEqual(expectedComposition);
   expect(contract.craftedTargetCounts, "ceremony carries authoritative objective counts").toBe(expectedCounts);
-  expect(contract.craftedBloomSlots, "six bouquet slots are unique and ordered").toEqual([0, 1, 2, 3, 4, 5]);
+  expect(contract.craftedBloomSlots, "bouquet unit slots are unique and ordered")
+    .toEqual(Array.from({ length: expectedBloomCount }, (_, index) => index));
+  Object.entries(expectedComposition.reduce((groups, flowerId, index) => {
+    (groups[flowerId] ||= []).push(contract.craftedUnitIndices[index]);
+    return groups;
+  }, {})).forEach(([, unitIndices]) => {
+    expect(unitIndices, "each species carries a stable zero-based unit identity")
+      .toEqual(Array.from({ length: unitIndices.length }, (_, index) => index));
+  });
   expect(new Set(contract.craftedFlowerNames).size, "both target flower names render in trophy").toBeGreaterThanOrEqual(2);
-  expect(Math.min(...contract.craftedBloomSizes), "flower heads are materially larger than labels and binding").toBeGreaterThanOrEqual(58);
-  expect(Math.min(...contract.craftedBloomSizes), "flower heads dominate the hand binding").toBeGreaterThan(contract.craftedBinding.height * 2);
-  expect(Math.min(...contract.craftedBloomSizes), "flower heads dominate ingredient labels").toBeGreaterThan(
-    Math.max(...contract.ingredientTokenHeights, 0) * 2
+  expect(Math.min(...contract.craftedBloomSizes), "every unit head remains materially legible").toBeGreaterThanOrEqual(24);
+  expect(Math.min(...contract.craftedBloomSizes), "unit heads remain larger than ingredient labels").toBeGreaterThan(
+    Math.max(...contract.ingredientTokenHeights, 0)
   );
   expect(contract.payoffTokenLayout.bonus, "ingredient row remains measurable").toMatchObject({
     display: "grid",
@@ -735,14 +788,15 @@ async function expectCeremony(page, expectedButton, screenshotPath, expectedGuid
   ).toBe(true);
   expect(contract.craftedImageSources.every((image) => image.complete && image.naturalWidth >= 48 && image.naturalHeight >= 48)).toBe(true);
   if (contract.trophyName.includes("First Bouquet")) {
-    expect(contract.craftedImageSources.map((image) => image.src)).toEqual([
-      "../assets/tiles/96/crimson_rose_rune.png",
-      "../assets/tiles/96/bone_white_thorn_star.png",
-      "../assets/tiles/96/crimson_rose_rune.png",
-      "../assets/tiles/96/bone_white_thorn_star.png",
-      "../assets/tiles/96/crimson_rose_rune.png",
-      "../assets/tiles/96/bone_white_thorn_star.png"
-    ]);
+    const sourceCounts = contract.craftedImageSources.reduce((counts, image) => {
+      const source = image.src.split("/").pop();
+      counts[source] = (counts[source] || 0) + 1;
+      return counts;
+    }, {});
+    expect(sourceCounts).toEqual({
+      "crimson_rose_rune.png": 8,
+      "bone_white_thorn_star.png": 6
+    });
   }
   expect(contract.trophyState, "bouquet presentation is ready").toBe("assembled");
   expect(contract.scenes, "one visible greenhouse scene").toBe(1);
@@ -870,9 +924,12 @@ async function clickPrimary(page) {
 }
 
 async function assertReloadKeeps(page, expectedButton, screenshotPath, expectedGuide = "") {
-  await page.reload({ waitUntil: "networkidle" });
-  await expectCeremony(page, expectedButton, screenshotPath, expectedGuide);
-  await expect(page.locator("#roundOneRestoration button:not([hidden])")).toBeFocused();
+  for (let reload = 1; reload <= 2; reload += 1) {
+    await page.reload({ waitUntil: "networkidle" });
+    const path = reload === 1 ? screenshotPath : screenshotPath.replace(/\.png$/, "-reload2.png");
+    await expectCeremony(page, expectedButton, path, expectedGuide);
+    await expect(page.locator("#roundOneRestoration button:not([hidden])")).toBeFocused();
+  }
 }
 
 async function forceRoundTwoFailure(page) {
@@ -889,6 +946,9 @@ async function forceRoundTwoFailure(page) {
   }, SAVE_KEY);
   await page.reload({ waitUntil: "networkidle" });
   await expect(page.locator("#renewBtn.visible")).toHaveText("Retry Bouquet");
+  const failedAssembly = await activeBouquetAssemblyState(page);
+  expect(failedAssembly.visibleBlooms, "failed order retains no falsely earned heads").toBe(0);
+  expect(earnedHeadCounts(failedAssembly)).toEqual({});
   await expectGreenhouseOwned(page, {
     stage: "restored",
     ownedStage: 1,
@@ -898,6 +958,11 @@ async function forceRoundTwoFailure(page) {
   });
   await page.locator("#renewBtn.visible").click();
   await expectActiveBoard(page);
+  const retriedAssembly = await activeBouquetAssemblyState(page);
+  expect(retriedAssembly.progress, "Retry resets only the live order bouquet").toBe("0/29");
+  expect(retriedAssembly.ingredients).toHaveLength(26);
+  expect(retriedAssembly.visibleBlooms).toBe(0);
+  expect(earnedHeadCounts(retriedAssembly)).toEqual({});
   await expectGreenhouseOwned(page, {
     stage: "restored",
     ownedStage: 1,
@@ -919,24 +984,18 @@ async function runJourney(page, label, includeRetry) {
   expect(initialAssembly.height, "fresh live bouquet has bouquet silhouette height").toBeGreaterThanOrEqual(compactReceiver ? 54 : 70);
   expect(initialAssembly.bindingWidth, "fresh live bouquet shows a physical binding").toBeGreaterThanOrEqual(50);
   expect(initialAssembly.vineWidth, "fresh live bouquet shows empty vine slots").toBeGreaterThanOrEqual(compactReceiver ? 74 : 84);
-  expectPhysicalBouquetGeometry(initialAssembly, [5, 1, 5, 1, 5, 1]);
+  expectPhysicalBouquetGeometry(initialAssembly, ROUND_ONE_COMPOSITION);
   expect(initialAssembly.ingredients.every((ingredient) => ingredient.slotState === "empty")).toBe(true);
   expect(initialAssembly.ingredients.every((ingredient) => ingredient.slotProgress === 0)).toBe(true);
   expect(initialAssembly.ingredients.filter((ingredient) => ingredient.nextObjective)).toHaveLength(1);
   expect(initialAssembly.ingredients.find((ingredient) => ingredient.nextObjective)?.flowerId).toBe(5);
   expect(initialAssembly.visibleBlooms).toBe(0);
+  expect(initialAssembly.buds, "fresh Round 1 exposes fourteen restrained future buds").toBe(14);
   expect(initialAssembly.emptyText).toBe("");
   const initialVisual = await sampleElementVisual(page, "#liveBouquetAssembly");
-  expect(initialVisual.samples).toHaveLength(6);
-  expect(initialVisual.samples.every((sample) => sample.complete && sample.naturalWidth > 0 && sample.naturalHeight > 0)).toBe(true);
-  expect(initialVisual.samples.every((sample) => sample.sampledPixels > 0 && sample.coloredPixels > 0),
-    "all six slot silhouettes contain rendered source pixels").toBe(true);
+  expect(initialVisual.samples, "unearned buds do not masquerade as flower-image heads").toHaveLength(0);
   const initialPixels = await renderedBouquetPixelStats(page);
-  expect(initialPixels, "fresh bouquet exposes six rendered head regions").toHaveLength(6);
-  expect(Math.min(...initialPixels.map((head) => head.p75)),
-    `fresh head silhouettes are visibly painted: ${JSON.stringify(initialPixels)}`).toBeGreaterThan(10);
-  expect(initialPixels.every((head) => head.litPixels >= 18),
-    `fresh capacity is a six-head silhouette, not a dark blur: ${JSON.stringify(initialPixels)}`).toBe(true);
+  expect(initialPixels, "fresh bouquet exposes fourteen intended unit positions").toHaveLength(14);
   expect(initialAssembly.overflowX).toBe(false);
   if (label.includes("mobile390")) {
     expect(initialAssembly.boardBottom, "mobile active board stays in viewport with live bouquet").toBeLessThanOrEqual(844);
@@ -945,37 +1004,50 @@ async function runJourney(page, label, includeRetry) {
   await page.reload({ waitUntil: "networkidle" });
   const reloadedEmptyAssembly = await activeBouquetAssemblyState(page);
   expect(reloadedEmptyAssembly.progress).toBe(initialAssembly.progress);
-  expectPhysicalBouquetGeometry(reloadedEmptyAssembly, [5, 1, 5, 1, 5, 1]);
+  expectPhysicalBouquetGeometry(reloadedEmptyAssembly, ROUND_ONE_COMPOSITION);
   expect(reloadedEmptyAssembly.ingredients.map((ingredient) => ingredient.slotState))
     .toEqual(initialAssembly.ingredients.map((ingredient) => ingredient.slotState));
   expect(reloadedEmptyAssembly.emptyText).toBe(initialAssembly.emptyText);
+  await page.reload({ waitUntil: "networkidle" });
+  const twiceReloadedEmptyAssembly = await activeBouquetAssemblyState(page);
+  expect(twiceReloadedEmptyAssembly.ingredients.map((ingredient) => ({
+    flowerId: ingredient.flowerId,
+    unitIndex: ingredient.unitIndex,
+    slotState: ingredient.slotState
+  }))).toEqual(reloadedEmptyAssembly.ingredients.map((ingredient) => ({
+    flowerId: ingredient.flowerId,
+    unitIndex: ingredient.unitIndex,
+    slotState: ingredient.slotState
+  })));
   const landing = await clickGuidedSwapAndSampleFlight(page, label);
   expect(landing.inAssembly, "positive target flight lands inside the live bouquet assembly").toBe(true);
   expect(landing.inBloom, "positive target flights land on every head changed by the gain").toBe(true);
-  expect(landing.flights.map((flight) => flight.growthSlot), "3-Thorn gain owns two distinct physical heads")
-    .toEqual([0, 2]);
+  expect(landing.flights.map((flight) => flight.growthSlot), "3-Thorn gain owns three distinct physical heads")
+    .toEqual([0, 2, 4]);
   expect(landing.sealFlowerId, "first authored harvest remains attributable to Thorn Rose").toBe(5);
   expect(landing.gainedAmount, "first authored harvest carries its authoritative gain").toBe(3);
-  expect(landing.receiverSlotProgress, "landing chooses the next growing head, not an already-full head").toBeGreaterThan(0);
-  expect(landing.receiverSlotProgress, "landing chooses the next growing head, not an already-full head").toBeLessThan(1);
-  expect(landing.pulsingReceivers, "both heads changed by the gain own the bounded acceptance beat").toBe(2);
+  expect(landing.receiverSlotProgress, "every landing resolves to a newly earned full unit head").toBe(1);
+  expect(landing.pulsingReceivers, "all three earned heads own the bounded acceptance beat").toBe(3);
   expect(landing.remainingTransients, "flight and seal self-clean before the next authoritative swap").toBe(0);
   expect(landing.recorder?.records.length, "preinstalled recorder observes the complete bounded landing lifecycle")
     .toBeGreaterThanOrEqual(2);
   expect(landing.recorder?.records.length).toBeLessThanOrEqual(landing.recorder?.limit || 0);
   expect(new Set(landing.recorder?.records.map((record) => record.type))).toEqual(new Set(["flight", "seal"]));
   const firstAssembly = await activeBouquetAssemblyState(page);
-  expectPhysicalBouquetGeometry(firstAssembly, [5, 1, 5, 1, 5, 1]);
-  expect(firstAssembly.progress).not.toBe(initialAssembly.progress);
+  expectPhysicalBouquetGeometry(firstAssembly, ROUND_ONE_COMPOSITION);
+  expect(firstAssembly.progress).toBe("3/14");
+  await expect(page.locator('.objective-target[data-flower-id="5"] .objective-target-count')).toHaveText("3/8");
+  await expect(page.locator('.objective-target[data-flower-id="1"] .objective-target-count')).toHaveText("0/6");
+  await expect(page.locator(".moves-counter")).toContainText("Moves 5");
   expect(["mid", "nearly", "complete"]).toContain(firstAssembly.state);
   expect(firstAssembly.ingredients.some((ingredient) => ingredient.slotProgress > 0)).toBe(true);
   expect(firstAssembly.ingredients.some((ingredient) => ingredient.flowerId === 5 && ingredient.filled)).toBe(true);
   expect(firstAssembly.ingredients.filter((ingredient) => (
     ingredient.flowerId === 5 && ingredient.visualProgress >= .45
-  )).length, "first match leaves multiple visibly formed Thorn Rose heads").toBeGreaterThanOrEqual(2);
+  )).length, "first match leaves exactly three visibly formed Thorn Rose heads").toBe(3);
   const firstPixels = await renderedBouquetPixelStats(page);
   const earnedPixelHeads = firstPixels.filter((head) => head.slotProgress > 0);
-  expect(earnedPixelHeads, "3-Thorn gain renders more than one earned physical head").toHaveLength(2);
+  expect(earnedPixelHeads, "3-Thorn gain renders exactly three earned physical heads").toHaveLength(3);
   earnedPixelHeads.forEach((head) => {
     const freshHead = initialPixels.find((initialHead) => initialHead.slot === head.slot);
     expect(head.coloredPixels,
@@ -987,7 +1059,7 @@ async function runJourney(page, label, includeRetry) {
     .toBeGreaterThan(Math.max(...firstAssembly.ingredients.filter((ingredient) => ingredient.slotProgress === 0).map((ingredient) => ingredient.width)) * 1.15);
   expect(Math.max(...firstAssembly.ingredients
     .filter((ingredient) => ingredient.flowerId === 5 && ingredient.filled)
-    .map((ingredient) => ingredient.imageWidth))).toBeGreaterThanOrEqual(compactReceiver ? 30 : 40);
+    .map((ingredient) => ingredient.imageWidth))).toBeGreaterThanOrEqual(28);
   expect(Math.max(...firstAssembly.ingredients
     .filter((ingredient) => ingredient.flowerId === 5)
     .map((ingredient) => ingredient.imageOpacity))).toBeGreaterThan(.75);
@@ -1007,7 +1079,9 @@ async function runJourney(page, label, includeRetry) {
     .filter((ingredient) => ingredient.slotProgress > 0)
     .map((ingredient) => ingredient.flowerId))).toEqual(new Set([5]));
   expect(firstAssembly.visibleBlooms).toBe(firstAssembly.ingredients.filter((ingredient) => ingredient.slotProgress > 0).length);
-  expect(firstAssembly.ingredients.some((ingredient) => ingredient.slotState === "partial")).toBe(true);
+  expect(firstAssembly.buds).toBe(11);
+  expect(earnedHeadCounts(firstAssembly)).toEqual({ 5: 3 });
+  expect(firstAssembly.ingredients.some((ingredient) => ingredient.slotState === "partial")).toBe(false);
   expect(firstAssembly.ingredients.some((ingredient) => ingredient.slotState === "empty")).toBe(true);
   expect(firstAssembly.ingredients.find((ingredient) => ingredient.nextObjective)?.flowerId).toBe(5);
   expect(firstAssembly.emptyText).toBe("");
@@ -1028,12 +1102,14 @@ async function runJourney(page, label, includeRetry) {
   expect(partialReloadAssembly.ingredients).toHaveLength(firstAssembly.ingredients.length);
   expect(twiceReloadedPartialAssembly.ingredients.map((ingredient) => ({
     flowerId: ingredient.flowerId,
+    unitIndex: ingredient.unitIndex,
     slotProgress: ingredient.slotProgress,
     slotState: ingredient.slotState,
     receiver: ingredient.receiver,
     nextObjective: ingredient.nextObjective
   }))).toEqual(partialReloadAssembly.ingredients.map((ingredient) => ({
     flowerId: ingredient.flowerId,
+    unitIndex: ingredient.unitIndex,
     slotProgress: ingredient.slotProgress,
     slotState: ingredient.slotState,
     receiver: ingredient.receiver,
@@ -1058,16 +1134,17 @@ async function runJourney(page, label, includeRetry) {
     .map((ingredient) => ingredient.flowerId));
   expect(speciesWithProgress.has(5), "mid-progress contains earned Thorn Rose heads").toBe(true);
   expect(speciesWithProgress.has(1), "mid-progress contains earned Bone Star heads").toBe(true);
-  expectPhysicalBouquetGeometry(secondAssembly, [5, 1, 5, 1, 5, 1]);
+  expectPhysicalBouquetGeometry(secondAssembly, ROUND_ONE_COMPOSITION);
   await page.screenshot({ path: `work/live-bouquet-${label}-mid-progress.png`, fullPage: true });
   await completeRoundWithReviewKey(page);
   const fullPreCeremonyAssembly = await activeBouquetAssemblyState(page);
   expect(fullPreCeremonyAssembly.complete).toBe("true");
-  expect(fullPreCeremonyAssembly.liveComposition).toEqual([5, 1, 5, 1, 5, 1]);
-  expect(fullPreCeremonyAssembly.ingredients).toHaveLength(6);
-  expect(fullPreCeremonyAssembly.visibleBlooms).toBe(6);
+  expect(fullPreCeremonyAssembly.liveComposition).toEqual(ROUND_ONE_COMPOSITION);
+  expect(fullPreCeremonyAssembly.ingredients).toHaveLength(14);
+  expect(fullPreCeremonyAssembly.visibleBlooms).toBe(14);
   expect(fullPreCeremonyAssembly.ingredients.every((ingredient) => ingredient.visualProgress === 1)).toBe(true);
   expect(fullPreCeremonyAssembly.ingredients.every((ingredient) => ingredient.slotState === "filled")).toBe(true);
+  expect(earnedHeadCounts(fullPreCeremonyAssembly)).toEqual({ 1: 6, 5: 8 });
   await page.screenshot({ path: `work/live-bouquet-${label}-full-pre-ceremony.png`, fullPage: true });
   const roundOneCeremony = await expectCeremony(page, "Restore Greenhouse", `work/pass2-${label}-round1-pending.png`, "Coins restore the greenhouse.");
   expect(roundOneCeremony.craftedComposition).toEqual(fullPreCeremonyAssembly.liveComposition);
@@ -1191,7 +1268,7 @@ test("simultaneous target gains bind to distinct growing blooms and persist", as
     await expect(page.locator(".tile")).toHaveCount(64);
     await page.locator('.tile[data-x="3"][data-y="3"]').click();
     await page.locator('.tile[data-x="4"][data-y="3"]').click();
-    await page.waitForFunction(() => document.querySelectorAll(".objective-flight").length === 4, null, { timeout: 1800 });
+    await page.waitForFunction(() => document.querySelectorAll(".objective-flight").length === 6, null, { timeout: 1800 });
     await page.waitForFunction(() => document.querySelectorAll(".bouquet-bind-seal").length === 2, null, { timeout: 1800 });
     const transient = await page.evaluate(() => {
       const rectData = (node) => {
@@ -1229,7 +1306,8 @@ test("simultaneous target gains bind to distinct growing blooms and persist", as
     });
     expect(transient.progress).toBe("6/14");
     expect(transient.seals.map((seal) => [seal.flowerId, seal.gainedAmount])).toEqual([[1, 3], [5, 3]]);
-    expect(transient.receivers.map((receiver) => [receiver.flowerId, receiver.slot])).toEqual([[1, 1], [1, 3], [5, 0], [5, 2]]);
+    expect(transient.receivers.map((receiver) => [receiver.flowerId, receiver.slot]))
+      .toEqual([[1, 1], [1, 3], [1, 5], [5, 0], [5, 2], [5, 4]]);
     expect(transient.receivers.every((receiver) => receiver.slotProgress > 0)).toBe(true);
     expect(transient.flights, "simultaneous species gains land once on every changed physical head")
       .toEqual(transient.receivers.map(({ flowerId, slot }) => ({ flowerId, slot })));
@@ -1246,9 +1324,22 @@ test("simultaneous target gains bind to distinct growing blooms and persist", as
     await page.reload({ waitUntil: "networkidle" });
     const persisted = await activeBouquetAssemblyState(page);
     expect(persisted.progress).toBe("6/14");
+    expect(earnedHeadCounts(persisted)).toEqual({ 1: 3, 5: 3 });
     expect(new Set(persisted.ingredients
       .filter((ingredient) => ingredient.slotProgress > 0)
       .map((ingredient) => ingredient.flowerId))).toEqual(new Set([1, 5]));
+    expect(await page.locator(".objective-flight, .bouquet-bind-seal").count()).toBe(0);
+    await page.reload({ waitUntil: "networkidle" });
+    const twicePersisted = await activeBouquetAssemblyState(page);
+    expect(twicePersisted.ingredients.map((ingredient) => ({
+      flowerId: ingredient.flowerId,
+      unitIndex: ingredient.unitIndex,
+      slotState: ingredient.slotState
+    }))).toEqual(persisted.ingredients.map((ingredient) => ({
+      flowerId: ingredient.flowerId,
+      unitIndex: ingredient.unitIndex,
+      slotState: ingredient.slotState
+    })));
     expect(await page.locator(".objective-flight, .bouquet-bind-seal").count()).toBe(0);
   }
 
@@ -1277,8 +1368,9 @@ test("nearly complete and mixed Round 2/3 progress stays legible in the physical
       cursedThorns: [],
       expectedProgress: "13/14",
       expectedState: "nearly",
-      composition: [5, 1, 5, 1, 5, 1],
+      composition: ROUND_ONE_COMPOSITION,
       species: [1, 5],
+      earnedHeads: { 1: 5, 5: 8 },
       thornProgress: ""
     },
     {
@@ -1289,8 +1381,9 @@ test("nearly complete and mixed Round 2/3 progress stays legible in the physical
       cursedThorns: [{ x: 2, y: 1, hp: 1 }],
       expectedProgress: "14/29",
       expectedState: "mid",
-      composition: [2, 4, 5, 2, 4, 5],
+      composition: ROUND_TWO_COMPOSITION,
       species: [2, 4, 5],
+      earnedHeads: { 2: 5, 4: 4, 5: 3 },
       thornProgress: "2/3"
     },
     {
@@ -1301,8 +1394,9 @@ test("nearly complete and mixed Round 2/3 progress stays legible in the physical
       cursedThorns: [],
       expectedProgress: "15/27",
       expectedState: "mid",
-      composition: [3, 0, 3, 0, 3, 0],
+      composition: ROUND_THREE_COMPOSITION,
       species: [0, 3],
+      earnedHeads: { 0: 8, 3: 7 },
       thornProgress: ""
     }
   ];
@@ -1347,6 +1441,8 @@ test("nearly complete and mixed Round 2/3 progress stays legible in the physical
       expect(new Set(assembly.ingredients
         .filter((ingredient) => ingredient.slotProgress > 0)
         .map((ingredient) => ingredient.flowerId))).toEqual(new Set(fixture.species));
+      expect(earnedHeadCounts(assembly), `${fixture.label} visual heads equal authoritative flower counts`)
+        .toEqual(fixture.earnedHeads);
       expect(assembly.ingredients.filter((ingredient) => ingredient.slotProgress > 0).length)
         .toBeGreaterThanOrEqual(fixture.species.length);
       const renderedPixels = await renderedBouquetPixelStats(page);
@@ -1358,9 +1454,9 @@ test("nearly complete and mixed Round 2/3 progress stays legible in the physical
       });
       if (fixture.label === "round1-nearly") {
         expect(renderedPixels.filter((head) => head.slotProgress > 0),
-          "13/14 is a materially whole six-head bouquet").toHaveLength(6);
-        expect(Math.min(...renderedPixels.map((head) => head.p90)),
-          `near-complete heads remain individually lit: ${JSON.stringify(renderedPixels)}`).toBeGreaterThan(28);
+          "13/14 is exactly thirteen visibly earned heads").toHaveLength(13);
+        expect(Math.min(...renderedPixels.filter((head) => head.slotProgress > 0).map((head) => head.p90)),
+          `near-complete earned heads remain individually lit: ${JSON.stringify(renderedPixels)}`).toBeGreaterThan(18);
       }
       if (fixture.thornProgress) {
         expect(assembly.thorn?.progress, "Round 2 bouquet carries the authoritative Thorn seal").toBe(fixture.thornProgress);
@@ -1476,10 +1572,10 @@ for (const config of [
     const binding = await visibleContract(page);
     expect(binding.trophyState).toBe("forming");
     expect(binding.buttons, "restore waits until binding resolves").toEqual([]);
-    expect(binding.craftedComposition).toEqual([5, 1, 5, 1, 5, 1]);
+    expect(binding.craftedComposition).toEqual(ROUND_ONE_COMPOSITION);
     expect(binding.craftedTargetCounts).toBe("5:8,1:6");
     expect(binding.craftedBouquets, "binding starts with the same one complete physical bouquet").toBe(1);
-    expect(binding.craftedBlooms, "all six inherited heads remain visible from the first binding frame").toBe(6);
+    expect(binding.craftedBlooms, "all fourteen inherited heads remain visible from the first binding frame").toBe(14);
     expect(binding.liveAssemblies, "binding never competes with a duplicate live-rail bouquet").toBe(0);
     const hiddenLiveCompositionKey = await page.locator("#liveBouquetAssembly").getAttribute("data-composition-key");
     expect(binding.craftedCompositionKey, "binding preserves exact live species, order, and objective identity")
@@ -1523,7 +1619,7 @@ for (const config of [
     });
     await clickGuidedSwap(page);
     const active = await activeBouquetAssemblyState(page);
-    expectPhysicalBouquetGeometry(active, [5, 1, 5, 1, 5, 1]);
+    expectPhysicalBouquetGeometry(active, ROUND_ONE_COMPOSITION);
     expect(active.ingredients.some((ingredient) => ingredient.slotProgress > 0)).toBe(true);
     expect(active.visibleBlooms).toBe(active.ingredients.filter((ingredient) => ingredient.slotProgress > 0).length);
     expect(active.width).toBeGreaterThanOrEqual(config.minWidth);
@@ -1540,8 +1636,8 @@ for (const config of [
     const contract = await visibleContract(page);
     expect(contract.trophyState).toBe("assembled");
     expect(contract.craftedBouquets).toBe(1);
-    expect(contract.craftedBlooms).toBe(6);
-    expect(contract.craftedStems).toBe(6);
+    expect(contract.craftedBlooms).toBe(14);
+    expect(contract.craftedStems).toBe(14);
     expect(contract.buttons).toEqual(["Restore Greenhouse · 100 coins"]);
     expect(contract.coins).toBe(120);
     expect(contract.overflowX).toBe(false);
