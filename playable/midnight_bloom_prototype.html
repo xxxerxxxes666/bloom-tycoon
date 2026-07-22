@@ -9351,12 +9351,13 @@
       clearIdleHint();
       const postOnboardingIdleHint = isPostOnboardingIdleHintActive();
       const roundOneAgencyHint = isRoundOneAgencyHandoffActive();
+      const roundOneOrderCorrection = isRoundOneOrderCorrectionActive();
       const armedRelicHint = isArmedLineRelicGuidanceActive();
       if ((hasMadeValidMove && !postOnboardingIdleHint && !armedRelicHint) || roundComplete || isBouquetFailed() || isResolving) {
         return;
       }
       const hintDelay = roundOneAgencyHint
-        ? ROUND_ONE_AGENCY_HINT_DELAY_MS
+        ? (roundOneOrderCorrection ? 650 : ROUND_ONE_AGENCY_HINT_DELAY_MS)
         : currentRound === 1
         ? 350
         : isRestoredRoundTwoGuideActive()
@@ -10651,6 +10652,11 @@
         && !altarReweaveActive;
     }
 
+    function isRoundOneOrderCorrectionActive(plan = activeRoundPlan()) {
+      return isRoundOneAgencyHandoffActive(plan)
+        && roundProgress(plan).earned === 0;
+    }
+
     function isPostOnboardingIdleHintActive(plan = activeRoundPlan()) {
       const roundOneAgencyHandoff = isRoundOneAgencyHandoffActive(plan);
       return focusedSliceRound(plan)
@@ -11520,6 +11526,9 @@
       }
       if (isRoundOneAgencyHandoffActive(plan) && idleHintCells.size === 2) {
         return "Match Thorn Rose.";
+      }
+      if (isRoundOneOrderCorrectionActive(plan)) {
+        return "Match the order flowers.";
       }
       if (plan.round === 1 && hasMadeValidMove) {
         return "Match 3 fills the bouquet.";
