@@ -2258,6 +2258,193 @@
       animation: first-action-token-travel 1.35s ease-in-out infinite;
     }
 
+    .target-match-forecast-guide {
+      position: absolute;
+      inset: 0;
+      z-index: 6;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .target-match-result-link {
+      position: absolute;
+      left: var(--forecast-link-left);
+      top: var(--forecast-link-top);
+      width: var(--forecast-link-length);
+      height: 4px;
+      transform: translateY(-50%) rotate(var(--forecast-link-angle));
+      transform-origin: 0 50%;
+      border-radius: 999px;
+      background:
+        repeating-linear-gradient(90deg, #9b1d22 0 8px, #d7b16d 8px 11px, #0000 11px 15px);
+      box-shadow: 0 0 5px #000, 0 0 9px #9b1d22aa;
+      opacity: .92;
+      pointer-events: none;
+    }
+
+    .target-match-result-link::before,
+    .target-match-result-link::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      width: 9px;
+      height: 9px;
+      border: 1px solid #d7b16d;
+      border-radius: 50%;
+      background: #210909;
+      box-shadow: inset 0 0 4px #000, 0 0 7px #9b1d22;
+      transform: translate(-50%, -50%) rotate(45deg);
+    }
+
+    .target-match-result-link::before { left: 0; }
+    .target-match-result-link::after { left: 100%; }
+
+    .target-match-causal-verb {
+      position: absolute;
+      left: var(--forecast-verb-left);
+      top: var(--forecast-verb-top);
+      display: inline-flex;
+      align-items: center;
+      gap: 22px;
+      padding: 3px 6px;
+      border: 1px solid #604323;
+      border-radius: 2px;
+      background: #080504e8;
+      box-shadow: inset 0 0 8px #000, 0 0 8px #000;
+      color: #d7b16d;
+      font: 900 7px/1 system-ui, sans-serif;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .target-match-causal-verb::after {
+      content: "";
+      position: absolute;
+      left: calc(50% - 7px);
+      top: 50%;
+      width: 13px;
+      height: 1px;
+      background: #fff0b4;
+      box-shadow: 0 0 5px #d7b16d;
+    }
+
+    .target-match-causal-verb::before {
+      content: "";
+      position: absolute;
+      left: calc(50% + 4px);
+      top: calc(50% - 3px);
+      border-left: 5px solid #fff0b4;
+      border-top: 3px solid transparent;
+      border-bottom: 3px solid transparent;
+    }
+
+    .target-match-endpoint-mark,
+    .target-match-result-mark {
+      position: absolute;
+      pointer-events: none;
+    }
+
+    .target-match-endpoint-mark {
+      inset: 4px;
+      z-index: 8;
+      border: 2px solid #f0c477;
+      border-radius: 2px;
+      clip-path: polygon(0 0, 34% 0, 34% 5%, 66% 5%, 66% 0, 100% 0, 100% 34%, 95% 34%, 95% 66%, 100% 66%, 100% 100%, 66% 100%, 66% 95%, 34% 95%, 34% 100%, 0 100%, 0 66%, 5% 66%, 5% 34%, 0 34%);
+      box-shadow: inset 0 0 0 1px #1b0d08, 0 0 8px #d7b16d;
+    }
+
+    .target-match-endpoint-mark::before {
+      content: attr(data-step);
+      position: absolute;
+      left: 2px;
+      top: 2px;
+      display: grid;
+      width: 13px;
+      height: 13px;
+      place-items: center;
+      border: 1px solid #f0c477;
+      border-radius: 1px;
+      background: #090504ed;
+      color: #fff0b4;
+      box-shadow: 0 0 6px #000;
+      font: 900 8px/1 system-ui, sans-serif;
+    }
+
+    .target-match-result-mark {
+      inset: 10%;
+      z-index: 6;
+      border: 2px solid color-mix(in srgb, var(--forecast-color, #9b1d22) 74%, #d7b16d);
+      border-radius: 50%;
+      box-shadow:
+        inset 0 0 10px #000,
+        0 0 0 2px #240b0b99,
+        0 0 12px color-mix(in srgb, var(--forecast-color, #9b1d22) 72%, #0000);
+    }
+
+    .target-match-result-mark::before,
+    .target-match-result-mark::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      pointer-events: none;
+    }
+
+    .target-match-result-mark::before {
+      width: 76%;
+      height: 76%;
+      border: 1px solid #d7b16d99;
+      transform: translate(-50%, -50%) rotate(45deg);
+      box-shadow: inset 0 0 7px #000;
+    }
+
+    .target-match-result-mark::after {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #fff0b4;
+      box-shadow: 0 0 7px var(--forecast-color, #9b1d22);
+      transform: translate(-50%, -50%);
+    }
+
+    .target-match-result-mark .target-match-ghost-wrap {
+      position: absolute;
+      inset: -8%;
+      opacity: 0;
+      filter: brightness(1.12) saturate(1.06) drop-shadow(0 0 6px var(--forecast-color, #9b1d22));
+      pointer-events: none;
+    }
+
+    .tile[data-target-match-incoming="true"] .target-match-result-mark {
+      background: radial-gradient(circle, #160706dc 0 38%, #0000 72%);
+    }
+
+    .tile[data-target-match-incoming="true"] .target-match-ghost-wrap {
+      opacity: .8;
+    }
+
+    .tile.target-match-swap-endpoint.idle-hint {
+      outline-color: #f0c477;
+      outline-offset: -2px;
+      animation: target-match-endpoint-breathe 1.25s ease-in-out infinite;
+    }
+
+    .objective-target.target-match-receiver,
+    .live-bouquet-ingredient.target-match-receiver {
+      outline: 1px solid #b9874d;
+      outline-offset: 2px;
+      border-radius: 50%;
+      box-shadow: 0 0 0 2px #210909, 0 0 10px #9b1d2288;
+    }
+
+    .objective-target.target-match-receiver {
+      border-radius: 3px;
+      outline-style: double;
+      box-shadow: inset 0 0 8px #210909, 0 0 9px #9b1d2266;
+    }
+
     .swap-path-arrow {
       --arrow-x: 0;
       --arrow-y: 0;
@@ -4282,6 +4469,17 @@
       }
       50% {
         transform: translate(-50%, -50%) scale(1.06);
+      }
+    }
+
+    @keyframes target-match-endpoint-breathe {
+      0%, 100% {
+        box-shadow: inset 0 0 14px #000, 0 0 0 2px #1a0d08, 0 0 9px #d7b16d88;
+        filter: brightness(1) saturate(1);
+      }
+      50% {
+        box-shadow: inset 0 0 14px #000, 0 0 0 2px #1a0d08, 0 0 16px #f0c477bb;
+        filter: brightness(1.06) saturate(1.12);
       }
     }
 
@@ -9268,6 +9466,62 @@
       return found;
     }
 
+    function targetMatchForecastDetails(plan = activeRoundPlan()) {
+      const pair = hintedPairCells();
+      const target = roundOneAgencyTarget(plan);
+      if (
+        plan.round !== 1
+        || !tutorialActive
+        || tutorialSkipped
+        || !isRoundOneAgencyHandoffActive(plan)
+        || roundComplete
+        || isBouquetFailed(plan)
+        || isResolving
+        || invalidSwapCells.size > 0
+        || validSwapCells.size > 0
+        || activeSwapCells.size > 0
+        || swapGlideCells.size > 0
+        || boardDragInputActive()
+        || !target
+        || pair.length !== 2
+        || !isAdjacentPair(pair[0], pair[1])
+        || !isLegalSwap(pair[0], pair[1])
+      ) {
+        return null;
+      }
+      const targetMatches = previewSwapMatches(pair[0], pair[1])
+        .filter((match) => match.val === target.flowerId);
+      if (!targetMatches.length) {
+        return null;
+      }
+      const cells = dedupeCells(targetMatches.flatMap((match) => match.cells))
+        .map(([x, y]) => ({ x, y }));
+      if (cells.length < 3) {
+        return null;
+      }
+      const runs = targetMatches.flatMap((match) => match.runs || [])
+        .map((run) => ({
+          direction: run.direction,
+          cells: run.cells.map(([x, y]) => ({ x, y }))
+        }));
+      const cellKeys = new Set(cells.map((cell) => `${cell.x},${cell.y}`));
+      const incoming = pair.find((cell, index) => (
+        board[pair[index === 0 ? 1 : 0].y][pair[index === 0 ? 1 : 0].x] === target.flowerId
+        && board[cell.y][cell.x] !== target.flowerId
+        && cellKeys.has(`${cell.x},${cell.y}`)
+      )) || null;
+      const directions = new Set(runs.map((run) => run.direction));
+      return {
+        target,
+        pair: pair.map((cell) => ({ ...cell })),
+        cells,
+        runs,
+        cellKeys,
+        incomingKey: incoming ? `${incoming.x},${incoming.y}` : "",
+        orientation: directions.size === 1 ? [...directions][0] : "mixed"
+      };
+    }
+
     function selectedHarvestPreviewFor(cell) {
       const preview = { cells: new Set(), anchors: new Set(), relicCells: new Set() };
       if (!cell || isResolving || roundComplete || isBouquetFailed()) {
@@ -11886,6 +12140,9 @@
       const activeRelicGuidance = !blackCandleActivation && !roundComplete && !isBouquetFailed()
         ? lineRelicGuidance()
         : null;
+      const targetMatchForecast = !blackCandleActivation && !activeRelicGuidance
+        ? targetMatchForecastDetails(activePlan)
+        : null;
       const failedFocusedRestoredOrder = roundOneRestored
         && activePlan.round >= 2
         && activePlan.round <= 3
@@ -11922,6 +12179,12 @@
       document.body.classList.toggle("round-one-followup-cue", roundOneFollowupCue);
       document.body.classList.toggle("round-one-refused", roundOneActive && !roundComplete && $("firstSwapCue").classList.contains("swap-refused"));
       document.body.classList.toggle("tutorial-active", tutorialActive);
+      document.body.classList.toggle("target-match-forecast-active", Boolean(targetMatchForecast));
+      if (targetMatchForecast) {
+        document.body.dataset.targetMatchForecast = flowers[targetMatchForecast.target.flowerId][0];
+      } else {
+        document.body.removeAttribute("data-target-match-forecast");
+      }
       if (targetLiteracyFlowerId !== null) {
         document.body.dataset.targetLiteracy = flowers[targetLiteracyFlowerId][0];
       } else {
@@ -12011,6 +12274,15 @@
       for (let y = 0; y < BOARD_SIZE; y += 1) {
         for (let x = 0; x < BOARD_SIZE; x += 1) {
           const value = board[y][x];
+          const forecastKey = `${x},${y}`;
+          const targetMatchEndpointIndex = targetMatchForecast?.pair.findIndex((cell) => (
+            cell.x === x && cell.y === y
+          )) ?? -1;
+          const targetMatchResult = Boolean(targetMatchForecast?.cellKeys.has(forecastKey));
+          const targetMatchIncoming = targetMatchResult
+            && targetMatchForecast?.incomingKey === forecastKey;
+          const targetMatchEndpointClass = targetMatchEndpointIndex >= 0 ? "target-match-swap-endpoint" : "";
+          const targetMatchResultClass = targetMatchResult ? "target-match-result" : "";
           const tile = document.createElement("button");
           tile.type = "button";
           tile.dataset.x = x;
@@ -12072,10 +12344,21 @@
           const relicPreviewClass = harvestPreview.relicCells.has(fallKey) ? "relic-preview" : "";
           const armedRelic = lineRelicAt({ x, y }) ? armedLineRelic : null;
           const armedRelicClass = armedRelic ? "black-candle-vine" : "";
-          tile.className = `tile ${selectedClass} ${legalClass} ${lineRelicLaneClass} ${lineRelicDestinationClass} ${blackCandleBurnCellClass} ${blackCandleBurnSourceClass} ${blackCandleBurnExtinguishedClass} ${blackCandleBurnRefillClass} ${previewClass} ${previewAnchorClass} ${relicPreviewClass} ${armedRelicClass} ${harvestClass} ${superClass} ${invalidClass} ${validSwapClass} ${swapClass} ${swapGlideClass} ${idleHintClass} ${targetLiteracyClass} ${thornTeachClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass} ${refillBornClass} ${settleClass}`;
+          tile.className = `tile ${selectedClass} ${legalClass} ${lineRelicLaneClass} ${lineRelicDestinationClass} ${blackCandleBurnCellClass} ${blackCandleBurnSourceClass} ${blackCandleBurnExtinguishedClass} ${blackCandleBurnRefillClass} ${previewClass} ${previewAnchorClass} ${relicPreviewClass} ${armedRelicClass} ${harvestClass} ${superClass} ${invalidClass} ${validSwapClass} ${swapClass} ${swapGlideClass} ${idleHintClass} ${targetLiteracyClass} ${targetMatchEndpointClass} ${targetMatchResultClass} ${thornTeachClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass} ${refillBornClass} ${settleClass}`;
           tile.disabled = isResolving || roundComplete || isBouquetFailed();
           tile.tabIndex = !tile.disabled && boardFocusCell.x === x && boardFocusCell.y === y ? 0 : -1;
           tile.style.setProperty("--tile-color", flowers[value][4]);
+          if (targetMatchForecast) {
+            tile.style.setProperty("--forecast-color", flowers[targetMatchForecast.target.flowerId][4]);
+          }
+          if (targetMatchEndpointIndex >= 0) {
+            tile.dataset.targetMatchSwapRole = targetMatchEndpointIndex === 0 ? "source" : "destination";
+          }
+          if (targetMatchResult) {
+            tile.dataset.targetMatchResult = "true";
+            tile.dataset.targetMatchFlowerId = String(targetMatchForecast.target.flowerId);
+            tile.dataset.targetMatchIncoming = String(targetMatchIncoming);
+          }
           tile.style.setProperty("--reweave-delay", `${Math.min(126, (x + y) * 9)}ms`);
           if (blackCandleBurnCell) {
             const directionalIndex = ["left", "up"].includes(blackCandleActivation.travelDirection)
@@ -12129,15 +12412,23 @@
             : "";
           const thornLabel = thorn ? " with Cursed Thorn blocker" : thornClearedClass ? " where a Cursed Thorn cracked" : "";
           const previewLabel = previewClass ? " in selected harvest preview" : relicPreviewClass ? " in Black Candle Vine lane preview" : "";
+          const targetMatchEndpointLabel = targetMatchEndpointIndex >= 0
+            ? ` guided exchange ${targetMatchEndpointIndex === 0 ? "source" : "destination"}`
+            : "";
+          const targetMatchResultLabel = targetMatchResult
+            ? ` in forecast ${flowers[targetMatchForecast.target.flowerId][0]} match`
+            : "";
           const relicLabel = armedRelic
             ? ` armed Black Candle Vine, clears ${armedRelic.direction === "vertical" ? "column" : "row"} when swapped`
             : "";
           const thornEventOffsetClass = thornHitClass && lineRelicArmingFeedback
             ? `offset-${x <= lineRelicArmingFeedback.x ? "left" : "right"}-${y <= lineRelicArmingFeedback.y ? "up" : "down"}`
             : "";
-          tile.setAttribute("aria-label", `${flowers[value][0]} tile${relicLabel}${legalLabel}${destinationLabel}${laneLabel}${previewLabel}${thornTeachLabel}${thornLabel}`);
+          tile.setAttribute("aria-label", `${flowers[value][0]} tile${relicLabel}${legalLabel}${destinationLabel}${laneLabel}${previewLabel}${targetMatchEndpointLabel}${targetMatchResultLabel}${thornTeachLabel}${thornLabel}`);
           tile.innerHTML = `
             ${iconMarkup(value, "", flowers[value][0], "tile-icon-wrap")}
+            ${targetMatchResult ? `<span class="target-match-result-mark" aria-hidden="true">${targetMatchIncoming ? iconMarkup(targetMatchForecast.target.flowerId, "target-match-ghost-icon", "", "target-match-ghost-wrap") : ""}</span>` : ""}
+            ${targetMatchEndpointIndex >= 0 ? `<span class="target-match-endpoint-mark" data-step="${targetMatchEndpointIndex + 1}" aria-hidden="true"></span>` : ""}
             ${lineRelicLaneClass ? `<span class="line-relic-lane-mark ${activeRelicGuidance.direction}" aria-hidden="true"></span>` : ""}
             ${armedRelic ? '<span class="black-candle-mark" aria-hidden="true"></span>' : ""}
             ${blackCandleBurnCell ? `<span class="black-candle-burn-echo" aria-hidden="true">${iconMarkup(blackCandleBurnCell.flowerId, "", "", "tile-icon-wrap")}</span>` : ""}
@@ -12258,6 +12549,19 @@
       renderActiveOrders(plan);
       renderRoundCeremony(plan);
       updateBouquetProgress(activePlan, progress);
+      document.querySelectorAll(".target-match-receiver").forEach((node) => {
+        node.classList.remove("target-match-receiver");
+      });
+      if (targetMatchForecast) {
+        document.querySelector(`.objective-target[data-flower-id="${targetMatchForecast.target.flowerId}"]`)
+          ?.classList.add("target-match-receiver");
+        const bouquetReceiver = document.querySelector(
+          `.live-bouquet-ingredient[data-flower-id="${targetMatchForecast.target.flowerId}"][data-receiver="true"]`
+        ) || document.querySelector(
+          `.live-bouquet-ingredient[data-flower-id="${targetMatchForecast.target.flowerId}"]`
+        );
+        bouquetReceiver?.classList.add("target-match-receiver");
+      }
       const coinsEl = $("coins");
       if (coinsEl) {
         coinsEl.textContent = coins;
@@ -12693,9 +12997,77 @@
       return true;
     }
 
+    function renderTargetMatchForecastGuide(boardEl, forecast) {
+      if (!forecast) {
+        return false;
+      }
+      const boardRect = boardEl.getBoundingClientRect();
+      if (!boardRect.width || !boardRect.height) {
+        return false;
+      }
+      const guideEl = document.createElement("span");
+      guideEl.className = "target-match-forecast-guide";
+      guideEl.setAttribute("aria-hidden", "true");
+      guideEl.dataset.targetFlowerId = String(forecast.target.flowerId);
+      guideEl.dataset.resultCells = forecast.cells.map((cell) => `${cell.x},${cell.y}`).join(" ");
+      guideEl.dataset.swapEndpoints = forecast.pair.map((cell) => `${cell.x},${cell.y}`).join(" ");
+      guideEl.dataset.orientation = forecast.orientation;
+
+      forecast.runs.forEach((run) => {
+        const first = run.cells[0];
+        const last = run.cells[run.cells.length - 1];
+        const firstTile = tileForCell(first.x, first.y);
+        const lastTile = tileForCell(last.x, last.y);
+        if (!firstTile || !lastTile) {
+          return;
+        }
+        const firstRect = firstTile.getBoundingClientRect();
+        const lastRect = lastTile.getBoundingClientRect();
+        const start = {
+          x: firstRect.left + firstRect.width / 2 - boardRect.left,
+          y: firstRect.top + firstRect.height / 2 - boardRect.top
+        };
+        const end = {
+          x: lastRect.left + lastRect.width / 2 - boardRect.left,
+          y: lastRect.top + lastRect.height / 2 - boardRect.top
+        };
+        const link = document.createElement("span");
+        link.className = "target-match-result-link";
+        link.style.setProperty("--forecast-link-left", `${start.x}px`);
+        link.style.setProperty("--forecast-link-top", `${start.y}px`);
+        link.style.setProperty("--forecast-link-length", `${Math.max(1, Math.hypot(end.x - start.x, end.y - start.y))}px`);
+        link.style.setProperty("--forecast-link-angle", `${Math.atan2(end.y - start.y, end.x - start.x) * 180 / Math.PI}deg`);
+        guideEl.appendChild(link);
+      });
+
+      const resultRects = forecast.cells
+        .map((cell) => tileForCell(cell.x, cell.y)?.getBoundingClientRect())
+        .filter(Boolean);
+      if (resultRects.length) {
+        const minLeft = Math.min(...resultRects.map((rect) => rect.left)) - boardRect.left;
+        const maxRight = Math.max(...resultRects.map((rect) => rect.right)) - boardRect.left;
+        const centerY = resultRects.reduce((sum, rect) => sum + rect.top + rect.height / 2, 0)
+          / resultRects.length - boardRect.top;
+        const verbX = boardRect.width - maxRight >= 76
+          ? maxRight + 38
+          : minLeft >= 76 ? minLeft - 38 : boardRect.width - 44;
+        const verb = document.createElement("span");
+        verb.className = "target-match-causal-verb";
+        verb.style.setProperty("--forecast-verb-left", `${Math.max(42, Math.min(boardRect.width - 42, verbX))}px`);
+        verb.style.setProperty("--forecast-verb-top", `${Math.max(12, Math.min(boardRect.height - 12, centerY))}px`);
+        verb.innerHTML = "<span>SWAP</span><span>GATHER</span>";
+        guideEl.appendChild(verb);
+      }
+      boardEl.appendChild(guideEl);
+      return true;
+    }
+
     function renderFirstSwapArrow(boardEl) {
+      const targetMatchForecast = targetMatchForecastDetails();
       const tutorialGuide = currentTutorialBoardGuidePair();
-      if (renderFirstActionSwapGuide(boardEl, tutorialGuide)) {
+      const renderedTutorialGuide = renderFirstActionSwapGuide(boardEl, tutorialGuide);
+      renderTargetMatchForecastGuide(boardEl, targetMatchForecast);
+      if (renderedTutorialGuide) {
         return;
       }
       if (currentRound === 1 && !roundComplete && (tutorialActive || tutorialSkipped) && !postRecoveryGuideActive) {
