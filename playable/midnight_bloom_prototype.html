@@ -10319,24 +10319,39 @@
         const roundOneAgencyHintAfterDelay = isRoundOneAgencyHandoffActive();
         const roundOneOrderCorrectionAfterDelay = isRoundOneOrderCorrectionActive();
         const armedRelicHintAfterDelay = isArmedLineRelicGuidanceActive();
+        const roundOneAgencyQuietWindowReady = roundOneAgencyHintAfterDelay
+          && !boardDragInputActive()
+          && invalidSwapCells.size === 0;
+        const recoverRoundOneAgencySelection = roundOneAgencyQuietWindowReady
+          && Boolean(selected);
         if ((hasMadeValidMove && !postOnboardingIdleHintAfterDelay && !armedRelicHintAfterDelay) || roundComplete || isBouquetFailed() || isResolving) {
           return;
+        }
+        if (roundOneAgencyQuietWindowReady && boardGuideTransientStateActive()) {
+          retireCompletedInteractionFeedback();
         }
         if (
           postOnboardingIdleHintAfterDelay
           && (
-            selected
+            (selected && !recoverRoundOneAgencySelection)
             || (!roundOneAgencyHintAfterDelay && tutorialActive)
             || restoredGreenhouseHandoff
             || boardDragInputActive()
             || invalidSwapCells.size > 0
-            || (!roundOneOrderCorrectionAfterDelay && boardGuideTransientStateActive())
+            || (
+              !roundOneOrderCorrectionAfterDelay
+              && boardGuideTransientStateActive()
+              && !recoverRoundOneAgencySelection
+            )
           )
         ) {
           if (boardDragInputActive()) {
             scheduleIdleHint();
           }
           return;
+        }
+        if (recoverRoundOneAgencySelection) {
+          selected = null;
         }
         if (boardDragInputActive()) {
           scheduleIdleHint();

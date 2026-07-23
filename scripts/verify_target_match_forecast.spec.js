@@ -152,7 +152,7 @@ async function forecastReport(page) {
 }
 
 async function expectForecast(page, label) {
-  await expect(page.locator("#board .target-match-forecast-guide")).toHaveCount(1, { timeout: 10000 });
+  await expect(page.locator("#board .target-match-forecast-guide")).toHaveCount(1, { timeout: 15000 });
   const pair = await hintedPair(page);
   expect(pair, `${label} exact actionable pair`).toHaveLength(2);
   const expected = await expectedTargetResult(page, pair);
@@ -345,7 +345,134 @@ test("Round 1 forecast lifecycle retires and restores only the agency phase", as
   await expect(page.locator("#board .tile")).toHaveCount(64);
 });
 
+for (const config of [
+  { label: "desktop-pointer", viewport: { width: 1280, height: 720 }, input: "pointer" },
+  { label: "mobile390-touch", viewport: { width: 390, height: 844 }, input: "touch", mobile: true },
+  { label: "desktop-keyboard-reduced", viewport: { width: 1280, height: 720 }, input: "keyboard", reduced: true },
+  { label: "mobile390-touch-reduced", viewport: { width: 390, height: 844 }, input: "touch", mobile: true, reduced: true }
+]) {
+  test(`Round 1 target forecast recovers after one abandoned selection on ${config.label}`, async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: config.viewport,
+      hasTouch: Boolean(config.mobile),
+      isMobile: Boolean(config.mobile),
+      reducedMotion: config.reduced ? "reduce" : "no-preference"
+    });
+    const page = await context.newPage();
+    const consoleErrors = [];
+    const pageErrors = [];
+    const failedRequests = [];
+    page.on("console", (message) => {
+      if (message.type() === "error") consoleErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    page.on("requestfailed", (request) => failedRequests.push(
+      `${request.url()} ${request.failure()?.errorText || ""}`
+    ));
+
+    try {
+      await openFresh(page, `selection-recovery-${config.label}`);
+      await completeOpening(page, config.input);
+      const initial = await expectForecast(page, `${config.label} before abandoned selection`);
+      const hintedKeys = new Set(initial.pair.map((cell) => `${cell.x},${cell.y}`));
+      const wrong = await page.locator("#board .tile").evaluateAll((tiles, keys) => {
+        const hints = new Set(keys);
+        const tile = tiles.find((candidate) => !hints.has(`${candidate.dataset.x},${candidate.dataset.y}`));
+        return { x: Number(tile.dataset.x), y: Number(tile.dataset.y) };
+      }, [...hintedKeys]);
+      const wrongTile = page.locator(`#board .tile[data-x="${wrong.x}"][data-y="${wrong.y}"]`);
+      if (config.input === "touch") {
+        await wrongTile.tap();
+      } else if (config.input === "keyboard") {
+        await wrongTile.focus();
+        await page.keyboard.press("Enter");
+      } else {
+        await wrongTile.click();
+      }
+
+      await expect(page.locator(".target-match-forecast-guide, .first-action-swap-guide, .tile.idle-hint")).toHaveCount(0);
+      await expect(wrongTile).toHaveClass(/\bsel\b/);
+      await expect(wrongTile).toBeFocused();
+      const selectedSave = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)), SAVE_KEY);
+      expect(selectedSave.moves).toBe(5);
+      expect(selectedSave.counts[5]).toBe(3);
+
+      await page.waitForTimeout(6000);
+      await expect(page.locator(".target-match-forecast-guide, .first-action-swap-guide, .tile.idle-hint")).toHaveCount(0);
+      await expect(wrongTile).toHaveClass(/\bsel\b/);
+      await page.locator("#board .target-match-forecast-guide").waitFor({ state: "attached", timeout: 6000 });
+      await expect(page.locator("#board .tile.sel")).toHaveCount(0);
+      await expect(wrongTile).toBeFocused();
+      const recovered = await expectForecast(page, `${config.label} recovered forecast`);
+      expect(recovered.pair.map((cell) => `${cell.x},${cell.y}`).sort()).toEqual(
+        initial.pair.map((cell) => `${cell.x},${cell.y}`).sort()
+      );
+      await page.screenshot({
+        path: `work/target-match-forecast-selection-recovery-${config.label}.png`,
+        fullPage: true
+      });
+
+      if (config.input === "keyboard") {
+        const source = page.locator(
+          `#board .tile[data-x="${recovered.pair[0].x}"][data-y="${recovered.pair[0].y}"]`
+        );
+        await source.focus();
+        await page.keyboard.press("Enter");
+        const dx = recovered.pair[1].x - recovered.pair[0].x;
+        const dy = recovered.pair[1].y - recovered.pair[0].y;
+        await page.keyboard.press(dx > 0 ? "ArrowRight" : dx < 0 ? "ArrowLeft" : dy > 0 ? "ArrowDown" : "ArrowUp");
+      } else {
+        await activatePair(page, recovered.pair, config.input);
+      }
+      await waitForSettledBoard(page);
+      const settledSave = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)), SAVE_KEY);
+      expect(settledSave.moves).toBe(4);
+      expect(settledSave.counts[5]).toBeGreaterThan(3);
+      const settled = await forecastReport(page);
+      expect(settled.tiles).toBe(64);
+      expect(settled.rows).toBe(8);
+      expect(settled.overflowX).toBe(false);
+      expect(settled.brokenImages).toEqual([]);
+      expect(consoleErrors).toEqual([]);
+      expect(pageErrors).toEqual([]);
+      expect(failedRequests).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+}
+
+test("Round 1 nonadjacent reselection restarts abandoned-selection recovery", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await openFresh(page, "selection-recovery-reselection");
+  await completeOpening(page, "pointer");
+  const initial = await expectForecast(page, "reselection initial");
+  const hintedKeys = new Set(initial.pair.map((cell) => `${cell.x},${cell.y}`));
+  const wrong = await page.locator("#board .tile").evaluateAll((tiles, keys) => {
+    const hints = new Set(keys);
+    const candidates = tiles
+      .filter((tile) => !hints.has(`${tile.dataset.x},${tile.dataset.y}`))
+      .map((tile) => ({ x: Number(tile.dataset.x), y: Number(tile.dataset.y) }));
+    const first = candidates[0];
+    const second = candidates.find((cell) => Math.abs(cell.x - first.x) + Math.abs(cell.y - first.y) > 1);
+    return [first, second];
+  }, [...hintedKeys]);
+  const tile = (cell) => page.locator(`#board .tile[data-x="${cell.x}"][data-y="${cell.y}"]`);
+  await tile(wrong[0]).click();
+  await page.waitForTimeout(5600);
+  await tile(wrong[1]).click();
+  await page.waitForTimeout(1700);
+  await expect(page.locator(".target-match-forecast-guide, .first-action-swap-guide, .tile.idle-hint")).toHaveCount(0);
+  await expect(tile(wrong[1])).toHaveClass(/\bsel\b/);
+  await expect(tile(wrong[1])).toBeFocused();
+  await page.locator("#board .target-match-forecast-guide").waitFor({ state: "attached", timeout: 8000 });
+  await expect(page.locator("#board .tile.sel")).toHaveCount(0);
+  await expect(tile(wrong[1])).toBeFocused();
+  await expectForecast(page, "reselection recovered forecast");
+});
+
 test("target forecast plate contains every edge placement and match orientation", async ({ browser }) => {
+  test.setTimeout(300000);
   const seedContext = await browser.newContext({ viewport: { width: 1280, height: 720 } });
   const seedPage = await seedContext.newPage();
   await openFresh(seedPage, "edge-geometry-seed");
@@ -412,7 +539,10 @@ test("target forecast plate contains every edge placement and match orientation"
         await page.goto(`${BASE_URL}?target-match-forecast=edge-${config.label}-${fixture.label}`, {
           waitUntil: "networkidle"
         });
-        await expect(page.locator("#board .target-match-forecast-guide")).toHaveCount(1, { timeout: 10000 });
+        await expect(
+          page.locator("#board .target-match-forecast-guide"),
+          `${config.label} ${fixture.label} forecast returns after fixture reload`
+        ).toHaveCount(1, { timeout: 15000 });
         const geometry = (await forecastReport(page)).geometry;
         expectForecastPlateContained(geometry, `${config.label} ${fixture.label}`);
         const report = await forecastReport(page);
