@@ -1824,7 +1824,7 @@ async function commitGuidedSwapAtControlReturn(page, { keyboard = false, sampleI
 }
 
 function assertPassiveInputPreservesFeedback(before, after, label) {
-  expect(before.orderPulseCount, `${label} starts with objective plus earned receiver feedback`).toBe(3);
+  expect(before.orderPulseCount, `${label} starts with objective plus three earned receiver heads`).toBe(4);
   expect(after.orderPulseCount, `${label} preserves order feedback`).toBe(before.orderPulseCount);
   const orderPulses = (state) => state.positiveFeedback
     .filter((node) => node.className.includes("order-pulse"))
@@ -4741,7 +4741,7 @@ test("passive selection and canceled input preserve completed order feedback", a
     const opening = await commitGuidedSwapAtControlReturn(targetPage);
     expect(opening.after.moves, `${label} opening move`).toBe(5);
     expect(opening.after.counts, `${label} opening objective`).toEqual([0, 0, 0, 0, 0, 3]);
-    expect(opening.after.orderPulseCount, `${label} objective plus earned receiver heads pulse`).toBe(3);
+    expect(opening.after.orderPulseCount, `${label} objective plus three earned receiver heads pulse`).toBe(4);
     return opening.after;
   };
 

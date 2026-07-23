@@ -354,7 +354,7 @@ async function handoffReport(page) {
       greenhouseText: ownedDial?.textContent.replace(/\s+/g, " ").trim() || "",
       ownedStage: ownedDial?.dataset.ownedStage || "",
       greenhouseStage: ownedDial?.dataset.restorationDialStage || "",
-      visibleBars: Array.from(document.querySelectorAll(".progress-meter, .restoration-dial-track"))
+      visibleBars: Array.from(document.querySelectorAll("#bouquetOrderProgress[role='progressbar'], .restoration-dial-track"))
         .filter(visible).length,
       guideTiles: document.querySelectorAll(".tile.idle-hint").length,
       guideCells: Array.from(document.querySelectorAll(".tile.idle-hint"))
@@ -612,7 +612,16 @@ for (const testCase of CASES) {
 
       await expect(page.locator("#tutorialCopy")).toHaveText("Match beside the Thorn.");
       await expect(page.locator(".tile.thorn-teach")).toHaveCount(2, { timeout: 7000 });
-      await page.waitForTimeout(100);
+      await page.waitForFunction(() => {
+        const tiles = Array.from(document.querySelectorAll(".tile"));
+        return tiles.length === 64 && tiles.every((tile) => {
+          const rect = tile.getBoundingClientRect();
+          return rect.top >= -1
+            && rect.bottom <= innerHeight + 1
+            && rect.left >= -1
+            && rect.right <= innerWidth + 1;
+        });
+      }, null, { timeout: 2200 });
       let report = await handoffReport(page);
       if (testCase.reduced) {
         await page.screenshot({
