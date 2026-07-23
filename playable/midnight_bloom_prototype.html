@@ -958,7 +958,7 @@
     .bouquet-order-progress {
       display: grid;
       grid-template-columns: minmax(300px, 330px) minmax(190px, 1fr);
-      grid-template-rows: 66px;
+      grid-template-rows: 82px;
       gap: 8px;
       min-width: 0;
       align-content: center;
@@ -1058,14 +1058,14 @@
       grid-row: 1;
       position: relative;
       width: 330px;
-      height: 66px;
+      height: 82px;
       display: block;
       align-self: center;
       justify-self: center;
       border: 1px solid #4a3320;
       background:
-        radial-gradient(ellipse at 50% 14%, #d7b16d50 0, #0000 60%),
-        radial-gradient(ellipse at 50% 76%, #6f944d42 0, #0000 66%),
+        radial-gradient(ellipse at 50% 16%, #d7b16d4d 0, #0000 61%),
+        radial-gradient(ellipse at 50% 68%, #758d4f42 0, #0000 67%),
         linear-gradient(180deg, #21150c, #080504);
       box-shadow:
         inset 0 0 0 1px #000,
@@ -1089,32 +1089,32 @@
 
     .live-bouquet-assembly::before {
       left: 50%;
-      bottom: 3px;
-      width: calc(58px + var(--live-bouquet-fullness, 0) * 8px);
-      height: 11px;
+      bottom: 4px;
+      width: calc(72px + var(--live-bouquet-fullness, 0) * 8px);
+      height: 15px;
       transform: translateX(-50%);
-      border: 1px solid #9b6535;
+      border: 1px solid #c08a4f;
       border-radius: 48% 48% 28% 28%;
       background:
-        linear-gradient(90deg, #4b1715, #8d3a27 22%, #d0a35e 50%, #8d3a27 78%, #4b1715);
-      box-shadow: inset 0 0 5px #000, 0 2px 5px #000;
-      clip-path: polygon(0 32%, 16% 8%, 50% 24%, 84% 8%, 100% 32%, 90% 78%, 50% 100%, 10% 78%);
+        linear-gradient(90deg, #381111, #803325 20%, #d0a35e 49%, #8e3b28 78%, #381111);
+      box-shadow: inset 0 0 6px #000, 0 2px 6px #000;
+      clip-path: polygon(0 28%, 15% 4%, 50% 22%, 85% 4%, 100% 28%, 91% 80%, 50% 100%, 9% 80%);
       z-index: 5;
     }
 
     .live-bouquet-assembly::after {
       left: 50%;
-      bottom: 4px;
-      width: calc(158px + var(--live-bouquet-fullness, 0) * 14px);
-      height: 56px;
+      bottom: 1px;
+      width: calc(188px + var(--live-bouquet-fullness, 0) * 12px);
+      height: 57px;
       transform: translateX(-50%);
       background:
-        radial-gradient(ellipse at 50% 24%, #9fb96b28 0 44%, #0000 66%),
-        repeating-linear-gradient(112deg, #0000 0 12px, #89a55d66 13px 15px, #0000 16px 27px);
-      clip-path: polygon(4% 22%, 24% 2%, 50% 22%, 76% 2%, 96% 22%, 76% 50%, 60% 66%, 54% 100%, 46% 100%, 40% 66%, 24% 50%);
-      opacity: calc(.38 + var(--live-bouquet-fullness, 0) * .3);
-      z-index: 1;
-      filter: drop-shadow(0 1px 3px #000);
+        linear-gradient(116deg, #161109 0 18%, #685537 19% 36%, #302518 37% 50%, #776242 51% 68%, #171109 69% 100%),
+        radial-gradient(ellipse at 50% 18%, #d5c28742 0 38%, #0000 66%);
+      clip-path: polygon(3% 10%, 23% 1%, 50% 24%, 77% 1%, 97% 10%, 80% 43%, 65% 56%, 56% 100%, 44% 100%, 35% 56%, 20% 43%);
+      opacity: calc(.76 + var(--live-bouquet-fullness, 0) * .18);
+      z-index: 3;
+      filter: drop-shadow(0 2px 4px #000);
     }
 
     .live-bouquet-stem {
@@ -1151,7 +1151,7 @@
     .live-bouquet-knot {
       position: absolute;
       left: 50%;
-      bottom: 1px;
+      bottom: 2px;
       z-index: 6;
       width: 17px;
       height: 17px;
@@ -1195,7 +1195,7 @@
       place-items: center;
       color: var(--live-color, #d7b16d);
       opacity: 1;
-      transform: translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.82 + var(--ingredient-visual-progress, 0) * .22));
+      transform: translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.9 + var(--ingredient-visual-progress, 0) * .1));
       filter: none;
       transition: opacity 220ms ease, transform 260ms ease;
     }
@@ -1238,6 +1238,11 @@
       filter: none;
     }
 
+    .live-bouquet-ingredient[data-slot-state="empty"] {
+      width: 30px !important;
+      height: 30px !important;
+    }
+
     .live-bouquet-ingredient[data-slot-state="empty"][data-next-objective="true"] .icon-wrap {
       opacity: .24;
       filter: none;
@@ -1263,18 +1268,20 @@
     .live-bouquet-bud {
       position: relative;
       z-index: 1;
-      width: 18px;
-      height: 18px;
-      border: 1px solid #7f8054;
-      border-radius: 58% 58% 48% 48%;
+      width: 23px;
+      height: 23px;
+      border: 1px solid #9b9a68;
+      border-radius: 60% 60% 50% 50%;
       background:
-        linear-gradient(90deg, #15170f 0 18%, #465231 48%, #1c2115 70%, #0b0c08 100%);
+        radial-gradient(circle at 38% 27%, #91926455 0 9%, #0000 28%),
+        linear-gradient(90deg, #171a10 0 16%, #59643c 47%, #252c19 72%, #0b0d08 100%);
       clip-path: polygon(50% 0, 82% 17%, 100% 48%, 79% 87%, 50% 100%, 21% 87%, 0 48%, 18% 17%);
-      opacity: .9;
+      opacity: .96;
       box-shadow:
-        inset 2px 1px 2px #a8a36a2b,
-        inset -3px -2px 4px #000,
-        0 1px 3px #000;
+        inset 2px 1px 3px #c3bd7f40,
+        inset -4px -3px 5px #000,
+        0 1px 4px #000,
+        0 0 2px #a9a36a55;
     }
 
     .live-bouquet-bud::before,
@@ -1286,21 +1293,21 @@
 
     .live-bouquet-bud::before {
       left: 50%;
-      top: 3px;
-      width: 1px;
-      height: 10px;
+      top: 4px;
+      width: 2px;
+      height: 13px;
       transform: translateX(-50%);
-      background: linear-gradient(#9a966554, #0000);
-      box-shadow: -4px 2px 0 #2b3320, 4px 2px 0 #171b11;
+      background: linear-gradient(#bab47b73, #0000);
+      box-shadow: -5px 2px 0 #354126, 5px 2px 0 #1a2114;
     }
 
     .live-bouquet-bud::after {
       left: 2px;
       right: 2px;
       bottom: 0;
-      height: 8px;
-      border-top: 1px solid #87906488;
-      background: linear-gradient(135deg, #31401f 0 34%, #17200f 35% 62%, #40512a 63% 100%);
+      height: 10px;
+      border-top: 1px solid #a5ad778f;
+      background: linear-gradient(135deg, #3d4e27 0 34%, #17200f 35% 62%, #536237 63% 100%);
       clip-path: polygon(0 100%, 18% 15%, 43% 65%, 50% 0, 59% 65%, 82% 15%, 100% 100%);
       opacity: .88;
     }
@@ -5477,8 +5484,8 @@
       body.round-one-active .title,
       body.restored-next-order-focus .title,
       body.round-three-focus-active .title {
-        margin: 2px 0 5px;
-        font-size: 43px;
+        margin: 1px 0;
+        font-size: 37px;
       }
 
       body.round-one-active .objective,
@@ -5500,7 +5507,7 @@
       body.restored-next-order-focus .progress,
       body.round-three-focus-active .progress {
         min-height: 23px;
-        margin-top: 4px;
+        margin-top: 2px;
         padding: 3px 7px;
       }
 
@@ -5510,7 +5517,7 @@
       body.restored-next-order-focus .live-bouquet-assembly,
       body.round-three-focus-active .live-bouquet-assembly {
         width: 330px;
-        height: 66px;
+        height: 82px;
       }
 
       body.round-one-active .live-bouquet-ingredient,
@@ -5871,8 +5878,8 @@
       }
 
       body.focused-active-play:not(.focused-slice-failed) .title {
-        margin: 2px 0 5px;
-        font-size: 43px;
+        margin: 1px 0;
+        font-size: 37px;
       }
 
       body.focused-active-play:not(.focused-slice-failed) .objective {
@@ -5951,13 +5958,13 @@
       body.focused-active-play:not(.focused-slice-failed) .progress {
         width: min(620px, 100%);
         min-height: 23px;
-        margin-top: 4px;
+        margin-top: 2px;
         padding: 3px 7px;
       }
 
       body.focused-active-play:not(.focused-slice-failed) .live-bouquet-assembly {
         width: 330px;
-        height: 66px;
+        height: 82px;
       }
 
       body.focused-active-play:not(.focused-slice-failed) .live-bouquet-ingredient {
@@ -5976,7 +5983,7 @@
       body.focused-active-play:not(.focused-slice-failed).round-two-followup-cue .first-swap-cue,
       body.focused-active-play:not(.focused-slice-failed).armed-line-relic-cue .first-swap-cue {
         min-height: 25px;
-        margin-top: 4px;
+        margin-top: 2px;
         padding: 3px 8px;
         font-size: 11px;
       }
@@ -6049,7 +6056,7 @@
 
       body.focused-active-play:not(.focused-slice-failed) .board {
         width: min(610px, calc(100vh - 240px), calc(100vw - 470px));
-        margin: 3px auto 6px;
+        margin: 0 auto 6px;
         padding: 7px;
       }
     }
@@ -7128,7 +7135,7 @@
       body.round-one-active .progress,
       body.focused-payoff-active .progress {
         width: calc(100vw - 26px);
-        min-height: 86px;
+        min-height: 108px;
         margin-top: 4px;
         padding: 3px 6px 5px;
         font-size: 9px;
@@ -7157,7 +7164,7 @@
       body.round-one-active .bouquet-order-progress,
       body.focused-payoff-active .bouquet-order-progress {
         grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: 18px 60px;
+        grid-template-rows: 18px 82px;
         gap: 0;
       }
       body.restored-next-order-focus .bouquet-receiver-copy,
@@ -7196,7 +7203,7 @@
         grid-column: 1 / -1;
         grid-row: 2;
         width: min(320px, 100%);
-        height: 66px;
+        height: 82px;
       }
       body.restored-next-order-focus .live-bouquet-ingredient,
       body.restored-greenhouse-handoff .live-bouquet-ingredient,
@@ -7206,7 +7213,7 @@
         width: var(--live-size, 28px);
         height: var(--live-size, 28px);
         top: calc(var(--live-y, 20px) - 3px);
-        transform: translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.78 + var(--ingredient-visual-progress, 0) * .24));
+        transform: translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.9 + var(--ingredient-visual-progress, 0) * .1));
       }
       .live-bouquet-ingredient.order-pulse[data-gain-receiver="true"] {
         animation-name: live-bouquet-harvest-mobile-contained;
@@ -8720,14 +8727,15 @@
 
     function liveBouquetLayout(index, total) {
       const crafted = bouquetCompositionLayout(index, total);
+      const size = total <= 16 ? 36 : total <= 20 ? 31 : 26;
       const layout = {
-        x: Math.round(crafted.x * .9),
-        y: Math.round(6 + crafted.y * .47),
-        size: Math.round(crafted.size * .72),
+        x: Math.round(crafted.x * 1.03),
+        y: Math.round(5 + crafted.y * .65 - (crafted.y > 75 ? 3 : 0)),
+        size,
         rot: crafted.rot,
         z: crafted.z
       };
-      const knotY = 59;
+      const knotY = 75;
       const stemTargetY = layout.y + layout.size * .08;
       const stemRise = Math.max(10, knotY - stemTargetY);
       return {

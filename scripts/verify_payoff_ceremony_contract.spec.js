@@ -617,8 +617,9 @@ function expectPhysicalBouquetGeometry(assembly, composition) {
   expect(crownWidth, "all heads form a compact crown instead of spanning the rail")
     .toBeLessThan(assembly.width * .78);
   expect(crownWidth, "compact crown remains visually substantial")
-    .toBeGreaterThan(assembly.width * .4);
-  expect(crownYSpread, "bouquet crown has vertical tiers instead of a flat row").toBeGreaterThan(14);
+    .toBeGreaterThan(assembly.width * .52);
+  expect(crownYSpread, "bouquet crown has three materially separated tiers instead of a flat row")
+    .toBeGreaterThan(32);
   expect(overlap.maximum, "bouquet heads cluster with natural overlap").toBeGreaterThan(.08);
   expect(overlap.maximum, `ingredient heads remain individually legible; closest slots ${overlap.pair.join("/")}`)
     .toBeLessThan(.82);
@@ -630,9 +631,9 @@ function expectPhysicalBouquetGeometry(assembly, composition) {
   const closed = assembly.ingredients.filter((ingredient) => ingredient.slotProgress === 0);
   expect(closed.every((ingredient) => ingredient.bud), "every unearned unit remains a visible closed botanical bud").toBe(true);
   expect(closed.every((ingredient) => (
-    ingredient.bud.width >= 13
-      && ingredient.bud.height >= 13
-      && ingredient.bud.opacity >= .75
+    ingredient.bud.width >= 21
+      && ingredient.bud.height >= 21
+      && ingredient.bud.opacity >= .9
       && ingredient.bud.backgroundImage !== "none"
       && ingredient.bud.borderStyle !== "none"
   )), "closed buds have substantial neutral botanical geometry").toBe(true);
@@ -1109,9 +1110,10 @@ async function runJourney(page, label, includeRetry) {
   expect(initialAssembly.progress).toBe("0/14");
   expect(initialAssembly.state).toBe("fresh");
   expect(initialAssembly.width, "fresh live bouquet is readable in the progress strip").toBeGreaterThanOrEqual(compactReceiver ? 220 : 210);
-  expect(initialAssembly.height, "fresh live bouquet has bouquet silhouette height").toBeGreaterThanOrEqual(compactReceiver ? 54 : 70);
-  expect(initialAssembly.bindingWidth, "fresh live bouquet shows a physical binding").toBeGreaterThanOrEqual(50);
-  expect(initialAssembly.vineWidth, "fresh live bouquet shows empty vine slots").toBeGreaterThanOrEqual(compactReceiver ? 74 : 84);
+  expect(initialAssembly.height, "fresh live bouquet owns substantial crown and wrap depth").toBeGreaterThanOrEqual(80);
+  expect(initialAssembly.bindingWidth, "fresh live bouquet shows a material binding").toBeGreaterThanOrEqual(68);
+  expect(initialAssembly.vineWidth, "fresh live bouquet shows a broad physical wrap").toBeGreaterThanOrEqual(184);
+  expect(initialAssembly.vineHeight, "fresh wrap has material depth below the crown").toBeGreaterThanOrEqual(54);
   expectPhysicalBouquetGeometry(initialAssembly, ROUND_ONE_COMPOSITION);
   expect(initialAssembly.ingredients.every((ingredient) => ingredient.slotState === "empty")).toBe(true);
   expect(initialAssembly.ingredients.every((ingredient) => ingredient.slotProgress === 0)).toBe(true);
@@ -1126,13 +1128,12 @@ async function runJourney(page, label, includeRetry) {
   expect(initialPixels, "fresh bouquet exposes fourteen intended unit positions").toHaveLength(14);
   expect(initialAssembly.ingredients.every((ingredient) => ingredient.bud), "all fourteen fresh units visibly begin closed").toBe(true);
   expect(Math.min(...initialAssembly.ingredients.map((ingredient) => ingredient.bud.width)),
-    "fresh capacity stays countable without flower-image stand-ins").toBeGreaterThanOrEqual(13);
+    "fresh capacity stays countable without flower-image stand-ins").toBeGreaterThanOrEqual(21);
   expect(Math.min(...initialPixels.map((head) => head.p90)),
     `every fresh bud renders above the empty panel floor: ${JSON.stringify(initialPixels)}`).toBeGreaterThan(10);
   expect(initialAssembly.overflowX).toBe(false);
-  if (label.includes("mobile390")) {
-    expect(initialAssembly.boardBottom, "mobile active board stays in viewport with live bouquet").toBeLessThanOrEqual(844);
-  }
+  expect(initialAssembly.boardBottom, `${label} keeps the complete altar in the first viewport`)
+    .toBeLessThanOrEqual(viewport?.height || 844);
   await page.screenshot({ path: `work/live-bouquet-${label}-empty.png`, fullPage: true });
   await page.reload({ waitUntil: "networkidle" });
   const reloadedEmptyAssembly = await activeBouquetAssemblyState(page);
