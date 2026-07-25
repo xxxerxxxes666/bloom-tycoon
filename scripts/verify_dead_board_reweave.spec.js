@@ -208,8 +208,8 @@ test("desktop click recovery presents one reweave and an objective-useful contin
   expect(active).toMatchObject({ tiles: 64, rows: 8, disabled: 64, cueVisible: true, phase: "active", sequence: 1, competing: 0, overflowX: false, brokenImages: [] });
   expect(active.cue).toBe("No moves — altar reweaving.");
   expect(active.boardBottom, "desktop active reweave keeps the full altar in view").toBeLessThanOrEqual(716);
-  expect(active.boardWidth).toBeCloseTo(480, 0);
-  expect(active.boardHeight).toBeCloseTo(480, 0);
+  expect(active.boardWidth).toBeCloseTo(600, 0);
+  expect(active.boardHeight).toBeCloseTo(600, 0);
   expect(active.cueOverlapsBoard, "desktop active reweave cue stays beside the altar").toBe(false);
   expect(activeSaved.moves).toBe(fixture.moves - 1);
   await page.screenshot({ path: "work/dead-board-reweave-desktop-active.png" });
@@ -226,8 +226,8 @@ test("desktop click recovery presents one reweave and an objective-useful contin
   expect(settled).toMatchObject({ tiles: 64, rows: 8, disabled: 0, guideCount: 1, idleHints: 2, cueVisible: true, phase: "guided", sequence: 1, overflowX: false, brokenImages: [] });
   expect(settled.cue).toContain("Path restored");
   expect(settled.boardBottom, "desktop guided reweave keeps the full altar in view").toBeLessThanOrEqual(716);
-  expect(settled.boardWidth).toBeCloseTo(480, 0);
-  expect(settled.boardHeight).toBeCloseTo(480, 0);
+  expect(settled.boardWidth).toBeCloseTo(600, 0);
+  expect(settled.boardHeight).toBeCloseTo(600, 0);
   expect(settled.cueOverlapsBoard, "desktop guided cue stays beside the altar").toBe(false);
   expect(settledSaved).toMatchObject({
     moves: activeSaved.moves,

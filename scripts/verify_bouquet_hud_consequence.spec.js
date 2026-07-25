@@ -668,8 +668,8 @@ function assertActiveViewport(report, viewport, label) {
   expect(report.overflowX, `${label} no horizontal overflow`).toBe(false);
   expect(report.brokenImages, `${label} no broken images`).toEqual([]);
   if (viewport.label === "desktop") {
-    expect(report.boardWidth, `${label} full desktop altar width`).toBeCloseTo(480, 0);
-    expect(report.boardHeight, `${label} full desktop altar height`).toBeCloseTo(480, 0);
+    expect(report.boardWidth, `${label} authoritative desktop altar width`).toBeCloseTo(600, 0);
+    expect(report.boardHeight, `${label} authoritative desktop altar height`).toBeCloseTo(600, 0);
   }
 }
 
@@ -910,8 +910,8 @@ function assertRoundTwoHandoffGeometry(report, viewport, label) {
   expect(report.overflowX, `${label} horizontal overflow`).toBe(false);
   expect(report.brokenImages, `${label} broken images`).toEqual([]);
   if (viewport.label === "desktop") {
-    expect(report.boardWidth, `${label} full desktop altar width`).toBeCloseTo(480, 0);
-    expect(report.boardHeight, `${label} full desktop altar height`).toBeCloseTo(480, 0);
+    expect(report.boardWidth, `${label} authoritative desktop altar width`).toBeCloseTo(600, 0);
+    expect(report.boardHeight, `${label} authoritative desktop altar height`).toBeCloseTo(600, 0);
     expect(report.boardBottom, `${label} desktop lower margin`).toBeLessThanOrEqual(716);
   } else {
     expect(report.boardWidth, `${label} exact mobile altar width`).toBeCloseTo(378, 0);
@@ -2111,9 +2111,11 @@ test("active hierarchy scales the roomy altar without moving the accepted short 
       label: "r1-desktop1280",
       viewport: { width: 1280, height: 720 },
       screenshot: "work/active-hierarchy-r1-desktop1280.png",
-      expectedBoard: 480,
-      expectedTile: 54.25,
+      expectedBoard: 600,
+      expectedTile: 69,
       maxGreenhouseAreaRatio: 0.53,
+      centered: true,
+      activeOrders: true,
       exerciseOpening: true
     },
     {
@@ -2318,10 +2320,10 @@ test("active hierarchy scales the roomy altar without moving the accepted short 
     }
     if (capture.mobileBaseline) {
       expect(report.heroDialVisible, `${capture.label} desktop greenhouse rail remains absent`).toBe(false);
-      expect(report.board.top, `${capture.label} accepted altar top`).toBeCloseTo(302, 0);
+      expect(report.board.top, `${capture.label} accepted altar top`).toBeCloseTo(324, 0);
       expect(report.objective.top, `${capture.label} accepted objective top`).toBeCloseTo(59, 0);
       expect(report.progress.top, `${capture.label} accepted bouquet HUD top`).toBeCloseTo(125, 0);
-      expect(report.mobileGreenhouse.top, `${capture.label} accepted greenhouse HUD top`).toBeCloseTo(218, 0);
+      expect(report.mobileGreenhouse.top, `${capture.label} accepted greenhouse HUD top`).toBeCloseTo(240, 0);
     }
 
     await page.screenshot({ path: capture.screenshot, fullPage: false });

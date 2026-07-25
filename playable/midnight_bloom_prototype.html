@@ -7965,6 +7965,237 @@
         max-width: 366px;
       }
     }
+
+    /* Large desktop authority: use the full gothic frame as a three-part altar
+       composition. The established bouquet receiver remains intact above the
+       board while greenhouse and current orders flank, rather than shrink, play. */
+    @media (min-width: 1180px) {
+      body.focused-active-play:not(.focused-slice-failed) .game {
+        --desktop-altar-size: min(650px, calc(100vh - 120px), calc(100vw - 630px));
+        width: calc(100vw - 10px);
+        height: calc(100vh - 10px);
+        min-height: 0;
+        grid-template-columns:
+          minmax(0, 1fr)
+          var(--desktop-altar-size)
+          minmax(0, 1fr);
+        grid-template-rows: 90px var(--desktop-altar-size);
+        align-content: center;
+        gap: 0;
+        padding: 6px;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .left,
+      body.focused-active-play:not(.focused-slice-failed) .main {
+        display: contents;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .active-greenhouse-stage {
+        display: block;
+        position: absolute;
+        inset: 6px;
+        z-index: 0;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .sigil,
+      body.focused-active-play:not(.focused-slice-failed) .title,
+      body.focused-active-play:not(.focused-slice-failed) .objective,
+      body.focused-active-play:not(.focused-slice-failed) .progress,
+      body.focused-active-play:not(.focused-slice-failed) .tutorial-panel,
+      body.focused-active-play:not(.focused-slice-failed) .first-swap-cue,
+      body.focused-active-play:not(.focused-slice-failed) .next-order-cue,
+      body.focused-active-play:not(.focused-slice-failed) .tutorial-help,
+      body.focused-active-play:not(.focused-slice-failed) .board,
+      body.focused-active-play:not(.focused-slice-failed) .hero,
+      body.focused-active-play:not(.focused-slice-failed) .active-orders-card {
+        z-index: 2;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .sigil {
+        grid-column: 1;
+        grid-row: 1;
+        align-self: start;
+        justify-self: center;
+        margin-top: 1px;
+        font-size: 9px;
+        letter-spacing: 6px;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .title {
+        grid-column: 1;
+        grid-row: 1;
+        align-self: start;
+        justify-self: center;
+        margin: 12px 0 0;
+        font-size: 32px;
+        line-height: 1;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .objective,
+      body.focused-active-play:not(.focused-slice-failed) .objective.compact-objective {
+        grid-column: 3;
+        grid-row: 1;
+        align-self: center;
+        justify-self: center;
+        width: calc(100% - 16px);
+        max-height: 88px;
+        margin: 0;
+        padding: 4px 6px;
+        gap: 3px 5px;
+        flex-wrap: wrap;
+        overflow: hidden;
+        font-size: 11px;
+        line-height: 1;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .objective .objective-text,
+      body.focused-active-play:not(.focused-slice-failed) .objective.compact-objective .objective-text {
+        flex: 1 1 auto;
+        font-size: 10px;
+        letter-spacing: 0.06em;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .objective .objective-goal-joiner,
+      body.focused-active-play:not(.focused-slice-failed) .objective .objective-separator {
+        display: none;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .objective .objective-target,
+      body.focused-active-play:not(.focused-slice-failed) .objective.compact-objective .objective-target {
+        flex: 1 1 calc(50% - 4px);
+        display: grid;
+        grid-template-columns: 20px minmax(0, 1fr);
+        grid-template-rows: 1fr 1fr;
+        min-width: 0;
+        max-width: calc(50% - 3px);
+        min-height: 30px;
+        padding: 2px 3px;
+        gap: 0 3px;
+        text-align: left;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .objective .objective-target .icon-wrap,
+      body.focused-active-play:not(.focused-slice-failed) .objective .thorn-goal-glyph {
+        grid-row: 1 / 3;
+        align-self: center;
+        width: 20px;
+        height: 20px;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .objective .objective-icon {
+        width: 20px;
+        height: 20px;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .objective .objective-target-name,
+      body.focused-active-play:not(.focused-slice-failed) .objective.compact-objective .objective-target-name {
+        align-self: end;
+        max-width: 100%;
+        overflow: hidden;
+        font-size: 0;
+        line-height: 1;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .objective .objective-target-name[data-compact-label]::after {
+        content: attr(data-compact-label);
+        font-size: 9px;
+        line-height: 1;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .objective .objective-target-count {
+        align-self: start;
+        font-size: 11px;
+        line-height: 1;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .objective .moves-counter {
+        flex: 0 0 auto;
+        min-height: 22px;
+        padding: 2px 6px;
+        font-size: 10px;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .progress {
+        grid-column: 2;
+        grid-row: 1;
+        align-self: start;
+        justify-self: stretch;
+        width: 100%;
+        min-height: 90px;
+        margin: 0;
+        padding: 3px 7px;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .tutorial-panel,
+      body.focused-active-play:not(.focused-slice-failed) .first-swap-cue,
+      body.focused-active-play:not(.focused-slice-failed) .next-order-cue {
+        position: relative !important;
+        left: auto !important;
+        top: auto !important;
+        grid-column: 1;
+        grid-row: 1;
+        align-self: end;
+        justify-self: center;
+        width: max-content;
+        max-width: calc(100% - 16px);
+        min-height: 26px;
+        margin: 0 0 1px;
+        padding: 3px 7px;
+        font-size: 10.5px;
+        line-height: 1.05;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .tutorial-skip {
+        min-height: 21px;
+        padding: 2px 6px;
+        font-size: 9px;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .main > .tutorial-help,
+      body.focused-active-play:not(.focused-slice-failed) .tutorial-help {
+        position: relative;
+        top: auto;
+        right: auto;
+        grid-column: 1;
+        grid-row: 1;
+        align-self: end;
+        justify-self: center;
+        margin: 0 0 2px;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .board,
+      body.black-candle-activation-active.focused-active-play:not(.focused-slice-failed) .board {
+        grid-column: 2;
+        grid-row: 2;
+        align-self: start;
+        justify-self: center;
+        width: var(--desktop-altar-size);
+        max-width: none;
+        gap: 4px;
+        margin: 0;
+        padding: 8px;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .hero {
+        grid-column: 1;
+        grid-row: 2;
+        align-self: start;
+        justify-self: center;
+        width: min(300px, calc(100% - 18px));
+        height: 360px;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .active-orders-card {
+        display: block;
+        grid-column: 3;
+        grid-row: 2;
+        align-self: start;
+        justify-self: center;
+        width: min(300px, calc(100% - 18px));
+        min-height: 0;
+        padding: 8px 9px;
+      }
+    }
   </style>
 </head>
 <body>
