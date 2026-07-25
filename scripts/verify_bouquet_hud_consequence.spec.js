@@ -27,6 +27,34 @@ const ROUND_COMPOSITIONS = {
   3: expectedUnitComposition([[3, 14], [0, 13]])
 };
 
+const ROUND_CONTRACTS = {
+  1: {
+    round: 1,
+    name: "First Bouquet",
+    reward: 120,
+    restoration: "Restore Greenhouse",
+    restorationCost: 100,
+    targets: [[5, 8], [1, 6]]
+  },
+  2: {
+    round: 2,
+    name: "Moonlit Wreath",
+    reward: 150,
+    restoration: "Upgrade Greenhouse",
+    restorationCost: 120,
+    targets: [[2, 10], [4, 9], [5, 7]],
+    thorn: 3
+  },
+  3: {
+    round: 3,
+    name: "Bloodroot Compact",
+    reward: 180,
+    restoration: "Raise Conservatory",
+    restorationCost: 180,
+    targets: [[3, 14], [0, 13]]
+  }
+};
+
 function expectedEarnedHeadCount(round, counts) {
   const objectives = {
     1: [[5, 8], [1, 6]],
@@ -41,6 +69,19 @@ const HUD_CASES = [
     label: "r1-active",
     expected: "Bouquet · 0/14",
     state: { currentRound: 1, moves: 6, counts: [0, 0, 0, 0, 0, 0], coins: 0 }
+  },
+  {
+    label: "r1-owned-replay-active",
+    expected: "Bouquet · 0/14",
+    state: {
+      currentRound: 1,
+      moves: 6,
+      counts: [0, 0, 0, 0, 0, 0],
+      coins: 50,
+      roundOneRestored: true,
+      roundTwoGreenhouseUpgraded: true,
+      roundThreeConservatoryRaised: true
+    }
   },
   {
     label: "r1-failed",
@@ -427,6 +468,7 @@ async function hudReport(page) {
     const saved = JSON.parse(localStorage.getItem("bloomTycoonPlayableStateV1") || "{}");
     const orderProgress = document.querySelector("#bouquetOrderProgress");
     const dial = document.querySelector("#heroRestorationDial");
+    const contract = document.querySelector(".order-contract");
     return {
       text: label.textContent.trim(),
       visible: visible(label),
@@ -468,9 +510,43 @@ async function hudReport(page) {
       assemblySlotStates: Array.from(document.querySelectorAll("#liveBouquetAssembly .live-bouquet-ingredient"))
         .map((ingredient) => ingredient.dataset.slotState || ""),
       linearMeterVisible: visible(document.querySelector("#bouquetOrderProgress .progress-meter")),
+      objectiveText: document.querySelector("#objective")?.innerText.replace(/\s+/g, " ").trim() || "",
+      visibleObjectiveTargets: Array.from(document.querySelectorAll("#objective .objective-target"))
+        .filter(visible).length,
+      contract: {
+        visible: visible(contract),
+        nodes: document.querySelectorAll(".order-contract").length,
+        heading: document.querySelector(".active-orders-card h3")?.textContent.trim() || "",
+        round: contract?.dataset.contractRound || "",
+        name: contract?.dataset.contractName || "",
+        reward: contract?.dataset.contractReward || "",
+        restoration: contract?.dataset.contractRestoration || "",
+        restorationCost: contract?.dataset.contractRestorationCost || "",
+        ownedStage: contract?.dataset.contractOwnedStage || "",
+        text: contract?.innerText.replace(/\s+/g, " ").trim() || "",
+        progressbars: contract ? Array.from(contract.querySelectorAll('[role="progressbar"]')).filter(visible).length : 0,
+        linearMeters: contract?.querySelectorAll(".order-fill, .progress-meter").length || 0,
+        ingredients: Array.from(contract?.querySelectorAll("[data-contract-target]") || [], (row) => ({
+          flowerId: Number(row.dataset.contractTarget),
+          progress: Number(row.dataset.progress),
+          needed: Number(row.dataset.needed),
+          remaining: Number(row.dataset.remaining),
+          text: row.innerText.replace(/\s+/g, " ").trim()
+        })),
+        thorn: (() => {
+          const row = contract?.querySelector("[data-contract-thorn]");
+          return row ? {
+            progress: Number(row.dataset.progress),
+            needed: Number(row.dataset.needed),
+            remaining: Number(row.dataset.remaining),
+            text: row.innerText.replace(/\s+/g, " ").trim()
+          } : null;
+        })()
+      },
       savedMoves: saved.moves,
       savedCounts: saved.counts || [],
       savedCoins: saved.coins,
+      savedClearedCursedThorns: saved.clearedCursedThorns || 0,
       savedOwnership: {
         roundOneRestored: Boolean(saved.roundOneRestored),
         roundTwoGreenhouseUpgraded: Boolean(saved.roundTwoGreenhouseUpgraded),
@@ -565,6 +641,65 @@ async function assertHudState(page, fixture, viewport, reload) {
   expect(report.rows, `${label} board rows`).toBe(8);
   expect(report.overflowX, `${label} no page overflow`).toBe(false);
   expect(report.brokenImages, `${label} no broken images`).toEqual([]);
+
+  const state = savedState(fixture);
+  const expectedContract = ROUND_CONTRACTS[state.currentRound];
+  const activeContract = !fixture.action && !fixture.retry;
+  if (viewport.label === "desktop" && activeContract) {
+    const restorationAlreadyOwned = savedOwnedStage >= expectedContract.round;
+    expect(report.contract.visible, `${label} one desktop current-order contract`).toBe(true);
+    expect(report.contract.heading, `${label} singular contract heading`).toBe("Current Order");
+    expect(report.contract.round, `${label} current round`).toBe(String(state.currentRound));
+    expect(report.contract.name, `${label} current order name`).toBe(expectedContract.name);
+    expect(report.contract.reward, `${label} exact reward`).toBe(String(expectedContract.reward));
+    expect(report.contract.restoration, `${label} greenhouse consequence`).toBe(
+      restorationAlreadyOwned ? "Nourish owned conservatory" : expectedContract.restoration
+    );
+    expect(report.contract.restorationCost, `${label} greenhouse cost`).toBe(
+      restorationAlreadyOwned ? "" : String(expectedContract.restorationCost)
+    );
+    expect(report.contract.ownedStage, `${label} owned greenhouse state`).toBe(String(savedOwnedStage));
+    expect(report.contract.progressbars, `${label} rail adds no progressbar`).toBe(0);
+    expect(report.contract.linearMeters, `${label} rail adds no linear fill`).toBe(0);
+    expect(report.contract.text, `${label} one-order language`).not.toMatch(
+      /Velvet Funeral|Saint's Offering|Amber Keepsake|Velvet Thread|Solar Ash/
+    );
+    expect(report.contract.ingredients, `${label} truthful ingredient deficits`).toEqual(
+      expectedContract.targets.map(([flowerId, needed]) => {
+        const progress = Math.min(state.counts[flowerId] || 0, needed);
+        return {
+          flowerId,
+          progress,
+          needed,
+          remaining: needed - progress,
+          text: expect.stringContaining(`${progress}/${needed}`)
+        };
+      })
+    );
+    if (expectedContract.thorn) {
+      const thornProgress = Math.min(report.savedClearedCursedThorns, expectedContract.thorn);
+      expect(report.contract.thorn, `${label} truthful thorn requirement`).toEqual({
+        progress: thornProgress,
+        needed: expectedContract.thorn,
+        remaining: expectedContract.thorn - thornProgress,
+        text: expect.stringContaining(`${thornProgress}/${expectedContract.thorn}`)
+      });
+    } else {
+      expect(report.contract.thorn, `${label} no invented blocker requirement`).toBeNull();
+    }
+    expect(report.visibleObjectiveTargets, `${label} micro HUD yields ingredient authority to contract`).toBe(0);
+    expect(report.objectiveText, `${label} top HUD keeps order and moves`).toMatch(
+      new RegExp(`Round ${state.currentRound} · ${expectedContract.name}`, "i")
+    );
+    expect(report.objectiveText, `${label} exact moves remain visible`).toContain(`Moves ${state.moves}`);
+  } else if (viewport.label !== "desktop") {
+    expect(report.contract.visible, `${label} desktop rail remains absent on mobile`).toBe(false);
+    if (activeContract) {
+      expect(report.visibleObjectiveTargets, `${label} mobile keeps compact ingredient targets`).toBe(
+        expectedContract.targets.length + (expectedContract.thorn ? 1 : 0)
+      );
+    }
+  }
 
   expect(report.visible, `${label} label visibility follows receiver handoff`).toBe(!fixture.action);
   expect(report.bouquetSurfaceVisible, `${label} compact bouquet/wallet rail remains present`).toBe(true);
@@ -929,7 +1064,7 @@ for (const viewport of VIEWPORTS) {
       const runtimeErrors = [];
       const requestFailures = [];
       page.on("console", (message) => {
-        if (message.type() === "error") runtimeErrors.push(message.text());
+        if (message.type() === "error" || message.type() === "warning") runtimeErrors.push(message.text());
       });
       page.on("pageerror", (error) => runtimeErrors.push(error.message));
       page.on("requestfailed", (request) => {
@@ -989,7 +1124,7 @@ for (const viewport of VIEWPORTS) {
       const page = await context.newPage();
       const runtimeErrors = [];
       page.on("console", (message) => {
-        if (message.type() === "error") runtimeErrors.push(message.text());
+        if (message.type() === "error" || message.type() === "warning") runtimeErrors.push(message.text());
       });
       page.on("pageerror", (error) => runtimeErrors.push(error.message));
       await page.addInitScript(({ key, state, marker }) => {
@@ -1208,7 +1343,7 @@ for (const viewport of FAILURE_VIEWPORTS) {
       const runtimeErrors = [];
       const requestFailures = [];
       page.on("console", (message) => {
-        if (message.type() === "error") runtimeErrors.push(message.text());
+        if (message.type() === "error" || message.type() === "warning") runtimeErrors.push(message.text());
       });
       page.on("pageerror", (error) => runtimeErrors.push(error.message));
       page.on("requestfailed", (request) => {
@@ -1515,7 +1650,7 @@ for (const config of ROUND_TWO_HANDOFF_INPUTS) {
     const idlePage = await idleContext.newPage();
     const idleErrors = [];
     idlePage.on("console", (message) => {
-      if (message.type() === "error") idleErrors.push(message.text());
+      if (message.type() === "error" || message.type() === "warning") idleErrors.push(message.text());
     });
     idlePage.on("pageerror", (error) => idleErrors.push(error.message));
     await idlePage.addInitScript(({ key, state, marker }) => {
@@ -1570,7 +1705,7 @@ for (const config of ROUND_TWO_HANDOFF_INPUTS) {
     const runtimeErrors = [];
     const requestFailures = [];
     actionPage.on("console", (message) => {
-      if (message.type() === "error") runtimeErrors.push(message.text());
+      if (message.type() === "error" || message.type() === "warning") runtimeErrors.push(message.text());
     });
     actionPage.on("pageerror", (error) => runtimeErrors.push(error.message));
     actionPage.on("requestfailed", (request) => {
@@ -1697,7 +1832,7 @@ for (const config of ROUND_TWO_HANDOFF_INPUTS) {
     const idlePage = await idleContext.newPage();
     const idleErrors = [];
     idlePage.on("console", (message) => {
-      if (message.type() === "error") idleErrors.push(message.text());
+      if (message.type() === "error" || message.type() === "warning") idleErrors.push(message.text());
     });
     idlePage.on("pageerror", (error) => idleErrors.push(error.message));
     await idlePage.addInitScript(({ key, state, marker }) => {
@@ -1753,7 +1888,7 @@ for (const config of ROUND_TWO_HANDOFF_INPUTS) {
     const refusalPage = await refusalContext.newPage();
     const refusalErrors = [];
     refusalPage.on("console", (message) => {
-      if (message.type() === "error") refusalErrors.push(message.text());
+      if (message.type() === "error" || message.type() === "warning") refusalErrors.push(message.text());
     });
     refusalPage.on("pageerror", (error) => refusalErrors.push(error.message));
     await refusalPage.addInitScript(({ key, state, marker }) => {
@@ -1884,7 +2019,7 @@ for (const config of ROUND_TWO_HANDOFF_INPUTS) {
     const runtimeErrors = [];
     const requestFailures = [];
     actionPage.on("console", (message) => {
-      if (message.type() === "error") runtimeErrors.push(message.text());
+      if (message.type() === "error" || message.type() === "warning") runtimeErrors.push(message.text());
     });
     actionPage.on("pageerror", (error) => runtimeErrors.push(error.message));
     actionPage.on("requestfailed", (request) => {
@@ -2021,7 +2156,7 @@ test("short desktop keeps the full altar and replay Help in the first viewport",
   const page = await context.newPage();
   const runtimeErrors = [];
   page.on("console", (message) => {
-    if (message.type() === "error") runtimeErrors.push(message.text());
+    if (message.type() === "error" || message.type() === "warning") runtimeErrors.push(message.text());
   });
   page.on("pageerror", (error) => runtimeErrors.push(error.message));
 
@@ -2116,6 +2251,7 @@ test("active hierarchy scales the roomy altar without moving the accepted short 
       maxGreenhouseAreaRatio: 0.53,
       centered: true,
       activeOrders: true,
+      contract: ROUND_CONTRACTS[1],
       exerciseOpening: true
     },
     {
@@ -2125,7 +2261,8 @@ test("active hierarchy scales the roomy altar without moving the accepted short 
       expectedBoard: 650,
       expectedTile: 75.25,
       maxGreenhouseAreaRatio: 0.27,
-      centered: true
+      centered: true,
+      contract: ROUND_CONTRACTS[1]
     },
     {
       label: "r1-mobile390",
@@ -2135,6 +2272,7 @@ test("active hierarchy scales the roomy altar without moving the accepted short 
       expectedBoard: 378,
       expectedTile: 42.875,
       mobileBaseline: true,
+      contract: ROUND_CONTRACTS[1],
       exerciseOpening: true
     },
     {
@@ -2145,6 +2283,7 @@ test("active hierarchy scales the roomy altar without moving the accepted short 
       expectedTile: 75.25,
       maxGreenhouseAreaRatio: 0.27,
       centered: true,
+      contract: ROUND_CONTRACTS[2],
       state: {
         ...savedState(HUD_CASES.find((fixture) => fixture.label === "r2-active")),
         moves: 9,
@@ -2167,6 +2306,7 @@ test("active hierarchy scales the roomy altar without moving the accepted short 
       maxGreenhouseAreaRatio: 0.27,
       centered: true,
       activeOrders: true,
+      contract: ROUND_CONTRACTS[3],
       state: {
         ...savedState(HUD_CASES.find((fixture) => fixture.label === "r3-active")),
         moves: 1,
@@ -2188,7 +2328,7 @@ test("active hierarchy scales the roomy altar without moving the accepted short 
     const runtimeErrors = [];
     const requestFailures = [];
     page.on("console", (message) => {
-      if (message.type() === "error") runtimeErrors.push(message.text());
+      if (message.type() === "error" || message.type() === "warning") runtimeErrors.push(message.text());
     });
     page.on("pageerror", (error) => runtimeErrors.push(error.message));
     page.on("requestfailed", (request) => requestFailures.push(
@@ -2256,6 +2396,7 @@ test("active hierarchy scales the roomy altar without moving the accepted short 
         .find(visible);
       const visibleButtons = Array.from(document.querySelectorAll("button"))
         .filter((button) => visible(button) && !button.closest("#board"));
+      const orderContract = document.querySelector(".order-contract");
       return {
         viewport: { width: innerWidth, height: innerHeight },
         bodyClasses: document.body.className,
@@ -2269,6 +2410,21 @@ test("active hierarchy scales the roomy altar without moving the accepted short 
         heroDialVisible: visible(document.querySelector("#heroRestorationDial")),
         heroDialText: document.querySelector("#heroRestorationDial")?.textContent.replace(/\s+/g, " ").trim() || "",
         activeOrdersVisible: visible(document.querySelector(".active-orders-card")),
+        orderContractVisible: visible(orderContract),
+        orderContractNodes: document.querySelectorAll(".order-contract").length,
+        orderContractName: orderContract?.dataset.contractName || "",
+        orderContractRound: orderContract?.dataset.contractRound || "",
+        orderContractReward: orderContract?.dataset.contractReward || "",
+        orderContractRestoration: orderContract?.dataset.contractRestoration || "",
+        orderContractRestorationCost: orderContract?.dataset.contractRestorationCost || "",
+        orderContractHeading: document.querySelector(".active-orders-card h3")?.textContent.trim() || "",
+        orderContractText: orderContract?.innerText.replace(/\s+/g, " ").trim() || "",
+        orderContractProgressbars: orderContract
+          ? Array.from(orderContract.querySelectorAll('[role="progressbar"]')).filter(visible).length
+          : 0,
+        orderContractLinearFills: orderContract?.querySelectorAll(".order-fill, .progress-meter").length || 0,
+        visibleObjectiveTargets: Array.from(document.querySelectorAll("#objective .objective-target"))
+          .filter(visible).length,
         tiles: tiles.length,
         rows: new Set(tiles.map((tile) => tile.dataset.y)).size,
         completeRows: completeRows.size,
@@ -2315,10 +2471,33 @@ test("active hierarchy scales the roomy altar without moving the accepted short 
         `${capture.label} altar is centered in the viewport`
       ).toBeCloseTo(capture.viewport.width / 2, 0);
     }
-    if (capture.activeOrders) {
-      expect(report.activeOrdersVisible, `${capture.label} current Active Orders remain visible`).toBe(true);
+    if (!capture.mobile) {
+      expect(report.activeOrdersVisible, `${capture.label} current-order rail remains visible`).toBe(true);
+      expect(report.orderContractVisible, `${capture.label} consolidated contract is visible`).toBe(true);
+      expect(report.orderContractNodes, `${capture.label} exactly one contract`).toBe(1);
+      expect(report.orderContractHeading, `${capture.label} singular contract heading`).toBe("Current Order");
+      expect(report.orderContractRound, `${capture.label} truthful round`).toBe(String(capture.contract.round));
+      expect(report.orderContractName, `${capture.label} truthful order`).toBe(capture.contract.name);
+      expect(report.orderContractReward, `${capture.label} truthful exact reward`).toBe(
+        String(capture.contract.reward)
+      );
+      expect(report.orderContractRestoration, `${capture.label} truthful greenhouse consequence`).toBe(
+        capture.contract.restoration
+      );
+      expect(report.orderContractRestorationCost, `${capture.label} truthful greenhouse cost`).toBe(
+        String(capture.contract.restorationCost)
+      );
+      expect(report.orderContractProgressbars, `${capture.label} rail adds no progressbar`).toBe(0);
+      expect(report.orderContractLinearFills, `${capture.label} rail adds no linear fill`).toBe(0);
+      expect(report.visibleObjectiveTargets, `${capture.label} micro HUD does not duplicate ingredient counts`).toBe(0);
+      expect(report.orderContractText, `${capture.label} retired fake parallel orders`).not.toMatch(
+        /Velvet Funeral|Saint's Offering|Amber Keepsake|Velvet Thread|Solar Ash/
+      );
     }
     if (capture.mobileBaseline) {
+      expect(report.activeOrdersVisible, `${capture.label} desktop current-order rail remains absent`).toBe(false);
+      expect(report.orderContractVisible, `${capture.label} contract remains hidden with its rail`).toBe(false);
+      expect(report.visibleObjectiveTargets, `${capture.label} compact objective targets remain visible`).toBe(2);
       expect(report.heroDialVisible, `${capture.label} desktop greenhouse rail remains absent`).toBe(false);
       expect(report.board.top, `${capture.label} accepted altar top`).toBeCloseTo(324, 0);
       expect(report.objective.top, `${capture.label} accepted objective top`).toBeCloseTo(59, 0);
@@ -2385,6 +2564,32 @@ test("active hierarchy scales the roomy altar without moving the accepted short 
         .not.toMatch(/restore|upgrade|raise|greenhouse|conservatory/i);
       expect(afterAuthority.savedOwnership, `${capture.label} saved ownership unchanged`).toEqual(beforeAuthority.savedOwnership);
       expect(afterAuthority.greenhouse, `${capture.label} greenhouse bytes and semantics unchanged`).toEqual(beforeAuthority.greenhouse);
+      if (capture.mobile) {
+        expect(afterAuthority.contract.visible, `${capture.label} no newly visible rail`).toBe(false);
+        expect(afterAuthority.visibleObjectiveTargets, `${capture.label} compact mobile targets remain`).toBe(2);
+      } else {
+        expect(afterAuthority.contract.visible, `${capture.label} current contract remains visible`).toBe(true);
+        expect(afterAuthority.contract.nodes, `${capture.label} one current contract`).toBe(1);
+        expect(afterAuthority.contract.name, `${capture.label} one order name after gain`).toBe("First Bouquet");
+        expect(afterAuthority.contract.ingredients, `${capture.label} ingredient deficits agree after gain`).toEqual([
+          {
+            flowerId: 5,
+            progress: 3,
+            needed: 8,
+            remaining: 5,
+            text: expect.stringContaining("3/8")
+          },
+          {
+            flowerId: 1,
+            progress: 0,
+            needed: 6,
+            remaining: 6,
+            text: expect.stringContaining("0/6")
+          }
+        ]);
+        expect(afterAuthority.visibleObjectiveTargets, `${capture.label} no third ingredient narrator`).toBe(0);
+        expect(afterAuthority.objectiveText, `${capture.label} exact post-swap moves`).toContain("Moves 5");
+      }
       await page.screenshot({
         path: `work/progress-authority-${capture.label}-after-opening.png`,
         fullPage: false

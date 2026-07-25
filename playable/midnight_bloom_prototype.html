@@ -223,26 +223,71 @@
       color: var(--muted);
     }
 
-    .order-line {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 6px;
-      position: relative;
-      overflow: hidden;
-      padding: 4px 5px;
-      border: 1px solid #0000;
-      background: #05040366;
+    .order-contract {
+      display: grid;
+      gap: 9px;
+      padding: 2px 1px 1px;
     }
 
-    .order-icon {
+    .order-contract-heading {
+      display: grid;
+      gap: 2px;
+      padding: 2px 3px 7px;
+      border-bottom: 1px solid #493522;
+    }
+
+    .order-contract-kicker,
+    .order-contract-section-label,
+    .order-contract-outcome small {
+      color: #9f8158;
+      font: 800 9px/1.1 system-ui, sans-serif;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+
+    .order-contract-name {
+      color: #ead3a0;
+      font: 900 20px/1.05 Georgia, serif;
+      text-shadow: 0 2px 0 #000, 0 0 10px #5b1b1538;
+    }
+
+    .order-contract-recipe {
+      display: grid;
+      gap: 5px;
+    }
+
+    .order-contract-ingredients {
+      display: grid;
+      gap: 0;
+    }
+
+    .contract-ingredient {
+      display: grid;
+      grid-template-columns: 30px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 7px;
+      min-height: 38px;
+      padding: 4px 3px;
+      color: #d8c3a0;
+    }
+
+    .contract-ingredient + .contract-ingredient {
+      border-top: 1px solid #2c2119;
+    }
+
+    .contract-ingredient.complete {
+      color: #dff5b8;
+    }
+
+    .contract-ingredient.order-pulse {
+      animation: order-pulse 900ms ease-out both;
+    }
+
+    .contract-ingredient-icon {
       width: 30px;
       height: 30px;
       object-fit: contain;
-      flex: 0 0 auto;
       filter: drop-shadow(0 0 5px #000);
-      position: relative;
-      z-index: 1;
     }
 
     .thorn-order-glyph {
@@ -266,48 +311,92 @@
         drop-shadow(0 0 5px #d7b16d88);
     }
 
-    .order-copy {
-      line-height: 1.15;
-      position: relative;
-      z-index: 1;
-    }
-
-    .order-fill {
-      position: absolute;
-      inset: 0 auto 0 0;
-      width: var(--order-pct, 0%);
+    .contract-ingredient-copy {
+      display: grid;
+      gap: 2px;
       min-width: 0;
-      pointer-events: none;
-      background:
-        linear-gradient(90deg, #5f833833, #d7b16d2f 72%, #0000);
-      box-shadow: inset 0 0 10px #000;
-      transition: width 360ms ease;
+      line-height: 1.05;
     }
 
-    .order-line.complete .order-copy {
+    .contract-ingredient-copy b {
+      overflow: hidden;
+      color: currentColor;
+      font: 800 11px/1.05 system-ui, sans-serif;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .contract-ingredient-deficit {
+      color: #927b5c;
+      font: 700 9px/1 system-ui, sans-serif;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .contract-ingredient.complete .contract-ingredient-deficit {
+      color: #77a64c;
+    }
+
+    .contract-ingredient-count {
+      min-width: 38px;
       color: #f0d99c;
+      font: 900 13px/1 system-ui, sans-serif;
+      text-align: right;
+      white-space: nowrap;
     }
 
-    .order-line.complete .order-icon {
-      filter: drop-shadow(0 0 7px #5f8338) drop-shadow(0 0 5px #000);
+    .contract-ingredient-count small {
+      color: #9f8158;
+      font-size: 9px;
     }
 
-    .order-line.complete {
-      border-color: #6f944d77;
-      background: linear-gradient(90deg, #14200f99, #08060466);
-      box-shadow: inset 0 0 12px #000, 0 0 10px #5f83382e;
+    .order-contract-outcome {
+      display: grid;
+      grid-template-columns: minmax(0, 0.78fr) 14px minmax(0, 1.22fr);
+      align-items: center;
+      gap: 5px;
+      padding: 9px 7px;
+      border-top: 1px solid #5a3f26;
+      border-bottom: 1px solid #2c2119;
+      background: linear-gradient(90deg, #1b0e088c, #0c0806c9 48%, #101309a8);
+      box-shadow: inset 0 0 14px #000;
     }
 
-    .order-line.complete .order-fill {
-      width: 100%;
-      background: linear-gradient(90deg, #5f83385c, #d7b16d35 74%, #0000);
+    .order-contract-reward,
+    .order-contract-consequence {
+      display: grid;
+      gap: 3px;
+      min-width: 0;
     }
 
-    .order-line.complete .order-copy::after {
-      content: "  SEALED";
-      color: #709d45;
-      font-size: 11px;
-      letter-spacing: 0.8px;
+    .order-contract-reward strong {
+      color: #f4d37e;
+      font: 900 15px/1 Georgia, serif;
+      white-space: nowrap;
+    }
+
+    .order-contract-flow {
+      color: #826342;
+      font: 900 16px/1 Georgia, serif;
+      text-align: center;
+    }
+
+    .order-contract-consequence strong {
+      color: #c9d8a4;
+      font: 900 11px/1.08 Georgia, serif;
+    }
+
+    .order-contract-consequence span {
+      color: #9f8e6e;
+      font: 700 9px/1.05 system-ui, sans-serif;
+      letter-spacing: 0.02em;
+    }
+
+    .order-contract-owned {
+      color: #9cba70;
+      font: 800 9px/1.1 system-ui, sans-serif;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
     }
 
     .order-pulse {
@@ -724,6 +813,10 @@
       clip-path: inset(50%);
       white-space: nowrap;
       border: 0;
+    }
+
+    .objective-desktop-order {
+      display: none;
     }
 
     .objective-target {
@@ -5324,18 +5417,6 @@
         font-size: 11px;
       }
 
-      body.round-one-active .order-line,
-      body.restored-next-order-focus .order-line {
-        gap: 6px;
-        margin-top: 4px;
-      }
-
-      body.round-one-active .order-icon,
-      body.restored-next-order-focus .order-icon {
-        width: 25px;
-        height: 25px;
-      }
-
       body.round-one-active .sigil,
       body.restored-next-order-focus .sigil {
         margin-top: 0;
@@ -5844,14 +5925,21 @@
         font-size: 11px;
       }
 
-      body.focused-active-play:not(.focused-slice-failed) .active-orders-card .order-line {
-        gap: 6px;
-        margin-top: 4px;
+      body.focused-active-play:not(.focused-slice-failed) .active-orders-card .order-contract {
+        gap: 7px;
       }
 
-      body.focused-active-play:not(.focused-slice-failed) .active-orders-card .order-icon {
-        width: 25px;
-        height: 25px;
+      body.focused-active-play:not(.focused-slice-failed) .active-orders-card .order-contract-name {
+        font-size: 18px;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .active-orders-card .contract-ingredient {
+        min-height: 35px;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .active-orders-card .contract-ingredient-icon {
+        width: 27px;
+        height: 27px;
       }
 
       body.focused-active-play:not(.focused-slice-failed) .main {
@@ -8050,69 +8138,33 @@
 
       body.focused-active-play:not(.focused-slice-failed) .objective .objective-text,
       body.focused-active-play:not(.focused-slice-failed) .objective.compact-objective .objective-text {
-        flex: 1 1 auto;
-        font-size: 10px;
-        letter-spacing: 0.06em;
+        flex: 1 1 100%;
+        color: #e4c89b;
+        font: 900 13px/1.05 Georgia, serif;
+        letter-spacing: 0.04em;
       }
 
-      body.focused-active-play:not(.focused-slice-failed) .objective .objective-goal-joiner,
-      body.focused-active-play:not(.focused-slice-failed) .objective .objective-separator {
+      body.focused-active-play:not(.focused-slice-failed) .objective-mobile-verb {
         display: none;
       }
 
+      body.focused-active-play:not(.focused-slice-failed) .objective-desktop-order {
+        display: inline;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .objective .objective-goal-joiner,
+      body.focused-active-play:not(.focused-slice-failed) .objective .objective-separator,
       body.focused-active-play:not(.focused-slice-failed) .objective .objective-target,
-      body.focused-active-play:not(.focused-slice-failed) .objective.compact-objective .objective-target {
-        flex: 1 1 calc(50% - 4px);
-        display: grid;
-        grid-template-columns: 20px minmax(0, 1fr);
-        grid-template-rows: 1fr 1fr;
-        min-width: 0;
-        max-width: calc(50% - 3px);
-        min-height: 30px;
-        padding: 2px 3px;
-        gap: 0 3px;
-        text-align: left;
-      }
-
-      body.focused-active-play:not(.focused-slice-failed) .objective .objective-target .icon-wrap,
-      body.focused-active-play:not(.focused-slice-failed) .objective .thorn-goal-glyph {
-        grid-row: 1 / 3;
-        align-self: center;
-        width: 20px;
-        height: 20px;
-      }
-
-      body.focused-active-play:not(.focused-slice-failed) .objective .objective-icon {
-        width: 20px;
-        height: 20px;
-      }
-
-      body.focused-active-play:not(.focused-slice-failed) .objective .objective-target-name,
-      body.focused-active-play:not(.focused-slice-failed) .objective.compact-objective .objective-target-name {
-        align-self: end;
-        max-width: 100%;
-        overflow: hidden;
-        font-size: 0;
-        line-height: 1;
-      }
-
-      body.focused-active-play:not(.focused-slice-failed) .objective .objective-target-name[data-compact-label]::after {
-        content: attr(data-compact-label);
-        font-size: 9px;
-        line-height: 1;
-      }
-
-      body.focused-active-play:not(.focused-slice-failed) .objective .objective-target-count {
-        align-self: start;
-        font-size: 11px;
-        line-height: 1;
+      body.focused-active-play:not(.focused-slice-failed) .objective.compact-objective .objective-target,
+      body.focused-active-play:not(.focused-slice-failed) .objective .objective-boon {
+        display: none;
       }
 
       body.focused-active-play:not(.focused-slice-failed) .objective .moves-counter {
         flex: 0 0 auto;
-        min-height: 22px;
-        padding: 2px 6px;
-        font-size: 10px;
+        min-height: 28px;
+        padding: 5px 10px;
+        font-size: 13px;
       }
 
       body.focused-active-play:not(.focused-slice-failed) .progress {
@@ -8193,7 +8245,7 @@
         justify-self: center;
         width: min(300px, calc(100% - 18px));
         min-height: 0;
-        padding: 8px 9px;
+        padding: 10px 11px 11px;
       }
     }
   </style>
@@ -8218,8 +8270,8 @@
 
       <div class="side-card active-orders-card">
         <div class="panel-title">
-          <img class="panel-icon" src="../assets/tiles/96/crimson_rose_rune.png" srcset="../assets/tiles/48/crimson_rose_rune.png 48w, ../assets/tiles/96/crimson_rose_rune.png 96w" sizes="42px" alt="">
-          <h3>Active Orders</h3>
+          <span class="panel-gate" aria-hidden="true">◆</span>
+          <h3>Current Order</h3>
         </div>
         <div id="activeOrders"></div>
       </div>
@@ -8250,7 +8302,9 @@
       <div class="sigil">SOLVE ET COAGULA</div>
       <h1 class="title">Bloom Tycoon</h1>
       <div class="objective" id="objective">
-        <span class="objective-text">Round 1 · Collect Thorn Rose 0/8 and Bone Star 0/6</span>
+        <span class="objective-text">
+          <span>Round 1</span><span class="objective-mobile-verb"> · Collect</span><span class="objective-desktop-order"> · First Bouquet</span>
+        </span>
         <span class="objective-separator">·</span>
         <span class="moves-counter">Moves 6</span>
       </div>
@@ -8439,8 +8493,8 @@
         name: "First Bouquet",
         moves: 6,
         targets: [
-          { flowerId: 5, needed: 8, order: "Velvet Funeral" },
-          { flowerId: 1, needed: 6, order: "Saint's Offering" }
+          { flowerId: 5, needed: 8 },
+          { flowerId: 1, needed: 6 }
         ],
         reward: { coins: 120, item: "First Bouquet Coffer", flowerId: 5 }
       },
@@ -8448,9 +8502,9 @@
         name: "Moonlit Wreath",
         moves: 9,
         targets: [
-          { flowerId: 2, needed: 10, order: "Moonlit Wreath" },
-          { flowerId: 4, needed: 9, order: "Amber Keepsake" },
-          { flowerId: 5, needed: 7, order: "Velvet Thread" }
+          { flowerId: 2, needed: 10 },
+          { flowerId: 4, needed: 9 },
+          { flowerId: 5, needed: 7 }
         ],
         thornGoal: { needed: 3, order: "Cursed Thorn" },
         thornPlacements: [
@@ -8464,8 +8518,8 @@
         name: "Bloodroot Compact",
         moves: 8,
         targets: [
-          { flowerId: 3, needed: 14, order: "Bloodroot Compact" },
-          { flowerId: 0, needed: 13, order: "Solar Ash" }
+          { flowerId: 3, needed: 14 },
+          { flowerId: 0, needed: 13 }
         ],
         reward: { coins: 180, item: "Bloodroot Compact", flowerId: 3 }
       }
@@ -8826,8 +8880,8 @@
           return;
         }
         rows.push({
-          label: target.order,
-          copy: `${target.order}: ${target.needed - progress} ${flowers[target.flowerId][0]} still needed (${progress}/${target.needed})`
+          label: flowers[target.flowerId][0],
+          copy: `${flowers[target.flowerId][0]}: ${target.needed - progress} still needed (${progress}/${target.needed})`
         });
       });
       if (plan.thornGoal) {
@@ -10250,7 +10304,7 @@
       if (isRestoredNextOrderFocus()) {
         return ` <strong>${flowers[remainingTarget.flowerId][0]} next.</strong> Follow the glow.`;
       }
-      return ` <strong>${flowers[remainingTarget.flowerId][0]} remains.</strong> Swap the glowing tiles to feed ${remainingTarget.order}.`;
+      return ` <strong>${flowers[remainingTarget.flowerId][0]} remains.</strong> Swap the glowing tiles to feed ${plan.name}.`;
     }
 
     function primeFocusedFirstMoveHint(plan = activeRoundPlan()) {
@@ -12886,7 +12940,9 @@
       const objectiveGoalCount = plan.targets.length + (plan.thornGoal ? 1 : 0);
       const objectiveEl = $("objective");
       objectiveEl.innerHTML = `
-        <span class="objective-text">Round ${plan.round} · ${roundComplete ? "Bouquet Complete" : failed ? "Bouquet Withered" : objectiveVerb}</span>
+        <span class="objective-text">
+          <span>Round ${plan.round}</span><span class="objective-mobile-verb"> · ${roundComplete ? "Bouquet Complete" : failed ? "Bouquet Withered" : objectiveVerb}</span><span class="objective-desktop-order"> · ${plan.name}</span>
+        </span>
         ${goalMarkup(plan)}
         ${thornObjectiveHintMarkup(plan)}
         <span class="objective-separator">·</span>
@@ -15197,9 +15253,10 @@
 
     function orderGainMessage(gained) {
       const messages = [];
-      activeRoundPlan().targets.forEach((target) => {
+      const plan = activeRoundPlan();
+      plan.targets.forEach((target) => {
         if (gained[target.flowerId] > 0) {
-          messages.push(`+${gained[target.flowerId]} ${flowers[target.flowerId][0]} added to ${target.order}.`);
+          messages.push(`+${gained[target.flowerId]} ${flowers[target.flowerId][0]} added to ${plan.name}.`);
         }
       });
       return messages.join(" ");
@@ -15218,18 +15275,40 @@
       return tokens.length ? `<span class="gain-list">${tokens.join("")}</span>` : "";
     }
 
+    function greenhouseOrderConsequence(plan = activeRoundPlan()) {
+      const ownership = greenhouseOwnedProgress();
+      const milestones = {
+        1: { stage: 1, action: "Restore Greenhouse", cost: FIRST_GREENHOUSE_RESTORE_COST },
+        2: { stage: 2, action: "Upgrade Greenhouse", cost: MOONLIT_GREENHOUSE_UPGRADE_COST },
+        3: { stage: 3, action: "Raise Conservatory", cost: BLOODROOT_CONSERVATORY_COST }
+      };
+      const milestone = milestones[plan.round] || milestones[1];
+      const alreadyOwned = ownership.stage >= milestone.stage;
+      return {
+        alreadyOwned,
+        action: alreadyOwned ? "Nourish owned conservatory" : milestone.action,
+        eyebrow: alreadyOwned ? "Greenhouse owned" : `Then ${milestone.action.split(" ")[0].toLowerCase()}`,
+        cost: alreadyOwned ? null : milestone.cost,
+        ownedLabel: `${ownership.ownedLabel} · ${greenhouseDialPhase(ownership)}`,
+        ownedStage: ownership.stage
+      };
+    }
+
     function renderActiveOrders(plan = activeRoundPlan()) {
-      const lines = plan.targets.map((target) => {
+      const ingredientRows = plan.targets.map((target) => {
         const flower = flowers[target.flowerId];
         const progress = targetProgress(target);
         const complete = progress >= target.needed;
         const pulse = orderPulseTargets.has(target.flowerId);
-        const pct = target.needed ? Math.min(100, (progress / target.needed) * 100) : 0;
+        const remaining = Math.max(0, target.needed - progress);
         return `
-          <div class="small order-line ${complete ? "complete" : ""} ${pulse ? "order-pulse" : ""}" style="--order-pct:${pct}%">
-            <span class="order-fill" aria-hidden="true"></span>
-            <img class="order-icon" src="${flower[1]}" srcset="${flowerIconSrcset(flower[1])}" sizes="24px" alt="${flower[0]}">
-            <span class="order-copy">${target.order}: ${progress}/${target.needed} ${flower[0]}</span>
+          <div class="contract-ingredient ${complete ? "complete" : ""} ${pulse ? "order-pulse" : ""}" data-contract-target="${target.flowerId}" data-progress="${progress}" data-needed="${target.needed}" data-remaining="${remaining}">
+            <img class="contract-ingredient-icon" src="${flower[1]}" srcset="${flowerIconSrcset(flower[1])}" sizes="30px" alt="">
+            <span class="contract-ingredient-copy">
+              <b>${flower[0]}</b>
+              <span class="contract-ingredient-deficit">${complete ? "Ready" : `${remaining} needed`}</span>
+            </span>
+            <span class="contract-ingredient-count"><b>${progress}</b><small>/${target.needed}</small></span>
           </div>
         `;
       });
@@ -15238,16 +15317,53 @@
         const needed = thornGoalNeeded(plan);
         const complete = progress >= needed;
         const pulse = thornPulseCells.size || thornClearedCells.size;
-        const pct = needed ? Math.min(100, (progress / needed) * 100) : 0;
-        lines.push(`
-          <div class="small order-line ${complete ? "complete" : ""} ${pulse ? "order-pulse" : ""}" style="--order-pct:${pct}%">
-            <span class="order-fill" aria-hidden="true"></span>
-            <span class="order-icon thorn-order-glyph" aria-hidden="true">${thornSealMarkup("", "")}</span>
-            <span class="order-copy">${plan.thornGoal.order}: ${progress}/${needed} cleared</span>
+        const remaining = Math.max(0, needed - progress);
+        ingredientRows.push(`
+          <div class="contract-ingredient ${complete ? "complete" : ""} ${pulse ? "order-pulse" : ""}" data-contract-thorn="true" data-progress="${progress}" data-needed="${needed}" data-remaining="${remaining}">
+            <span class="contract-ingredient-icon thorn-order-glyph" aria-hidden="true">${thornSealMarkup("", "")}</span>
+            <span class="contract-ingredient-copy">
+              <b>${plan.thornGoal.order}</b>
+              <span class="contract-ingredient-deficit">${complete ? "Cleared" : `${remaining} to clear`}</span>
+            </span>
+            <span class="contract-ingredient-count"><b>${progress}</b><small>/${needed}</small></span>
           </div>
         `);
       }
-      $("activeOrders").innerHTML = lines.join("");
+      const consequence = greenhouseOrderConsequence(plan);
+      $("activeOrders").innerHTML = `
+        <section
+          class="order-contract"
+          aria-label="Round ${plan.round} current order: ${plan.name}"
+          data-contract-round="${plan.round}"
+          data-contract-name="${plan.name}"
+          data-contract-reward="${plan.reward.coins}"
+          data-contract-owned-stage="${consequence.ownedStage}"
+          data-contract-restoration="${consequence.action}"
+          data-contract-restoration-cost="${consequence.cost ?? ""}"
+        >
+          <div class="order-contract-heading">
+            <span class="order-contract-kicker">Round ${plan.round} · One bouquet</span>
+            <strong class="order-contract-name">${plan.name}</strong>
+          </div>
+          <div class="order-contract-recipe">
+            <span class="order-contract-section-label">Bouquet recipe</span>
+            <div class="order-contract-ingredients">${ingredientRows.join("")}</div>
+          </div>
+          <div class="order-contract-outcome">
+            <span class="order-contract-reward">
+              <small>Exact reward</small>
+              <strong>+${plan.reward.coins} coins</strong>
+            </span>
+            <span class="order-contract-flow" aria-hidden="true">→</span>
+            <span class="order-contract-consequence">
+              <small>${consequence.eyebrow}</small>
+              <strong>${consequence.action}</strong>
+              <span>${consequence.cost === null ? "Restoration remains yours" : `${consequence.cost} coins`}</span>
+            </span>
+          </div>
+          <span class="order-contract-owned">${consequence.ownedLabel}</span>
+        </section>
+      `;
       applyImageFallbacks($("activeOrders"));
     }
 

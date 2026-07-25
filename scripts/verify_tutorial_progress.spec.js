@@ -1824,14 +1824,18 @@ async function commitGuidedSwapAtControlReturn(page, { keyboard = false, sampleI
 }
 
 function assertPassiveInputPreservesFeedback(before, after, label) {
-  const visibleOrderPulseCount = before.positiveFeedback
-    .filter((node) => node.className.includes("order-line"))
+  const visibleContractPulseCount = before.positiveFeedback
+    .filter((node) => node.className.includes("contract-ingredient"))
     .length;
-  expect(visibleOrderPulseCount, `${label} has at most one visible Active Order pulse`).toBeLessThanOrEqual(1);
+  const visibleObjectivePulseCount = before.positiveFeedback
+    .filter((node) => node.className.includes("objective-target"))
+    .length;
+  expect(visibleContractPulseCount, `${label} has at most one visible current-contract pulse`).toBeLessThanOrEqual(1);
+  expect(visibleObjectivePulseCount, `${label} has at most one visible compact-objective pulse`).toBeLessThanOrEqual(1);
   expect(
     before.orderPulseCount,
-    `${label} starts with objective, three earned receiver heads, and any visible Active Order`
-  ).toBe(4 + visibleOrderPulseCount);
+    `${label} starts with three earned heads and one visible ingredient receiver`
+  ).toBe(3 + visibleContractPulseCount + visibleObjectivePulseCount);
   expect(after.orderPulseCount, `${label} preserves order feedback`).toBe(before.orderPulseCount);
   const orderPulses = (state) => state.positiveFeedback
     .filter((node) => node.className.includes("order-pulse"))
@@ -4748,11 +4752,10 @@ test("passive selection and canceled input preserve completed order feedback", a
     const opening = await commitGuidedSwapAtControlReturn(targetPage);
     expect(opening.after.moves, `${label} opening move`).toBe(5);
     expect(opening.after.counts, `${label} opening objective`).toEqual([0, 0, 0, 0, 0, 3]);
-    const expectedPulses = viewport.width >= 1180 ? 5 : 4;
     expect(
       opening.after.orderPulseCount,
-      `${label} objective, three receiver heads, and visible desktop order pulse`
-    ).toBe(expectedPulses);
+      `${label} three receiver heads and one visible ingredient receiver`
+    ).toBe(4);
     return opening.after;
   };
 
