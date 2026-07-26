@@ -3360,8 +3360,8 @@ test("repeated Round 1 exploration still closes through the displayed six-move c
   }
 });
 
-test("Round 1 Shuffle preserves a sufficient two-move Black Candle close", async ({ browser }) => {
-  test.setTimeout(240000);
+test.describe("Round 1 Shuffle preserves a sufficient two-move Black Candle close", () => {
+  test.describe.configure({ mode: "parallel" });
   const cases = [
     {
       label: "fresh-desktop-pointer-zero-progress",
@@ -3370,7 +3370,8 @@ test("Round 1 Shuffle preserves a sufficient two-move Black Candle close", async
       shuffleKey: "",
       ownedReplay: false,
       bankTargetMatch: false,
-      reducedMotion: "no-preference"
+      reducedMotion: "no-preference",
+      reloadAtReserve: false
     },
     {
       label: "owned-mobile-touch-reduced-target-progress",
@@ -3379,7 +3380,8 @@ test("Round 1 Shuffle preserves a sufficient two-move Black Candle close", async
       shuffleKey: "",
       ownedReplay: true,
       bankTargetMatch: true,
-      reducedMotion: "reduce"
+      reducedMotion: "reduce",
+      reloadAtReserve: true
     },
     {
       label: "fresh-desktop-keyboard-enter-zero-progress",
@@ -3388,7 +3390,8 @@ test("Round 1 Shuffle preserves a sufficient two-move Black Candle close", async
       shuffleKey: "Enter",
       ownedReplay: false,
       bankTargetMatch: false,
-      reducedMotion: "no-preference"
+      reducedMotion: "no-preference",
+      reloadAtReserve: true
     },
     {
       label: "fresh-mobile-keyboard-space-reduced-zero-progress",
@@ -3397,7 +3400,28 @@ test("Round 1 Shuffle preserves a sufficient two-move Black Candle close", async
       shuffleKey: " ",
       ownedReplay: false,
       bankTargetMatch: false,
-      reducedMotion: "reduce"
+      reducedMotion: "reduce",
+      reloadAtReserve: false
+    },
+    {
+      label: "owned-desktop-keyboard-space-reduced-target-progress",
+      viewport: { width: 1280, height: 720 },
+      input: "keyboard",
+      shuffleKey: " ",
+      ownedReplay: true,
+      bankTargetMatch: true,
+      reducedMotion: "reduce",
+      reloadAtReserve: true
+    },
+    {
+      label: "fresh-mobile-touch-zero-progress",
+      viewport: { width: 390, height: 844 },
+      input: "touch",
+      shuffleKey: "",
+      ownedReplay: false,
+      bankTargetMatch: false,
+      reducedMotion: "no-preference",
+      reloadAtReserve: true
     }
   ];
   const openingOffOrderPair = [{ x: 3, y: 2 }, { x: 4, y: 2 }];
@@ -3446,7 +3470,7 @@ test("Round 1 Shuffle preserves a sufficient two-move Black Candle close", async
     }
   };
 
-  for (const testCase of cases) {
+  const runCase = async (browser, testCase) => {
     const context = await browser.newContext({
       viewport: testCase.viewport,
       hasTouch: testCase.input === "touch",
@@ -3538,9 +3562,52 @@ test("Round 1 Shuffle preserves a sufficient two-move Black Candle close", async
       expect(reserveFocus.selectedTiles).toBe(0);
       await page.locator("#shuffleBtn").evaluate((button) => button.click());
       expect((await activeState(page)).moves).toBe(2);
-      await page.locator("#tutorialHelpBtn").click();
-      await expect(page.locator("#tutorialCopy")).toHaveText("Match the order flowers.");
-      await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 2500 });
+
+      if (testCase.reloadAtReserve) {
+        await page.reload({ waitUntil: "domcontentloaded" });
+        const interrupted = await guidedRoundOneState(page, `${testCase.label} restored reserve`);
+        expect(interrupted.moves).toBe(2);
+        expect(interrupted.counts).toEqual(reserve.counts);
+        expect(interrupted.hints).toEqual([]);
+        expect(interrupted.tutorial).toBe("Match the order flowers.");
+        const interruptedFocus = await page.evaluate(() => {
+          const active = document.activeElement;
+          const roving = Array.from(document.querySelectorAll("#board .tile[tabindex='0']"));
+          return {
+            activeId: active?.id || "",
+            activeTag: active?.tagName || "",
+            activeTile: Boolean(active?.matches?.("#board .tile:not(:disabled)")),
+            activeVisible: Boolean(active && active.getClientRects().length),
+            rovingIds: roving.map((tile) => tile.id),
+            selectedTiles: document.querySelectorAll("#board .tile.selected").length
+          };
+        });
+        expect(interruptedFocus.activeTag).not.toBe("BODY");
+        expect(interruptedFocus.activeId).not.toBe("shuffleBtn");
+        expect(interruptedFocus.activeTile).toBe(true);
+        expect(interruptedFocus.activeVisible).toBe(true);
+        expect(interruptedFocus.rovingIds).toEqual([interruptedFocus.activeId]);
+        expect(interruptedFocus.selectedTiles).toBe(0);
+        await expect(page.locator(".impact-sigil, .objective-flight, .order-pulse")).toHaveCount(0);
+        await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 2500 });
+        expect(unorderedPairKey(await hintedPair(page))).toBe("5,0 <-> 5,1");
+        await expect(page.locator("#tutorialCopy")).toHaveText("Match 4 arms Black Candle Vine.");
+        await expect(page.locator("#tile-5-0")).toBeFocused();
+        await expect(page.locator("#board .tile[tabindex='0']")).toHaveCount(1);
+
+        await page.locator("#tutorialSkipBtn").click();
+        await expect(page.locator("#tutorialHelpBtn")).toBeVisible();
+        await page.locator("#tutorialHelpBtn").click();
+        await expect(page.locator("#tutorialCopy")).toHaveText("Match the order flowers.");
+        await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 2500 });
+        expect(unorderedPairKey(await hintedPair(page))).toBe("5,0 <-> 5,1");
+        await expect(page.locator("#tutorialCopy")).toHaveText("Match 4 arms Black Candle Vine.");
+        await expect(page.locator("#tile-5-0")).toBeFocused();
+      } else {
+        await page.locator("#tutorialHelpBtn").click();
+        await expect(page.locator("#tutorialCopy")).toHaveText("Match the order flowers.");
+        await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 2500 });
+      }
 
       const closingGuide = await guidedRoundOneState(page, `${testCase.label} strict-four guide`);
       expect(closingGuide.tutorial).toBe("Match 4 arms Black Candle Vine.");
@@ -3548,7 +3615,6 @@ test("Round 1 Shuffle preserves a sufficient two-move Black Candle close", async
       await expect(page.locator("#tile-5-0")).toBeFocused();
       await expect(page.locator("#board .tile[tabindex='0']")).toHaveCount(1);
       expect(await legalFourBoneStarPreview(page)).toMatchObject({ ok: true });
-      await page.screenshot({ path: `work/round-one-shuffle-focus-${testCase.label}.png`, fullPage: true });
       await activatePair(page, closingGuide.hints, testCase.input, {
         guidedKeyboard: testCase.input === "keyboard"
       });
@@ -3593,6 +3659,13 @@ test("Round 1 Shuffle preserves a sufficient two-move Black Candle close", async
     } finally {
       await context.close();
     }
+  };
+
+  for (const testCase of cases) {
+    test(testCase.label, async ({ browser }) => {
+      test.setTimeout(240000);
+      await runCase(browser, testCase);
+    });
   }
 });
 

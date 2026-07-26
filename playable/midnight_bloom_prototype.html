@@ -11201,6 +11201,28 @@
       return true;
     }
 
+    function restoreRoundOneClosingReserveAuthority(plan = activeRoundPlan()) {
+      if (
+        plan.round !== 1
+        || moves !== 2
+        || roundComplete
+        || isBouquetFailed(plan)
+        || roundObjectivesComplete(plan)
+        || roundOneGuidedStage(plan) !== "black-candle"
+      ) {
+        return false;
+      }
+      roundOneLastSwapMissedOrder = true;
+      roundOneShuffleReserveFocusActive = true;
+      tutorialSkipped = false;
+      tutorialActive = true;
+      tutorialReplayOwnsNarration = false;
+      beginRoundOneAgencyDiscovery({ showLiteracy: false });
+      boardFocusCell = clampBoardFocusCell();
+      queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
+      return true;
+    }
+
     function beginRoundOneSecondTargetDiscovery({ showLiteracy = true } = {}) {
       if (!isRoundOneSecondTargetAuthorityReady()) {
         roundOneSecondTargetDiscoveryActive = false;
@@ -17822,21 +17844,25 @@
       }
     } else if (currentRound === 1 && !roundComplete && hasMadeValidMove && !isBouquetFailed()) {
       seedRoundOneGuidedMove(activeRoundPlan());
-      if (roundOneHasExploratoryHarvest()) {
-        nextTargetMoveHint();
-        const hintedFocus = firstHintFocusCell();
-        if (hintedFocus) {
-          boardFocusCell = hintedFocus;
-        }
-      } else if (isRoundOneSecondTargetDiscoveryActive()) {
-        beginRoundOneSecondTargetDiscovery({ showLiteracy: false });
-      } else if (isRoundOneAgencyHandoffActive()) {
-        beginRoundOneAgencyDiscovery();
-      } else {
-        nextTargetMoveHint();
-        const hintedFocus = firstHintFocusCell();
-        if (hintedFocus) {
-          boardFocusCell = hintedFocus;
+      // The delayed strict-four guide remains transient, but its focus and
+      // correction authority are derived from the settled reserve state.
+      if (!restoreRoundOneClosingReserveAuthority()) {
+        if (roundOneHasExploratoryHarvest()) {
+          nextTargetMoveHint();
+          const hintedFocus = firstHintFocusCell();
+          if (hintedFocus) {
+            boardFocusCell = hintedFocus;
+          }
+        } else if (isRoundOneSecondTargetDiscoveryActive()) {
+          beginRoundOneSecondTargetDiscovery({ showLiteracy: false });
+        } else if (isRoundOneAgencyHandoffActive()) {
+          beginRoundOneAgencyDiscovery();
+        } else {
+          nextTargetMoveHint();
+          const hintedFocus = firstHintFocusCell();
+          if (hintedFocus) {
+            boardFocusCell = hintedFocus;
+          }
         }
       }
     }

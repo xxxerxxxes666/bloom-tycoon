@@ -1,5 +1,12 @@
 # Codex Build Notes
 
+## 2026-07-26 Round 1 reserve reload continuity
+
+- Player-visible result: reloading immediately after the paid Shuffle that reaches the protected two-move First Bouquet reserve now restores a visible enabled board focus immediately, then returns the existing strict-four Black Candle guide and exact `Match 4 arms Black Candle Vine.` copy on its existing short correction delay. The authored `(5,0) <-> (5,1)` source becomes the sole roving focused tile; Help replay returns to that same source instead of leaving focus on Skip.
+- Authority boundary: the interruption state is derived from authoritative unfinished Round 1 at Moves `2` with the Black Candle formation stage available. Its correction, timer, and focus flags remain transient and are reconstructed at startup; no save field, schema, move, copy, timing, economy, control, round, or progression change was added.
+- Permanent natural contract: the existing sufficient Shuffle-close matrix now interrupts fresh `0/14` and owned `3/14` reserves on desktop `1280x720` and exact `390x844`. Pointer, touch, Enter, Space, full/reduced motion, immediate focus, delayed source focus, Help replay, formation, Moves-1 reload, activation, 64 tiles/eight rows, overflow, images, and browser errors are asserted through ordinary player input.
+- Verification: the six-case changed-flow matrix passes `6/6` in `14.9s`; the two per-swap outcome-truth regressions and changed matrix pass together before the unchanged comprehensive lifecycle enters its known extended visual-settling path, and the tutorial Shuffle-protection edge passes isolated `1/1`. Project/HTML verifiers, all spec and extracted inline JavaScript syntax, `git diff --check`, and the scoped added-line security scan pass. Current desktop and exact-mobile guide captures were visually inspected with the full altar, narrator, and authored endpoints readable.
+
 ## 2026-07-26 Round 1 retiring-Shuffle focus handoff
 
 - Player-visible result: when the third paid Round 1 Shuffle retires itself at the protected two-move Black Candle reserve, keyboard focus now lands immediately on the existing visible roving board tile instead of `BODY`. When the delayed strict-four forecast appears, its authored source becomes the sole roving tile and receives focus without selecting a flower or spending a move.
