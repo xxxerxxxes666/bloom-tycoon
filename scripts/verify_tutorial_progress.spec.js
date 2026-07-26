@@ -2864,6 +2864,205 @@ test("Skip returns focus to the authoritative Round 1 guide", async ({ browser }
   }
 });
 
+test("exact-mobile Help owns a complete replay touch target across the first three rounds", async ({ browser }) => {
+  test.setTimeout(180000);
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    hasTouch: true,
+    isMobile: true
+  });
+  const page = await context.newPage();
+  const consoleMessages = [];
+  const pageErrors = [];
+  const failedRequests = [];
+  page.on("console", (message) => {
+    if (message.type() === "error" || message.type() === "warning") {
+      consoleMessages.push(`${message.type()}: ${message.text()}`);
+    }
+  });
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("requestfailed", (request) => {
+    failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`);
+  });
+
+  const setActiveRound = async (round) => {
+    await page.evaluate(({ key, round }) => {
+      const state = JSON.parse(localStorage.getItem(key) || "{}");
+      state.currentRound = round;
+      state.roundComplete = false;
+      state.moves = round === 1 ? 6 : round === 2 ? 9 : 8;
+      state.counts = [0, 0, 0, 0, 0, 0];
+      state.roundOneRestored = round > 1;
+      state.roundTwoGreenhouseUpgraded = round > 2;
+      state.roundThreeConservatoryRaised = false;
+      state.hasMadeValidMove = false;
+      state.tutorialSkipped = true;
+      state.tutorialActive = false;
+      state.blackCandleLessonComplete = true;
+      state.armedLineRelic = null;
+      state.cursedThorns = [];
+      state.clearedCursedThorns = 0;
+      state.restoredRoundTwoGuideMoves = 0;
+      localStorage.setItem(key, JSON.stringify(state));
+    }, { key: SAVE_KEY, round });
+    await page.reload({ waitUntil: "networkidle" });
+    await expect(page.locator(".tile")).toHaveCount(64);
+    await expect(page.locator("#tutorialHelpBtn")).toBeVisible();
+  };
+
+  const mobileHelpGeometry = async () => page.evaluate(() => {
+    const bounds = (selector) => {
+      const rect = document.querySelector(selector)?.getBoundingClientRect();
+      return rect ? {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height
+      } : null;
+    };
+    const help = bounds("#tutorialHelpBtn");
+    const board = bounds("#board");
+    const objective = bounds("#objective");
+    const overlaps = (a, b) => Boolean(
+      a && b
+      && a.left < b.right
+      && a.right > b.left
+      && a.top < b.bottom
+      && a.bottom > b.top
+    );
+    return {
+      help,
+      board,
+      objective,
+      helpOverlapsBoard: overlaps(help, board),
+      helpOverlapsObjective: overlaps(help, objective),
+      tiles: document.querySelectorAll("#board .tile").length,
+      rows: new Set(Array.from(document.querySelectorAll("#board .tile")).map((tile) => tile.dataset.y)).size,
+      selected: document.querySelectorAll("#board .tile.sel, #board .tile.selected").length,
+      overflowX: document.documentElement.scrollWidth > innerWidth + 1,
+      brokenImages: Array.from(document.images)
+        .filter((image) => image.getClientRects().length && image.complete && image.naturalWidth === 0)
+        .map((image) => image.getAttribute("src"))
+    };
+  });
+
+  const assertMobileHelpGeometry = async (label) => {
+    const geometry = await mobileHelpGeometry();
+    expect(geometry.help.width, `${label} Help width`).toBeGreaterThanOrEqual(44);
+    expect(geometry.help.height, `${label} Help height`).toBeGreaterThanOrEqual(44);
+    expect(geometry.help.left, `${label} Help stays in viewport`).toBeGreaterThanOrEqual(0);
+    expect(geometry.help.right, `${label} Help stays in viewport`).toBeLessThanOrEqual(390);
+    expect(geometry.help.bottom, `${label} Help stays in viewport`).toBeLessThanOrEqual(844);
+    expect(geometry.helpOverlapsBoard, `${label} Help does not cover altar`).toBe(false);
+    expect(geometry.helpOverlapsObjective, `${label} Help does not cover objective`).toBe(false);
+    expect(geometry.board.left, `${label} altar left edge`).toBeCloseTo(8, 1);
+    expect(geometry.board.right, `${label} altar right edge`).toBeCloseTo(386, 1);
+    expect(geometry.board.width, `${label} altar width`).toBeCloseTo(378, 1);
+    expect(geometry.board.height, `${label} altar height`).toBeCloseTo(378, 1);
+    expect(geometry.board.bottom, `${label} all rows stay in first viewport`).toBeLessThanOrEqual(844);
+    expect(geometry.tiles, `${label} tile count`).toBe(64);
+    expect(geometry.rows, `${label} row count`).toBe(8);
+    expect(geometry.selected, `${label} no selection`).toBe(0);
+    expect(geometry.overflowX, `${label} no horizontal overflow`).toBe(false);
+    expect(geometry.brokenImages, `${label} no broken images`).toEqual([]);
+    return geometry;
+  };
+
+  const tapHelpAndReturnToGuide = async (label, pointFor) => {
+    const before = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}"), SAVE_KEY);
+    const geometry = await assertMobileHelpGeometry(label);
+    const [x, y] = pointFor(geometry.help);
+    await page.touchscreen.tap(x, y);
+    await expect(page.locator("#tutorialPanel")).toBeVisible();
+    await expect(page.locator("#tutorialSkipBtn")).toBeFocused();
+    const hintedIds = await page.locator("#board .tile.idle-hint").evaluateAll(
+      (tiles) => tiles.map((tile) => tile.id)
+    );
+    expect(hintedIds, `${label} Help restores a guide`).toHaveLength(2);
+    await page.locator("#tutorialSkipBtn").tap();
+    await expect(page.locator("#tutorialPanel")).toBeHidden();
+    const focusedId = await page.evaluate(() => document.activeElement?.id || "");
+    expect(hintedIds, `${label} Skip returns to a guided endpoint`).toContain(focusedId);
+    await expect(page.locator("#board .tile[tabindex='0']")).toHaveCount(1);
+    await expect(page.locator("#board .tile[tabindex='0']")).toHaveAttribute("id", focusedId);
+    await expect(page.locator("#board .tile.sel, #board .tile.selected")).toHaveCount(0);
+    const after = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}"), SAVE_KEY);
+    expect(after.moves, `${label} replay spends no move`).toBe(before.moves);
+    expect(after.counts, `${label} replay changes no objective`).toEqual(before.counts);
+  };
+
+  const touchPoints = [
+    ["top-left", (box) => [box.left + 8, box.top + 8]],
+    ["top", (box) => [(box.left + box.right) / 2, box.top + 2]],
+    ["top-right", (box) => [box.right - 8, box.top + 8]],
+    ["right", (box) => [box.right - 2, (box.top + box.bottom) / 2]],
+    ["bottom-right", (box) => [box.right - 8, box.bottom - 8]],
+    ["bottom", (box) => [(box.left + box.right) / 2, box.bottom - 2]],
+    ["bottom-left", (box) => [box.left + 8, box.bottom - 8]],
+    ["left", (box) => [box.left + 2, (box.top + box.bottom) / 2]]
+  ];
+
+  try {
+    await seedDeterministicMath(page, "mobile-help-touch-target");
+    await openFreshNoReview(page, "mobile-help-touch-target");
+    await expect(page.locator("#tutorialPanel")).toBeVisible({ timeout: 3000 });
+    await page.locator("#tutorialSkipBtn").tap();
+    await expect(page.locator("#tutorialHelpBtn")).toBeVisible();
+    await tapHelpAndReturnToGuide("Round 1 center", (box) => [
+      (box.left + box.right) / 2,
+      (box.top + box.bottom) / 2
+    ]);
+
+    await setActiveRound(2);
+    const untouchedRoundTwo = await page.evaluate(
+      (key) => JSON.parse(localStorage.getItem(key) || "{}"),
+      SAVE_KEY
+    );
+    for (const [edge, pointFor] of touchPoints) {
+      await page.evaluate(({ key, state }) => {
+        localStorage.setItem(key, JSON.stringify(state));
+      }, { key: SAVE_KEY, state: untouchedRoundTwo });
+      await page.reload({ waitUntil: "networkidle" });
+      await expect(page.locator("#tutorialHelpBtn")).toBeVisible();
+      await tapHelpAndReturnToGuide(`Round 2 ${edge}`, pointFor);
+    }
+    await page.screenshot({ path: "work/mobile-help-touch-target-round-two.png", fullPage: true });
+
+    await setActiveRound(3);
+    const roundThreeGeometry = await assertMobileHelpGeometry("Round 3 center");
+    await page.touchscreen.tap(
+      (roundThreeGeometry.help.left + roundThreeGeometry.help.right) / 2,
+      (roundThreeGeometry.help.top + roundThreeGeometry.help.bottom) / 2
+    );
+    await expect(page.locator("#tutorialPanel")).toBeVisible();
+    await expect(page.locator("#tutorialSkipBtn")).toBeFocused();
+
+    expect(consoleMessages).toEqual([]);
+    expect(pageErrors).toEqual([]);
+    expect(failedRequests).toEqual([]);
+  } finally {
+    await context.close();
+  }
+
+  const desktopContext = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+  const desktop = await desktopContext.newPage();
+  try {
+    await seedDeterministicMath(desktop, "desktop-help-size-control");
+    await openFreshNoReview(desktop, "desktop-help-size-control");
+    await expect(desktop.locator("#tutorialPanel")).toBeVisible({ timeout: 3000 });
+    await desktop.locator("#tutorialSkipBtn").click();
+    await expect(desktop.locator("#tutorialHelpBtn")).toBeVisible();
+    const desktopHelp = await desktop.locator("#tutorialHelpBtn").boundingBox();
+    expect(desktopHelp.width, "desktop Help width unchanged").toBeCloseTo(30, 1);
+    expect(desktopHelp.height, "desktop Help height unchanged").toBeCloseTo(30, 1);
+    await desktop.screenshot({ path: "work/desktop-help-size-control.png", fullPage: true });
+  } finally {
+    await desktopContext.close();
+  }
+});
+
 test("Round 1 agency retires and restores guidance across real input boundaries", async ({ browser }) => {
   const cases = [
     { label: "desktop-pointer", viewport: { width: 1280, height: 720 }, input: "pointer" },

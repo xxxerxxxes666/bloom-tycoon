@@ -1,5 +1,12 @@
 # Codex Build Notes
 
+## 2026-07-26 exact-mobile Help touch target
+
+- Player-visible result: the existing tutorial replay `?` is now a real `44x44px` mobile control in active Round 1-3 instead of a `30x30px` precision target. Its node, glyph, action, and desktop `30x30px` geometry are unchanged.
+- Scope: one mobile-only CSS size override in `playable/midnight_bloom_prototype.html`, a permanent exact-mobile interaction contract in `scripts/verify_tutorial_progress.spec.js`, and this note. No board, objective, copy, timer, move, save, economy, round, progression, or input mechanic changed.
+- Permanent contract: exact `390x844` checks cover active R1-R3 geometry, the unchanged `378x378` altar and all 64 tiles/eight rows, no board/objective overlap or horizontal overflow, all eight realistic corner/edge touch points in the restored Round 2 lesson, Help-to-Skip focus, Skip-to-guide roving focus, zero selection/move/objective mutation, broken images, request/runtime/console errors, and unchanged desktop sizing.
+- Verification: the new R1-R3/eight-point matrix passes `1/1`; combined with the existing eight-point Skip and six-input Skip/focus journey, the affected tutorial group passes `3/3` in `1.8m`. The complete Round 2 handoff/Help replay contract passes pointer, exact-mobile touch, keyboard, and reduced motion `4/4`; runtime budgets pass `4/4`. Project/HTML verifiers, every spec and extracted inline JavaScript syntax, `git diff --check`, and the changed-added-line secret/tracker/network/private-IP scan pass. Inspected exact-mobile and desktop captures retain the full altar, 64 tiles/eight rows, readable objective/cue, no overlap, and unchanged desktop Help geometry.
+
 ## 2026-07-26 pre-move Skip reload focus
 
 - Player-visible result: reloading after dismissing the opening Round 1 tutorial now returns keyboard focus to the same glowing source flower instead of leaving focus on the page. The opening pair, Help action, moves, bouquet counts, board, and selection remain unchanged.
