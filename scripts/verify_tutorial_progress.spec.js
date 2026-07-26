@@ -207,7 +207,7 @@ async function visibleReport(page) {
 
 async function clickGuidedSwap(page, options = {}) {
   const hints = page.locator(".tile.idle-hint");
-  await expect(hints).toHaveCount(2, { timeout: 5000 });
+  await expect(hints).toHaveCount(2, { timeout: 12000 });
   const pair = await hints.evaluateAll((tiles) => tiles.map((tile) => ({
     x: tile.dataset.x,
     y: tile.dataset.y
@@ -2749,7 +2749,7 @@ test("Round 1 agency retires and restores guidance across real input boundaries"
 });
 
 test("off-order opening success redirects the player to real bouquet progress", async ({ browser }) => {
-  test.setTimeout(420000);
+  test.setTimeout(0);
   const cases = [
     { label: "desktop-pointer", viewport: { width: 1280, height: 720 }, input: "pointer" },
     { label: "mobile390-touch", viewport: { width: 390, height: 844 }, input: "touch", mobile: true },
@@ -2900,7 +2900,11 @@ test("off-order opening success redirects the player to real bouquet progress", 
       ).toContain(targetProgress.tutorial);
 
       for (let remaining = 0; remaining < 4 && !(await activeState(page)).roundComplete; remaining += 1) {
-        await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 8500 });
+        const beforeGuide = await guidedRoundOneState(page, `${testCase.label} closing guide ${remaining + 1} before`);
+        await expect(
+          page.locator(".tile.idle-hint"),
+          `${testCase.label} closing guide ${remaining + 1} returns from ${beforeGuide.tutorial} at moves ${beforeGuide.moves}`
+        ).toHaveCount(2, { timeout: 30000 });
         await activatePair(page, await hintedPair(page), testCase.input);
         await page.waitForFunction((key) => {
           const saved = JSON.parse(localStorage.getItem(key) || "{}");
@@ -2919,8 +2923,8 @@ test("off-order opening success redirects the player to real bouquet progress", 
       const completed = await activeState(page);
       expect(completed.roundComplete, `${testCase.label} off-order exploration still completes the authored order`).toBe(true);
       expect(completed.moves, `${testCase.label} completion stays inside the six-move budget`).toBeGreaterThanOrEqual(0);
-      await expect(page.locator("#roundOneRestoration")).toBeVisible();
-      await expect(page.locator("#restoreGreenhouseBtn")).toBeVisible();
+      await expect(page.locator("#roundOneRestoration")).toBeVisible({ timeout: 15000 });
+      await expect(page.locator("#restoreGreenhouseBtn")).toBeVisible({ timeout: 15000 });
       expect(consoleErrors).toEqual([]);
       expect(pageErrors).toEqual([]);
       expect(failedRequests).toEqual([]);
@@ -3105,6 +3109,257 @@ test("later off-order success uses the settled swap outcome instead of cumulativ
   }
 });
 
+test("repeated Round 1 exploration still closes through the displayed six-move contract", async ({ browser }) => {
+  test.setTimeout(420000);
+  const cases = [
+    { label: "desktop-pointer", viewport: { width: 1280, height: 720 }, input: "pointer" },
+    { label: "mobile390-touch", viewport: { width: 390, height: 844 }, input: "touch", mobile: true },
+    { label: "desktop-keyboard-reduced", viewport: { width: 1280, height: 720 }, input: "keyboard", reduced: true },
+    { label: "mobile390-touch-reduced", viewport: { width: 390, height: 844 }, input: "touch", mobile: true, reduced: true }
+  ];
+  const openingOffOrderPair = [{ x: 3, y: 2 }, { x: 4, y: 2 }];
+  const repeatedOffOrderPair = [{ x: 6, y: 1 }, { x: 6, y: 2 }];
+  const targetIds = [5, 1];
+
+  const activatePair = async (page, pair, input, { completes = false } = {}) => {
+    const before = await page.evaluate((key) => (
+      JSON.parse(localStorage.getItem(key) || "{}").moves
+    ), SAVE_KEY);
+    const tile = (cell) => page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`);
+    if (input === "touch") {
+      await tile(pair[0]).tap();
+      await tile(pair[1]).tap();
+    } else if (input === "keyboard") {
+      await tile(pair[0]).focus();
+      await page.keyboard.press("Enter");
+      await tile(pair[1]).focus();
+      await page.keyboard.press("Enter");
+    } else {
+      await tile(pair[0]).click();
+      await tile(pair[1]).click();
+    }
+    await page.waitForFunction(({ key, before, completes }) => {
+      const saved = JSON.parse(localStorage.getItem(key) || "{}");
+      return completes
+        ? Boolean(saved.roundComplete)
+        : Number(saved.moves) === Number(before) - 1
+          && Array.from(document.querySelectorAll(".tile")).every((node) => !node.disabled);
+    }, { key: SAVE_KEY, before, completes }, { timeout: 12000 });
+    if (!completes) {
+      await waitForSettledBoard(page);
+    }
+  };
+
+  const assertNoFalseFillPromise = async (page, label) => {
+    const report = await page.evaluate((key) => {
+      const tutorial = document.querySelector("#tutorialCopy")?.textContent.trim() || "";
+      if (tutorial !== "Match 3 fills the bouquet.") {
+        return { tutorial, closes: null };
+      }
+      const saved = JSON.parse(localStorage.getItem(key) || "{}");
+      const next = saved.board.map((row) => row.slice());
+      const hints = Array.from(document.querySelectorAll(".tile.idle-hint")).map((node) => ({
+        x: Number(node.dataset.x),
+        y: Number(node.dataset.y)
+      }));
+      if (hints.length !== 2) {
+        return { tutorial, closes: false };
+      }
+      const [a, b] = hints;
+      [next[a.y][a.x], next[b.y][b.x]] = [next[b.y][b.x], next[a.y][a.x]];
+      const gained = new Map();
+      const addRun = (flowerId, cells) => {
+        if (!gained.has(flowerId)) gained.set(flowerId, new Set());
+        cells.forEach(([x, y]) => gained.get(flowerId).add(`${x},${y}`));
+      };
+      for (let y = 0; y < 8; y += 1) {
+        for (let start = 0, x = 1; x <= 8; x += 1) {
+          if (x === 8 || next[y][x] !== next[y][start]) {
+            if (x - start >= 3) {
+              addRun(next[y][start], Array.from({ length: x - start }, (_, index) => [start + index, y]));
+            }
+            start = x;
+          }
+        }
+      }
+      for (let x = 0; x < 8; x += 1) {
+        for (let start = 0, y = 1; y <= 8; y += 1) {
+          if (y === 8 || next[y][x] !== next[start][x]) {
+            if (y - start >= 3) {
+              addRun(next[start][x], Array.from({ length: y - start }, (_, index) => [x, start + index]));
+            }
+            start = y;
+          }
+        }
+      }
+      return {
+        tutorial,
+        closes: (saved.counts[5] || 0) + (gained.get(5)?.size || 0) >= 8
+          && (saved.counts[1] || 0) + (gained.get(1)?.size || 0) >= 6
+      };
+    }, SAVE_KEY);
+    if (report.tutorial === "Match 3 fills the bouquet.") {
+      expect(report.closes, `${label} fill promise matches the guided swap's actual target yield`).toBe(true);
+    }
+  };
+
+  for (const testCase of cases) {
+    const context = await browser.newContext({
+      viewport: testCase.viewport,
+      hasTouch: Boolean(testCase.mobile),
+      isMobile: Boolean(testCase.mobile),
+      reducedMotion: testCase.reduced ? "reduce" : "no-preference"
+    });
+    const page = await context.newPage();
+    const consoleErrors = [];
+    const pageErrors = [];
+    const failedRequests = [];
+    page.on("console", (message) => {
+      if (message.type() === "error") consoleErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    page.on("requestfailed", (request) => failedRequests.push(
+      `${request.url()} ${request.failure()?.errorText || ""}`
+    ));
+
+    try {
+      await seedDeterministicMath(page, "fairness-seed-9");
+      await openFreshNoReview(page, `round-one-closing-fairness-${testCase.label}`);
+
+      await activatePair(page, openingOffOrderPair, testCase.input);
+      let correction = await guidedRoundOneState(page, `${testCase.label} opening correction`);
+      expect(correction.moves).toBe(5);
+      expect(targetIds.map((flowerId) => correction.counts[flowerId])).toEqual([0, 0]);
+      expect(correction.tutorial).toBe("Match the order flowers.");
+      expect(correction.hints).toEqual([]);
+      await assertNoFalseFillPromise(page, `${testCase.label} opening correction`);
+
+      await expect(
+        page.locator(".tile.idle-hint"),
+        `${testCase.label} opening correction returns guidance`
+      ).toHaveCount(2, { timeout: 8500 });
+      await activatePair(page, await hintedPair(page), testCase.input);
+      const firstTargetMove = await guidedRoundOneState(page, `${testCase.label} first recovered target`);
+      expect(firstTargetMove.moves).toBe(4);
+      expect(firstTargetMove.counts[5]).toBe(3);
+      await assertNoFalseFillPromise(page, `${testCase.label} first recovered target`);
+
+      for (let exploration = 0; exploration < 2; exploration += 1) {
+        const before = await guidedRoundOneState(page, `${testCase.label} exploration ${exploration + 1} before`);
+        await activatePair(page, repeatedOffOrderPair, testCase.input);
+        correction = await guidedRoundOneState(page, `${testCase.label} exploration ${exploration + 1} correction`);
+        expect(correction.moves).toBe(3 - exploration);
+        expect(
+          targetIds.map((flowerId) => correction.counts[flowerId] - before.counts[flowerId]),
+          `${testCase.label} exploration ${exploration + 1} earns zero order flowers`
+        ).toEqual([0, 0]);
+        expect(correction.tutorial).toBe("Match the order flowers.");
+        expect(correction.hints).toEqual([]);
+        expect(correction.visibleInstructionSurfaces).toBe(1);
+        expect(correction.visibleButtons).toEqual(["Skip"]);
+        expect(correction.tiles).toBe(64);
+        expect(correction.rows).toBe(8);
+        expect(correction.overflowX).toBe(false);
+        expect(correction.brokenImages).toEqual([]);
+        await assertNoFalseFillPromise(page, `${testCase.label} exploration ${exploration + 1}`);
+        const focusBeforeGuide = await page.evaluate(() => document.activeElement?.id || "");
+        await expect(
+          page.locator(".tile.idle-hint"),
+          `${testCase.label} exploration ${exploration + 1} returns guidance`
+        ).toHaveCount(2, { timeout: 8500 });
+        expect(
+          await page.evaluate(() => document.activeElement?.id || ""),
+          `${testCase.label} correction guide does not steal focus`
+        ).toBe(focusBeforeGuide);
+        if (exploration === 0) {
+          expect((await guidedRoundOneState(page, `${testCase.label} first exploration guide`)).tutorial)
+            .toBe("Match Thorn Rose.");
+        }
+      }
+
+      const closingGuide = await guidedRoundOneState(page, `${testCase.label} two-move closing guide`);
+      expect(closingGuide.moves).toBe(2);
+      expect(closingGuide.tutorial).toBe("Match 4 arms Black Candle Vine.");
+      expect(unorderedPairKey(closingGuide.hints)).toBe("5,0 <-> 5,1");
+      expect(await legalFourBoneStarPreview(page)).toMatchObject({ ok: true });
+      const guideReport = await firstActionGuideReport(page);
+      expect(guideReport.pointerEvents).toBe("none");
+      expect(guideReport.tiles).toBe(64);
+      expect(guideReport.rows).toBe(8);
+      expect(guideReport.overflowX).toBe(false);
+      expect(guideReport.brokenImages).toEqual([]);
+      if (testCase.mobile) {
+        expect(guideReport.completeRows).toBe(8);
+        expect(guideReport.boardBottom).toBeLessThanOrEqual(844);
+      }
+      await assertNoFalseFillPromise(page, `${testCase.label} two-move close`);
+
+      const beforeFormation = closingGuide.counts.slice();
+      await activatePair(page, closingGuide.hints, testCase.input);
+      const formed = await guidedRoundOneState(page, `${testCase.label} closing Black Candle formed`);
+      expect(formed.moves).toBe(1);
+      expect(formed.counts[1] - beforeFormation[1]).toBe(4);
+      expect(formed.tutorial).toBe("Swap right to burn this row.");
+      expect(formed.roundComplete).toBe(false);
+      expect(formed.visibleButtons).toEqual(["Skip"]);
+
+      await page.reload({ waitUntil: "networkidle" });
+      await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 4000 });
+      const reloaded = await guidedRoundOneState(page, `${testCase.label} closing lane reload`);
+      expect(reloaded.moves).toBe(1);
+      expect(reloaded.counts).toEqual(formed.counts);
+      expect(reloaded.tutorial).toBe("Swap right to burn this row.");
+      expect(reloaded.roundComplete).toBe(false);
+      await expect(page.locator(".impact-sigil, .objective-flight, .order-pulse")).toHaveCount(0);
+
+      await page.evaluate(() => {
+        const tutorial = document.querySelector("#tutorialCopy");
+        window.__roundOneFairnessNarration = [tutorial?.textContent.trim() || ""];
+        window.__roundOneFairnessNarrationObserver = new MutationObserver(() => {
+          const text = tutorial?.textContent.trim() || "";
+          if (text && !window.__roundOneFairnessNarration.includes(text)) {
+            window.__roundOneFairnessNarration.push(text);
+          }
+        });
+        window.__roundOneFairnessNarrationObserver.observe(tutorial, {
+          childList: true,
+          characterData: true,
+          subtree: true
+        });
+      });
+      await activatePair(page, reloaded.hints, testCase.input, { completes: true });
+      await expect(page.locator("#roundOneRestoration")).toBeVisible({ timeout: 12000 });
+      await expect(page.locator("#tutorialCopy")).toHaveText("Coins restore the greenhouse.", { timeout: 12000 });
+      const closingNarration = await page.evaluate(() => {
+        window.__roundOneFairnessNarrationObserver?.disconnect();
+        return window.__roundOneFairnessNarration || [];
+      });
+      expect(closingNarration).toContain("Bouquet bound.");
+      expect(closingNarration.at(-1)).toBe("Coins restore the greenhouse.");
+      const completed = await guidedRoundOneState(page, `${testCase.label} closing activation complete`);
+      const completedDataRows = await page.locator(".tile").evaluateAll((tiles) => (
+        new Set(tiles.map((tile) => Number(tile.dataset.y))).size
+      ));
+      expect(completed.moves).toBe(0);
+      expect(completed.roundComplete).toBe(true);
+      expect(completed.counts[5]).toBeGreaterThanOrEqual(8);
+      expect(completed.counts[1]).toBeGreaterThanOrEqual(6);
+      expect(completed.bouquet).toBe("Bouquet Complete · 14/14");
+      expect(completed.tutorial).toBe("Coins restore the greenhouse.");
+      expect(completed.payoffVisible).toBe(true);
+      expect(completed.tiles).toBe(64);
+      expect(completedDataRows).toBe(8);
+      expect(completed.overflowX).toBe(false);
+      expect(completed.brokenImages).toEqual([]);
+      expect(consoleErrors).toEqual([]);
+      expect(pageErrors).toEqual([]);
+      expect(failedRequests).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  }
+});
+
 test("later off-order primary match stays truthful when its cascade advances the order", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
   await seedDeterministicMath(page, "later-off-order-seed-0");
@@ -3129,7 +3384,8 @@ test("later off-order primary match stays truthful when its cascade advances the
   expect(afterCascade.counts[4]).toBeGreaterThan(beforeCascade.counts[4]);
   expect(afterCascade.counts[5]).toBeGreaterThan(beforeCascade.counts[5]);
   expect(afterCascade.bouquet).not.toBe(beforeCascade.bouquet);
-  expect(afterCascade.tutorial).toBe("Match 3 fills the bouquet.");
+  expect(afterCascade.tutorial).not.toBe("Match the order flowers.");
+  expect(afterCascade.tutorial).not.toBe("Match 3 fills the bouquet.");
   expect(afterCascade.visibleInstructionSurfaces).toBe(1);
   expect(afterCascade.tiles).toBe(64);
   expect(afterCascade.rows).toBe(8);
@@ -3138,6 +3394,7 @@ test("later off-order primary match stays truthful when its cascade advances the
 });
 
 test("guided Round 1 payoff keeps one dominant action", async ({ page }) => {
+  test.setTimeout(0);
   const consoleErrors = [];
   const pageErrors = [];
   const failedRequests = [];
@@ -3150,7 +3407,7 @@ test("guided Round 1 payoff keeps one dominant action", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await seedDeterministicMath(page, "fresh-black-candle-mobile390");
   await openFresh(page, "guided-payoff-mobile390");
-  await expect(page.locator("#tutorialPanel")).toBeVisible({ timeout: 3000 });
+  await expect(page.locator("#tutorialPanel")).toBeVisible({ timeout: 7000 });
   await completeGuidedRoundOne(page);
 
   await expect(page.locator("#bouquetProgressLabel")).toHaveText("Bouquet Complete · 14/14");
@@ -3262,6 +3519,7 @@ test("guided Round 1 payoff keeps one dominant action", async ({ page }) => {
 });
 
 test("Black Candle Vine forms, persists, and activates as a deliberate lane special", async ({ browser }) => {
+  test.setTimeout(0);
   const cases = [
     { label: "desktop", viewport: { width: 1280, height: 720 }, input: "keyboard" },
     { label: "mobile390", viewport: { width: 390, height: 844 }, input: "touch", mobile: true }

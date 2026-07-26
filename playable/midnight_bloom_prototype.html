@@ -10029,6 +10029,12 @@
       if (!hasMadeValidMove && thornProgress <= 0 && boneProgress <= 0) {
         return "thorn-opening";
       }
+      if (
+        moves === 2
+        && (thornProgress < thornTarget.needed || boneProgress < boneTarget.needed)
+      ) {
+        return "black-candle";
+      }
       if (thornProgress < 6) {
         return "thorn-followup";
       }
@@ -10704,6 +10710,73 @@
       board[2][5] = fillerB;
       board[2][6] = fillerD;
       board[2][7] = fillerC;
+    }
+
+    function seedRoundOneFinalBlackCandleLane(plan = activeRoundPlan()) {
+      const guidance = lineRelicGuidance();
+      if (
+        plan.round !== 1
+        || moves !== 1
+        || !guidance
+        || roundObjectivesComplete(plan)
+      ) {
+        return false;
+      }
+      const sourceKey = `${guidance.source.x},${guidance.source.y}`;
+      const authoredCells = guidance.laneCells.filter((cell) => `${cell.x},${cell.y}` !== sourceKey);
+      const sourceFlowerId = board[guidance.source.y][guidance.source.x];
+      const requiredTargets = [];
+      plan.targets.forEach((target) => {
+        let deficit = Math.max(0, target.needed - targetProgress(target));
+        if (target.flowerId === sourceFlowerId && deficit > 0) {
+          deficit -= 1;
+        }
+        requiredTargets.push(...Array(deficit).fill(target.flowerId));
+      });
+      if (requiredTargets.length > authoredCells.length) {
+        return false;
+      }
+      const originalValues = authoredCells.map((cell) => board[cell.y][cell.x]);
+      const fillers = roundOneSafeFillers(-1);
+      const fillerSlots = authoredCells.length - requiredTargets.length;
+      for (let fillerOffset = 0; fillerOffset < fillers.length; fillerOffset += 1) {
+        const payload = requiredTargets.concat(
+          Array.from({ length: fillerSlots }, (_, index) => (
+            fillers[(fillerOffset + index) % fillers.length]
+          ))
+        );
+        const remainingByFlower = new Map();
+        payload.forEach((flowerId) => {
+          remainingByFlower.set(flowerId, (remainingByFlower.get(flowerId) || 0) + 1);
+        });
+        const flowerIds = [...remainingByFlower.keys()];
+        const place = (cellIndex) => {
+          if (cellIndex >= authoredCells.length) {
+            return matches().length === 0;
+          }
+          const cell = authoredCells[cellIndex];
+          for (const flowerId of flowerIds) {
+            const remaining = remainingByFlower.get(flowerId) || 0;
+            if (remaining <= 0) {
+              continue;
+            }
+            board[cell.y][cell.x] = flowerId;
+            remainingByFlower.set(flowerId, remaining - 1);
+            if (place(cellIndex + 1)) {
+              return true;
+            }
+            remainingByFlower.set(flowerId, remaining);
+          }
+          return false;
+        };
+        if (place(0)) {
+          return true;
+        }
+      }
+      authoredCells.forEach((cell, index) => {
+        board[cell.y][cell.x] = originalValues[index];
+      });
+      return false;
     }
 
     function hasRoundOneBlackCandleLessonMove(plan = activeRoundPlan()) {
@@ -12707,9 +12780,13 @@
     }
 
     function isRoundOneFirstTargetAgencyHandoffActive(plan = activeRoundPlan()) {
+      const guidedStage = roundOneGuidedStage(plan);
+      const lowMoveCorrection = roundOneLastSwapMissedOrder
+        && moves === 2
+        && guidedStage === "black-candle";
       return plan.round === 1
         && hasMadeValidMove
-        && roundOneGuidedStage(plan) === "thorn-followup"
+        && (guidedStage === "thorn-followup" || lowMoveCorrection)
         && !roundComplete
         && !isBouquetFailed(plan)
         && !isArmedLineRelicGuidanceActive()
@@ -13799,6 +13876,32 @@
       return `Bouquet · ${progress.earned}/${progress.needed}`;
     }
 
+    function guidedOrdinarySwapCompletesRound(plan = activeRoundPlan()) {
+      if (!thornGoalComplete(plan)) {
+        return false;
+      }
+      const pair = hintedPairCells();
+      if (
+        pair.length !== 2
+        || !isLegalSwap(pair[0], pair[1])
+        || lineRelicAt(pair[0])
+        || lineRelicAt(pair[1])
+      ) {
+        return false;
+      }
+      const gainedCellsByFlower = new Map();
+      previewSwapMatches(pair[0], pair[1]).forEach((match) => {
+        if (!gainedCellsByFlower.has(match.val)) {
+          gainedCellsByFlower.set(match.val, new Set());
+        }
+        const gainedCells = gainedCellsByFlower.get(match.val);
+        match.cells.forEach(([x, y]) => gainedCells.add(`${x},${y}`));
+      });
+      return plan.targets.every((target) => (
+        targetProgress(target) + (gainedCellsByFlower.get(target.flowerId)?.size || 0) >= target.needed
+      ));
+    }
+
     function updateBouquetProgress(plan = activeRoundPlan(), progress = roundProgress(plan)) {
       const bar = $("bar");
       if (bar) {
@@ -13915,7 +14018,17 @@
         return roundOneAgencyDiscoveryCue(plan);
       }
       if (plan.round === 1 && hasMadeValidMove) {
-        return "Match 3 fills the bouquet.";
+        if (guidedOrdinarySwapCompletesRound(plan)) {
+          return "Match 3 fills the bouquet.";
+        }
+        const guidedStage = roundOneGuidedStage(plan);
+        if (guidedStage === "thorn-followup") {
+          return roundOneAgencyDiscoveryCue(plan);
+        }
+        if (guidedStage === "bone-ordinary") {
+          return "Find Bone Stars.";
+        }
+        return "Match the order flowers.";
       }
       if (plan.round === 1 && selectedMatchesHintedPair(hintedPairCells())) {
         return "Tap the other glowing flower.";
@@ -14535,6 +14648,13 @@
           : roundTwoOpeningBudgetActive
             ? { maxCascades: 1, quietReseed: true, suppressAltarDrift: true, playerSwap: { a: source, b: target } }
             : { playerSwap: { a: source, b: target } });
+        if (
+          authoredRoundOneLesson
+          && moves === 1
+          && result.armedLineRelics.length
+        ) {
+          seedRoundOneFinalBlackCandleLane(activeRoundPlan());
+        }
         confirmFinalHarvestCommit(result);
         const firstMoveCopy = isFirstValidMove && currentRound === 1
           ? "<strong>First bloom!</strong> Your bouquet is already taking shape. "
