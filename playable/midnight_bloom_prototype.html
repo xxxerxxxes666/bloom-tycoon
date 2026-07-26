@@ -6479,25 +6479,70 @@
       color:#b9965f!important;
     }
     body.restored-greenhouse-handoff .board { box-shadow:0 0 0 1px #7fa35a,0 0 18px #7fcf6538,inset 0 0 16px #000; }
-    body.round-one-active:not(.round-one-complete) .board,
-    body.restored-next-order-focus:not(.restored-greenhouse-handoff) .board {
+    :where(body.focused-active-play) .board {
       border-color: color-mix(in srgb, var(--stage-accent, #b9874d) 44%, #261d18);
       background:
-        radial-gradient(circle at 50% 48%, #130807eb 0, #080403ed 49%, #030202 78%),
-        radial-gradient(ellipse at 50% 9%, color-mix(in srgb, var(--stage-accent, #b9874d) 22%, #0000) 0, #0000 54%),
-        linear-gradient(180deg, #0000008f, #00000028 42%, #000000a8),
-        var(--active-greenhouse-image, url("../assets/greenhouse/first_greenhouse_withered.jpg")) center / cover no-repeat,
-        repeating-linear-gradient(0deg, #0000 0 52px, color-mix(in srgb, var(--stage-accent, #b9874d) 24%, #0000) 53px 54px),
-        repeating-linear-gradient(90deg, #0000 0 52px, color-mix(in srgb, var(--stage-accent, #b9874d) 24%, #0000) 53px 54px),
+        radial-gradient(circle at 50% 48%, #08040396 0, #030202ad 58%, #010101d4 100%),
+        radial-gradient(ellipse at 50% 12%, color-mix(in srgb, var(--stage-accent, #b9874d) 38%, #0000) 0, #0000 58%),
+        repeating-linear-gradient(0deg, #0000 0 52px, color-mix(in srgb, var(--stage-accent, #b9874d) 34%, #0000) 53px 54px),
+        repeating-linear-gradient(90deg, #0000 0 52px, color-mix(in srgb, var(--stage-secondary, #d1a15e) 30%, #0000) 53px 54px),
+        linear-gradient(180deg, #0008, #0002 44%, #0009),
+        var(--active-greenhouse-image, url("../assets/greenhouse/first_greenhouse_withered.jpg")) center 62% / cover no-repeat,
         linear-gradient(180deg, #21160f, #050404);
       box-shadow:
         inset 0 0 42px #000,
         inset 0 0 0 5px #080504,
-        inset 0 0 38px color-mix(in srgb, var(--stage-accent, #b9874d) 22%, #0000),
-        inset 0 16px 28px color-mix(in srgb, var(--stage-secondary, #d1a15e) 12%, #0000),
+        inset 0 0 38px color-mix(in srgb, var(--stage-accent, #b9874d) 32%, #0000),
+        inset 0 16px 28px color-mix(in srgb, var(--stage-secondary, #d1a15e) 18%, #0000),
         0 0 0 1px #000,
-        0 0 30px color-mix(in srgb, var(--stage-accent, #b9874d) 28%, #0000),
+        0 0 30px color-mix(in srgb, var(--stage-accent, #b9874d) 34%, #0000),
         0 18px 42px #000c;
+    }
+    :where(body.focused-active-play) .board::before {
+      inset: -8px;
+      z-index: 0;
+      padding: 16px;
+      border: 0;
+      background:
+        linear-gradient(180deg, #0002, #0008),
+        radial-gradient(ellipse at 50% 42%, color-mix(in srgb, var(--stage-secondary, #d1a15e) 46%, #0000) 0, #0000 62%),
+        var(--active-greenhouse-image, url("../assets/greenhouse/first_greenhouse_withered.jpg")) center 64% / cover no-repeat;
+      box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--stage-secondary, #d1a15e) 64%, #17100c),
+        inset 0 0 18px #000,
+        0 0 0 1px #050303,
+        0 0 24px color-mix(in srgb, var(--stage-accent, #b9874d) 42%, #0000);
+      opacity: 0.96;
+      filter: saturate(var(--stage-art-saturation, 1.06)) contrast(1.12);
+      -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+      mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+    :where(body.focused-active-play) .board::after {
+      background:
+        linear-gradient(135deg, color-mix(in srgb, var(--stage-secondary, #d1a15e) 78%, #d2a15b) 0 13px, #0000 13px) left top / 54px 54px no-repeat,
+        linear-gradient(225deg, color-mix(in srgb, var(--stage-secondary, #d1a15e) 78%, #d2a15b) 0 13px, #0000 13px) right top / 54px 54px no-repeat,
+        linear-gradient(45deg, color-mix(in srgb, var(--stage-accent, #b9874d) 78%, #d2a15b) 0 13px, #0000 13px) left bottom / 54px 54px no-repeat,
+        linear-gradient(315deg, color-mix(in srgb, var(--stage-accent, #b9874d) 78%, #d2a15b) 0 13px, #0000 13px) right bottom / 54px 54px no-repeat,
+        radial-gradient(circle at 50% 50%, #0000 46%, color-mix(in srgb, var(--board-stage-shadow) 34%, #0008) 70%, #000b 100%),
+        repeating-conic-gradient(from 0deg at 50% 50%, #0000 0 11deg, color-mix(in srgb, var(--board-stage-glow) 24%, #0000) 12deg 13deg, #0000 14deg 28deg);
+      opacity: 0.94;
+    }
+    :where(body.focused-active-play) .board .tile {
+      border-color: color-mix(in srgb, var(--stage-accent, #b9874d) 58%, #8a623a);
+    }
+    :where(body.focused-active-play) .board .tile::before {
+      border-color: color-mix(in srgb, var(--stage-secondary, #d1a15e) 42%, #5d4228);
+      opacity: 0.56;
+    }
+    :where(body.focused-active-play:not(.focused-slice-failed):not(.first-move-made)) .board::before {
+      animation: greenhouse-board-world-arrival 820ms cubic-bezier(.16,.8,.22,1) both;
     }
     body.restored-next-order-focus .board { touch-action:manipulation; box-shadow:0 0 0 1px #6f944d,0 0 22px #7fcf6530,inset 0 0 16px #000; }
     body.restored-next-order-focus:not(.restored-greenhouse-handoff) .board {
@@ -7176,6 +7221,11 @@
       35% { filter:brightness(1.14) saturate(1.12); }
       100% { filter:brightness(1); }
     }
+    @keyframes greenhouse-board-world-arrival {
+      0% { opacity:.24; filter:brightness(.62) saturate(.72) contrast(1.04); }
+      52% { opacity:1; filter:brightness(1.24) saturate(1.22) contrast(1.14); }
+      100% { opacity:.96; filter:brightness(1) saturate(var(--stage-art-saturation,1.06)) contrast(1.12); }
+    }
     @keyframes board-bloom-hit {
       0% { transform:scale(1); filter:brightness(1); }
       35% { transform:scale(1.006); filter:brightness(1.13) saturate(1.16); }
@@ -7704,6 +7754,10 @@
       body.restored-greenhouse-handoff .board,
       body.round-three-focus-active .board,
       body.round-one-active .board { width:calc(100vw - 12px); max-width:378px; gap:3px; padding:5px; margin:7px auto 0; }
+      :where(body.focused-active-play) .board::before {
+        inset: -4px;
+        padding: 9px;
+      }
       body.round-one-active:not(.focused-payoff-active) .mobile-greenhouse-progress,
       body.restored-next-order-focus:not(.focused-payoff-active) .mobile-greenhouse-progress,
       body.round-three-focus-active:not(.focused-payoff-active) .mobile-greenhouse-progress {
@@ -8272,6 +8326,9 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
+      :where(body.focused-active-play) .board::before {
+        animation: none !important;
+      }
       body.final-harvest-active .live-bouquet-ingredient[data-final-harvest-slot="true"]::after,
       body.final-harvest-transfer-active .live-bouquet-ingredient[data-final-harvest-slot="true"]::after {
         animation: none !important;
