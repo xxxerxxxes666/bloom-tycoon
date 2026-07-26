@@ -6508,6 +6508,7 @@
     body.round-three-focus-active #roundCeremony { display:none!important; }
     body.restored-greenhouse-handoff .next-order-cue { display:flex; width:max-content; max-width:calc(100% - 20px); min-height:30px; margin:7px auto 0; padding:5px 11px; align-items:center; justify-content:center; border:1px solid #77944f; color:#e8ffc5; background:linear-gradient(90deg,#10170d,#25381c,#10170d); box-shadow:0 0 18px #7fcf6536,inset 0 0 10px #000; font:800 13px Georgia,serif; letter-spacing:.07em; text-align:center; text-transform:uppercase; animation:handoff-cue-rise 1.9s ease-out both; }
     body.owned-replay-entry .next-order-cue { display:none!important; }
+    body.owned-replay-entry .tutorial-help { display:none!important; }
     @media (min-width:761px) {
       body.owned-replay-entry .first-swap-cue { display:none!important; }
       body.owned-replay-entry .bouquet-reward-promise {
@@ -8685,6 +8686,121 @@
         min-height: 0;
         padding: 10px 11px 11px;
       }
+
+      body.focused-active-play:not(.focused-slice-failed) .tutorial-command-region {
+        grid-column: 1;
+        grid-row: 1;
+        align-self: end;
+        justify-self: center;
+        width: calc(100% - 12px);
+        max-width: none;
+        margin: 0 0 1px;
+      }
+    }
+
+    .tutorial-command-region {
+      position: absolute;
+      left: 50%;
+      top: -2px;
+      z-index: 15;
+      bottom: auto;
+      transform: translateX(-50%);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 0 4px;
+      width: calc(100% - 18px);
+      max-width: 520px;
+      min-height: 0;
+      margin: 0 auto;
+    }
+
+    .board-command-stack {
+      position: relative;
+      display: flex;
+      flex-direction: column-reverse;
+      align-items: center;
+      width: 100%;
+      min-width: 0;
+      padding-top: 29px;
+    }
+
+    body.tutorial-active .board-command-stack {
+      padding-top: 63px;
+    }
+
+    .tutorial-command-region > .first-swap-cue,
+    .tutorial-command-region > .tutorial-panel {
+      flex: 0 1 auto;
+      min-width: 0;
+      margin-right: 0;
+      margin-left: 0;
+    }
+
+    .tutorial-command-region > .first-swap-cue {
+      max-width: calc(100% - 44px);
+    }
+
+    .tutorial-command-region > .tutorial-help {
+      position: relative !important;
+      top: auto !important;
+      right: auto !important;
+      bottom: auto;
+      flex: 0 0 auto;
+      align-self: center;
+      width: auto;
+      min-width: 32px;
+      min-height: 30px;
+      margin: 7px 0 0;
+      padding: 0 4px;
+      border-radius: 999px;
+      font-size: 9px;
+      letter-spacing: .04em;
+    }
+
+    @media (max-width: 600px) {
+      .tutorial-command-region {
+        gap: 0 5px;
+        width: calc(100% - 16px);
+      }
+
+      .tutorial-command-region > .tutorial-help {
+        min-width: 44px;
+        min-height: 30px;
+        padding: 0 7px;
+        font-size: 9px;
+      }
+
+      .tutorial-command-region > .first-swap-cue {
+        max-width: calc(100% - 49px);
+      }
+    }
+
+    @media (min-width: 1180px) {
+      body.focused-active-play:not(.focused-slice-failed) .board-command-stack {
+        display: contents;
+        padding-top: 0;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .tutorial-command-region {
+        position: relative;
+        left: auto;
+        top: auto;
+        bottom: auto;
+        transform: none;
+        flex-wrap: nowrap;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .tutorial-command-region > .first-swap-cue::before {
+        padding-right: 5px;
+        font-size: 8px;
+        letter-spacing: .08em;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .tutorial-command-region > .tutorial-help {
+        margin: 0 0 2px;
+      }
     }
   </style>
 </head>
@@ -8770,17 +8886,21 @@
         </span>
         <span class="greenhouse-restoration-dial" id="mobileRestorationDial"></span>
       </div>
-      <div class="first-swap-cue" id="firstSwapCue" aria-live="polite">Glowing pair incoming…</div>
-      <div class="tutorial-panel" id="tutorialPanel" hidden aria-live="polite">
-        <span class="tutorial-icon" aria-hidden="true">✦</span>
-        <span class="tutorial-copy" id="tutorialCopy">Swap the glowing flowers.</span>
-        <button class="tutorial-skip" id="tutorialSkipBtn" type="button">Skip</button>
+      <div class="board-command-stack">
+        <div class="board" id="board" role="grid" aria-label="Bloom Tycoon match board" aria-rowcount="8" aria-colcount="8"></div>
+        <div class="tutorial-command-region" id="tutorialCommandRegion" role="group" aria-label="Board commands">
+          <div class="first-swap-cue" id="firstSwapCue" aria-live="polite">Glowing pair incoming…</div>
+          <div class="tutorial-panel" id="tutorialPanel" hidden aria-live="polite">
+            <span class="tutorial-icon" aria-hidden="true">✦</span>
+            <span class="tutorial-copy" id="tutorialCopy">Swap the glowing flowers.</span>
+            <button class="tutorial-skip" id="tutorialSkipBtn" type="button">Skip</button>
+          </div>
+          <div class="next-order-cue" id="nextOrderCue" aria-live="polite">Restored Greenhouse · Moonlit Wreath · Match beside thorns</div>
+          <button class="tutorial-help" id="tutorialHelpBtn" type="button" aria-label="Replay Tutorial" title="Replay Tutorial">Help</button>
+        </div>
       </div>
-      <div class="next-order-cue" id="nextOrderCue" aria-live="polite">Restored Greenhouse · Moonlit Wreath · Match beside thorns</div>
-      <div class="board" id="board" role="grid" aria-label="Bloom Tycoon match board" aria-rowcount="8" aria-colcount="8"></div>
       <div class="mobile-greenhouse-plinth" id="mobileGreenhousePlinth" aria-hidden="true">
       </div>
-      <button class="tutorial-help" id="tutorialHelpBtn" type="button" aria-label="Replay Tutorial" title="Replay Tutorial">?</button>
       <div class="controls">
         <button class="btn" id="shuffleBtn" type="button">
           <span>Shuffle (-1 move)</span>

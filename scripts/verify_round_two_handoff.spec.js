@@ -319,6 +319,14 @@ async function handoffReport(page) {
     const mobileIdentity = document.querySelector("#mobileGreenhouseIdentity");
     const mobileIdentityArt = document.querySelector("#mobileGreenhouseIdentityArt");
     const mobileIdentityRect = mobileIdentity?.getBoundingClientRect();
+    const help = document.querySelector("#tutorialHelpBtn");
+    const helpRect = help?.getBoundingClientRect();
+    const helpCenterTarget = visible(help)
+      ? document.elementFromPoint(
+        helpRect.left + helpRect.width / 2,
+        helpRect.top + helpRect.height / 2
+      )
+      : null;
     return {
       state,
       bodyClasses: document.body.className,
@@ -352,6 +360,8 @@ async function handoffReport(page) {
       ].filter(visible).length,
       tutorialVisible: visible(document.querySelector("#tutorialPanel")),
       tutorialCopy: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
+      helpCenterTargetId: helpCenterTarget?.id || "",
+      helpCenterBelongsToHelp: Boolean(help && helpCenterTarget && help.contains(helpCenterTarget)),
       firstCueVisible: visible(document.querySelector("#firstSwapCue")),
       firstCue: document.querySelector("#firstSwapCue")?.textContent.trim() || "",
       ownedNote: ownedNote?.textContent.trim() || "",
@@ -1221,6 +1231,10 @@ for (const testCase of CASES) {
       expect(autonomyHint.tiles, `${testCase.label} idle hint tile integrity`).toBe(64);
       expect(autonomyHint.rows, `${testCase.label} idle hint rows`).toBe(8);
       expect(autonomyHint.overflowX, `${testCase.label} idle hint fit`).toBe(false);
+      expect(
+        autonomyHint.helpCenterBelongsToHelp,
+        `${testCase.label} settled Help center belongs to Help, not ${autonomyHint.helpCenterTargetId || "an empty hit target"}`
+      ).toBe(true);
       await page.screenshot({
         path: `work/round-two-autonomy-hint-${testCase.label}.png`
       });

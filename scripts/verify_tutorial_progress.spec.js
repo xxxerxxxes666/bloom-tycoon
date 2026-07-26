@@ -2735,6 +2735,138 @@ test("Skip returns focus to the authoritative Round 1 guide", async ({ browser }
       await page.keyboard.press(input);
     }
   };
+  const commandSurfaceReport = async (page) => page.evaluate(() => {
+    const visible = (node) => {
+      if (!node) return false;
+      const bounds = node.getBoundingClientRect();
+      const style = getComputedStyle(node);
+      return style.display !== "none"
+        && style.visibility !== "hidden"
+        && Number(style.opacity || 1) !== 0
+        && bounds.width > 0
+        && bounds.height > 0;
+    };
+    const rect = (node) => {
+      if (!node || !visible(node)) return null;
+      const bounds = node.getBoundingClientRect();
+      return {
+        left: bounds.left,
+        top: bounds.top,
+        right: bounds.right,
+        bottom: bounds.bottom,
+        width: bounds.width,
+        height: bounds.height
+      };
+    };
+    const contains = (outer, inner) => Boolean(
+      outer
+      && inner
+      && inner.left >= outer.left - 1
+      && inner.right <= outer.right + 1
+      && inner.top >= outer.top - 1
+      && inner.bottom <= outer.bottom + 1
+    );
+    const overlaps = (first, second) => Boolean(
+      first
+      && second
+      && first.left < second.right
+      && first.right > second.left
+      && first.top < second.bottom
+      && first.bottom > second.top
+    );
+    const regionNode = document.querySelector("#tutorialCommandRegion");
+    const panelNode = document.querySelector("#tutorialPanel");
+    const cueNode = document.querySelector("#firstSwapCue");
+    const copyNode = document.querySelector("#tutorialCopy");
+    const skipNode = document.querySelector("#tutorialSkipBtn");
+    const helpNode = document.querySelector("#tutorialHelpBtn");
+    const boardNode = document.querySelector("#board");
+    const region = rect(regionNode);
+    const panel = rect(panelNode);
+    const cue = rect(cueNode);
+    const copy = rect(copyNode);
+    const skip = rect(skipNode);
+    const help = rect(helpNode);
+    const board = rect(boardNode);
+    const tiles = Array.from(document.querySelectorAll("#board .tile"));
+    const completeRows = new Set(tiles
+      .filter((tile) => {
+        const bounds = tile.getBoundingClientRect();
+        return bounds.left >= -1
+          && bounds.right <= innerWidth + 1
+          && bounds.top >= -1
+          && bounds.bottom <= innerHeight + 1;
+      })
+      .map((tile) => tile.dataset.y)).size;
+    return {
+      region,
+      panel,
+      cue,
+      copy,
+      skip,
+      help,
+      board,
+      panelContained: contains(region, panel),
+      cueContained: contains(region, cue),
+      copyContained: contains(panel, copy),
+      skipContained: contains(panel, skip),
+      helpContained: contains(region, help),
+      helpOverlapsCue: overlaps(help, cue),
+      helpOverlapsPanel: overlaps(help, panel),
+      skipOverlapsCopy: overlaps(skip, copy),
+      helpText: helpNode?.textContent.trim() || "",
+      helpName: helpNode?.getAttribute("aria-label") || "",
+      helpParent: helpNode?.parentElement?.id || "",
+      strongerCommand: [
+        "black-candle-activation-active",
+        "final-harvest-active",
+        "final-harvest-transfer-active",
+        "final-harvest-handoff-active",
+        "focused-slice-failed",
+        "focused-payoff-active"
+      ].some((className) => document.body.classList.contains(className)),
+      visibleCommandChildren: [panelNode, cueNode, helpNode].filter(visible).map((node) => node.id),
+      tiles: tiles.length,
+      completeRows,
+      overflowX: document.documentElement.scrollWidth > innerWidth + 1,
+      boardBottom: board?.bottom || 0
+    };
+  });
+  const expectActiveTutorialSurface = (report, label) => {
+    expect(report.visibleCommandChildren, `${label} one active instruction plus Skip region`)
+      .toEqual(["tutorialPanel"]);
+    expect(report.panelContained, `${label} tutorial pill belongs to command region`).toBe(true);
+    expect(report.copyContained, `${label} tutorial copy is contained`).toBe(true);
+    expect(report.skipContained, `${label} Skip is contained`).toBe(true);
+    expect(report.skipOverlapsCopy, `${label} Skip does not cover tutorial copy`).toBe(false);
+    expect(report.tiles, `${label} tile integrity`).toBe(64);
+    expect(report.completeRows, `${label} complete board rows`).toBe(8);
+    expect(report.overflowX, `${label} horizontal fit`).toBe(false);
+  };
+  const expectReplaySurface = (report, testCase, label, { allowStrongerCommand = false } = {}) => {
+    const helpVisible = report.visibleCommandChildren.includes("tutorialHelpBtn");
+    expect(report.visibleCommandChildren, `${label} has one phase-owned command region`)
+      .toEqual(helpVisible ? ["firstSwapCue", "tutorialHelpBtn"] : ["firstSwapCue"]);
+    expect(report.cueContained, `${label} cue is contained`).toBe(true);
+    if (helpVisible) {
+      expect(report.helpContained, `${label} Help is contained`).toBe(true);
+      expect(report.helpOverlapsCue, `${label} Help does not cover the cue`).toBe(false);
+      expect(report.helpOverlapsPanel, `${label} Help does not cover the tutorial pill`).toBe(false);
+      expect(report.helpText, `${label} Help is visibly named`).toBe("Help");
+      expect(report.helpName, `${label} Help has its complete accessible action name`).toBe("Replay Tutorial");
+      expect(report.helpParent, `${label} Help has tutorial command ownership`).toBe("tutorialCommandRegion");
+    } else {
+      expect(allowStrongerCommand, `${label} may suppress Help only for a stronger phase`).toBe(true);
+      expect(report.strongerCommand, `${label} names the stronger phase that suppresses Help`).toBe(true);
+    }
+    expect(report.tiles, `${label} tile integrity`).toBe(64);
+    expect(report.completeRows, `${label} complete board rows`).toBe(8);
+    expect(report.overflowX, `${label} horizontal fit`).toBe(false);
+    if (testCase.mobile) {
+      expect(report.boardBottom, `${label} full board remains in the first viewport`)
+        .toBeLessThanOrEqual(testCase.viewport.height);
+    }
+  };
 
   for (const testCase of cases) {
     const context = await browser.newContext({
@@ -2760,6 +2892,10 @@ test("Skip returns focus to the authoritative Round 1 guide", async ({ browser }
       await seedDeterministicMath(page, `skip-focus-${testCase.label}`);
       await openFreshNoReview(page, `skip-focus-${testCase.label}`);
       await expect(page.locator("#tutorialPanel")).toBeVisible({ timeout: 3000 });
+      expectActiveTutorialSurface(
+        await commandSurfaceReport(page),
+        `${testCase.label} fresh tutorial`
+      );
       expect(unorderedPairKey(await hintedPair(page))).toBe("1,0 <-> 1,1");
       const beforeOpeningSkip = await page.evaluate(
         (key) => JSON.parse(localStorage.getItem(key) || "{}"),
@@ -2771,6 +2907,11 @@ test("Skip returns focus to the authoritative Round 1 guide", async ({ browser }
         .toBe("tile-1-0");
       await expect(page.locator("#board .tile[tabindex='0']")).toHaveAttribute("id", "tile-1-0");
       await expect(page.locator("#board .tile.selected, #board .tile.sel")).toHaveCount(0);
+      expectReplaySurface(
+        await commandSurfaceReport(page),
+        testCase,
+        `${testCase.label} opening Skip`
+      );
       const afterOpeningSkip = await page.evaluate(
         (key) => JSON.parse(localStorage.getItem(key) || "{}"),
         SAVE_KEY
@@ -2791,6 +2932,11 @@ test("Skip returns focus to the authoritative Round 1 guide", async ({ browser }
       await expect(page.locator("#tile-1-1")).toHaveAttribute("tabindex", "-1");
       await expect(page.locator("#board .tile.selected, #board .tile.sel")).toHaveCount(0);
       expect(unorderedPairKey(await hintedPair(page))).toBe("1,0 <-> 1,1");
+      expectReplaySurface(
+        await commandSurfaceReport(page),
+        testCase,
+        `${testCase.label} skipped reload`
+      );
       if (testCase.label === "desktop-pointer" || testCase.label === "mobile390-touch") {
         await page.screenshot({
           path: `work/opening-skip-reload-focus-${testCase.mobile ? "mobile390" : "desktop"}.png`,
@@ -2805,6 +2951,10 @@ test("Skip returns focus to the authoritative Round 1 guide", async ({ browser }
       await page.locator("#tutorialHelpBtn").click();
       await expect(page.locator("#tutorialPanel")).toBeVisible();
       await expect(page.locator("#tutorialSkipBtn")).toBeFocused();
+      expectActiveTutorialSurface(
+        await commandSurfaceReport(page),
+        `${testCase.label} Help replay`
+      );
       await clickGuidedSwap(page);
       await clickGuidedSwap(page);
       await clickGuidedSwap(page);
@@ -2822,6 +2972,12 @@ test("Skip returns focus to the authoritative Round 1 guide", async ({ browser }
       await expect(page.locator("#tile-5-0")).toHaveAttribute("tabindex", "0");
       await expect(page.locator("#tile-6-0")).toHaveAttribute("tabindex", "-1");
       await expect(page.locator("#board .tile.selected, #board .tile.sel")).toHaveCount(0);
+      expectReplaySurface(
+        await commandSurfaceReport(page),
+        testCase,
+        `${testCase.label} armed Black Candle Skip`,
+        { allowStrongerCommand: true }
+      );
       const afterSkip = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}"), SAVE_KEY);
       expect(afterSkip.moves, `${testCase.label} Skip spends no move`).toBe(beforeSkip.moves);
       expect(afterSkip.counts, `${testCase.label} Skip changes no objective`).toEqual(beforeSkip.counts);
@@ -4571,8 +4727,20 @@ test("Black Candle Vine forms, persists, and activates as a deliberate lane spec
       if (!testCase.mobile) {
         await page.locator("#tutorialSkipBtn").click();
         await assertForecastStable("Skip", { fullPresentation: false });
-        await page.locator("#tutorialHelpBtn").click();
-        await assertForecastStable("Help replay", { fullPresentation: false });
+        const help = page.locator("#tutorialHelpBtn");
+        if (await help.isVisible()) {
+          await help.click();
+          await assertForecastStable("Help replay", { fullPresentation: false });
+        } else {
+          const strongerCommand = await page.evaluate(() => [
+            "black-candle-activation-active",
+            "final-harvest-active",
+            "final-harvest-transfer-active",
+            "final-harvest-handoff-active"
+          ].find((className) => document.body.classList.contains(className)) || "");
+          expect(strongerCommand, "Help is suppressed only by stronger Black Candle/final-harvest authority")
+            .not.toBe("");
+        }
       }
 
       const activationPair = activationPairFromForecast(activationForecast);
