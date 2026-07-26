@@ -6653,6 +6653,25 @@
     .restoration-flare { position:absolute; inset:0; z-index:11; pointer-events:none; opacity:0; background:linear-gradient(90deg,#0000 0 18%,#fff0b5 36%,#7fcf65a8 50%,#fff0b5 64%,#0000 82%); mix-blend-mode:screen; transform:translateX(-84%) skewX(-12deg); filter:blur(1px); }
     .restoration-spark-field { position:absolute; inset:0; z-index:12; pointer-events:none; overflow:hidden; }
     .restoration-spark-field span { position:absolute; left:var(--spark-x); top:var(--spark-y); width:var(--spark-size,4px); height:var(--spark-size,4px); border-radius:50%; background:#fff2b8; box-shadow:0 0 8px #f1d47a,0 0 16px #7fcf65; opacity:0; transform:translate(-50%,-50%) scale(.4); }
+    .round-one-restoration[data-payoff-round="1"]:not(.restored) .restoration-scene::before {
+      background:
+        radial-gradient(circle at 50% 46%,#0000 0 58%,#0202024f 82%,#02010199 100%),
+        linear-gradient(180deg,#08070735,#0000 34%,#08050424 70%,#0201018c);
+      box-shadow:inset 0 0 22px #0009;
+    }
+    .round-one-restoration[data-payoff-round="1"]:not(.restored) .greenhouse-art-withered {
+      filter:brightness(1.08) contrast(1.12) saturate(.58);
+    }
+    .round-one-restoration[data-payoff-round="1"]:not(.restored) .restoration-veil {
+      opacity:.2;
+      background:
+        radial-gradient(ellipse at 50% 54%,#0000 0 54%,#07050478 100%),
+        linear-gradient(180deg,#1b15101f,#0000 52%,#10090630);
+      box-shadow:inset 0 0 18px #0008;
+    }
+    .round-one-restoration[data-payoff-round="1"] .restoration-cracks {
+      display:none;
+    }
     .round-one-restoration.restored .restoration-scene { border-color:#b88c52; box-shadow:inset 0 0 28px #7fcf654d,0 0 26px #b8793045; }
     .round-one-restoration.restored .greenhouse-art-withered { opacity:0; filter:brightness(.5) contrast(1.05) saturate(.55); transform:scale(1.04); }
     .round-one-restoration.restored .greenhouse-art-restored { opacity:1; filter:brightness(1.08) saturate(1.12); transform:scale(1.015); }
@@ -6677,6 +6696,17 @@
     .round-one-restoration.restoration-awakening .restoration-flare { animation:restoration-flare-sweep 820ms ease-out both; }
     .round-one-restoration.restoration-awakening .restoration-spark-field span { animation:restoration-spark-rise 980ms ease-out var(--spark-delay,0ms) both; }
     .round-one-restoration.restoration-awakening .restoration-state { animation:restoration-state-pop 760ms ease-out both; }
+    .round-one-restoration[data-payoff-round="1"][data-restoration-phase="transforming"] .greenhouse-art-withered {
+      filter:brightness(1.04) contrast(1.12) saturate(.58);
+    }
+    .round-one-restoration[data-payoff-round="1"][data-restoration-phase="transforming"] .next-order-btn {
+      display:none!important;
+    }
+    .round-one-restoration[data-payoff-round="1"][data-restoration-phase="transforming"] .payoff-transaction {
+      border-color:#e2b65f;
+      color:#fff4bd;
+      box-shadow:inset 0 0 12px #000,0 0 18px #e2b65f4d;
+    }
     .restoration-state { position:absolute; inset:auto 0 8px; z-index:10; color:#ead9a9; font-weight:800; letter-spacing:.12em; text-shadow:0 2px 4px #000,0 0 10px #000; }
     .restoration-title { position:relative; z-index:4; color:#f3dfaa; font:700 21px/1.15 Georgia,serif; }
     .coin-payoff { position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:2; }
@@ -8629,7 +8659,7 @@
         restored: "../assets/greenhouse/first_greenhouse_restored.jpg",
         width: 1672,
         height: 941,
-        label: "Greenhouse restoration before and after"
+        label: "The same greenhouse before restoration and after restoration"
       },
       moonlit: {
         withered: "../assets/greenhouse/first_greenhouse_restored.jpg",
@@ -13039,6 +13069,11 @@
       panel.dataset.payoffMode = ceremony.ownedReplay ? "owned-replay" : "restoration";
       panel.dataset.ownedRenewalPhase = ceremony.ownedReplay ? ownedRenewalPhase || "settled" : "";
       panel.dataset.assemblyReady = String(!presentationPending);
+      if (!panel.classList.contains("restoration-awakening")) {
+        panel.dataset.restorationPhase = ceremony.plan.round === 1
+          ? ceremony.primary === "spend" ? "pending" : "settled"
+          : "";
+      }
       panel.classList.toggle("owned-replay", ceremony.ownedReplay);
       $("restorationTitle").textContent = ceremony.title;
       $("restorationState").textContent = finalHarvestCommit?.phase === "ceremony" && !ceremony.ownedReplay
@@ -16240,19 +16275,26 @@
       pulseCoinBalance();
       roundOneRestored = true;
       ritualMessage = "<strong>Greenhouse restored.</strong> The dead glass burns gold and the first vines wake.";
-      pulseNextOrderReady();
-      queuePostRenderFocus("nextOrderBtn");
+      saveProgress();
       render();
       pulseActiveGreenhouseIntake();
       playBloomSound("restore");
       const panel = $("roundOneRestoration");
+      const transformationDuration = prefersReducedMotion() ? 140 : 1280;
+      panel.dataset.restorationPhase = "transforming";
       panel.classList.add("spend-pulse");
       panel.classList.remove("restoration-awakening");
       void panel.offsetWidth;
       panel.classList.add("restoration-awakening");
-      window.setTimeout(() => panel.classList.remove("spend-pulse"), 680);
-      window.setTimeout(() => panel.classList.remove("restoration-awakening"), 1280);
-      saveProgress();
+      $("payoffTransaction").textContent = `${FIRST_GREENHOUSE_RESTORE_COST} coins spent · Greenhouse awakening · ${coins} coins remain.`;
+      $("tutorialCopy").textContent = "Greenhouse awakening.";
+      window.setTimeout(() => {
+        panel.classList.remove("spend-pulse", "restoration-awakening");
+        panel.dataset.restorationPhase = "settled";
+        pulseNextOrderReady();
+        queuePostRenderFocus("nextOrderBtn");
+        render();
+      }, transformationDuration);
     }
 
     function upgradeRoundTwoGreenhouse() {

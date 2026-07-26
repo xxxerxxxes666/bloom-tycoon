@@ -970,6 +970,118 @@ async function expectCeremony(page, expectedButton, screenshotPath, expectedGuid
   return contract;
 }
 
+async function restorationSceneEvidence(page) {
+  const scene = page.locator(".restoration-scene");
+  const png = decodePng(await scene.screenshot({ animations: "allow" }));
+  const pixels = pixelBoxStats(
+    png,
+    { left: 0, top: 0, right: png.width, bottom: png.height },
+    1,
+    1
+  );
+  const dom = await page.evaluate(() => {
+    const panel = document.querySelector("#roundOneRestoration");
+    const sceneNode = panel?.querySelector(".restoration-scene");
+    const withered = panel?.querySelector(".greenhouse-art-withered");
+    const restored = panel?.querySelector(".greenhouse-art-restored");
+    const cracks = panel?.querySelector(".restoration-cracks");
+    const rect = sceneNode?.getBoundingClientRect();
+    const imageState = (image) => ({
+      src: image?.getAttribute("src") || "",
+      complete: Boolean(image?.complete),
+      naturalWidth: image?.naturalWidth || 0,
+      naturalHeight: image?.naturalHeight || 0,
+      opacity: Number(getComputedStyle(image).opacity || 0),
+      objectPosition: getComputedStyle(image).objectPosition
+    });
+    return {
+      phase: panel?.dataset.restorationPhase || "",
+      artKey: sceneNode?.dataset.greenhouseArt || "",
+      ariaLabel: sceneNode?.getAttribute("aria-label") || "",
+      rect: rect ? {
+        left: rect.left,
+        top: rect.top,
+        width: rect.width,
+        height: rect.height,
+        right: rect.right,
+        bottom: rect.bottom
+      } : null,
+      withered: imageState(withered),
+      restored: imageState(restored),
+      cracksDisplay: cracks ? getComputedStyle(cracks).display : ""
+    };
+  });
+  return { ...dom, pixels };
+}
+
+function expectRoundOneSceneIdentity(evidence, label) {
+  expect(evidence.artKey, `${label} scene uses Round 1 art pair`).toBe("first");
+  expect(evidence.ariaLabel, `${label} scene identifies one before/after place`).toMatch(/before restoration and after restoration/i);
+  expect(evidence.withered.src, `${label} withered source`).toContain("first_greenhouse_withered.jpg");
+  expect(evidence.restored.src, `${label} restored source`).toContain("first_greenhouse_restored.jpg");
+  for (const [state, image] of Object.entries({
+    withered: evidence.withered,
+    restored: evidence.restored
+  })) {
+    expect(image.complete, `${label} ${state} image loaded`).toBe(true);
+    expect(image.naturalWidth, `${label} ${state} image has real pixels`).toBe(1672);
+    expect(image.naturalHeight, `${label} ${state} image has real pixels`).toBe(941);
+    expect(image.objectPosition, `${label} ${state} keeps the shared composition`).toBe("50% 50%");
+  }
+}
+
+async function restoreRoundOneAndCapturePeak(page, label, pendingEvidence) {
+  await expect(page.locator("#restoreGreenhouseBtn")).toBeFocused();
+  await page.keyboard.press("Enter");
+  await page.waitForFunction(() => (
+    document.querySelector("#roundOneRestoration")?.dataset.restorationPhase === "transforming"
+  ), null, { timeout: 500 });
+  await page.waitForTimeout(220);
+  const captureFrame = await page.evaluate(() => {
+    const panel = document.querySelector("#roundOneRestoration");
+    const withered = panel?.querySelector(".greenhouse-art-withered");
+    const restored = panel?.querySelector(".greenhouse-art-restored");
+    return {
+      witheredOpacity: Number(getComputedStyle(withered).opacity || 0),
+      restoredOpacity: Number(getComputedStyle(restored).opacity || 0),
+      phase: panel?.dataset.restorationPhase || ""
+    };
+  });
+  expect(captureFrame.phase).toBe("transforming");
+  expect(captureFrame.witheredOpacity, `${label} screenshot retains the same withered place`).toBeGreaterThan(.05);
+  expect(captureFrame.restoredOpacity, `${label} screenshot includes restored material entering the same frame`).toBeGreaterThan(.3);
+  await page.screenshot({ path: `work/restoration-${label}-round1-peak.png`, fullPage: true });
+  const peakContract = await visibleContract(page);
+  const peakEvidence = await restorationSceneEvidence(page);
+  expectRoundOneSceneIdentity(peakEvidence, `${label} transformation peak`);
+  expect(peakEvidence.phase).toBe("transforming");
+  expect(peakContract.coins, `${label} spend settles authoritatively at press time`).toBe(20);
+  expect(peakContract.transactionText).toBe("100 coins spent · Greenhouse awakening · 20 coins remain.");
+  expect(peakContract.buttons, `${label} no second action interrupts the bounded transformation`).toEqual([]);
+  const savedAtPeak = await page.evaluate((key) => {
+    const saved = JSON.parse(localStorage.getItem(key) || "{}");
+    return {
+      coins: saved.coins,
+      roundOneRestored: saved.roundOneRestored,
+      roundTwoGreenhouseUpgraded: saved.roundTwoGreenhouseUpgraded,
+      roundThreeConservatoryRaised: saved.roundThreeConservatoryRaised
+    };
+  }, SAVE_KEY);
+  expect(savedAtPeak, `${label} spend and ownership save once before presentation settles`).toEqual({
+    coins: 20,
+    roundOneRestored: true,
+    roundTwoGreenhouseUpgraded: false,
+    roundThreeConservatoryRaised: false
+  });
+  expect(peakEvidence.restored.opacity, `${label} restored material is visibly entering the same frame`).toBeGreaterThan(.3);
+  expect(peakEvidence.pixels.coloredPixels, `${label} transformation visibly adds restored color`)
+    .toBeGreaterThan(pendingEvidence.pixels.coloredPixels);
+  await page.waitForFunction(() => (
+    document.querySelector("#roundOneRestoration")?.dataset.restorationPhase === "settled"
+      && !document.querySelector("#roundOneRestoration")?.classList.contains("restoration-awakening")
+  ), null, { timeout: 1600 });
+}
+
 async function expectActiveBoard(page) {
   await expect(page.locator(".tile")).toHaveCount(64, { timeout: 5000 });
   await expect(page.locator(".tile[tabindex='0']")).toHaveCount(1);
@@ -1361,6 +1473,151 @@ test("payoff ceremony contract mobile 390x844 journey", async ({ page }) => {
   expect(consoleMessages).toEqual([]);
   expect(pageErrors).toEqual([]);
   expect(failedRequests).toEqual([]);
+});
+
+test("Round 1 restoration keeps one readable place through spend, peak, settlement, and reload", async ({ browser }) => {
+  for (const config of [
+    { label: "desktop", viewport: { width: 1280, height: 720 }, mobile: false },
+    { label: "mobile390", viewport: { width: 390, height: 844 }, mobile: true }
+  ]) {
+    const context = await browser.newContext({
+      viewport: config.viewport,
+      hasTouch: config.mobile,
+      isMobile: config.mobile,
+      reducedMotion: "no-preference"
+    });
+    const page = await context.newPage();
+    const consoleMessages = [];
+    const pageErrors = [];
+    const failedRequests = [];
+    const failedSameOriginResponses = [];
+    page.on("console", (message) => consoleMessages.push(`${message.type()}: ${message.text()}`));
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    page.on("requestfailed", (request) => failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`));
+    page.on("response", (response) => {
+      if (response.status() >= 400 && new URL(response.url()).origin === new URL(BASE_URL).origin) {
+        failedSameOriginResponses.push(`${response.status()} ${response.url()}`);
+      }
+    });
+
+    try {
+      await resetPage(page, `restoration_transform_${config.label}`);
+      await page.evaluate((key) => {
+        const state = JSON.parse(localStorage.getItem(key) || "{}");
+        Object.assign(state, {
+          currentRound: 1,
+          roundComplete: true,
+          roundOneRestored: false,
+          roundTwoGreenhouseUpgraded: false,
+          roundThreeConservatoryRaised: false,
+          moves: 1,
+          coins: 120,
+          counts: [0, 6, 0, 0, 0, 8],
+          cursedThorns: [],
+          clearedCursedThorns: 0,
+          tutorialSkipped: false,
+          tutorialActive: true,
+          blackCandleLessonComplete: true
+        });
+        localStorage.setItem(key, JSON.stringify(state));
+      }, SAVE_KEY);
+      await page.reload({ waitUntil: "networkidle" });
+
+      const pendingContract = await expectCeremony(
+        page,
+        "Restore Greenhouse",
+        `work/restoration-${config.label}-round1-pending.png`,
+        "Coins restore the greenhouse."
+      );
+      const pendingScene = await restorationSceneEvidence(page);
+      expectRoundOneSceneIdentity(pendingScene, `${config.label} pending`);
+      expect(pendingContract.coins).toBe(120);
+      expect(pendingContract.transactionText).toBe("Earned 120 coins. Restore costs 100.");
+      expect(pendingContract.buttons).toEqual(["Restore Greenhouse · 100 coins"]);
+      expect(pendingScene.phase).toBe("pending");
+      expect(pendingScene.withered.opacity).toBe(1);
+      expect(pendingScene.restored.opacity).toBe(0);
+      expect(pendingScene.cracksDisplay, "oversized crossed overlay is removed from Round 1").toBe("none");
+      expect(pendingScene.pixels.p75, `${config.label} withered architecture clears the black floor`).toBeGreaterThan(15);
+      expect(pendingScene.pixels.p90, `${config.label} ribs, broken glass, and dead beds remain readable`).toBeGreaterThan(31);
+      expect(
+        pendingScene.pixels.coloredPixels / pendingScene.pixels.sampledPixels,
+        `${config.label} pending scene remains bleak rather than cheerful`
+      ).toBeLessThan(.34);
+
+      await assertReloadKeeps(
+        page,
+        "Restore Greenhouse",
+        `work/restoration-${config.label}-round1-pending-reload.png`,
+        "Coins restore the greenhouse."
+      );
+      await restoreRoundOneAndCapturePeak(page, config.label, pendingScene);
+      const settledContract = await expectCeremony(
+        page,
+        "Next Order",
+        `work/restoration-${config.label}-round1-settled.png`,
+        "Tap Next Order."
+      );
+      const settledScene = await restorationSceneEvidence(page);
+      expectRoundOneSceneIdentity(settledScene, `${config.label} settled`);
+      expect(settledContract.coins).toBe(20);
+      expect(settledContract.transactionText).toBe("Restored for 100. 20 coins remain.");
+      expect(settledContract.buttons).toEqual(["Next Order → Moonlit Wreath"]);
+      expect(settledScene.phase).toBe("settled");
+      expect(settledScene.rect.width, `${config.label} same scene width before and after`).toBeCloseTo(pendingScene.rect.width, 0);
+      expect(settledScene.rect.height, `${config.label} same scene height before and after`).toBeCloseTo(pendingScene.rect.height, 0);
+      expect(settledScene.withered.opacity).toBe(0);
+      expect(settledScene.restored.opacity).toBe(1);
+      expect(settledScene.pixels.coloredPixels, `${config.label} settled restoration has a material color reveal`)
+        .toBeGreaterThan(pendingScene.pixels.coloredPixels * 1.45);
+      await assertReloadKeeps(
+        page,
+        "Next Order",
+        `work/restoration-${config.label}-round1-settled-reload.png`,
+        "Tap Next Order."
+      );
+      const reloadedSave = await page.evaluate((key) => {
+        const saved = JSON.parse(localStorage.getItem(key) || "{}");
+        return {
+          coins: saved.coins,
+          roundOneRestored: saved.roundOneRestored,
+          roundTwoGreenhouseUpgraded: saved.roundTwoGreenhouseUpgraded,
+          roundThreeConservatoryRaised: saved.roundThreeConservatoryRaised
+        };
+      }, SAVE_KEY);
+      expect(reloadedSave).toEqual({
+        coins: 20,
+        roundOneRestored: true,
+        roundTwoGreenhouseUpgraded: false,
+        roundThreeConservatoryRaised: false
+      });
+      await clickPrimary(page);
+      await expectActiveBoard(page);
+      const active = await page.evaluate(() => {
+        const tiles = Array.from(document.querySelectorAll(".tile"));
+        const rowTops = new Set(tiles.map((tile) => Math.round(tile.getBoundingClientRect().top)));
+        const board = document.querySelector("#board")?.getBoundingClientRect();
+        return {
+          tiles: tiles.length,
+          rows: rowTops.size,
+          boardBottom: board?.bottom || 0,
+          overflowX: document.documentElement.scrollWidth > innerWidth + 1
+        };
+      });
+      expect(active.tiles).toBe(64);
+      expect(active.rows).toBe(8);
+      expect(active.overflowX).toBe(false);
+      if (config.mobile) {
+        expect(active.boardBottom, "all eight rows return inside exact mobile viewport").toBeLessThanOrEqual(844);
+      }
+      expect(consoleMessages).toEqual([]);
+      expect(pageErrors).toEqual([]);
+      expect(failedRequests).toEqual([]);
+      expect(failedSameOriginResponses).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  }
 });
 
 test("simultaneous target gains bind to distinct growing blooms and persist", async ({ page }) => {
@@ -1792,6 +2049,31 @@ for (const config of [
     expect(contract.overflowX).toBe(false);
     expect(contract.brokenImages).toEqual([]);
     await page.screenshot({ path: `work/pass2-reduced-motion-${config.label}-round1-pending.png`, fullPage: true });
+    const pendingScene = await restorationSceneEvidence(page);
+    expectRoundOneSceneIdentity(pendingScene, `${config.label} reduced-motion pending`);
+    const startedAt = Date.now();
+    await page.locator("#restoreGreenhouseBtn").click();
+    await page.waitForFunction(() => (
+      document.querySelector("#roundOneRestoration")?.dataset.restorationPhase === "settled"
+    ), null, { timeout: 650 });
+    expect(Date.now() - startedAt, "reduced motion settles without spatial pacing").toBeLessThan(650);
+    const settled = await expectCeremony(
+      page,
+      "Next Order",
+      `work/restoration-reduced-motion-${config.label}-settled.png`,
+      "Tap Next Order."
+    );
+    const settledScene = await restorationSceneEvidence(page);
+    expectRoundOneSceneIdentity(settledScene, `${config.label} reduced-motion settled`);
+    expect(settled.coins).toBe(20);
+    expect(settled.transactionText).toBe("Restored for 100. 20 coins remain.");
+    expect(settled.buttons).toEqual(["Next Order → Moonlit Wreath"]);
+    const runningAnimations = await page.evaluate(() => (
+      document.querySelector(".restoration-scene")
+        ?.getAnimations({ subtree: true })
+        .filter((animation) => animation.playState === "running").length || 0
+    ));
+    expect(runningAnimations, "reduced-motion acknowledgment leaves no spatial animation running").toBe(0);
     expect(consoleMessages).toEqual([]);
     expect(pageErrors).toEqual([]);
     expect(failedRequests).toEqual([]);
