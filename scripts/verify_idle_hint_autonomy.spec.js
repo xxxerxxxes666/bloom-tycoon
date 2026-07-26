@@ -6,10 +6,10 @@ const SAVE_KEY = "bloomTycoonPlayableStateV1";
 const HINT_TIMEOUT = 8500;
 
 const CASES = [
-  { label: "desktop-pointer", viewport: { width: 1280, height: 720 }, input: "pointer" },
-  { label: "mobile390-touch", viewport: { width: 390, height: 844 }, input: "touch", mobile: true },
-  { label: "desktop-keyboard-reduced", viewport: { width: 1280, height: 720 }, input: "keyboard", reduced: true },
-  { label: "mobile390-touch-reduced", viewport: { width: 390, height: 844 }, input: "touch", mobile: true, reduced: true }
+  { label: "desktop-pointer", viewport: { width: 1280, height: 720 }, input: "pointer", dismissKey: "Enter" },
+  { label: "mobile390-touch", viewport: { width: 390, height: 844 }, input: "touch", mobile: true, dismissKey: "Enter" },
+  { label: "desktop-keyboard-reduced", viewport: { width: 1280, height: 720 }, input: "keyboard", reduced: true, dismissKey: "Space" },
+  { label: "mobile390-touch-reduced", viewport: { width: 390, height: 844 }, input: "touch", mobile: true, reduced: true, dismissKey: "Space" }
 ];
 
 test.setTimeout(180000);
@@ -83,6 +83,8 @@ async function autonomyReport(page) {
       disabledTiles: tiles.filter((tile) => tile.disabled).length,
       activeElementId: document.activeElement?.id || "",
       rovingTileIds: tiles.filter((tile) => tile.tabIndex === 0).map((tile) => tile.id),
+      tutorialVisible: visible(document.querySelector("#tutorialPanel")),
+      helpVisible: visible(document.querySelector("#tutorialHelpBtn")),
       tiles: tiles.length,
       rows: new Set(tiles.map((tile) => tile.dataset.y)).size,
       completeRows: new Set(tiles
@@ -347,6 +349,51 @@ for (const testCase of CASES) {
         );
         expect(reloaded.report.state.moves, `${testCase.label} reload ${reload} move state`).toBe(7);
       }
+
+      const helpButton = page.locator("#tutorialHelpBtn");
+      if (testCase.input === "touch") {
+        await helpButton.tap();
+      } else if (testCase.input === "keyboard") {
+        await helpButton.focus();
+        await page.keyboard.press("Enter");
+      } else {
+        await helpButton.click();
+      }
+      await expect(page.locator("#tutorialSkipBtn")).toBeFocused();
+      const replayState = JSON.stringify((await autonomyReport(page)).state);
+      for (let reload = 1; reload <= 2; reload += 1) {
+        await page.reload({ waitUntil: "networkidle" });
+        const replay = await autonomyReport(page);
+        expect(replay.activeElementId, `${testCase.label} replay reload ${reload} Skip focus`)
+          .toBe("tutorialSkipBtn");
+        expect(replay.tutorialVisible, `${testCase.label} replay reload ${reload} visible`).toBe(true);
+        expect(replay.rovingTileIds, `${testCase.label} replay reload ${reload} one board fallback`)
+          .toHaveLength(1);
+        expect(replay.selectedTiles, `${testCase.label} replay reload ${reload} no selection`).toBe(0);
+        expect(replay.tiles, `${testCase.label} replay reload ${reload} tiles`).toBe(64);
+        expect(replay.rows, `${testCase.label} replay reload ${reload} rows`).toBe(8);
+        expect(replay.completeRows, `${testCase.label} replay reload ${reload} visible rows`).toBe(8);
+        expect(replay.overflowX, `${testCase.label} replay reload ${reload} no overflow`).toBe(false);
+        expect(replay.brokenImages, `${testCase.label} replay reload ${reload} images`).toEqual([]);
+        expect(
+          JSON.stringify(replay.state),
+          `${testCase.label} replay reload ${reload} exact save`
+        ).toBe(replayState);
+      }
+
+      await page.keyboard.press(testCase.dismissKey);
+      const dismissedReplay = await autonomyReport(page);
+      const settled = JSON.parse(settledState);
+      expect(dismissedReplay.tutorialVisible, `${testCase.label} ${testCase.dismissKey} dismisses replay`)
+        .toBe(false);
+      expect(dismissedReplay.activeElementId, `${testCase.label} dismissal returns to Help`)
+        .toBe("tutorialHelpBtn");
+      expect(dismissedReplay.helpVisible, `${testCase.label} Help remains visible`).toBe(true);
+      expect(dismissedReplay.rovingTileIds, `${testCase.label} board roving model preserved`).toHaveLength(1);
+      expect(dismissedReplay.selectedTiles, `${testCase.label} dismissal selects no tile`).toBe(0);
+      expect(dismissedReplay.state.moves, `${testCase.label} dismissal spends no move`).toBe(settled.moves);
+      expect(dismissedReplay.state.counts, `${testCase.label} dismissal changes no counts`).toEqual(settled.counts);
+      expect(dismissedReplay.state.board, `${testCase.label} dismissal changes no board`).toEqual(settled.board);
 
       expect(consoleErrors).toEqual([]);
       expect(pageErrors).toEqual([]);

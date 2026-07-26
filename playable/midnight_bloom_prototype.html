@@ -14445,6 +14445,13 @@
         && !boardGuideTransientStateActive();
     }
 
+    function shouldRestoreSavedTutorialPrimaryFocus(plan = activeRoundPlan()) {
+      return focusedSliceRound(plan)
+        && tutorialActive
+        && !roundComplete
+        && !isBouquetFailed(plan);
+    }
+
     function currentTutorialBoardGuidePair() {
       if (
         currentRound !== 1
@@ -17982,7 +17989,9 @@
         }
       }
     }
-    if (!postRenderFocusTarget && shouldRestoreSettledActiveBoardFocus()) {
+    if (!postRenderFocusTarget && shouldRestoreSavedTutorialPrimaryFocus()) {
+      queuePostRenderFocus("tutorialSkipBtn");
+    } else if (!postRenderFocusTarget && shouldRestoreSettledActiveBoardFocus()) {
       boardFocusCell = clampBoardFocusCell();
       queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
     }

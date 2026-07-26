@@ -5,10 +5,10 @@ const BASE_URL = process.env.BLOOM_TEST_URL
 const SAVE_KEY = "bloomTycoonPlayableStateV1";
 
 const CASES = [
-  { label: "desktop-pointer", viewport: { width: 1280, height: 720 }, input: "pointer" },
-  { label: "mobile390-touch", viewport: { width: 390, height: 844 }, input: "touch", mobile: true },
-  { label: "desktop-keyboard-reduced", viewport: { width: 1280, height: 720 }, input: "keyboard", reduced: true },
-  { label: "mobile390-touch-reduced", viewport: { width: 390, height: 844 }, input: "touch", mobile: true, reduced: true }
+  { label: "desktop-pointer", viewport: { width: 1280, height: 720 }, input: "pointer", dismissKey: "Enter" },
+  { label: "mobile390-touch", viewport: { width: 390, height: 844 }, input: "touch", mobile: true, dismissKey: "Enter" },
+  { label: "desktop-keyboard-reduced", viewport: { width: 1280, height: 720 }, input: "keyboard", reduced: true, dismissKey: "Space" },
+  { label: "mobile390-touch-reduced", viewport: { width: 390, height: 844 }, input: "touch", mobile: true, reduced: true, dismissKey: "Space" }
 ];
 
 test.setTimeout(240000);
@@ -1225,14 +1225,72 @@ for (const testCase of CASES) {
         path: `work/round-two-autonomy-hint-${testCase.label}.png`
       });
 
+      const completedSettledState = (await handoffReport(page)).state;
       await activateControl(page, "#tutorialHelpBtn", testCase.input);
       await page.waitForTimeout(100);
-      const completedLessonReplay = await handoffReport(page);
+      let completedLessonReplay = await handoffReport(page);
+      expect(completedLessonReplay.activeElementId, `${testCase.label} completed Help focuses Skip`)
+        .toBe("tutorialSkipBtn");
       expect(completedLessonReplay.thornSwapTiles, `${testCase.label} completed lesson Help does not restore causes`).toBe(0);
       expect(completedLessonReplay.thornTargets, `${testCase.label} completed lesson Help does not restore blockers`).toBe(0);
       expect(completedLessonReplay.guideTiles, `${testCase.label} completed lesson Help does not restore hints`).toBe(0);
       expect(completedLessonReplay.guideOverlays, `${testCase.label} completed lesson Help does not restore overlay`).toBe(0);
-      await activateControl(page, "#tutorialSkipBtn", testCase.input);
+      const completedReplayState = JSON.stringify(completedLessonReplay.state);
+      for (let reload = 1; reload <= 2; reload += 1) {
+        await page.reload({ waitUntil: "networkidle" });
+        completedLessonReplay = await handoffReport(page);
+        expect(
+          completedLessonReplay.activeElementId,
+          `${testCase.label} completed replay reload ${reload} Skip focus`
+        ).toBe("tutorialSkipBtn");
+        expect(
+          completedLessonReplay.tutorialVisible,
+          `${testCase.label} completed replay reload ${reload} visible`
+        ).toBe(true);
+        expect(
+          completedLessonReplay.rovingTileIds,
+          `${testCase.label} completed replay reload ${reload} one board fallback`
+        ).toHaveLength(1);
+        expect(
+          completedLessonReplay.selectedCells,
+          `${testCase.label} completed replay reload ${reload} no selection`
+        ).toEqual([]);
+        expect(completedLessonReplay.tiles, `${testCase.label} completed replay reload ${reload} tiles`)
+          .toBe(64);
+        expect(completedLessonReplay.rows, `${testCase.label} completed replay reload ${reload} rows`)
+          .toBe(8);
+        expect(
+          completedLessonReplay.completeRows,
+          `${testCase.label} completed replay reload ${reload} visible rows`
+        ).toBe(8);
+        expect(
+          completedLessonReplay.overflowX,
+          `${testCase.label} completed replay reload ${reload} no overflow`
+        ).toBe(false);
+        expect(
+          completedLessonReplay.brokenImages,
+          `${testCase.label} completed replay reload ${reload} images`
+        ).toEqual([]);
+        expect(
+          JSON.stringify(completedLessonReplay.state),
+          `${testCase.label} completed replay reload ${reload} exact save`
+        ).toBe(completedReplayState);
+      }
+      await page.keyboard.press(testCase.dismissKey);
+      const dismissedCompletedReplay = await handoffReport(page);
+      expect(
+        dismissedCompletedReplay.tutorialVisible,
+        `${testCase.label} ${testCase.dismissKey} dismisses completed replay`
+      ).toBe(false);
+      expect(dismissedCompletedReplay.activeElementId, `${testCase.label} dismissal returns to Help`)
+        .toBe("tutorialHelpBtn");
+      expect(dismissedCompletedReplay.selectedCells, `${testCase.label} dismissal selects no tile`).toEqual([]);
+      expect(dismissedCompletedReplay.state.moves, `${testCase.label} dismissal spends no move`)
+        .toBe(completedSettledState.moves);
+      expect(dismissedCompletedReplay.state.counts, `${testCase.label} dismissal changes no counts`)
+        .toEqual(completedSettledState.counts);
+      expect(dismissedCompletedReplay.state.board, `${testCase.label} dismissal changes no board`)
+        .toEqual(completedSettledState.board);
 
       await page.addInitScript(({ key, fixtureKey }) => {
         if (sessionStorage.getItem(fixtureKey)) {

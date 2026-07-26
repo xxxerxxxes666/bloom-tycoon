@@ -1,5 +1,12 @@
 # Codex Build Notes
 
+## 2026-07-26 saved Help replay primary focus
+
+- Player-visible result: reloading while an active Round 1-3 tutorial or Help replay is already visible now returns keyboard focus to its existing `Skip` primary action instead of leaving focus on the page. The board's roving tile remains intact beneath the modal instruction, and dismissing replay still returns to the authoritative guide source when one exists or the existing Help fallback otherwise.
+- Authority boundary: startup queues `tutorialSkipBtn` only for an active unfinished focused-round tutorial with no failure, completion, or previously queued stronger focus owner. Restored Thorn teaching, armed Black Candle, Retry, payoff, and ordinary settled board fallback retain their existing precedence. No save field, node, control, copy, timer, move, board, economy, round, or progression changed.
+- Permanent contract: the natural settled Round 2 post-Thorn journey and ordinary matched Round 3 autonomy journey now open Help across pointer, exact-mobile touch, and keyboard input, then perform two reloads on desktop `1280x720` and exact `390x844` under full and reduced motion. Every reload requires visible replay, focused Skip, one preserved roving board tile, no selection or save mutation, 64 tiles/eight complete rows, no overflow, and loaded imagery. Enter and Space are each exercised on desktop and mobile; dismissal must happen once, spend no move, change no counts/board, and focus the existing Help fallback in these guide-free settled states.
+- Verification: the changed R2/R3 matrix passes `8/8` in `6.0m`; failure/Retry, fresh tutorial, Skip-to-guide, payoff, and natural first-bouquet preservation completed `16` cases before the broad debugger-frozen Black Candle visual sampler stopped advancing after its desktop formation capture. That unrelated no-timeout sampler was terminated; its remaining focus-specific armed-relic, fresh-tutorial, and keyboard/payoff checks pass separately `3/3`. Runtime passes `4/4` with 64 tiles/eight rows, exact-mobile control return, no dormant scaffold, horizontal overflow, or broken images. Project/HTML verification and modified spec syntax pass before release.
+
 ## 2026-07-26 settled active-order reload focus
 
 - Player-visible result: ordinary settled Round 2 and Round 3 reloads now return keyboard focus to the board's existing sole roving flower instead of leaving focus on the page. The handoff is reload-only: normal pointer/touch play keeps its current focus behavior.
