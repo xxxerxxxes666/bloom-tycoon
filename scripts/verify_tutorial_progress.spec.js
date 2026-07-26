@@ -3360,6 +3360,163 @@ test("repeated Round 1 exploration still closes through the displayed six-move c
   }
 });
 
+test("Round 1 Shuffle preserves a sufficient two-move Black Candle close", async ({ browser }) => {
+  test.setTimeout(240000);
+  const cases = [
+    {
+      label: "fresh-desktop-pointer-zero-progress",
+      viewport: { width: 1280, height: 720 },
+      input: "pointer",
+      ownedReplay: false,
+      bankTargetMatch: false
+    },
+    {
+      label: "owned-mobile-touch-reduced-target-progress",
+      viewport: { width: 390, height: 844 },
+      input: "touch",
+      ownedReplay: true,
+      bankTargetMatch: true
+    }
+  ];
+  const openingOffOrderPair = [{ x: 3, y: 2 }, { x: 4, y: 2 }];
+
+  const activatePair = async (page, pair, input, { completes = false } = {}) => {
+    const movesBefore = await page.evaluate((key) => (
+      JSON.parse(localStorage.getItem(key) || "{}").moves
+    ), SAVE_KEY);
+    for (const cell of pair) {
+      const tile = page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`);
+      if (input === "touch") {
+        await tile.tap();
+      } else {
+        await tile.click();
+      }
+    }
+    await page.waitForFunction(({ key, movesBefore, completes }) => {
+      const saved = JSON.parse(localStorage.getItem(key) || "{}");
+      return completes
+        ? Boolean(saved.roundComplete)
+        : Number(saved.moves) === Number(movesBefore) - 1
+          && Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled);
+    }, { key: SAVE_KEY, movesBefore, completes }, { timeout: 12000 });
+    if (!completes) {
+      await waitForSettledBoard(page);
+    }
+  };
+
+  for (const testCase of cases) {
+    const context = await browser.newContext({
+      viewport: testCase.viewport,
+      hasTouch: testCase.input === "touch",
+      isMobile: testCase.input === "touch",
+      reducedMotion: testCase.input === "touch" ? "reduce" : "no-preference"
+    });
+    const page = await context.newPage();
+    const consoleErrors = [];
+    const pageErrors = [];
+    const failedRequests = [];
+    page.on("console", (message) => {
+      if (message.type() === "error") consoleErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    page.on("requestfailed", (request) => failedRequests.push(
+      `${request.url()} ${request.failure()?.errorText || ""}`
+    ));
+
+    try {
+      await seedDeterministicMath(page, `shuffle-close-${testCase.label}`);
+      await openFreshNoReview(page, `shuffle-close-${testCase.label}`);
+
+      await activatePair(page, openingOffOrderPair, testCase.input);
+      expect((await guidedRoundOneState(page, `${testCase.label} opening miss`)).counts.slice(0, 6))
+        .toEqual([0, 0, 3, 0, 0, 0]);
+
+      if (testCase.bankTargetMatch) {
+        await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 8500 });
+        await activatePair(page, await hintedPair(page), testCase.input);
+        const banked = await guidedRoundOneState(page, `${testCase.label} banked target`);
+        expect(banked.counts[5] + banked.counts[1]).toBe(3);
+      }
+
+      if (testCase.ownedReplay) {
+        await page.evaluate((key) => {
+          const saved = JSON.parse(localStorage.getItem(key) || "{}");
+          localStorage.setItem(key, JSON.stringify({
+            ...saved,
+            roundOneRestored: true
+          }));
+        }, SAVE_KEY);
+        await page.reload({ waitUntil: "networkidle" });
+      }
+      if (await page.locator("#tutorialSkipBtn").isVisible()) {
+        await page.locator("#tutorialSkipBtn").click();
+      }
+      const expectedShuffles = testCase.bankTargetMatch ? 2 : 3;
+      for (let shuffle = 0; shuffle < expectedShuffles; shuffle += 1) {
+        const movesBefore = (await activeState(page)).moves;
+        await page.locator("#shuffleBtn").click();
+        await page.waitForFunction(({ key, movesBefore }) => (
+          Number(JSON.parse(localStorage.getItem(key) || "{}").moves) === movesBefore - 1
+        ), { key: SAVE_KEY, movesBefore });
+        await waitForSettledBoard(page);
+      }
+
+      const reserve = await guidedRoundOneState(page, `${testCase.label} two-move reserve`);
+      expect(reserve.moves).toBe(2);
+      expect(reserve.counts[5] + reserve.counts[1]).toBe(testCase.bankTargetMatch ? 3 : 0);
+      expect(reserve.hints).toEqual([]);
+      await expect(page.locator("#shuffleBtn")).toBeHidden();
+      await expect(page.locator("#shuffleBtn")).toBeDisabled();
+      await page.locator("#shuffleBtn").evaluate((button) => button.click());
+      expect((await activeState(page)).moves).toBe(2);
+      await page.locator("#tutorialHelpBtn").click();
+      await expect(page.locator("#tutorialCopy")).toHaveText("Match the order flowers.");
+      await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 2500 });
+
+      const closingGuide = await guidedRoundOneState(page, `${testCase.label} strict-four guide`);
+      expect(closingGuide.tutorial).toBe("Match 4 arms Black Candle Vine.");
+      expect(unorderedPairKey(closingGuide.hints)).toBe("5,0 <-> 5,1");
+      expect(await legalFourBoneStarPreview(page)).toMatchObject({ ok: true });
+      await activatePair(page, closingGuide.hints, testCase.input);
+
+      const formed = await guidedRoundOneState(page, `${testCase.label} sufficient lane formed`);
+      const boneDeficitAfterFormation = Math.max(0, 6 - reserve.counts[1] - 4);
+      const finalLaneCapacity = 7 + (boneDeficitAfterFormation > 0 ? 1 : 0);
+      const needsTargetCarry = 8 - reserve.counts[5] + boneDeficitAfterFormation > finalLaneCapacity;
+      expect(formed.moves).toBe(1);
+      expect(formed.counts[1] - reserve.counts[1]).toBe(4);
+      expect(formed.counts[5] - reserve.counts[5]).toBe(needsTargetCarry ? 3 : 0);
+      expect(formed.tutorial).toBe("Swap right to burn this row.");
+      expect(formed.roundComplete).toBe(false);
+
+      await page.reload({ waitUntil: "networkidle" });
+      await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 4000 });
+      const reloaded = await guidedRoundOneState(page, `${testCase.label} sufficient lane reload`);
+      expect(reloaded.moves).toBe(1);
+      expect(reloaded.counts).toEqual(formed.counts);
+      expect(reloaded.tutorial).toBe("Swap right to burn this row.");
+      await expect(page.locator(".impact-sigil, .objective-flight, .order-pulse")).toHaveCount(0);
+
+      await activatePair(page, reloaded.hints, testCase.input, { completes: true });
+      const completed = await guidedRoundOneState(page, `${testCase.label} Shuffle close complete`);
+      expect(completed.moves).toBe(0);
+      expect(completed.roundComplete).toBe(true);
+      expect(completed.counts[5]).toBeGreaterThanOrEqual(8);
+      expect(completed.counts[1]).toBeGreaterThanOrEqual(6);
+      expect(completed.bouquet).toBe("Bouquet Complete · 14/14");
+      expect(completed.tiles).toBe(64);
+      expect(completed.rows).toBe(8);
+      expect(completed.overflowX).toBe(false);
+      expect(completed.brokenImages).toEqual([]);
+      expect(consoleErrors).toEqual([]);
+      expect(pageErrors).toEqual([]);
+      expect(failedRequests).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  }
+});
+
 test("later off-order primary match stays truthful when its cascade advances the order", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
   await seedDeterministicMath(page, "later-off-order-seed-0");

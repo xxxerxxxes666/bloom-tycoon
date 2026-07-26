@@ -6279,6 +6279,7 @@
     body.round-one-active #renewBtn,
     body.round-one-active:not(.first-move-made) #shuffleBtn,
     body.round-one-active.tutorial-active #shuffleBtn,
+    body.round-one-active.round-one-closing-reserve #shuffleBtn,
     body.round-one-active #roundCeremony {
       display: none !important;
     }
@@ -10715,14 +10716,25 @@
       const [fillerA, fillerB, fillerC, fillerD] = fillers;
       const thornNeeded = Math.max(0, thornTarget.needed - targetProgress(thornTarget));
       const boneNeeded = Math.max(0, boneTarget.needed - targetProgress(boneTarget));
+      const boneNeededAfterFormation = Math.max(0, boneNeeded - 4);
+      const finalLaneCapacity = BOARD_SIZE - 1 + (boneNeededAfterFormation > 0 ? 1 : 0);
+      const needsTargetCarry = thornNeeded + boneNeededAfterFormation > finalLaneCapacity;
+      if (needsTargetCarry) {
+        for (let y = 0; y < BOARD_SIZE; y += 1) {
+          for (let x = 0; x < BOARD_SIZE; x += 1) {
+            board[y][x] = fillers[(x + y * 2) % fillers.length];
+          }
+        }
+      }
       // Adjacent swap at (5,0) -> (5,1) creates exactly four Bone Stars.
-      // The row burn carries any remaining tutorial targets without extending the run.
+      // When the final lane cannot hold every deficit, the same swap also makes
+      // three real Thorn Roses so the visible two-move close remains sufficient.
       board[0][0] = boneNeeded > 4 ? bone : fillerD;
       board[0][1] = boneNeeded > 5 ? bone : fillerA;
       board[0][2] = thornNeeded > 0 ? thorn : fillerA;
       board[0][3] = thornNeeded > 1 ? thorn : fillerB;
       board[0][4] = bone;
-      board[0][5] = fillerC;
+      board[0][5] = needsTargetCarry ? thorn : fillerC;
       board[0][6] = bone;
       board[0][7] = bone;
       board[1][0] = fillerA;
@@ -10738,9 +10750,13 @@
       board[2][2] = fillerD;
       board[2][3] = fillerA;
       board[2][4] = fillerA;
-      board[2][5] = fillerB;
+      board[2][5] = needsTargetCarry ? thorn : fillerB;
       board[2][6] = fillerD;
       board[2][7] = fillerC;
+      if (needsTargetCarry) {
+        board[3][5] = thorn;
+        board[4][5] = fillerD;
+      }
     }
 
     function seedRoundOneFinalBlackCandleLane(plan = activeRoundPlan()) {
@@ -12812,12 +12828,11 @@
 
     function isRoundOneFirstTargetAgencyHandoffActive(plan = activeRoundPlan()) {
       const guidedStage = roundOneGuidedStage(plan);
-      const lowMoveCorrection = roundOneLastSwapMissedOrder
-        && moves === 2
+      const lowMoveClose = moves === 2
         && guidedStage === "black-candle";
       return plan.round === 1
         && hasMadeValidMove
-        && (guidedStage === "thorn-followup" || lowMoveCorrection)
+        && (guidedStage === "thorn-followup" || lowMoveClose)
         && !roundComplete
         && !isBouquetFailed(plan)
         && !isArmedLineRelicGuidanceActive()
@@ -13425,6 +13440,10 @@
       document.body.classList.toggle("thorn-lesson-active", activePlan.round === 2 && Boolean(activePlan.thornGoal) && thornGoalProgress(activePlan) === 0 && !roundComplete);
       document.body.classList.toggle("round-two-followup-cue", isRestoredRoundTwoGuideActive() && hasMadeValidMove && idleHintCells.size === 2 && !roundComplete);
       document.body.classList.toggle("first-move-made", hasMadeValidMove);
+      document.body.classList.toggle(
+        "round-one-closing-reserve",
+        roundOneActive && moves === 2 && !roundComplete && !roundObjectivesComplete(activePlan)
+      );
       const roundOneBlackCandleCue = roundOneActive && !roundComplete && $("firstSwapCue").textContent.includes("Black Candle Vine");
       document.body.classList.toggle("round-one-black-candle-cue", roundOneBlackCandleCue);
       const roundOneFollowupCue = roundOneActive && !roundComplete && $("firstSwapCue").textContent.includes("Keep matching");
@@ -13885,6 +13904,7 @@
       $("shuffleBtn").disabled = isResolving
         || roundComplete
         || moves < 1
+        || (currentRound === 1 && moves === 2 && !roundObjectivesComplete(activePlan))
         || (currentRound === 1 && tutorialActive);
       $("ritualLog").innerHTML = ritualMessage;
       $("renewBtn").textContent = roundComplete ? "Next Bouquet" : failed ? "Retry Bouquet" : "Renew Bouquet";
@@ -17044,6 +17064,13 @@
       if (isResolving) {
         return;
       }
+      if (
+        currentRound === 1
+        && moves === 2
+        && !roundObjectivesComplete(activeRoundPlan())
+      ) {
+        return;
+      }
       if (currentRound === 1 && tutorialActive) {
         return;
       }
@@ -17072,6 +17099,14 @@
       armedLineRelic = null;
       ritualMessage = "The greenhouse table shuffles. One move is spent.";
       build();
+      if (
+        currentRound === 1
+        && moves === 2
+        && !roundObjectivesComplete(activeRoundPlan())
+      ) {
+        roundOneLastSwapMissedOrder = true;
+        beginRoundOneAgencyDiscovery();
+      }
       if (isBouquetFailed()) {
         markBouquetFailed();
       } else {
