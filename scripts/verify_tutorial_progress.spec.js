@@ -3594,6 +3594,14 @@ test.describe("Round 1 Shuffle preserves a sufficient two-move Black Candle clos
         await expect(page.locator("#tutorialCopy")).toHaveText("Match 4 arms Black Candle Vine.");
         await expect(page.locator("#tile-5-0")).toBeFocused();
         await expect(page.locator("#board .tile[tabindex='0']")).toHaveCount(1);
+        await expect(page.locator("#board .tile[tabindex='0']")).toHaveAttribute("id", "tile-5-0");
+        await expect(page.locator("#tile-5-0")).toHaveAttribute("tabindex", "0");
+        await expect(page.locator("#tile-0-0")).toHaveAttribute("tabindex", "-1");
+        await expect(page.locator("#tile-5-1")).toHaveAttribute("tabindex", "-1");
+        await page.keyboard.press("Shift+Tab");
+        await expect(page.locator("#tutorialSkipBtn")).toBeFocused();
+        await page.keyboard.press("Tab");
+        await expect(page.locator("#tile-5-0")).toBeFocused();
 
         await page.locator("#tutorialSkipBtn").click();
         await expect(page.locator("#tutorialHelpBtn")).toBeVisible();
@@ -3602,6 +3610,14 @@ test.describe("Round 1 Shuffle preserves a sufficient two-move Black Candle clos
         await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 2500 });
         expect(unorderedPairKey(await hintedPair(page))).toBe("5,0 <-> 5,1");
         await expect(page.locator("#tutorialCopy")).toHaveText("Match 4 arms Black Candle Vine.");
+        await expect(page.locator("#tile-5-0")).toBeFocused();
+        await expect(page.locator("#board .tile[tabindex='0']")).toHaveAttribute("id", "tile-5-0");
+        await expect(page.locator("#tile-5-0")).toHaveAttribute("tabindex", "0");
+        await expect(page.locator("#tile-0-0")).toHaveAttribute("tabindex", "-1");
+        await expect(page.locator("#tile-5-1")).toHaveAttribute("tabindex", "-1");
+        await page.keyboard.press("Shift+Tab");
+        await expect(page.locator("#tutorialSkipBtn")).toBeFocused();
+        await page.keyboard.press("Tab");
         await expect(page.locator("#tile-5-0")).toBeFocused();
       } else {
         await page.locator("#tutorialHelpBtn").click();
@@ -3614,6 +3630,7 @@ test.describe("Round 1 Shuffle preserves a sufficient two-move Black Candle clos
       expect(unorderedPairKey(closingGuide.hints)).toBe("5,0 <-> 5,1");
       await expect(page.locator("#tile-5-0")).toBeFocused();
       await expect(page.locator("#board .tile[tabindex='0']")).toHaveCount(1);
+      await expect(page.locator("#board .tile[tabindex='0']")).toHaveAttribute("id", "tile-5-0");
       expect(await legalFourBoneStarPreview(page)).toMatchObject({ ok: true });
       await activatePair(page, closingGuide.hints, testCase.input, {
         guidedKeyboard: testCase.input === "keyboard"

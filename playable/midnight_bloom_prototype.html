@@ -13564,7 +13564,13 @@
       renderTutorialPanel();
       const boardEl = $("board");
       const focusedTileBeforeRender = boardTileFromElement(document.activeElement);
-      if (focusedTileBeforeRender) {
+      const queuedBoardFocus = /^tile-(\d+)-(\d+)$/.exec(postRenderFocusTarget);
+      if (queuedBoardFocus) {
+        boardFocusCell = clampBoardFocusCell({
+          x: Number(queuedBoardFocus[1]),
+          y: Number(queuedBoardFocus[2])
+        });
+      } else if (focusedTileBeforeRender) {
         boardFocusCell = clampBoardFocusCell(focusedTileBeforeRender);
       }
       boardFocusCell = clampBoardFocusCell();

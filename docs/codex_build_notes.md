@@ -1,5 +1,12 @@
 # Codex Build Notes
 
+## 2026-07-26 queued board-focus ownership
+
+- Player-visible result: when the restored two-move Black Candle guide transfers focus to its authored `(5,0)` source, that source now also owns the board's sole roving `tabindex="0"`. Keyboard focus and arrow/Tab ownership no longer split between the visible source and stale `(0,0)` fallback after the delayed guide or Skip-to-Help replay.
+- Scope: queued board-tile focus now takes precedence over preserving the previously focused tile during the same render. Non-board focus targets, copy, guide timing, selection, moves, matching, saves, economy, controls, and progression are unchanged.
+- Permanent contract: all fresh `0/14` and owned `3/14` desktop/exact-mobile interruption cases now require `#tile-5-0` to be both DOM-focused and the sole roving tile after the restored guide and Help replay, with `(0,0)` and `(5,1)` at `tabindex="-1"`. Shift+Tab moves to visible Skip and Tab returns to `(5,0)`, then the matrix completes formation, saved-lane reload, activation, and `14/14` through pointer, touch, Enter, and Space.
+- Verification: the strengthened interruption matrix passes `6/6` in `15.6s`. Agency recovery, settled-state reload, tutorial Shuffle protection, rapid keyboard refusal, and complete keyboard board/payoff focus pass together `5/5`. Project/HTML verifiers, every spec and extracted inline JavaScript syntax, and `git diff --check` pass before release.
+
 ## 2026-07-26 Round 1 reserve reload continuity
 
 - Player-visible result: reloading immediately after the paid Shuffle that reaches the protected two-move First Bouquet reserve now restores a visible enabled board focus immediately, then returns the existing strict-four Black Candle guide and exact `Match 4 arms Black Candle Vine.` copy on its existing short correction delay. The authored `(5,0) <-> (5,1)` source becomes the sole roving focused tile; Help replay returns to that same source instead of leaving focus on Skip.
