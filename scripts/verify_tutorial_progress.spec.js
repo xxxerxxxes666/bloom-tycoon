@@ -2723,6 +2723,18 @@ test("Skip returns focus to the authoritative Round 1 guide", async ({ browser }
     { label: "desktop-pointer", viewport: { width: 1280, height: 720 }, input: "pointer" },
     { label: "mobile390-touch", viewport: { width: 390, height: 844 }, input: "touch", mobile: true }
   ];
+  const activateSkip = async (page, input) => {
+    const skip = page.locator("#tutorialSkipBtn");
+    if (input === "touch") {
+      const box = await skip.boundingBox();
+      await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+    } else if (input === "pointer") {
+      await skip.click();
+    } else {
+      await skip.focus();
+      await page.keyboard.press(input);
+    }
+  };
 
   for (const testCase of cases) {
     const context = await browser.newContext({
@@ -2747,6 +2759,52 @@ test("Skip returns focus to the authoritative Round 1 guide", async ({ browser }
     try {
       await seedDeterministicMath(page, `skip-focus-${testCase.label}`);
       await openFreshNoReview(page, `skip-focus-${testCase.label}`);
+      await expect(page.locator("#tutorialPanel")).toBeVisible({ timeout: 3000 });
+      expect(unorderedPairKey(await hintedPair(page))).toBe("1,0 <-> 1,1");
+      const beforeOpeningSkip = await page.evaluate(
+        (key) => JSON.parse(localStorage.getItem(key) || "{}"),
+        SAVE_KEY
+      );
+      await activateSkip(page, testCase.input);
+      await expect(page.locator("#tutorialPanel")).toBeHidden();
+      await expect.poll(async () => page.evaluate(() => document.activeElement?.id || document.activeElement?.tagName))
+        .toBe("tile-1-0");
+      await expect(page.locator("#board .tile[tabindex='0']")).toHaveAttribute("id", "tile-1-0");
+      await expect(page.locator("#board .tile.selected, #board .tile.sel")).toHaveCount(0);
+      const afterOpeningSkip = await page.evaluate(
+        (key) => JSON.parse(localStorage.getItem(key) || "{}"),
+        SAVE_KEY
+      );
+      expect(afterOpeningSkip.moves, `${testCase.label} opening Skip spends no move`)
+        .toBe(beforeOpeningSkip.moves);
+      expect(afterOpeningSkip.counts, `${testCase.label} opening Skip changes no objective`)
+        .toEqual(beforeOpeningSkip.counts);
+      expect(afterOpeningSkip.board, `${testCase.label} opening Skip preserves the board`)
+        .toEqual(beforeOpeningSkip.board);
+
+      await page.reload({ waitUntil: "networkidle" });
+      await expect(page.locator("#tutorialPanel")).toBeHidden();
+      await expect(page.locator("#tile-1-0")).toBeFocused();
+      await expect(page.locator("#board .tile[tabindex='0']")).toHaveCount(1);
+      await expect(page.locator("#board .tile[tabindex='0']")).toHaveAttribute("id", "tile-1-0");
+      await expect(page.locator("#tile-1-0")).toHaveAttribute("tabindex", "0");
+      await expect(page.locator("#tile-1-1")).toHaveAttribute("tabindex", "-1");
+      await expect(page.locator("#board .tile.selected, #board .tile.sel")).toHaveCount(0);
+      expect(unorderedPairKey(await hintedPair(page))).toBe("1,0 <-> 1,1");
+      if (testCase.label === "desktop-pointer" || testCase.label === "mobile390-touch") {
+        await page.screenshot({
+          path: `work/opening-skip-reload-focus-${testCase.mobile ? "mobile390" : "desktop"}.png`,
+          fullPage: true
+        });
+      }
+      await page.keyboard.press("Tab");
+      await expect(page.locator("#tutorialHelpBtn")).toBeFocused();
+      await page.keyboard.press("Shift+Tab");
+      await expect(page.locator("#tile-1-0")).toBeFocused();
+
+      await page.locator("#tutorialHelpBtn").click();
+      await expect(page.locator("#tutorialPanel")).toBeVisible();
+      await expect(page.locator("#tutorialSkipBtn")).toBeFocused();
       await clickGuidedSwap(page);
       await clickGuidedSwap(page);
       await clickGuidedSwap(page);
@@ -2755,16 +2813,7 @@ test("Skip returns focus to the authoritative Round 1 guide", async ({ browser }
       await expect(page.locator("#board .tile[tabindex='0']")).toHaveAttribute("id", "tile-5-0");
       const beforeSkip = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}"), SAVE_KEY);
 
-      const skip = page.locator("#tutorialSkipBtn");
-      if (testCase.input === "touch") {
-        const box = await skip.boundingBox();
-        await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
-      } else if (testCase.input === "pointer") {
-        await skip.click();
-      } else {
-        await skip.focus();
-        await page.keyboard.press(testCase.input);
-      }
+      await activateSkip(page, testCase.input);
 
       await expect(page.locator("#tutorialPanel")).toBeHidden();
       await expect(page.locator("#tile-5-0")).toBeFocused();
@@ -2777,11 +2826,6 @@ test("Skip returns focus to the authoritative Round 1 guide", async ({ browser }
       expect(afterSkip.moves, `${testCase.label} Skip spends no move`).toBe(beforeSkip.moves);
       expect(afterSkip.counts, `${testCase.label} Skip changes no objective`).toEqual(beforeSkip.counts);
       expect(afterSkip.board, `${testCase.label} Skip preserves the board`).toEqual(beforeSkip.board);
-
-      await page.keyboard.press("Shift+Tab");
-      await page.keyboard.press("Tab");
-      await expect(page.locator("#tile-5-0")).toBeFocused();
-      await expect(page.locator("#board .tile[tabindex='0']")).toHaveAttribute("id", "tile-5-0");
 
       await page.reload({ waitUntil: "networkidle" });
       await expect(page.locator("#tutorialPanel")).toBeHidden();
@@ -5472,6 +5516,10 @@ test("Round 1 tutorial board choreography derives from the authoritative hinted 
     await expect(page.locator("#tutorialPanel")).toBeVisible({ timeout: 3000 });
     const reloadedPair = await hintedPair(page);
     expect(reloadedPair).toEqual(pair);
+    expect(
+      await page.evaluate(() => document.activeElement?.id || document.activeElement?.tagName),
+      `${config.label} fresh unskipped reload does not steal board focus`
+    ).not.toBe(`tile-${pair[0].x}-${pair[0].y}`);
     guide = await firstActionGuideReport(page);
     assertFirstActionGuide(guide, reloadedPair, `pre-move reload ${config.label}`, { mobile: config.mobile });
 

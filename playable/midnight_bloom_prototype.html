@@ -14317,6 +14317,7 @@
       }
       const guidedFocusCell = lineRelicGuidance()?.source
         || currentTutorialBoardGuidePair()?.source
+        || firstHintFocusCell()
         || null;
       const skippingThornLesson = isAuthoritativeRoundTwoThornLesson();
       const skippingRoundOneAgency = isRoundOneAgencyHandoffActive();
@@ -14342,9 +14343,11 @@
       if (guidedFocusCell && window.requestAnimationFrame) {
         const focusCell = { ...boardFocusCell };
         window.requestAnimationFrame(() => {
-          if (tutorialSkipped && !tutorialActive && !roundComplete && !isBouquetFailed()) {
-            focusBoardCell(focusCell.x, focusCell.y);
-          }
+          window.requestAnimationFrame(() => {
+            if (tutorialSkipped && !tutorialActive && !roundComplete && !isBouquetFailed()) {
+              focusBoardCell(focusCell.x, focusCell.y);
+            }
+          });
         });
       }
       saveProgress();
@@ -17928,6 +17931,9 @@
         idleHintCells = new Set(firstMove.map((cell) => `${cell.x},${cell.y}`));
         boardFocusCell = clampBoardFocusCell(firstMove[0]);
         $("firstSwapCue").textContent = roundStartCueText(activeRoundPlan(), firstMove);
+        if (tutorialSkipped && !tutorialActive) {
+          queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
+        }
       }
     } else if (currentRound === 1 && !roundComplete && hasMadeValidMove && !isBouquetFailed()) {
       seedRoundOneGuidedMove(activeRoundPlan());

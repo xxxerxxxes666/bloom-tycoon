@@ -1,5 +1,12 @@
 # Codex Build Notes
 
+## 2026-07-26 pre-move Skip reload focus
+
+- Player-visible result: reloading after dismissing the opening Round 1 tutorial now returns keyboard focus to the same glowing source flower instead of leaving focus on the page. The opening pair, Help action, moves, bouquet counts, board, and selection remain unchanged.
+- Scope: startup queues the already-derived opening source only for an unfinished, untouched Round 1 whose tutorial was previously skipped. Fresh unskipped tutorials, active Help replay, later rounds, failure, completion, and ceremony do not enter this branch.
+- Permanent contract: pointer, Enter, Space, and exact-mobile touch paths now cover opening Skip, immediate source focus, reload before the first move, active-element/sole-roving agreement, Tab to Help and Shift+Tab back, replay, natural Black Candle formation, armed reload, activation, and payoff.
+- Verification: the extended six-case Skip matrix, both no-review Round 1 journeys, first-action choreography, exact-mobile Skip touch contract, all six Shuffle reserve cases, the integrated eight-case Round 2 handoff suite, four runtime budgets, project/HTML verification, every spec syntax check, and extracted inline-JavaScript syntax pass. The matrix also asserts that a fresh unskipped reload does not take board focus.
+
 ## 2026-07-26 tutorial Skip focus handoff
 
 - Player-visible result: dismissing an active Round 1 tutorial now returns keyboard focus to the guide the player was already following instead of dropping focus to the page. An armed Black Candle returns to its activation source; an ordinary tutorial returns to its current pair source.
