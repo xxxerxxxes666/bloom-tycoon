@@ -6290,26 +6290,88 @@
     body.round-one-active.round-one-black-candle-cue .first-swap-cue { position:relative; z-index:12; }
     body.restored-greenhouse-handoff.round-one-active .first-swap-cue { display:none!important; }
     body.focused-active-play.final-harvest-active:not(.tutorial-active) .first-swap-cue,
-    body.focused-active-play.final-harvest-transfer-active:not(.tutorial-active) .first-swap-cue {
+    body.focused-active-play.final-harvest-transfer-active:not(.tutorial-active) .first-swap-cue,
+    body.final-harvest-active .tutorial-panel.final-harvest-tutorial,
+    body.final-harvest-transfer-active .tutorial-panel.final-harvest-tutorial {
+      --final-harvest-cue-contrast-bg: #2c1909;
       display: flex;
+      position: relative;
+      z-index: 20;
       width: max-content;
       max-width: calc(100% - 20px);
-      min-height: 30px;
+      min-height: 34px;
       margin: 7px auto 0;
-      padding: 5px 10px;
+      padding: 6px 11px;
       align-items: center;
       gap: 8px;
-      border: 1px solid #b9874d;
+      border: 1px solid #d7b16d;
       border-radius: 999px;
-      color: #fff0b4;
-      background: linear-gradient(90deg, #17100c, #30200e, #17100c);
-      box-shadow: 0 0 14px #d7b16d38, inset 0 0 9px #000;
-      font: 800 14px Georgia,serif;
+      opacity: 1;
+      color: #fff6d2;
+      background: linear-gradient(90deg, #100906, var(--final-harvest-cue-contrast-bg), #100906);
+      box-shadow: 0 0 16px #d7b16d52, inset 0 0 9px #000;
+      font: 900 15px/1.1 Georgia,serif;
       letter-spacing: .035em;
       text-align: center;
+      text-shadow: 0 1px 0 #000, 0 0 7px #d7b16d38;
     }
-    body.final-harvest-transfer-active .tutorial-help {
+
+    body.final-harvest-active .first-swap-cue::before,
+    body.final-harvest-transfer-active .first-swap-cue::before,
+    body.final-harvest-active .tutorial-panel.final-harvest-tutorial .tutorial-icon,
+    body.final-harvest-transfer-active .tutorial-panel.final-harvest-tutorial .tutorial-icon {
+      border-color: #b9874d;
+      color: #f0c477;
+      opacity: 1;
+      font-weight: 900;
+    }
+
+    body.final-harvest-active .tutorial-help,
+    body.final-harvest-transfer-active .tutorial-help,
+    body.final-harvest-handoff-active .tutorial-help,
+    body.final-harvest-active .tutorial-panel.final-harvest-tutorial .tutorial-skip,
+    body.final-harvest-transfer-active .tutorial-panel.final-harvest-tutorial .tutorial-skip,
+    body.final-harvest-active .controls,
+    body.final-harvest-transfer-active .controls,
+    body.final-harvest-handoff-active .controls,
+    body.final-harvest-transfer-active #renewBtn,
+    body.final-harvest-handoff-active #renewBtn,
+    body.final-harvest-handoff-active #restoreGreenhouseBtn,
+    body.final-harvest-handoff-active #nextOrderBtn,
+    body.final-harvest-handoff-active #payoffTransaction,
+    body.final-harvest-handoff-active #restorationCopy {
       display: none !important;
+    }
+
+    body.final-harvest-active .order-contract-outcome,
+    body.final-harvest-active .order-contract-owned,
+    body.final-harvest-active .greenhouse-restoration-dial .restoration-dial-phase,
+    body.final-harvest-active .greenhouse-restoration-dial .restoration-dial-goals,
+    body.final-harvest-transfer-active .order-contract-outcome,
+    body.final-harvest-transfer-active .order-contract-owned,
+    body.final-harvest-transfer-active .greenhouse-restoration-dial .restoration-dial-phase,
+    body.final-harvest-transfer-active .greenhouse-restoration-dial .restoration-dial-goals,
+    body.final-harvest-handoff-active .order-contract-outcome,
+    body.final-harvest-handoff-active .order-contract-owned,
+    body.final-harvest-handoff-active .greenhouse-restoration-dial .restoration-dial-phase,
+    body.final-harvest-handoff-active .greenhouse-restoration-dial .restoration-dial-goals {
+      display: none !important;
+    }
+
+    body.final-harvest-active .objective-target.final-harvest-target,
+    body.final-harvest-active .contract-ingredient.final-harvest-target {
+      outline: 1px solid #f0c477;
+      outline-offset: 1px;
+    }
+
+    body.final-harvest-active .objective-target.final-harvest-target .objective-target-name,
+    body.final-harvest-active .objective-target.final-harvest-target .objective-target-count,
+    body.final-harvest-active .contract-ingredient.final-harvest-target .contract-ingredient-deficit {
+      color: #fff0b4;
+    }
+
+    body.final-harvest-active .tile.final-harvest-match:not(.final-harvest-endpoint) {
+      outline-width: 2px;
     }
     body.round-one-active .board { touch-action:manipulation; }
     /* Legacy verifier marker: body.round-one-active.round-one-complete .objective,
@@ -8341,15 +8403,18 @@
         margin: 0 0 2px;
       }
 
-      body.focused-active-play.final-harvest-active:not(.tutorial-active) .first-swap-cue {
-        justify-self: start;
-        max-width: calc(100% - 52px);
-        margin-left: 8px;
-      }
-
-      body.focused-active-play.final-harvest-active:not(.tutorial-active) .main > .tutorial-help {
-        justify-self: end;
-        margin-right: 8px;
+      body.focused-active-play.final-harvest-active:not(.tutorial-active) .first-swap-cue,
+      body.focused-active-play.final-harvest-transfer-active:not(.tutorial-active) .first-swap-cue,
+      body.final-harvest-active .tutorial-panel.final-harvest-tutorial,
+      body.final-harvest-transfer-active .tutorial-panel.final-harvest-tutorial {
+        justify-self: center;
+        width: calc(100% - 16px);
+        max-width: none;
+        min-height: 34px;
+        margin: 0 8px 1px;
+        padding: 5px 8px;
+        font-size: 13px;
+        line-height: 1.1;
       }
 
       body.focused-active-play:not(.focused-slice-failed) .board,
@@ -12941,7 +13006,7 @@
         render();
         ownedReplayRenewalTimer = window.setTimeout(
           settleOwnedReplayRenewal,
-          Math.max(80, 520 - finalHarvestLead)
+          Math.max(80, (finalHarvestRenewal ? 480 : 520) - finalHarvestLead)
         );
         return;
       }
@@ -12959,7 +13024,7 @@
           settleOwnedReplayRenewal,
           finalHarvestRenewal ? 450 : 520
         );
-      }, finalHarvestRenewal ? 600 : 660);
+      }, finalHarvestRenewal ? 560 : 660);
     }
 
     function renderFocusedPayoffCeremony(ceremony) {
@@ -12976,13 +13041,15 @@
       panel.dataset.assemblyReady = String(!presentationPending);
       panel.classList.toggle("owned-replay", ceremony.ownedReplay);
       $("restorationTitle").textContent = ceremony.title;
-      $("restorationState").textContent = ownedRenewalPhase === "binding"
-        ? "BOUQUET BOUND · OWNED CONSERVATORY"
-        : ownedRenewalPhase === "transfer"
-          ? `TENDING WITH ${ceremony.plan.name.toUpperCase()}`
-          : ["renewal", "acknowledgment"].includes(ownedRenewalPhase)
-            ? "CONSERVATORY NOURISHED · REMAINS 100% RAISED"
-            : ceremony.state;
+      $("restorationState").textContent = finalHarvestCommit?.phase === "ceremony" && !ceremony.ownedReplay
+        ? `BOUQUET BOUND · ${ceremony.plan.name.toUpperCase()}`
+        : ownedRenewalPhase === "binding"
+          ? "BOUQUET BOUND · OWNED CONSERVATORY"
+          : ownedRenewalPhase === "transfer"
+            ? `TENDING WITH ${ceremony.plan.name.toUpperCase()}`
+            : ["renewal", "acknowledgment"].includes(ownedRenewalPhase)
+              ? "CONSERVATORY NOURISHED · REMAINS 100% RAISED"
+              : ceremony.state;
       $("payoffTransaction").textContent = ceremony.transaction;
       $("restorationCopy").textContent = ceremony.copy;
       $("payoffTransaction").style.visibility = presentationPending ? "hidden" : "";
@@ -13621,6 +13688,9 @@
       }
       if (isBouquetFailed(plan)) {
         return "Moves ended. Retry the bouquet.";
+      }
+      if (finalHarvestCommit?.phase === "ceremony" && !isOwnedRestorationReplay()) {
+        return "Bouquet bound.";
       }
       if (finalHarvestTransferActive()) {
         return finalHarvestCue(finalHarvestCommit);

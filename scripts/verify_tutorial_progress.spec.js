@@ -2450,8 +2450,9 @@ for (const viewport of [
     await page.locator("#tutorialSkipBtn").click();
     await expect(page.locator("#tutorialPanel")).toBeHidden();
     await expect(page.locator("#firstSwapCue")).toBeVisible();
-    await expect(page.locator("#shuffleBtn")).toBeVisible();
-    await expect(page.locator("#shuffleBtn")).toBeEnabled();
+    await expect(page.locator("body")).toHaveAttribute("data-final-harvest-phase", "eligible");
+    await expect(page.locator("#shuffleBtn")).toBeHidden();
+    await expect(page.locator("#tutorialHelpBtn")).toBeHidden();
     await expect(page.locator(".first-action-swap-guide")).toHaveCount(0);
     await expect(page.locator(".swap-path-arrow")).toHaveCount(0);
     assertArmedRelicGuidance(
@@ -2460,22 +2461,6 @@ for (const viewport of [
       `${viewport.label} Skip restores persistent Black Candle cue`,
       viewport.mobile,
       { expectedArrows: 0 }
-    );
-    await page.locator("#tutorialHelpBtn").click();
-    await expect(page.locator("#tutorialPanel")).toBeVisible();
-    await expect(page.locator("#firstSwapCue")).toBeHidden();
-    await expect(page.locator("#shuffleBtn")).toBeHidden();
-    await expect(page.locator("#shuffleBtn")).toBeDisabled();
-    assertFirstActionGuide(
-      await firstActionGuideReport(page),
-      await hintedPair(page),
-      `${viewport.label} Help replay guide`,
-      { mobile: viewport.mobile, stage: "black-candle-activation" }
-    );
-    assertNaturalBlackCandleTutorial(
-      await guidedRoundOneState(page, "Black Candle armed after Help replay"),
-      viewport.mobile,
-      `${viewport.label} Help replay`
     );
 
     await clickHighlightedPair(page);

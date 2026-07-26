@@ -224,6 +224,139 @@ async function journeyState(page) {
   }, SAVE_KEY);
 }
 
+async function finalHarvestAuthorityState(page) {
+  return page.evaluate(() => {
+    const visible = (node) => {
+      if (!node) return false;
+      const rect = node.getBoundingClientRect();
+      const style = getComputedStyle(node);
+      return style.display !== "none"
+        && style.visibility !== "hidden"
+        && Number(style.opacity || 1) !== 0
+        && rect.width > 0
+        && rect.height > 0;
+    };
+    const visibleText = (node) => {
+      if (!visible(node)) return "";
+      const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
+      const parts = [];
+      while (walker.nextNode()) {
+        const parent = walker.currentNode.parentElement;
+        if (parent && visible(parent)) {
+          const text = walker.currentNode.textContent.replace(/\s+/g, " ").trim();
+          if (text) parts.push(text);
+        }
+      }
+      return parts.join(" ").replace(/\s+/g, " ").trim();
+    };
+    const rgb = (value) => {
+      const hex = String(value).trim().match(/^#([0-9a-f]{6})$/i)?.[1];
+      if (hex) {
+        return [0, 2, 4].map((offset) => Number.parseInt(hex.slice(offset, offset + 2), 16));
+      }
+      const channels = String(value).match(/[\d.]+/g)?.slice(0, 3).map(Number) || [];
+      return channels.length === 3 ? channels : null;
+    };
+    const luminance = (value) => {
+      const channels = rgb(value);
+      if (!channels) return null;
+      const linear = channels.map((channel) => {
+        const normalized = channel / 255;
+        return normalized <= 0.04045
+          ? normalized / 12.92
+          : ((normalized + 0.055) / 1.055) ** 2.4;
+      });
+      return linear[0] * 0.2126 + linear[1] * 0.7152 + linear[2] * 0.0722;
+    };
+    const contrast = (foreground, background) => {
+      const first = luminance(foreground);
+      const second = luminance(background);
+      if (first === null || second === null) return 0;
+      return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
+    };
+    const finalTutorial = document.querySelector("#tutorialPanel.final-harvest-tutorial");
+    const finalTutorialVisible = visible(finalTutorial);
+    const cue = finalTutorialVisible
+      ? finalTutorial
+      : document.querySelector("#firstSwapCue");
+    const commandNode = finalTutorialVisible
+      ? document.querySelector("#tutorialCopy")
+      : cue;
+    const categoryNode = finalTutorialVisible
+      ? finalTutorial.querySelector(".tutorial-icon")
+      : null;
+    const cueStyle = cue ? getComputedStyle(cue) : null;
+    const commandStyle = commandNode ? getComputedStyle(commandNode) : cueStyle;
+    const categoryStyle = categoryNode
+      ? getComputedStyle(categoryNode)
+      : cue ? getComputedStyle(cue, "::before") : null;
+    const cueRect = cue?.getBoundingClientRect();
+    const cueContrastBackground = cueStyle
+      ?.getPropertyValue("--final-harvest-cue-contrast-bg").trim() || "";
+    const actionLikeControls = Array.from(document.querySelectorAll(
+      "button, a[href], input, select, textarea, summary, [role='button'], [tabindex]"
+    ))
+      .filter((node) => !node.closest(".board") && visible(node))
+      .map((node) => ({
+        id: node.id || "",
+        kind: node.tagName.toLowerCase(),
+        text: visibleText(node) || node.getAttribute("aria-label") || node.getAttribute("title") || ""
+      }))
+      .filter((entry, index, entries) => (
+        entries.findIndex((candidate) => candidate.id === entry.id && candidate.text === entry.text) === index
+      ));
+    const sharedHudText = [
+      "#objective",
+      "#bouquetProgress",
+      "#mobileGreenhouseProgress",
+      "#heroRestorationDial",
+      "#firstSwapCue",
+      "#tutorialPanel",
+      "#nextOrderCue",
+      "#activeOrders",
+      "#ritualLog",
+      "#roundOneRestoration",
+      "#roundCeremony"
+    ].map((selector) => ({
+      selector,
+      text: visibleText(document.querySelector(selector))
+    })).filter((entry) => entry.text);
+    return {
+      cuePresentation: {
+        visible: visible(cue),
+        opacity: cueStyle?.opacity || "",
+        categoryOpacity: categoryStyle?.opacity || "",
+        color: commandStyle?.color || "",
+        categoryColor: categoryStyle?.color || "",
+        contrastBackground: cueContrastBackground,
+        contrastRatio: contrast(commandStyle?.color || "", cueContrastBackground),
+        categoryContrastRatio: contrast(categoryStyle?.color || "", cueContrastBackground),
+        category: categoryNode
+          ? categoryNode.textContent.trim()
+          : (categoryStyle?.content || "").replace(/^["']|["']$/g, ""),
+        fontSize: Number.parseFloat(commandStyle?.fontSize || "0"),
+        fontWeight: Number.parseInt(commandStyle?.fontWeight || "0", 10),
+        rect: cueRect ? {
+          left: cueRect.left,
+          top: cueRect.top,
+          right: cueRect.right,
+          bottom: cueRect.bottom,
+          width: cueRect.width,
+          height: cueRect.height
+        } : null,
+        clipped: Boolean(cueRect && (
+          cueRect.left < -0.5
+          || cueRect.top < -0.5
+          || cueRect.right > innerWidth + 0.5
+          || cueRect.bottom > innerHeight + 0.5
+        ))
+      },
+      actionLikeControls,
+      sharedHudText
+    };
+  });
+}
+
 const GREENHOUSE_EXPECTATIONS = [
   {
     stage: 0,
@@ -485,8 +618,22 @@ function parsedFinalHarvestTargets(state) {
   });
 }
 
+const TRANSIENT_FUTURE_ACTION_COPY = /\b(?:Retry|Next Order|Next Bouquet|Play Again|Restore|Upgrade|Raise)\b/i;
+
+function expectTransientFinalHarvestAuthority(state, label) {
+  const actionCopy = state.actionLikeControls.map((control) => control.text).join(" · ");
+  const sharedCopy = state.sharedHudText.map((entry) => entry.text).join(" · ");
+  expect(state.actionLikeControls.some((control) => control.id === "tutorialHelpBtn"),
+    `${label} Help does not compete`).toBe(false);
+  expect(actionCopy, `${label} has no future action control`).not.toMatch(TRANSIENT_FUTURE_ACTION_COPY);
+  expect(sharedCopy, `${label} has no future action language`).not.toMatch(TRANSIENT_FUTURE_ACTION_COPY);
+}
+
 async function expectEligibleFinalHarvest(page, round, label) {
-  const state = await journeyState(page);
+  const state = {
+    ...(await journeyState(page)),
+    ...(await finalHarvestAuthorityState(page))
+  };
   const targets = parsedFinalHarvestTargets(state);
   expect(state.finalHarvestPhase, `${label} eligibility phase`).toBe("eligible");
   expect(state.round, `${label} authoritative round`).toBe(round);
@@ -524,6 +671,7 @@ async function expectEligibleFinalHarvest(page, round, label) {
   }
   expect(state.brokenImages, `${label} has no broken images`).toEqual([]);
   expect(state.liveRegionOwners, `${label} has exactly one visible narrator`).toHaveLength(1);
+  expectTransientFinalHarvestAuthority(state, `${label} eligibility`);
   if (state.finalHarvestOwner === "stronger-guidance") {
     expect(state.liveRegionOwners[0].text, `${label} Black Candle remains sole narrator`)
       .toMatch(/BLACK CANDLE.*Swap (left|right|up|down) to burn this (row|column)/i);
@@ -532,6 +680,19 @@ async function expectEligibleFinalHarvest(page, round, label) {
     expect(state.liveRegionOwners[0].text, `${label} narrator is literal`).toMatch(/^Finish with .+\.$/);
     expect(state.liveRegionOwners[0].text, `${label} narrator yields stronger categories`)
       .not.toMatch(/BLACK CANDLE|CURSED THORN|RETRY|NEXT ORDER/i);
+    expect(state.cuePresentation.visible, `${label} literal command is visible`).toBe(true);
+    expect(state.cuePresentation.category, `${label} literal command category`).toBe("FINAL HARVEST");
+    expect(state.cuePresentation.opacity, `${label} literal command computed opacity`).toBe("1");
+    expect(state.cuePresentation.categoryOpacity, `${label} category computed opacity`).toBe("1");
+    expect(state.cuePresentation.contrastRatio, `${label} literal command WCAG-style contrast`)
+      .toBeGreaterThanOrEqual(4.5);
+    expect(state.cuePresentation.categoryContrastRatio, `${label} category WCAG-style contrast`)
+      .toBeGreaterThanOrEqual(4.5);
+    expect(state.cuePresentation.fontSize, `${label} literal command screenshot-scale type`)
+      .toBeGreaterThanOrEqual(13);
+    expect(state.cuePresentation.fontWeight, `${label} literal command weight`)
+      .toBeGreaterThanOrEqual(900);
+    expect(state.cuePresentation.clipped, `${label} cue stays inside the viewport`).toBe(false);
   }
   for (const { flowerId, deficit, gain } of targets) {
     expect(ROUND_NEEDED[round][flowerId], `${label} target belongs to the real order`).toBeDefined();
@@ -596,7 +757,10 @@ async function finishThroughFinalHarvest(page, state, activation, evidencePrefix
   });
   // Read the board-owned landing immediately, then keep its evidence frame.
   // Reduced motion deliberately keeps this truthful handoff brief.
-  const landing = await journeyState(page);
+  const landing = {
+    ...(await journeyState(page)),
+    ...(await finalHarvestAuthorityState(page))
+  };
   expect(landing.finalHarvestPhase).toBe("landing");
   expect(landing.roundComplete, `${evidencePrefix} authority completes before handoff`).toBe(true);
   expect(landing.moves, `${evidencePrefix} spends exactly one move`).toBe(movesBefore - 1);
@@ -609,6 +773,7 @@ async function finishThroughFinalHarvest(page, state, activation, evidencePrefix
   expect(landing.finalHarvestFlightCount, `${evidencePrefix} target flights are present`).toBeGreaterThan(0);
   expect(landing.liveRegionOwners, `${evidencePrefix} landing has one narrator`).toHaveLength(1);
   expect(landing.liveRegionOwners[0].id).toBe("tutorialPanel");
+  expectTransientFinalHarvestAuthority(landing, `${evidencePrefix} landing`);
   if (state.finalHarvestOwner === "stronger-guidance") {
     expect(
       /BLACK CANDLE.*Burning the full (row|column)/i.test(landing.liveRegionOwners[0].text)
@@ -618,18 +783,91 @@ async function finishThroughFinalHarvest(page, state, activation, evidencePrefix
   } else {
     expect(landing.liveRegionOwners[0].text).toMatch(/^(FINAL HARVEST )?Final flowers landing\.$/);
   }
+  const handoffSnapshotPromise = page.evaluate(() => new Promise((resolve) => {
+    const visible = (node) => {
+      if (!node) return false;
+      const style = getComputedStyle(node);
+      const rect = node.getBoundingClientRect();
+      return style.display !== "none"
+        && style.visibility !== "hidden"
+        && Number(style.opacity || 1) !== 0
+        && rect.width > 0
+        && rect.height > 0;
+    };
+    const visibleText = (node) => {
+      if (!visible(node)) return "";
+      const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
+      const parts = [];
+      while (walker.nextNode()) {
+        const parent = walker.currentNode.parentElement;
+        if (parent && visible(parent)) {
+          const text = walker.currentNode.textContent.replace(/\s+/g, " ").trim();
+          if (text) parts.push(text);
+        }
+      }
+      return parts.join(" ").replace(/\s+/g, " ").trim();
+    };
+    let observer;
+    const capture = () => {
+      if (!document.body.classList.contains("final-harvest-handoff-active")) {
+        return false;
+      }
+      observer?.disconnect();
+      resolve({
+        finalHarvestPhase: document.body.dataset.finalHarvestPhase || "",
+        craftedBouquetComposition: document.querySelector(".crafted-bouquet")?.dataset.compositionKey || "",
+        cue: document.querySelector("#firstSwapCue")?.textContent.trim() || "",
+        actionLikeControls: Array.from(document.querySelectorAll(
+          "button, a[href], input, select, textarea, summary, [role='button'], [tabindex]"
+        ))
+          .filter((node) => !node.closest(".board") && visible(node))
+          .map((node) => ({
+            id: node.id || "",
+            kind: node.tagName.toLowerCase(),
+            text: visibleText(node) || node.getAttribute("aria-label") || node.getAttribute("title") || ""
+          })),
+        sharedHudText: [
+          "#objective",
+          "#bouquetProgress",
+          "#mobileGreenhouseProgress",
+          "#heroRestorationDial",
+          "#firstSwapCue",
+          "#tutorialPanel",
+          "#nextOrderCue",
+          "#activeOrders",
+          "#ritualLog",
+          "#roundOneRestoration",
+          "#roundCeremony"
+        ].map((selector) => ({
+          selector,
+          text: visibleText(document.querySelector(selector))
+        })).filter((entry) => entry.text)
+      });
+      return true;
+    };
+    if (capture()) return;
+    observer = new MutationObserver(capture);
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ["class", "data-final-harvest-phase"]
+    });
+  }));
   await page.screenshot({ path: `${evidencePrefix}-transfer.png` });
-  await page.locator("#roundOneRestoration").waitFor({ state: "visible", timeout: 5000 });
-  const handoff = await journeyState(page);
+  const handoff = await handoffSnapshotPromise;
+  expect(handoff.finalHarvestPhase, `${evidencePrefix} exact identity handoff phase`).toBe("ceremony");
   expect(handoff.craftedBouquetComposition, `${evidencePrefix} ceremony keeps bouquet identity`)
     .toBe(state.finalHarvestComposition);
+  expectTransientFinalHarvestAuthority(handoff, `${evidencePrefix} handoff`);
+  await page.locator("#roundOneRestoration").waitFor({ state: "visible", timeout: 5000 });
   await page.waitForFunction(() => !document.body.dataset.finalHarvestPhase, null, { timeout: 2500 });
   // The visibility edge can coincide with Chromium's view-transition snapshot.
-  // Wait for that named transition to release before keeping ceremony evidence.
-  await page.waitForTimeout(120);
-  await page.screenshot({ path: `${evidencePrefix}-ceremony.png`, fullPage: true });
-  await page.waitForTimeout(730);
-  const settled = await journeyState(page);
+  // Wait for that named transition and the bouquet seal to release before
+  // keeping settled ceremony evidence.
+  await page.waitForTimeout(850);
+  const settled = {
+    ...(await journeyState(page)),
+    ...(await finalHarvestAuthorityState(page))
+  };
   expect(settled.finalHarvestPhase, `${evidencePrefix} transient phase clears`).toBe("");
   expect(settled.finalHarvestTransientNodes, `${evidencePrefix} transient nodes clear`).toBe(0);
   expect(settled.cue, `${evidencePrefix} landing copy clears`).not.toBe("Final flowers landing.");
@@ -637,6 +875,29 @@ async function finishThroughFinalHarvest(page, state, activation, evidencePrefix
   expect(settled.tiles).toBe(64);
   expect(settled.overflowX).toBe(false);
   expect(settled.brokenImages).toEqual([]);
+  await page.screenshot({ path: `${evidencePrefix}-ceremony.png`, fullPage: true });
+  console.log(`${evidencePrefix} authority trace: ${JSON.stringify({
+    eligible: {
+      cue: state.cue,
+      cuePresentation: state.cuePresentation,
+      controls: state.actionLikeControls,
+      hud: state.sharedHudText
+    },
+    landing: {
+      cue: landing.cue,
+      controls: landing.actionLikeControls,
+      hud: landing.sharedHudText
+    },
+    handoff: {
+      cue: handoff.cue,
+      controls: handoff.actionLikeControls,
+      hud: handoff.sharedHudText
+    },
+    settled: {
+      controls: settled.actionLikeControls,
+      hud: settled.sharedHudText
+    }
+  })}`);
   return settled;
 }
 
@@ -775,7 +1036,9 @@ async function playCurrentRound(page, label, round, strategy = "optimized", expe
         await page.waitForTimeout(options.reducedMotion ? 80 : 460);
         await page.evaluate(() => window.scrollTo({ top: 0, left: 0, behavior: "auto" }));
         if (!options.reducedMotion && [1, 3].includes(round)) {
-          await page.screenshot({ path: `${options.evidencePrefix}-round${round}-transfer.png`, fullPage: true });
+          await page.locator("#roundOneRestoration").screenshot({
+            path: `${options.evidencePrefix}-round${round}-transfer.png`
+          });
         }
         if (!options.reducedMotion) {
           await page.waitForFunction(() => (
@@ -786,9 +1049,8 @@ async function playCurrentRound(page, label, round, strategy = "optimized", expe
           await page.evaluate(() => window.scrollTo({ top: 0, left: 0, behavior: "auto" }));
         }
         if ([1, 3].includes(round)) {
-          await page.screenshot({
-            path: `${options.evidencePrefix}-round${round}-${options.reducedMotion ? "acknowledgment" : "peak"}.png`,
-            fullPage: true
+          await page.locator("#roundOneRestoration").screenshot({
+            path: `${options.evidencePrefix}-round${round}-${options.reducedMotion ? "acknowledgment" : "peak"}.png`
           });
         }
         await page.waitForFunction(() => (
@@ -1125,6 +1387,21 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
     const completionPacingLimit = config.reducedMotion
       ? blackCandlePresentationObserved ? 1000 : 700
       : blackCandlePresentationObserved ? 3150 : 2400;
+    const phaseTransitions = phaseSamples.filter((sample, index, samples) => (
+      index === 0 || sample.phase !== samples[index - 1].phase
+    )).map((sample) => ({
+      phase: sample.phase,
+      elapsed: Math.round(sample.at - completionSample.at)
+    }));
+    const largestSampleGap = renewalSamples.slice(1).reduce((largest, sample, index) => (
+      Math.max(largest, sample.at - renewalSamples[index].at)
+    ), 0);
+    console.log(`${runLabel} round ${round} pacing diagnostic: ${JSON.stringify({
+      completionToAction: Math.round(completionToAction),
+      blackCandlePresentationObserved,
+      phaseTransitions,
+      largestSampleGap: Math.round(largestSampleGap)
+    })}`);
     expect(
       completionToAction,
       `${runLabel} round ${round} completion-to-action stays inside the focused pacing contract`
