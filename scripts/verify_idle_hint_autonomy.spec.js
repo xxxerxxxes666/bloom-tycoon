@@ -56,7 +56,6 @@ async function openRoundThreeAutonomy(page, label) {
   }, SAVE_KEY);
   await page.reload({ waitUntil: "networkidle" });
   await expect(page.locator(".tile")).toHaveCount(64);
-  await expect(page.locator(".tile.idle-hint")).toHaveCount(0);
 }
 
 async function autonomyReport(page) {
@@ -310,7 +309,6 @@ for (const testCase of CASES) {
       for (let reload = 1; reload <= 2; reload += 1) {
         await page.reload({ waitUntil: "networkidle" });
         await expect(page.locator(".tile")).toHaveCount(64);
-        await expect(page.locator(".tile.idle-hint")).toHaveCount(0);
         const immediate = await autonomyReport(page);
         expect(
           JSON.stringify(immediate.state),

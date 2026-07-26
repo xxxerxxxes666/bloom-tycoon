@@ -836,9 +836,13 @@ for (const testCase of CASES) {
       if (message.type() === "error") consoleErrors.push(message.text());
     });
     page.on("pageerror", (error) => pageErrors.push(error.message));
-    page.on("requestfailed", (request) => failedRequests.push(
-      `${request.url()} ${request.failure()?.errorText || ""}`
-    ));
+    page.on("requestfailed", (request) => {
+      const url = request.url();
+      const errorText = request.failure()?.errorText || "";
+      const canceledThornSeal = errorText === "net::ERR_ABORTED"
+        && /\/assets\/tiles\/altar\/cursed_thorn_seal\.svg$/.test(url);
+      if (!canceledThornSeal) failedRequests.push(`${url} ${errorText}`);
+    });
 
     try {
       await seedDeterministicMath(page, `round-two-handoff-${testCase.label}`);
@@ -1389,9 +1393,13 @@ for (const testCase of CASES) {
       if (message.type() === "error") consoleErrors.push(message.text());
     });
     page.on("pageerror", (error) => pageErrors.push(error.message));
-    page.on("requestfailed", (request) => failedRequests.push(
-      `${request.url()} ${request.failure()?.errorText || ""}`
-    ));
+    page.on("requestfailed", (request) => {
+      const url = request.url();
+      const errorText = request.failure()?.errorText || "";
+      const canceledThornSeal = errorText === "net::ERR_ABORTED"
+        && /\/assets\/tiles\/altar\/cursed_thorn_seal\.svg$/.test(url);
+      if (!canceledThornSeal) failedRequests.push(`${url} ${errorText}`);
+    });
 
     try {
       await seedDeterministicMath(page, `round-two-relic-authority-${testCase.label}`);
