@@ -3367,29 +3367,71 @@ test("Round 1 Shuffle preserves a sufficient two-move Black Candle close", async
       label: "fresh-desktop-pointer-zero-progress",
       viewport: { width: 1280, height: 720 },
       input: "pointer",
+      shuffleKey: "",
       ownedReplay: false,
-      bankTargetMatch: false
+      bankTargetMatch: false,
+      reducedMotion: "no-preference"
     },
     {
       label: "owned-mobile-touch-reduced-target-progress",
       viewport: { width: 390, height: 844 },
       input: "touch",
+      shuffleKey: "",
       ownedReplay: true,
-      bankTargetMatch: true
+      bankTargetMatch: true,
+      reducedMotion: "reduce"
+    },
+    {
+      label: "fresh-desktop-keyboard-enter-zero-progress",
+      viewport: { width: 1280, height: 720 },
+      input: "keyboard",
+      shuffleKey: "Enter",
+      ownedReplay: false,
+      bankTargetMatch: false,
+      reducedMotion: "no-preference"
+    },
+    {
+      label: "fresh-mobile-keyboard-space-reduced-zero-progress",
+      viewport: { width: 390, height: 844 },
+      input: "keyboard",
+      shuffleKey: " ",
+      ownedReplay: false,
+      bankTargetMatch: false,
+      reducedMotion: "reduce"
     }
   ];
   const openingOffOrderPair = [{ x: 3, y: 2 }, { x: 4, y: 2 }];
 
-  const activatePair = async (page, pair, input, { completes = false } = {}) => {
+  const activatePair = async (page, pair, input, { completes = false, guidedKeyboard = false } = {}) => {
     const movesBefore = await page.evaluate((key) => (
       JSON.parse(localStorage.getItem(key) || "{}").moves
     ), SAVE_KEY);
-    for (const cell of pair) {
-      const tile = page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`);
-      if (input === "touch") {
-        await tile.tap();
+    if (input === "keyboard") {
+      const source = page.locator(`.tile[data-x="${pair[0].x}"][data-y="${pair[0].y}"]`);
+      const destination = page.locator(`.tile[data-x="${pair[1].x}"][data-y="${pair[1].y}"]`);
+      if (guidedKeyboard) {
+        await expect(source).toBeFocused();
+        await page.keyboard.press("Enter");
+        await expect(destination).toBeFocused();
+        await page.keyboard.press("Enter");
       } else {
-        await tile.click();
+        await source.focus();
+        await page.keyboard.press("Enter");
+        const direction = pair[1].x > pair[0].x
+          ? "ArrowRight"
+          : pair[1].x < pair[0].x
+            ? "ArrowLeft"
+            : pair[1].y > pair[0].y ? "ArrowDown" : "ArrowUp";
+        await page.keyboard.press(direction);
+      }
+    } else {
+      for (const cell of pair) {
+        const tile = page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`);
+        if (input === "touch") {
+          await tile.tap();
+        } else {
+          await tile.click();
+        }
       }
     }
     await page.waitForFunction(({ key, movesBefore, completes }) => {
@@ -3409,7 +3451,7 @@ test("Round 1 Shuffle preserves a sufficient two-move Black Candle close", async
       viewport: testCase.viewport,
       hasTouch: testCase.input === "touch",
       isMobile: testCase.input === "touch",
-      reducedMotion: testCase.input === "touch" ? "reduce" : "no-preference"
+      reducedMotion: testCase.reducedMotion
     });
     const page = await context.newPage();
     const consoleErrors = [];
@@ -3454,7 +3496,16 @@ test("Round 1 Shuffle preserves a sufficient two-move Black Candle close", async
       const expectedShuffles = testCase.bankTargetMatch ? 2 : 3;
       for (let shuffle = 0; shuffle < expectedShuffles; shuffle += 1) {
         const movesBefore = (await activeState(page)).moves;
-        await page.locator("#shuffleBtn").click();
+        const shuffleButton = page.locator("#shuffleBtn");
+        if (testCase.shuffleKey && shuffle === expectedShuffles - 1) {
+          await shuffleButton.focus();
+          await expect(shuffleButton).toBeFocused();
+          await page.keyboard.press(testCase.shuffleKey);
+        } else if (testCase.input === "touch") {
+          await shuffleButton.tap();
+        } else {
+          await shuffleButton.click();
+        }
         await page.waitForFunction(({ key, movesBefore }) => (
           Number(JSON.parse(localStorage.getItem(key) || "{}").moves) === movesBefore - 1
         ), { key: SAVE_KEY, movesBefore });
@@ -3467,6 +3518,24 @@ test("Round 1 Shuffle preserves a sufficient two-move Black Candle close", async
       expect(reserve.hints).toEqual([]);
       await expect(page.locator("#shuffleBtn")).toBeHidden();
       await expect(page.locator("#shuffleBtn")).toBeDisabled();
+      const reserveFocus = await page.evaluate(() => {
+        const active = document.activeElement;
+        const roving = Array.from(document.querySelectorAll("#board .tile[tabindex='0']"));
+        return {
+          activeId: active?.id || "",
+          activeTag: active?.tagName || "",
+          activeTile: Boolean(active?.matches?.("#board .tile:not(:disabled)")),
+          activeVisible: Boolean(active && active.getClientRects().length),
+          rovingIds: roving.map((tile) => tile.id),
+          selectedTiles: document.querySelectorAll("#board .tile.selected").length
+        };
+      });
+      expect(reserveFocus.activeTag).not.toBe("BODY");
+      expect(reserveFocus.activeId).not.toBe("shuffleBtn");
+      expect(reserveFocus.activeTile).toBe(true);
+      expect(reserveFocus.activeVisible).toBe(true);
+      expect(reserveFocus.rovingIds).toEqual([reserveFocus.activeId]);
+      expect(reserveFocus.selectedTiles).toBe(0);
       await page.locator("#shuffleBtn").evaluate((button) => button.click());
       expect((await activeState(page)).moves).toBe(2);
       await page.locator("#tutorialHelpBtn").click();
@@ -3476,8 +3545,13 @@ test("Round 1 Shuffle preserves a sufficient two-move Black Candle close", async
       const closingGuide = await guidedRoundOneState(page, `${testCase.label} strict-four guide`);
       expect(closingGuide.tutorial).toBe("Match 4 arms Black Candle Vine.");
       expect(unorderedPairKey(closingGuide.hints)).toBe("5,0 <-> 5,1");
+      await expect(page.locator("#tile-5-0")).toBeFocused();
+      await expect(page.locator("#board .tile[tabindex='0']")).toHaveCount(1);
       expect(await legalFourBoneStarPreview(page)).toMatchObject({ ok: true });
-      await activatePair(page, closingGuide.hints, testCase.input);
+      await page.screenshot({ path: `work/round-one-shuffle-focus-${testCase.label}.png`, fullPage: true });
+      await activatePair(page, closingGuide.hints, testCase.input, {
+        guidedKeyboard: testCase.input === "keyboard"
+      });
 
       const formed = await guidedRoundOneState(page, `${testCase.label} sufficient lane formed`);
       const boneDeficitAfterFormation = Math.max(0, 6 - reserve.counts[1] - 4);
@@ -3495,9 +3569,14 @@ test("Round 1 Shuffle preserves a sufficient two-move Black Candle close", async
       expect(reloaded.moves).toBe(1);
       expect(reloaded.counts).toEqual(formed.counts);
       expect(reloaded.tutorial).toBe("Swap right to burn this row.");
+      await expect(page.locator(`.tile[data-x="${reloaded.hints[0].x}"][data-y="${reloaded.hints[0].y}"]`))
+        .toBeFocused();
       await expect(page.locator(".impact-sigil, .objective-flight, .order-pulse")).toHaveCount(0);
 
-      await activatePair(page, reloaded.hints, testCase.input, { completes: true });
+      await activatePair(page, reloaded.hints, testCase.input, {
+        completes: true,
+        guidedKeyboard: testCase.input === "keyboard"
+      });
       const completed = await guidedRoundOneState(page, `${testCase.label} Shuffle close complete`);
       expect(completed.moves).toBe(0);
       expect(completed.roundComplete).toBe(true);

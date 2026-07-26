@@ -9024,6 +9024,7 @@
     let supremeChargeActive = false;
     let hasMadeValidMove = false;
     let roundOneLastSwapMissedOrder = false;
+    let roundOneShuffleReserveFocusActive = false;
     let restoredRoundTwoGuideMoves = 0;
     let tutorialSkipped = false;
     let tutorialActive = false;
@@ -11466,6 +11467,10 @@
         ) {
           const move = roundOneBlackCandleLessonSwap();
           idleHintCells = new Set(move.map((cell) => `${cell.x},${cell.y}`));
+          if (moves === 2 && roundOneShuffleReserveFocusActive) {
+            boardFocusCell = clampBoardFocusCell(move[0]);
+            queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
+          }
           $("firstSwapCue").textContent = isRoundOneSecondTargetDiscoveryActive(plan)
             ? "Match Bone Star with the glowing pair."
             : "Make 4 Bone Stars - arm Black Candle Vine.";
@@ -11513,6 +11518,12 @@
           isAuthoritativeRoundTwoThornLesson()
           ||
           (currentRound === 1 && tutorialActive && !isRoundOneAgencyHandoffActive())
+          || (
+            currentRound === 1
+            && moves === 2
+            && roundOneShuffleReserveFocusActive
+            && roundOneGuidedStage(activeRoundPlan()) === "black-candle"
+          )
           || (
             hintCells.has(`${cell.x},${cell.y}`)
             && (
@@ -14662,6 +14673,7 @@
       const guidedRoundTwoLesson = isAuthoritativeRoundTwoThornLesson()
         && previewSwapMatches(source, target).some((match) => cellsTouchCursedThorn(match.cells));
       roundOneLastSwapMissedOrder = false;
+      roundOneShuffleReserveFocusActive = false;
       hasMadeValidMove = true;
       if (roundTwoOpeningBudgetActive) {
         restoredRoundTwoGuideMoves = Math.min(
@@ -17124,6 +17136,9 @@
       ) {
         roundOneLastSwapMissedOrder = true;
         beginRoundOneAgencyDiscovery();
+        boardFocusCell = clampBoardFocusCell();
+        queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
+        roundOneShuffleReserveFocusActive = true;
       }
       if (isBouquetFailed()) {
         markBouquetFailed();
@@ -17180,6 +17195,7 @@
       moves = plan.moves;
       counts = [0, 0, 0, 0, 0, 0];
       roundOneLastSwapMissedOrder = false;
+      roundOneShuffleReserveFocusActive = false;
       hasMadeValidMove = false;
       blackCandleLessonComplete = currentRound !== 1 || tutorialSkipped;
       roundComplete = false;
@@ -17261,6 +17277,7 @@
       currentRound = 1;
       restoredRoundTwoGuideMoves = 0;
       roundOneLastSwapMissedOrder = false;
+      roundOneShuffleReserveFocusActive = false;
       hasMadeValidMove = false;
       blackCandleLessonComplete = true;
       roundComplete = false;

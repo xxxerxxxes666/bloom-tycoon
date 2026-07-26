@@ -1,5 +1,11 @@
 # Codex Build Notes
 
+## 2026-07-26 Round 1 retiring-Shuffle focus handoff
+
+- Player-visible result: when the third paid Round 1 Shuffle retires itself at the protected two-move Black Candle reserve, keyboard focus now lands immediately on the existing visible roving board tile instead of `BODY`. When the delayed strict-four forecast appears, its authored source becomes the sole roving tile and receives focus without selecting a flower or spending a move.
+- Scope: focus ownership only. Shuffle still costs one move, retires at Moves `2`, keeps the same copy and timing, and preserves the existing sufficient `+4 Bone Star / +3 Thorn Rose` formation, saved final lane, activation, economy, and progression.
+- Permanent natural contract: the six-move Shuffle-close matrix now covers desktop pointer, exact `390x844` touch, desktop Enter, and exact-mobile Space with reduced motion. It asserts the immediate visible fallback, no hidden-button or `BODY` focus, zero accidental selection, strict-four source focus, Enter-then-Enter formation and activation, reload focus continuity, 64 tiles/eight rows, no overflow or broken images, and empty browser error logs.
+
 ## 2026-07-26 Round 1 Shuffle closing fairness
 
 - Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_tutorial_progress.spec.js`, and this note.
