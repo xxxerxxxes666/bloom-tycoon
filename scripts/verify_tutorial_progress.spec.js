@@ -2561,9 +2561,7 @@ test("exact-mobile Black Candle Skip owns a complete touch target", async ({ bro
     for (const cell of pair) {
       const endpoint = page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`);
       await expect(endpoint).toBeVisible();
-      const box = await endpoint.boundingBox();
-      expect(box, `touch endpoint ${cell.x},${cell.y} is visible`).toBeTruthy();
-      await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+      await endpoint.tap();
     }
     await page.waitForFunction(({ key, movesBefore }) => {
       const saved = JSON.parse(localStorage.getItem(key) || "{}");
@@ -2695,8 +2693,7 @@ test("exact-mobile Black Candle Skip owns a complete touch target", async ({ bro
     await page.screenshot({ path: "work/mobile-skip-touch-target-armed.png", fullPage: true });
     const activationPair = await hintedPair(page);
     for (const cell of activationPair) {
-      const box = await page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`).boundingBox();
-      await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+      await page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`).tap();
     }
     await expect(page.locator("#restoreGreenhouseBtn")).toBeVisible({ timeout: 10000 });
     const completed = await guidedRoundOneState(page, "mobile Skip touch target complete");
@@ -2713,6 +2710,113 @@ test("exact-mobile Black Candle Skip owns a complete touch target", async ({ bro
     expect(failedRequests).toEqual([]);
   } finally {
     await context.close();
+  }
+});
+
+test("Skip returns focus to the authoritative Round 1 guide", async ({ browser }) => {
+  test.setTimeout(240000);
+  const cases = [
+    { label: "desktop-enter", viewport: { width: 1280, height: 720 }, input: "Enter" },
+    { label: "desktop-space", viewport: { width: 1280, height: 720 }, input: "Space" },
+    { label: "mobile390-enter", viewport: { width: 390, height: 844 }, input: "Enter", mobile: true },
+    { label: "mobile390-space", viewport: { width: 390, height: 844 }, input: "Space", mobile: true },
+    { label: "desktop-pointer", viewport: { width: 1280, height: 720 }, input: "pointer" },
+    { label: "mobile390-touch", viewport: { width: 390, height: 844 }, input: "touch", mobile: true }
+  ];
+
+  for (const testCase of cases) {
+    const context = await browser.newContext({
+      viewport: testCase.viewport,
+      hasTouch: Boolean(testCase.mobile),
+      isMobile: Boolean(testCase.mobile)
+    });
+    const page = await context.newPage();
+    const consoleMessages = [];
+    const pageErrors = [];
+    const failedRequests = [];
+    page.on("console", (message) => {
+      if (message.type() === "error" || message.type() === "warning") {
+        consoleMessages.push(`${message.type()}: ${message.text()}`);
+      }
+    });
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    page.on("requestfailed", (request) => {
+      failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`);
+    });
+
+    try {
+      await seedDeterministicMath(page, `skip-focus-${testCase.label}`);
+      await openFreshNoReview(page, `skip-focus-${testCase.label}`);
+      await clickGuidedSwap(page);
+      await clickGuidedSwap(page);
+      await clickGuidedSwap(page);
+      await expect(page.locator("#tutorialCopy")).toHaveText("Swap right to burn this row.");
+      await expect(page.locator("#tile-5-0")).toBeFocused();
+      await expect(page.locator("#board .tile[tabindex='0']")).toHaveAttribute("id", "tile-5-0");
+      const beforeSkip = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}"), SAVE_KEY);
+
+      const skip = page.locator("#tutorialSkipBtn");
+      if (testCase.input === "touch") {
+        const box = await skip.boundingBox();
+        await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+      } else if (testCase.input === "pointer") {
+        await skip.click();
+      } else {
+        await skip.focus();
+        await page.keyboard.press(testCase.input);
+      }
+
+      await expect(page.locator("#tutorialPanel")).toBeHidden();
+      await expect(page.locator("#tile-5-0")).toBeFocused();
+      await expect(page.locator("#board .tile[tabindex='0']")).toHaveCount(1);
+      await expect(page.locator("#board .tile[tabindex='0']")).toHaveAttribute("id", "tile-5-0");
+      await expect(page.locator("#tile-5-0")).toHaveAttribute("tabindex", "0");
+      await expect(page.locator("#tile-6-0")).toHaveAttribute("tabindex", "-1");
+      await expect(page.locator("#board .tile.selected, #board .tile.sel")).toHaveCount(0);
+      const afterSkip = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}"), SAVE_KEY);
+      expect(afterSkip.moves, `${testCase.label} Skip spends no move`).toBe(beforeSkip.moves);
+      expect(afterSkip.counts, `${testCase.label} Skip changes no objective`).toEqual(beforeSkip.counts);
+      expect(afterSkip.board, `${testCase.label} Skip preserves the board`).toEqual(beforeSkip.board);
+
+      await page.keyboard.press("Shift+Tab");
+      await page.keyboard.press("Tab");
+      await expect(page.locator("#tile-5-0")).toBeFocused();
+      await expect(page.locator("#board .tile[tabindex='0']")).toHaveAttribute("id", "tile-5-0");
+
+      await page.reload({ waitUntil: "networkidle" });
+      await expect(page.locator("#tutorialPanel")).toBeHidden();
+      await expect(page.locator("#tile-5-0")).toBeFocused();
+      await expect(page.locator("#board .tile[tabindex='0']")).toHaveAttribute("id", "tile-5-0");
+      const activationPair = await hintedPair(page);
+      expect(unorderedPairKey(activationPair)).toBe("5,0 <-> 6,0");
+      for (const cell of activationPair) {
+        const tile = page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`);
+        if (testCase.input === "touch") {
+          const box = await tile.boundingBox();
+          await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+        } else if (testCase.input === "pointer") {
+          await tile.click();
+        } else {
+          await tile.focus();
+          await page.keyboard.press(testCase.input);
+        }
+      }
+      await expect(page.locator("#restoreGreenhouseBtn")).toBeVisible({ timeout: 10000 });
+      const completed = await guidedRoundOneState(page, `${testCase.label} Skip focus completion`);
+      expect(completed.roundComplete).toBe(true);
+      expect(completed.bouquet).toBe("Bouquet Complete · 14/14");
+      expect(completed.tiles).toBe(64);
+      expect(await page.locator(".tile").evaluateAll((tiles) => (
+        new Set(tiles.map((tile) => tile.dataset.y)).size
+      ))).toBe(8);
+      expect(completed.overflowX).toBe(false);
+      expect(completed.brokenImages).toEqual([]);
+      expect(consoleMessages).toEqual([]);
+      expect(pageErrors).toEqual([]);
+      expect(failedRequests).toEqual([]);
+    } finally {
+      await context.close();
+    }
   }
 });
 
@@ -5375,6 +5479,11 @@ test("Round 1 tutorial board choreography derives from the authoritative hinted 
     await expect(page.locator("#tutorialPanel")).toBeHidden();
     await expect(page.locator(".first-action-swap-guide")).toHaveCount(0);
     await expect(page.locator(".swap-path-arrow")).toHaveCount(0);
+    await expect(page.locator(`#tile-${pair[0].x}-${pair[0].y}`)).toBeFocused();
+    await expect(page.locator("#board .tile[tabindex='0']")).toHaveAttribute(
+      "id",
+      `tile-${pair[0].x}-${pair[0].y}`
+    );
 
     await page.locator("#tutorialHelpBtn").click();
     await expect(page.locator("#tutorialPanel")).toBeVisible();

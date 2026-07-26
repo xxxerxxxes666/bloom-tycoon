@@ -14271,6 +14271,9 @@
       if (blackCandleActivationPresentation) {
         clearBlackCandleActivationPresentation();
       }
+      const guidedFocusCell = lineRelicGuidance()?.source
+        || currentTutorialBoardGuidePair()?.source
+        || null;
       const skippingThornLesson = isAuthoritativeRoundTwoThornLesson();
       const skippingRoundOneAgency = isRoundOneAgencyHandoffActive();
       tutorialSkipped = true;
@@ -14285,8 +14288,21 @@
         clearIdleHint();
         clearThornTeachingCue(false);
       }
-      queuePostRenderFocus("tutorialHelpBtn");
+      if (guidedFocusCell) {
+        boardFocusCell = clampBoardFocusCell(guidedFocusCell);
+        queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
+      } else {
+        queuePostRenderFocus("tutorialHelpBtn");
+      }
       render();
+      if (guidedFocusCell && window.requestAnimationFrame) {
+        const focusCell = { ...boardFocusCell };
+        window.requestAnimationFrame(() => {
+          if (tutorialSkipped && !tutorialActive && !roundComplete && !isBouquetFailed()) {
+            focusBoardCell(focusCell.x, focusCell.y);
+          }
+        });
+      }
       saveProgress();
       if (skippingRoundOneAgency) {
         scheduleIdleHint();

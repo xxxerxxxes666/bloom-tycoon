@@ -1,5 +1,12 @@
 # Codex Build Notes
 
+## 2026-07-26 tutorial Skip focus handoff
+
+- Player-visible result: dismissing an active Round 1 tutorial now returns keyboard focus to the guide the player was already following instead of dropping focus to the page. An armed Black Candle returns to its activation source; an ordinary tutorial returns to its current pair source.
+- Scope: the existing Skip action captures the authoritative guide before hiding the panel, then reuses the established queued board-focus model. It does not select a flower, spend a move, change the board, alter copy, add a control, or affect later-round Help fallback.
+- Permanent contract: natural desktop and exact-mobile routes activate Skip with Enter, Space, pointer, and touch, require active-element and sole-roving identity to agree immediately, round-trip through Shift+Tab/Tab, reload the armed state, and complete the 14-flower bouquet through the original activation pair.
+- Verification: the six-case Skip matrix, both no-review Round 1 journeys, first-action choreography, exact-mobile Skip touch contract, all six Shuffle reserve cases, four runtime budgets, project/HTML verification, every spec syntax check, extracted inline-JavaScript syntax, diff hygiene, and changed-added-line security scanning pass. Desktop and exact-mobile screenshots retain 64 tiles, eight rows, a contained altar, one-action hierarchy, loaded imagery, and zero horizontal overflow.
+
 ## 2026-07-26 exact-mobile Skip touch target
 
 - Player-visible result: the existing tutorial Skip control now has a real `44x44px` mobile button box instead of the prior `40x24px` target. The label, action copy, control, and accepted Black Candle plate remain separate and contained; desktop sizing is unchanged.
