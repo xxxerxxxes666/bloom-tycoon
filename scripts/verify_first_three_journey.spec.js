@@ -7,6 +7,11 @@ const ROUND_TARGETS = {
   2: [2, 4, 5],
   3: [3, 0]
 };
+const ROUND_NEEDED = {
+  1: { 5: 8, 1: 6 },
+  2: { 2: 10, 4: 9, 5: 7 },
+  3: { 3: 14, 0: 13 }
+};
 
 function expectedUnitComposition(targetCounts) {
   const placement = targetCounts.map(([flowerId, needed], targetIndex) => ({
@@ -165,12 +170,46 @@ async function journeyState(page) {
       tutorialIcon: document.querySelector("#tutorialPanel .tutorial-icon")?.textContent.trim() || "",
       tutorialIconAriaHidden: document.querySelector("#tutorialPanel .tutorial-icon")?.getAttribute("aria-hidden") || "",
       blackCandleTutorial: document.querySelector("#tutorialPanel")?.classList.contains("black-candle-tutorial") || false,
+      finalHarvestPhase: document.body.dataset.finalHarvestPhase || "",
+      finalHarvestPair: (document.body.dataset.finalHarvestPair || "").split(" ").filter(Boolean),
+      finalHarvestTargets: (document.body.dataset.finalHarvestTargets || "").split(" ").filter(Boolean),
+      finalHarvestSlots: (document.body.dataset.finalHarvestSlots || "").split(" ").filter(Boolean).map(Number),
+      finalHarvestComposition: document.body.dataset.finalHarvestComposition || "",
+      finalHarvestKind: document.body.dataset.finalHarvestKind || "",
+      finalHarvestOwner: document.body.dataset.finalHarvestOwner || "",
+      finalHarvestEndpointCount: document.querySelectorAll(".tile.final-harvest-endpoint").length,
+      finalHarvestMatchCount: document.querySelectorAll(".tile.final-harvest-match").length,
+      finalHarvestObjectiveTargets: document.querySelectorAll(".objective-target.final-harvest-target").length,
+      finalHarvestContractTargets: document.querySelectorAll(".contract-ingredient.final-harvest-target").length,
+      armedRelicSource: document.querySelector("#board")?.dataset.armedRelicSource || "",
+      armedRelicDestination: document.querySelector("#board")?.dataset.armedRelicDestination || "",
+      finalHarvestPhysicalSlots: Array.from(document.querySelectorAll(
+        '.live-bouquet-ingredient[data-final-harvest-slot="true"]'
+      )).map((slot) => ({
+        index: Number(slot.dataset.liveSlot),
+        flowerId: Number(slot.dataset.flowerId),
+        state: slot.dataset.slotState,
+        gainReceiver: slot.dataset.gainReceiver
+      })),
+      liveBouquetVisible: visible(document.querySelector("#liveBouquetAssembly")),
+      liveBouquetComposition: document.querySelector("#liveBouquetAssembly")?.dataset.compositionKey || "",
+      craftedBouquetComposition: document.querySelector(".crafted-bouquet")?.dataset.compositionKey || "",
+      finalHarvestTransientNodes: document.querySelectorAll(
+        ".objective-flight, .bouquet-bind-seal, .greenhouse-intake-flight"
+      ).length,
+      finalHarvestFlightCount: document.querySelectorAll(".objective-flight").length,
       visibleLiveRegions,
       liveRegionOwners: visibleLiveRegions.filter((region) => ["polite", "assertive"].includes(region.live)),
       activeElementId: document.activeElement?.id || "",
       tiles: document.querySelectorAll(".tile").length,
       tileRows,
       boardBottom: boardRect ? boardRect.bottom : 0,
+      viewportWidth: innerWidth,
+      viewportHeight: innerHeight,
+      minimumTileWidth: Math.min(...Array.from(document.querySelectorAll(".tile"))
+        .map((tile) => tile.getBoundingClientRect().width)),
+      minimumTileHeight: Math.min(...Array.from(document.querySelectorAll(".tile"))
+        .map((tile) => tile.getBoundingClientRect().height)),
       visibleButtons: Array.from(document.querySelectorAll("button"))
         .filter((button) => visible(button) && !button.closest(".board"))
         .map((button) => button.textContent.trim())
@@ -281,12 +320,29 @@ async function clickGuidedSwap(page, strategy = "optimized") {
   const movesBefore = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}").moves, SAVE_KEY);
   let lastError = null;
   for (let attempt = 0; attempt < 3; attempt += 1) {
-    const pairHandle = await page.waitForFunction(({ targets, strategy }) => {
+    const pairHandle = await page.waitForFunction(({ targets, needed, strategy }) => {
+    const saved = JSON.parse(localStorage.getItem("bloomTycoonPlayableStateV1") || "{}");
+    if (document.body.dataset.finalHarvestPhase === "eligible") {
+      const pair = (document.body.dataset.finalHarvestPair || "")
+        .split(" ")
+        .filter(Boolean)
+        .map((key) => {
+          const [x, y] = key.split(",").map(Number);
+          return { x, y };
+        });
+      if (pair.length === 2) {
+        return pair;
+      }
+    }
+    const round = saved.currentRound || 1;
     const hinted = Array.from(document.querySelectorAll(".tile.idle-hint")).slice(0, 2).map((tile) => ({
       x: Number(tile.dataset.x),
       y: Number(tile.dataset.y)
     }));
-    if (hinted.length === 2) {
+    // Preserve the authored Round 1/2 lessons. Once they are taught, the
+    // final-harvest journey remains an ordinary objective-following player
+    // that does not deliberately manufacture another four-match.
+    if (hinted.length === 2 && !(strategy === "final-harvest" && round >= 3)) {
       return hinted;
     }
 
@@ -294,7 +350,6 @@ async function clickGuidedSwap(page, strategy = "optimized") {
     Array.from(document.querySelectorAll(".tile")).forEach((tile) => {
       board[Number(tile.dataset.y)][Number(tile.dataset.x)] = Number(tile.dataset.flowerId);
     });
-    const round = JSON.parse(localStorage.getItem("bloomTycoonPlayableStateV1") || "{}").currentRound || 1;
     const targetIds = targets[String(round)] || [];
     const thornCells = Array.from(document.querySelectorAll(".tile.cursed-thorn, .tile.thorn-teach-blocker")).map((tile) => ({
       x: Number(tile.dataset.x),
@@ -360,6 +415,12 @@ async function clickGuidedSwap(page, strategy = "optimized") {
           }
           const matchedValues = Array.from(found.cells.values());
           const targetMatches = matchedValues.filter((value) => targetIds.includes(value)).length;
+          const directTargetCounts = matchedValues.reduce((counts, value) => {
+            if (targetIds.includes(value)) {
+              counts[value] = (counts[value] || 0) + 1;
+            }
+            return counts;
+          }, {});
           const thornScore = round === 2
             ? Array.from(found.cells.keys()).filter((key) => {
               const [cellX, cellY] = key.split(",").map(Number);
@@ -367,8 +428,17 @@ async function clickGuidedSwap(page, strategy = "optimized") {
             }).length
             : 0;
           const fourScore = found.runs.some((run) => run.length >= 4) ? 3 : 0;
-          const optimizationScore = strategy === "optimized" ? fourScore + found.cells.size : 0;
-          const score = targetMatches * 10 + thornScore * 7 + optimizationScore;
+          const optimizationScore = strategy === "optimized"
+            ? fourScore + found.cells.size
+            : strategy === "final-harvest" && round >= 3 ? -fourScore * 8 : 0;
+          const deficitScore = strategy === "final-harvest" && round >= 3
+            ? Object.entries(directTargetCounts).reduce((sum, [flowerId, gain]) => {
+              const required = needed[String(round)]?.[flowerId] || 0;
+              const current = Number(saved.counts?.[flowerId] || 0);
+              return sum + (required > current && current + gain >= required ? 50 : 0);
+            }, 0)
+            : 0;
+          const score = targetMatches * 10 + thornScore * 7 + optimizationScore + deficitScore;
           if (!best || score > best.score) {
             best = { score, pair: [a, b] };
           }
@@ -376,7 +446,7 @@ async function clickGuidedSwap(page, strategy = "optimized") {
       }
     }
     return best?.pair || null;
-    }, { targets: ROUND_TARGETS, strategy }, { timeout: 8500 });
+    }, { targets: ROUND_TARGETS, needed: ROUND_NEEDED, strategy }, { timeout: 8500 });
     const pairValue = await pairHandle.jsonValue();
     const pair = (pairValue || []).map((tile) => ({
       x: String(tile.x),
@@ -406,6 +476,168 @@ async function clickGuidedSwap(page, strategy = "optimized") {
     }
   }
   throw lastError || new Error("Unable to perform a fresh guided swap");
+}
+
+function parsedFinalHarvestTargets(state) {
+  return state.finalHarvestTargets.map((entry) => {
+    const [flowerId, deficit, gain] = entry.split(":").map(Number);
+    return { flowerId, deficit, gain };
+  });
+}
+
+async function expectEligibleFinalHarvest(page, round, label) {
+  const state = await journeyState(page);
+  const targets = parsedFinalHarvestTargets(state);
+  expect(state.finalHarvestPhase, `${label} eligibility phase`).toBe("eligible");
+  expect(state.round, `${label} authoritative round`).toBe(round);
+  expect(state.roundComplete, `${label} remains active`).toBe(false);
+  expect(state.finalHarvestPair, `${label} one exact finishing pair`).toHaveLength(2);
+  if (state.finalHarvestOwner === "stronger-guidance") {
+    expect(state.finalHarvestKind, `${label} only Black Candle may outrank the final cue`).toBe("black-candle");
+    expect(state.finalHarvestEndpointCount, `${label} does not compete with Black Candle endpoints`).toBe(0);
+    expect(state.finalHarvestMatchCount, `${label} does not compete with the burn lane`).toBe(0);
+    expect(state.finalHarvestPair.slice().sort(), `${label} uses the exact Black Candle pair`)
+      .toEqual([state.armedRelicSource, state.armedRelicDestination].sort());
+  } else {
+    expect(state.finalHarvestKind, `${label} plain finishing opportunity`).toBe("plain-match");
+    expect(state.finalHarvestEndpointCount, `${label} pair endpoints agree`).toBe(2);
+    expect(state.finalHarvestMatchCount, `${label} plain target match is visible`).toBeGreaterThanOrEqual(3);
+  }
+  expect(targets.length, `${label} has remaining target species`).toBeGreaterThanOrEqual(1);
+  expect(targets.every(({ deficit, gain }) => deficit > 0 && gain >= deficit), `${label} gains close every deficit`).toBe(true);
+  expect(state.finalHarvestSlots.length, `${label} slots equal total deficit`)
+    .toBe(targets.reduce((sum, target) => sum + target.deficit, 0));
+  expect(state.finalHarvestPhysicalSlots.map((slot) => slot.index).sort((a, b) => a - b))
+    .toEqual(state.finalHarvestSlots.slice().sort((a, b) => a - b));
+  expect(state.finalHarvestPhysicalSlots.every((slot) => slot.state === "empty"), `${label} final receivers are closed`).toBe(true);
+  expect(state.finalHarvestObjectiveTargets, `${label} tactical objective agrees`).toBe(targets.length);
+  expect(state.finalHarvestContractTargets, `${label} current-order deficit agrees`).toBe(targets.length);
+  expect(state.liveBouquetComposition, `${label} receiver identity`).toBe(state.finalHarvestComposition);
+  expect(state.tiles, `${label} retains 64 tiles`).toBe(64);
+  expect(state.tileRows, `${label} retains eight rows`).toBe(8);
+  expect(state.overflowX, `${label} has no horizontal overflow`).toBe(false);
+  if (state.viewportWidth === 390) {
+    expect(state.boardBottom, `${label} keeps every row in the exact mobile viewport`)
+      .toBeLessThanOrEqual(state.viewportHeight);
+    expect(state.minimumTileWidth, `${label} mobile tile hit width stays stable`).toBeGreaterThanOrEqual(40);
+    expect(state.minimumTileHeight, `${label} mobile tile hit height stays stable`).toBeGreaterThanOrEqual(40);
+  }
+  expect(state.brokenImages, `${label} has no broken images`).toEqual([]);
+  expect(state.liveRegionOwners, `${label} has exactly one visible narrator`).toHaveLength(1);
+  if (state.finalHarvestOwner === "stronger-guidance") {
+    expect(state.liveRegionOwners[0].text, `${label} Black Candle remains sole narrator`)
+      .toMatch(/BLACK CANDLE.*Swap (left|right|up|down) to burn this (row|column)/i);
+    expect(state.liveRegionOwners[0].text, `${label} final copy yields cleanly`).not.toMatch(/Finish with/i);
+  } else {
+    expect(state.liveRegionOwners[0].text, `${label} narrator is literal`).toMatch(/^Finish with .+\.$/);
+    expect(state.liveRegionOwners[0].text, `${label} narrator yields stronger categories`)
+      .not.toMatch(/BLACK CANDLE|CURSED THORN|RETRY|NEXT ORDER/i);
+  }
+  for (const { flowerId, deficit, gain } of targets) {
+    expect(ROUND_NEEDED[round][flowerId], `${label} target belongs to the real order`).toBeDefined();
+    expect(ROUND_NEEDED[round][flowerId] - state.counts[flowerId], `${label} saved deficit ${flowerId}`).toBe(deficit);
+    expect(gain, `${label} direct gain ${flowerId}`).toBeGreaterThanOrEqual(deficit);
+  }
+  return state;
+}
+
+async function playUntilFinalHarvest(page, round, label, strategy = "goal-following") {
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    let state = await journeyState(page);
+    if (!state.finalHarvestPhase && !state.roundComplete) {
+      await page.waitForTimeout(950);
+      state = await journeyState(page);
+    }
+    if (state.finalHarvestPhase === "eligible") {
+      return expectEligibleFinalHarvest(page, round, label);
+    }
+    expect(state.roundComplete, `${label} cannot complete before final-harvest eligibility`).toBe(false);
+    expect(state.moves, `${label} retains a legal finishing path`).toBeGreaterThan(0);
+    await clickGuidedSwap(page, strategy);
+  }
+  throw new Error(`${label} did not reach natural final-harvest eligibility`);
+}
+
+async function performFinalHarvestInput(page, state, activation) {
+  const pair = state.finalHarvestPair.map((key) => {
+    const [x, y] = key.split(",").map(Number);
+    return { x, y };
+  });
+  const tile = (cell) => page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`);
+  if (activation === "keyboard") {
+    await tile(pair[0]).focus();
+    await page.keyboard.press("Enter");
+    const key = pair[1].x > pair[0].x
+      ? "ArrowRight"
+      : pair[1].x < pair[0].x
+        ? "ArrowLeft"
+        : pair[1].y > pair[0].y ? "ArrowDown" : "ArrowUp";
+    await page.keyboard.press(key);
+  } else if (activation === "touch") {
+    await tile(pair[0]).tap();
+    await tile(pair[1]).tap();
+  } else {
+    await tile(pair[0]).click();
+    await tile(pair[1]).click();
+  }
+}
+
+async function finishThroughFinalHarvest(page, state, activation, evidencePrefix) {
+  const movesBefore = state.moves;
+  await performFinalHarvestInput(page, state, activation);
+  await page.waitForFunction(() => (
+    document.body.dataset.finalHarvestPhase === "landing"
+    && document.querySelectorAll(".objective-flight").length > 0
+    && Array.from(document.querySelectorAll(
+      '.live-bouquet-ingredient[data-final-harvest-slot="true"]'
+    )).every((slot) => slot.dataset.gainReceiver === "true")
+  ), null, {
+    timeout: 5000
+  });
+  // Read the board-owned landing immediately, then keep its evidence frame.
+  // Reduced motion deliberately keeps this truthful handoff brief.
+  const landing = await journeyState(page);
+  expect(landing.finalHarvestPhase).toBe("landing");
+  expect(landing.roundComplete, `${evidencePrefix} authority completes before handoff`).toBe(true);
+  expect(landing.moves, `${evidencePrefix} spends exactly one move`).toBe(movesBefore - 1);
+  expect(landing.liveBouquetVisible, `${evidencePrefix} live bouquet remains on the board`).toBe(true);
+  expect(landing.liveBouquetComposition, `${evidencePrefix} landing identity`)
+    .toBe(state.finalHarvestComposition);
+  expect(landing.finalHarvestPhysicalSlots.every((slot) => (
+    slot.state === "filled" && slot.gainReceiver === "true"
+  )), `${evidencePrefix} every final physical slot receives its flower`).toBe(true);
+  expect(landing.finalHarvestFlightCount, `${evidencePrefix} target flights are present`).toBeGreaterThan(0);
+  expect(landing.liveRegionOwners, `${evidencePrefix} landing has one narrator`).toHaveLength(1);
+  expect(landing.liveRegionOwners[0].id).toBe("tutorialPanel");
+  if (state.finalHarvestOwner === "stronger-guidance") {
+    expect(
+      /BLACK CANDLE.*Burning the full (row|column)/i.test(landing.liveRegionOwners[0].text)
+        || /^(FINAL HARVEST )?Final flowers landing\.$/.test(landing.liveRegionOwners[0].text),
+      `${evidencePrefix} transitions from Black Candle ownership to literal landing copy`
+    ).toBe(true);
+  } else {
+    expect(landing.liveRegionOwners[0].text).toMatch(/^(FINAL HARVEST )?Final flowers landing\.$/);
+  }
+  await page.screenshot({ path: `${evidencePrefix}-transfer.png` });
+  await page.locator("#roundOneRestoration").waitFor({ state: "visible", timeout: 5000 });
+  const handoff = await journeyState(page);
+  expect(handoff.craftedBouquetComposition, `${evidencePrefix} ceremony keeps bouquet identity`)
+    .toBe(state.finalHarvestComposition);
+  await page.waitForFunction(() => !document.body.dataset.finalHarvestPhase, null, { timeout: 2500 });
+  // The visibility edge can coincide with Chromium's view-transition snapshot.
+  // Wait for that named transition to release before keeping ceremony evidence.
+  await page.waitForTimeout(120);
+  await page.screenshot({ path: `${evidencePrefix}-ceremony.png`, fullPage: true });
+  await page.waitForTimeout(730);
+  const settled = await journeyState(page);
+  expect(settled.finalHarvestPhase, `${evidencePrefix} transient phase clears`).toBe("");
+  expect(settled.finalHarvestTransientNodes, `${evidencePrefix} transient nodes clear`).toBe(0);
+  expect(settled.cue, `${evidencePrefix} landing copy clears`).not.toBe("Final flowers landing.");
+  expect(settled.roundComplete).toBe(true);
+  expect(settled.tiles).toBe(64);
+  expect(settled.overflowX).toBe(false);
+  expect(settled.brokenImages).toEqual([]);
+  return settled;
 }
 
 async function spendPrimaryCeremonyAction(page, activation = "pointer") {
@@ -522,9 +754,24 @@ async function playCurrentRound(page, label, round, strategy = "optimized", expe
     if (state.roundComplete) {
       if (options.captureOwnedRenewal) {
         const firstPhase = options.reducedMotion ? "acknowledgment" : "transfer";
-        await page.waitForFunction((phase) => (
-          document.querySelector("#roundOneRestoration")?.dataset.ownedRenewalPhase === phase
-        ), firstPhase, { timeout: 3500 });
+        try {
+          await page.waitForFunction((phase) => (
+            document.querySelector("#roundOneRestoration")?.dataset.ownedRenewalPhase === phase
+            || window.__ownedRenewalRecorder?.samples?.some((sample) => sample.phase === phase)
+          ), firstPhase, { timeout: 3500 });
+        } catch (error) {
+          const diagnostic = await page.evaluate(() => ({
+            current: document.querySelector("#roundOneRestoration")?.dataset.ownedRenewalPhase || "",
+            phases: [...new Set(
+              (window.__ownedRenewalRecorder?.samples || []).map((sample) => sample.phase).filter(Boolean)
+            )],
+            finalHarvestPhase: document.body.dataset.finalHarvestPhase || "",
+            bouquetSealed: document.querySelector("#roundOneRestoration")?.classList.contains("bouquet-sealed")
+          }));
+          throw new Error(
+            `${label} round ${round} never reached ${firstPhase}: ${JSON.stringify(diagnostic)}; ${error.message}`
+          );
+        }
         await page.waitForTimeout(options.reducedMotion ? 80 : 460);
         await page.evaluate(() => window.scrollTo({ top: 0, left: 0, behavior: "auto" }));
         if (!options.reducedMotion && [1, 3].includes(round)) {
@@ -533,6 +780,7 @@ async function playCurrentRound(page, label, round, strategy = "optimized", expe
         if (!options.reducedMotion) {
           await page.waitForFunction(() => (
             document.querySelector("#roundOneRestoration")?.dataset.ownedRenewalPhase === "renewal"
+            || window.__ownedRenewalRecorder?.samples?.some((sample) => sample.phase === "renewal")
           ), null, { timeout: 2200 });
           await page.waitForTimeout(420);
           await page.evaluate(() => window.scrollTo({ top: 0, left: 0, behavior: "auto" }));
@@ -1079,6 +1327,390 @@ async function assertActiveBoard(page, mobile) {
     expect(state.ritualLogVisible, "active mobile ritual log hidden").toBe(false);
     expect(state.boardBottom, "exact mobile board stays in first viewport").toBeLessThanOrEqual(844);
   }
+}
+
+async function findInvalidAdjacentPair(page) {
+  return page.evaluate(() => {
+    const board = Array.from({ length: 8 }, () => Array(8).fill(-1));
+    document.querySelectorAll(".tile").forEach((tile) => {
+      board[Number(tile.dataset.y)][Number(tile.dataset.x)] = Number(tile.dataset.flowerId);
+    });
+    const matchedAtEndpoint = (next, endpoints) => {
+      const keys = new Set(endpoints.map(({ x, y }) => `${x},${y}`));
+      for (let y = 0; y < 8; y += 1) {
+        for (let start = 0, x = 1; x <= 8; x += 1) {
+          if (x === 8 || next[y][x] !== next[y][start]) {
+            if (x - start >= 3) {
+              for (let mx = start; mx < x; mx += 1) {
+                if (keys.has(`${mx},${y}`)) return true;
+              }
+            }
+            start = x;
+          }
+        }
+      }
+      for (let x = 0; x < 8; x += 1) {
+        for (let start = 0, y = 1; y <= 8; y += 1) {
+          if (y === 8 || next[y][x] !== next[start][x]) {
+            if (y - start >= 3) {
+              for (let my = start; my < y; my += 1) {
+                if (keys.has(`${x},${my}`)) return true;
+              }
+            }
+            start = y;
+          }
+        }
+      }
+      return false;
+    };
+    for (let y = 0; y < 8; y += 1) {
+      for (let x = 0; x < 8; x += 1) {
+        for (const [dx, dy] of [[1, 0], [0, 1]]) {
+          const a = { x, y };
+          const b = { x: x + dx, y: y + dy };
+          if (b.x >= 8 || b.y >= 8) continue;
+          if (board[a.y][a.x] === board[b.y][b.x]) return [a, b];
+          const next = board.map((row) => row.slice());
+          [next[a.y][a.x], next[b.y][b.x]] = [next[b.y][b.x], next[a.y][a.x]];
+          if (!matchedAtEndpoint(next, [a, b])) return [a, b];
+        }
+      }
+    }
+    return null;
+  });
+}
+
+async function findNonObjectiveLegalPairs(page, round) {
+  return page.evaluate(({ targetIds, finishingPair }) => {
+    const board = Array.from({ length: 8 }, () => Array(8).fill(-1));
+    const relicCells = new Set();
+    document.querySelectorAll(".tile").forEach((tile) => {
+      const key = `${tile.dataset.x},${tile.dataset.y}`;
+      board[Number(tile.dataset.y)][Number(tile.dataset.x)] = Number(tile.dataset.flowerId);
+      if (tile.dataset.lineRelic) relicCells.add(key);
+    });
+    const matchesAtEndpoints = (next, endpoints) => {
+      const endpointKeys = new Set(endpoints.map(({ x, y }) => `${x},${y}`));
+      const values = [];
+      for (let y = 0; y < 8; y += 1) {
+        for (let start = 0, x = 1; x <= 8; x += 1) {
+          if (x === 8 || next[y][x] !== next[y][start]) {
+            if (x - start >= 3) {
+              const run = [];
+              for (let mx = start; mx < x; mx += 1) run.push({ x: mx, y });
+              if (run.some(({ x: mx, y: my }) => endpointKeys.has(`${mx},${my}`))) {
+                values.push(next[y][start]);
+              }
+            }
+            start = x;
+          }
+        }
+      }
+      for (let x = 0; x < 8; x += 1) {
+        for (let start = 0, y = 1; y <= 8; y += 1) {
+          if (y === 8 || next[y][x] !== next[start][x]) {
+            if (y - start >= 3) {
+              const run = [];
+              for (let my = start; my < y; my += 1) run.push({ x, y: my });
+              if (run.some(({ x: mx, y: my }) => endpointKeys.has(`${mx},${my}`))) {
+                values.push(next[start][x]);
+              }
+            }
+            start = y;
+          }
+        }
+      }
+      return values;
+    };
+    const pairs = [];
+    for (let y = 0; y < 8; y += 1) {
+      for (let x = 0; x < 8; x += 1) {
+        for (const [dx, dy] of [[1, 0], [0, 1]]) {
+          const a = { x, y };
+          const b = { x: x + dx, y: y + dy };
+          if (b.x >= 8 || b.y >= 8 || board[a.y][a.x] === board[b.y][b.x]) continue;
+          const keys = [`${a.x},${a.y}`, `${b.x},${b.y}`];
+          if (keys.some((key) => relicCells.has(key)) || keys.every((key) => finishingPair.includes(key))) {
+            continue;
+          }
+          const next = board.map((row) => row.slice());
+          [next[a.y][a.x], next[b.y][b.x]] = [next[b.y][b.x], next[a.y][a.x]];
+          const matchedValues = matchesAtEndpoints(next, [a, b]);
+          if (matchedValues.length && matchedValues.every((flowerId) => !targetIds.includes(flowerId))) {
+            pairs.push([a, b]);
+          }
+        }
+      }
+    }
+    return pairs;
+  }, {
+    targetIds: ROUND_TARGETS[round],
+    finishingPair: (await journeyState(page)).finalHarvestPair
+  });
+}
+
+async function exerciseFinalHarvestZeroGain(page, eligible, label) {
+  const savedEligible = await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY);
+  const zeroGainPairs = await findNonObjectiveLegalPairs(page, eligible.round);
+  let observedZeroGain = false;
+  for (const pair of zeroGainPairs) {
+    const before = await journeyState(page);
+    const tile = (cell) => page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`);
+    await tile(pair[0]).click();
+    await tile(pair[1]).click();
+    await page.waitForFunction(() => Array.from(document.querySelectorAll(".tile")).every((node) => !node.disabled), null, {
+      timeout: 10000
+    });
+    await page.waitForTimeout(950);
+    const after = await journeyState(page);
+    const objectiveCountsUnchanged = ROUND_TARGETS[eligible.round]
+      .every((flowerId) => after.counts[flowerId] === before.counts[flowerId]);
+    if (!after.roundComplete && objectiveCountsUnchanged && after.moves === before.moves - 1) {
+      expect(after.finalHarvestPhase, `${label} zero-gain move never commits a transfer`).not.toBe("landing");
+      expect(after.finalHarvestTransientNodes, `${label} zero-gain move clears all transient nodes`).toBe(0);
+      observedZeroGain = true;
+      break;
+    }
+    await page.evaluate(({ key, saved }) => localStorage.setItem(key, saved), {
+      key: SAVE_KEY,
+      saved: savedEligible
+    });
+    await page.reload({ waitUntil: "networkidle" });
+  }
+  await page.evaluate(({ key, saved }) => localStorage.setItem(key, saved), {
+    key: SAVE_KEY,
+    saved: savedEligible
+  });
+  await page.reload({ waitUntil: "networkidle" });
+  await expectEligibleFinalHarvest(page, eligible.round, `${label} restored after zero-gain probe`);
+  return observedZeroGain;
+}
+
+async function exerciseFinalHarvestLifecycle(page, eligible, label) {
+  const savedEligible = await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY);
+  for (let reload = 0; reload < 2; reload += 1) {
+    await page.reload({ waitUntil: "networkidle" });
+    const reloaded = await expectEligibleFinalHarvest(page, eligible.round, `${label} reload ${reload + 1}`);
+    expect(reloaded.finalHarvestPair).toEqual(eligible.finalHarvestPair);
+    expect(reloaded.finalHarvestTransientNodes).toBe(0);
+  }
+
+  if (await page.locator("#tutorialHelpBtn").isVisible()) {
+    await page.locator("#tutorialHelpBtn").click();
+    const help = await journeyState(page);
+    expect(help.finalHarvestPhase, `${label} Help owns narration`).toBe("");
+    expect(help.finalHarvestEndpointCount).toBe(0);
+    expect(help.finalHarvestTransientNodes).toBe(0);
+    await page.locator("#tutorialSkipBtn").click();
+    await expectEligibleFinalHarvest(page, eligible.round, `${label} Skip returns truthful eligibility`);
+  }
+
+  const invalidPair = await findInvalidAdjacentPair(page);
+  expect(invalidPair, `${label} has an ordinary invalid adjacent pair`).toHaveLength(2);
+  const invalidTile = (cell) => page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`);
+  await invalidTile(invalidPair[0]).click();
+  await invalidTile(invalidPair[1]).click();
+  await expect(page.locator(".tile.invalid-swap")).toHaveCount(2);
+  const refused = await journeyState(page);
+  expect(refused.finalHarvestPhase, `${label} invalid input clears presentation`).toBe("");
+  expect(refused.finalHarvestEndpointCount).toBe(0);
+  expect(refused.finalHarvestTransientNodes).toBe(0);
+  await page.waitForFunction(() => document.body.dataset.finalHarvestPhase === "eligible", null, {
+    timeout: 2500
+  });
+
+  const endpoint = page.locator(".tile.final-harvest-endpoint").first();
+  const box = await endpoint.boundingBox();
+  expect(box).not.toBeNull();
+  await endpoint.dispatchEvent("pointerdown", {
+    pointerId: 31,
+    isPrimary: true,
+    pointerType: "mouse",
+    clientX: box.x + box.width / 2,
+    clientY: box.y + box.height / 2
+  });
+  await endpoint.dispatchEvent("pointercancel", {
+    pointerId: 31,
+    isPrimary: true,
+    pointerType: "mouse",
+    clientX: box.x + box.width / 2,
+    clientY: box.y + box.height / 2
+  });
+  const canceled = await expectEligibleFinalHarvest(page, eligible.round, `${label} canceled input`);
+  expect(canceled.finalHarvestTransientNodes).toBe(0);
+
+  await page.evaluate(({ key, saved }) => localStorage.setItem(key, saved), {
+    key: SAVE_KEY,
+    saved: savedEligible
+  });
+  await page.reload({ waitUntil: "networkidle" });
+  await expectEligibleFinalHarvest(page, eligible.round, `${label} restored after cancellation`);
+
+  await page.evaluate((key) => {
+    const state = JSON.parse(localStorage.getItem(key) || "{}");
+    state.moves = 0;
+    state.roundComplete = false;
+    localStorage.setItem(key, JSON.stringify(state));
+  }, SAVE_KEY);
+  await page.reload({ waitUntil: "networkidle" });
+  const failed = await journeyState(page);
+  expect(failed.visibleButtons).toContain("Retry Bouquet");
+  expect(failed.finalHarvestPhase, `${label} failure owns state`).toBe("");
+  expect(failed.finalHarvestTransientNodes).toBe(0);
+  await page.getByRole("button", { name: "Retry Bouquet", exact: true }).click();
+  const retried = await journeyState(page);
+  expect(retried.roundComplete).toBe(false);
+  expect(retried.finalHarvestPhase, `${label} Retry has no stale final state`).toBe("");
+  expect(retried.finalHarvestTransientNodes).toBe(0);
+  expect(retried.tiles).toBe(64);
+
+  await page.evaluate(({ key, saved }) => localStorage.setItem(key, saved), {
+    key: SAVE_KEY,
+    saved: savedEligible
+  });
+  await page.reload({ waitUntil: "networkidle" });
+  return expectEligibleFinalHarvest(page, eligible.round, `${label} restored finishing state`);
+}
+
+async function runFinalHarvestJourney(browser, config) {
+  const context = await browser.newContext({
+    viewport: config.viewport,
+    hasTouch: config.mobile,
+    isMobile: config.mobile,
+    reducedMotion: "no-preference"
+  });
+  const page = await context.newPage();
+  const consoleMessages = [];
+  const pageErrors = [];
+  const failedRequests = [];
+  page.on("console", (message) => {
+    if (["error", "warning"].includes(message.type())) {
+      consoleMessages.push(`${message.type()}: ${message.text()}`);
+    }
+  });
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("requestfailed", (request) => failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`));
+  let reducedMotionFixture = null;
+  try {
+    const runLabel = `${config.label}-final-harvest`;
+    await openFresh(page, "altar-rose", runLabel);
+    for (let round = 1; round <= 3; round += 1) {
+      let eligible = await playUntilFinalHarvest(page, round, `${runLabel} round ${round}`, "final-harvest");
+      if (!config.mobile && round === 2) {
+        eligible = await exerciseFinalHarvestLifecycle(page, eligible, `${runLabel} round ${round}`);
+      }
+      if (config.mobile && round === 3) {
+        reducedMotionFixture = await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY);
+      }
+      await page.screenshot({
+        path: `work/final-harvest-${config.label}-round${round}-eligible.png`,
+        fullPage: true
+      });
+      const activation = config.mobile
+        ? "touch"
+        : round === 2 ? "keyboard" : "pointer";
+      const settled = await finishThroughFinalHarvest(
+        page,
+        eligible,
+        activation,
+        `work/final-harvest-${config.label}-round${round}`
+      );
+      expect(settled.coins).toBe([120, 170, 230][round - 1]);
+      const firstAction = await spendPrimaryCeremonyAction(page);
+      expect(firstAction).toBe([
+        "Restore Greenhouse · 100 coins",
+        "Upgrade Greenhouse · 120 coins",
+        "Raise Conservatory · 180 coins"
+      ][round - 1]);
+      if (round < 3) {
+        const nextAction = await spendPrimaryCeremonyAction(page, config.mobile ? "touch" : "pointer");
+        expect(nextAction).toBe([
+          "Next Order → Moonlit Wreath",
+          "Next Order → Bloodroot Compact"
+        ][round - 1]);
+        await assertActiveBoard(page, config.mobile);
+      }
+    }
+    if (!config.mobile) {
+      const probeContext = await browser.newContext({
+        viewport: config.viewport,
+        reducedMotion: "no-preference"
+      });
+      const probePage = await probeContext.newPage();
+      probePage.on("console", (message) => {
+        if (["error", "warning"].includes(message.type())) {
+          consoleMessages.push(`${message.type()}: ${message.text()}`);
+        }
+      });
+      probePage.on("pageerror", (error) => pageErrors.push(error.message));
+      probePage.on("requestfailed", (request) => (
+        failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`)
+      ));
+      try {
+        await openFresh(probePage, "altar-rose", `${runLabel}-zero-gain`);
+        const probeEligible = await playUntilFinalHarvest(
+          probePage,
+          1,
+          `${runLabel} zero-gain round 1`,
+          "final-harvest"
+        );
+        expect(
+          await exerciseFinalHarvestZeroGain(
+            probePage,
+            probeEligible,
+            `${runLabel} zero-gain round 1`
+          ),
+          `${runLabel} exercises one authoritative zero-objective-gain move`
+        ).toBe(true);
+      } finally {
+        await probeContext.close();
+      }
+    }
+    expect(consoleMessages).toEqual([]);
+    expect(pageErrors).toEqual([]);
+    expect(failedRequests).toEqual([]);
+  } finally {
+    await context.close();
+  }
+  return reducedMotionFixture;
+}
+
+for (const config of [
+  { label: "desktop", viewport: { width: 1280, height: 720 }, mobile: false },
+  { label: "mobile390", viewport: { width: 390, height: 844 }, mobile: true }
+]) {
+  test(`final harvest causally closes all three natural orders on ${config.label}`, async ({ browser }) => {
+    const reducedMotionFixture = await runFinalHarvestJourney(browser, config);
+    if (!config.mobile) {
+      return;
+    }
+    expect(reducedMotionFixture).toBeTruthy();
+    const context = await browser.newContext({
+      viewport: config.viewport,
+      hasTouch: true,
+      isMobile: true,
+      reducedMotion: "reduce"
+    });
+    const page = await context.newPage();
+    try {
+      await page.goto(`${BASE_URL}?final-harvest=reduced-motion`, { waitUntil: "networkidle" });
+      await page.evaluate(({ key, saved }) => localStorage.setItem(key, saved), {
+        key: SAVE_KEY,
+        saved: reducedMotionFixture
+      });
+      await page.reload({ waitUntil: "networkidle" });
+      const eligible = await expectEligibleFinalHarvest(page, 3, "mobile reduced-motion reconstructed state");
+      expect(eligible.reducedMotion).toBe(true);
+      await finishThroughFinalHarvest(
+        page,
+        eligible,
+        "touch",
+        "work/final-harvest-mobile390-reduced-round3"
+      );
+    } finally {
+      await context.close();
+    }
+  });
 }
 
 for (const config of [

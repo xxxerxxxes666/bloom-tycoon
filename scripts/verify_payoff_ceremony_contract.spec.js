@@ -118,7 +118,10 @@ async function currentBouquetPixelFrame(page) {
       viewport: { width: innerWidth, height: innerHeight },
       assembly: rectFor(assembly),
       runningAnimations: assembly.getAnimations({ subtree: true })
-        .filter((animation) => animation.playState === "running").length,
+        .filter((animation) => (
+          animation.playState === "running"
+          && animation.animationName !== "final-harvest-receiver-breathe"
+        )).length,
       ingredients: ingredients.map((ingredient) => ({
         flowerId: Number(ingredient.dataset.flowerId),
         slot: Number(ingredient.dataset.liveSlot),
@@ -160,7 +163,10 @@ async function waitForBouquetPixelReadiness(page) {
       return node.isConnected && rect.width > 0 && rect.height > 0;
     };
     if (!assembly || !measurable(assembly) || !ingredients.length || !ingredients.every(measurable)
-        || assembly.getAnimations({ subtree: true }).some((animation) => animation.playState === "running")) {
+        || assembly.getAnimations({ subtree: true }).some((animation) => (
+          animation.playState === "running"
+          && animation.animationName !== "final-harvest-receiver-breathe"
+        ))) {
       return false;
     }
     const progress = assembly.dataset.progress;

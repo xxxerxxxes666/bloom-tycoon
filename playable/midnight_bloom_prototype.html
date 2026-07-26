@@ -1438,6 +1438,46 @@
       animation: live-bouquet-receiver-ring 520ms ease-out both;
     }
 
+    body.final-harvest-active .live-bouquet-assembly,
+    body.final-harvest-transfer-active .live-bouquet-assembly {
+      border-color: #d7b16d;
+      background:
+        radial-gradient(ellipse at 50% 18%, #d7b16d4a 0, #0000 59%),
+        radial-gradient(ellipse at 50% 76%, #6f944d35 0, #0000 64%),
+        linear-gradient(180deg, #1d120b, #060403);
+      box-shadow: inset 0 0 10px #000, 0 0 15px #d7b16d52;
+    }
+
+    body.final-harvest-active .live-bouquet-ingredient[data-final-harvest-slot="true"],
+    body.final-harvest-transfer-active .live-bouquet-ingredient[data-final-harvest-slot="true"] {
+      z-index: 38 !important;
+      transform:
+        translate(-50%, -50%)
+        rotate(var(--live-rot, 0deg))
+        scale(1.16);
+      filter: brightness(1.16);
+    }
+
+    body.final-harvest-active .live-bouquet-ingredient[data-final-harvest-slot="true"]::after,
+    body.final-harvest-transfer-active .live-bouquet-ingredient[data-final-harvest-slot="true"]::after {
+      content: "";
+      position: absolute;
+      inset: -6px;
+      border: 2px solid color-mix(in srgb, var(--live-color, #d7b16d) 62%, #f4dfaa);
+      border-radius: 50%;
+      opacity: .92;
+      box-shadow:
+        0 0 0 2px #180b07,
+        0 0 12px color-mix(in srgb, var(--live-color, #d7b16d) 72%, #0000);
+      pointer-events: none;
+      animation: final-harvest-receiver-breathe 1.15s ease-in-out infinite;
+    }
+
+    body.final-harvest-transfer-active .live-bouquet-ingredient[data-final-harvest-slot="true"]::after {
+      animation: none;
+      opacity: .55;
+    }
+
     .live-bouquet-assembly[data-assembly-complete="true"] {
       border-color: #b9874d;
       background:
@@ -1537,6 +1577,7 @@
     }
 
     .tutorial-panel.black-candle-tutorial .tutorial-icon,
+    .tutorial-panel.final-harvest-tutorial .tutorial-icon,
     .tutorial-panel.refused-tutorial .tutorial-icon,
     .tutorial-panel.failed-tutorial .tutorial-icon {
       padding-right: 7px;
@@ -1563,6 +1604,7 @@
 
     @media (max-width: 600px) {
       .tutorial-panel.black-candle-tutorial,
+      .tutorial-panel.final-harvest-tutorial,
       .tutorial-panel.refused-tutorial,
       .tutorial-panel.failed-tutorial {
         gap: 5px;
@@ -1572,6 +1614,7 @@
         letter-spacing: 0;
       }
       .tutorial-panel.black-candle-tutorial .tutorial-icon,
+      .tutorial-panel.final-harvest-tutorial .tutorial-icon,
       .tutorial-panel.refused-tutorial .tutorial-icon,
       .tutorial-panel.failed-tutorial .tutorial-icon {
         padding-right: 5px;
@@ -1579,6 +1622,7 @@
         letter-spacing: .045em;
       }
       .tutorial-panel.black-candle-tutorial .tutorial-skip,
+      .tutorial-panel.final-harvest-tutorial .tutorial-skip,
       .tutorial-panel.refused-tutorial .tutorial-skip,
       .tutorial-panel.failed-tutorial .tutorial-skip {
         padding-right: 6px;
@@ -2569,6 +2613,53 @@
       outline-color: #f0c477;
       outline-offset: -2px;
       animation: target-match-endpoint-breathe 1.25s ease-in-out infinite;
+    }
+
+    .tile.final-harvest-endpoint {
+      z-index: 6;
+      outline: 2px solid #d7b16d;
+      outline-offset: -3px;
+      box-shadow:
+        inset 0 0 14px #000,
+        inset 0 0 0 1px #6d4d27,
+        0 0 0 2px #140a07,
+        0 0 14px #d7b16d75;
+    }
+
+    .tile.final-harvest-match:not(.final-harvest-endpoint) {
+      z-index: 4;
+      outline: 1px solid color-mix(in srgb, var(--final-harvest-color, #d7b16d) 68%, #d7b16d);
+      outline-offset: -5px;
+      box-shadow:
+        inset 0 0 15px #000,
+        0 0 10px color-mix(in srgb, var(--final-harvest-color, #d7b16d) 52%, #0000);
+    }
+
+    .objective-target.final-harvest-target,
+    .contract-ingredient.final-harvest-target {
+      border-color: #b9874d;
+      background:
+        radial-gradient(circle at 18% 50%, #d7b16d22 0, #0000 42%),
+        #0b0807e8;
+      box-shadow: inset 0 0 9px #000, 0 0 9px #d7b16d3d;
+    }
+
+    body.final-harvest-active .first-swap-cue::before,
+    body.final-harvest-transfer-active .first-swap-cue::before {
+      content: "FINAL HARVEST";
+    }
+
+    body.final-harvest-transfer-active #liveBouquetAssembly {
+      view-transition-name: final-harvest-bouquet;
+    }
+
+    body.final-harvest-handoff-active .crafted-bouquet {
+      view-transition-name: final-harvest-bouquet;
+    }
+
+    ::view-transition-group(final-harvest-bouquet) {
+      animation-duration: 360ms;
+      animation-timing-function: cubic-bezier(.16,.82,.2,1);
     }
 
     .objective-target.target-match-receiver,
@@ -6198,6 +6289,28 @@
     body.focused-active-play.armed-line-relic-cue .first-swap-cue::before { content:"BLACK CANDLE"; }
     body.round-one-active.round-one-black-candle-cue .first-swap-cue { position:relative; z-index:12; }
     body.restored-greenhouse-handoff.round-one-active .first-swap-cue { display:none!important; }
+    body.focused-active-play.final-harvest-active:not(.tutorial-active) .first-swap-cue,
+    body.focused-active-play.final-harvest-transfer-active:not(.tutorial-active) .first-swap-cue {
+      display: flex;
+      width: max-content;
+      max-width: calc(100% - 20px);
+      min-height: 30px;
+      margin: 7px auto 0;
+      padding: 5px 10px;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid #b9874d;
+      border-radius: 999px;
+      color: #fff0b4;
+      background: linear-gradient(90deg, #17100c, #30200e, #17100c);
+      box-shadow: 0 0 14px #d7b16d38, inset 0 0 9px #000;
+      font: 800 14px Georgia,serif;
+      letter-spacing: .035em;
+      text-align: center;
+    }
+    body.final-harvest-transfer-active .tutorial-help {
+      display: none !important;
+    }
     body.round-one-active .board { touch-action:manipulation; }
     /* Legacy verifier marker: body.round-one-active.round-one-complete .objective,
        body.round-one-active.round-one-complete .active-greenhouse-stage,
@@ -7996,6 +8109,11 @@
       100% { filter: brightness(.9); }
     }
 
+    @keyframes final-harvest-receiver-breathe {
+      0%, 100% { opacity: .58; transform: scale(.92); }
+      50% { opacity: 1; transform: scale(1.08); }
+    }
+
     @keyframes black-candle-directional-sweep {
       0% { opacity: 0; transform: scaleX(.04); }
       18% { opacity: 1; }
@@ -8017,6 +8135,14 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
+      body.final-harvest-active .live-bouquet-ingredient[data-final-harvest-slot="true"]::after,
+      body.final-harvest-transfer-active .live-bouquet-ingredient[data-final-harvest-slot="true"]::after {
+        animation: none !important;
+        opacity: .82;
+      }
+      ::view-transition-group(final-harvest-bouquet) {
+        animation-duration: 1ms;
+      }
       .black-candle-burn-sweep {
         display: none !important;
       }
@@ -8213,6 +8339,17 @@
         align-self: end;
         justify-self: center;
         margin: 0 0 2px;
+      }
+
+      body.focused-active-play.final-harvest-active:not(.tutorial-active) .first-swap-cue {
+        justify-self: start;
+        max-width: calc(100% - 52px);
+        margin-left: 8px;
+      }
+
+      body.focused-active-play.final-harvest-active:not(.tutorial-active) .main > .tutorial-help {
+        justify-self: end;
+        margin-right: 8px;
       }
 
       body.focused-active-play:not(.focused-slice-failed) .board,
@@ -8624,6 +8761,12 @@
     let thornTeachingTimer = null;
     let orderPulseTargets = new Set();
     let orderPulseSlots = new Map();
+    let visibleFinalHarvest = null;
+    let finalHarvestCommit = null;
+    let finalHarvestTransferTimer = null;
+    let finalHarvestHandoffTimer = null;
+    let finalHarvestCeremonyPacing = null;
+    let tutorialReplayOwnsNarration = false;
     let interactionFeedbackGeneration = 0;
     let isResolving = false;
     let altarReweaveActive = false;
@@ -8809,10 +8952,13 @@
       const displayCount = Math.min(current, needed);
       const pulseClass = orderPulseTargets.has(flowerId) ? "order-pulse" : "";
       const literacyClass = targetLiteracyFlowerId === flowerId ? "target-literacy" : "";
+      const finalHarvestClass = visibleFinalHarvest?.targetFlowerIds.includes(flowerId)
+        ? "final-harvest-target"
+        : "";
       const completeClass = displayCount >= needed ? "complete" : "";
       const pct = needed ? Math.min(100, (displayCount / needed) * 100) : 0;
       return `
-        <span class="objective-target ${pulseClass} ${literacyClass} ${completeClass}" data-flower-id="${flowerId}" style="--target-pct:${pct}%">
+        <span class="objective-target ${pulseClass} ${literacyClass} ${finalHarvestClass} ${completeClass}" data-flower-id="${flowerId}" style="--target-pct:${pct}%">
           <span class="objective-target-fill" aria-hidden="true"></span>
           ${iconMarkup(flowerId, "objective-icon", flower[0])}
           <span class="objective-target-name" data-compact-label="${compactFlowerLabel(flowerId)}">${flower[0]}</span>
@@ -9064,6 +9210,9 @@
       });
       const nextIncompleteTarget = plan.targets.find((target) => targetProgress(target) < target.needed) || null;
       const nextObjectiveSlot = nextIncompleteTarget ? receivers.get(nextIncompleteTarget.flowerId) : -1;
+      const finalHarvestComposition = visibleFinalHarvest?.compositionKey === bouquetCompositionKey(plan)
+        ? new Set(visibleFinalHarvest.finalSlotIndexes)
+        : null;
       const stemsMarkup = slotDetails.map(({ layout, index, slotProgress, visualProgress }) => `
         <span class="live-bouquet-stem" aria-hidden="true" data-filled="${slotProgress >= 1 ? "true" : "false"}" style="--ingredient-progress:${slotProgress.toFixed(3)};--ingredient-visual-progress:${visualProgress.toFixed(3)};--live-stem-x:${layout.stemX}px;--live-stem-top:${layout.stemTop}px;--live-stem-height:${layout.stemHeight}px;--live-stem-rot:${layout.stemRot}deg;"></span>
         <span class="live-bouquet-leaf" aria-hidden="true" data-filled="${slotProgress >= 1 ? "true" : "false"}" style="--ingredient-progress:${slotProgress.toFixed(3)};--ingredient-visual-progress:${visualProgress.toFixed(3)};--live-leaf-x:${layout.leafX}px;--live-leaf-y:${layout.leafY}px;--live-leaf-rot:${index % 2 ? 202 : -22}deg;"></span>
@@ -9072,6 +9221,7 @@
         const gainReceiver = orderPulseSlots.get(target.flowerId)?.has(index) || false;
         const pulse = gainReceiver ? "order-pulse" : "";
         const receiver = receivers.get(target.flowerId) === index;
+        const finalHarvestSlot = finalHarvestComposition?.has(index) || false;
         const slotState = slotProgress >= 1 ? "filled" : slotProgress > 0 ? "partial" : "empty";
         return `
           <span class="live-bouquet-ingredient live-bouquet-bloom ${pulse}"
@@ -9084,6 +9234,7 @@
             data-filled="${slotProgress >= 1 ? "true" : "false"}"
             data-receiver="${receiver}"
             data-gain-receiver="${gainReceiver}"
+            data-final-harvest-slot="${finalHarvestSlot}"
             data-next-objective="${nextObjectiveSlot === index}"
             data-progress="${current}/${target.needed}"
             style="--ingredient-progress:${slotProgress.toFixed(3)};--ingredient-visual-progress:${visualProgress.toFixed(3)};--live-x:calc(50% + ${layout.x}px);--live-y:${layout.y}px;--live-size:${layout.size}px;--live-rot:${layout.rot}deg;--live-z:${layout.z};--live-color:${flower[4]};"
@@ -9121,6 +9272,8 @@
       assembly.dataset.assemblyState = rendered.state;
       assembly.dataset.visibleBlooms = String(rendered.visibleBlooms);
       assembly.dataset.compositionKey = bouquetCompositionKey(plan);
+      assembly.dataset.finalHarvestPhase = visibleFinalHarvest?.phase || "";
+      assembly.dataset.finalHarvestSlots = visibleFinalHarvest?.finalSlotIndexes.join(" ") || "";
       assembly.innerHTML = rendered.markup;
       applyImageFallbacks(assembly);
     }
@@ -9347,6 +9500,315 @@
       const score = targetCells * 10 + thornCells * 7 + strictFourBonus + matchedCells.size;
       swapBoardCells(a, b);
       return { earned, thorns, target: firstTarget, score };
+    }
+
+    function unorderedCellPairMatches(first, second) {
+      if (!Array.isArray(first) || !Array.isArray(second) || first.length !== 2 || second.length !== 2) {
+        return false;
+      }
+      const key = (pair) => pair
+        .map((cell) => `${cell.x},${cell.y}`)
+        .sort()
+        .join("|");
+      return key(first) === key(second);
+    }
+
+    function directObjectiveMoveDetail(pair, plan = activeRoundPlan()) {
+      const [a, b] = pair || [];
+      if (!a || !b || !isLegalSwap(a, b) || lineRelicAt(a) || lineRelicAt(b)) {
+        return null;
+      }
+      const found = previewSwapMatches(a, b);
+      if (!found.length) {
+        return null;
+      }
+      const strongestShape = bestShape(found.map((match) => analyzeMatchShape(match)));
+      const resourceMultiplier = strongestShape?.resourceMultiplier || 1;
+      const targetByFlower = new Map(plan.targets.map((target) => [target.flowerId, target]));
+      const gains = new Map();
+      const targetCells = new Map();
+      found.forEach((match) => {
+        const target = targetByFlower.get(match.val);
+        if (!target || targetProgress(target) >= target.needed) {
+          return;
+        }
+        const cells = targetCells.get(match.val) || new Map();
+        match.cells.forEach(([x, y]) => cells.set(`${x},${y}`, { x, y }));
+        targetCells.set(match.val, cells);
+      });
+      targetCells.forEach((cells, flowerId) => gains.set(
+        flowerId,
+        cells.size * resourceMultiplier
+      ));
+      if (!gains.size) {
+        return null;
+      }
+      return {
+        pair: pair.map((cell) => ({ ...cell })),
+        gains,
+        targetCells: new Map(
+          [...targetCells].map(([flowerId, cells]) => [flowerId, [...cells.values()]])
+        )
+      };
+    }
+
+    function finalHarvestGuidanceBlocked(plan = activeRoundPlan()) {
+      return !focusedSliceRound(plan)
+        || roundComplete
+        || isBouquetFailed(plan)
+        || isResolving
+        || moves <= 0
+        || !thornGoalComplete(plan)
+        || Boolean(blackCandleActivationPresentation)
+        || tutorialReplayOwnsNarration
+        || (tutorialActive && plan.round === 1 && !blackCandleLessonComplete && !armedLineRelic)
+        || (tutorialActive && plan.round >= 2)
+        || restoredGreenhouseHandoff
+        || altarReweaveActive
+        || postRecoveryGuideActive
+        || invalidSwapCells.size > 0
+        || validSwapCells.size > 0
+        || activeSwapCells.size > 0
+        || swapGlideCells.size > 0
+        || harvestFlashCells.size > 0
+        || fallAnimations.size > 0
+        || refillBornCells.size > 0
+        || refillColumns.size > 0
+        || boardParticles.length > 0
+        || supremeChargeActive
+        || boardDragInputActive();
+    }
+
+    function blackCandleObjectiveMoveDetail(plan = activeRoundPlan()) {
+      const guidance = lineRelicGuidance();
+      if (!armedLineRelic || !guidance?.pair) {
+        return null;
+      }
+      const cells = armedLineRelic.direction === "vertical"
+        ? Array.from({ length: BOARD_SIZE }, (_, y) => ({ x: armedLineRelic.x, y }))
+        : Array.from({ length: BOARD_SIZE }, (_, x) => ({ x, y: armedLineRelic.y }));
+      const targetFlowerIds = new Set(plan.targets.map((target) => target.flowerId));
+      const targetCells = new Map();
+      cells.forEach((cell) => {
+        const flowerId = board[cell.y]?.[cell.x];
+        if (!targetFlowerIds.has(flowerId)) {
+          return;
+        }
+        const flowerCells = targetCells.get(flowerId) || [];
+        flowerCells.push({ ...cell });
+        targetCells.set(flowerId, flowerCells);
+      });
+      return {
+        pair: guidance.pair.map((cell) => ({ ...cell })),
+        gains: new Map([...targetCells].map(([flowerId, flowerCells]) => [flowerId, flowerCells.length])),
+        targetCells,
+        guidanceYielded: true,
+        kind: "black-candle"
+      };
+    }
+
+    function finalHarvestEligibility(plan = activeRoundPlan()) {
+      if (finalHarvestGuidanceBlocked(plan)) {
+        return null;
+      }
+      const remaining = plan.targets
+        .map((target) => ({
+          target,
+          deficit: Math.max(0, target.needed - targetProgress(target))
+        }))
+        .filter((entry) => entry.deficit > 0);
+      if (!remaining.length) {
+        return null;
+      }
+      const moveDetails = armedLineRelic
+        ? [blackCandleObjectiveMoveDetail(plan)].filter(Boolean)
+        : legalMoves().map((pair) => directObjectiveMoveDetail(pair, plan)).filter(Boolean);
+      const candidates = moveDetails.flatMap((detail) => {
+        if (!detail || remaining.some(({ target, deficit }) => (
+          (detail.gains.get(target.flowerId) || 0) < deficit
+        ))) {
+          return [];
+        }
+        const targetFlowerIds = remaining.map(({ target }) => target.flowerId);
+        const matchingCells = targetFlowerIds.flatMap((flowerId) => (
+          (detail.targetCells.get(flowerId) || []).map((cell) => ({ ...cell, flowerId }))
+        ));
+        const excess = remaining.reduce((sum, { target, deficit }) => (
+          sum + (detail.gains.get(target.flowerId) || 0) - deficit
+        ), 0);
+        return [{
+          ...detail,
+          remaining,
+          targetFlowerIds,
+          matchingCells,
+          excess,
+          guidanceYielded: Boolean(detail.guidanceYielded),
+          kind: detail.kind || "plain-match"
+        }];
+      }).sort((first, second) => (
+        first.excess - second.excess
+        || first.matchingCells.length - second.matchingCells.length
+        || first.pair[0].y - second.pair[0].y
+        || first.pair[0].x - second.pair[0].x
+        || first.pair[1].y - second.pair[1].y
+        || first.pair[1].x - second.pair[1].x
+      ));
+      const candidate = candidates[0] || null;
+      if (!candidate) {
+        return null;
+      }
+      const finalSlotIndexes = bouquetComposition(plan)
+        .filter(({ target, unitIndex }) => (
+          candidate.targetFlowerIds.includes(target.flowerId)
+          && unitIndex >= targetProgress(target)
+          && unitIndex < target.needed
+        ))
+        .map(({ index }) => index);
+      if (!finalSlotIndexes.length) {
+        return null;
+      }
+      return {
+        round: plan.round,
+        pair: candidate.pair,
+        remaining: candidate.remaining.map(({ target, deficit }) => ({
+          flowerId: target.flowerId,
+          deficit,
+          gain: candidate.gains.get(target.flowerId) || 0
+        })),
+        targetFlowerIds: candidate.targetFlowerIds,
+        matchingCells: candidate.matchingCells,
+        finalSlotIndexes,
+        compositionKey: bouquetCompositionKey(plan),
+        guidanceYielded: candidate.guidanceYielded,
+        kind: candidate.kind,
+        phase: "eligible"
+      };
+    }
+
+    function finalHarvestCue(presentation = visibleFinalHarvest) {
+      if (!presentation) {
+        return "";
+      }
+      if (presentation.phase === "landing") {
+        return "Final flowers landing.";
+      }
+      const labels = presentation.targetFlowerIds.map((flowerId) => flowers[flowerId][0]);
+      return `Finish with ${labels.join(" + ")}.`;
+    }
+
+    function clearFinalHarvestPresentation({ renderAfter = false } = {}) {
+      if (finalHarvestTransferTimer && window.clearTimeout) {
+        window.clearTimeout(finalHarvestTransferTimer);
+      }
+      if (finalHarvestHandoffTimer && window.clearTimeout) {
+        window.clearTimeout(finalHarvestHandoffTimer);
+      }
+      finalHarvestTransferTimer = null;
+      finalHarvestHandoffTimer = null;
+      finalHarvestCommit = null;
+      visibleFinalHarvest = null;
+      finalHarvestCeremonyPacing = null;
+      if (renderAfter) {
+        render();
+      }
+    }
+
+    function commitFinalHarvestForPair(pair, plan = activeRoundPlan()) {
+      const eligibility = finalHarvestEligibility(plan);
+      if (!eligibility || !unorderedCellPairMatches(eligibility.pair, pair)) {
+        finalHarvestCommit = null;
+        return false;
+      }
+      finalHarvestCommit = {
+        ...eligibility,
+        pair: eligibility.pair.map((cell) => ({ ...cell })),
+        remaining: eligibility.remaining.map((entry) => ({ ...entry })),
+        targetFlowerIds: eligibility.targetFlowerIds.slice(),
+        matchingCells: eligibility.matchingCells.map((cell) => ({ ...cell })),
+        finalSlotIndexes: eligibility.finalSlotIndexes.slice(),
+        guidanceYielded: eligibility.guidanceYielded,
+        kind: eligibility.kind,
+        phase: "committed"
+      };
+      return true;
+    }
+
+    function confirmFinalHarvestCommit(result, plan = activeRoundPlan()) {
+      if (
+        !finalHarvestCommit
+        || finalHarvestCommit.round !== plan.round
+        || finalHarvestCommit.compositionKey !== bouquetCompositionKey(plan)
+        || finalHarvestCommit.remaining.some(({ flowerId, deficit }) => (
+          Number(result?.gained?.[flowerId] || 0) < deficit
+        ))
+        || !roundObjectivesComplete(plan)
+      ) {
+        clearFinalHarvestPresentation();
+        return false;
+      }
+      finalHarvestCommit.phase = "landing";
+      visibleFinalHarvest = finalHarvestCommit;
+      return true;
+    }
+
+    function finalHarvestTransferActive() {
+      return Boolean(finalHarvestCommit && finalHarvestCommit.phase === "landing");
+    }
+
+    function revealFinalHarvestCeremony(plan = activeRoundPlan()) {
+      if (!finalHarvestCommit || finalHarvestCommit.round !== plan.round || !roundComplete) {
+        clearFinalHarvestPresentation();
+        return;
+      }
+      finalHarvestTransferTimer = null;
+      finalHarvestCommit.phase = "ceremony";
+      const transferHold = finalHarvestCommit.transferHold || 0;
+      const reveal = () => {
+        pulseCoinBalance();
+        pulseBouquetSealFeedback(isOwnedRestorationReplay() ? transferHold : 0);
+        if (plan.round >= 2) {
+          pulseNextOrderReady();
+        }
+        render();
+        finalHarvestHandoffTimer = window.setTimeout(() => {
+          finalHarvestHandoffTimer = null;
+          finalHarvestCommit = null;
+          visibleFinalHarvest = null;
+          if ($("firstSwapCue")?.textContent === "Final flowers landing.") {
+            $("firstSwapCue").textContent = "";
+          }
+          if (roundComplete) {
+            render();
+          }
+        }, prefersReducedMotion() ? 80 : 420);
+      };
+      if (!prefersReducedMotion() && typeof document.startViewTransition === "function") {
+        try {
+          document.startViewTransition(reveal);
+        } catch (error) {
+          reveal();
+        }
+      } else {
+        reveal();
+      }
+    }
+
+    function startFinalHarvestCompletionTransfer(plan = activeRoundPlan()) {
+      if (!finalHarvestTransferActive() || finalHarvestCommit.round !== plan.round) {
+        return false;
+      }
+      if (finalHarvestTransferTimer) {
+        return true;
+      }
+      const slotCount = Math.max(1, finalHarvestCommit.finalSlotIndexes.length);
+      const hold = prefersReducedMotion()
+        ? 400
+        : Math.min(920, 540 + (slotCount - 1) * 56);
+      finalHarvestCommit.transferHold = hold;
+      finalHarvestTransferTimer = window.setTimeout(() => {
+        revealFinalHarvestCeremony(plan);
+      }, hold);
+      return true;
     }
 
     function roundOneTargetByFlower(flowerId, plan = activeRoundPlan()) {
@@ -10585,6 +11047,10 @@
 
     function scheduleIdleHint() {
       clearIdleHint();
+      const finalHarvest = finalHarvestEligibility();
+      if (finalHarvest && !finalHarvest.guidanceYielded) {
+        return;
+      }
       const postOnboardingIdleHint = isPostOnboardingIdleHintActive();
       const roundOneAgencyHint = isRoundOneAgencyHandoffActive();
       const roundOneOrderCorrection = isRoundOneOrderCorrectionActive();
@@ -11160,7 +11626,13 @@
       const cue = $("firstSwapCue");
       const authoritativeThornLesson = isAuthoritativeRoundTwoThornLesson();
       const roundOneAgencyHandoff = isRoundOneAgencyHandoffActive();
-      const focusedCueActive = (currentRound === 1 || isRestoredNextOrderFocus() || authoritativeThornLesson || postRecoveryGuideActive) && !roundComplete && cue;
+      const focusedCueActive = (
+        currentRound === 1
+        || isRestoredNextOrderFocus()
+        || authoritativeThornLesson
+        || postRecoveryGuideActive
+        || visibleFinalHarvest?.phase === "eligible"
+      ) && !roundComplete && cue;
       const returnCue = continuingRefusal
         ? invalidSwapReturnCue
         : focusedCueActive ? cue.textContent : "";
@@ -12458,13 +12930,19 @@
         settleOwnedReplayRenewal();
         return;
       }
+      const finalHarvestRenewal = Boolean(finalHarvestCeremonyPacing);
+      const finalHarvestLead = Number(finalHarvestCeremonyPacing?.remainingLead || 0);
+      finalHarvestCeremonyPacing = null;
       if (ownedReplayRenewalTimer && window.clearTimeout) {
         window.clearTimeout(ownedReplayRenewalTimer);
       }
       if (prefersReducedMotion()) {
         ownedReplayRenewalPhase = "acknowledgment";
         render();
-        ownedReplayRenewalTimer = window.setTimeout(settleOwnedReplayRenewal, 520);
+        ownedReplayRenewalTimer = window.setTimeout(
+          settleOwnedReplayRenewal,
+          Math.max(80, 520 - finalHarvestLead)
+        );
         return;
       }
       ownedReplayRenewalPhase = "transfer";
@@ -12477,8 +12955,11 @@
         }
         ownedReplayRenewalPhase = "renewal";
         render();
-        ownedReplayRenewalTimer = window.setTimeout(settleOwnedReplayRenewal, 520);
-      }, 660);
+        ownedReplayRenewalTimer = window.setTimeout(
+          settleOwnedReplayRenewal,
+          finalHarvestRenewal ? 450 : 520
+        );
+      }, finalHarvestRenewal ? 600 : 660);
     }
 
     function renderFocusedPayoffCeremony(ceremony) {
@@ -12524,20 +13005,30 @@
     }
 
     function updateFocusedPayoffLiveRegionOwnership(plan = activeRoundPlan()) {
+      const finalHarvestNarration = Boolean(visibleFinalHarvest)
+        && ["eligible", "landing"].includes(visibleFinalHarvest.phase);
       const tutorialOwnsNarration = focusedSliceRound(plan)
-        && (roundComplete || isBouquetFailed(plan));
+        && (roundComplete || isBouquetFailed(plan) || finalHarvestNarration);
       $("coinBalance")?.setAttribute("aria-live", tutorialOwnsNarration ? "off" : "polite");
       $("roundOneRestoration")?.setAttribute("aria-live", tutorialOwnsNarration ? "off" : "polite");
-      $("tutorialPanel")?.setAttribute("aria-live", "polite");
+      $("tutorialPanel")?.setAttribute(
+        "aria-live",
+        finalHarvestNarration && !tutorialActive ? "off" : "polite"
+      );
+      $("firstSwapCue")?.setAttribute(
+        "aria-live",
+        finalHarvestNarration && tutorialActive ? "off" : "polite"
+      );
     }
 
     function render() {
       clearDragPreview({ resetInputs: true });
+      const finalHarvestLanding = finalHarvestTransferActive();
       const roundOneActive = currentRound === 1;
-      const roundTwoUpgradePending = currentRound === 2 && roundComplete && roundOneRestored && !roundTwoGreenhouseUpgraded;
-      const roundTwoUpgradeComplete = currentRound === 2 && roundComplete && roundOneRestored && roundTwoGreenhouseUpgraded;
-      const roundThreeFinalPending = currentRound === 3 && roundComplete && !roundThreeConservatoryRaised;
-      const roundThreeFinalComplete = currentRound === 3 && roundComplete && roundThreeConservatoryRaised;
+      const roundTwoUpgradePending = currentRound === 2 && roundComplete && !finalHarvestLanding && roundOneRestored && !roundTwoGreenhouseUpgraded;
+      const roundTwoUpgradeComplete = currentRound === 2 && roundComplete && !finalHarvestLanding && roundOneRestored && roundTwoGreenhouseUpgraded;
+      const roundThreeFinalPending = currentRound === 3 && roundComplete && !finalHarvestLanding && !roundThreeConservatoryRaised;
+      const roundThreeFinalComplete = currentRound === 3 && roundComplete && !finalHarvestLanding && roundThreeConservatoryRaised;
       const roundThreeFinalPayoff = roundThreeFinalPending || roundThreeFinalComplete;
       const payoffCeremony = focusedPayoffCeremony();
       const activePlan = activeRoundPlan();
@@ -12547,6 +13038,20 @@
       }
       if (targetLiteracyFlowerId !== null && !isRoundOneAgencyHandoffActive(activePlan)) {
         clearTargetLiteracy(false);
+      }
+      visibleFinalHarvest = finalHarvestCommit && ["landing", "ceremony"].includes(finalHarvestCommit.phase)
+        ? finalHarvestCommit
+        : finalHarvestEligibility(activePlan);
+      if (visibleFinalHarvest?.phase === "eligible" && idleHintTimer && window.clearTimeout) {
+        window.clearTimeout(idleHintTimer);
+        idleHintTimer = null;
+      }
+      if (
+        visibleFinalHarvest
+        && !visibleFinalHarvest.guidanceYielded
+        && ["eligible", "landing"].includes(visibleFinalHarvest.phase)
+      ) {
+        $("firstSwapCue").textContent = finalHarvestCue(visibleFinalHarvest);
       }
       const progress = roundProgress(activePlan);
       const activeRelicGuidance = !blackCandleActivation && !roundComplete && !isBouquetFailed()
@@ -12565,23 +13070,29 @@
       renderGreenhouseRestorationDial();
       updateBloomSoundscapeStage(activeGreenhouseStageKey());
       document.body.classList.toggle("round-one-active", roundOneActive);
-      document.body.classList.toggle("round-one-complete", roundOneActive && roundComplete);
+      document.body.classList.toggle("round-one-complete", roundOneActive && roundComplete && !finalHarvestLanding);
       document.body.classList.toggle("restored-greenhouse-handoff", restoredGreenhouseHandoff && !roundComplete);
-      document.body.classList.toggle("restored-next-order-focus", isRestoredRoundTwoWindow() || failedFocusedRestoredOrder);
+      document.body.classList.toggle(
+        "restored-next-order-focus",
+        isRestoredRoundTwoWindow() || failedFocusedRestoredOrder || (finalHarvestLanding && currentRound === 2)
+      );
       document.body.classList.toggle("restored-next-order-guide", isRestoredNextOrderFocus());
       document.body.classList.toggle("round-two-upgrade-pending", roundTwoUpgradePending);
       document.body.classList.toggle("round-two-upgrade-complete", roundTwoUpgradeComplete);
       document.body.classList.toggle("round-three-final-pending", roundThreeFinalPending);
       document.body.classList.toggle("round-three-final-complete", roundThreeFinalComplete);
-      document.body.classList.toggle("round-three-focus-active", currentRound === 3 && !roundComplete && roundOneRestored && roundTwoGreenhouseUpgraded);
+      document.body.classList.toggle("round-three-focus-active", currentRound === 3 && (!roundComplete || finalHarvestLanding) && roundOneRestored && roundTwoGreenhouseUpgraded);
       document.body.classList.toggle("reduced-motion", prefersReducedMotion());
       document.body.classList.toggle("black-candle-activation-active", Boolean(blackCandleActivation));
-      document.body.classList.toggle("focused-active-play", focusedSliceRound(activePlan) && !roundComplete);
+      document.body.classList.toggle("focused-active-play", focusedSliceRound(activePlan) && (!roundComplete || finalHarvestLanding));
       document.body.classList.toggle("altar-reweave-active", altarReweaveActive && !roundComplete && !isBouquetFailed(activePlan));
       document.body.classList.toggle("post-recovery-guide", postRecoveryGuideActive && !roundComplete && !isBouquetFailed(activePlan));
       document.body.classList.toggle("armed-line-relic-cue", Boolean(activeRelicGuidance));
       document.body.classList.toggle("focused-slice-failed", activePlan.round <= 3 && isBouquetFailed(activePlan));
-      document.body.classList.toggle("focused-payoff-active", focusedSliceRound(activePlan) && roundComplete);
+      document.body.classList.toggle("focused-payoff-active", focusedSliceRound(activePlan) && roundComplete && !finalHarvestLanding);
+      document.body.classList.toggle("final-harvest-active", visibleFinalHarvest?.phase === "eligible");
+      document.body.classList.toggle("final-harvest-transfer-active", finalHarvestLanding);
+      document.body.classList.toggle("final-harvest-handoff-active", finalHarvestCommit?.phase === "ceremony");
       document.body.classList.toggle("thorn-lesson-active", activePlan.round === 2 && Boolean(activePlan.thornGoal) && thornGoalProgress(activePlan) === 0 && !roundComplete);
       document.body.classList.toggle("round-two-followup-cue", isRestoredRoundTwoGuideActive() && hasMadeValidMove && idleHintCells.size === 2 && !roundComplete);
       document.body.classList.toggle("first-move-made", hasMadeValidMove);
@@ -12608,6 +13119,31 @@
       document.body.dataset.altarReweaveSequence = String(altarReweaveSequence);
       document.body.dataset.altarReweaveMotion = prefersReducedMotion() ? "reduced" : "full";
       document.body.dataset.tutorialPrompt = tutorialActive ? tutorialCopy() : "";
+      if (visibleFinalHarvest) {
+        document.body.dataset.finalHarvestPhase = visibleFinalHarvest.phase;
+        document.body.dataset.finalHarvestRound = String(visibleFinalHarvest.round);
+        document.body.dataset.finalHarvestPair = visibleFinalHarvest.pair
+          .map((cell) => `${cell.x},${cell.y}`)
+          .join(" ");
+        document.body.dataset.finalHarvestTargets = visibleFinalHarvest.remaining
+          .map(({ flowerId, deficit, gain }) => `${flowerId}:${deficit}:${gain}`)
+          .join(" ");
+        document.body.dataset.finalHarvestSlots = visibleFinalHarvest.finalSlotIndexes.join(" ");
+        document.body.dataset.finalHarvestComposition = visibleFinalHarvest.compositionKey;
+        document.body.dataset.finalHarvestKind = visibleFinalHarvest.kind;
+        document.body.dataset.finalHarvestOwner = visibleFinalHarvest.guidanceYielded
+          ? "stronger-guidance"
+          : "final-harvest";
+      } else {
+        document.body.removeAttribute("data-final-harvest-phase");
+        document.body.removeAttribute("data-final-harvest-round");
+        document.body.removeAttribute("data-final-harvest-pair");
+        document.body.removeAttribute("data-final-harvest-targets");
+        document.body.removeAttribute("data-final-harvest-slots");
+        document.body.removeAttribute("data-final-harvest-composition");
+        document.body.removeAttribute("data-final-harvest-kind");
+        document.body.removeAttribute("data-final-harvest-owner");
+      }
       if (blackCandleActivation) {
         document.body.dataset.blackCandleActivationPhase = blackCandleActivation.phase;
         document.body.dataset.blackCandleActivationMotion = blackCandleActivation.motion;
@@ -12682,6 +13218,16 @@
       )) || null;
       boardEl.classList.toggle("line-relic-arming", Boolean(lineRelicArmingFeedback));
       const harvestPreview = selectedHarvestPreviewFor(selected);
+      const finalHarvestEndpointKeys = new Set(
+        visibleFinalHarvest?.phase === "eligible" && !visibleFinalHarvest.guidanceYielded
+          ? visibleFinalHarvest.pair.map((cell) => `${cell.x},${cell.y}`)
+          : []
+      );
+      const finalHarvestCells = new Map(
+        visibleFinalHarvest?.phase === "eligible" && !visibleFinalHarvest.guidanceYielded
+          ? visibleFinalHarvest.matchingCells.map((cell) => [`${cell.x},${cell.y}`, cell.flowerId])
+          : []
+      );
 
       for (let y = 0; y < BOARD_SIZE; y += 1) {
         for (let x = 0; x < BOARD_SIZE; x += 1) {
@@ -12714,7 +13260,16 @@
           const swapClass = activeSwapCells.has(`${x},${y}`) ? "swap-snap" : "";
           const swapGlide = swapGlideCells.get(`${x},${y}`);
           const swapGlideClass = swapGlide ? "swap-glide" : "";
-          const idleHintClass = idleHintCells.has(`${x},${y}`) ? "idle-hint" : "";
+          const idleHintClass = (
+            !visibleFinalHarvest || visibleFinalHarvest.guidanceYielded
+          ) && idleHintCells.has(`${x},${y}`) ? "idle-hint" : "";
+          const finalHarvestEndpointClass = finalHarvestEndpointKeys.has(`${x},${y}`)
+            ? "final-harvest-endpoint"
+            : "";
+          const finalHarvestFlowerId = finalHarvestCells.get(`${x},${y}`);
+          const finalHarvestMatchClass = finalHarvestFlowerId !== undefined
+            ? "final-harvest-match"
+            : "";
           const targetLiteracyClass = targetLiteracyFlowerId === value ? "target-literacy" : "";
           const thornTeachingActive = !activeRelicGuidance && thornTeachingCells.has(`${x},${y}`);
           const thornTeachingSwapCell = thornTeachingActive && thornTeachingSwapCells.has(`${x},${y}`);
@@ -12756,10 +13311,17 @@
           const relicPreviewClass = harvestPreview.relicCells.has(fallKey) ? "relic-preview" : "";
           const armedRelic = lineRelicAt({ x, y }) ? armedLineRelic : null;
           const armedRelicClass = armedRelic ? "black-candle-vine" : "";
-          tile.className = `tile ${selectedClass} ${legalClass} ${lineRelicLaneClass} ${lineRelicDestinationClass} ${blackCandleBurnCellClass} ${blackCandleBurnSourceClass} ${blackCandleBurnExtinguishedClass} ${blackCandleBurnRefillClass} ${previewClass} ${previewAnchorClass} ${relicPreviewClass} ${armedRelicClass} ${harvestClass} ${superClass} ${invalidClass} ${validSwapClass} ${swapClass} ${swapGlideClass} ${idleHintClass} ${targetLiteracyClass} ${targetMatchEndpointClass} ${targetMatchResultClass} ${thornTeachClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass} ${refillBornClass} ${settleClass}`;
+          tile.className = `tile ${selectedClass} ${legalClass} ${lineRelicLaneClass} ${lineRelicDestinationClass} ${blackCandleBurnCellClass} ${blackCandleBurnSourceClass} ${blackCandleBurnExtinguishedClass} ${blackCandleBurnRefillClass} ${previewClass} ${previewAnchorClass} ${relicPreviewClass} ${armedRelicClass} ${harvestClass} ${superClass} ${invalidClass} ${validSwapClass} ${swapClass} ${swapGlideClass} ${idleHintClass} ${finalHarvestEndpointClass} ${finalHarvestMatchClass} ${targetLiteracyClass} ${targetMatchEndpointClass} ${targetMatchResultClass} ${thornTeachClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass} ${refillBornClass} ${settleClass}`;
           tile.disabled = isResolving || roundComplete || isBouquetFailed();
           tile.tabIndex = !tile.disabled && boardFocusCell.x === x && boardFocusCell.y === y ? 0 : -1;
           tile.style.setProperty("--tile-color", flowers[value][4]);
+          if (finalHarvestFlowerId !== undefined) {
+            tile.style.setProperty("--final-harvest-color", flowers[finalHarvestFlowerId][4]);
+            tile.dataset.finalHarvestFlowerId = String(finalHarvestFlowerId);
+          }
+          if (finalHarvestEndpointClass) {
+            tile.dataset.finalHarvestEndpoint = "true";
+          }
           if (targetMatchForecast) {
             tile.style.setProperty("--forecast-color", flowers[targetMatchForecast.target.flowerId][4]);
           }
@@ -12830,13 +13392,18 @@
           const targetMatchResultLabel = targetMatchResult
             ? ` in forecast ${flowers[targetMatchForecast.target.flowerId][0]} match`
             : "";
+          const finalHarvestLabel = finalHarvestEndpointClass
+            ? " final harvest swap endpoint"
+            : finalHarvestMatchClass
+              ? ` in final ${flowers[finalHarvestFlowerId][0]} match`
+              : "";
           const relicLabel = armedRelic
             ? ` armed Black Candle Vine, clears ${armedRelic.direction === "vertical" ? "column" : "row"} when swapped`
             : "";
           const thornEventOffsetClass = thornHitClass && lineRelicArmingFeedback
             ? `offset-${x <= lineRelicArmingFeedback.x ? "left" : "right"}-${y <= lineRelicArmingFeedback.y ? "up" : "down"}`
             : "";
-          tile.setAttribute("aria-label", `${flowers[value][0]} tile${relicLabel}${legalLabel}${destinationLabel}${laneLabel}${previewLabel}${targetMatchEndpointLabel}${targetMatchResultLabel}${thornTeachLabel}${thornLabel}`);
+          tile.setAttribute("aria-label", `${flowers[value][0]} tile${relicLabel}${legalLabel}${destinationLabel}${laneLabel}${previewLabel}${targetMatchEndpointLabel}${targetMatchResultLabel}${finalHarvestLabel}${thornTeachLabel}${thornLabel}`);
           tile.innerHTML = `
             ${iconMarkup(value, "", flowers[value][0], "tile-icon-wrap")}
             ${targetMatchResult ? `<span class="target-match-result-mark" aria-hidden="true">${targetMatchIncoming ? iconMarkup(targetMatchForecast.target.flowerId, "target-match-ghost-icon", "", "target-match-ghost-wrap") : ""}</span>` : ""}
@@ -13036,7 +13603,7 @@
           : isBouquetFailed(plan) ? "paused" : "active";
       }
       const bouquetProgress = $("bouquetProgress");
-      const receiverHandedOff = roundComplete;
+      const receiverHandedOff = roundComplete && !finalHarvestTransferActive();
       if (bouquetProgress) {
         bouquetProgress.hidden = false;
         bouquetProgress.classList.toggle("receiver-handed-off", receiverHandedOff);
@@ -13054,6 +13621,9 @@
       }
       if (isBouquetFailed(plan)) {
         return "Moves ended. Retry the bouquet.";
+      }
+      if (finalHarvestTransferActive()) {
+        return finalHarvestCue(finalHarvestCommit);
       }
       if (roundComplete) {
         const ownedReplayPhase = ownedReplayPresentationPhase();
@@ -13095,6 +13665,9 @@
         && (thornGoalProgress(plan) === 0 || thornTeachingSwapCells.size === 2)
       ) {
         return "Match beside the Thorn.";
+      }
+      if (visibleFinalHarvest?.phase === "eligible") {
+        return finalHarvestCue(visibleFinalHarvest);
       }
       if (plan.round === 2 && hasMadeValidMove) {
         return "Finish the Moonlit Wreath.";
@@ -13141,7 +13714,15 @@
         && !failedTutorial
         && (Boolean(blackCandleActivationPresentation) || (!roundComplete && Boolean(armedLineRelic)))
         && !refusedTutorial;
+      const namedFinalHarvest = tutorialActive
+        && !failedTutorial
+        && !refusedTutorial
+        && !namedBlackCandle
+        && Boolean(visibleFinalHarvest)
+        && ["eligible", "landing"].includes(visibleFinalHarvest.phase)
+        && !visibleFinalHarvest.guidanceYielded;
       panel.classList.toggle("black-candle-tutorial", namedBlackCandle);
+      panel.classList.toggle("final-harvest-tutorial", namedFinalHarvest);
       panel.classList.toggle("refused-tutorial", refusedTutorial);
       panel.classList.toggle("failed-tutorial", failedTutorial);
       if (icon) {
@@ -13149,10 +13730,12 @@
           ? "NO BLOOM"
           : failedTutorial
             ? "RETRY"
-            : namedBlackCandle ? "BLACK CANDLE" : "✦";
+            : namedBlackCandle
+              ? "BLACK CANDLE"
+              : namedFinalHarvest ? "FINAL HARVEST" : "✦";
         icon.setAttribute(
           "aria-hidden",
-          refusedTutorial || failedTutorial || namedBlackCandle ? "false" : "true"
+          refusedTutorial || failedTutorial || namedBlackCandle || namedFinalHarvest ? "false" : "true"
         );
       }
       if (skip) {
@@ -13195,6 +13778,7 @@
       clearTargetLiteracy(false);
       tutorialSkipped = false;
       tutorialActive = true;
+      tutorialReplayOwnsNarration = Boolean(replay);
       if (restartRoundOneAgencyHint) {
         beginRoundOneAgencyDiscovery();
       }
@@ -13224,6 +13808,7 @@
       const skippingRoundOneAgency = isRoundOneAgencyHandoffActive();
       tutorialSkipped = true;
       tutorialActive = false;
+      tutorialReplayOwnsNarration = false;
       blackCandleLessonComplete = true;
       if (skippingRoundOneAgency) {
         clearTargetLiteracy(false);
@@ -13251,6 +13836,7 @@
       }
       tutorialSkipped = true;
       tutorialActive = false;
+      tutorialReplayOwnsNarration = false;
       blackCandleLessonComplete = true;
       clearTargetLiteracy(false);
     }
@@ -13632,6 +14218,7 @@
         );
         return;
       }
+      commitFinalHarvestForPair([selected, target]);
       const roundOnePlanBeforeSwap = activeRoundPlan();
       const roundOneFirstTargetBeforeSwap = roundOnePlanBeforeSwap.targets[0];
       const roundOneSecondTargetBeforeSwap = roundOnePlanBeforeSwap.targets[1];
@@ -13725,6 +14312,7 @@
           : roundTwoOpeningBudgetActive
             ? { maxCascades: 1, quietReseed: true, suppressAltarDrift: true, playerSwap: { a: source, b: target } }
             : { playerSwap: { a: source, b: target } });
+        confirmFinalHarvestCommit(result);
         const firstMoveCopy = isFirstValidMove && currentRound === 1
           ? "<strong>First bloom!</strong> Your bouquet is already taking shape. "
           : "";
@@ -13746,6 +14334,9 @@
               blackCandleConsequencePresented = true;
               pulseOrderCounts(result.gained, result.gainedCells);
               render();
+              if (completedDuringBlackCandle && finalHarvestTransferActive()) {
+                startFinalHarvestCompletionTransfer(activeRoundPlan());
+              }
             }
           });
         }
@@ -14494,12 +15085,14 @@
       validSwapCells.clear();
       harvestFlashCells.clear();
       orderPulseTargets.clear();
+      orderPulseSlots.clear();
       settledCells.clear();
       refillBornCells.clear();
       refillColumns.clear();
       lastWildChain = null;
       bouquetSealPulseActive = false;
       nextOrderPulseActive = false;
+      clearFinalHarvestPresentation();
       document.querySelectorAll(
         ".objective-flight, .bouquet-bind-seal, .greenhouse-intake-flight"
       ).forEach((effect) => effect.remove());
@@ -15300,9 +15893,10 @@
         const progress = targetProgress(target);
         const complete = progress >= target.needed;
         const pulse = orderPulseTargets.has(target.flowerId);
+        const finalHarvestTarget = visibleFinalHarvest?.targetFlowerIds.includes(target.flowerId);
         const remaining = Math.max(0, target.needed - progress);
         return `
-          <div class="contract-ingredient ${complete ? "complete" : ""} ${pulse ? "order-pulse" : ""}" data-contract-target="${target.flowerId}" data-progress="${progress}" data-needed="${target.needed}" data-remaining="${remaining}">
+          <div class="contract-ingredient ${complete ? "complete" : ""} ${pulse ? "order-pulse" : ""} ${finalHarvestTarget ? "final-harvest-target" : ""}" data-contract-target="${target.flowerId}" data-progress="${progress}" data-needed="${target.needed}" data-remaining="${remaining}" data-final-harvest-target="${Boolean(finalHarvestTarget)}">
             <img class="contract-ingredient-icon" src="${flower[1]}" srcset="${flowerIconSrcset(flower[1])}" sizes="30px" alt="">
             <span class="contract-ingredient-copy">
               <b>${flower[0]}</b>
@@ -15434,10 +16028,13 @@
     }
 
     function beginRoundCompletionFeedback(plan = activeRoundPlan()) {
-      pulseCoinBalance();
-      pulseBouquetSealFeedback();
-      if (plan.round >= 2) {
-        pulseNextOrderReady();
+      const finalHarvestTransferStarted = startFinalHarvestCompletionTransfer(plan);
+      if (!finalHarvestTransferStarted) {
+        pulseCoinBalance();
+        pulseBouquetSealFeedback();
+        if (plan.round >= 2) {
+          pulseNextOrderReady();
+        }
       }
       playBloomSound("complete");
       if (!focusedSliceRound(plan)) {
@@ -15683,9 +16280,17 @@
       window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "auto" }));
     }
 
-    function pulseBouquetSealFeedback() {
+    function pulseBouquetSealFeedback(completionLead = 0) {
       if (bouquetSealPulseTimer && window.clearTimeout) {
         window.clearTimeout(bouquetSealPulseTimer);
+      }
+      const sealDuration = prefersReducedMotion() ? 40 : 820;
+      const boundedLead = Math.max(0, Number(completionLead || 0));
+      finalHarvestCeremonyPacing = boundedLead > 0
+        ? { remainingLead: Math.max(0, boundedLead - sealDuration) }
+        : null;
+      if (finalHarvestCommit?.phase === "ceremony") {
+        finalHarvestCommit.completionLeadRemaining = Math.max(0, boundedLead - sealDuration);
       }
       bouquetSealPulseActive = true;
       pushBoardParticle({
@@ -15703,11 +16308,12 @@
           if (isOwnedRestorationReplay()) {
             startOwnedReplayRenewal();
           } else {
+            finalHarvestCeremonyPacing = null;
             queuePostRenderFocus(focusedPayoffPrimaryButtonId());
             render();
           }
         }
-      }, prefersReducedMotion() ? 40 : 820);
+      }, Math.max(0, sealDuration - boundedLead));
     }
 
     function pulseNextOrderReady() {

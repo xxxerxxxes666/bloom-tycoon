@@ -18,7 +18,7 @@ const ROUND_FIXTURES = {
       roundThreeConservatoryRaised: false
     },
     objectiveCounts: ["Thorn Rose 5/8", "Bone Star 6/6"],
-    failedDeficits: ["3 Thorn Rose still needed"],
+    failedDeficits: ["Thorn Rose: 3 still needed"],
     completedSelectors: ['.objective-target[data-flower-id="1"].complete'],
     retryCue: /Swap the glowing pair|Thorn Rose next|Bone Star next/,
     progressCheck: (before, after) => after.counts[5] > before.counts[5] || after.counts[1] > before.counts[1]
@@ -39,7 +39,7 @@ const ROUND_FIXTURES = {
       roundThreeConservatoryRaised: false
     },
     objectiveCounts: ["Nightshade 7/10", "Amber Seed 9/9", "Thorn Rose 7/7", "Cursed Thorn 3/3"],
-    failedDeficits: ["3 Nightshade still needed"],
+    failedDeficits: ["Nightshade: 3 still needed"],
     completedSelectors: [
       '.objective-target[data-flower-id="4"].complete',
       '.objective-target[data-flower-id="5"].complete',
@@ -62,7 +62,7 @@ const ROUND_FIXTURES = {
       roundThreeConservatoryRaised: false
     },
     objectiveCounts: ["Bloodroot 11/14", "Sol Rot 13/13"],
-    failedDeficits: ["3 Bloodroot still needed"],
+    failedDeficits: ["Bloodroot: 3 still needed"],
     completedSelectors: ['.objective-target[data-flower-id="0"].complete'],
     retryCue: /Match Bloodroot and Sol Rot|Bloodroot next|Sol Rot next/,
     progressCheck: (before, after) => after.counts[3] > before.counts[3] || after.counts[0] > before.counts[0]

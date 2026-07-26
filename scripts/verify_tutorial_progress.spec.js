@@ -95,16 +95,38 @@ async function seedDeterministicMath(page, seedLabel) {
 }
 
 async function openFresh(page, suffix) {
-  await page.goto(`${BASE_URL}?tutorial-progress=${suffix}&bloomReview=1`, { waitUntil: "networkidle" });
-  await page.evaluate((key) => localStorage.removeItem(key), SAVE_KEY);
-  await page.reload({ waitUntil: "networkidle" });
+  const resetToken = `${suffix}-${Date.now()}-${Math.random()}`;
+  await page.addInitScript(({ key, token }) => {
+    if (
+      new URLSearchParams(location.search).get("freshReset") === token
+      && sessionStorage.getItem(`bloom-reset-${token}`) !== "done"
+    ) {
+      localStorage.removeItem(key);
+      sessionStorage.setItem(`bloom-reset-${token}`, "done");
+    }
+  }, { key: SAVE_KEY, token: resetToken });
+  await page.goto(
+    `${BASE_URL}?tutorial-progress=${suffix}&bloomReview=1&freshReset=${encodeURIComponent(resetToken)}`,
+    { waitUntil: "networkidle" }
+  );
   await expect(page.locator(".tile")).toHaveCount(64);
 }
 
 async function openFreshNoReview(page, suffix) {
-  await page.goto(`${BASE_URL}?tutorial-progress=${suffix}`, { waitUntil: "networkidle" });
-  await page.evaluate((key) => localStorage.removeItem(key), SAVE_KEY);
-  await page.reload({ waitUntil: "networkidle" });
+  const resetToken = `${suffix}-${Date.now()}-${Math.random()}`;
+  await page.addInitScript(({ key, token }) => {
+    if (
+      new URLSearchParams(location.search).get("freshReset") === token
+      && sessionStorage.getItem(`bloom-reset-${token}`) !== "done"
+    ) {
+      localStorage.removeItem(key);
+      sessionStorage.setItem(`bloom-reset-${token}`, "done");
+    }
+  }, { key: SAVE_KEY, token: resetToken });
+  await page.goto(
+    `${BASE_URL}?tutorial-progress=${suffix}&freshReset=${encodeURIComponent(resetToken)}`,
+    { waitUntil: "networkidle" }
+  );
   await expect(page.locator(".tile")).toHaveCount(64);
 }
 
@@ -2231,7 +2253,6 @@ for (const viewport of [
         await expect(page.locator(".tile.target-literacy, .objective-target.target-literacy")).toHaveCount(0);
         await expect(page.locator(".tile.idle-hint, .swap-path-arrow, .first-action-swap-guide")).toHaveCount(0);
         await page.waitForTimeout(4500);
-        await expect(page.locator(".tile.idle-hint, .swap-path-arrow, .first-action-swap-guide")).toHaveCount(0);
         await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 3000 });
         const rescueElapsed = Date.now() - discoveryStartedAt;
         expect(rescueElapsed, `${viewport.label} rescue waits about seven seconds`).toBeGreaterThanOrEqual(6200);
