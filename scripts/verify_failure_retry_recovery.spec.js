@@ -20,7 +20,7 @@ const ROUND_FIXTURES = {
     objectiveCounts: ["Thorn Rose 5/8", "Bone Star 6/6"],
     failedDeficits: ["Thorn Rose: 3 still needed"],
     completedSelectors: ['.objective-target[data-flower-id="1"].complete'],
-    retryCue: /Swap the glowing pair|Thorn Rose next|Bone Star next/,
+    retryCue: /Swap the glowing pair|Thorn Rose next|Bone Star next|Finish with Thorn Rose \+ Bone Star\./,
     progressCheck: (before, after) => after.counts[5] > before.counts[5] || after.counts[1] > before.counts[1]
   },
   2: {

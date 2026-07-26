@@ -380,6 +380,8 @@ async function handoffReport(page) {
       invalidTiles: document.querySelectorAll(".tile.invalid-swap").length,
       forbiddenGenericNarration: document.body.innerText.includes("Finish the Moonlit Wreath"),
       focusableTiles: document.querySelectorAll(".tile[tabindex='0']").length,
+      rovingTileIds: Array.from(document.querySelectorAll(".tile[tabindex='0']"))
+        .map((tile) => tile.id),
       focusedTile: document.activeElement?.classList.contains("tile") || false,
       motion: Array.from(document.querySelectorAll(".tile.thorn-teach, .tile.thorn-teach-blocker"))
         .map((tile) => getComputedStyle(tile).animationName)
@@ -977,7 +979,48 @@ for (const testCase of CASES) {
       await page.screenshot({
         path: `work/round-two-handoff-${testCase.label}-thorn-settled.png`
       });
-      const directLessonFocus = directLessonSettled.activeElementId;
+      const directSettledState = JSON.stringify(directLessonSettled.state);
+      let directLessonFocus = directLessonSettled.activeElementId;
+      for (let reload = 1; reload <= 2; reload += 1) {
+        await page.reload({ waitUntil: "networkidle" });
+        await expect(page.locator(".tile")).toHaveCount(64);
+        const reloadedSettled = await handoffReport(page);
+        expect(
+          JSON.stringify(reloadedSettled.state),
+          `${testCase.label} direct settled reload ${reload} exact save`
+        ).toBe(directSettledState);
+        expect(
+          reloadedSettled.activeElementId,
+          `${testCase.label} direct settled reload ${reload} board focus`
+        ).toMatch(/^tile-\d-\d$/);
+        expect(
+          reloadedSettled.rovingTileIds,
+          `${testCase.label} direct settled reload ${reload} active and roving agree`
+        ).toEqual([reloadedSettled.activeElementId]);
+        expect(reloadedSettled.selectedCells, `${testCase.label} direct reload ${reload} no selection`)
+          .toEqual([]);
+        expect(reloadedSettled.instructionCount, `${testCase.label} direct reload ${reload} no lesson`)
+          .toBe(0);
+        expect(reloadedSettled.tiles, `${testCase.label} direct reload ${reload} tiles`).toBe(64);
+        expect(reloadedSettled.rows, `${testCase.label} direct reload ${reload} rows`).toBe(8);
+        expect(reloadedSettled.completeRows, `${testCase.label} direct reload ${reload} visible rows`).toBe(8);
+        expect(reloadedSettled.overflowX, `${testCase.label} direct reload ${reload} no overflow`).toBe(false);
+        expect(reloadedSettled.brokenImages, `${testCase.label} direct reload ${reload} images`).toEqual([]);
+
+        await page.keyboard.press("ArrowRight");
+        const keyboardReady = await handoffReport(page);
+        expect(
+          keyboardReady.rovingTileIds,
+          `${testCase.label} direct reload ${reload} keyboard roving agreement`
+        ).toEqual([keyboardReady.activeElementId]);
+        expect(keyboardReady.selectedCells, `${testCase.label} direct reload ${reload} keyboard no selection`)
+          .toEqual([]);
+        expect(
+          JSON.stringify(keyboardReady.state),
+          `${testCase.label} direct reload ${reload} keyboard preserves save`
+        ).toBe(directSettledState);
+        directLessonFocus = keyboardReady.activeElementId;
+      }
       await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 8500 });
       const directAutonomyHint = await handoffReport(page);
       const directAutonomyGuide = await usefulGuideReport(page);

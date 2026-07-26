@@ -83,6 +83,7 @@ async function autonomyReport(page) {
       selectedTiles: tiles.filter((tile) => tile.classList.contains("sel")).length,
       disabledTiles: tiles.filter((tile) => tile.disabled).length,
       activeElementId: document.activeElement?.id || "",
+      rovingTileIds: tiles.filter((tile) => tile.tabIndex === 0).map((tile) => tile.id),
       tiles: tiles.length,
       rows: new Set(tiles.map((tile) => tile.dataset.y)).size,
       completeRows: new Set(tiles
@@ -304,12 +305,48 @@ for (const testCase of CASES) {
       }, SAVE_KEY, { timeout: 12000 });
       await expect(page.locator(".tile.idle-hint")).toHaveCount(0);
       await waitForAutonomyHint(page, `${testCase.label} after valid match`);
+      const settledState = JSON.stringify((await autonomyReport(page)).state);
 
       for (let reload = 1; reload <= 2; reload += 1) {
         await page.reload({ waitUntil: "networkidle" });
         await expect(page.locator(".tile")).toHaveCount(64);
         await expect(page.locator(".tile.idle-hint")).toHaveCount(0);
-        const reloaded = await waitForAutonomyHint(page, `${testCase.label} reload ${reload}`);
+        const immediate = await autonomyReport(page);
+        expect(
+          JSON.stringify(immediate.state),
+          `${testCase.label} reload ${reload} exact settled save`
+        ).toBe(settledState);
+        expect(immediate.activeElementId, `${testCase.label} reload ${reload} board focus`)
+          .toMatch(/^tile-\d-\d$/);
+        expect(
+          immediate.rovingTileIds,
+          `${testCase.label} reload ${reload} active and roving agree`
+        ).toEqual([immediate.activeElementId]);
+        expect(immediate.selectedTiles, `${testCase.label} reload ${reload} no selection`).toBe(0);
+        expect(immediate.tiles, `${testCase.label} reload ${reload} tiles`).toBe(64);
+        expect(immediate.rows, `${testCase.label} reload ${reload} rows`).toBe(8);
+        expect(immediate.completeRows, `${testCase.label} reload ${reload} visible rows`).toBe(8);
+        expect(immediate.overflowX, `${testCase.label} reload ${reload} no overflow`).toBe(false);
+        expect(immediate.brokenImages, `${testCase.label} reload ${reload} images`).toEqual([]);
+
+        await page.keyboard.press("ArrowRight");
+        const keyboardReady = await autonomyReport(page);
+        expect(
+          keyboardReady.rovingTileIds,
+          `${testCase.label} reload ${reload} keyboard roving agreement`
+        ).toEqual([keyboardReady.activeElementId]);
+        expect(keyboardReady.selectedTiles, `${testCase.label} reload ${reload} keyboard no selection`)
+          .toBe(0);
+        expect(
+          JSON.stringify(keyboardReady.state),
+          `${testCase.label} reload ${reload} keyboard preserves save`
+        ).toBe(settledState);
+
+        const reloaded = await waitForAutonomyHint(
+          page,
+          `${testCase.label} reload ${reload}`,
+          keyboardReady.activeElementId
+        );
         expect(reloaded.report.state.moves, `${testCase.label} reload ${reload} move state`).toBe(7);
       }
 

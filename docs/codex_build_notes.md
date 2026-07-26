@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-07-26 settled active-order reload focus
+
+- Player-visible result: ordinary settled Round 2 and Round 3 reloads now return keyboard focus to the board's existing sole roving flower instead of leaving focus on the page. The handoff is reload-only: normal pointer/touch play keeps its current focus behavior.
+- Authority boundary: startup queues this fallback only for an unfinished R2/R3 save with a completed valid move and no tutorial replay, selection, resolution, Black Candle, greenhouse handoff, dead-board reweave, final-harvest, failure, or payoff owner. An already queued stronger focus target always wins.
+- Permanent contract: the natural Round 2 Thorn lesson matrix and Round 3 ordinary-match autonomy matrix cover desktop `1280x720`, exact mobile `390x844`, full motion, reduced motion, pointer, touch, and keyboard. Both rounds perform two reloads, require DOM focus and sole roving identity to agree immediately, exercise arrow-key board movement, and prove no selection, move, count, board, or saved-state mutation with 64 tiles/eight complete rows, loaded imagery, and no overflow.
+- Regression cleanup: the failure/Retry fixture now recognizes the existing truthful `Finish with Thorn Rose + Bone Star.` final-harvest cue, so its focus/state checks no longer stop on retired wording. Product copy and Retry behavior are unchanged.
+- Local verification: the changed R2/R3 reload matrix passes `8/8` in `5.8m`; failure/Retry passes `12/12`; tutorial, Black Candle, payoff, failure, and runtime preservation checks pass `18/18`; the complete runtime budget passes `4/4`. `python3 scripts/verify_project.py`, the HTML verifier, all spec and extracted inline JavaScript syntax, `git diff --check`, and changed-added-line credential/tracker/network/private-IP scanning pass. Browser checks report 64 tiles/eight complete rows, no selection or save mutation, no overflow or broken images, and empty product console/page/request error collections.
+
 ## 2026-07-26 exact-mobile Help touch target
 
 - Player-visible result: the existing tutorial replay `?` is now a real `44x44px` mobile control in active Round 1-3 instead of a `30x30px` precision target. Its node, glyph, action, and desktop `30x30px` geometry are unchanged.

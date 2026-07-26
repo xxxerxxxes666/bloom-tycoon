@@ -14427,6 +14427,24 @@
         || boardDragInputActive();
     }
 
+    function shouldRestoreSettledActiveBoardFocus(plan = activeRoundPlan()) {
+      return (plan.round === 2 || plan.round === 3)
+        && hasMadeValidMove
+        && !roundComplete
+        && !isBouquetFailed(plan)
+        && !tutorialActive
+        && !tutorialReplayOwnsNarration
+        && !selected
+        && !armedLineRelic
+        && !blackCandleActivationPresentation
+        && !restoredGreenhouseHandoff
+        && !ownedReplayEntryActive
+        && !altarReweaveActive
+        && !postRecoveryGuideActive
+        && !finalHarvestCommit
+        && !boardGuideTransientStateActive();
+    }
+
     function currentTutorialBoardGuidePair() {
       if (
         currentRound !== 1
@@ -17963,6 +17981,10 @@
           }
         }
       }
+    }
+    if (!postRenderFocusTarget && shouldRestoreSettledActiveBoardFocus()) {
+      boardFocusCell = clampBoardFocusCell();
+      queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
     }
     render();
     applyImageFallbacks(document);

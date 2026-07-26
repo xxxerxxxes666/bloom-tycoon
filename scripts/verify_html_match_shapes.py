@@ -310,6 +310,8 @@ def verify_source_hooks():
         "roundComplete || isBouquetFailed(plan)",
         "allowPartialProgress: Boolean(activatingRelic)",
         "queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);",
+        "function shouldRestoreSettledActiveBoardFocus(plan = activeRoundPlan())",
+        "if (!postRenderFocusTarget && shouldRestoreSettledActiveBoardFocus())",
         ".tutorial-panel.black-candle-tutorial .tutorial-icon,",
         'content:"BLACK CANDLE"!important',
         "body.focused-active-play.armed-line-relic-cue .first-swap-cue {",
