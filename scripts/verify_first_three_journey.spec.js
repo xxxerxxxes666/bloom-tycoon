@@ -231,6 +231,8 @@ async function journeyState(page) {
       visibleLiveRegions,
       liveRegionOwners: visibleLiveRegions.filter((region) => ["polite", "assertive"].includes(region.live)),
       activeElementId: document.activeElement?.id || "",
+      rovingTileIds: Array.from(document.querySelectorAll(".tile[tabindex='0']")).map((tile) => tile.id),
+      selectedTileCount: document.querySelectorAll(".tile.sel").length,
       tiles: document.querySelectorAll(".tile").length,
       tileRows,
       boardBottom: boardRect ? boardRect.bottom : 0,
@@ -2027,6 +2029,38 @@ async function runFinalHarvestJourney(browser, config) {
           "Next Order → Bloodroot Compact"
         ][round - 1]);
         await assertActiveBoard(page, config.mobile);
+        if (round === 2) {
+          const untouchedState = await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY);
+          const initialRoundThree = await journeyState(page);
+          expect(initialRoundThree.round, `${runLabel} untouched R3 initial round`).toBe(3);
+          expect(initialRoundThree.moves, `${runLabel} untouched R3 initial moves`).toBe(8);
+          expect(initialRoundThree.bouquet, `${runLabel} untouched R3 initial bouquet`)
+            .toBe("Bouquet · 0/27");
+          expect(initialRoundThree.activeElementId, `${runLabel} untouched R3 initial focus`)
+            .toMatch(/^tile-\d-\d$/);
+          expect(initialRoundThree.rovingTileIds, `${runLabel} untouched R3 initial roving agreement`)
+            .toEqual([initialRoundThree.activeElementId]);
+          expect(initialRoundThree.selectedTileCount, `${runLabel} untouched R3 initial selection`).toBe(0);
+          for (let reload = 1; reload <= 2; reload += 1) {
+            await page.reload({ waitUntil: "networkidle" });
+            await assertActiveBoard(page, config.mobile);
+            const restoredRoundThree = await journeyState(page);
+            expect(
+              await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY),
+              `${runLabel} untouched R3 reload ${reload} exact save`
+            ).toBe(untouchedState);
+            expect(restoredRoundThree.activeElementId, `${runLabel} untouched R3 reload ${reload} focus`)
+              .toMatch(/^tile-\d-\d$/);
+            expect(
+              restoredRoundThree.rovingTileIds,
+              `${runLabel} untouched R3 reload ${reload} roving agreement`
+            ).toEqual([restoredRoundThree.activeElementId]);
+            expect(
+              restoredRoundThree.selectedTileCount,
+              `${runLabel} untouched R3 reload ${reload} selection`
+            ).toBe(0);
+          }
+        }
       }
     }
     if (!config.mobile) {

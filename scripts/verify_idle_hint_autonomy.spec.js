@@ -58,6 +58,50 @@ async function openRoundThreeAutonomy(page, label) {
   await expect(page.locator(".tile")).toHaveCount(64);
 }
 
+async function openUntouchedRoundThree(page, label) {
+  await page.goto(`${BASE_URL}?untouched-round-three=${label}`, { waitUntil: "networkidle" });
+  await page.evaluate((key) => localStorage.removeItem(key), SAVE_KEY);
+  await page.reload({ waitUntil: "networkidle" });
+  await expect(page.locator(".tile")).toHaveCount(64);
+  await page.evaluate((key) => {
+    const state = JSON.parse(localStorage.getItem(key) || "{}");
+    const board = Array.from({ length: 8 }, (_, y) => (
+      Array.from({ length: 8 }, (_, x) => (x + y * 2) % 6)
+    ));
+    board[0][0] = 3;
+    board[0][1] = 1;
+    board[0][2] = 3;
+    board[0][3] = 4;
+    board[1][1] = 3;
+    board[4][4] = 0;
+    board[4][5] = 1;
+    board[4][6] = 0;
+    board[5][5] = 0;
+    Object.assign(state, {
+      board,
+      armedLineRelic: null,
+      moves: 8,
+      coins: 50,
+      counts: [0, 0, 0, 0, 0, 0],
+      cursedThorns: [],
+      clearedCursedThorns: 0,
+      currentRound: 3,
+      roundComplete: false,
+      roundOneRestored: true,
+      roundTwoGreenhouseUpgraded: true,
+      roundThreeConservatoryRaised: false,
+      hasMadeValidMove: false,
+      restoredRoundTwoGuideMoves: 0,
+      tutorialSkipped: true,
+      tutorialActive: false,
+      blackCandleLessonComplete: true
+    });
+    localStorage.setItem(key, JSON.stringify(state));
+  }, SAVE_KEY);
+  await page.reload({ waitUntil: "networkidle" });
+  await expect(page.locator(".tile")).toHaveCount(64);
+}
+
 async function autonomyReport(page) {
   return page.evaluate((key) => {
     const visible = (node) => {
@@ -422,6 +466,119 @@ for (const testCase of CASES) {
         .toEqual(settled.board);
       expect(recoveredUsefulness.legal, `${testCase.label} recovered replay hint is legal`).toBe(true);
       expect(recoveredUsefulness.useful, `${testCase.label} recovered replay hint advances the order`).toBe(true);
+
+      expect(consoleErrors).toEqual([]);
+      expect(pageErrors).toEqual([]);
+      expect(failedRequests).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+}
+
+for (const testCase of CASES) {
+  test(`untouched Round 3 reload restores board focus on ${testCase.label}`, async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: testCase.viewport,
+      hasTouch: Boolean(testCase.mobile),
+      isMobile: Boolean(testCase.mobile),
+      reducedMotion: testCase.reduced ? "reduce" : "no-preference"
+    });
+    const page = await context.newPage();
+    const consoleErrors = [];
+    const pageErrors = [];
+    const failedRequests = [];
+    page.on("console", (message) => {
+      if (message.type() === "error") consoleErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    page.on("requestfailed", (request) => (
+      failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`)
+    ));
+
+    try {
+      await openUntouchedRoundThree(page, testCase.label);
+      const initial = await autonomyReport(page);
+      const savedState = JSON.stringify(initial.state);
+      expect(initial.state).toMatchObject({
+        currentRound: 3,
+        moves: 8,
+        counts: [0, 0, 0, 0, 0, 0],
+        roundComplete: false,
+        hasMadeValidMove: false
+      });
+      expect(initial.activeElementId, `${testCase.label} initial board focus`).toMatch(/^tile-\d-\d$/);
+      expect(initial.rovingTileIds, `${testCase.label} initial focus and roving agree`)
+        .toEqual([initial.activeElementId]);
+      expect(initial.selectedTiles, `${testCase.label} initial no selection`).toBe(0);
+
+      const initialTile = page.locator(`#${initial.activeElementId}`);
+      if (testCase.mobile) await initialTile.tap();
+      else await initialTile.click();
+      expect((await autonomyReport(page)).selectedTiles, `${testCase.label} ordinary input remains active`).toBe(1);
+      expect(
+        JSON.stringify((await autonomyReport(page)).state),
+        `${testCase.label} ordinary selection changes no save`
+      ).toBe(savedState);
+
+      for (let reload = 1; reload <= 2; reload += 1) {
+        await page.reload({ waitUntil: "networkidle" });
+        await expect(page.locator(".tile")).toHaveCount(64);
+        const restored = await autonomyReport(page);
+        expect(
+          JSON.stringify(restored.state),
+          `${testCase.label} reload ${reload} exact untouched save`
+        ).toBe(savedState);
+        expect(restored.activeElementId, `${testCase.label} reload ${reload} board focus`)
+          .toMatch(/^tile-\d-\d$/);
+        expect(
+          restored.rovingTileIds,
+          `${testCase.label} reload ${reload} active and roving agree`
+        ).toEqual([restored.activeElementId]);
+        expect(restored.selectedTiles, `${testCase.label} reload ${reload} no selection`).toBe(0);
+        expect(restored.tiles, `${testCase.label} reload ${reload} tiles`).toBe(64);
+        expect(restored.rows, `${testCase.label} reload ${reload} rows`).toBe(8);
+        expect(restored.completeRows, `${testCase.label} reload ${reload} visible rows`).toBe(8);
+        expect(restored.overflowX, `${testCase.label} reload ${reload} no overflow`).toBe(false);
+        expect(restored.brokenImages, `${testCase.label} reload ${reload} images`).toEqual([]);
+
+        await page.keyboard.press("ArrowRight");
+        const keyboardReady = await autonomyReport(page);
+        expect(
+          keyboardReady.rovingTileIds,
+          `${testCase.label} reload ${reload} arrow keeps roving agreement`
+        ).toEqual([keyboardReady.activeElementId]);
+        expect(keyboardReady.selectedTiles, `${testCase.label} reload ${reload} arrow selects nothing`).toBe(0);
+        expect(
+          JSON.stringify(keyboardReady.state),
+          `${testCase.label} reload ${reload} arrow changes no save`
+        ).toBe(savedState);
+
+        if (reload === 1) {
+          await page.keyboard.press(testCase.dismissKey);
+          const selectedByKeyboard = await autonomyReport(page);
+          expect(
+            selectedByKeyboard.selectedTiles,
+            `${testCase.label} ${testCase.dismissKey} immediately operates board`
+          ).toBe(1);
+          expect(
+            JSON.stringify(selectedByKeyboard.state),
+            `${testCase.label} ${testCase.dismissKey} selection changes no save`
+          ).toBe(savedState);
+          continue;
+        }
+
+        const focusBeforeHint = keyboardReady.activeElementId;
+        const hint = await waitForAutonomyHint(
+          page,
+          `${testCase.label} untouched reload`,
+          focusBeforeHint
+        );
+        expect(hint.report.state.moves, `${testCase.label} delayed hint spends no move`).toBe(8);
+        expect(hint.report.state.counts, `${testCase.label} delayed hint changes no counts`)
+          .toEqual([0, 0, 0, 0, 0, 0]);
+        expect(hint.report.selectedTiles, `${testCase.label} delayed hint selects nothing`).toBe(0);
+      }
 
       expect(consoleErrors).toEqual([]);
       expect(pageErrors).toEqual([]);

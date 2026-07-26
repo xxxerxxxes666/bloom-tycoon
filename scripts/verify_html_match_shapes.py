@@ -492,6 +492,8 @@ def verify_source_hooks():
         "restartPostOnboardingHint",
         "const restartPostOnboardingHint = !skippingThornLesson",
         "if (skippingRoundOneAgency || restartPostOnboardingHint)",
+        "const untouchedRoundThreeOpening = plan.round === 3",
+        "&& (hasMadeValidMove || untouchedRoundThreeOpening)",
         "Permanent through replay",
         "BLOODROOT CONSERVATORY · OWNED · 100% RAISED",
         'panel.dataset.payoffMode = ceremony.ownedReplay ? "owned-replay" : "restoration";',

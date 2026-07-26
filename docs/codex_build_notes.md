@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-07-26 untouched Round 3 reload focus
+
+- Player-visible result: reloading Bloodroot Compact before its first valid move now places keyboard focus on the board's existing sole roving flower instead of leaving focus on the page. The later seven-second objective-useful guide still appears without moving that focus.
+- Authority boundary: the established settled R2/R3 reload fallback now also recognizes only authoritative Round 3 at its full eight-move budget with zero bouquet progress and no valid move. Tutorial/replay, direct Thorn teaching, armed Black Candle, selection, resolution, refusal, dead-board reweave, Retry, handoff, and payoff remain stronger owners. No focus is queued during ordinary pointer or touch play.
+- Scope: `playable/midnight_bloom_prototype.html`, `scripts/verify_idle_hint_autonomy.spec.js`, `scripts/verify_first_three_journey.spec.js`, `scripts/verify_html_match_shapes.py`, and this note. No save field, node, control, copy, timer, mechanic, move, economy value, round, or progression changed.
+- Permanent contract: the natural desktop `1280x720` and exact-mobile `390x844` journey completes Moonlit Wreath, enters Bloodroot Compact through its real ceremony action, then reloads the untouched order twice with exact save, active-element/sole-roving agreement, no selection, and 64 tiles/eight complete rows. A separate desktop/mobile, full/reduced matrix covers pointer/touch selection, Arrow navigation, Enter/Space operation, two quiet saved-state reloads, and the delayed legal objective-useful hint without focus theft or state mutation.
+- Local verification: the focused untouched matrix passes `4/4`; both natural first-three interruption journeys pass `2/2`; the complete R3 autonomy, Round 2 Thorn, and Black Candle precedence matrix passes `16/16` in `9.1m`; Retry, fresh/replayed tutorial, later-round armed relic, and keyboard payoff focus pass `15/15`; runtime budgets pass `4/4`. All browser paths retain loaded imagery, no horizontal overflow, and empty console/page/request error collections.
+
 ## 2026-07-26 Help replay idle-guidance restart
 
 - Player-visible result: dismissing Help during ordinary settled Round 2 or Round 3 play now restarts the existing quiet-window guidance. The board remains unmarked for the first six seconds; within the established seven-second window, exactly one current legal objective-useful pair returns without stealing focus from Help.

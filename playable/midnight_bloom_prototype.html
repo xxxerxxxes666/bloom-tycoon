@@ -14430,8 +14430,12 @@
     }
 
     function shouldRestoreSettledActiveBoardFocus(plan = activeRoundPlan()) {
+      const untouchedRoundThreeOpening = plan.round === 3
+        && !hasMadeValidMove
+        && moves === plan.moves
+        && roundProgress(plan).earned === 0;
       return (plan.round === 2 || plan.round === 3)
-        && hasMadeValidMove
+        && (hasMadeValidMove || untouchedRoundThreeOpening)
         && !roundComplete
         && !isBouquetFailed(plan)
         && !tutorialActive
