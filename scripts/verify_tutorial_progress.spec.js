@@ -2531,6 +2531,191 @@ for (const viewport of [
   });
 }
 
+test("exact-mobile Black Candle Skip owns a complete touch target", async ({ browser }) => {
+  test.setTimeout(180000);
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    hasTouch: true,
+    isMobile: true
+  });
+  const page = await context.newPage();
+  const consoleMessages = [];
+  const pageErrors = [];
+  const failedRequests = [];
+  page.on("console", (message) => {
+    if (message.type() === "error" || message.type() === "warning") {
+      consoleMessages.push(`${message.type()}: ${message.text()}`);
+    }
+  });
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("requestfailed", (request) => {
+    failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`);
+  });
+
+  const tapPair = async (pair) => {
+    await waitForSettledBoard(page);
+    const movesBefore = await page.evaluate(
+      (key) => Number(JSON.parse(localStorage.getItem(key) || "{}").moves),
+      SAVE_KEY
+    );
+    for (const cell of pair) {
+      const endpoint = page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`);
+      await expect(endpoint).toBeVisible();
+      const box = await endpoint.boundingBox();
+      expect(box, `touch endpoint ${cell.x},${cell.y} is visible`).toBeTruthy();
+      await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+    }
+    await page.waitForFunction(({ key, movesBefore }) => {
+      const saved = JSON.parse(localStorage.getItem(key) || "{}");
+      return Number(saved.moves) === movesBefore - 1;
+    }, { key: SAVE_KEY, movesBefore }, { timeout: 10000 });
+    await waitForSettledBoard(page);
+  };
+
+  const skipGeometry = async () => page.evaluate(() => {
+    const rect = (selector) => {
+      const bounds = document.querySelector(selector)?.getBoundingClientRect();
+      return bounds ? {
+        left: bounds.left,
+        top: bounds.top,
+        right: bounds.right,
+        bottom: bounds.bottom,
+        width: bounds.width,
+        height: bounds.height
+      } : null;
+    };
+    const overlaps = (a, b) => Boolean(
+      a && b
+      && a.left < b.right
+      && a.right > b.left
+      && a.top < b.bottom
+      && a.bottom > b.top
+    );
+    const panel = rect("#tutorialPanel");
+    const icon = rect("#tutorialPanel .tutorial-icon");
+    const copy = rect("#tutorialCopy");
+    const skip = rect("#tutorialSkipBtn");
+    const board = rect("#board");
+    return {
+      panel,
+      icon,
+      copy,
+      skip,
+      board,
+      iconOverlap: overlaps(skip, icon),
+      copyOverlap: overlaps(skip, copy),
+      tiles: document.querySelectorAll(".tile").length,
+      rows: new Set(Array.from(document.querySelectorAll(".tile")).map((tile) => tile.dataset.y)).size,
+      visibleNonTileButtons: Array.from(document.querySelectorAll("button"))
+        .filter((button) => {
+          const bounds = button.getBoundingClientRect();
+          const style = getComputedStyle(button);
+          return !button.closest("#board")
+            && style.display !== "none"
+            && style.visibility !== "hidden"
+            && bounds.width > 0
+            && bounds.height > 0;
+        })
+        .map((button) => button.textContent.trim())
+        .filter(Boolean),
+      selectedTiles: document.querySelectorAll(".tile.sel").length,
+      overflowX: document.documentElement.scrollWidth > innerWidth + 1,
+      overflowY: document.documentElement.scrollHeight > innerHeight + 1,
+      brokenImages: Array.from(document.images)
+        .filter((image) => image.complete && image.naturalWidth === 0)
+        .map((image) => image.getAttribute("src"))
+    };
+  });
+
+  const assertSkipGeometry = async (label) => {
+    const geometry = await skipGeometry();
+    expect(geometry.skip.width, `${label} touch width`).toBeGreaterThanOrEqual(44);
+    expect(geometry.skip.height, `${label} touch height`).toBeGreaterThanOrEqual(44);
+    expect(geometry.skip.left, `${label} contained left`).toBeGreaterThanOrEqual(geometry.panel.left - 1);
+    expect(geometry.skip.right, `${label} contained right`).toBeLessThanOrEqual(geometry.panel.right + 1);
+    expect(geometry.skip.top, `${label} contained top`).toBeGreaterThanOrEqual(geometry.panel.top - 1);
+    expect(geometry.skip.bottom, `${label} contained bottom`).toBeLessThanOrEqual(geometry.panel.bottom + 1);
+    expect(geometry.iconOverlap, `${label} does not overlap BLACK CANDLE`).toBe(false);
+    expect(geometry.copyOverlap, `${label} does not overlap action copy`).toBe(false);
+    expect(geometry.board.bottom, `${label} altar remains in first viewport`).toBeLessThanOrEqual(844);
+    expect(geometry.tiles, `${label} tile count`).toBe(64);
+    expect(geometry.rows, `${label} complete board rows`).toBe(8);
+    expect(geometry.visibleNonTileButtons, `${label} one-action hierarchy`).toEqual(["Skip"]);
+    expect(geometry.selectedTiles, `${label} no accidental selection`).toBe(0);
+    expect(geometry.overflowX, `${label} no horizontal overflow`).toBe(false);
+    expect(geometry.overflowY, `${label} no vertical overflow`).toBe(false);
+    expect(geometry.brokenImages, `${label} no broken images`).toEqual([]);
+    return geometry;
+  };
+
+  try {
+    await seedDeterministicMath(page, "mobile-skip-touch-target");
+    await openFreshNoReview(page, "mobile-skip-touch-target");
+    await tapPair(await hintedPair(page));
+    await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 9000 });
+    await tapPair(await hintedPair(page));
+    await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 3000 });
+    await tapPair(await hintedPair(page));
+    await expect(page.locator("#tutorialCopy")).toHaveText("Swap right to burn this row.");
+    await expect(page.locator("#tile-5-0")).toBeFocused();
+
+    const armed = await guidedRoundOneState(page, "mobile Skip touch target armed");
+    expect(armed.roundComplete).toBe(false);
+    expect(armed.namedBlackCandleTutorial).toBe(true);
+    const savedArmed = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}"), SAVE_KEY);
+    const touchPoints = [
+      ["top-left", (box) => [box.left + 8, box.top + 8]],
+      ["top", (box) => [(box.left + box.right) / 2, box.top + 2]],
+      ["top-right", (box) => [box.right - 8, box.top + 8]],
+      ["right", (box) => [box.right - 2, (box.top + box.bottom) / 2]],
+      ["bottom-right", (box) => [box.right - 8, box.bottom - 8]],
+      ["bottom", (box) => [(box.left + box.right) / 2, box.bottom - 2]],
+      ["bottom-left", (box) => [box.left + 8, box.bottom - 8]],
+      ["left", (box) => [box.left + 2, (box.top + box.bottom) / 2]]
+    ];
+
+    for (const [edge, pointFor] of touchPoints) {
+      const geometry = await assertSkipGeometry(`mobile ${edge}`);
+      const [x, y] = pointFor(geometry.skip);
+      await page.touchscreen.tap(x, y);
+      await expect(page.locator("#tutorialPanel")).toBeHidden();
+      const afterTap = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}"), SAVE_KEY);
+      expect(afterTap.moves, `${edge} tap spends no move`).toBe(savedArmed.moves);
+      expect(afterTap.counts, `${edge} tap changes no objective`).toEqual(savedArmed.counts);
+      await page.evaluate(({ key, state }) => {
+        localStorage.setItem(key, JSON.stringify(state));
+      }, { key: SAVE_KEY, state: savedArmed });
+      await page.reload({ waitUntil: "networkidle" });
+      await expect(page.locator("#tutorialCopy")).toHaveText("Swap right to burn this row.");
+      await expect(page.locator(".tile.idle-hint")).toHaveCount(2);
+      await expect(page.locator("#tile-5-0")).toBeFocused();
+      await expect(page.locator("#board .tile[tabindex='0']")).toHaveAttribute("id", "tile-5-0");
+    }
+
+    await page.screenshot({ path: "work/mobile-skip-touch-target-armed.png", fullPage: true });
+    const activationPair = await hintedPair(page);
+    for (const cell of activationPair) {
+      const box = await page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`).boundingBox();
+      await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+    }
+    await expect(page.locator("#restoreGreenhouseBtn")).toBeVisible({ timeout: 10000 });
+    const completed = await guidedRoundOneState(page, "mobile Skip touch target complete");
+    expect(completed.roundComplete).toBe(true);
+    expect(completed.bouquet).toBe("Bouquet Complete · 14/14");
+    expect(completed.tiles).toBe(64);
+    expect(await page.locator(".tile").evaluateAll((tiles) => (
+      new Set(tiles.map((tile) => tile.dataset.y)).size
+    ))).toBe(8);
+    expect(completed.overflowX).toBe(false);
+    expect(completed.brokenImages).toEqual([]);
+    expect(consoleMessages).toEqual([]);
+    expect(pageErrors).toEqual([]);
+    expect(failedRequests).toEqual([]);
+  } finally {
+    await context.close();
+  }
+});
+
 test("Round 1 agency retires and restores guidance across real input boundaries", async ({ browser }) => {
   const cases = [
     { label: "desktop-pointer", viewport: { width: 1280, height: 720 }, input: "pointer" },

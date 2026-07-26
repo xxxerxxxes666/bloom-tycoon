@@ -1,5 +1,12 @@
 # Codex Build Notes
 
+## 2026-07-26 exact-mobile Skip touch target
+
+- Player-visible result: the existing tutorial Skip control now has a real `44x44px` mobile button box instead of the prior `40x24px` target. The label, action copy, control, and accepted Black Candle plate remain separate and contained; desktop sizing is unchanged.
+- Scope: one mobile-only minimum size on the existing button. No node, control, copy, timer, board mechanic, move, save, economy, round, or progression change was added.
+- Permanent contract: an exact `390x844` natural touch journey reaches the armed Round 1 Black Candle, verifies the complete target and altar geometry, taps near all four corners and all four edge midpoints, and reloads authoritative armed state between taps. Every point must dismiss the tutorial without spending a move or changing objectives; each reload must restore exact copy, pair, focus, and sole roving source before touch activation completes `14/14`.
+- Verification: the natural desktop/mobile journey, exact-mobile eight-point Skip target, and six-case Shuffle reserve pointer/touch/Enter/Space/full/reduced matrix pass together `9/9`. Runtime desktop/mobile/reduced-motion checks pass `4/4` with 64 tiles/eight rows, one semantic progressbar, no dormant review scaffold, no broken images, and no horizontal overflow. Project/HTML verifiers, every spec and extracted inline JavaScript syntax, `git diff --check`, and the scoped added-line secret/tracker/network scan pass.
+
 ## 2026-07-26 contained desktop Black Candle instruction
 
 - Player-visible result: the natural Round 1 Black Candle activation instruction now keeps its `BLACK CANDLE` label, exact `Swap right to burn this row.` action, and visible `Skip` control fully inside the constrained large-desktop tutorial pill. The action was readable before, but the control extended past the pill's right edge during formation and saved activation reloads.
