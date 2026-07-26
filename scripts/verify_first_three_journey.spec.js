@@ -485,6 +485,9 @@ async function clickGuidedSwap(page, strategy = "optimized") {
   for (let attempt = 0; attempt < 3; attempt += 1) {
     const pairHandle = await page.waitForFunction(({ targets, needed, strategy }) => {
     const saved = JSON.parse(localStorage.getItem("bloomTycoonPlayableStateV1") || "{}");
+    if (document.querySelector("#board")?.getAttribute("aria-busy") === "true") {
+      return null;
+    }
     if (document.body.dataset.finalHarvestPhase === "eligible") {
       const pair = (document.body.dataset.finalHarvestPair || "")
         .split(" ")
@@ -624,7 +627,10 @@ async function clickGuidedSwap(page, strategy = "optimized") {
       await page.waitForFunction(() => (
         document.querySelector("#roundOneRestoration")?.offsetParent
         || document.querySelector("#renewBtn")?.classList.contains("visible")
-        || Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled)
+        || (
+          document.querySelector("#board")?.getAttribute("aria-busy") !== "true"
+          && Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled)
+        )
       ), null, { timeout: 10000 });
       return;
     } catch (error) {
@@ -633,9 +639,10 @@ async function clickGuidedSwap(page, strategy = "optimized") {
       if (state.roundComplete || state.moves < movesBefore) {
         return;
       }
-      await page.waitForFunction(() => Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled), null, {
-        timeout: 10000
-      });
+      await page.waitForFunction(() => (
+        document.querySelector("#board")?.getAttribute("aria-busy") !== "true"
+        && Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled)
+      ), null, { timeout: 10000 });
     }
   }
   throw lastError || new Error("Unable to perform a fresh guided swap");

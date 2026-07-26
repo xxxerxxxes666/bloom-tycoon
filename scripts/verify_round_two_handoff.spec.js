@@ -336,6 +336,7 @@ async function handoffReport(page) {
       boardLeft: boardRect?.left || 0,
       boardRight: boardRect?.right || 0,
       boardWidth: boardRect?.width || 0,
+      boardBusy: document.querySelector("#board")?.getAttribute("aria-busy") === "true",
       scrollY,
       tutorialBottom: document.querySelector("#tutorialPanel")?.getBoundingClientRect().bottom || 0,
       overflowX: document.documentElement.scrollWidth > innerWidth + 1,
@@ -448,6 +449,208 @@ async function usefulGuideReport(page) {
 async function startThornFeedbackRecorder(page) {
   await page.evaluate(() => {
     window.__roundTwoHandoffThornEvents = [];
+    window.__roundTwoHandoffThornGeometry = {
+      samples: 0,
+      sawThreeOutcomes: false,
+      sawReadableLabels: false,
+      sawBusy: false,
+      sawReleaseAfterBusy: false,
+      releasedWhileVisible: false,
+      maxOutcomeWidthTileRatio: 0,
+      maxOutcomeHeightTileRatio: 0,
+      maxSiblingOverlapRatio: 0,
+      maxBoardObscurationRatio: 0,
+      maxOutsideNearbyRatio: 0,
+      peak: null
+    };
+    const rectValue = (rect) => ({
+      left: rect.left,
+      top: rect.top,
+      right: rect.right,
+      bottom: rect.bottom,
+      width: rect.width,
+      height: rect.height
+    });
+    const intersectionArea = (a, b) => (
+      Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left))
+      * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top))
+    );
+    const unionArea = (rects) => {
+      const xEdges = [...new Set(rects.flatMap((rect) => [rect.left, rect.right]))]
+        .sort((a, b) => a - b);
+      let area = 0;
+      for (let index = 0; index < xEdges.length - 1; index += 1) {
+        const left = xEdges[index];
+        const right = xEdges[index + 1];
+        const spans = rects
+          .filter((rect) => rect.left < right && rect.right > left)
+          .map((rect) => [rect.top, rect.bottom])
+          .sort((a, b) => a[0] - b[0]);
+        let covered = 0;
+        let start = null;
+        let end = null;
+        spans.forEach(([top, bottom]) => {
+          if (start === null) {
+            start = top;
+            end = bottom;
+          } else if (top <= end) {
+            end = Math.max(end, bottom);
+          } else {
+            covered += end - start;
+            start = top;
+            end = bottom;
+          }
+        });
+        if (start !== null) covered += end - start;
+        area += (right - left) * covered;
+      }
+      return area;
+    };
+    const sampleGeometry = () => {
+      const geometry = window.__roundTwoHandoffThornGeometry;
+      const board = document.querySelector("#board");
+      const boardRect = board?.getBoundingClientRect();
+      const events = Array.from(document.querySelectorAll(".thorn-event"));
+      const shocks = Array.from(document.querySelectorAll(".board-particle.thorn-shock"))
+        .map((node) => {
+          const style = getComputedStyle(node);
+          return {
+            rect: rectValue(node.getBoundingClientRect()),
+            opacity: Number(style.opacity || 1)
+          };
+        })
+        .filter(({ opacity }) => opacity >= 0.08);
+      const outcomes = events.map((event) => {
+        const tile = event.closest(".tile");
+        const tileRect = rectValue(tile.getBoundingClientRect());
+        const eventRect = rectValue(event.getBoundingClientRect());
+        const visibleEventRect = {
+          left: Math.max(eventRect.left, tileRect.left),
+          top: Math.max(eventRect.top, tileRect.top),
+          right: Math.min(eventRect.right, tileRect.right),
+          bottom: Math.min(eventRect.bottom, tileRect.bottom)
+        };
+        visibleEventRect.width = Math.max(0, visibleEventRect.right - visibleEventRect.left);
+        visibleEventRect.height = Math.max(0, visibleEventRect.bottom - visibleEventRect.top);
+        const eventStyle = getComputedStyle(event);
+        const center = {
+          x: tileRect.left + tileRect.width / 2,
+          y: tileRect.top + tileRect.height / 2
+        };
+        const shock = shocks
+          .map((candidate) => ({
+            ...candidate,
+            distance: Math.hypot(
+              candidate.rect.left + candidate.rect.width / 2 - center.x,
+              candidate.rect.top + candidate.rect.height / 2 - center.y
+            )
+          }))
+          .sort((a, b) => a.distance - b.distance)[0];
+        const visualRects = [
+          ...(Number(eventStyle.opacity || 1) >= 0.08 ? [visibleEventRect] : []),
+          ...(shock && shock.distance <= tileRect.width * 0.35 ? [shock.rect] : [])
+        ];
+        const combined = visualRects.length ? {
+          left: Math.min(...visualRects.map((rect) => rect.left)),
+          top: Math.min(...visualRects.map((rect) => rect.top)),
+          right: Math.max(...visualRects.map((rect) => rect.right)),
+          bottom: Math.max(...visualRects.map((rect) => rect.bottom))
+        } : {
+          left: center.x,
+          top: center.y,
+          right: center.x,
+          bottom: center.y
+        };
+        combined.width = combined.right - combined.left;
+        combined.height = combined.bottom - combined.top;
+        const nearby = {
+          left: tileRect.left - tileRect.width * 0.14,
+          top: tileRect.top - tileRect.height * 0.14,
+          right: tileRect.right + tileRect.width * 0.14,
+          bottom: tileRect.bottom + tileRect.height * 0.14
+        };
+        const combinedArea = combined.width * combined.height;
+        return {
+          cell: `${tile.dataset.x},${tile.dataset.y}`,
+          label: event.textContent.trim(),
+          labelOpacity: Number(eventStyle.opacity || 1),
+          tile: tileRect,
+          event: eventRect,
+          shock: shock?.rect || null,
+          combined,
+          visible: visualRects.length > 0,
+          outsideNearbyRatio: combinedArea
+            ? 1 - intersectionArea(combined, nearby) / combinedArea
+            : 0
+        };
+      });
+      const visibleOutcomeCount = outcomes.filter((outcome) => outcome.visible).length;
+      const busy = board?.getAttribute("aria-busy") === "true";
+      geometry.samples += 1;
+      geometry.sawThreeOutcomes ||= outcomes.length === 3;
+      geometry.sawReadableLabels ||= outcomes.length === 3
+        && outcomes.every((outcome) => outcome.labelOpacity >= 0.65);
+      geometry.sawBusy ||= busy;
+      geometry.sawReleaseAfterBusy ||= geometry.sawBusy && !busy;
+      geometry.releasedWhileVisible ||= !busy && visibleOutcomeCount > 0;
+      if (!outcomes.length || !boardRect) return;
+      const combinedRects = outcomes.map((outcome) => outcome.combined);
+      let siblingOverlapRatio = 0;
+      for (let first = 0; first < combinedRects.length; first += 1) {
+        for (let second = first + 1; second < combinedRects.length; second += 1) {
+          const firstArea = combinedRects[first].width * combinedRects[first].height;
+          const secondArea = combinedRects[second].width * combinedRects[second].height;
+          const smallerArea = Math.min(firstArea, secondArea);
+          if (!smallerArea) continue;
+          siblingOverlapRatio = Math.max(
+            siblingOverlapRatio,
+            intersectionArea(combinedRects[first], combinedRects[second])
+              / smallerArea
+          );
+        }
+      }
+      const boardArea = boardRect.width * boardRect.height;
+      const obscurationRatio = boardArea ? unionArea(combinedRects) / boardArea : 0;
+      const outcomeWidthTileRatio = Math.max(...outcomes.map(
+        (outcome) => outcome.combined.width / outcome.tile.width
+      ));
+      const outcomeHeightTileRatio = Math.max(...outcomes.map(
+        (outcome) => outcome.combined.height / outcome.tile.height
+      ));
+      const outsideNearbyRatio = Math.max(...outcomes.map(
+        (outcome) => outcome.outsideNearbyRatio
+      ));
+      geometry.maxOutcomeWidthTileRatio = Math.max(
+        geometry.maxOutcomeWidthTileRatio,
+        outcomeWidthTileRatio
+      );
+      geometry.maxOutcomeHeightTileRatio = Math.max(
+        geometry.maxOutcomeHeightTileRatio,
+        outcomeHeightTileRatio
+      );
+      geometry.maxSiblingOverlapRatio = Math.max(
+        geometry.maxSiblingOverlapRatio,
+        siblingOverlapRatio
+      );
+      geometry.maxBoardObscurationRatio = Math.max(
+        geometry.maxBoardObscurationRatio,
+        obscurationRatio
+      );
+      geometry.maxOutsideNearbyRatio = Math.max(
+        geometry.maxOutsideNearbyRatio,
+        outsideNearbyRatio
+      );
+      if (!geometry.peak || obscurationRatio > geometry.peak.boardObscurationRatio) {
+        geometry.peak = {
+          boardObscurationRatio: obscurationRatio,
+          outcomeWidthTileRatio,
+          outcomeHeightTileRatio,
+          siblingOverlapRatio,
+          outsideNearbyRatio,
+          outcomes
+        };
+      }
+    };
     window.__roundTwoHandoffRecorder = window.setInterval(() => {
       document.querySelectorAll(".thorn-event").forEach((node) => {
         const text = node.textContent.trim();
@@ -455,15 +658,34 @@ async function startThornFeedbackRecorder(page) {
           window.__roundTwoHandoffThornEvents.push(text);
         }
       });
-    }, 16);
+      sampleGeometry();
+    }, 8);
+    sampleGeometry();
   });
 }
 
 async function stopThornFeedbackRecorder(page) {
   return page.evaluate(() => {
     clearInterval(window.__roundTwoHandoffRecorder);
-    return window.__roundTwoHandoffThornEvents || [];
+    return {
+      events: window.__roundTwoHandoffThornEvents || [],
+      geometry: window.__roundTwoHandoffThornGeometry || null
+    };
   });
+}
+
+async function waitForThornTruePeak(page, reduced) {
+  await page.waitForFunction((reducedMotion) => {
+    const events = Array.from(document.querySelectorAll(".thorn-event"));
+    if (
+      events.length !== 3
+      || document.querySelector("#board")?.getAttribute("aria-busy") !== "true"
+    ) return false;
+    if (reducedMotion) {
+      return events.every((event) => Number(getComputedStyle(event).opacity || 1) >= 0.65);
+    }
+    return true;
+  }, Boolean(reduced), { timeout: 2500 });
 }
 
 function expectReadyHandoff(report, testCase, label) {
@@ -681,12 +903,29 @@ for (const testCase of CASES) {
 
       const untouchedRoundTwoState = JSON.stringify(report.state);
       const directLessonGuide = guide;
+      await startThornFeedbackRecorder(page);
       await activatePair(page, directLessonGuide.pair, testCase.input);
+      await waitForThornTruePeak(page, testCase.reduced);
+      const thornPeakBoundary = await handoffReport(page);
+      expect(thornPeakBoundary.boardBusy, `${testCase.label} Thorn outcomes own control`).toBe(true);
+      expect(thornPeakBoundary.selectedCells, `${testCase.label} Thorn peak has no next selection`).toEqual([]);
+      await page.locator('.tile[data-x="7"][data-y="7"]').dispatchEvent("click");
+      const refusedDuringPeak = await handoffReport(page);
+      expect(refusedDuringPeak.state, `${testCase.label} peak input rewrites no authority`)
+        .toEqual(thornPeakBoundary.state);
+      expect(refusedDuringPeak.selectedCells, `${testCase.label} peak input cannot select`).toEqual([]);
+      if (!testCase.reduced) await page.waitForTimeout(300);
+      await expect(page.locator("#board")).toHaveAttribute("aria-busy", "true");
+      await page.screenshot({
+        path: `work/round-two-handoff-${testCase.label}-thorn-true-peak.png`
+      });
       await page.waitForFunction((key) => {
         const state = JSON.parse(localStorage.getItem(key) || "{}");
         return state.moves === 8
           && state.clearedCursedThorns === 3
           && document.querySelectorAll(".tile").length === 64
+          && document.querySelector("#board")?.getAttribute("aria-busy") === "false"
+          && document.querySelectorAll(".thorn-event").length === 0
           && Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled);
       }, SAVE_KEY, { timeout: 12000 });
       const directLessonSettled = await handoffReport(page);
@@ -696,6 +935,48 @@ for (const testCase of CASES) {
       expect(directLessonSettled.thornSwapTiles, `${testCase.label} direct lesson retires causes`).toBe(0);
       expect(directLessonSettled.thornTargets, `${testCase.label} direct lesson retires blockers`).toBe(0);
       expect(directLessonSettled.guideOverlays, `${testCase.label} direct lesson retires overlay`).toBe(0);
+      expect(directLessonSettled.boardBusy, `${testCase.label} direct lesson releases causal boundary`).toBe(false);
+      expect(directLessonSettled.disabledTiles, `${testCase.label} direct lesson returns control`).toBe(0);
+      expect(directLessonSettled.focusedTile, `${testCase.label} direct lesson restores board focus`).toBe(true);
+      await expect(page.locator(".thorn-event")).toHaveCount(0);
+      await page.waitForTimeout(24);
+      const directThornFeedback = await stopThornFeedbackRecorder(page);
+      expect(
+        directThornFeedback.events.some((event) => event === "CRACK" || event === "BREAK"),
+        `${testCase.label} direct localized feedback`
+      ).toBe(true);
+      expect(directThornFeedback.geometry.samples, `${testCase.label} full feedback sampling`).toBeGreaterThan(3);
+      expect(directThornFeedback.geometry.sawThreeOutcomes, `${testCase.label} three blocker outcomes`).toBe(true);
+      expect(directThornFeedback.geometry.sawReadableLabels, `${testCase.label} readable CRACK/BREAK labels`).toBe(true);
+      expect(directThornFeedback.geometry.sawBusy, `${testCase.label} feedback owns control`).toBe(true);
+      expect(directThornFeedback.geometry.sawReleaseAfterBusy, `${testCase.label} control eventually returns`).toBe(true);
+      expect(
+        directThornFeedback.geometry.releasedWhileVisible,
+        `${testCase.label} control cannot return before the final outcome retires`
+      ).toBe(false);
+      expect(
+        directThornFeedback.geometry.maxOutcomeWidthTileRatio,
+        `${testCase.label} outcomes stay near blocker width`
+      ).toBeLessThanOrEqual(1.08);
+      expect(
+        directThornFeedback.geometry.maxOutcomeHeightTileRatio,
+        `${testCase.label} outcomes stay near blocker height`
+      ).toBeLessThanOrEqual(1.08);
+      expect(
+        directThornFeedback.geometry.maxSiblingOverlapRatio,
+        `${testCase.label} sibling outcome rectangles do not materially overlap`
+      ).toBeLessThanOrEqual(0.02);
+      expect(
+        directThornFeedback.geometry.maxBoardObscurationRatio,
+        `${testCase.label} board obscuration stays bounded`
+      ).toBeLessThanOrEqual(0.05);
+      expect(
+        directThornFeedback.geometry.maxOutsideNearbyRatio,
+        `${testCase.label} each outcome remains by its blocker`
+      ).toBeLessThanOrEqual(0.01);
+      await page.screenshot({
+        path: `work/round-two-handoff-${testCase.label}-thorn-settled.png`
+      });
       const directLessonFocus = directLessonSettled.activeElementId;
       await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 8500 });
       const directAutonomyHint = await handoffReport(page);
@@ -846,23 +1127,26 @@ for (const testCase of CASES) {
       await startThornFeedbackRecorder(page);
       await activatePair(page, guide.pair, testCase.input);
       await expect(page.locator(".thorn-event").first()).toBeVisible({ timeout: 7000 });
-      await page.screenshot({
-        path: `work/round-two-handoff-${testCase.label}-thorn-crack.png`
-      });
       await page.waitForFunction(({ key, moves }) => {
         const state = JSON.parse(localStorage.getItem(key) || "{}");
         return state.moves === moves - 1
           && document.querySelectorAll(".tile").length === 64
+          && document.querySelector("#board")?.getAttribute("aria-busy") === "false"
+          && document.querySelectorAll(".thorn-event, .board-particle.thorn-shock").length === 0
           && Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled);
       }, { key: SAVE_KEY, moves: before.moves }, { timeout: 12000 });
-      const thornEvents = await stopThornFeedbackRecorder(page);
+      await page.waitForTimeout(24);
+      const thornFeedback = await stopThornFeedbackRecorder(page);
       const after = await handoffReport(page);
       const afterThornHp = after.state.cursedThorns.reduce((sum, thorn) => sum + thorn.hp, 0);
       expect(after.state.moves, `${testCase.label} one move spent`).toBe(before.moves - 1);
       expect(afterThornHp, `${testCase.label} thorn HP damaged`).toBeLessThan(beforeThornHp);
       expect(after.state.clearedCursedThorns, `${testCase.label} Thorn goal seals`).toBe(3);
       expect(after.state.counts[guide.targetFlowerId], `${testCase.label} flower progress`).toBeGreaterThan(before.counts[guide.targetFlowerId]);
-      expect(thornEvents.some((event) => event === "CRACK" || event === "BREAK"), `${testCase.label} localized crack feedback`).toBe(true);
+      expect(
+        thornFeedback.events.some((event) => event === "CRACK" || event === "BREAK"),
+        `${testCase.label} localized crack feedback`
+      ).toBe(true);
       expect(after.transitionNodeCount, `${testCase.label} shared transition surface retained`).toBe(1);
       expect(after.instructionCount, `${testCase.label} lesson retires`).toBe(0);
       expect(after.guideTiles, `${testCase.label} guide pair retires`).toBe(0);
@@ -875,10 +1159,6 @@ for (const testCase of CASES) {
       expect(after.completeRows, `${testCase.label} post-action complete rows`).toBe(8);
       expect(after.completeColumns, `${testCase.label} post-action complete columns`).toBe(8);
       expect(after.boardBottom, `${testCase.label} post-action board fit`).toBeLessThanOrEqual(testCase.viewport.height);
-      await page.screenshot({
-        path: `work/round-two-handoff-${testCase.label}-post-swap.png`
-      });
-
       const postLessonFocus = after.activeElementId;
       await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 8500 });
       const autonomyHint = await handoffReport(page);
@@ -1127,14 +1407,17 @@ for (const testCase of CASES) {
           && document.querySelectorAll(".tile").length === 64
           && Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled);
       }, { key: SAVE_KEY, moves: beforeActivation.moves }, { timeout: 12000 });
-      const thornEvents = await stopThornFeedbackRecorder(page);
+      const thornFeedback = await stopThornFeedbackRecorder(page);
       report = await roundTwoRelicReport(page);
       expect(report.state.moves, `${testCase.label} activation spends once`).toBe(7);
       expect(report.state.clearedCursedThorns, `${testCase.label} row burn seals Thorns`).toBe(3);
       expect(report.relicTiles, `${testCase.label} relic retires`).toBe(0);
       expect(report.namedTutorial, `${testCase.label} Black Candle narrator retires`).toBe(false);
       expect(report.tutorialCopy, `${testCase.label} ordinary Round 2 guidance resumes`).toBe("Finish the Moonlit Wreath.");
-      expect(thornEvents.some((event) => event === "CRACK" || event === "BREAK"), `${testCase.label} Thorn feedback`).toBe(true);
+      expect(
+        thornFeedback.events.some((event) => event === "CRACK" || event === "BREAK"),
+        `${testCase.label} Thorn feedback`
+      ).toBe(true);
       expect(report.tiles, `${testCase.label} post-activation tiles`).toBe(64);
       expect(report.rows, `${testCase.label} post-activation rows`).toBe(8);
 
@@ -1241,7 +1524,7 @@ for (const testCase of CASES) {
           && document.querySelectorAll(".tile").length === 64
           && Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled);
       }, { key: SAVE_KEY, moves: beforeRecoveredMove.moves }, { timeout: 12000 });
-      const recoveredThornEvents = await stopThornFeedbackRecorder(page);
+      const recoveredThornFeedback = await stopThornFeedbackRecorder(page);
       report = await handoffReport(page);
       const afterRemainingHp = report.state.cursedThorns
         .reduce((sum, thorn) => sum + thorn.hp, 0);
@@ -1252,7 +1535,7 @@ for (const testCase of CASES) {
         `${testCase.label} recovered pair never resurrects stale blocker coordinates`
       ).toBe(true);
       expect(
-        recoveredThornEvents.some((event) => event === "CRACK" || event === "BREAK"),
+        recoveredThornFeedback.events.some((event) => event === "CRACK" || event === "BREAK"),
         `${testCase.label} recovered pair emits Thorn feedback`
       ).toBe(true);
       expect(report.tiles, `${testCase.label} recovered pair tiles`).toBe(64);
