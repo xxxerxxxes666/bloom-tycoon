@@ -490,6 +490,8 @@ def verify_source_hooks():
         "const usefulMove = postOnboardingIdleHintAfterDelay",
         "postOnboardingIdleHintAfterDelay && !roundOneAgencyHintAfterDelay",
         "restartPostOnboardingHint",
+        "const restartPostOnboardingHint = !skippingThornLesson",
+        "if (skippingRoundOneAgency || restartPostOnboardingHint)",
         "Permanent through replay",
         "BLOODROOT CONSERVATORY · OWNED · 100% RAISED",
         'panel.dataset.payoffMode = ceremony.ownedReplay ? "owned-replay" : "restoration";',

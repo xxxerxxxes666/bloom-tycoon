@@ -1291,6 +1291,25 @@ for (const testCase of CASES) {
         .toEqual(completedSettledState.counts);
       expect(dismissedCompletedReplay.state.board, `${testCase.label} dismissal changes no board`)
         .toEqual(completedSettledState.board);
+      expect(await page.locator(".tile.idle-hint").count(), `${testCase.label} no immediate replay hint`)
+        .toBe(0);
+      await page.waitForTimeout(6000);
+      expect(await page.locator(".tile.idle-hint").count(), `${testCase.label} quiet window lasts six seconds`)
+        .toBe(0);
+      await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 2500 });
+      const recoveredReplayHint = await handoffReport(page);
+      const recoveredReplayGuide = await usefulGuideReport(page);
+      expect(recoveredReplayHint.activeElementId, `${testCase.label} recovered hint does not steal Help focus`)
+        .toBe("tutorialHelpBtn");
+      expect(recoveredReplayHint.selectedCells, `${testCase.label} recovered hint selects no tile`).toEqual([]);
+      expect(recoveredReplayHint.state.moves, `${testCase.label} recovered hint spends no move`)
+        .toBe(completedSettledState.moves);
+      expect(recoveredReplayHint.state.counts, `${testCase.label} recovered hint changes no counts`)
+        .toEqual(completedSettledState.counts);
+      expect(recoveredReplayHint.state.board, `${testCase.label} recovered hint changes no board`)
+        .toEqual(completedSettledState.board);
+      expect(recoveredReplayGuide.legal, `${testCase.label} recovered replay hint is legal`).toBe(true);
+      expect(recoveredReplayGuide.useful, `${testCase.label} recovered replay hint advances the order`).toBe(true);
 
       await page.addInitScript(({ key, fixtureKey }) => {
         if (sessionStorage.getItem(fixtureKey)) {

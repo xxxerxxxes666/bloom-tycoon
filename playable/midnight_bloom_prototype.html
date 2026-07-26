@@ -14338,6 +14338,8 @@
         clearIdleHint();
         clearThornTeachingCue(false);
       }
+      const restartPostOnboardingHint = !skippingThornLesson
+        && isPostOnboardingIdleHintActive();
       if (guidedFocusCell) {
         boardFocusCell = clampBoardFocusCell(guidedFocusCell);
         queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
@@ -14356,7 +14358,7 @@
         });
       }
       saveProgress();
-      if (skippingRoundOneAgency) {
+      if (skippingRoundOneAgency || restartPostOnboardingHint) {
         scheduleIdleHint();
       }
     }

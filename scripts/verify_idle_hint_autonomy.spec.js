@@ -394,6 +394,34 @@ for (const testCase of CASES) {
       expect(dismissedReplay.state.moves, `${testCase.label} dismissal spends no move`).toBe(settled.moves);
       expect(dismissedReplay.state.counts, `${testCase.label} dismissal changes no counts`).toEqual(settled.counts);
       expect(dismissedReplay.state.board, `${testCase.label} dismissal changes no board`).toEqual(settled.board);
+      expect(await page.locator(".tile.idle-hint").count(), `${testCase.label} no immediate replay hint`)
+        .toBe(0);
+
+      if (testCase.label === "desktop-pointer") {
+        await page.waitForTimeout(3000);
+        await helpButton.click();
+        await expect(page.locator("#tutorialSkipBtn")).toBeFocused();
+        await page.keyboard.press("Enter");
+        expect(await page.locator(".tile.idle-hint").count(), `${testCase.label} repeated replay clears prior generation`)
+          .toBe(0);
+      }
+
+      await page.waitForTimeout(6000);
+      expect(await page.locator(".tile.idle-hint").count(), `${testCase.label} quiet window lasts six seconds`)
+        .toBe(0);
+      await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 2500 });
+      const recoveredAfterReplay = await autonomyReport(page);
+      const recoveredUsefulness = await hintUsefulness(page);
+      expect(recoveredAfterReplay.activeElementId, `${testCase.label} recovered hint does not steal Help focus`)
+        .toBe("tutorialHelpBtn");
+      expect(recoveredAfterReplay.selectedTiles, `${testCase.label} recovered hint selects no tile`).toBe(0);
+      expect(recoveredAfterReplay.state.moves, `${testCase.label} recovered hint spends no move`).toBe(settled.moves);
+      expect(recoveredAfterReplay.state.counts, `${testCase.label} recovered hint changes no counts`)
+        .toEqual(settled.counts);
+      expect(recoveredAfterReplay.state.board, `${testCase.label} recovered hint changes no board`)
+        .toEqual(settled.board);
+      expect(recoveredUsefulness.legal, `${testCase.label} recovered replay hint is legal`).toBe(true);
+      expect(recoveredUsefulness.useful, `${testCase.label} recovered replay hint advances the order`).toBe(true);
 
       expect(consoleErrors).toEqual([]);
       expect(pageErrors).toEqual([]);

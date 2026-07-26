@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-07-26 Help replay idle-guidance restart
+
+- Player-visible result: dismissing Help during ordinary settled Round 2 or Round 3 play now restarts the existing quiet-window guidance. The board remains unmarked for the first six seconds; within the established seven-second window, exactly one current legal objective-useful pair returns without stealing focus from Help.
+- Authority boundary: replay dismissal reuses `scheduleIdleHint()` only when the existing post-onboarding eligibility predicate is active. Direct or partial Thorn teaching, armed Black Candle, selection, drag, resolution, refusal, dead-board reweave, failure, completion, handoff, and payoff continue to own their established precedence. Repeated Help/Skip clears the previous generation and starts one replacement timer through the scheduler's existing retirement path.
+- Scope: `playable/midnight_bloom_prototype.html`, `scripts/verify_idle_hint_autonomy.spec.js`, `scripts/verify_round_two_handoff.spec.js`, `scripts/verify_html_match_shapes.py`, and this note. No timer duration, node, copy, control, save field, mechanic, move, economy value, round, or progression changed.
+- Permanent contract: natural post-Thorn Round 2 and ordinary/Black-Candle-resolved Round 3 journeys cover desktop `1280x720`, exact `390x844`, pointer, touch, keyboard, full motion, and reduced motion. They require zero hints through six seconds, exactly two legal useful endpoints in the existing window, no focus theft, no selection/move/count/board mutation, timer-generation replacement, 64 tiles/eight complete rows, loaded imagery, no overflow, and empty console/page/request error collections.
+- Local verification: the changed R2/R3 matrix passes `8/8` in `7.0m`; failure/Retry, active Black Candle, fresh tutorial, keyboard board, and payoff precedence pass `15/15`; runtime budgets pass `4/4` with 64 tiles/eight rows, no dormant scaffold, broken images, horizontal overflow, or control-return regression. Project/HTML verification and modified spec syntax pass before release.
+
 ## 2026-07-26 saved Help replay primary focus
 
 - Player-visible result: reloading while an active Round 1-3 tutorial or Help replay is already visible now returns keyboard focus to its existing `Skip` primary action instead of leaving focus on the page. The board's roving tile remains intact beneath the modal instruction, and dismissing replay still returns to the authoritative guide source when one exists or the existing Help fallback otherwise.
