@@ -728,6 +728,10 @@
       display: none;
     }
 
+    .mobile-greenhouse-identity {
+      display: none;
+    }
+
     .sigil {
       text-align: center;
       letter-spacing: 12px;
@@ -7703,18 +7707,59 @@
       body.round-one-active:not(.focused-payoff-active) .mobile-greenhouse-progress,
       body.restored-next-order-focus:not(.focused-payoff-active) .mobile-greenhouse-progress,
       body.round-three-focus-active:not(.focused-payoff-active) .mobile-greenhouse-progress {
-        display: block;
+        display: grid;
+        grid-template-columns: 84px minmax(0, 1fr);
+        align-items: stretch;
+        gap: 5px;
         width: calc(100vw - 14px);
         max-width: 378px;
         margin: 5px auto 0;
         pointer-events: none;
+      }
+      .mobile-greenhouse-identity {
+        position: relative;
+        display: block;
+        min-width: 0;
+        height: 48px;
+        overflow: hidden;
+        border: 1px solid color-mix(in srgb, var(--stage-accent, #b9874d) 62%, #241812);
+        background: #030202;
+        box-shadow:
+          inset 0 0 12px #000,
+          0 0 11px color-mix(in srgb, var(--stage-accent, #b9874d) 18%, #0000);
+        isolation: isolate;
+      }
+      .mobile-greenhouse-identity::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        border: 1px solid #f1d59524;
+        background:
+          linear-gradient(180deg, #00000008, #00000054),
+          radial-gradient(ellipse at 50% 46%, #0000 0 42%, #0008 100%);
+        box-shadow: inset 0 0 10px #000;
+      }
+      .mobile-greenhouse-identity img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+        filter:
+          brightness(var(--stage-art-brightness, 1.04))
+          contrast(1.15)
+          saturate(var(--stage-art-saturation, 1.06));
+      }
+      .mobile-greenhouse-identity[data-stage-key="restored"] img {
+        filter: brightness(1.12) contrast(1.12) saturate(1.14);
       }
       .mobile-greenhouse-progress .greenhouse-restoration-dial {
         position: relative;
         left: auto;
         bottom: auto;
         width: 100%;
-        min-height: 34px;
+        min-height: 48px;
         padding: 4px 7px 5px;
         transform: none;
         display: grid;
@@ -7763,8 +7808,8 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        font-size: 10px;
-        text-align: right;
+        font-size: 9px;
+        text-align: left;
       }
       body.restored-next-order-focus .active-greenhouse-stage,
       body.restored-greenhouse-handoff .active-greenhouse-stage,
@@ -8559,6 +8604,9 @@
         </span>
       </div>
       <div class="mobile-greenhouse-progress" id="mobileGreenhouseProgress" aria-label="Greenhouse progress">
+        <span class="mobile-greenhouse-identity" id="mobileGreenhouseIdentity" data-stage-key="withered" aria-hidden="true">
+          <img id="mobileGreenhouseIdentityArt" src="../assets/greenhouse/first_greenhouse_withered.jpg" alt="" width="1672" height="941">
+        </span>
         <span class="greenhouse-restoration-dial" id="mobileRestorationDial"></span>
       </div>
       <div class="first-swap-cue" id="firstSwapCue" aria-live="polite">Glowing pair incoming…</div>
@@ -12720,6 +12768,8 @@
       const hero = document.querySelector(".hero");
       const main = document.querySelector(".main");
       const mobilePlinth = $("mobileGreenhousePlinth");
+      const mobileIdentity = $("mobileGreenhouseIdentity");
+      const mobileIdentityArt = $("mobileGreenhouseIdentityArt");
       document.body.dataset.activeGreenhouseStage = stageKey;
       document.body.style.setProperty("--active-greenhouse-image", `url("${stage.src}")`);
       document.body.style.setProperty("--stage-accent", stage.accent);
@@ -12749,6 +12799,17 @@
       if (mobilePlinth) {
         mobilePlinth.dataset.stageLabel = stage.shortLabel;
         mobilePlinth.setAttribute("aria-label", stage.label);
+      }
+      if (mobileIdentity) {
+        mobileIdentity.dataset.stageKey = stageKey;
+        mobileIdentity.dataset.stageLabel = stage.shortLabel;
+      }
+      if (mobileIdentityArt && mobileIdentityArt.getAttribute("src") !== stage.src) {
+        mobileIdentityArt.src = stage.src;
+      }
+      if (mobileIdentityArt) {
+        mobileIdentityArt.width = stage.width;
+        mobileIdentityArt.height = stage.height;
       }
     }
 

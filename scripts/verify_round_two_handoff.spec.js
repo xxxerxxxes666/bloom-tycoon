@@ -316,6 +316,9 @@ async function handoffReport(page) {
     }).map((tile) => tile.dataset.x));
     const ownedNote = Array.from(document.querySelectorAll(".restoration-owned-note")).find(visible);
     const ownedDial = Array.from(document.querySelectorAll(".greenhouse-restoration-dial")).find(visible);
+    const mobileIdentity = document.querySelector("#mobileGreenhouseIdentity");
+    const mobileIdentityArt = document.querySelector("#mobileGreenhouseIdentityArt");
+    const mobileIdentityRect = mobileIdentity?.getBoundingClientRect();
     return {
       state,
       bodyClasses: document.body.className,
@@ -354,6 +357,14 @@ async function handoffReport(page) {
       greenhouseText: ownedDial?.textContent.replace(/\s+/g, " ").trim() || "",
       ownedStage: ownedDial?.dataset.ownedStage || "",
       greenhouseStage: ownedDial?.dataset.restorationDialStage || "",
+      mobileIdentityVisible: visible(mobileIdentity),
+      mobileIdentityStage: mobileIdentity?.dataset.stageKey || "",
+      mobileIdentitySrc: mobileIdentityArt?.getAttribute("src") || "",
+      mobileIdentityComplete: Boolean(mobileIdentityArt?.complete),
+      mobileIdentityNaturalWidth: mobileIdentityArt?.naturalWidth || 0,
+      mobileIdentityNaturalHeight: mobileIdentityArt?.naturalHeight || 0,
+      mobileIdentityWidth: mobileIdentityRect?.width || 0,
+      mobileIdentityHeight: mobileIdentityRect?.height || 0,
       visibleBars: Array.from(document.querySelectorAll("#bouquetOrderProgress[role='progressbar'], .restoration-dial-track"))
         .filter(visible).length,
       guideTiles: document.querySelectorAll(".tile.idle-hint").length,
@@ -506,8 +517,17 @@ function expectReadyHandoff(report, testCase, label) {
   if (testCase.mobile) {
     expect(report.greenhouseText, `${label} compact owned restoration consequence`).toContain("RESTORED");
     expect(report.greenhouseText, `${label} restored pane consequence`).toContain("First panes restored");
+    expect(report.mobileIdentityVisible, `${label} restored greenhouse image remains visible`).toBe(true);
+    expect(report.mobileIdentityStage, `${label} visual stage follows ownership`).toBe("restored");
+    expect(report.mobileIdentitySrc, `${label} same restored greenhouse asset`).toContain("first_greenhouse_restored.jpg");
+    expect(report.mobileIdentityComplete, `${label} restored asset loaded`).toBe(true);
+    expect(report.mobileIdentityNaturalWidth, `${label} restored asset has pixels`).toBe(1672);
+    expect(report.mobileIdentityNaturalHeight, `${label} restored asset has pixels`).toBe(941);
+    expect(report.mobileIdentityWidth, `${label} identity remains recognizable`).toBeGreaterThanOrEqual(80);
+    expect(report.mobileIdentityHeight, `${label} identity remains recognizable`).toBeGreaterThanOrEqual(44);
   } else {
     expect(report.ownedNote, `${label} owned restoration consequence`).toBe("Owned 1/3 · Next: Upgrade Greenhouse");
+    expect(report.mobileIdentityVisible, `${label} desktop composition remains unchanged`).toBe(false);
   }
   expect(report.ownedStage, `${label} owned stage`).toBe("1");
   expect(report.greenhouseStage, `${label} active greenhouse authority`).toBe("restored");
@@ -568,6 +588,12 @@ function expectRecoveredThornLesson(report, testCase, expectedState, expectedGui
   expect(report.boardBottom, `${label} board in first viewport`).toBeLessThanOrEqual(testCase.viewport.height);
   expect(report.overflowX, `${label} no horizontal overflow`).toBe(false);
   expect(report.brokenImages, `${label} no broken images`).toEqual([]);
+  if (testCase.mobile) {
+    expect(report.mobileIdentityVisible, `${label} restored greenhouse survives recovery`).toBe(true);
+    expect(report.mobileIdentityStage, `${label} recovered visual stage`).toBe("restored");
+    expect(report.mobileIdentitySrc, `${label} recovered restored asset`).toContain("first_greenhouse_restored.jpg");
+    expect(report.mobileIdentityComplete, `${label} recovered restored asset loaded`).toBe(true);
+  }
 }
 
 for (const testCase of CASES) {
@@ -596,6 +622,16 @@ for (const testCase of CASES) {
       await page.evaluate((key) => localStorage.removeItem(key), SAVE_KEY);
       await page.reload({ waitUntil: "networkidle" });
       await expect(page.locator(".tile")).toHaveCount(64);
+      const freshReport = await handoffReport(page);
+      expect(freshReport.state.roundOneRestored, `${testCase.label} fresh ownership`).toBe(false);
+      expect(freshReport.mobileIdentityStage, `${testCase.label} fresh visual stage`).toBe("withered");
+      expect(freshReport.mobileIdentitySrc, `${testCase.label} fresh greenhouse asset`)
+        .toContain("first_greenhouse_withered.jpg");
+      if (testCase.mobile) {
+        expect(freshReport.mobileIdentityVisible, `${testCase.label} fresh withered place is visible`).toBe(true);
+      } else {
+        expect(freshReport.mobileIdentityVisible, `${testCase.label} desktop keeps mobile identity hidden`).toBe(false);
+      }
       await completeNaturalRoundOne(page, testCase.input);
 
       const ceremonyState = await page.evaluate((key) => (
@@ -603,6 +639,11 @@ for (const testCase of CASES) {
       ), SAVE_KEY);
       expect(ceremonyState.coins).toBe(120);
       expect(ceremonyState.roundComplete).toBe(true);
+      expect(ceremonyState.roundOneRestored, `${testCase.label} matching alone cannot restore`).toBe(false);
+      const pendingReport = await handoffReport(page);
+      expect(pendingReport.mobileIdentityStage, `${testCase.label} pending visual remains withered`).toBe("withered");
+      expect(pendingReport.mobileIdentitySrc, `${testCase.label} pending asset remains withered`)
+        .toContain("first_greenhouse_withered.jpg");
       if (testCase.input === "touch") await page.locator("#restoreGreenhouseBtn").tap();
       else await page.locator("#restoreGreenhouseBtn").click();
       await expect(page.locator("#nextOrderBtn")).toBeVisible({ timeout: 7000 });
@@ -893,6 +934,22 @@ for (const testCase of CASES) {
       expect(retried.rows, `${testCase.label} Retry rows`).toBe(8);
       expect(retried.overflowX, `${testCase.label} Retry fit`).toBe(false);
       expect(retried.instructionCount, `${testCase.label} Retry does not duplicate the lesson`).toBeLessThanOrEqual(1);
+      expect(retried.state.currentRound, `${testCase.label} Retry restores the same order`).toBe(2);
+      expect(retried.state.moves, `${testCase.label} Retry restores the complete move budget`).toBe(9);
+      expect(retried.state.counts, `${testCase.label} Retry resets the order atomically`)
+        .toEqual([0, 0, 0, 0, 0, 0]);
+      expect(retried.state.roundComplete, `${testCase.label} Retry returns to active play`).toBe(false);
+      expect(retried.state.coins, `${testCase.label} Retry preserves spent balance`).toBe(20);
+      expect(retried.state.roundOneRestored, `${testCase.label} Retry preserves ownership`).toBe(true);
+      expect(retried.ownedStage, `${testCase.label} Retry preserves exact owned stage`).toBe("1");
+      expect(retried.greenhouseStage, `${testCase.label} Retry preserves exact visual authority`).toBe("restored");
+      if (testCase.mobile) {
+        expect(retried.mobileIdentityVisible, `${testCase.label} Retry preserves restored greenhouse art`).toBe(true);
+        expect(retried.mobileIdentityStage, `${testCase.label} Retry restored visual stage`).toBe("restored");
+        expect(retried.mobileIdentitySrc, `${testCase.label} Retry restored asset identity`)
+          .toContain("first_greenhouse_restored.jpg");
+        expect(retried.mobileIdentityComplete, `${testCase.label} Retry restored asset loaded`).toBe(true);
+      }
       expect(consoleErrors, `${testCase.label} console errors`).toEqual([]);
       expect(pageErrors, `${testCase.label} page errors`).toEqual([]);
       expect(failedRequests, `${testCase.label} request failures`).toEqual([]);

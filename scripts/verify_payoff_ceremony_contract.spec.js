@@ -1014,6 +1014,50 @@ async function restorationSceneEvidence(page) {
   return { ...dom, pixels };
 }
 
+async function mobileGreenhouseContinuityEvidence(page) {
+  const identity = page.locator("#mobileGreenhouseIdentity");
+  const visible = await identity.isVisible();
+  const dom = await identity.evaluate((node) => {
+    const image = node.querySelector("img");
+    const rect = node.getBoundingClientRect();
+    const dial = document.querySelector("#mobileRestorationDial");
+    return {
+      visible: getComputedStyle(node).display !== "none" && rect.width > 0 && rect.height > 0,
+      stageKey: node.dataset.stageKey || "",
+      rect: {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height
+      },
+      src: image?.getAttribute("src") || "",
+      complete: Boolean(image?.complete),
+      naturalWidth: image?.naturalWidth || 0,
+      naturalHeight: image?.naturalHeight || 0,
+      renderedWidth: image?.getBoundingClientRect().width || 0,
+      renderedHeight: image?.getBoundingClientRect().height || 0,
+      objectFit: image ? getComputedStyle(image).objectFit : "",
+      objectPosition: image ? getComputedStyle(image).objectPosition : "",
+      ownedStage: dial?.dataset.ownedStage || "",
+      pct: dial?.dataset.restorationDialPct || "",
+      dialText: dial?.textContent.replace(/\s+/g, " ").trim() || ""
+    };
+  });
+  if (!visible) return { ...dom, pixels: null };
+  const png = decodePng(await identity.screenshot({ animations: "disabled" }));
+  return {
+    ...dom,
+    pixels: pixelBoxStats(
+      png,
+      { left: 0, top: 0, right: png.width, bottom: png.height },
+      1,
+      1
+    )
+  };
+}
+
 function expectRoundOneSceneIdentity(evidence, label) {
   expect(evidence.artKey, `${label} scene uses Round 1 art pair`).toBe("first");
   expect(evidence.ariaLabel, `${label} scene identifies one before/after place`).toMatch(/before restoration and after restoration/i);
@@ -1593,6 +1637,7 @@ test("Round 1 restoration keeps one readable place through spend, peak, settleme
       });
       await clickPrimary(page);
       await expectActiveBoard(page);
+      const continuity = await mobileGreenhouseContinuityEvidence(page);
       const active = await page.evaluate(() => {
         const tiles = Array.from(document.querySelectorAll(".tile"));
         const rowTops = new Set(tiles.map((tile) => Math.round(tile.getBoundingClientRect().top)));
@@ -1609,6 +1654,32 @@ test("Round 1 restoration keeps one readable place through spend, peak, settleme
       expect(active.overflowX).toBe(false);
       if (config.mobile) {
         expect(active.boardBottom, "all eight rows return inside exact mobile viewport").toBeLessThanOrEqual(844);
+        expect(continuity.visible, "restored place remains visible beside the existing mobile dial").toBe(true);
+        expect(continuity.stageKey).toBe("restored");
+        expect(continuity.src).toContain("first_greenhouse_restored.jpg");
+        expect(continuity.complete).toBe(true);
+        expect(continuity.naturalWidth).toBe(1672);
+        expect(continuity.naturalHeight).toBe(941);
+        expect(continuity.rect.width).toBeGreaterThanOrEqual(80);
+        expect(continuity.rect.height).toBeGreaterThanOrEqual(44);
+        expect(continuity.renderedWidth).toBeGreaterThanOrEqual(80);
+        expect(continuity.renderedHeight).toBeGreaterThanOrEqual(44);
+        expect(continuity.objectFit).toBe("cover");
+        expect(continuity.objectPosition).toBe("50% 50%");
+        expect(continuity.ownedStage).toBe("1");
+        expect(continuity.pct).toBe("33");
+        expect(continuity.dialText).toContain("RESTORED");
+        expect(continuity.dialText).toContain("First panes restored");
+        expect(continuity.pixels.p90, "restored ribs and lit glass remain readable at compact scale")
+          .toBeGreaterThan(38);
+        expect(continuity.pixels.coloredPixels, "compact identity carries visible restored color")
+          .toBeGreaterThan(continuity.pixels.sampledPixels * .18);
+        await page.screenshot({
+          path: "work/restoration-mobile390-round2-continuity.png",
+          fullPage: true
+        });
+      } else {
+        expect(continuity.visible, "desktop keeps its accepted greenhouse composition").toBe(false);
       }
       expect(consoleMessages).toEqual([]);
       expect(pageErrors).toEqual([]);
