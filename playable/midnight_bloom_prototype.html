@@ -8476,7 +8476,7 @@
       body.focused-active-play:not(.focused-slice-failed) .game {
         --desktop-altar-size: min(650px, calc(100vh - 120px), calc(100vw - 630px));
         width: calc(100vw - 10px);
-        height: calc(100vh - 10px);
+        height: calc(100vh - 16px);
         min-height: 0;
         grid-template-columns:
           minmax(0, 1fr)
@@ -8714,6 +8714,7 @@
       max-width: 520px;
       min-height: 0;
       margin: 0 auto;
+      pointer-events: none;
     }
 
     .board-command-stack {
@@ -8757,17 +8758,19 @@
       border-radius: 999px;
       font-size: 9px;
       letter-spacing: .04em;
+      pointer-events: auto;
     }
 
     @media (max-width: 600px) {
       .tutorial-command-region {
+        top: -52px;
         gap: 0 5px;
         width: calc(100% - 16px);
       }
 
       .tutorial-command-region > .tutorial-help {
         min-width: 44px;
-        min-height: 30px;
+        min-height: 44px;
         padding: 0 7px;
         font-size: 9px;
       }
@@ -8790,6 +8793,10 @@
         bottom: auto;
         transform: none;
         flex-wrap: nowrap;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .tutorial-command-region > .tutorial-panel {
+        max-width: 100%;
       }
 
       body.focused-active-play:not(.focused-slice-failed) .tutorial-command-region > .first-swap-cue::before {
