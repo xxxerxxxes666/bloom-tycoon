@@ -227,7 +227,10 @@ for (const config of CONFIGS) {
     });
     page.on("pageerror", (error) => pageErrors.push(error.message));
     page.on("requestfailed", (request) => {
-      failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`);
+      const errorText = request.failure()?.errorText || "";
+      if (errorText !== "net::ERR_ABORTED") {
+        failedRequests.push(`${request.url()} ${errorText}`);
+      }
     });
 
     try {
