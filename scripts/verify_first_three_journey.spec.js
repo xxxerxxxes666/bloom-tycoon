@@ -85,11 +85,26 @@ async function journeyState(page) {
         && rect.width > 0
         && rect.height > 0;
     };
+    const visibleRect = (node) => {
+      if (!visible(node)) return null;
+      const rect = node.getBoundingClientRect();
+      return {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height
+      };
+    };
     const tileRows = [...new Set(Array.from(document.querySelectorAll(".tile"))
       .map((tile) => Math.round(tile.getBoundingClientRect().top)))].length;
     const boardRect = document.querySelector(".board")?.getBoundingClientRect();
     const progressRect = document.querySelector("#bouquetProgress")?.getBoundingClientRect();
     const coinRect = document.querySelector("#coinBalance")?.getBoundingClientRect();
+    const replayEntrySurface = innerWidth <= 760
+      ? document.querySelector("#firstSwapCue")
+      : document.querySelector("#bouquetRewardPromise");
     const visibleLiveRegions = Array.from(document.querySelectorAll("[aria-live]"))
       .filter(visible)
       .map((node) => {
@@ -161,9 +176,24 @@ async function journeyState(page) {
       actionBottom: Array.from(document.querySelectorAll("#roundOneRestoration button"))
         .find(visible)?.getBoundingClientRect().bottom || 0,
       cue: document.querySelector("#firstSwapCue")?.textContent.trim() || "",
+      cueVisible: visible(document.querySelector("#firstSwapCue")),
+      rewardPromise: document.querySelector("#bouquetRewardPromise")?.textContent.trim() || "",
+      replayEntryReceipt: replayEntrySurface?.textContent.trim() || "",
+      replayEntryActive: document.body.classList.contains("owned-replay-entry"),
       handoffCue: document.querySelector("#nextOrderCue")?.textContent.trim() || "",
       handoffCueVisible: visible(document.querySelector("#nextOrderCue")),
       handoffCueBottom: document.querySelector("#nextOrderCue")?.getBoundingClientRect().bottom || 0,
+      replayEntryGeometry: {
+        receipt: visibleRect(replayEntrySurface),
+        detachedReceipt: visibleRect(document.querySelector("#nextOrderCue")),
+        masthead: visibleRect(document.querySelector(".title")),
+        help: visibleRect(document.querySelector("#tutorialHelpBtn")),
+        bouquet: visibleRect(document.querySelector("#bouquetProgress")),
+        greenhouseContinuity: visibleRect(document.querySelector("#mobileGreenhouseProgress")),
+        board: visibleRect(document.querySelector("#board")),
+        currentOrder: visibleRect(document.querySelector(".active-orders-card")),
+        firstActionableTile: visibleRect(document.querySelector(".tile[tabindex='0']"))
+      },
       hintedTiles: document.querySelectorAll(".tile.idle-hint").length,
       reducedMotion: matchMedia("(prefers-reduced-motion: reduce)").matches,
       tutorial: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
@@ -1195,7 +1225,7 @@ async function playFocusedCycle(page, config, runLabel, strategy, options = {}) 
   return results;
 }
 
-async function reloadAndExpectActiveReplayBalance(page, config, expectedCoins) {
+async function reloadAndExpectActiveReplayBalance(page, config, expectedCoins, expectedHintedTiles = 2) {
   for (let reload = 0; reload < 2; reload += 1) {
     await page.reload({ waitUntil: "networkidle" });
     await expect(page.locator(".tile")).toHaveCount(64);
@@ -1204,9 +1234,16 @@ async function reloadAndExpectActiveReplayBalance(page, config, expectedCoins) {
     expect(state.roundComplete).toBe(false);
     expect(state.coins).toBe(expectedCoins);
     expect(state.focusedEconomyVersion).toBe(2);
+    expect(state.replayEntryActive, `replay reload ${reload + 1} settles the bounded acknowledgment`).toBe(false);
     expect(state.handoffCueVisible, `replay reload ${reload + 1} does not resurrect renewal cue`).toBe(false);
-    expect(state.hintedTiles, `replay reload ${reload + 1} keeps one guided pair`).toBe(2);
-    expect(state.cue, `replay reload ${reload + 1} has one clear instruction`).toMatch(/Thorn Rose next|Swap the glowing pair/);
+    expect(state.hintedTiles, `replay reload ${reload + 1} preserves settled guidance authority`)
+      .toBe(expectedHintedTiles);
+    const expectedCue = expectedHintedTiles === 2
+      ? /Thorn Rose next|Swap the glowing pair/
+      : /Find 3 Thorn Roses/;
+    expect(state.cue, `replay reload ${reload + 1} has one clear instruction`).toMatch(expectedCue);
+    expect(state.cue).not.toMatch(/coins kept|Conservatory owned|New order ready/);
+    expect(state.rewardPromise).toBe("Complete for 120 coins");
     await expectVisibleCoinBalance(page, expectedCoins, { pulsing: false });
     await expectPermanentRaisedGreenhouse(page, `replay reload ${reload + 1}`);
     await assertActiveBoard(page, config.mobile);
@@ -1241,6 +1278,10 @@ async function failAndRetryOwnedReplayRoundOne(page, config, expectedCoins, runL
     expect(failed.moves).toBe(0);
     expect(failed.coins).toBe(expectedCoins);
     expect(failed.visibleButtons).toEqual(["Retry Bouquet"]);
+    expect(failed.replayEntryActive, "failure does not resurrect replay entry").toBe(false);
+    expect(failed.handoffCueVisible, "failure has no detached replay receipt").toBe(false);
+    expect(failed.cue).not.toMatch(/coins kept|Conservatory owned|New order ready/);
+    expect(failed.rewardPromise).toBe("Complete for 120 coins");
     expect(failed.ownedRenewalHidden, "failure has no owned-renewal overlay").toBe(true);
     expect(failed.ownedRenewalTransientNodes, "failure has no owned-renewal debris").toBe(0);
     await expectPermanentRaisedGreenhouse(page, `${runLabel} failed replay reload ${reload + 1}`);
@@ -1265,6 +1306,10 @@ async function failAndRetryOwnedReplayRoundOne(page, config, expectedCoins, runL
   expect(retried.coins).toBe(expectedCoins);
   expect(retried.hintedTiles).toBe(2);
   expect(retried.visibleButtons).not.toContain("Retry Bouquet");
+  expect(retried.replayEntryActive, "Retry does not resurrect replay entry").toBe(false);
+  expect(retried.handoffCueVisible, "Retry has no detached replay receipt").toBe(false);
+  expect(retried.cue).not.toMatch(/coins kept|Conservatory owned|New order ready/);
+  expect(retried.rewardPromise).toBe("Complete for 120 coins");
   expect(retried.ownedRenewalHidden, "Retry clears owned-renewal overlay").toBe(true);
   expect(retried.ownedRenewalTransientNodes, "Retry clears owned-renewal debris").toBe(0);
   await expectPermanentRaisedGreenhouse(page, `${runLabel} retried replay`);
@@ -1603,6 +1648,75 @@ async function assertActiveBoard(page, mobile) {
   if (mobile) {
     expect(state.ritualLogVisible, "active mobile ritual log hidden").toBe(false);
     expect(state.boardBottom, "exact mobile board stays in first viewport").toBeLessThanOrEqual(844);
+  }
+}
+
+function rectanglesOverlap(first, second) {
+  if (!first || !second) return false;
+  return first.left < second.right - 0.5
+    && first.right > second.left + 0.5
+    && first.top < second.bottom - 0.5
+    && first.bottom > second.top + 0.5;
+}
+
+function expectOwnedReplayEntryGeometry(state, config, label) {
+  const geometry = state.replayEntryGeometry;
+  expect(state.replayEntryActive, `${label} bounded replay entry is active`).toBe(true);
+  expect(state.cueVisible, `${label} viewport uses the intended cue surface`).toBe(config.mobile);
+  expect(state.handoffCueVisible, `${label} detached receipt stays retired`).toBe(false);
+  expect(geometry.receipt, `${label} receipt geometry`).toBeTruthy();
+  expect(geometry.detachedReceipt, `${label} no detached receipt geometry`).toBeNull();
+  expect(geometry.board, `${label} board geometry`).toBeTruthy();
+  expect(geometry.bouquet, `${label} bouquet geometry`).toBeTruthy();
+  expect(geometry.firstActionableTile, `${label} first actionable tile geometry`).toBeTruthy();
+  for (const [name, rect] of [
+    ["masthead", geometry.masthead],
+    ["Help", geometry.help],
+    ["board", geometry.board],
+    ["current-order rail", geometry.currentOrder],
+    ["first actionable tile", geometry.firstActionableTile]
+  ]) {
+    expect(
+      rectanglesOverlap(geometry.receipt, rect),
+      `${label} receipt does not overlap ${name}`
+    ).toBe(false);
+  }
+  if (config.mobile) {
+    expect(geometry.greenhouseContinuity, `${label} compact greenhouse continuity geometry`).toBeTruthy();
+    expect(geometry.receipt.top, `${label} receipt follows greenhouse continuity`)
+      .toBeGreaterThanOrEqual(geometry.greenhouseContinuity.bottom);
+    expect(geometry.receipt.bottom, `${label} receipt remains above the board`)
+      .toBeLessThanOrEqual(geometry.board.top);
+    expect(geometry.receipt.top - geometry.greenhouseContinuity.bottom)
+      .toBeLessThanOrEqual(12);
+    expect(geometry.board.top - geometry.receipt.bottom).toBeLessThanOrEqual(12);
+  } else {
+    expect(
+      geometry.receipt.left,
+      `${label} receipt is contained by the bouquet header`
+    ).toBeGreaterThanOrEqual(geometry.bouquet.left);
+    expect(geometry.receipt.right, `${label} receipt stays inside the bouquet header`)
+      .toBeLessThanOrEqual(geometry.bouquet.right);
+    expect(geometry.receipt.top, `${label} receipt stays below bouquet header top`)
+      .toBeGreaterThanOrEqual(geometry.bouquet.top - 3);
+    expect(geometry.receipt.bottom, `${label} receipt stays above bouquet header bottom`)
+      .toBeLessThanOrEqual(geometry.bouquet.bottom);
+    expect(geometry.bouquet.bottom, `${label} bouquet header hands directly into the board`)
+      .toBeLessThanOrEqual(geometry.board.top + 0.5);
+  }
+  const receiptCenter = geometry.receipt.left + geometry.receipt.width / 2;
+  expect(receiptCenter, `${label} receipt aligns with board left`).toBeGreaterThan(geometry.board.left);
+  expect(receiptCenter, `${label} receipt aligns with board right`).toBeLessThan(geometry.board.right);
+  expect(geometry.board.bottom, `${label} board remains in the first viewport`)
+    .toBeLessThanOrEqual(config.viewport.height);
+  if (config.mobile) {
+    expect(
+      rectanglesOverlap(geometry.receipt, geometry.greenhouseContinuity),
+      `${label} receipt does not overlap greenhouse continuity`
+    ).toBe(false);
+    expect(geometry.receipt.left, `${label} receipt stays inside mobile left edge`).toBeGreaterThanOrEqual(0);
+    expect(geometry.receipt.right, `${label} receipt stays inside mobile right edge`)
+      .toBeLessThanOrEqual(config.viewport.width);
   }
 }
 
@@ -2057,8 +2171,17 @@ for (const config of [
 
       const firstCycle = await playFocusedCycle(page, config, `${runLabel}-cycle1`, "goal-following", {
         evidencePrefix: `work/economy-${config.label}-cycle1`,
-        replayActivation: config.mobile ? "touch" : "pointer"
+        stopBeforeReplay: true
       });
+      expect(firstCycle[2].balances).toEqual([50, 230, 50]);
+      expect(firstCycle[2].actions).toEqual(["Raise Conservatory · 180 coins"]);
+      const firstReplayAction = await spendPrimaryCeremonyAction(
+        page,
+        config.mobile ? "touch" : "pointer"
+      );
+      expect(firstReplayAction).toBe("Play Again → First Bouquet");
+      firstCycle[2].balances.push((await journeyState(page)).coins);
+      firstCycle[2].actions.push(firstReplayAction);
       expect(firstCycle.map((round) => round.balances)).toEqual([
         [0, 120, 20, 20],
         [20, 170, 50, 50],
@@ -2066,19 +2189,31 @@ for (const config of [
       ]);
       const replayHandoff = await journeyState(page);
       expect(replayHandoff.coins).toBe(50);
-      expect(replayHandoff.handoffCueVisible).toBe(true);
-      expect(replayHandoff.handoffCue).toBe("Greenhouse Renewal · First Bouquet · 50 coins carried forward");
+      expect(replayHandoff.replayEntryReceipt).toBe("50 coins kept · Conservatory owned · New order ready.");
       expect(replayHandoff.hintedTiles).toBe(2);
       expect(replayHandoff.reducedMotion).toBe(false);
       expect(replayHandoff.tiles).toBe(64);
+      console.log(`${runLabel} replay-entry transient geometry: ${JSON.stringify(replayHandoff.replayEntryGeometry)}`);
+      expectOwnedReplayEntryGeometry(replayHandoff, config, `${runLabel} first replay handoff`);
       await expectPermanentRaisedGreenhouse(page, `${runLabel} first replay handoff`);
-      if (config.mobile) {
-        expect(replayHandoff.boardBottom).toBeLessThanOrEqual(config.viewport.height);
-        expect(replayHandoff.handoffCueBottom).toBeLessThanOrEqual(config.viewport.height);
-      }
       await expect(page.locator(".tile[tabindex='0']")).toHaveCount(1);
       await expect(page.locator(".tile[tabindex='0']")).toBeFocused();
-      await page.screenshot({ path: `work/replay-handoff-${config.label}.png`, fullPage: true });
+      await page.screenshot({ path: `work/replay-entry-${config.label}-transient.png`, fullPage: true });
+      await page.waitForFunction(() => !document.body.classList.contains("owned-replay-entry"));
+      const settledReplayEntry = await journeyState(page);
+      expect(settledReplayEntry.replayEntryActive).toBe(false);
+      expect(settledReplayEntry.handoffCueVisible).toBe(false);
+      expect(settledReplayEntry.cue).toMatch(/Thorn Rose next|Swap the glowing pair/);
+      expect(settledReplayEntry.rewardPromise).toBe("Complete for 120 coins");
+      expect(settledReplayEntry.replayEntryGeometry.detachedReceipt).toBeNull();
+      expect(settledReplayEntry.replayEntryGeometry.board.top)
+        .toBeCloseTo(replayHandoff.replayEntryGeometry.board.top, 0);
+      expect(settledReplayEntry.boardBottom).toBeLessThanOrEqual(config.viewport.height);
+      await page.screenshot({ path: `work/replay-entry-${config.label}-settled.png`, fullPage: true });
+      console.log(`${runLabel} replay-entry geometry: ${JSON.stringify({
+        transient: replayHandoff.replayEntryGeometry,
+        settled: settledReplayEntry.replayEntryGeometry
+      })}`);
 
       await reloadAndExpectActiveReplayBalance(page, config, 50);
       await page.screenshot({ path: `work/replay-active-reload-${config.label}.png`, fullPage: true });
@@ -2114,11 +2249,18 @@ for (const config of [
       expect(secondReplayAction).toBe("Play Again → First Bouquet");
       const secondReplayHandoff = await journeyState(page);
       expect(secondReplayHandoff.coins).toBe(500);
-      expect(secondReplayHandoff.handoffCueVisible).toBe(true);
-      expect(secondReplayHandoff.handoffCue).toBe("Greenhouse Renewal · First Bouquet · 500 coins carried forward");
+      expect(secondReplayHandoff.replayEntryReceipt).toBe("500 coins kept · Conservatory owned · New order ready.");
+      expectOwnedReplayEntryGeometry(secondReplayHandoff, config, `${runLabel} second replay handoff`);
       await expectPermanentRaisedGreenhouse(page, `${runLabel} second replay handoff`);
-      await page.screenshot({ path: `work/replay-second-handoff-${config.label}.png`, fullPage: true });
-      await reloadAndExpectActiveReplayBalance(page, config, 500);
+      await page.screenshot({ path: `work/replay-second-entry-${config.label}-transient.png`, fullPage: true });
+      await clickGuidedSwap(page, "goal-following");
+      const afterImmediateReplayMove = await journeyState(page);
+      expect(afterImmediateReplayMove.replayEntryActive, "first replay move retires the receipt").toBe(false);
+      expect(afterImmediateReplayMove.handoffCueVisible, "first replay move cannot restore the detached receipt").toBe(false);
+      expect(afterImmediateReplayMove.rewardPromise).toBe("Complete for 120 coins");
+      expect(afterImmediateReplayMove.coins).toBe(500);
+      await page.screenshot({ path: `work/replay-second-entry-${config.label}-first-move.png`, fullPage: true });
+      await reloadAndExpectActiveReplayBalance(page, config, 500, 0);
       const secondReplayReady = await journeyState(page);
       expect(secondReplayReady.coins).toBe(500);
       await page.screenshot({ path: `work/replay-second-active-reload-${config.label}.png`, fullPage: true });
@@ -2245,16 +2387,23 @@ test("reduced-motion exact-mobile replay boundary preserves the owned wallet", a
     const handoff = await journeyState(page);
     expect(handoff.reducedMotion).toBe(true);
     expect(handoff.coins).toBe(50);
-    expect(handoff.handoffCueVisible).toBe(true);
-    expect(handoff.handoffCue).toBe("Greenhouse Renewal · First Bouquet · 50 coins carried forward");
+    expect(handoff.replayEntryReceipt).toBe("50 coins kept · Conservatory owned · New order ready.");
+    expectOwnedReplayEntryGeometry(handoff, config, "reduced-motion first replay handoff");
     expect(handoff.tiles).toBe(64);
     expect(handoff.tileRows).toBe(8);
     expect(handoff.boardBottom).toBeLessThanOrEqual(844);
-    expect(handoff.handoffCueBottom).toBeLessThanOrEqual(844);
     expect(handoff.overflowX).toBe(false);
     expect(handoff.brokenImages).toEqual([]);
     await expectPermanentRaisedGreenhouse(page, "reduced-motion first replay handoff");
-    await page.screenshot({ path: "work/replay-handoff-mobile390-reduced.png", fullPage: true });
+    await page.screenshot({ path: "work/replay-entry-mobile390-reduced-transient.png", fullPage: true });
+    await page.waitForFunction(() => !document.body.classList.contains("owned-replay-entry"));
+    const reducedSettledEntry = await journeyState(page);
+    expect(reducedSettledEntry.cue).toMatch(/Thorn Rose next|Swap the glowing pair/);
+    expect(reducedSettledEntry.handoffCueVisible).toBe(false);
+    expect(reducedSettledEntry.rewardPromise).toBe("Complete for 120 coins");
+    expect(reducedSettledEntry.replayEntryGeometry.board.top)
+      .toBeCloseTo(handoff.replayEntryGeometry.board.top, 0);
+    await page.screenshot({ path: "work/replay-entry-mobile390-reduced-settled.png", fullPage: true });
 
     await reloadAndExpectActiveReplayBalance(page, config, 50);
     await page.screenshot({ path: "work/replay-active-reload-mobile390-reduced.png", fullPage: true });
@@ -2295,9 +2444,10 @@ test("reduced-motion exact-mobile replay boundary preserves the owned wallet", a
     await spendPrimaryCeremonyAction(page, "touch");
     const secondHandoff = await journeyState(page);
     expect(secondHandoff.coins).toBe(500);
-    expect(secondHandoff.handoffCue).toBe("Greenhouse Renewal · First Bouquet · 500 coins carried forward");
+    expect(secondHandoff.replayEntryReceipt).toBe("500 coins kept · Conservatory owned · New order ready.");
+    expectOwnedReplayEntryGeometry(secondHandoff, config, "reduced-motion second replay handoff");
     await expectPermanentRaisedGreenhouse(page, "reduced-motion second replay handoff");
-    await page.screenshot({ path: "work/replay-second-handoff-mobile390-reduced.png", fullPage: true });
+    await page.screenshot({ path: "work/replay-second-entry-mobile390-reduced-transient.png", fullPage: true });
     await reloadAndExpectActiveReplayBalance(page, config, 500);
     expect(consoleMessages).toEqual([]);
     expect(pageErrors).toEqual([]);
