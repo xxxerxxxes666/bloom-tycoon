@@ -1,5 +1,12 @@
 # Codex Build Notes
 
+## 2026-07-26 contained desktop Black Candle instruction
+
+- Player-visible result: the natural Round 1 Black Candle activation instruction now keeps its `BLACK CANDLE` label, exact `Swap right to burn this row.` action, and visible `Skip` control fully inside the constrained large-desktop tutorial pill. The action was readable before, but the control extended past the pill's right edge during formation and saved activation reloads.
+- Scope: only the named Black Candle pill's large-desktop internal gap and padding changed. Copy, timing, control behavior, board geometry, matching, moves, relic formation/activation, saves, economy, mobile layout, and progression are unchanged.
+- Permanent contract: the natural desktop and exact-mobile no-review journey now treats every visible label, action, and Skip rectangle as pill-contained at formation and both activation reloads, in addition to requiring no internal scroll overflow, one instruction surface, 64 tiles/eight rows, first-viewport mobile fit, no document overflow, loaded images, and empty browser error logs.
+- Verification: the repaired natural desktop/mobile journey passes `2/2`, including formation, two armed-state reloads, activation, completion, focus, images, overflow, and browser errors. Black Candle precedence/Retry plus the six-case Shuffle-close pointer/touch/Enter/Space/full/reduced matrix pass `8/8`; the runtime desktop/mobile/reduced-motion suite passes `4/4` with 64 tiles/eight rows, one semantic progressbar, no dormant review scaffold, no broken images, and no horizontal overflow. Project/HTML verifiers, every spec and extracted inline JavaScript syntax check, `git diff --check`, and the scoped added-line security scan pass.
+
 ## 2026-07-26 queued board-focus ownership
 
 - Player-visible result: when the restored two-move Black Candle guide transfers focus to its authored `(5,0)` source, that source now also owns the board's sole roving `tabindex="0"`. Keyboard focus and arrow/Tab ownership no longer split between the visible source and stale `(0,0)` fallback after the delayed guide or Skip-to-Help replay.

@@ -495,8 +495,15 @@ async function guidedRoundOneState(page, tag) {
         tutorialPanel
         && (
           tutorialPanel.scrollWidth > tutorialPanel.clientWidth + 1
-          || tutorialCopyRect?.left < tutorialPanelRect.left - 1
-          || tutorialCopyRect?.right > tutorialPanelRect.right + 1
+          || [tutorialIcon, tutorialPanel?.querySelector(".tutorial-copy"), tutorialPanel?.querySelector(".tutorial-skip")]
+            .filter(visible)
+            .map((node) => node.getBoundingClientRect())
+            .some((childRect) => (
+              childRect.left < tutorialPanelRect.left - 1
+              || childRect.right > tutorialPanelRect.right + 1
+              || childRect.top < tutorialPanelRect.top - 1
+              || childRect.bottom > tutorialPanelRect.bottom + 1
+            ))
         )
       ),
       tutorialPanelGeometry: tutorialPanelRect ? {
@@ -504,8 +511,12 @@ async function guidedRoundOneState(page, tag) {
         right: Math.round(tutorialPanelRect.right),
         clientWidth: tutorialPanel.clientWidth,
         scrollWidth: tutorialPanel.scrollWidth,
+        iconLeft: Math.round(tutorialIcon?.getBoundingClientRect().left || 0),
+        iconRight: Math.round(tutorialIcon?.getBoundingClientRect().right || 0),
         copyLeft: Math.round(tutorialCopyRect?.left || 0),
-        copyRight: Math.round(tutorialCopyRect?.right || 0)
+        copyRight: Math.round(tutorialCopyRect?.right || 0),
+        skipLeft: Math.round(tutorialPanel?.querySelector(".tutorial-skip")?.getBoundingClientRect().left || 0),
+        skipRight: Math.round(tutorialPanel?.querySelector(".tutorial-skip")?.getBoundingClientRect().right || 0)
       } : null,
       hints,
       targetLiteracy: document.body.dataset.targetLiteracy || "",
