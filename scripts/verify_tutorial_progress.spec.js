@@ -3081,6 +3081,20 @@ test("exact-mobile Help owns a complete replay touch target across the first thr
     const help = bounds("#tutorialHelpBtn");
     const board = bounds("#board");
     const objective = bounds("#objective");
+    const greenhouseProgress = bounds("#mobileGreenhouseProgress");
+    const greenhouseRegions = [
+      ".restoration-dial-stage",
+      ".restoration-dial-percent",
+      ".restoration-dial-phase",
+      ".restoration-dial-track"
+    ].map((selector) => ({ selector, bounds: bounds(`#mobileGreenhouseProgress ${selector}`) }))
+      .filter((region) => region.bounds);
+    const visibleCommands = [
+      "#firstSwapCue",
+      "#tutorialPanel",
+      "#nextOrderCue"
+    ].map((selector) => ({ selector, bounds: bounds(selector) }))
+      .filter((command) => command.bounds);
     const overlaps = (a, b) => Boolean(
       a && b
       && a.left < b.right
@@ -3092,8 +3106,22 @@ test("exact-mobile Help owns a complete replay touch target across the first thr
       help,
       board,
       objective,
+      greenhouseProgress,
+      greenhouseRegions,
+      visibleCommands,
       helpOverlapsBoard: overlaps(help, board),
       helpOverlapsObjective: overlaps(help, objective),
+      helpProgressOverlaps: greenhouseRegions
+        .filter((region) => overlaps(help, region.bounds))
+        .map((region) => region.selector),
+      commandProgressOverlaps: visibleCommands.flatMap((command) => (
+        greenhouseRegions
+          .filter((region) => overlaps(command.bounds, region.bounds))
+          .map((region) => `${command.selector} -> ${region.selector}`)
+      )),
+      commandBoardOverlaps: visibleCommands
+        .filter((command) => overlaps(command.bounds, board))
+        .map((command) => command.selector),
       tiles: document.querySelectorAll("#board .tile").length,
       rows: new Set(Array.from(document.querySelectorAll("#board .tile")).map((tile) => tile.dataset.y)).size,
       selected: document.querySelectorAll("#board .tile.sel, #board .tile.selected").length,
@@ -3113,6 +3141,10 @@ test("exact-mobile Help owns a complete replay touch target across the first thr
     expect(geometry.help.bottom, `${label} Help stays in viewport`).toBeLessThanOrEqual(844);
     expect(geometry.helpOverlapsBoard, `${label} Help does not cover altar`).toBe(false);
     expect(geometry.helpOverlapsObjective, `${label} Help does not cover objective`).toBe(false);
+    expect(geometry.help.top, `${label} Help follows greenhouse progress`)
+      .toBeGreaterThanOrEqual(geometry.greenhouseProgress.bottom);
+    expect(geometry.helpProgressOverlaps, `${label} Help keeps greenhouse progress readable`).toEqual([]);
+    expect(geometry.commandProgressOverlaps, `${label} commands keep greenhouse progress readable`).toEqual([]);
     expect(geometry.board.left, `${label} altar left edge`).toBeCloseTo(8, 1);
     expect(geometry.board.right, `${label} altar right edge`).toBeCloseTo(386, 1);
     expect(geometry.board.width, `${label} altar width`).toBeCloseTo(378, 1);
@@ -3126,6 +3158,13 @@ test("exact-mobile Help owns a complete replay touch target across the first thr
     return geometry;
   };
 
+  const assertVisibleCommandsClearProgress = async (label) => {
+    const geometry = await mobileHelpGeometry();
+    expect(geometry.visibleCommands, `${label} keeps one visible command`).not.toHaveLength(0);
+    expect(geometry.commandProgressOverlaps, `${label} keeps greenhouse progress readable`).toEqual([]);
+    expect(geometry.commandBoardOverlaps, `${label} keeps the altar interactive`).toEqual([]);
+  };
+
   const tapHelpAndReturnToGuide = async (label, pointFor) => {
     const before = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}"), SAVE_KEY);
     const geometry = await assertMobileHelpGeometry(label);
@@ -3133,6 +3172,7 @@ test("exact-mobile Help owns a complete replay touch target across the first thr
     await page.touchscreen.tap(x, y);
     await expect(page.locator("#tutorialPanel")).toBeVisible();
     await expect(page.locator("#tutorialSkipBtn")).toBeFocused();
+    await assertVisibleCommandsClearProgress(`${label} replay`);
     const hintedIds = await page.locator("#board .tile.idle-hint").evaluateAll(
       (tiles) => tiles.map((tile) => tile.id)
     );
@@ -3194,6 +3234,31 @@ test("exact-mobile Help owns a complete replay touch target across the first thr
     );
     await expect(page.locator("#tutorialPanel")).toBeVisible();
     await expect(page.locator("#tutorialSkipBtn")).toBeFocused();
+    await assertVisibleCommandsClearProgress("Round 3 replay");
+
+    await page.evaluate((key) => {
+      const state = JSON.parse(localStorage.getItem(key) || "{}");
+      state.roundThreeConservatoryRaised = true;
+      state.tutorialActive = false;
+      state.tutorialSkipped = true;
+      localStorage.setItem(key, JSON.stringify(state));
+    }, SAVE_KEY);
+    await page.reload({ waitUntil: "networkidle" });
+    await assertMobileHelpGeometry("Round 3 conservatory owned");
+
+    await page.evaluate((key) => {
+      const state = JSON.parse(localStorage.getItem(key) || "{}");
+      state.currentRound = 1;
+      state.roundComplete = false;
+      state.moves = 6;
+      state.counts = [0, 0, 0, 0, 0, 0];
+      state.hasMadeValidMove = false;
+      state.tutorialActive = false;
+      state.tutorialSkipped = true;
+      localStorage.setItem(key, JSON.stringify(state));
+    }, SAVE_KEY);
+    await page.reload({ waitUntil: "networkidle" });
+    await assertMobileHelpGeometry("owned replay Round 1");
 
     expect(consoleMessages).toEqual([]);
     expect(pageErrors).toEqual([]);
