@@ -637,12 +637,13 @@ function expectPhysicalBouquetGeometry(assembly, composition) {
   const closed = assembly.ingredients.filter((ingredient) => ingredient.slotProgress === 0);
   expect(closed.every((ingredient) => ingredient.bud), "every unearned unit remains a visible closed botanical bud").toBe(true);
   expect(closed.every((ingredient) => (
-    ingredient.bud.width >= 21
-      && ingredient.bud.height >= 21
-      && ingredient.bud.opacity >= .9
+    ingredient.bud.width >= 14
+      && ingredient.bud.height >= 20
+      && ingredient.bud.opacity >= .55
+      && ingredient.bud.opacity <= .78
       && ingredient.bud.backgroundImage !== "none"
       && ingredient.bud.borderStyle !== "none"
-  )), "closed buds have substantial neutral botanical geometry").toBe(true);
+  )), "closed buds retain botanical geometry while staying materially subordinate").toBe(true);
   expect(assembly.knot, "one binding knot remains visible").not.toBeNull();
   expect(assembly.knot.width, "binding knot remains materially legible").toBeGreaterThan(14);
   expect(assembly.knot.centerY, "binding knot sits below the crown")
@@ -1290,9 +1291,11 @@ async function runJourney(page, label, includeRetry) {
   expect(initialPixels, "fresh bouquet exposes fourteen intended unit positions").toHaveLength(14);
   expect(initialAssembly.ingredients.every((ingredient) => ingredient.bud), "all fourteen fresh units visibly begin closed").toBe(true);
   expect(Math.min(...initialAssembly.ingredients.map((ingredient) => ingredient.bud.width)),
-    "fresh capacity stays countable without flower-image stand-ins").toBeGreaterThanOrEqual(21);
+    "fresh capacity stays countable without flower-image stand-ins").toBeGreaterThanOrEqual(14);
+  expect(Math.max(...initialAssembly.ingredients.map((ingredient) => ingredient.bud.width)),
+    "fresh closed capacity remains narrower than an earned flower head").toBeLessThanOrEqual(18);
   expect(Math.min(...initialPixels.map((head) => head.p90)),
-    `every fresh bud renders above the empty panel floor: ${JSON.stringify(initialPixels)}`).toBeGreaterThan(10);
+    `every fresh bud renders above the empty panel floor: ${JSON.stringify(initialPixels)}`).toBeGreaterThan(8);
   expect(initialAssembly.overflowX).toBe(false);
   expect(initialAssembly.boardBottom, `${label} keeps the complete altar in the first viewport`)
     .toBeLessThanOrEqual(viewport?.height || 844);
@@ -1354,11 +1357,11 @@ async function runJourney(page, label, includeRetry) {
     const freshHead = initialPixels.find((initialHead) => initialHead.slot === head.slot);
     expect(head.coloredPixels,
       `earned Thorn slot ${head.slot} gains materially more rendered color than its capacity silhouette: ${JSON.stringify({ freshHead, head })}`)
-      .toBeGreaterThan((freshHead?.coloredPixels || 0) * 1.45);
+      .toBeGreaterThan((freshHead?.coloredPixels || 0) * 1.55);
   });
   expect(Math.min(...firstAssembly.ingredients.filter((ingredient) => ingredient.slotProgress > 0).map((ingredient) => ingredient.imageWidth)),
     "each earned Thorn image is materially larger than every closed botanical bud")
-    .toBeGreaterThan(Math.max(...firstAssembly.ingredients.filter((ingredient) => ingredient.slotProgress === 0).map((ingredient) => ingredient.bud.width)) * 1.5);
+    .toBeGreaterThan(Math.max(...firstAssembly.ingredients.filter((ingredient) => ingredient.slotProgress === 0).map((ingredient) => ingredient.bud.width)) * 2);
   expect(Math.max(...firstAssembly.ingredients
     .filter((ingredient) => ingredient.flowerId === 5 && ingredient.filled)
     .map((ingredient) => ingredient.imageWidth))).toBeGreaterThanOrEqual(28);
@@ -1368,11 +1371,11 @@ async function runJourney(page, label, includeRetry) {
   const earnedHeadOpacity = Math.min(...firstAssembly.ingredients
     .filter((ingredient) => ingredient.slotProgress > 0)
     .map((ingredient) => ingredient.imageOpacity));
-  const emptyHeadOpacity = Math.max(...firstAssembly.ingredients
+  const closedBudOpacity = Math.max(...firstAssembly.ingredients
     .filter((ingredient) => ingredient.slotProgress === 0)
-    .map((ingredient) => ingredient.imageOpacity));
-  expect(earnedHeadOpacity, "earned flower heads visually dominate blueprint capacity")
-    .toBeGreaterThan(emptyHeadOpacity + .2);
+    .map((ingredient) => ingredient.bud.opacity));
+  expect(earnedHeadOpacity, "earned flower heads visually dominate closed capacity")
+    .toBeGreaterThan(closedBudOpacity + .2);
   expect(firstAssembly.ingredients.filter((ingredient) => ingredient.receiver)).toHaveLength(2);
   expect(new Set(firstAssembly.ingredients
     .filter((ingredient) => ingredient.receiver)
