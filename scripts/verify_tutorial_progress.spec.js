@@ -429,6 +429,7 @@ async function guidedRoundOneState(page, tag) {
         && rect.height > 0;
     };
     const saved = JSON.parse(localStorage.getItem(key) || "{}");
+    const boardRows = (saved.board || []).map((row) => row.slice());
     const tileRects = Array.from(document.querySelectorAll(".tile")).map((tile) => tile.getBoundingClientRect());
     const board = document.querySelector(".board");
     const firstSwapCue = document.querySelector("#firstSwapCue");
@@ -454,6 +455,8 @@ async function guidedRoundOneState(page, tag) {
       round: saved.currentRound || 1,
       moves: saved.moves,
       counts: saved.counts || [],
+      boardRows,
+      boardSerialization: boardRows.map((row) => row.join("")).join("/"),
       roundComplete: Boolean(saved.roundComplete),
       coins: saved.coins,
       bouquet: document.querySelector("#bouquetProgressLabel")?.textContent.trim() || "",
@@ -548,6 +551,183 @@ async function guidedRoundOneState(page, tag) {
     };
   }, { key: SAVE_KEY, tag });
 }
+
+function authoredBoardDiversity(boardRows) {
+  const rows = boardRows.map((row) => row.join(""));
+  const translationAgreements = [];
+  for (const [dx, dy] of [[2, 0], [3, 0], [4, 0], [0, 2], [0, 3], [0, 4]]) {
+    let compared = 0;
+    let equal = 0;
+    for (let y = 0; y < boardRows.length; y += 1) {
+      for (let x = 0; x < (boardRows[y] || []).length; x += 1) {
+        const shiftedY = y + dy;
+        const shiftedX = x + dx;
+        if (
+          shiftedY < 0
+          || shiftedY >= boardRows.length
+          || shiftedX < 0
+          || shiftedX >= boardRows[shiftedY].length
+        ) {
+          continue;
+        }
+        compared += 1;
+        equal += Number(boardRows[y][x] === boardRows[shiftedY][shiftedX]);
+      }
+    }
+    translationAgreements.push({
+      shift: `${dx},${dy}`,
+      agreement: compared ? equal / compared : 0
+    });
+  }
+  let longestAlignedRowRun = 0;
+  for (let first = 0; first < boardRows.length; first += 1) {
+    for (let second = first + 1; second < boardRows.length; second += 1) {
+      let run = 0;
+      for (let x = 0; x < boardRows[first].length; x += 1) {
+        run = boardRows[first][x] === boardRows[second][x] ? run + 1 : 0;
+        longestAlignedRowRun = Math.max(longestAlignedRowRun, run);
+      }
+    }
+  }
+  const worstTranslation = translationAgreements
+    .sort((first, second) => second.agreement - first.agreement)[0];
+  return {
+    uniqueRows: new Set(rows).size,
+    repeatedFullRows: rows.length - new Set(rows).size,
+    longestAlignedRowRun,
+    worstTranslation
+  };
+}
+
+function assertOrganicAuthoredBoard(state, label) {
+  const diversity = authoredBoardDiversity(state.boardRows);
+  expect(
+    diversity.repeatedFullRows,
+    `${label} has no repeated full row templates: ${state.boardSerialization}`
+  ).toBe(0);
+  expect(
+    diversity.longestAlignedRowRun,
+    `${label} has no repeated long row sequence: ${JSON.stringify(diversity)}`
+  ).toBeLessThan(6);
+  expect(
+    diversity.worstTranslation.agreement,
+    `${label} has no conspicuous axis periodicity: ${JSON.stringify(diversity)}`
+  ).toBeLessThan(0.55);
+}
+
+test("authored Round 1 boards stay organic through the ordinary guided route", async ({ browser }) => {
+  const cases = [
+    {
+      label: "desktop-pointer",
+      viewport: { width: 1280, height: 720 },
+      mobile: false
+    },
+    {
+      label: "mobile390-touch",
+      viewport: { width: 390, height: 844 },
+      mobile: true
+    }
+  ];
+  const activatePair = async (page, pair, mobile, { completes = false } = {}) => {
+    const movesBefore = await page.evaluate((key) => (
+      JSON.parse(localStorage.getItem(key) || "{}").moves
+    ), SAVE_KEY);
+    for (const cell of pair) {
+      const tile = page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`);
+      if (mobile) {
+        await tile.tap();
+      } else {
+        await tile.click();
+      }
+    }
+    await page.waitForFunction(({ key, movesBefore, completes }) => {
+      const saved = JSON.parse(localStorage.getItem(key) || "{}");
+      return completes
+        ? Boolean(saved.roundComplete)
+        : saved.moves === movesBefore - 1
+          && Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled);
+    }, { key: SAVE_KEY, movesBefore, completes }, { timeout: 12000 });
+    if (!completes) {
+      await waitForSettledBoard(page);
+    }
+  };
+
+  for (const testCase of cases) {
+    const context = await browser.newContext({
+      viewport: testCase.viewport,
+      hasTouch: testCase.mobile,
+      isMobile: testCase.mobile
+    });
+    const page = await context.newPage();
+    const consoleErrors = [];
+    const pageErrors = [];
+    const failedRequests = [];
+    page.on("console", (message) => {
+      if (message.type() === "error") consoleErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    page.on("requestfailed", (request) => failedRequests.push(
+      `${request.url()} ${request.failure()?.errorText || ""}`
+    ));
+
+    try {
+      await seedDeterministicMath(page, `organic-authored-${testCase.label}`);
+      await openFreshNoReview(page, `organic-authored-${testCase.label}`);
+      await expect(page.locator("#tutorialPanel")).toBeVisible({ timeout: 3000 });
+
+      const fresh = await guidedRoundOneState(page, `${testCase.label} fresh`);
+      assertOrganicAuthoredBoard(fresh, `${testCase.label} fresh authored board`);
+      expect(unorderedPairKey(fresh.hints)).toBe("1,0 <-> 1,1");
+      expect(fresh.moves).toBe(6);
+      expect(fresh.counts).toEqual([0, 0, 0, 0, 0, 0]);
+
+      await activatePair(page, fresh.hints, testCase.mobile);
+      const postOpening = await guidedRoundOneState(page, `${testCase.label} post-opening`);
+      assertOrganicAuthoredBoard(postOpening, `${testCase.label} post-opening settled board`);
+      expect(postOpening.moves).toBe(5);
+      expect(postOpening.counts).toEqual([0, 0, 0, 0, 0, 3]);
+      expect(postOpening.bouquet).toBe("Bouquet · 3/14");
+      expect(postOpening.tiles).toBe(64);
+      expect(postOpening.rows).toBe(8);
+
+      await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 9000 });
+      const followup = await guidedRoundOneState(page, `${testCase.label} followup`);
+      assertOrganicAuthoredBoard(followup, `${testCase.label} authored follow-up board`);
+      const usefulPairs = await objectiveUsefulPairs(page);
+      expect(usefulPairs.some((candidate) => (
+        unorderedPairKey(candidate.pair) === unorderedPairKey(followup.hints)
+      ))).toBe(true);
+      await activatePair(page, followup.hints, testCase.mobile);
+
+      await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 3000 });
+      const formation = await guidedRoundOneState(page, `${testCase.label} Black Candle formation`);
+      assertOrganicAuthoredBoard(formation, `${testCase.label} authored Black Candle board`);
+      expect(unorderedPairKey(formation.hints)).toBe("5,0 <-> 5,1");
+      expect(await legalFourBoneStarPreview(page)).toMatchObject({ ok: true });
+      await activatePair(page, formation.hints, testCase.mobile);
+
+      await expect(page.locator('.tile[data-line-relic="black-candle-vine"]')).toHaveCount(1);
+      const armed = await guidedRoundOneState(page, `${testCase.label} Black Candle armed`);
+      assertOrganicAuthoredBoard(armed, `${testCase.label} authored activation board`);
+      expect(armed.counts[1] - formation.counts[1]).toBe(4);
+      expect(armed.hints).toHaveLength(2);
+      await activatePair(page, armed.hints, testCase.mobile, { completes: true });
+
+      const completed = await guidedRoundOneState(page, `${testCase.label} complete`);
+      expect(completed.roundComplete).toBe(true);
+      expect(completed.bouquet).toBe("Bouquet Complete · 14/14");
+      expect(completed.tiles).toBe(64);
+      expect(completed.rows).toBe(8);
+      expect(completed.overflowX).toBe(false);
+      expect(completed.brokenImages).toEqual([]);
+      expect(consoleErrors).toEqual([]);
+      expect(pageErrors).toEqual([]);
+      expect(failedRequests).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  }
+});
 
 function assertNaturalBlackCandleTutorial(state, mobile, label) {
   expect(state.tutorial, `${label} keeps exact directional action`).toBe("Swap right to burn this row.");
@@ -2231,6 +2411,7 @@ for (const viewport of [
     const trace = [await guidedRoundOneState(page, "initial")];
     const guidedPairs = [trace[0].hints];
     assertActiveGuidedState(trace[0], viewport.mobile, `${viewport.label} initial`);
+    assertOrganicAuthoredBoard(trace[0], `${viewport.label} authored opening`);
     expect(unorderedPairKey(guidedPairs[0]), `${viewport.label} exact authored opening pair`)
       .toBe("1,0 <-> 1,1");
     assertFirstActionGuide(
@@ -2250,6 +2431,7 @@ for (const viewport of [
         const discovery = await guidedRoundOneState(page, "post-opening discovery");
         trace.push(discovery);
         assertActiveGuidedState(discovery, viewport.mobile, `${viewport.label} post-opening discovery`);
+        assertOrganicAuthoredBoard(discovery, `${viewport.label} post-opening settled board`);
         expect(discovery.moves, `${viewport.label} opening spends once`).toBe(5);
         expect(discovery.counts, `${viewport.label} opening fills Thorn Rose`).toEqual([0, 0, 0, 0, 0, 3]);
         expect(discovery.tutorial, `${viewport.label} literal target discovery cue`).toBe("Find 3 Thorn Roses.");
@@ -2278,6 +2460,7 @@ for (const viewport of [
         expect(rescueElapsed, `${viewport.label} rescue remains bounded`).toBeLessThan(9500);
         await expect(page.locator(".first-action-swap-guide")).toHaveCount(1);
         const delayed = await guidedRoundOneState(page, "post-opening delayed rescue");
+        assertOrganicAuthoredBoard(delayed, `${viewport.label} post-opening guided board`);
         expect(delayed.moves, `${viewport.label} delayed hint spends no move`).toBe(discovery.moves);
         expect(delayed.counts, `${viewport.label} delayed hint changes no objective`).toEqual(discovery.counts);
         expect(delayed.tutorial, `${viewport.label} delayed copy is literal`).toBe("Match Thorn Rose.");
@@ -2338,6 +2521,7 @@ for (const viewport of [
 
     const blackCandleCue = reloaded;
     assertActiveGuidedState(blackCandleCue, viewport.mobile, `${viewport.label} before Black Candle`);
+    assertOrganicAuthoredBoard(blackCandleCue, `${viewport.label} authored Black Candle formation board`);
     expect(blackCandleCue.tutorial).toBe("Match 4 arms Black Candle Vine.");
     expect(blackCandleCue.cue).toBe("Make 4 Bone Stars - arm Black Candle Vine.");
     expect(blackCandleCue.hints).toHaveLength(2);
@@ -2367,6 +2551,7 @@ for (const viewport of [
     const formed = await guidedRoundOneState(page, "Black Candle armed");
     trace.push(formed);
     guidedPairs.push(formed.hints);
+    assertOrganicAuthoredBoard(formed, `${viewport.label} authored Black Candle activation board`);
     expect(formed.roundComplete).toBe(false);
     expect(formed.payoffVisible).toBe(false);
     expect(formed.tiles).toBe(64);

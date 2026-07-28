@@ -9188,6 +9188,16 @@
     const FOCUSED_ECONOMY_SAVE_VERSION = 2;
     const BOARD_SIZE = 8;
     const MAX_BOARD_BUILD_ATTEMPTS = 650;
+    const ROUND_ONE_ORGANIC_FILLER_TEMPLATE = [
+      [2, 0, 3, 3, 0, 2, 2, 0],
+      [1, 0, 0, 1, 2, 3, 0, 1],
+      [3, 1, 0, 0, 1, 2, 3, 0],
+      [0, 1, 0, 2, 2, 0, 3, 1],
+      [0, 3, 1, 3, 0, 1, 2, 2],
+      [1, 2, 3, 2, 2, 3, 0, 3],
+      [2, 3, 1, 1, 0, 1, 3, 2],
+      [3, 1, 1, 3, 2, 2, 0, 2]
+    ];
     const baseElementCounts = [42, 37, 28, 33, 24, 31];
     const roundTemplates = [
       {
@@ -10480,24 +10490,23 @@
         .filter((flowerId) => flowerId !== targetFlowerId && !blockedTargets.has(flowerId));
     }
 
+    function fillRoundOneOrganicSafeBoard(fillers, firstRow = 0, lastRow = BOARD_SIZE) {
+      for (let y = firstRow; y < lastRow; y += 1) {
+        for (let x = 0; x < BOARD_SIZE; x += 1) {
+          board[y][x] = fillers[ROUND_ONE_ORGANIC_FILLER_TEMPLATE[y][x]];
+        }
+      }
+    }
+
     function writeRoundOneThreeMatchPatch(originX, originY, flowerId, { safeBoard = false } = {}) {
       if (originX + 3 >= BOARD_SIZE || originY + 3 >= BOARD_SIZE) {
         return;
       }
       const fillers = roundOneSafeFillers(flowerId);
       const [fillerA, fillerB, fillerC, fillerD] = fillers;
-      const rowPatternA = [fillerA, fillerB, fillerC, fillerD, fillerA, fillerB, fillerC, fillerD];
-      const rowPatternB = [fillerC, fillerD, fillerA, fillerB, fillerC, fillerD, fillerA, fillerB];
-      const rowPatternC = [fillerB, fillerC, fillerD, fillerA, fillerB, fillerC, fillerD, fillerA];
-      const rowPatternD = [fillerD, fillerA, fillerB, fillerC, fillerD, fillerA, fillerB, fillerC];
-      const rowPatterns = [rowPatternA, rowPatternB, rowPatternC, rowPatternD];
       const firstRow = safeBoard ? 0 : originY;
-      const lastRow = safeBoard ? BOARD_SIZE : originY + rowPatterns.length;
-      for (let y = firstRow; y < lastRow; y += 1) {
-        for (let x = 0; x < BOARD_SIZE; x += 1) {
-          board[y][x] = rowPatterns[(y - originY + rowPatterns.length) % rowPatterns.length][x];
-        }
-      }
+      const lastRow = safeBoard ? BOARD_SIZE : originY + 4;
+      fillRoundOneOrganicSafeBoard(fillers, firstRow, lastRow);
       board[originY][originX] = flowerId;
       board[originY][originX + 1] = fillerA;
       board[originY][originX + 2] = flowerId;
@@ -11079,11 +11088,7 @@
       const finalLaneCapacity = BOARD_SIZE - 1 + (boneNeededAfterFormation > 0 ? 1 : 0);
       const needsTargetCarry = thornNeeded + boneNeededAfterFormation > finalLaneCapacity;
       if (needsTargetCarry) {
-        for (let y = 0; y < BOARD_SIZE; y += 1) {
-          for (let x = 0; x < BOARD_SIZE; x += 1) {
-            board[y][x] = fillers[(x + y * 2) % fillers.length];
-          }
-        }
+        fillRoundOneOrganicSafeBoard(fillers);
       }
       // Adjacent swap at (5,0) -> (5,1) creates exactly four Bone Stars.
       // When the final lane cannot hold every deficit, the same swap also makes
