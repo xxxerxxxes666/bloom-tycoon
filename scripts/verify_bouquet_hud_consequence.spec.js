@@ -472,6 +472,7 @@ async function hudReport(page) {
     const mobileGreenhouseArt = document.querySelector("#mobileGreenhouseIdentityArt");
     const mobileDial = document.querySelector("#mobileRestorationDial");
     const instruction = [
+      document.querySelector(".tutorial-command-region"),
       document.querySelector("#tutorialPanel"),
       document.querySelector("#firstSwapCue"),
       document.querySelector("#nextOrderCue"),
