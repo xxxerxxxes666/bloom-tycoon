@@ -8732,7 +8732,8 @@
     }
 
     .tutorial-command-region > .first-swap-cue,
-    .tutorial-command-region > .tutorial-panel {
+    .tutorial-command-region > .tutorial-panel,
+    .tutorial-command-region > .next-order-cue {
       flex: 0 1 auto;
       min-width: 0;
       margin-right: 0;
@@ -8779,7 +8780,14 @@
         font-size: 9px;
       }
 
-      .tutorial-command-region > .first-swap-cue {
+      .tutorial-command-region > .first-swap-cue,
+      .tutorial-command-region > .next-order-cue {
+        max-width: calc(100% - 49px);
+      }
+
+      body.restored-greenhouse-handoff .tutorial-command-region > .next-order-cue {
+        flex: 1 1 0;
+        width: auto;
         max-width: calc(100% - 49px);
       }
     }

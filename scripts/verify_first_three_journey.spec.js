@@ -481,10 +481,151 @@ async function expectVisibleCoinBalance(page, expectedCoins, options = {}) {
   }
 }
 
+async function guidedPairHitReport(page, pair) {
+  return page.evaluate(({ key, pair }) => {
+    const state = JSON.parse(localStorage.getItem(key) || "{}");
+    const visible = (node) => {
+      if (!node) return false;
+      const bounds = node.getBoundingClientRect();
+      const style = getComputedStyle(node);
+      return style.display !== "none"
+        && style.visibility !== "hidden"
+        && Number(style.opacity || 1) !== 0
+        && bounds.width > 0
+        && bounds.height > 0;
+    };
+    const reportNode = (node) => {
+      if (!node) return null;
+      const bounds = node.getBoundingClientRect();
+      const style = getComputedStyle(node);
+      return {
+        id: node.id,
+        className: node.className,
+        rect: {
+          left: bounds.left,
+          top: bounds.top,
+          right: bounds.right,
+          bottom: bounds.bottom,
+          width: bounds.width,
+          height: bounds.height
+        },
+        visible: visible(node),
+        pointerEvents: style.pointerEvents,
+        position: style.position,
+        zIndex: style.zIndex
+      };
+    };
+    const reportTile = (cell) => {
+      const node = document.querySelector(
+        `.tile[data-x="${cell.x}"][data-y="${cell.y}"]`
+      );
+      const report = reportNode(node);
+      if (!node || !report) return report;
+      const bounds = node.getBoundingClientRect();
+      const center = {
+        x: bounds.left + bounds.width / 2,
+        y: bounds.top + bounds.height / 2
+      };
+      const owner = document.elementFromPoint(center.x, center.y);
+      return {
+        ...report,
+        center,
+        ownedByTile: Boolean(owner && (owner === node || node.contains(owner))),
+        owner: owner ? {
+          tag: owner.tagName,
+          id: owner.id,
+          className: owner.className,
+          ancestors: Array.from((function* ownerChain() {
+            let current = owner;
+            while (current && current !== document.documentElement) {
+              yield `${current.tagName.toLowerCase()}#${current.id}.${String(current.className)}`;
+              current = current.parentElement;
+            }
+          })())
+        } : null
+      };
+    };
+    return {
+      intendedPair: pair,
+      source: reportTile(pair[0]),
+      destination: reportTile(pair[1]),
+      commands: {
+        region: reportNode(document.querySelector("#tutorialCommandRegion")),
+        panel: reportNode(document.querySelector("#tutorialPanel")),
+        cue: reportNode(document.querySelector("#firstSwapCue")),
+        nextCue: reportNode(document.querySelector("#nextOrderCue")),
+        help: reportNode(document.querySelector("#tutorialHelpBtn")),
+        skip: reportNode(document.querySelector("#tutorialSkipBtn"))
+      },
+      body: {
+        className: document.body.className,
+        dataset: { ...document.body.dataset }
+      },
+      board: {
+        rect: reportNode(document.querySelector("#board"))?.rect || null,
+        busy: document.querySelector("#board")?.getAttribute("aria-busy"),
+        selected: Array.from(document.querySelectorAll(".tile.selected, .tile.sel"))
+          .map((tile) => `${tile.dataset.x},${tile.dataset.y}`),
+        unownedTileCenters: Array.from(document.querySelectorAll(".tile"))
+          .map((tile) => reportTile({ x: tile.dataset.x, y: tile.dataset.y }))
+          .filter((tile) => !tile?.ownedByTile)
+      },
+      authoritativeState: {
+        currentRound: state.currentRound,
+        moves: state.moves,
+        counts: state.counts,
+        roundComplete: state.roundComplete,
+        tutorialStep: state.tutorialStep,
+        tutorialSkipped: state.tutorialSkipped,
+        board: state.board
+      }
+    };
+  }, {
+    key: SAVE_KEY,
+    pair: pair.map((cell) => ({ x: Number(cell.x), y: Number(cell.y) }))
+  });
+}
+
+function expectGuidedPairHitOwnership(report, label) {
+  expect(
+    report.commands.region.pointerEvents,
+    `${label} command wrapper is presentation-only: ${JSON.stringify(report)}`
+  ).toBe("none");
+  for (const name of ["panel", "cue", "nextCue"]) {
+    if (report.commands[name]?.visible) {
+      expect(
+        report.commands[name].pointerEvents,
+        `${label} ${name} passes through outside controls: ${JSON.stringify(report)}`
+      ).toBe("none");
+    }
+  }
+  for (const name of ["help", "skip"]) {
+    if (report.commands[name]?.visible) {
+      expect(
+        report.commands[name].pointerEvents,
+        `${label} ${name} remains a real hit target: ${JSON.stringify(report)}`
+      ).toBe("auto");
+    }
+  }
+  expect(
+    report.source.ownedByTile,
+    `${label} source center belongs to its tile: ${JSON.stringify(report)}`
+  ).toBe(true);
+  expect(
+    report.destination.ownedByTile,
+    `${label} destination center belongs to its tile: ${JSON.stringify(report)}`
+  ).toBe(true);
+  expect(
+    report.board.unownedTileCenters,
+    `${label} every tile center belongs to its tile: ${JSON.stringify(report)}`
+  ).toEqual([]);
+}
+
 async function clickGuidedSwap(page, strategy = "optimized") {
   const movesBefore = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}").moves, SAVE_KEY);
   let lastError = null;
-  for (let attempt = 0; attempt < 3; attempt += 1) {
+  let lastNoSpendReport = null;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
     const pairHandle = await page.waitForFunction(({ targets, needed, strategy }) => {
     const saved = JSON.parse(localStorage.getItem("bloomTycoonPlayableStateV1") || "{}");
     if (document.querySelector("#board")?.getAttribute("aria-busy") === "true") {
@@ -621,11 +762,25 @@ async function clickGuidedSwap(page, strategy = "optimized") {
       y: String(tile.y)
     }));
     expect(pair, "guided pair").toHaveLength(2);
+    const beforeInput = await guidedPairHitReport(page, pair);
+    expectGuidedPairHitOwnership(beforeInput, `guided swap attempt ${attempt + 1}`);
+    const selected = beforeInput.board.selected;
+    const selectedIndex = pair.findIndex((cell) => selected.includes(`${cell.x},${cell.y}`));
+    const endpoints = selected.length === 1 && selectedIndex >= 0
+      ? [pair[selectedIndex === 0 ? 1 : 0]]
+      : pair;
+    const useTouch = await page.evaluate(() => navigator.maxTouchPoints > 0);
     try {
-      await page.locator(`.tile[data-x="${pair[0].x}"][data-y="${pair[0].y}"]`).click({ force: true });
-      // The first selection re-renders the board. Resolve the second tile again
-      // so a detached pre-render node cannot make the fairness audit flaky.
-      await page.locator(`.tile[data-x="${pair[1].x}"][data-y="${pair[1].y}"]`).click({ force: true });
+      for (const endpoint of endpoints) {
+        const currentReport = await guidedPairHitReport(page, pair);
+        expectGuidedPairHitOwnership(currentReport, `guided swap endpoint ${endpoint.x},${endpoint.y}`);
+        const tile = page.locator(`.tile[data-x="${endpoint.x}"][data-y="${endpoint.y}"]`);
+        if (useTouch) {
+          await tile.tap();
+        } else {
+          await tile.click();
+        }
+      }
       await page.waitForFunction(() => (
         document.querySelector("#roundOneRestoration")?.offsetParent
         || document.querySelector("#renewBtn")?.classList.contains("visible")
@@ -634,7 +789,11 @@ async function clickGuidedSwap(page, strategy = "optimized") {
           && Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled)
         )
       ), null, { timeout: 10000 });
-      return;
+      const afterInput = await journeyState(page);
+      if (afterInput.roundComplete || afterInput.moves < movesBefore) {
+        return;
+      }
+      lastNoSpendReport = await guidedPairHitReport(page, pair);
     } catch (error) {
       lastError = error;
       const state = await journeyState(page);
@@ -647,7 +806,11 @@ async function clickGuidedSwap(page, strategy = "optimized") {
       ), null, { timeout: 10000 });
     }
   }
-  throw lastError || new Error("Unable to perform a fresh guided swap");
+  throw new Error(
+    `Guided swap spent no authoritative move after one stale-rerender retry: ${
+      JSON.stringify(lastNoSpendReport)
+    }${lastError ? `; ${lastError.message}` : ""}`
+  );
 }
 
 function parsedFinalHarvestTargets(state) {
@@ -2174,15 +2337,25 @@ for (const config of [
   }
 
   for (const seed of GOAL_FOLLOWING_SEEDS) {
-    test(`goal-following first-three journey completes on ${config.label} with ${seed}`, async ({ page }) => {
-      const { runLabel, results } = await playFirstThree(page, config, seed, "goal-following");
-      console.log(`${runLabel} first-three journey: ${JSON.stringify(results)}`);
-      expect(results[0].swaps, "Round 1 goal-following tutorial does not drag").toBeLessThanOrEqual(5);
-      expect(results[1].movesLeft, "Round 2 goal-following play completes").toBeGreaterThanOrEqual(0);
-      expect(results[2].movesLeft, "Round 3 goal-following play completes").toBeGreaterThanOrEqual(0);
-      expect(results[0].actions).toEqual(["Restore Greenhouse · 100 coins", "Next Order → Moonlit Wreath"]);
-      expect(results[1].actions).toEqual(["Upgrade Greenhouse · 120 coins", "Next Order → Bloodroot Compact"]);
-      expect(results[2].actions).toEqual(["Raise Conservatory · 180 coins", "Play Again → First Bouquet"]);
+    test(`goal-following first-three journey completes on ${config.label} with ${seed}`, async ({ browser }) => {
+      const context = await browser.newContext({
+        viewport: config.viewport,
+        hasTouch: config.mobile,
+        isMobile: config.mobile
+      });
+      const page = await context.newPage();
+      try {
+        const { runLabel, results } = await playFirstThree(page, config, seed, "goal-following");
+        console.log(`${runLabel} first-three journey: ${JSON.stringify(results)}`);
+        expect(results[0].swaps, "Round 1 goal-following tutorial does not drag").toBeLessThanOrEqual(5);
+        expect(results[1].movesLeft, "Round 2 goal-following play completes").toBeGreaterThanOrEqual(0);
+        expect(results[2].movesLeft, "Round 3 goal-following play completes").toBeGreaterThanOrEqual(0);
+        expect(results[0].actions).toEqual(["Restore Greenhouse · 100 coins", "Next Order → Moonlit Wreath"]);
+        expect(results[1].actions).toEqual(["Upgrade Greenhouse · 120 coins", "Next Order → Bloodroot Compact"]);
+        expect(results[2].actions).toEqual(["Raise Conservatory · 180 coins", "Play Again → First Bouquet"]);
+      } finally {
+        await context.close();
+      }
     });
   }
 
