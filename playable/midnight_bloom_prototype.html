@@ -1161,9 +1161,9 @@
       justify-self: center;
       border: 1px solid #4a3320;
       background:
-        radial-gradient(ellipse at 50% 16%, #d7b16d4d 0, #0000 61%),
-        radial-gradient(ellipse at 50% 68%, #758d4f42 0, #0000 67%),
-        linear-gradient(180deg, #21150c, #080504);
+        radial-gradient(ellipse at 50% 12%, #d7b16d5c 0, #5f492a24 43%, #0000 68%),
+        radial-gradient(ellipse at 50% 76%, #758d4f4d 0, #0000 72%),
+        linear-gradient(180deg, #24180e, #090604);
       box-shadow:
         inset 0 0 0 1px #000,
         inset 0 0 12px #000,
@@ -1186,15 +1186,15 @@
 
     .live-bouquet-assembly::before {
       left: 50%;
-      bottom: 4px;
-      width: calc(72px + var(--live-bouquet-fullness, 0) * 8px);
-      height: 15px;
+      bottom: 5px;
+      width: calc(86px + var(--live-bouquet-fullness, 0) * 10px);
+      height: 20px;
       transform: translateX(-50%);
       border: 1px solid #c08a4f;
       border-radius: 48% 48% 28% 28%;
       background:
-        linear-gradient(90deg, #381111, #803325 20%, #d0a35e 49%, #8e3b28 78%, #381111);
-      box-shadow: inset 0 0 6px #000, 0 2px 6px #000;
+        linear-gradient(90deg, #381111, #8d3928 20%, #e0b66d 49%, #9c442d 78%, #381111);
+      box-shadow: inset 0 0 6px #000, 0 2px 6px #000, 0 0 7px #b9874d3d;
       clip-path: polygon(0 28%, 15% 4%, 50% 22%, 85% 4%, 100% 28%, 91% 80%, 50% 100%, 9% 80%);
       z-index: 5;
     }
@@ -1202,16 +1202,16 @@
     .live-bouquet-assembly::after {
       left: 50%;
       bottom: 1px;
-      width: calc(188px + var(--live-bouquet-fullness, 0) * 12px);
-      height: 57px;
+      width: calc(250px + var(--live-bouquet-fullness, 0) * 12px);
+      height: 68px;
       transform: translateX(-50%);
       background:
-        linear-gradient(116deg, #161109 0 18%, #685537 19% 36%, #302518 37% 50%, #776242 51% 68%, #171109 69% 100%),
-        radial-gradient(ellipse at 50% 18%, #d5c28742 0 38%, #0000 66%);
-      clip-path: polygon(3% 10%, 23% 1%, 50% 24%, 77% 1%, 97% 10%, 80% 43%, 65% 56%, 56% 100%, 44% 100%, 35% 56%, 20% 43%);
-      opacity: calc(.76 + var(--live-bouquet-fullness, 0) * .18);
+        linear-gradient(116deg, #171109 0 16%, #806a46 17% 34%, #36291a 35% 50%, #8d754e 51% 70%, #171109 71% 100%),
+        radial-gradient(ellipse at 50% 15%, #ead99b57 0 38%, #0000 68%);
+      clip-path: polygon(2% 8%, 21% 0, 50% 25%, 79% 0, 98% 8%, 83% 42%, 66% 58%, 57% 100%, 43% 100%, 34% 58%, 17% 42%);
+      opacity: calc(.86 + var(--live-bouquet-fullness, 0) * .1);
       z-index: 3;
-      filter: drop-shadow(0 2px 4px #000);
+      filter: drop-shadow(0 2px 4px #000) drop-shadow(0 0 3px #b9874d24);
     }
 
     .live-bouquet-stem {
@@ -1220,14 +1220,14 @@
       top: auto;
       bottom: 7px;
       z-index: 2;
-      width: 3px;
+      width: 4px;
       height: var(--live-stem-height, 34px);
       border-radius: 999px;
       transform: rotate(var(--live-stem-rot, 0deg));
       transform-origin: 50% 100%;
-      opacity: calc(.5 + var(--ingredient-visual-progress, 0) * .48);
-      background: linear-gradient(90deg, #263916 0, #a9bd73 48%, #31451c 70%, #171008 100%);
-      box-shadow: 0 1px 3px #000;
+      opacity: calc(.64 + var(--ingredient-visual-progress, 0) * .34);
+      background: linear-gradient(90deg, #223414 0, #bdcf84 46%, #3d5824 70%, #171008 100%);
+      box-shadow: 0 1px 3px #000, 0 0 2px #8ca56040;
     }
 
     .live-bouquet-leaf {
@@ -1235,50 +1235,50 @@
       left: calc(50% + var(--live-leaf-x, 0px));
       top: var(--live-leaf-y, 43px);
       z-index: 3;
-      width: 18px;
-      height: 8px;
-      border: 1px solid #87a45c78;
+      width: 21px;
+      height: 9px;
+      border: 1px solid #9bb76b8f;
       border-radius: 80% 14% 70% 18%;
-      background: linear-gradient(90deg, #17230f, #6f944d 58%, #23190d);
+      background: linear-gradient(90deg, #17230f, #789d54 58%, #2a1e10);
       transform: rotate(var(--live-leaf-rot, -22deg));
-      opacity: calc(.3 + var(--ingredient-visual-progress, 0) * .64);
+      opacity: calc(.46 + var(--ingredient-visual-progress, 0) * .48);
       box-shadow: 0 1px 3px #000;
     }
 
     .live-bouquet-stem[data-filled="false"] {
-      opacity: .24;
-      background: linear-gradient(90deg, #171710, #4a4931 48%, #242419 72%, #0b0b08);
-      box-shadow: none;
+      opacity: .48;
+      background: linear-gradient(90deg, #181912, #757451 46%, #363724 72%, #0b0b08);
+      box-shadow: 0 1px 2px #000;
     }
 
     .live-bouquet-leaf[data-filled="false"] {
-      border-color: #6d684544;
-      background: linear-gradient(90deg, #11120d, #474832 58%, #191811);
-      opacity: .16;
-      filter: saturate(.3) brightness(.72);
-      box-shadow: none;
+      border-color: #817b5270;
+      background: linear-gradient(90deg, #12130e, #626347 58%, #1d1c14);
+      opacity: .34;
+      filter: saturate(.45) brightness(.88);
+      box-shadow: 0 1px 2px #000;
     }
 
     .live-bouquet-knot {
       position: absolute;
       left: 50%;
-      bottom: 2px;
+      bottom: 1px;
       z-index: 6;
-      width: 17px;
-      height: 17px;
+      width: 20px;
+      height: 20px;
       transform: translateX(-50%) rotate(45deg);
       border: 1px solid #d4aa62;
       background: radial-gradient(circle at 35% 30%, #edcf8c, #8c402a 42%, #2b0c0a 76%);
-      box-shadow: inset 0 0 5px #000, 0 0 5px #000;
+      box-shadow: inset 0 0 5px #000, 0 0 6px #000, 0 0 5px #d7b16d42;
     }
 
     .live-bouquet-knot::before,
     .live-bouquet-knot::after {
       content: "";
       position: absolute;
-      top: 8px;
-      width: 7px;
-      height: 19px;
+      top: 10px;
+      width: 8px;
+      height: 21px;
       background: linear-gradient(180deg, #873324, #3b1311);
       clip-path: polygon(0 0, 100% 0, 74% 100%, 50% 78%, 25% 100%);
       z-index: -1;
@@ -1350,8 +1350,8 @@
     }
 
     .live-bouquet-ingredient[data-slot-state="empty"] {
-      width: 30px !important;
-      height: 30px !important;
+      width: 40px !important;
+      height: 40px !important;
     }
 
     .live-bouquet-ingredient[data-slot-state="empty"][data-next-objective="true"] .icon-wrap {
@@ -1385,18 +1385,20 @@
     .live-bouquet-bud {
       position: relative;
       z-index: 1;
-      width: 15px;
-      height: 22px;
-      border: 1px solid #777052a8;
+      width: 20px;
+      height: 30px;
+      border: 1px solid #a59a69;
       border-radius: 54% 54% 42% 42% / 70% 70% 30% 30%;
       background:
-        linear-gradient(90deg, #11110d 0 18%, #4e4b35 47%, #27261b 72%, #0a0a07 100%);
+        linear-gradient(90deg, #171711 0 16%, #777151 45%, #3b3928 72%, #0c0c09 100%);
       clip-path: polygon(50% 0, 72% 11%, 88% 36%, 82% 68%, 63% 88%, 50% 100%, 37% 88%, 18% 68%, 12% 36%, 28% 11%);
-      opacity: .68;
+      opacity: .76;
       box-shadow:
-        inset 1px 1px 2px #b8ad7730,
+        inset 2px 1px 2px #e0d59a52,
         inset -3px -2px 4px #000,
-        0 1px 2px #000;
+        0 0 0 1px #070605,
+        0 1px 3px #000,
+        0 0 4px #b5a66b2b;
     }
 
     .live-bouquet-bud::before,
@@ -1408,21 +1410,21 @@
 
     .live-bouquet-bud::before {
       left: 50%;
-      top: 3px;
-      width: 1px;
-      height: 14px;
+      top: 4px;
+      width: 2px;
+      height: 17px;
       transform: translateX(-50%);
-      background: linear-gradient(#a79d6a78, #27271b 72%, #0000);
-      box-shadow: -3px 3px 0 #343424, 3px 3px 0 #1b1b13;
+      background: linear-gradient(#ded49aa3, #343425 72%, #0000);
+      box-shadow: -4px 4px 0 #4f4e37, 4px 4px 0 #28281c;
     }
 
     .live-bouquet-bud::after {
       left: 1px;
       right: 1px;
       bottom: 0;
-      height: 8px;
-      border-top: 1px solid #7770527a;
-      background: linear-gradient(135deg, #343524 0 34%, #15160f 35% 62%, #454531 63% 100%);
+      height: 10px;
+      border-top: 1px solid #a39a6994;
+      background: linear-gradient(135deg, #50523a 0 34%, #202117 35% 62%, #676649 63% 100%);
       clip-path: polygon(0 100%, 18% 15%, 43% 65%, 50% 0, 59% 65%, 82% 15%, 100% 100%);
       opacity: .72;
     }
@@ -7142,12 +7144,12 @@
     }
     @keyframes live-bouquet-harvest {
       0% { transform:translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.84 + var(--ingredient-visual-progress, 0) * .16)); filter:brightness(1) saturate(1) drop-shadow(0 2px 5px #000); }
-      38% { transform:translate(-50%, -58%) rotate(var(--live-rot, 0deg)) scale(calc(.98 + var(--ingredient-visual-progress, 0) * .16)); filter:brightness(1.48) saturate(1.3) drop-shadow(0 0 11px currentColor); }
+      38% { transform:translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.9 + var(--ingredient-visual-progress, 0) * .12)); filter:brightness(1.48) saturate(1.3) drop-shadow(0 0 11px currentColor); }
       100% { transform:translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.84 + var(--ingredient-visual-progress, 0) * .16)); filter:brightness(1) saturate(1) drop-shadow(0 2px 5px #000); }
     }
     @keyframes live-bouquet-harvest-mobile-contained {
       0% { transform:translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.82 + var(--ingredient-visual-progress, 0) * .18)); filter:brightness(1) saturate(1) drop-shadow(0 2px 5px #000); }
-      38% { transform:translate(-50%, -53%) rotate(var(--live-rot, 0deg)) scale(calc(.94 + var(--ingredient-visual-progress, 0) * .14)); filter:brightness(1.48) saturate(1.3) drop-shadow(0 0 11px currentColor); }
+      38% { transform:translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.9 + var(--ingredient-visual-progress, 0) * .12)); filter:brightness(1.48) saturate(1.3) drop-shadow(0 0 11px currentColor); }
       100% { transform:translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.82 + var(--ingredient-visual-progress, 0) * .18)); filter:brightness(1) saturate(1) drop-shadow(0 2px 5px #000); }
     }
     @keyframes live-bouquet-accept {
@@ -7577,7 +7579,7 @@
       body.round-one-active .progress,
       body.focused-payoff-active .progress {
         width: calc(100vw - 26px);
-        min-height: 108px;
+        min-height: 120px;
         margin-top: 4px;
         padding: 3px 6px 5px;
         font-size: 9px;
@@ -7606,7 +7608,7 @@
       body.round-one-active .bouquet-order-progress,
       body.focused-payoff-active .bouquet-order-progress {
         grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: 18px 82px;
+        grid-template-rows: 18px 94px;
         gap: 0;
       }
       body.restored-next-order-focus .bouquet-receiver-copy,
@@ -7645,7 +7647,7 @@
         grid-column: 1 / -1;
         grid-row: 2;
         width: min(320px, 100%);
-        height: 82px;
+        height: 94px;
       }
       body.restored-next-order-focus .live-bouquet-ingredient,
       body.restored-greenhouse-handoff .live-bouquet-ingredient,
@@ -7654,7 +7656,7 @@
       body.focused-payoff-active .live-bouquet-ingredient {
         width: var(--live-size, 28px);
         height: var(--live-size, 28px);
-        top: calc(var(--live-y, 20px) - 3px);
+        top: var(--live-y, 20px);
         transform: translate(-50%, -50%) rotate(var(--live-rot, 0deg)) scale(calc(.9 + var(--ingredient-visual-progress, 0) * .1));
       }
       .live-bouquet-ingredient.order-pulse[data-gain-receiver="true"] {
@@ -9604,15 +9606,34 @@
 
     function liveBouquetLayout(index, total) {
       const crafted = bouquetCompositionLayout(index, total);
-      const size = total <= 16 ? 36 : total <= 20 ? 31 : 26;
+      const compact = total <= 16;
+      const size = compact ? 42 : total <= 20 ? 31 : 26;
+      const compactRows = [4, 6, Math.max(0, total - 10)].filter(Boolean);
+      let compactRow = 0;
+      let compactRowStart = 0;
+      while (compactRow < compactRows.length - 1
+          && index >= compactRowStart + compactRows[compactRow]) {
+        compactRowStart += compactRows[compactRow];
+        compactRow += 1;
+      }
+      const compactRowCount = compactRows[compactRow] || total;
+      const compactRowIndex = index - compactRowStart;
+      const compactX = total === 14 && (compactRow === 0 || compactRow === 2)
+        ? [-74, -37, 37, 74][compactRowIndex]
+        : Math.round((compactRowIndex - (compactRowCount - 1) / 2) * 37);
+      const compactMobile = window.matchMedia("(max-width: 760px)").matches;
       const layout = {
-        x: Math.round(crafted.x * 1.03),
-        y: Math.round(5 + crafted.y * .65 - (crafted.y > 75 ? 3 : 0)),
+        x: compact
+          ? compactX
+          : Math.round(crafted.x * 1.03),
+        y: compact
+          ? (compactMobile ? [23, 47, 64] : [23, 40, 56])[compactRow]
+          : Math.round(5 + crafted.y * .65 - (crafted.y > 75 ? 3 : 0)),
         size,
-        rot: crafted.rot,
+        rot: compact ? [-5, 4, -3, 5, -4, 3][index % 6] : crafted.rot,
         z: crafted.z
       };
-      const knotY = 75;
+      const knotY = compactMobile ? 87 : 75;
       const stemTargetY = layout.y + layout.size * .08;
       const stemRise = Math.max(10, knotY - stemTargetY);
       return {

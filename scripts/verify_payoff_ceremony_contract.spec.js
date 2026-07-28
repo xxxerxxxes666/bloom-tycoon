@@ -122,13 +122,17 @@ async function currentBouquetPixelFrame(page) {
           animation.playState === "running"
           && animation.animationName !== "final-harvest-receiver-breathe"
         )).length,
-      ingredients: ingredients.map((ingredient) => ({
-        flowerId: Number(ingredient.dataset.flowerId),
-        slot: Number(ingredient.dataset.liveSlot),
-        slotProgress: Number(ingredient.dataset.slotProgress),
-        connected: ingredient.isConnected,
-        ...rectFor(ingredient)
-      }))
+      ingredients: ingredients.map((ingredient) => {
+        const head = ingredient.querySelector(".live-bouquet-bud, img");
+        return {
+          flowerId: Number(ingredient.dataset.flowerId),
+          slot: Number(ingredient.dataset.liveSlot),
+          slotProgress: Number(ingredient.dataset.slotProgress),
+          connected: ingredient.isConnected && Boolean(head?.isConnected),
+          head: head ? rectFor(head) : null,
+          ...rectFor(ingredient)
+        };
+      })
     };
   });
 }
@@ -149,6 +153,9 @@ function bouquetPixelFramesMatch(before, after) {
       ingredient.flowerId === after.ingredients[index].flowerId
         && ingredient.slot === after.ingredients[index].slot
         && ingredient.slotProgress === after.ingredients[index].slotProgress
+        && ingredient.head
+        && after.ingredients[index].head
+        && stableRect(ingredient.head, after.ingredients[index].head)
         && stableRect(ingredient, after.ingredients[index])
     ));
 }
@@ -193,7 +200,10 @@ async function renderedBouquetPixelStats(page) {
     }
     const scaleX = png.width / after.viewport.width;
     const scaleY = png.height / after.viewport.height;
-    return after.ingredients.map((box) => ({ ...box, ...pixelBoxStats(png, box, scaleX, scaleY) }));
+    return after.ingredients.map((box) => ({
+      ...box,
+      ...pixelBoxStats(png, box.head, scaleX, scaleY)
+    }));
   }
   throw new Error("Live bouquet never reached a connected, painted, viewport-stable sampling frame");
 }
@@ -561,6 +571,22 @@ function overlapRatio(first, second) {
   return smallerArea ? (overlapWidth * overlapHeight) / smallerArea : 0;
 }
 
+function minimumCenterDistance(ingredients) {
+  let minimum = Number.POSITIVE_INFINITY;
+  for (let index = 0; index < ingredients.length; index += 1) {
+    for (let compare = index + 1; compare < ingredients.length; compare += 1) {
+      minimum = Math.min(
+        minimum,
+        Math.hypot(
+          ingredients[index].centerX - ingredients[compare].centerX,
+          ingredients[index].centerY - ingredients[compare].centerY
+        )
+      );
+    }
+  }
+  return Number.isFinite(minimum) ? minimum : 0;
+}
+
 function expectedUnitComposition(targetCounts) {
   const placement = targetCounts.map(([flowerId, needed], targetIndex) => ({
     flowerId,
@@ -636,16 +662,24 @@ function expectPhysicalBouquetGeometry(assembly, composition) {
   )), "empty capacity uses botanical silhouettes, not dark inventory sockets").toBe(true);
   const closed = assembly.ingredients.filter((ingredient) => ingredient.slotProgress === 0);
   expect(closed.every((ingredient) => ingredient.bud), "every unearned unit remains a visible closed botanical bud").toBe(true);
+  if (closed.length === composition.length && composition.length === 14) {
+    const closedLeft = Math.min(...closed.map((ingredient) => ingredient.bud.left));
+    const closedRight = Math.max(...closed.map((ingredient) => ingredient.bud.right));
+    expect(closedRight - closedLeft, "the fourteen actual bud silhouettes confidently occupy the receiver")
+      .toBeGreaterThan(assembly.width * .6);
+    expect(minimumCenterDistance(closed), "closed heads retain screenshot-scale separation in all three tiers")
+      .toBeGreaterThanOrEqual(22);
+  }
   expect(closed.every((ingredient) => (
-    ingredient.bud.width >= 14
-      && ingredient.bud.height >= 20
+    ingredient.bud.width >= 19
+      && ingredient.bud.height >= 27
       && ingredient.bud.opacity >= .55
       && ingredient.bud.opacity <= .78
       && ingredient.bud.backgroundImage !== "none"
       && ingredient.bud.borderStyle !== "none"
   )), "closed buds retain botanical geometry while staying materially subordinate").toBe(true);
   expect(assembly.knot, "one binding knot remains visible").not.toBeNull();
-  expect(assembly.knot.width, "binding knot remains materially legible").toBeGreaterThan(14);
+  expect(assembly.knot.width, "binding knot remains materially legible").toBeGreaterThan(19);
   expect(assembly.knot.centerY, "binding knot sits below the crown")
     .toBeGreaterThan(assembly.ingredients.reduce((sum, ingredient) => sum + ingredient.centerY, 0) / composition.length + 14);
   const stemXSpread = Math.max(...assembly.stemDetails.map((stem) => stem.anchorX))
@@ -1185,7 +1219,7 @@ async function expectCleanReplayBoard(page) {
       .filter(Boolean);
   });
   expect(buttons.length, "clean active board keeps the non-board action cap").toBeLessThanOrEqual(2);
-  expect(buttons).toContain("?");
+  expect(buttons).toContain("Help");
   const mobileFooter = await page.evaluate(() => {
     const visible = (node) => {
       if (!node) return false;
@@ -1273,10 +1307,12 @@ async function runJourney(page, label, includeRetry) {
   expect(initialAssembly.progress).toBe("0/14");
   expect(initialAssembly.state).toBe("fresh");
   expect(initialAssembly.width, "fresh live bouquet is readable in the progress strip").toBeGreaterThanOrEqual(compactReceiver ? 220 : 210);
-  expect(initialAssembly.height, "fresh live bouquet owns substantial crown and wrap depth").toBeGreaterThanOrEqual(80);
-  expect(initialAssembly.bindingWidth, "fresh live bouquet shows a material binding").toBeGreaterThanOrEqual(68);
-  expect(initialAssembly.vineWidth, "fresh live bouquet shows a broad physical wrap").toBeGreaterThanOrEqual(184);
-  expect(initialAssembly.vineHeight, "fresh wrap has material depth below the crown").toBeGreaterThanOrEqual(54);
+  expect(initialAssembly.height, "fresh live bouquet owns substantial crown and wrap depth")
+    .toBeGreaterThanOrEqual(label.includes("mobile390") ? 92 : 80);
+  expect(initialAssembly.bindingWidth, "fresh live bouquet shows a material binding").toBeGreaterThanOrEqual(84);
+  expect(initialAssembly.vineWidth, "fresh live bouquet shows a broad physical wrap")
+    .toBeGreaterThan(initialAssembly.width * .74);
+  expect(initialAssembly.vineHeight, "fresh wrap has material depth below the crown").toBeGreaterThanOrEqual(66);
   expectPhysicalBouquetGeometry(initialAssembly, ROUND_ONE_COMPOSITION);
   expect(initialAssembly.ingredients.every((ingredient) => ingredient.slotState === "empty")).toBe(true);
   expect(initialAssembly.ingredients.every((ingredient) => ingredient.slotProgress === 0)).toBe(true);
@@ -1291,11 +1327,15 @@ async function runJourney(page, label, includeRetry) {
   expect(initialPixels, "fresh bouquet exposes fourteen intended unit positions").toHaveLength(14);
   expect(initialAssembly.ingredients.every((ingredient) => ingredient.bud), "all fourteen fresh units visibly begin closed").toBe(true);
   expect(Math.min(...initialAssembly.ingredients.map((ingredient) => ingredient.bud.width)),
-    "fresh capacity stays countable without flower-image stand-ins").toBeGreaterThanOrEqual(14);
+    "fresh capacity stays countable without flower-image stand-ins").toBeGreaterThanOrEqual(19);
   expect(Math.max(...initialAssembly.ingredients.map((ingredient) => ingredient.bud.width)),
-    "fresh closed capacity remains narrower than an earned flower head").toBeLessThanOrEqual(18);
+    "fresh closed capacity remains narrower than an earned flower head").toBeLessThanOrEqual(21);
+  expect(Math.min(...initialPixels.map((head) => head.p75)),
+    `every fresh bud has normal-screenshot midtone contrast: ${JSON.stringify(initialPixels)}`).toBeGreaterThan(20);
   expect(Math.min(...initialPixels.map((head) => head.p90)),
-    `every fresh bud renders above the empty panel floor: ${JSON.stringify(initialPixels)}`).toBeGreaterThan(8);
+    `every fresh bud renders above the empty panel floor: ${JSON.stringify(initialPixels)}`).toBeGreaterThan(46);
+  expect(Math.min(...initialPixels.map((head) => head.litPixels)),
+    `every fresh bud owns a material painted footprint: ${JSON.stringify(initialPixels)}`).toBeGreaterThan(300);
   expect(initialAssembly.overflowX).toBe(false);
   expect(initialAssembly.boardBottom, `${label} keeps the complete altar in the first viewport`)
     .toBeLessThanOrEqual(viewport?.height || 844);
@@ -1386,8 +1426,15 @@ async function runJourney(page, label, includeRetry) {
   expect(firstAssembly.visibleBlooms).toBe(firstAssembly.ingredients.filter((ingredient) => ingredient.slotProgress > 0).length);
   expect(firstAssembly.buds).toBe(11);
   expect(firstAssembly.ingredients.filter((ingredient) => ingredient.slotProgress === 0)
-    .every((ingredient) => ingredient.bud?.width >= 13 && ingredient.bud?.height >= 13),
+    .every((ingredient) => ingredient.bud?.width >= 19 && ingredient.bud?.height >= 27),
   "the eleven unearned units remain visibly closed after the first harvest").toBe(true);
+  const closedFirstPixels = firstPixels.filter((head) => head.slotProgress === 0);
+  expect(closedFirstPixels, "the authored opening preserves eleven painted closed heads").toHaveLength(11);
+  expect(Math.min(...closedFirstPixels.map((head) => head.p90)),
+    "all eleven remaining buds retain screenshot-scale contrast after the earned heads arrive").toBeGreaterThan(46);
+  expect(Math.min(...earnedPixelHeads.map((head) => head.coloredPixels)),
+    "each earned Thorn head materially dominates the strongest remaining closed silhouette")
+    .toBeGreaterThan(Math.max(...closedFirstPixels.map((head) => head.coloredPixels)) * 1.35);
   expect(earnedHeadCounts(firstAssembly)).toEqual({ 5: 3 });
   expect(firstAssembly.ingredients.some((ingredient) => ingredient.slotState === "partial")).toBe(false);
   expect(firstAssembly.ingredients.some((ingredient) => ingredient.slotState === "empty")).toBe(true);
