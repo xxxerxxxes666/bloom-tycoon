@@ -8803,7 +8803,7 @@
         justify-content: start;
         justify-self: start;
         width: 105px;
-        margin: 5px 0 0;
+        margin: 5px 0 -30px;
         gap: 0;
       }
 
@@ -8811,7 +8811,7 @@
       body.restored-next-order-focus:not(.focused-payoff-active) .mobile-greenhouse-progress,
       body.round-three-focus-active:not(.focused-payoff-active) .mobile-greenhouse-progress {
         width: 105px;
-        margin: 5px 0 0;
+        margin: 5px 0 -30px;
       }
 
       .mobile-greenhouse-identity,
@@ -8822,7 +8822,7 @@
       }
 
       .mobile-greenhouse-identity {
-        height: 48px;
+        height: 78px;
         border-color: color-mix(in srgb, var(--stage-accent, #b9874d) 76%, #241812);
         box-shadow:
           inset 0 0 8px #000,
@@ -8846,8 +8846,8 @@
       .mobile-greenhouse-progress .greenhouse-restoration-dial {
         z-index: 2;
         grid-template-columns: 1fr;
-        grid-template-rows: 12px 4px 14px;
-        min-height: 48px;
+        grid-template-rows: 12px 4px minmax(0, 1fr);
+        min-height: 78px;
         padding: 3px 5px 4px;
         gap: 3px;
         border-color: transparent;

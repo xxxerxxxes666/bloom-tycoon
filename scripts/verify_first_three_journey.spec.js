@@ -1927,13 +1927,25 @@ function expectOwnedReplayEntryGeometry(state, config, label) {
   }
   if (config.mobile) {
     expect(geometry.greenhouseContinuity, `${label} compact greenhouse continuity geometry`).toBeTruthy();
-    expect(geometry.receipt.top, `${label} receipt follows greenhouse continuity`)
-      .toBeGreaterThanOrEqual(geometry.greenhouseContinuity.bottom);
+    expect(
+      rectanglesOverlap(geometry.receipt, geometry.greenhouseContinuity),
+      `${label} receipt stays disjoint from greenhouse continuity`
+    ).toBe(false);
+    expect(geometry.receipt.left, `${label} receipt follows the greenhouse command lane`)
+      .toBeGreaterThanOrEqual(geometry.greenhouseContinuity.right);
+    expect(geometry.receipt.left - geometry.greenhouseContinuity.right)
+      .toBeLessThanOrEqual(12);
+    expect(geometry.greenhouseContinuity.bottom, `${label} greenhouse remains above the board`)
+      .toBeLessThanOrEqual(geometry.board.top);
     expect(geometry.receipt.bottom, `${label} receipt remains above the board`)
       .toBeLessThanOrEqual(geometry.board.top);
-    expect(geometry.receipt.top - geometry.greenhouseContinuity.bottom)
-      .toBeLessThanOrEqual(12);
-    expect(geometry.board.top - geometry.receipt.bottom).toBeLessThanOrEqual(12);
+    expect(
+      geometry.board.top - Math.max(
+        geometry.greenhouseContinuity.bottom,
+        geometry.receipt.bottom
+      ),
+      `${label} greenhouse and receipt hand directly into the board`
+    ).toBeLessThanOrEqual(12);
   } else {
     expect(
       geometry.receipt.left,

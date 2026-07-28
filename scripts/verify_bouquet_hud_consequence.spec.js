@@ -471,8 +471,9 @@ async function hudReport(page) {
     const mobileGreenhouse = document.querySelector("#mobileGreenhouseProgress");
     const mobileGreenhouseArt = document.querySelector("#mobileGreenhouseIdentityArt");
     const mobileDial = document.querySelector("#mobileRestorationDial");
+    const commandRegion = document.querySelector("#tutorialCommandRegion");
     const instruction = [
-      document.querySelector(".tutorial-command-region"),
+      commandRegion,
       document.querySelector("#tutorialPanel"),
       document.querySelector("#firstSwapCue"),
       document.querySelector("#nextOrderCue"),
@@ -596,6 +597,7 @@ async function hudReport(page) {
         rect: mobileGreenhouseRect,
         artRect: rect(document.querySelector("#mobileGreenhouseIdentity")),
         dialRect: rect(mobileDial),
+        commandRect: rect(commandRegion),
         text: mobileDial?.innerText.replace(/\s+/g, " ").trim() || "",
         ariaLabel: mobileGreenhouse?.getAttribute("aria-label") || "",
         art: mobileGreenhouseArt?.getAttribute("src") || "",
@@ -604,6 +606,19 @@ async function hudReport(page) {
       },
       activeActionId: activeAction?.id || "",
       activeActionText: activeAction?.textContent.trim() || "",
+      commandHitTargets: Array.from(document.querySelectorAll(
+        "#tutorialCommandRegion button, #restoreGreenhouseBtn, #nextOrderBtn, #renewBtn.visible"
+      )).filter(visible).map((button) => {
+        const bounds = button.getBoundingClientRect();
+        const hit = document.elementFromPoint(
+          bounds.left + bounds.width / 2,
+          bounds.top + bounds.height / 2
+        );
+        return {
+          id: button.id,
+          owner: hit?.closest("button")?.id || ""
+        };
+      }),
       visiblePayoffActions: [
         document.querySelector("#restoreGreenhouseBtn"),
         document.querySelector("#nextOrderBtn")
@@ -611,7 +626,14 @@ async function hudReport(page) {
       retryVisible: visible(document.querySelector("#renewBtn.visible")),
       tiles: document.querySelectorAll(".tile").length,
       rows: new Set(Array.from(document.querySelectorAll(".tile"), (tile) => tile.dataset.y)).size,
+      completeRows: new Set(Array.from(document.querySelectorAll(".tile"))
+        .filter((tile) => {
+          const bounds = tile.getBoundingClientRect();
+          return visible(tile) && bounds.top >= 0 && bounds.bottom <= innerHeight;
+        })
+        .map((tile) => tile.dataset.y)).size,
       boardVisible: visible(board),
+      boardTop: boardRect?.top || 0,
       boardBottom: boardRect?.bottom || 0,
       overflowX: document.documentElement.scrollWidth > innerWidth + 1,
       brokenImages: Array.from(document.images)
@@ -619,6 +641,91 @@ async function hudReport(page) {
         .map((image) => image.getAttribute("src"))
     };
   });
+}
+
+async function renderedGreenhouseStructure(page) {
+  const image = await page.locator("#mobileGreenhouseProgress").screenshot({
+    animations: "disabled"
+  });
+  return page.evaluate(async (base64) => {
+    const bitmap = new Image();
+    await new Promise((resolve, reject) => {
+      bitmap.onload = resolve;
+      bitmap.onerror = reject;
+      bitmap.src = `data:image/png;base64,${base64}`;
+    });
+    const canvas = document.createElement("canvas");
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    context.drawImage(bitmap, 0, 0);
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    const firstArtRow = 13;
+    const lastArtRow = canvas.height - 15;
+    let samples = 0;
+    let luminanceSum = 0;
+    let luminanceSquaredSum = 0;
+    let red = 0;
+    let green = 0;
+    let blue = 0;
+    let horizontalEdges = 0;
+    let structuredRows = 0;
+    for (let y = firstArtRow; y < lastArtRow; y += 1) {
+      let rowSamples = 0;
+      let rowLuminance = 0;
+      let rowLuminanceSquared = 0;
+      for (let x = 2; x < canvas.width - 2; x += 1) {
+        const offset = (y * canvas.width + x) * 4;
+        const luminance = (
+          0.2126 * pixels[offset]
+          + 0.7152 * pixels[offset + 1]
+          + 0.0722 * pixels[offset + 2]
+        );
+        samples += 1;
+        rowSamples += 1;
+        luminanceSum += luminance;
+        luminanceSquaredSum += luminance * luminance;
+        rowLuminance += luminance;
+        rowLuminanceSquared += luminance * luminance;
+        red += pixels[offset];
+        green += pixels[offset + 1];
+        blue += pixels[offset + 2];
+        if (x > 2) {
+          const previous = offset - 4;
+          const previousLuminance = (
+            0.2126 * pixels[previous]
+            + 0.7152 * pixels[previous + 1]
+            + 0.0722 * pixels[previous + 2]
+          );
+          if (Math.abs(luminance - previousLuminance) > 18) {
+            horizontalEdges += 1;
+          }
+        }
+      }
+      const rowMean = rowLuminance / rowSamples;
+      const rowDeviation = Math.sqrt(
+        rowLuminanceSquared / rowSamples - rowMean * rowMean
+      );
+      if (rowDeviation > 8) {
+        structuredRows += 1;
+      }
+    }
+    const mean = luminanceSum / samples;
+    return {
+      width: canvas.width,
+      height: canvas.height,
+      sampledArtRows: lastArtRow - firstArtRow,
+      meanLuminance: mean,
+      luminanceDeviation: Math.sqrt(
+        luminanceSquaredSum / samples - mean * mean
+      ),
+      meanRed: red / samples,
+      meanGreen: green / samples,
+      meanBlue: blue / samples,
+      horizontalEdges,
+      structuredRows
+    };
+  }, image.toString("base64"));
 }
 
 function expectedGreenhouseOwnership(fixture) {
@@ -680,8 +787,15 @@ async function assertHudState(page, fixture, viewport, reload) {
   expect(report.greenhouse.art, `${label} owned art`).toContain(expectedOwned.art);
   expect(report.tiles, `${label} tile integrity`).toBe(64);
   expect(report.rows, `${label} board rows`).toBe(8);
+  if (report.boardVisible) {
+    expect(report.completeRows, `${label} complete viewport rows`).toBe(8);
+  }
   expect(report.overflowX, `${label} no page overflow`).toBe(false);
   expect(report.brokenImages, `${label} no broken images`).toEqual([]);
+  expect(
+    report.commandHitTargets,
+    `${label} visible command centers retain their own hit authority`
+  ).toEqual(report.commandHitTargets.map(({ id }) => ({ id, owner: id })));
 
   const state = savedState(fixture);
   const expectedContract = ROUND_CONTRACTS[state.currentRound];
@@ -754,10 +868,14 @@ async function assertHudState(page, fixture, viewport, reload) {
       );
       expect(report.mobileGreenhouse.art, `${label} persisted stage crop`).toContain(expectedOwned.art);
       expect(report.mobileGreenhouse.rect.width, `${label} greenhouse yields command lane`).toBeLessThanOrEqual(110);
-      expect(report.mobileGreenhouse.rect.height, `${label} compact greenhouse height`).toBeCloseTo(48, 0);
+      expect(report.mobileGreenhouse.rect.height, `${label} recognizable greenhouse height`).toBeCloseTo(78, 0);
       expect(report.mobileGreenhouse.artRect, `${label} visible place crop fills compact surface`).toEqual(
         report.mobileGreenhouse.dialRect
       );
+      expect(
+        report.mobileGreenhouse.rect.bottom,
+        `${label} greenhouse keeps a breathing gap above the altar`
+      ).toBeLessThanOrEqual(report.boardTop - 4);
       expect(report.mobileGreenhouse.overlapsInstruction, `${label} greenhouse clears phase command`).toBe(false);
       expect(report.mobileGreenhouse.overlapsBoard, `${label} greenhouse clears altar`).toBe(false);
     }
@@ -2216,6 +2334,159 @@ for (const config of ROUND_TWO_HANDOFF_INPUTS) {
     await actionContext.close();
   });
 }
+
+test("mobile greenhouse renders recognizable persisted architecture without yielding board or command authority", async ({ browser }) => {
+  const stageCases = [
+    {
+      key: "withered",
+      fixture: HUD_CASES.find((fixture) => fixture.label === "r1-active"),
+      art: "first_greenhouse_withered.jpg",
+      boardTop: 324
+    },
+    {
+      key: "restored",
+      fixture: HUD_CASES.find((fixture) => fixture.label === "r2-active"),
+      art: "first_greenhouse_restored.jpg",
+      boardTop: 372
+    },
+    {
+      key: "moonlit",
+      fixture: HUD_CASES.find((fixture) => fixture.label === "r3-active"),
+      art: "moonlit_wreath_greenhouse.jpg",
+      boardTop: 324,
+      reducedMotion: "reduce"
+    },
+    {
+      key: "bloodroot",
+      fixture: HUD_CASES.find((fixture) => fixture.label === "r1-owned-replay-active"),
+      art: "bloodroot_compact_greenhouse.jpg",
+      boardTop: 324
+    }
+  ];
+  const renderedStages = new Map();
+
+  for (const stageCase of stageCases) {
+    const context = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      isMobile: true,
+      hasTouch: true,
+      reducedMotion: stageCase.reducedMotion || "no-preference"
+    });
+    const page = await context.newPage();
+    const runtimeErrors = [];
+    const requestFailures = [];
+    page.on("console", (message) => {
+      if (message.type() === "error" || message.type() === "warning") {
+        runtimeErrors.push(message.text());
+      }
+    });
+    page.on("pageerror", (error) => runtimeErrors.push(error.message));
+    page.on("requestfailed", (request) => {
+      const errorText = request.failure()?.errorText || "failed";
+      const replacedGreenhouseImage = errorText === "net::ERR_ABORTED"
+        && request.url().includes("/assets/greenhouse/")
+        && request.url().endsWith(".jpg");
+      if (!replacedGreenhouseImage) {
+        requestFailures.push(`${request.url()} :: ${errorText}`);
+      }
+    });
+    await page.addInitScript(({ key, state }) => {
+      localStorage.setItem(key, JSON.stringify(state));
+    }, { key: SAVE_KEY, state: savedState(stageCase.fixture) });
+    await page.goto(
+      `${BASE_URL}?greenhouse-recognition=${stageCase.key}`,
+      { waitUntil: "networkidle" }
+    );
+
+    for (let reload = 0; reload <= 2; reload += 1) {
+      await expect(page.locator("#board .tile")).toHaveCount(64);
+      await expect(page.locator("#mobileGreenhouseProgress")).toBeVisible();
+      const report = await hudReport(page);
+      const pixels = await renderedGreenhouseStructure(page);
+      const label = `${stageCase.key} greenhouse reload ${reload}`;
+
+      expect(report.greenhouse.stage, `${label} ownership stage`).toBe(stageCase.key);
+      expect(report.mobileGreenhouse.art, `${label} persisted original art`).toContain(stageCase.art);
+      expect(report.mobileGreenhouse.rect, `${label} bounded architectural crop`).toMatchObject({
+        width: 105,
+        height: 78
+      });
+      expect(report.mobileGreenhouse.rect.bottom, `${label} crop clears altar`).toBeLessThanOrEqual(
+        report.boardTop - 4
+      );
+      expect(report.mobileGreenhouse.overlapsInstruction, `${label} crop clears command region`).toBe(false);
+      expect(report.mobileGreenhouse.overlapsBoard, `${label} crop clears board`).toBe(false);
+      expect(report.boardTop, `${label} accepted board top`).toBeCloseTo(stageCase.boardTop, 0);
+      expect(report.boardBottom, `${label} complete board in viewport`).toBeLessThanOrEqual(844);
+      expect(report.tiles, `${label} tile integrity`).toBe(64);
+      expect(report.rows, `${label} row integrity`).toBe(8);
+      expect(report.completeRows, `${label} eight complete rows`).toBe(8);
+      expect(report.overflowX, `${label} horizontal overflow`).toBe(false);
+      expect(report.brokenImages, `${label} broken images`).toEqual([]);
+      expect(
+        report.commandHitTargets,
+        `${label} visible command center hit authority`
+      ).toEqual(report.commandHitTargets.map(({ id }) => ({ id, owner: id })));
+
+      expect(pixels.width, `${label} rendered crop width`).toBe(105);
+      expect(pixels.height, `${label} rendered crop height`).toBe(78);
+      expect(pixels.sampledArtRows, `${label} exposed architectural depth`).toBeGreaterThanOrEqual(48);
+      expect(pixels.structuredRows, `${label} visible facade structure`).toBeGreaterThanOrEqual(30);
+      expect(pixels.horizontalEdges, `${label} visible ribs, panes, and doorway edges`).toBeGreaterThanOrEqual(450);
+      expect(pixels.luminanceDeviation, `${label} structure is not a flat dark receipt`).toBeGreaterThan(20);
+
+      if (reload === 0) {
+        renderedStages.set(stageCase.key, pixels);
+        const reducedSuffix = stageCase.reducedMotion ? "-reduced-motion" : "";
+        await page.screenshot({
+          path: `work/greenhouse-recognition-after-${stageCase.key}${reducedSuffix}-390x844.png`,
+          fullPage: false
+        });
+        await page.locator("#mobileGreenhouseProgress").screenshot({
+          path: `work/greenhouse-recognition-after-${stageCase.key}${reducedSuffix}-crop.png`,
+          animations: "disabled"
+        });
+      }
+      if (reload < 2) {
+        await page.reload({ waitUntil: "networkidle" });
+      }
+    }
+
+    expect(runtimeErrors, `${stageCase.key} runtime errors`).toEqual([]);
+    expect(requestFailures, `${stageCase.key} request failures`).toEqual([]);
+    await context.close();
+  }
+
+  const renderedDistance = (first, second) => Math.hypot(
+    first.meanRed - second.meanRed,
+    first.meanGreen - second.meanGreen,
+    first.meanBlue - second.meanBlue
+  );
+  expect(
+    renderedDistance(renderedStages.get("withered"), renderedStages.get("restored")),
+    "withered and restored crops are materially distinct"
+  ).toBeGreaterThan(30);
+  expect(
+    renderedDistance(renderedStages.get("restored"), renderedStages.get("moonlit")),
+    "restored and moonlit crops are materially distinct"
+  ).toBeGreaterThan(30);
+  expect(
+    renderedDistance(renderedStages.get("moonlit"), renderedStages.get("bloodroot")),
+    "moonlit and bloodroot crops are materially distinct"
+  ).toBeGreaterThan(30);
+  expect(
+    renderedStages.get("restored").meanGreen - renderedStages.get("restored").meanBlue,
+    "restored greenhouse retains living gold-green glass"
+  ).toBeGreaterThan(18);
+  expect(
+    renderedStages.get("moonlit").meanBlue - renderedStages.get("moonlit").meanGreen,
+    "moonlit greenhouse retains violet-blue glass"
+  ).toBeGreaterThan(18);
+  expect(
+    renderedStages.get("bloodroot").meanRed - renderedStages.get("bloodroot").meanBlue,
+    "bloodroot greenhouse retains crimson glass"
+  ).toBeGreaterThan(55);
+});
 
 test("short desktop keeps the full altar and replay Help in the first viewport", async ({ browser }) => {
   const viewport = VIEWPORTS[0];
