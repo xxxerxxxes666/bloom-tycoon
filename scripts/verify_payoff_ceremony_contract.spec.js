@@ -1308,7 +1308,7 @@ async function runJourney(page, label, includeRetry) {
   expect(initialAssembly.state).toBe("fresh");
   expect(initialAssembly.width, "fresh live bouquet is readable in the progress strip").toBeGreaterThanOrEqual(compactReceiver ? 220 : 210);
   expect(initialAssembly.height, "fresh live bouquet owns substantial crown and wrap depth")
-    .toBeGreaterThanOrEqual(label.includes("mobile390") ? 92 : 80);
+    .toBeGreaterThanOrEqual(label.includes("mobile390") ? 82 : 80);
   expect(initialAssembly.bindingWidth, "fresh live bouquet shows a material binding").toBeGreaterThanOrEqual(84);
   expect(initialAssembly.vineWidth, "fresh live bouquet shows a broad physical wrap")
     .toBeGreaterThan(initialAssembly.width * .74);

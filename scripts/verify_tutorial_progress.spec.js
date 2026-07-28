@@ -3141,8 +3141,10 @@ test("exact-mobile Help owns a complete replay touch target across the first thr
     expect(geometry.help.bottom, `${label} Help stays in viewport`).toBeLessThanOrEqual(844);
     expect(geometry.helpOverlapsBoard, `${label} Help does not cover altar`).toBe(false);
     expect(geometry.helpOverlapsObjective, `${label} Help does not cover objective`).toBe(false);
-    expect(geometry.help.top, `${label} Help follows greenhouse progress`)
-      .toBeGreaterThanOrEqual(geometry.greenhouseProgress.bottom);
+    expect(geometry.help.top, `${label} Help shares the compact greenhouse command row`)
+      .toBeGreaterThanOrEqual(geometry.greenhouseProgress.top);
+    expect(geometry.help.bottom, `${label} Help stays inside the compact greenhouse command row`)
+      .toBeLessThanOrEqual(geometry.greenhouseProgress.bottom);
     expect(geometry.helpProgressOverlaps, `${label} Help keeps greenhouse progress readable`).toEqual([]);
     expect(geometry.commandProgressOverlaps, `${label} commands keep greenhouse progress readable`).toEqual([]);
     expect(geometry.board.left, `${label} altar left edge`).toBeCloseTo(8, 1);

@@ -1478,7 +1478,7 @@
       transform:
         translate(-50%, -50%)
         rotate(var(--live-rot, 0deg))
-        scale(1.16);
+        scale(1.08);
       filter: brightness(1.16);
     }
 
@@ -7579,7 +7579,7 @@
       body.round-one-active .progress,
       body.focused-payoff-active .progress {
         width: calc(100vw - 26px);
-        min-height: 120px;
+        min-height: 108px;
         margin-top: 4px;
         padding: 3px 6px 5px;
         font-size: 9px;
@@ -7608,7 +7608,7 @@
       body.round-one-active .bouquet-order-progress,
       body.focused-payoff-active .bouquet-order-progress {
         grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: 18px 94px;
+        grid-template-rows: 18px 82px;
         gap: 0;
       }
       body.restored-next-order-focus .bouquet-receiver-copy,
@@ -7647,7 +7647,7 @@
         grid-column: 1 / -1;
         grid-row: 2;
         width: min(320px, 100%);
-        height: 94px;
+        height: 82px;
       }
       body.restored-next-order-focus .live-bouquet-ingredient,
       body.restored-greenhouse-handoff .live-bouquet-ingredient,
@@ -8766,13 +8766,24 @@
 
     @media (max-width: 600px) {
       .board-command-stack {
-        padding-top: 74px;
+        padding-top: 29px;
+      }
+
+      body.tutorial-active .board-command-stack {
+        padding-top: 29px;
       }
 
       .tutorial-command-region {
-        top: -7px;
+        left: 96px;
+        right: 0;
+        top: -51px;
+        transform: none;
         gap: 0 5px;
-        width: calc(100% - 16px);
+        width: auto;
+      }
+
+      .tutorial-command-region > .first-swap-cue::before {
+        display: none;
       }
 
       .tutorial-command-region > .tutorial-help {
@@ -8785,6 +8796,54 @@
       .tutorial-command-region > .first-swap-cue,
       .tutorial-command-region > .next-order-cue {
         max-width: calc(100% - 49px);
+      }
+
+      .mobile-greenhouse-progress {
+        grid-template-columns: 96px;
+        justify-content: start;
+        gap: 0;
+      }
+
+      .mobile-greenhouse-identity,
+      .mobile-greenhouse-progress .greenhouse-restoration-dial {
+        grid-column: 1;
+        grid-row: 1;
+        width: 96px;
+      }
+
+      .mobile-greenhouse-progress .greenhouse-restoration-dial {
+        z-index: 2;
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 5px;
+        min-height: 48px;
+        padding: 5px 6px;
+        gap: 4px;
+        background: linear-gradient(180deg, #05030396, #120907d9);
+      }
+
+      .mobile-greenhouse-progress .restoration-dial-topline {
+        grid-column: 1;
+        grid-row: 1;
+        justify-content: center;
+      }
+
+      .mobile-greenhouse-progress .restoration-dial-stage {
+        font-size: 7px;
+        letter-spacing: .06em;
+      }
+
+      .mobile-greenhouse-progress .restoration-dial-percent {
+        font-size: 10px;
+      }
+
+      .mobile-greenhouse-progress .restoration-dial-track {
+        grid-column: 1;
+        grid-row: 2;
+        height: 5px;
+      }
+
+      .mobile-greenhouse-progress .restoration-dial-phase {
+        display: none;
       }
 
       body.restored-greenhouse-handoff .tutorial-command-region > .next-order-cue {
@@ -9212,6 +9271,7 @@
     let finalHarvestHandoffTimer = null;
     let finalHarvestCeremonyPacing = null;
     let tutorialReplayOwnsNarration = false;
+    let tutorialReplayReturnsFocusToHelp = false;
     let interactionFeedbackGeneration = 0;
     let isResolving = false;
     let altarReweaveActive = false;
@@ -9627,13 +9687,13 @@
           ? compactX
           : Math.round(crafted.x * 1.03),
         y: compact
-          ? (compactMobile ? [23, 47, 64] : [23, 40, 56])[compactRow]
+          ? (compactMobile ? [22, 40, 55] : [23, 40, 56])[compactRow]
           : Math.round(5 + crafted.y * .65 - (crafted.y > 75 ? 3 : 0)),
         size,
         rot: compact ? [-5, 4, -3, 5, -4, 3][index % 6] : crafted.rot,
         z: crafted.z
       };
-      const knotY = compactMobile ? 87 : 75;
+      const knotY = 75;
       const stemTargetY = layout.y + layout.size * .08;
       const stemRise = Math.max(10, knotY - stemTargetY);
       return {
@@ -14433,7 +14493,7 @@
       }
     }
 
-    function startTutorial({ replay = false } = {}) {
+    function startTutorial({ replay = false, returnFocusToHelp = false } = {}) {
       if (blackCandleActivationPresentation) {
         clearBlackCandleActivationPresentation();
       }
@@ -14455,6 +14515,7 @@
       tutorialSkipped = false;
       tutorialActive = true;
       tutorialReplayOwnsNarration = Boolean(replay);
+      tutorialReplayReturnsFocusToHelp = Boolean(replay && returnFocusToHelp);
       if (restartRoundOneAgencyHint) {
         beginRoundOneAgencyDiscovery();
       }
@@ -14486,9 +14547,12 @@
         || null;
       const skippingThornLesson = isAuthoritativeRoundTwoThornLesson();
       const skippingRoundOneAgency = isRoundOneAgencyHandoffActive();
+      const closingKeyboardReplay = tutorialReplayOwnsNarration
+        && tutorialReplayReturnsFocusToHelp;
       tutorialSkipped = true;
       tutorialActive = false;
       tutorialReplayOwnsNarration = false;
+      tutorialReplayReturnsFocusToHelp = false;
       blackCandleLessonComplete = true;
       if (skippingRoundOneAgency) {
         clearTargetLiteracy(false);
@@ -14500,14 +14564,16 @@
       }
       const restartPostOnboardingHint = !skippingThornLesson
         && isPostOnboardingIdleHintActive();
-      if (guidedFocusCell) {
+      if (closingKeyboardReplay) {
+        queuePostRenderFocus("tutorialHelpBtn");
+      } else if (guidedFocusCell) {
         boardFocusCell = clampBoardFocusCell(guidedFocusCell);
         queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
       } else {
         queuePostRenderFocus("tutorialHelpBtn");
       }
       render();
-      if (guidedFocusCell && window.requestAnimationFrame) {
+      if (!closingKeyboardReplay && guidedFocusCell && window.requestAnimationFrame) {
         const focusCell = { ...boardFocusCell };
         window.requestAnimationFrame(() => {
           window.requestAnimationFrame(() => {
@@ -14534,6 +14600,7 @@
       tutorialSkipped = true;
       tutorialActive = false;
       tutorialReplayOwnsNarration = false;
+      tutorialReplayReturnsFocusToHelp = false;
       blackCandleLessonComplete = true;
       clearTargetLiteracy(false);
     }
@@ -18072,7 +18139,10 @@
     $("restoreGreenhouseBtn").addEventListener("click", advanceGreenhouseUpgrade);
     $("nextOrderBtn").addEventListener("click", advanceGreenhousePayoffAction);
     $("tutorialSkipBtn").addEventListener("click", skipTutorial);
-    $("tutorialHelpBtn").addEventListener("click", () => startTutorial({ replay: true }));
+    $("tutorialHelpBtn").addEventListener("click", (event) => startTutorial({
+      replay: true,
+      returnFocusToHelp: event.detail === 0
+    }));
     $("board").addEventListener("pointerdown", handleBoardPointerDown);
     $("board").addEventListener("pointermove", handleBoardPointerMove);
     $("board").addEventListener("pointerup", handleBoardPointerUp);

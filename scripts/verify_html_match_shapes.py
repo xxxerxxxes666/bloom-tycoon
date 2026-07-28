@@ -1046,7 +1046,7 @@ def verify_source_hooks():
         "id=\"tutorialHelpBtn\"",
         "id=\"tutorialSkipBtn\"",
         "let tutorialSkipped = false",
-        "function startTutorial({ replay = false } = {})",
+        "function startTutorial({ replay = false, returnFocusToHelp = false } = {})",
         "function skipTutorial",
         "function scheduleFreshTutorial",
         "Swap the glowing flowers.",
