@@ -105,6 +105,17 @@ async function journeyState(page) {
     const replayEntrySurface = innerWidth <= 760
       ? document.querySelector("#firstSwapCue")
       : document.querySelector("#bouquetRewardPromise");
+    const payoffAction = Array.from(document.querySelectorAll("#roundOneRestoration button"))
+      .find(visible) || null;
+    const payoffFloatingCommands = [
+      ["tutorialPanel", document.querySelector("#tutorialPanel")],
+      ["firstSwapCue", document.querySelector("#firstSwapCue")],
+      ["nextOrderCue", document.querySelector("#nextOrderCue")]
+    ].filter(([, node]) => visible(node)).map(([id, node]) => ({
+      id,
+      text: node.textContent.replace(/\s+/g, " ").trim(),
+      rect: visibleRect(node)
+    }));
     const visibleLiveRegions = Array.from(document.querySelectorAll("[aria-live]"))
       .filter(visible)
       .map((node) => {
@@ -177,6 +188,16 @@ async function journeyState(page) {
         .find(visible)?.getBoundingClientRect().bottom || 0,
       cue: document.querySelector("#firstSwapCue")?.textContent.trim() || "",
       cueVisible: visible(document.querySelector("#firstSwapCue")),
+      tutorialVisible: visible(document.querySelector("#tutorialPanel")),
+      payoffFloatingCommands,
+      payoffGeometry: {
+        title: visibleRect(document.querySelector(".title")),
+        coins: visibleRect(document.querySelector("#coinBalance")),
+        bouquet: visibleRect(document.querySelector("#bouquetTrophy")),
+        greenhouse: visibleRect(document.querySelector(".restoration-scene")),
+        transaction: visibleRect(document.querySelector("#payoffTransaction")),
+        action: visibleRect(payoffAction)
+      },
       rewardPromise: document.querySelector("#bouquetRewardPromise")?.textContent.trim() || "",
       replayEntryReceipt: replayEntrySurface?.textContent.trim() || "",
       replayEntryActive: document.body.classList.contains("owned-replay-entry"),
@@ -440,19 +461,45 @@ async function expectGreenhouseOwned(page, expectedStage, context) {
   return state;
 }
 
-function expectFocusedPayoffNarration(state, context, expectedCue = state.tutorial) {
-  expect(state.liveRegionOwners, `${context} has one concise live owner`).toEqual([{
-    id: "tutorialPanel",
-    live: "polite",
-    text: expectedCue
+function expectFocusedPayoffNarration(state, context) {
+  expect(state.tutorialVisible, `${context} shared tutorial narrator is hidden`).toBe(false);
+  expect(state.tutorial, `${context} hidden tutorial narrator has no stale command`).toBe("");
+  expect(state.cueVisible, `${context} active-board cue stays hidden`).toBe(false);
+  expect(state.handoffCueVisible, `${context} detached handoff cue stays hidden`).toBe(false);
+  expect(state.payoffFloatingCommands, `${context} has no floating command surface`).toEqual([]);
+  expect(
+    state.liveRegionOwners.map(({ id, live }) => ({ id, live })),
+    `${context} ceremony has one live owner`
+  ).toEqual([{
+    id: "roundOneRestoration",
+    live: "polite"
   }]);
   const visibleLiveById = Object.fromEntries(
     state.visibleLiveRegions.map((region) => [region.id, region])
   );
   expect(visibleLiveById.coinBalance?.live, `${context} coin balance is quiet`).toBe("off");
-  expect(visibleLiveById.roundOneRestoration?.live, `${context} ceremony subtree is quiet`).toBe("off");
-  expect(state.liveRegionOwners[0].text.length, `${context} live narration stays concise`).toBeLessThanOrEqual(48);
-  expect(state.liveRegionOwners[0].text, `${context} has no stale Black Candle category`).not.toMatch(/BLACK CANDLE/i);
+  expect(visibleLiveById.roundOneRestoration?.live, `${context} ceremony subtree owns narration`).toBe("polite");
+  expect(state.liveRegionOwners[0].text, `${context} ceremony has no stale Black Candle category`).not.toMatch(/BLACK CANDLE/i);
+  expect(state.payoffGeometry.title, `${context} title remains visible`).not.toBeNull();
+  expect(state.payoffGeometry.coins, `${context} compact wallet remains visible`).not.toBeNull();
+  expect(
+    rectanglesOverlap(state.payoffGeometry.title, state.payoffGeometry.coins),
+    `${context} title and compact wallet do not overlap`
+  ).toBe(false);
+  if (state.payoffGeometry.action) {
+    for (const [name, rect] of Object.entries({
+      title: state.payoffGeometry.title,
+      wallet: state.payoffGeometry.coins,
+      bouquet: state.payoffGeometry.bouquet,
+      greenhouse: state.payoffGeometry.greenhouse,
+      transaction: state.payoffGeometry.transaction
+    })) {
+      expect(
+        rectanglesOverlap(state.payoffGeometry.action, rect),
+        `${context} dominant action does not overlap ${name}`
+      ).toBe(false);
+    }
+  }
 }
 
 async function expectPermanentRaisedGreenhouse(page, context) {
@@ -973,18 +1020,11 @@ async function finishThroughFinalHarvest(page, state, activation, evidencePrefix
     slot.state === "filled" && slot.gainReceiver === "true"
   )), `${evidencePrefix} every final physical slot receives its flower`).toBe(true);
   expect(landing.finalHarvestFlightCount, `${evidencePrefix} target flights are present`).toBeGreaterThan(0);
-  expect(landing.liveRegionOwners, `${evidencePrefix} landing has one narrator`).toHaveLength(1);
-  expect(landing.liveRegionOwners[0].id).toBe("tutorialPanel");
+  expect(landing.tutorialVisible, `${evidencePrefix} landing suppresses the shared narrator`).toBe(false);
+  expect(landing.tutorial, `${evidencePrefix} landing has no hidden duplicate copy`).toBe("");
+  expect(landing.payoffFloatingCommands, `${evidencePrefix} landing has no floating command surface`).toEqual([]);
+  expect(landing.liveRegionOwners, `${evidencePrefix} landing has no competing live narrator`).toEqual([]);
   expectTransientFinalHarvestAuthority(landing, `${evidencePrefix} landing`);
-  if (state.finalHarvestOwner === "stronger-guidance") {
-    expect(
-      /BLACK CANDLE.*Burning the full (row|column)/i.test(landing.liveRegionOwners[0].text)
-        || /^(FINAL HARVEST )?Final flowers landing\.$/.test(landing.liveRegionOwners[0].text),
-      `${evidencePrefix} transitions from Black Candle ownership to literal landing copy`
-    ).toBe(true);
-  } else {
-    expect(landing.liveRegionOwners[0].text).toMatch(/^(FINAL HARVEST )?Final flowers landing\.$/);
-  }
   const handoffSnapshotPromise = page.evaluate(() => new Promise((resolve) => {
     const visible = (node) => {
       if (!node) return false;
@@ -1009,6 +1049,18 @@ async function finishThroughFinalHarvest(page, state, activation, evidencePrefix
       }
       return parts.join(" ").replace(/\s+/g, " ").trim();
     };
+    const visibleRect = (node) => {
+      if (!visible(node)) return null;
+      const rect = node.getBoundingClientRect();
+      return {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height
+      };
+    };
     let observer;
     const capture = () => {
       if (!document.body.classList.contains("final-harvest-handoff-active")) {
@@ -1019,6 +1071,23 @@ async function finishThroughFinalHarvest(page, state, activation, evidencePrefix
         finalHarvestPhase: document.body.dataset.finalHarvestPhase || "",
         craftedBouquetComposition: document.querySelector(".crafted-bouquet")?.dataset.compositionKey || "",
         cue: document.querySelector("#firstSwapCue")?.textContent.trim() || "",
+        tutorialCopy: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
+        tutorialVisible: visible(document.querySelector("#tutorialPanel")),
+        floatingCommands: [
+          ["tutorialPanel", document.querySelector("#tutorialPanel")],
+          ["firstSwapCue", document.querySelector("#firstSwapCue")],
+          ["nextOrderCue", document.querySelector("#nextOrderCue")]
+        ].filter(([, node]) => visible(node)).map(([id]) => id),
+        liveRegionOwners: Array.from(document.querySelectorAll("[aria-live]"))
+          .filter((node) => visible(node) && ["polite", "assertive"].includes(node.getAttribute("aria-live")))
+          .map((node) => ({ id: node.id, live: node.getAttribute("aria-live") })),
+        geometry: {
+          title: visibleRect(document.querySelector(".title")),
+          coins: visibleRect(document.querySelector("#coinBalance")),
+          bouquet: visibleRect(document.querySelector("#bouquetTrophy")),
+          greenhouse: visibleRect(document.querySelector(".restoration-scene")),
+          transaction: visibleRect(document.querySelector("#payoffTransaction"))
+        },
         actionLikeControls: Array.from(document.querySelectorAll(
           "button, a[href], input, select, textarea, summary, [role='button'], [tabindex]"
         ))
@@ -1059,7 +1128,19 @@ async function finishThroughFinalHarvest(page, state, activation, evidencePrefix
   expect(handoff.finalHarvestPhase, `${evidencePrefix} exact identity handoff phase`).toBe("ceremony");
   expect(handoff.craftedBouquetComposition, `${evidencePrefix} ceremony keeps bouquet identity`)
     .toBe(state.finalHarvestComposition);
+  expect(handoff.tutorialVisible, `${evidencePrefix} binding suppresses the shared narrator`).toBe(false);
+  expect(handoff.tutorialCopy, `${evidencePrefix} binding has no hidden narrator copy`).toBe("");
+  expect(handoff.floatingCommands, `${evidencePrefix} binding has no floating command surface`).toEqual([]);
+  expect(handoff.liveRegionOwners, `${evidencePrefix} binding ceremony owns live narration`).toEqual([{
+    id: "roundOneRestoration",
+    live: "polite"
+  }]);
+  expect(
+    rectanglesOverlap(handoff.geometry.title, handoff.geometry.coins),
+    `${evidencePrefix} binding keeps title and wallet separate`
+  ).toBe(false);
   expectTransientFinalHarvestAuthority(handoff, `${evidencePrefix} handoff`);
+  await page.screenshot({ path: `${evidencePrefix}-binding.png`, fullPage: true });
   await page.locator("#roundOneRestoration").waitFor({ state: "visible", timeout: 5000 });
   await page.waitForFunction(() => !document.body.dataset.finalHarvestPhase, null, { timeout: 2500 });
   // The visibility edge can coincide with Chromium's view-transition snapshot.
@@ -1163,6 +1244,7 @@ async function installOwnedRenewalRecorder(page) {
         phase: panel?.dataset.ownedRenewalPhase || "",
         renewalPhase: renewal?.dataset.renewalPhase || "",
         topCue: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
+        tutorialVisible: visible(document.querySelector("#tutorialPanel")),
         tutorialIcon: document.querySelector("#tutorialPanel .tutorial-icon")?.textContent.trim() || "",
         tutorialIconAriaHidden: document.querySelector("#tutorialPanel .tutorial-icon")?.getAttribute("aria-hidden") || "",
         blackCandleTutorial: document.querySelector("#tutorialPanel")?.classList.contains("black-candle-tutorial") || false,
@@ -1496,7 +1578,6 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
     "Next Order → Bloodroot Compact",
     "Play Again → First Bouquet"
   ];
-  const expectedSettledCues = ["Tap Next Order.", "Tap Next Order.", "Play again."];
   const expectedTitles = [
     "First Bouquet Complete",
     "Moonlit Wreath Complete",
@@ -1539,18 +1620,8 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
     const transientSamples = phaseSamples.filter((sample) => sample.phase !== "settled");
     expect(transientSamples.length, `${runLabel} round ${round} sampled transient ceremony`).toBeGreaterThan(0);
     expect(
-      transientSamples.every((sample) => !/Next Order|Play again/i.test(sample.topCue)),
-      `${runLabel} round ${round} transient cue never offers the settled action`
-    ).toBe(true);
-    expect(
-      phaseSamples.filter((sample) => sample.phase === "binding")
-        .every((sample) => sample.topCue === "Bouquet bound."),
-      `${runLabel} round ${round} binding cue follows the bouquet`
-    ).toBe(true);
-    expect(
-      phaseSamples.filter((sample) => ["transfer", "renewal", "acknowledgment"].includes(sample.phase))
-        .every((sample) => sample.topCue === "Nourishing conservatory."),
-      `${runLabel} round ${round} tending cue follows the greenhouse`
+      phaseSamples.every((sample) => sample.topCue === "" && !sample.tutorialVisible),
+      `${runLabel} round ${round} ceremony phases suppress the shared narrator`
     ).toBe(true);
     expect(
       phaseSamples.every((sample) => (
@@ -1563,24 +1634,27 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
     expect(
       phaseSamples.every((sample) => (
         sample.liveRegionOwners.length === 1
-        && sample.liveRegionOwners[0].id === "tutorialPanel"
+        && sample.liveRegionOwners[0].id === "roundOneRestoration"
         && sample.liveRegionOwners[0].live === "polite"
-        && sample.liveRegionOwners[0].text === sample.topCue
       )),
-      `${runLabel} round ${round} ceremony keeps one concise live narrator`
+      `${runLabel} round ${round} ceremony keeps one authoritative live owner`
     ).toBe(true);
-    const nonQuietPayoffSamples = phaseSamples.filter((sample) => {
+    const invalidPayoffOwnershipSamples = phaseSamples.filter((sample) => {
       const coinRegion = sample.liveRegions.find((region) => region.id === "coinBalance");
       const ceremonyRegion = sample.liveRegions.find((region) => region.id === "roundOneRestoration");
-      return (coinRegion && coinRegion.live !== "off") || ceremonyRegion?.live !== "off";
+      return coinRegion?.live !== "off"
+        || ceremonyRegion?.live !== "polite"
+        || sample.liveRegionOwners.length !== 1
+        || sample.liveRegionOwners[0]?.id !== "roundOneRestoration"
+        || sample.liveRegionOwners[0]?.live !== "polite";
     });
     expect(
-      nonQuietPayoffSamples.map((sample) => ({
+      invalidPayoffOwnershipSamples.map((sample) => ({
         phase: sample.phase,
         blackCandleActivationPhase: sample.blackCandleActivationPhase,
         liveRegions: sample.liveRegions
       })),
-      `${runLabel} round ${round} coin and ceremony subtree stay quiet`
+      `${runLabel} round ${round} keeps the wallet quiet and ceremony as the sole polite owner`
     ).toEqual([]);
     expect(transientSamples.every((sample) => sample.actionCount === 0), "no action during binding/renewal").toBe(true);
     expect(transientSamples.every((sample) => !sample.transactionVisible), "reward display waits for renewal").toBe(true);
@@ -1644,22 +1718,21 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
       };
     }
     result.retainedArmedRelicAtCompletion = phaseSamples.some((sample) => sample.armedRelic);
-    expect(settledSample.topCue, `${runLabel} round ${round} settled action cue returns`).toBe(expectedSettledCues[round - 1]);
+    expect(settledSample.topCue, `${runLabel} round ${round} settled action has no duplicate cue`).toBe("");
     expect(settledSample.transientNodes, "settled ceremony removes all transient descendants").toBe(0);
     expect(settledSample.renewalHidden, "settled ceremony hides transient host").toBe(true);
     const rewardBalance = startCoins + expectedRewards[round - 1];
     const ceremony = await journeyState(page);
     expectFocusedPayoffNarration(
       ceremony,
-      `${runLabel} round ${round} owned settled ceremony`,
-      expectedSettledCues[round - 1]
+      `${runLabel} round ${round} owned settled ceremony`
     );
     expect(ceremony.activeElementId, `${runLabel} round ${round} sole action owns focus`).toBe("nextOrderBtn");
     expect(ceremony.coins, `${runLabel} round ${round} reward credited once`).toBe(rewardBalance);
     expect(ceremony.payoffTransaction).toBe(`Reward added · +${expectedRewards[round - 1]} coins · ${rewardBalance} coins balance.`);
     expect(ceremony.payoffCopy).toBe(expectedCopies[round - 1]);
     expect(ceremony.payoffMode).toBe("owned-replay");
-    expect(ceremony.tutorial).toBe(expectedSettledCues[round - 1]);
+    expect(ceremony.tutorial).toBe("");
     expect(ceremony.tutorialIcon).not.toBe("BLACK CANDLE");
     expect(ceremony.tutorialIconAriaHidden).toBe("true");
     expect(ceremony.blackCandleTutorial).toBe(false);
@@ -1694,14 +1767,13 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
       const reloaded = await journeyState(page);
       expectFocusedPayoffNarration(
         reloaded,
-        `${runLabel} round ${round} owned ceremony reload ${reload + 1}`,
-        expectedSettledCues[round - 1]
+        `${runLabel} round ${round} owned ceremony reload ${reload + 1}`
       );
       expect(reloaded.coins, `${runLabel} round ${round} reward reload ${reload + 1}`).toBe(rewardBalance);
       expect(reloaded.payoffTransaction).toBe(`Reward added · +${expectedRewards[round - 1]} coins · ${rewardBalance} coins balance.`);
       expect(reloaded.payoffCopy).toBe(expectedCopies[round - 1]);
       expect(reloaded.payoffMode).toBe("owned-replay");
-      expect(reloaded.tutorial).toBe(expectedSettledCues[round - 1]);
+      expect(reloaded.tutorial).toBe("");
       expect(reloaded.tutorialIcon).not.toBe("BLACK CANDLE");
       expect(reloaded.tutorialIconAriaHidden).toBe("true");
       expect(reloaded.blackCandleTutorial).toBe(false);

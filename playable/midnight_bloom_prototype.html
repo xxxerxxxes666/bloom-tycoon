@@ -13683,20 +13683,32 @@
       renderOwnedReplayRenewal(ceremony, ownedRenewalPhase);
     }
 
+    function focusedPayoffOwnsCommand(plan = activeRoundPlan()) {
+      return focusedSliceRound(plan) && roundComplete;
+    }
+
     function updateFocusedPayoffLiveRegionOwnership(plan = activeRoundPlan()) {
       const finalHarvestNarration = Boolean(visibleFinalHarvest)
         && ["eligible", "landing"].includes(visibleFinalHarvest.phase);
+      const payoffOwnsNarration = focusedPayoffOwnsCommand(plan);
       const tutorialOwnsNarration = focusedSliceRound(plan)
-        && (roundComplete || isBouquetFailed(plan) || finalHarvestNarration);
-      $("coinBalance")?.setAttribute("aria-live", tutorialOwnsNarration ? "off" : "polite");
-      $("roundOneRestoration")?.setAttribute("aria-live", tutorialOwnsNarration ? "off" : "polite");
+        && !payoffOwnsNarration
+        && (isBouquetFailed(plan) || finalHarvestNarration);
+      $("coinBalance")?.setAttribute(
+        "aria-live",
+        payoffOwnsNarration || tutorialOwnsNarration ? "off" : "polite"
+      );
+      $("roundOneRestoration")?.setAttribute(
+        "aria-live",
+        payoffOwnsNarration ? "polite" : tutorialOwnsNarration ? "off" : "polite"
+      );
       $("tutorialPanel")?.setAttribute(
         "aria-live",
-        finalHarvestNarration && !tutorialActive ? "off" : "polite"
+        payoffOwnsNarration || (finalHarvestNarration && !tutorialActive) ? "off" : "polite"
       );
       $("firstSwapCue")?.setAttribute(
         "aria-live",
-        finalHarvestNarration && tutorialActive ? "off" : "polite"
+        payoffOwnsNarration || (finalHarvestNarration && tutorialActive) ? "off" : "polite"
       );
     }
 
@@ -14474,7 +14486,8 @@
       if (skip) {
         skip.hidden = roundComplete || Boolean(blackCandleActivationPresentation);
       }
-      if (!tutorialActive) {
+      if (!tutorialActive || focusedPayoffOwnsCommand()) {
+        copy.textContent = "";
         panel.hidden = true;
         return;
       }
@@ -16987,7 +17000,6 @@
       void panel.offsetWidth;
       panel.classList.add("restoration-awakening");
       $("payoffTransaction").textContent = `${FIRST_GREENHOUSE_RESTORE_COST} coins spent · Greenhouse awakening · ${coins} coins remain.`;
-      $("tutorialCopy").textContent = "Greenhouse awakening.";
       window.setTimeout(() => {
         panel.classList.remove("spend-pulse", "restoration-awakening");
         panel.dataset.restorationPhase = "settled";

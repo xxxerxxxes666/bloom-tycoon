@@ -1275,6 +1275,7 @@ async function startBlackCandleActivationRecorder(page) {
           reduced: document.body.dataset.blackCandleActivationMotion || "",
           direction: document.body.dataset.blackCandleActivationDirection || "",
           lane: document.body.dataset.blackCandleActivationLane || "",
+          roundComplete: Boolean(saved.roundComplete),
           savedMoves: Number(saved.moves),
           savedCounts: saved.counts || [],
           laneTiles: laneTiles.map((tile) => ({
@@ -1443,10 +1444,17 @@ function assertBlackCandleActivationFrames(frames, testCase, persisted, forecast
     expect(frame.payoffVisible, `${testCase.label} ceremony waits`).toBe(false);
     expect(frame.restoreOrNextVisible, `${testCase.label} no reward action starts early`).toBe(false);
     expect(frame.overflowX, `${testCase.label} no horizontal overflow`).toBe(false);
-    expect(
-      frame.visibleInstructionText.join(" "),
-      `${testCase.label} present-tense event acknowledgment`
-    ).toMatch(new RegExp(`Burning the full ${forecast.laneDirection === "vertical" ? "column" : "row"}`, "i"));
+    if (frame.roundComplete) {
+      expect(
+        frame.visibleInstructionText,
+        `${testCase.label} completed payoff suppresses the shared activation narrator`
+      ).toEqual([]);
+    } else {
+      expect(
+        frame.visibleInstructionText.join(" "),
+        `${testCase.label} present-tense event acknowledgment`
+      ).toMatch(new RegExp(`Burning the full ${forecast.laneDirection === "vertical" ? "column" : "row"}`, "i"));
+    }
     expect(
       frame.visibleInstructionText.join(" "),
       `${testCase.label} no stale/future action language`
@@ -2488,7 +2496,7 @@ for (const viewport of [
     expect(activated.tutorialIconText).toBe("✦");
     expect(activated.tutorialIconAriaHidden).toBe("true");
     expect(activated.tutorialPanelText).not.toContain("BLACK CANDLE");
-    expect(activated.visibleInstructionSurfaces).toBe(1);
+    expect(activated.visibleInstructionSurfaces).toBe(0);
     await page.screenshot({ path: "work/black-candle-" + viewport.label + "-activated.png", fullPage: true });
 
     await expect(page.locator("#restoreGreenhouseBtn")).toBeVisible({ timeout: 3000 });
@@ -2498,7 +2506,8 @@ for (const viewport of [
     expect(ceremony.payoffVisible).toBe(true);
     expect(ceremony.coins).toBe(120);
     expect(ceremony.bouquet).toBe("Bouquet Complete · 14/14");
-    expect(ceremony.tutorial).toBe("Coins restore the greenhouse.");
+    expect(ceremony.tutorial).toBe("");
+    expect(ceremony.visibleInstructionSurfaces).toBe(0);
     expect(ceremony.visibleButtons).toEqual(["Restore Greenhouse · 100 coins"]);
     expect(ceremony.visibleButtons.filter((label) => label.startsWith("Restore"))).toHaveLength(1);
     expect(ceremony.payoffTokens).toEqual(expect.arrayContaining(["x8 Thorn Rose", "x6 Bone Star"]));
@@ -4096,13 +4105,13 @@ test("repeated Round 1 exploration still closes through the displayed six-move c
       });
       await activatePair(page, reloaded.hints, testCase.input, { completes: true });
       await expect(page.locator("#roundOneRestoration")).toBeVisible({ timeout: 12000 });
-      await expect(page.locator("#tutorialCopy")).toHaveText("Coins restore the greenhouse.", { timeout: 12000 });
+      await expect(page.locator("#tutorialPanel")).toBeHidden({ timeout: 12000 });
+      await expect(page.locator("#tutorialCopy")).toHaveText("");
       const closingNarration = await page.evaluate(() => {
         window.__roundOneFairnessNarrationObserver?.disconnect();
         return window.__roundOneFairnessNarration || [];
       });
-      expect(closingNarration).toContain("Bouquet bound.");
-      expect(closingNarration.at(-1)).toBe("Coins restore the greenhouse.");
+      expect(closingNarration.join(" · ")).not.toMatch(/Next Order|Restore Greenhouse/i);
       const completed = await guidedRoundOneState(page, `${testCase.label} closing activation complete`);
       const completedDataRows = await page.locator(".tile").evaluateAll((tiles) => (
         new Set(tiles.map((tile) => Number(tile.dataset.y))).size
@@ -4112,7 +4121,8 @@ test("repeated Round 1 exploration still closes through the displayed six-move c
       expect(completed.counts[5]).toBeGreaterThanOrEqual(8);
       expect(completed.counts[1]).toBeGreaterThanOrEqual(6);
       expect(completed.bouquet).toBe("Bouquet Complete · 14/14");
-      expect(completed.tutorial).toBe("Coins restore the greenhouse.");
+      expect(completed.tutorial).toBe("");
+      expect(completed.visibleInstructionSurfaces).toBe(0);
       expect(completed.payoffVisible).toBe(true);
       expect(completed.tiles).toBe(64);
       expect(completedDataRows).toBe(8);
@@ -4504,14 +4514,15 @@ test("guided Round 1 payoff keeps one dominant action", async ({ page }) => {
   await completeGuidedRoundOne(page);
 
   await expect(page.locator("#bouquetProgressLabel")).toHaveText("Bouquet Complete · 14/14");
-  await expect(page.locator("#tutorialCopy")).toHaveText("Coins restore the greenhouse.");
+  await expect(page.locator("#tutorialPanel")).toBeHidden();
+  await expect(page.locator("#tutorialCopy")).toHaveText("");
   await expectReadyPrimaryAction(page, "Restore Greenhouse · 100 coins");
   await expect(page.locator("#restoreGreenhouseBtn")).toBeFocused();
   let report = await visibleReport(page);
   expect(report).toMatchObject({
     tiles: 64,
-    tutorialVisible: true,
-    tutorialInViewport: true,
+    tutorialVisible: false,
+    tutorialInViewport: false,
     coins: 120,
     payoffTransaction: "Earned 120 coins. Restore costs 100.",
     overflowX: false,
@@ -4530,10 +4541,11 @@ test("guided Round 1 payoff keeps one dominant action", async ({ page }) => {
 
   await page.reload({ waitUntil: "networkidle" });
   await expect(page.locator(".tile")).toHaveCount(64);
-  await expect(page.locator("#tutorialCopy")).toHaveText("Coins restore the greenhouse.");
+  await expect(page.locator("#tutorialPanel")).toBeHidden();
+  await expect(page.locator("#tutorialCopy")).toHaveText("");
   await expect(page.locator("#restoreGreenhouseBtn")).toBeFocused();
   report = await visibleReport(page);
-  expect(report.tutorialInViewport).toBe(true);
+  expect(report.tutorialInViewport).toBe(false);
   expect(report.coins).toBe(120);
   expect(report.payoffTransaction).toBe("Earned 120 coins. Restore costs 100.");
   expect(report.visibleProgressText).not.toContain("+120 coins -> Restore -100 coins");
@@ -4546,7 +4558,8 @@ test("guided Round 1 payoff keeps one dominant action", async ({ page }) => {
   expect(report.greenhouseArt).toContain("first_greenhouse_withered.jpg");
 
   await page.locator("#restoreGreenhouseBtn").click();
-  await expect(page.locator("#tutorialCopy")).toHaveText("Tap Next Order.");
+  await expect(page.locator("#tutorialPanel")).toBeHidden();
+  await expect(page.locator("#tutorialCopy")).toHaveText("");
   await expect(page.locator("#nextOrderBtn")).toHaveText("Next Order → Moonlit Wreath");
   await expect(page.locator("#nextOrderBtn")).toBeFocused();
   report = await visibleReport(page);
@@ -4554,7 +4567,7 @@ test("guided Round 1 payoff keeps one dominant action", async ({ page }) => {
   expect(report.payoffTransaction).toBe("Restored for 100. 20 coins remain.");
   expect(report.restorationState).toBe("RESTORED GREENHOUSE");
   expect(report.visibleNonTileButtons).toEqual(["Next Order → Moonlit Wreath"]);
-  expect(report.tutorialInViewport).toBe(true);
+  expect(report.tutorialInViewport).toBe(false);
   expect(report.savedOwnership.roundOneRestored).toBe(true);
   expect(report.greenhouseOwnedStage).toBe("1");
   expect(report.greenhousePct).toBe("33");
@@ -4568,10 +4581,11 @@ test("guided Round 1 payoff keeps one dominant action", async ({ page }) => {
 
   await page.reload({ waitUntil: "networkidle" });
   await expect(page.locator(".tile")).toHaveCount(64);
-  await expect(page.locator("#tutorialCopy")).toHaveText("Tap Next Order.");
+  await expect(page.locator("#tutorialPanel")).toBeHidden();
+  await expect(page.locator("#tutorialCopy")).toHaveText("");
   await expect(page.locator("#nextOrderBtn")).toBeFocused();
   report = await visibleReport(page);
-  expect(report.tutorialInViewport).toBe(true);
+  expect(report.tutorialInViewport).toBe(false);
   expect(report.coins).toBe(20);
   expect(report.payoffTransaction).toBe("Restored for 100. 20 coins remain.");
   expect(report.restorationState).toBe("RESTORED GREENHOUSE");
@@ -4845,7 +4859,8 @@ test("Black Candle Vine forms, persists, and activates as a deliberate lane spec
       const activated = await activeState(page);
       expect(activated.moves, "activation spends exactly one move").toBe(persisted.moves - 1);
       expect(activated.armedLineRelic).toBeNull();
-      await expect(page.locator("#tutorialCopy")).toHaveText("Coins restore the greenhouse.");
+      await expect(page.locator("#tutorialPanel")).toBeHidden();
+      await expect(page.locator("#tutorialCopy")).toHaveText("");
       expectedLaneGain.forEach((gain, flowerId) => {
         expect(
           activated.counts[flowerId] - persisted.counts[flowerId],
@@ -5781,8 +5796,8 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
   expect(new Set(await page.locator(".tile").evaluateAll((tiles) => tiles.map((tile) => tile.dataset.y))).size).toBe(8);
 
   await completeRoundWithReviewKey(page);
-  await expect(page.locator("#tutorialCopy")).toHaveText("Coins restore the greenhouse.");
-  await expect(page.locator("#tutorialPanel")).toBeVisible();
+  await expect(page.locator("#tutorialCopy")).toHaveText("");
+  await expect(page.locator("#tutorialPanel")).toBeHidden();
   await expect(page.locator("#tutorialSkipBtn")).toBeHidden();
   await expect(page.locator("#tutorialHelpBtn")).toBeHidden();
   await expectReadyPrimaryAction(page, "Restore Greenhouse · 100 coins");
@@ -5793,8 +5808,8 @@ test("fresh tutorial is skippable, replayable, and tied to concrete progress", a
   expect(report.visibleNonTileButtons).toEqual(["Restore Greenhouse · 100 coins"]);
   await page.locator("#restoreGreenhouseBtn").click();
   await expect(page.locator("#nextOrderBtn")).toBeVisible({ timeout: 5000 });
-  await expect(page.locator("#tutorialCopy")).toHaveText("Tap Next Order.");
-  await expect(page.locator("#tutorialPanel")).toBeVisible();
+  await expect(page.locator("#tutorialCopy")).toHaveText("");
+  await expect(page.locator("#tutorialPanel")).toBeHidden();
   await expect(page.locator("#tutorialSkipBtn")).toBeHidden();
   report = await visibleReport(page);
   expect(report.visibleButtons).toEqual(["Next Order → Moonlit Wreath"]);
@@ -6682,25 +6697,29 @@ test("keyboard play follows the board and payoff focus", async ({ page }) => {
   await expect(page.locator(".tile[tabindex='0']")).toHaveCount(1);
 
   await completeRoundWithReviewKey(page);
-  await expect(page.locator("#tutorialCopy")).toHaveText("Coins restore the greenhouse.");
+  await expect(page.locator("#tutorialPanel")).toBeHidden();
+  await expect(page.locator("#tutorialCopy")).toHaveText("");
   await expectReadyPrimaryAction(page, "Restore Greenhouse · 100 coins");
   await expect(page.locator("#restoreGreenhouseBtn")).toBeFocused();
   let report = await visibleReport(page);
   expect(report.visibleNonTileButtons).toEqual(["Restore Greenhouse · 100 coins"]);
   await page.reload({ waitUntil: "networkidle" });
-  await expect(page.locator("#tutorialCopy")).toHaveText("Coins restore the greenhouse.");
+  await expect(page.locator("#tutorialPanel")).toBeHidden();
+  await expect(page.locator("#tutorialCopy")).toHaveText("");
   await expect(page.locator("#restoreGreenhouseBtn")).toBeFocused();
   report = await visibleReport(page);
   expect(report.visibleNonTileButtons).toEqual(["Restore Greenhouse · 100 coins"]);
   await page.keyboard.press("Enter");
   await expect(page.locator("#nextOrderBtn")).toBeVisible({ timeout: 5000 });
-  await expect(page.locator("#tutorialCopy")).toHaveText("Tap Next Order.");
+  await expect(page.locator("#tutorialPanel")).toBeHidden();
+  await expect(page.locator("#tutorialCopy")).toHaveText("");
   await expect(page.locator("#nextOrderBtn")).toBeFocused();
   report = await visibleReport(page);
   expect(report.visibleNonTileButtons).toEqual(["Next Order → Moonlit Wreath"]);
   await page.waitForFunction(() => Array.from(document.images).every((image) => image.complete), null, { timeout: 5000 });
   await page.reload({ waitUntil: "networkidle" });
-  await expect(page.locator("#tutorialCopy")).toHaveText("Tap Next Order.");
+  await expect(page.locator("#tutorialPanel")).toBeHidden();
+  await expect(page.locator("#tutorialCopy")).toHaveText("");
   await expect(page.locator("#nextOrderBtn")).toBeFocused();
   report = await visibleReport(page);
   expect(report.visibleNonTileButtons).toEqual(["Next Order → Moonlit Wreath"]);

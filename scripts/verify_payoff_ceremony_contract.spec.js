@@ -764,6 +764,18 @@ async function visibleContract(page) {
         && rect.height > 0;
     };
     const visible = (selector) => Array.from(document.querySelectorAll(selector)).filter(isVisible);
+    const rectFor = (node) => {
+      if (!isVisible(node)) return null;
+      const rect = node.getBoundingClientRect();
+      return {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height
+      };
+    };
     const visibleButtons = visible("#roundOneRestoration button").map((button) => button.textContent.trim());
     const visibleNonBoardButtons = Array.from(document.querySelectorAll("button"))
       .filter((button) => isVisible(button) && !button.closest(".board"))
@@ -792,6 +804,22 @@ async function visibleContract(page) {
     const brokenImages = Array.from(document.images)
       .filter((image) => isVisible(image) && image.complete && image.naturalWidth === 0)
       .map((image) => image.getAttribute("src"));
+    const visibleCommandSurfaces = [
+      ["tutorialPanel", document.querySelector("#tutorialPanel")],
+      ["firstSwapCue", document.querySelector("#firstSwapCue")],
+      ["nextOrderCue", document.querySelector("#nextOrderCue")]
+    ].filter(([, node]) => isVisible(node)).map(([id, node]) => ({
+      id,
+      text: node.textContent.replace(/\s+/g, " ").trim(),
+      rect: rectFor(node)
+    }));
+    const visibleLiveRegionOwners = Array.from(document.querySelectorAll("[aria-live]"))
+      .filter((node) => isVisible(node) && ["polite", "assertive"].includes(node.getAttribute("aria-live")))
+      .map((node) => ({
+        id: node.id,
+        live: node.getAttribute("aria-live")
+      }));
+    const visibleAction = visible("#roundOneRestoration button")[0] || null;
     return {
       bodyClass: document.body.className,
       assemblyReady: document.querySelector("#roundOneRestoration")?.dataset.assemblyReady || "",
@@ -883,6 +911,16 @@ async function visibleContract(page) {
       objective: visible(".objective").length,
       tutorialVisible: visible("#tutorialPanel").length === 1,
       tutorialCopy: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
+      visibleCommandSurfaces,
+      visibleLiveRegionOwners,
+      payoffGeometry: {
+        title: rectFor(document.querySelector(".title")),
+        coins: rectFor(document.querySelector("#coinBalance")),
+        bouquet: rectFor(document.querySelector("#bouquetTrophy")),
+        greenhouse: rectFor(document.querySelector(".restoration-scene")),
+        transaction: rectFor(document.querySelector("#payoffTransaction")),
+        action: rectFor(visibleAction)
+      },
       buttons: visibleButtons,
       nonBoardButtons: visibleNonBoardButtons,
       retired: visibleRetired,
@@ -892,6 +930,45 @@ async function visibleContract(page) {
       brokenImages
     };
   });
+}
+
+function rectanglesOverlap(first, second) {
+  if (!first || !second) return false;
+  return first.left < second.right - 0.5
+    && first.right > second.left + 0.5
+    && first.top < second.bottom - 0.5
+    && first.bottom > second.top + 0.5;
+}
+
+function expectPayoffCommandAuthority(contract, label, expectedActions) {
+  expect(contract.tutorialVisible, `${label} shared tutorial narrator is hidden`).toBe(false);
+  expect(contract.tutorialCopy, `${label} hidden tutorial narrator has no stale command`).toBe("");
+  expect(contract.visibleCommandSurfaces, `${label} has no floating command surface`).toEqual([]);
+  expect(contract.visibleLiveRegionOwners, `${label} ceremony owns live narration`).toEqual([{
+    id: "roundOneRestoration",
+    live: "polite"
+  }]);
+  expect(contract.buttons, `${label} exact actionable control count`).toHaveLength(expectedActions);
+  expect(contract.payoffGeometry.title, `${label} title remains visible`).not.toBeNull();
+  expect(contract.payoffGeometry.coins, `${label} compact wallet remains visible`).not.toBeNull();
+  expect(
+    rectanglesOverlap(contract.payoffGeometry.title, contract.payoffGeometry.coins),
+    `${label} title and wallet do not overlap`
+  ).toBe(false);
+  if (expectedActions === 1) {
+    for (const [name, rect] of Object.entries({
+      title: contract.payoffGeometry.title,
+      wallet: contract.payoffGeometry.coins,
+      bouquet: contract.payoffGeometry.bouquet,
+      greenhouse: contract.payoffGeometry.greenhouse,
+      transaction: contract.payoffGeometry.transaction
+    })) {
+      expect(
+        rectanglesOverlap(contract.payoffGeometry.action, rect),
+        `${label} dominant action does not overlap ${name}`
+      ).toBe(false);
+    }
+  }
 }
 
 async function expectCeremony(page, expectedButton, screenshotPath, expectedGuide = "") {
@@ -989,10 +1066,7 @@ async function expectCeremony(page, expectedButton, screenshotPath, expectedGuid
   expect(contract.buttons[0]).toContain(expectedButton);
   expect(contract.nonBoardButtons, "one visible non-board action during ceremony").toHaveLength(1);
   expect(contract.nonBoardButtons[0]).toContain(expectedButton);
-  if (expectedGuide) {
-    expect(contract.tutorialVisible, "terse payoff guidance remains visible").toBe(true);
-    expect(contract.tutorialCopy).toBe(expectedGuide);
-  }
+  expectPayoffCommandAuthority(contract, `${contract.trophyName} ${expectedButton}`, 1);
   expect(contract.board, "board hidden during ceremony").toBe(0);
   expect(contract.controls, "controls hidden during ceremony").toBe(0);
   expect(contract.objective, "objective hidden during ceremony").toBe(0);
@@ -1137,6 +1211,7 @@ async function restoreRoundOneAndCapturePeak(page, label, pendingEvidence) {
   expect(peakContract.coins, `${label} spend settles authoritatively at press time`).toBe(20);
   expect(peakContract.transactionText).toBe("100 coins spent · Greenhouse awakening · 20 coins remain.");
   expect(peakContract.buttons, `${label} no second action interrupts the bounded transformation`).toEqual([]);
+  expectPayoffCommandAuthority(peakContract, `${label} transformation`, 0);
   const savedAtPeak = await page.evaluate((key) => {
     const saved = JSON.parse(localStorage.getItem(key) || "{}");
     return {
