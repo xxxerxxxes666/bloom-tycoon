@@ -468,7 +468,36 @@ async function hudReport(page) {
     const saved = JSON.parse(localStorage.getItem("bloomTycoonPlayableStateV1") || "{}");
     const orderProgress = document.querySelector("#bouquetOrderProgress");
     const dial = document.querySelector("#heroRestorationDial");
+    const mobileGreenhouse = document.querySelector("#mobileGreenhouseProgress");
+    const mobileGreenhouseArt = document.querySelector("#mobileGreenhouseIdentityArt");
+    const mobileDial = document.querySelector("#mobileRestorationDial");
+    const instruction = [
+      document.querySelector("#tutorialPanel"),
+      document.querySelector("#firstSwapCue"),
+      document.querySelector("#nextOrderCue"),
+      document.querySelector("#tutorialHelpBtn")
+    ].find(visible);
     const contract = document.querySelector(".order-contract");
+    const rect = (node) => {
+      const bounds = node?.getBoundingClientRect();
+      return bounds
+        ? {
+            left: bounds.left,
+            top: bounds.top,
+            right: bounds.right,
+            bottom: bounds.bottom,
+            width: bounds.width,
+            height: bounds.height
+          }
+        : null;
+    };
+    const overlaps = (a, b) => Boolean(
+      a
+      && b
+      && Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1
+      && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1
+    );
+    const mobileGreenhouseRect = rect(mobileGreenhouse);
     return {
       text: label.textContent.trim(),
       visible: visible(label),
@@ -560,6 +589,17 @@ async function hudReport(page) {
         bodyPct: document.body.dataset.greenhouseRevivalPct || "",
         art: document.querySelector("#activeGreenhouseStageArt")?.getAttribute("src") || "",
         text: dial?.textContent.replace(/\s+/g, " ").trim() || ""
+      },
+      mobileGreenhouse: {
+        visible: visible(mobileGreenhouse),
+        rect: mobileGreenhouseRect,
+        artRect: rect(document.querySelector("#mobileGreenhouseIdentity")),
+        dialRect: rect(mobileDial),
+        text: mobileDial?.innerText.replace(/\s+/g, " ").trim() || "",
+        ariaLabel: mobileGreenhouse?.getAttribute("aria-label") || "",
+        art: mobileGreenhouseArt?.getAttribute("src") || "",
+        overlapsInstruction: overlaps(mobileGreenhouseRect, rect(instruction)),
+        overlapsBoard: overlaps(mobileGreenhouseRect, rect(board))
       },
       activeActionId: activeAction?.id || "",
       activeActionText: activeAction?.textContent.trim() || "",
@@ -694,6 +734,32 @@ async function assertHudState(page, fixture, viewport, reload) {
     expect(report.objectiveText, `${label} exact moves remain visible`).toContain(`Moves ${state.moves}`);
   } else if (viewport.label !== "desktop") {
     expect(report.contract.visible, `${label} desktop rail remains absent on mobile`).toBe(false);
+    if (!fixture.action) {
+      const compactTransaction = [
+        "RESTORE · 100 COINS",
+        "UPGRADE · 120 COINS",
+        "RAISE · 180 COINS",
+        "OWNED · PERMANENT"
+      ][savedOwnedStage];
+      expect(report.mobileGreenhouse.visible, `${label} compact owned place remains visible`).toBe(true);
+      expect(report.mobileGreenhouse.text, `${label} stage and next transaction`).toContain(
+        `${expectedOwned.key.toUpperCase()} ${expectedOwned.pct}%`
+      );
+      expect(report.mobileGreenhouse.text, `${label} concise next consequence`).toContain(
+        compactTransaction
+      );
+      expect(report.mobileGreenhouse.ariaLabel, `${label} exact owned stage semantics`).toContain(
+        `Owned ${savedOwnedStage}/3`
+      );
+      expect(report.mobileGreenhouse.art, `${label} persisted stage crop`).toContain(expectedOwned.art);
+      expect(report.mobileGreenhouse.rect.width, `${label} greenhouse yields command lane`).toBeLessThanOrEqual(110);
+      expect(report.mobileGreenhouse.rect.height, `${label} compact greenhouse height`).toBeCloseTo(48, 0);
+      expect(report.mobileGreenhouse.artRect, `${label} visible place crop fills compact surface`).toEqual(
+        report.mobileGreenhouse.dialRect
+      );
+      expect(report.mobileGreenhouse.overlapsInstruction, `${label} greenhouse clears phase command`).toBe(false);
+      expect(report.mobileGreenhouse.overlapsBoard, `${label} greenhouse clears altar`).toBe(false);
+    }
     if (activeContract) {
       expect(report.visibleObjectiveTargets, `${label} mobile keeps compact ingredient targets`).toBe(
         expectedContract.targets.length + (expectedContract.thorn ? 1 : 0)

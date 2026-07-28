@@ -8799,51 +8799,111 @@
       }
 
       .mobile-greenhouse-progress {
-        grid-template-columns: 96px;
+        grid-template-columns: 105px;
         justify-content: start;
+        justify-self: start;
+        width: 105px;
+        margin: 5px 0 0;
         gap: 0;
+      }
+
+      body.round-one-active:not(.focused-payoff-active) .mobile-greenhouse-progress,
+      body.restored-next-order-focus:not(.focused-payoff-active) .mobile-greenhouse-progress,
+      body.round-three-focus-active:not(.focused-payoff-active) .mobile-greenhouse-progress {
+        width: 105px;
+        margin: 5px 0 0;
       }
 
       .mobile-greenhouse-identity,
       .mobile-greenhouse-progress .greenhouse-restoration-dial {
         grid-column: 1;
         grid-row: 1;
-        width: 96px;
+        width: 105px;
+      }
+
+      .mobile-greenhouse-identity {
+        height: 48px;
+        border-color: color-mix(in srgb, var(--stage-accent, #b9874d) 76%, #241812);
+        box-shadow:
+          inset 0 0 8px #000,
+          0 0 13px color-mix(in srgb, var(--stage-accent, #b9874d) 28%, #0000);
+      }
+
+      .mobile-greenhouse-identity::after {
+        border-color: #f1d5953b;
+        background: radial-gradient(ellipse at 50% 46%, #0000 0 68%, #0006 100%);
+        box-shadow: inset 0 0 5px #000;
+      }
+
+      .mobile-greenhouse-identity img {
+        object-position: center;
+        filter:
+          brightness(calc(var(--stage-art-brightness, 1.04) * 1.34))
+          contrast(1.18)
+          saturate(calc(var(--stage-art-saturation, 1.06) * 1.08));
       }
 
       .mobile-greenhouse-progress .greenhouse-restoration-dial {
         z-index: 2;
         grid-template-columns: 1fr;
-        grid-template-rows: auto 5px;
+        grid-template-rows: 12px 4px 14px;
         min-height: 48px;
-        padding: 5px 6px;
-        gap: 4px;
-        background: linear-gradient(180deg, #05030396, #120907d9);
+        padding: 3px 5px 4px;
+        gap: 3px;
+        border-color: transparent;
+        background: none;
+        box-shadow: inset 0 0 8px #0008;
       }
 
       .mobile-greenhouse-progress .restoration-dial-topline {
         grid-column: 1;
         grid-row: 1;
-        justify-content: center;
+        justify-content: space-between;
+        margin: -1px -2px 0;
+        padding: 1px 3px;
+        background: #030202bd;
+        border-radius: 2px;
       }
 
       .mobile-greenhouse-progress .restoration-dial-stage {
-        font-size: 7px;
+        max-width: 13ch;
+        font-size: 6.5px;
         letter-spacing: .06em;
       }
 
       .mobile-greenhouse-progress .restoration-dial-percent {
-        font-size: 10px;
+        font-size: 9px;
       }
 
       .mobile-greenhouse-progress .restoration-dial-track {
         grid-column: 1;
         grid-row: 2;
-        height: 5px;
+        height: 4px;
+        border-color: color-mix(in srgb, var(--stage-accent, #b9874d) 54%, #21150e);
+        background: #030202b8;
       }
 
       .mobile-greenhouse-progress .restoration-dial-phase {
-        display: none;
+        grid-column: 1;
+        grid-row: 3;
+        display: block;
+        align-self: end;
+        overflow: hidden;
+        color: #f2dda6;
+        font: 900 7px/1 system-ui, sans-serif;
+        letter-spacing: .045em;
+        text-align: center;
+        text-overflow: clip;
+        text-transform: uppercase;
+        text-shadow: 0 1px 3px #000, 0 0 7px #000;
+        white-space: nowrap;
+        margin: 0 -2px -1px;
+        padding: 2px 2px 1px;
+        background: #030202d9;
+      }
+
+      body.owned-replay-entry .tutorial-command-region {
+        top: -7px;
       }
 
       body.restored-greenhouse-handoff .tutorial-command-region > .next-order-cue {
@@ -13368,11 +13428,21 @@
             : isOwnedRestorationReplay()
               ? "Permanent through replay"
               : "Complete: Play Again";
+      const compactNext = stage === 0
+        ? `Restore · ${FIRST_GREENHOUSE_RESTORE_COST} coins`
+        : stage === 1
+          ? `Upgrade · ${MOONLIT_GREENHOUSE_UPGRADE_COST} coins`
+          : stage === 2
+            ? `Raise · ${BLOODROOT_CONSERVATORY_COST} coins`
+            : isOwnedRestorationReplay()
+              ? "Owned · Permanent"
+              : "Complete · Play Again";
       return {
         stage,
         pct,
         stageKey: activeGreenhouseStageKey(),
         next,
+        compactNext,
         ownedLabel: `Owned ${stage}/3`
       };
     }
@@ -13421,13 +13491,13 @@
       const livePct = ownership.pct;
       const pctLabel = `${Math.round(livePct)}%`;
       const stageLabel = ownership.stageKey.toUpperCase();
-      const markup = `
+      const markup = (phase) => `
         <span class="restoration-dial-topline">
           <span class="restoration-dial-stage">${stageLabel}</span>
           <span class="restoration-dial-percent">${pctLabel}</span>
         </span>
         <span class="restoration-dial-track" aria-hidden="true"><span class="restoration-dial-fill"></span></span>
-        <span class="restoration-dial-phase">${greenhouseDialPhase(ownership)}</span>
+        <span class="restoration-dial-phase">${phase}</span>
         <span class="restoration-dial-goals"><span class="restoration-owned-note">${ownership.ownedLabel} · ${ownership.next}</span></span>
       `;
       [$("heroRestorationDial"), $("mobileRestorationDial")].filter(Boolean).forEach((dial) => {
@@ -13435,8 +13505,20 @@
         dial.dataset.ownedStage = String(ownership.stage);
         dial.dataset.restorationDialPct = String(Math.round(livePct));
         dial.style.setProperty("--dial-pct", `${livePct.toFixed(2)}%`);
-        dial.innerHTML = markup;
+        dial.innerHTML = markup(
+          dial.id === "mobileRestorationDial"
+            ? ownership.compactNext
+            : greenhouseDialPhase(ownership)
+        );
       });
+      const stage = activeGreenhouseStages[ownership.stageKey] || activeGreenhouseStages.withered;
+      const mobileProgress = $("mobileGreenhouseProgress");
+      if (mobileProgress) {
+        mobileProgress.setAttribute(
+          "aria-label",
+          `${stage.label}. ${ownership.ownedLabel}. Next: ${ownership.compactNext}.`
+        );
+      }
     }
 
     function pulseActiveGreenhouseIntake() {

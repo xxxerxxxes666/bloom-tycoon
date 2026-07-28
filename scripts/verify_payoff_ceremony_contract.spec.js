@@ -1794,7 +1794,8 @@ test("Round 1 restoration keeps one readable place through spend, peak, settleme
         expect(continuity.ownedStage).toBe("1");
         expect(continuity.pct).toBe("33");
         expect(continuity.dialText).toContain("RESTORED");
-        expect(continuity.dialText).toContain("First panes restored");
+        expect(continuity.dialText).toContain("Upgrade · 120 coins");
+        expect(continuity.dialText).not.toContain("First panes restored");
         expect(continuity.pixels.p90, "restored ribs and lit glass remain readable at compact scale")
           .toBeGreaterThan(38);
         expect(continuity.pixels.coloredPixels, "compact identity carries visible restored color")
