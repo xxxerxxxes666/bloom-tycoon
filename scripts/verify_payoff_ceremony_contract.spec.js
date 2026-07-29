@@ -71,6 +71,8 @@ function pixelBoxStats(png, box, scaleX, scaleY) {
   const luminance = [];
   let coloredPixels = 0;
   let litPixels = 0;
+  let nearWhitePixels = 0;
+  let deepDarkPixels = 0;
   for (let y = top; y < bottom; y += 1) {
     for (let x = left; x < right; x += 1) {
       const offset = y * png.stride + x * png.channels;
@@ -82,6 +84,8 @@ function pixelBoxStats(png, box, scaleX, scaleY) {
       luminance.push(value);
       if (value > 26) litPixels += 1;
       if (value > 20 && chroma > 14) coloredPixels += 1;
+      if (value > 235 && chroma < 32) nearWhitePixels += 1;
+      if (value < 28) deepDarkPixels += 1;
     }
   }
   luminance.sort((a, b) => a - b);
@@ -92,6 +96,8 @@ function pixelBoxStats(png, box, scaleX, scaleY) {
     p97: percentile(.97),
     litPixels,
     coloredPixels,
+    nearWhitePixels,
+    deepDarkPixels,
     sampledPixels: luminance.length
   };
 }
@@ -252,6 +258,45 @@ async function clickGuidedSwap(page) {
   }, pair);
   await page.waitForTimeout(1400);
   return true;
+}
+
+async function completeRoundOneNaturally(page, label) {
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const before = await page.evaluate((key) => {
+      const saved = JSON.parse(localStorage.getItem(key) || "{}");
+      return {
+        round: saved.currentRound || 1,
+        complete: Boolean(saved.roundComplete),
+        moves: Number(saved.moves || 0)
+      };
+    }, SAVE_KEY);
+    expect(before.round, `${label} remains on natural Round 1`).toBe(1);
+    if (before.complete) return;
+    expect(before.moves, `${label} natural completion retains a move`).toBeGreaterThan(0);
+    await page.waitForFunction(() => (
+      document.querySelector("#roundOneRestoration")?.offsetParent
+      || (
+        document.querySelector("#board")?.getAttribute("aria-busy") !== "true"
+        && document.querySelectorAll(".tile.idle-hint").length === 2
+      )
+    ), null, { timeout: 9500 });
+    if (await page.locator("#roundOneRestoration").isVisible()) return;
+    const pair = await page.locator(".tile.idle-hint").evaluateAll((tiles) => (
+      tiles.slice(0, 2).map((tile) => ({ x: tile.dataset.x, y: tile.dataset.y }))
+    ));
+    expect(pair, `${label} receives one authoritative natural hint pair`).toHaveLength(2);
+    for (const endpoint of pair) {
+      await page.locator(`.tile[data-x="${endpoint.x}"][data-y="${endpoint.y}"]`).click();
+    }
+    await page.waitForFunction(({ key, movesBefore }) => {
+      const saved = JSON.parse(localStorage.getItem(key) || "{}");
+      if (saved.roundComplete === true) return true;
+      return Number(saved.moves) < movesBefore
+        && document.querySelector("#board")?.getAttribute("aria-busy") !== "true"
+        && Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled);
+    }, { key: SAVE_KEY, movesBefore: before.moves }, { timeout: 10000 });
+  }
+  throw new Error(`${label} did not complete Round 1 through natural legal swaps`);
 }
 
 async function clickGuidedSwapNoWait(page) {
@@ -976,11 +1021,14 @@ async function expectCeremony(page, expectedButton, screenshotPath, expectedGuid
   const waitingForBouquet = await visibleContract(page);
   if (waitingForBouquet.assemblyReady === "false") {
     expect(waitingForBouquet.buttons, "payoff action waits for the bouquet object").toEqual([]);
-    expect(waitingForBouquet.trophyState).toBe("forming");
+    expect(
+      ["forming", "assembled"],
+      "natural final-harvest handoff may finish the bouquet before command authority settles"
+    ).toContain(waitingForBouquet.trophyState);
   }
   const primaryButton = page.locator("#roundOneRestoration button:not([hidden])");
-  await expect(primaryButton).toBeVisible({ timeout: 1800 });
-  await expect(primaryButton).toBeEnabled({ timeout: 1800 });
+  await expect(primaryButton).toBeVisible({ timeout: 4500 });
+  await expect(primaryButton).toBeEnabled({ timeout: 4500 });
   const contract = await visibleContract(page);
   expect(contract.trophies, "one visible bouquet trophy").toBe(1);
   expect(contract.craftedBouquets, "one crafted bouquet object").toBe(1);
@@ -1079,26 +1127,30 @@ async function expectCeremony(page, expectedButton, screenshotPath, expectedGuid
   return contract;
 }
 
-async function restorationSceneEvidence(page) {
+async function restorationSceneEvidence(page, screenshotPath = "") {
   const scene = page.locator(".restoration-scene");
-  const png = decodePng(await scene.screenshot({ animations: "allow" }));
-  const pixels = pixelBoxStats(
-    png,
-    { left: 0, top: 0, right: png.width, bottom: png.height },
-    1,
-    1
-  );
   const dom = await page.evaluate(() => {
     const panel = document.querySelector("#roundOneRestoration");
     const sceneNode = panel?.querySelector(".restoration-scene");
     const withered = panel?.querySelector(".greenhouse-art-withered");
     const restored = panel?.querySelector(".greenhouse-art-restored");
     const cracks = panel?.querySelector(".restoration-cracks");
+    const light = panel?.querySelector(".greenhouse-light");
+    const rays = panel?.querySelector(".restoration-glass-rays");
+    const flare = panel?.querySelector(".restoration-flare");
     const intake = panel?.querySelector("#restorationBouquetIntake");
     const transferBouquet = intake?.querySelector(".crafted-bouquet");
     const trophyBouquet = panel?.querySelector("#bouquetTrophy .crafted-bouquet");
     const rect = sceneNode?.getBoundingClientRect();
     const transferRect = transferBouquet?.getBoundingClientRect();
+    const localRect = (nodeRect) => nodeRect && rect ? {
+      left: nodeRect.left - rect.left,
+      top: nodeRect.top - rect.top,
+      right: nodeRect.right - rect.left,
+      bottom: nodeRect.bottom - rect.top,
+      width: nodeRect.width,
+      height: nodeRect.height
+    } : null;
     const imageState = (image) => ({
       src: image?.getAttribute("src") || "",
       complete: Boolean(image?.complete),
@@ -1122,6 +1174,11 @@ async function restorationSceneEvidence(page) {
       withered: imageState(withered),
       restored: imageState(restored),
       cracksDisplay: cracks ? getComputedStyle(cracks).display : "",
+      lighting: {
+        lightOpacity: Number(getComputedStyle(light).opacity || 0),
+        raysOpacity: Number(getComputedStyle(rays).opacity || 0),
+        flareOpacity: Number(getComputedStyle(flare).opacity || 0)
+      },
       bouquetTransfer: {
         panelState: panel?.dataset.bouquetTransfer || "",
         intakeCompositionKey: intake?.dataset.compositionKey || "",
@@ -1140,11 +1197,49 @@ async function restorationSceneEvidence(page) {
           height: transferRect.height,
           right: transferRect.right,
           bottom: transferRect.bottom
-        } : null
+        } : null,
+        localRect: localRect(transferRect),
+        heads: Array.from(transferBouquet?.querySelectorAll(".crafted-flower-bloom") || []).map((head) => {
+          const image = head.querySelector("img");
+          const headRect = head.getBoundingClientRect();
+          return {
+            flowerId: Number(head.dataset.craftedFlower),
+            slot: Number(head.dataset.craftedSlot),
+            rect: localRect(headRect),
+            imageComplete: Boolean(image?.complete),
+            naturalWidth: image?.naturalWidth || 0,
+            naturalHeight: image?.naturalHeight || 0
+          };
+        })
       }
     };
   });
-  return { ...dom, pixels };
+  const png = decodePng(await scene.screenshot({
+    animations: "allow",
+    ...(screenshotPath ? { path: screenshotPath } : {})
+  }));
+  const pixels = pixelBoxStats(
+    png,
+    { left: 0, top: 0, right: png.width, bottom: png.height },
+    1,
+    1
+  );
+  const bouquetPixels = dom.bouquetTransfer.localRect
+    ? pixelBoxStats(png, dom.bouquetTransfer.localRect, 1, 1)
+    : null;
+  const heads = dom.bouquetTransfer.heads.map((head) => ({
+    ...head,
+    pixels: head.rect ? pixelBoxStats(png, head.rect, 1, 1) : null
+  }));
+  return {
+    ...dom,
+    pixels,
+    bouquetTransfer: {
+      ...dom.bouquetTransfer,
+      bouquetPixels,
+      heads
+    }
+  };
 }
 
 async function mobileGreenhouseContinuityEvidence(page) {
@@ -1207,6 +1302,62 @@ function expectRoundOneSceneIdentity(evidence, label) {
   }
 }
 
+async function waitForBouquetTransferProgress(page, minimum) {
+  await page.waitForFunction((minimumProgress) => {
+    const bouquet = document.querySelector(
+      "#restorationBouquetIntake .crafted-bouquet"
+    );
+    const animation = bouquet?.getAnimations().find((candidate) => (
+      candidate.animationName === "bouquet-into-greenhouse"
+      || candidate.animationName === "bouquet-into-greenhouse-mobile"
+    ));
+    const progress = animation?.effect?.getComputedTiming().progress;
+    return Number.isFinite(progress) && progress >= minimumProgress;
+  }, minimum, { timeout: 900 });
+}
+
+function expectRecognizableTransferredBouquet(evidence, label, minimumWidth) {
+  const transfer = evidence.bouquetTransfer;
+  expect(transfer.rect, `${label} has a measurable inherited bouquet`).toBeTruthy();
+  expect(transfer.rect.width, `${label} keeps a normal-scale bouquet silhouette`).toBeGreaterThanOrEqual(minimumWidth);
+  expect(transfer.rect.height, `${label} keeps substantial crown and binding depth`).toBeGreaterThanOrEqual(74);
+  expect(transfer.heads.map((head) => head.flowerId), `${label} preserves the exact flower-unit order`)
+    .toEqual(ROUND_ONE_COMPOSITION);
+  expect(transfer.heads.every((head) => (
+    head.imageComplete && head.naturalWidth > 0 && head.naturalHeight > 0
+  )), `${label} renders every inherited repo-local flower head`).toBe(true);
+  for (const [flowerId, flowerName, count] of [[5, "Thorn Rose", 8], [1, "Bone Star", 6]]) {
+    const heads = transfer.heads.filter((head) => head.flowerId === flowerId);
+    expect(heads, `${label} retains ${count} ${flowerName} heads`).toHaveLength(count);
+    const readable = heads.filter((head) => (
+      head.rect.width >= 22
+      && head.rect.height >= 22
+      && head.pixels
+      && head.pixels.p90 >= 44
+      && head.pixels.coloredPixels >= 70
+      && head.pixels.nearWhitePixels / head.pixels.sampledPixels < .28
+    ));
+    expect(
+      readable.length,
+      `${label} visibly recognizes multiple ${flowerName} heads: ${JSON.stringify(heads)}`
+    ).toBeGreaterThanOrEqual(2);
+  }
+  const pixels = transfer.bouquetPixels;
+  expect(pixels, `${label} has composited bouquet pixels`).toBeTruthy();
+  expect(
+    pixels.nearWhitePixels / pixels.sampledPixels,
+    `${label} bouquet is framed instead of bleached`
+  ).toBeLessThan(.2);
+  expect(
+    pixels.deepDarkPixels / pixels.sampledPixels,
+    `${label} silhouette retains a dark contrast boundary`
+  ).toBeGreaterThan(.03);
+  expect(
+    pixels.coloredPixels / pixels.sampledPixels,
+    `${label} keeps recognizable botanical color`
+  ).toBeGreaterThan(.08);
+}
+
 async function restoreRoundOneAndCapturePeak(page, label, pendingEvidence) {
   await expect(page.locator("#restoreGreenhouseBtn")).toBeFocused();
   await page.evaluate(() => {
@@ -1218,23 +1369,45 @@ async function restoreRoundOneAndCapturePeak(page, label, pendingEvidence) {
   await page.waitForFunction(() => (
     document.querySelector("#roundOneRestoration")?.dataset.restorationPhase === "transforming"
   ), null, { timeout: 500 });
-  await page.waitForTimeout(220);
-  const captureFrame = await page.evaluate(() => {
+  await waitForBouquetTransferProgress(page, .06);
+  const earlyEvidence = await page.evaluate(() => {
     const panel = document.querySelector("#roundOneRestoration");
+    const scene = panel?.querySelector(".restoration-scene")?.getBoundingClientRect();
+    const bouquet = panel?.querySelector("#restorationBouquetIntake .crafted-bouquet")?.getBoundingClientRect();
     const withered = panel?.querySelector(".greenhouse-art-withered");
     const restored = panel?.querySelector(".greenhouse-art-restored");
     return {
+      phase: panel?.dataset.restorationPhase || "",
       witheredOpacity: Number(getComputedStyle(withered).opacity || 0),
       restoredOpacity: Number(getComputedStyle(restored).opacity || 0),
-      phase: panel?.dataset.restorationPhase || ""
+      scene: scene ? { left: scene.left, top: scene.top, width: scene.width, height: scene.height } : null,
+      bouquet: bouquet ? {
+        centerX: bouquet.left + bouquet.width / 2,
+        centerY: bouquet.top + bouquet.height / 2
+      } : null
     };
   });
-  expect(captureFrame.phase).toBe("transforming");
-  expect(captureFrame.witheredOpacity, `${label} screenshot retains the same withered place`).toBeGreaterThan(.05);
-  expect(captureFrame.restoredOpacity, `${label} screenshot includes restored material entering the same frame`).toBeGreaterThan(.3);
-  await page.screenshot({ path: `work/restoration-${label}-round1-peak.png`, fullPage: true });
+  expect(earlyEvidence.phase).toBe("transforming");
+  expect(earlyEvidence.witheredOpacity, `${label} early transfer retains the withered place`).toBeGreaterThan(.5);
+  expect(earlyEvidence.restoredOpacity, `${label} reveal stays subordinate during departure`).toBeLessThan(.55);
+  if (label.includes("mobile390")) {
+    expect(earlyEvidence.bouquet.centerY, `${label} bouquet visibly departs downward from its trophy`)
+      .toBeLessThan(earlyEvidence.scene.top + earlyEvidence.scene.height * .42);
+  } else {
+    expect(earlyEvidence.bouquet.centerX, `${label} bouquet visibly departs across the trophy-to-greenhouse boundary`)
+      .toBeLessThan(earlyEvidence.scene.left + earlyEvidence.scene.width * .42);
+  }
+  await page.screenshot({
+    path: `work/restoration-${label}-round1-early-transfer.png`,
+    fullPage: true
+  });
+
+  await waitForBouquetTransferProgress(page, .6);
   const peakContract = await visibleContract(page);
-  const peakEvidence = await restorationSceneEvidence(page);
+  const peakEvidence = await restorationSceneEvidence(
+    page,
+    `work/restoration-${label}-round1-recognizable-peak-absorption.png`
+  );
   expectRoundOneSceneIdentity(peakEvidence, `${label} transformation peak`);
   expect(peakEvidence.phase).toBe("transforming");
   expect(peakEvidence.bouquetTransfer).toMatchObject({
@@ -1260,6 +1433,26 @@ async function restoreRoundOneAndCapturePeak(page, label, pendingEvidence) {
       - Math.max(peakEvidence.bouquetTransfer.rect.top, peakEvidence.rect.top),
     `${label} exact bouquet overlaps the same greenhouse vertically`
   ).toBeGreaterThan(40);
+  expect(
+    Math.abs(
+      (peakEvidence.bouquetTransfer.rect.left + peakEvidence.bouquetTransfer.rect.right) / 2
+        - (peakEvidence.rect.left + peakEvidence.rect.right) / 2
+    ),
+    `${label} bouquet converges on the greenhouse intake focus`
+  ).toBeLessThan(peakEvidence.rect.width * .12);
+  expect(
+    peakEvidence.lighting.lightOpacity,
+    `${label} bouquet arrives before greenhouse light reaches its final peak`
+  ).toBeLessThan(.95);
+  expect(
+    peakEvidence.lighting.raysOpacity,
+    `${label} bouquet arrives before glass rays reach their final peak`
+  ).toBeLessThan(.88);
+  expectRecognizableTransferredBouquet(
+    peakEvidence,
+    `${label} transformation peak`,
+    label.includes("mobile390") ? 136 : 148
+  );
   expect(peakContract.coins, `${label} spend settles authoritatively at press time`).toBe(20);
   expect(peakContract.transactionText).toBe("100 coins spent · Greenhouse awakening · 20 coins remain.");
   expect(peakContract.buttons, `${label} no second action interrupts the bounded transformation`).toEqual([]);
@@ -1285,7 +1478,7 @@ async function restoreRoundOneAndCapturePeak(page, label, pendingEvidence) {
   await page.waitForFunction(() => (
     document.querySelector("#roundOneRestoration")?.dataset.restorationPhase === "settled"
       && !document.querySelector("#roundOneRestoration")?.classList.contains("restoration-awakening")
-  ), null, { timeout: 1600 });
+  ), null, { timeout: 2300 });
   const settledTransfer = await restorationSceneEvidence(page);
   expect(settledTransfer.bouquetTransfer).toMatchObject({
     panelState: "settled",
@@ -1434,6 +1627,7 @@ async function forceRoundTwoFailure(page) {
 }
 
 async function runJourney(page, label, includeRetry) {
+  await seedDeterministicMath(page, `payoff-${label}`);
   await resetPage(page, `pass2_${label}`);
   const viewport = page.viewportSize();
   const compactReceiver = label.includes("mobile390")
@@ -1626,7 +1820,7 @@ async function runJourney(page, label, includeRetry) {
   expect(speciesWithProgress.has(1), "mid-progress contains earned Bone Star heads").toBe(true);
   expectPhysicalBouquetGeometry(secondAssembly, ROUND_ONE_COMPOSITION);
   await page.screenshot({ path: `work/live-bouquet-${label}-mid-progress.png`, fullPage: true });
-  await completeRoundWithReviewKey(page);
+  await completeRoundOneNaturally(page, `${label} natural ceremony journey`);
   const fullPreCeremonyAssembly = await activeBouquetAssemblyState(page);
   expect(fullPreCeremonyAssembly.complete).toBe("true");
   expect(fullPreCeremonyAssembly.liveComposition).toEqual(ROUND_ONE_COMPOSITION);
@@ -1704,11 +1898,11 @@ test("payoff ceremony contract mobile 390x844 journey", async ({ page }) => {
   expect(failedRequests).toEqual([]);
 });
 
-test("Round 1 restoration keeps one readable place through spend, peak, settlement, and reload", async ({ browser }) => {
-  for (const config of [
-    { label: "desktop", viewport: { width: 1280, height: 720 }, mobile: false },
-    { label: "mobile390", viewport: { width: 390, height: 844 }, mobile: true }
-  ]) {
+for (const config of [
+  { label: "desktop", viewport: { width: 1280, height: 720 }, mobile: false },
+  { label: "mobile390", viewport: { width: 390, height: 844 }, mobile: true }
+]) {
+  test(`Round 1 restoration keeps one readable place through spend, peak, settlement, and reload on ${config.label}`, async ({ browser }) => {
     const context = await browser.newContext({
       viewport: config.viewport,
       hasTouch: config.mobile,
@@ -1730,27 +1924,9 @@ test("Round 1 restoration keeps one readable place through spend, peak, settleme
     });
 
     try {
+      await seedDeterministicMath(page, `restoration-${config.label}`);
       await resetPage(page, `restoration_transform_${config.label}`);
-      await page.evaluate((key) => {
-        const state = JSON.parse(localStorage.getItem(key) || "{}");
-        Object.assign(state, {
-          currentRound: 1,
-          roundComplete: true,
-          roundOneRestored: false,
-          roundTwoGreenhouseUpgraded: false,
-          roundThreeConservatoryRaised: false,
-          moves: 1,
-          coins: 120,
-          counts: [0, 6, 0, 0, 0, 8],
-          cursedThorns: [],
-          clearedCursedThorns: 0,
-          tutorialSkipped: false,
-          tutorialActive: true,
-          blackCandleLessonComplete: true
-        });
-        localStorage.setItem(key, JSON.stringify(state));
-      }, SAVE_KEY);
-      await page.reload({ waitUntil: "networkidle" });
+      await completeRoundOneNaturally(page, `${config.label} first restoration evidence`);
 
       const pendingContract = await expectCeremony(
         page,
@@ -1874,8 +2050,8 @@ test("Round 1 restoration keeps one readable place through spend, peak, settleme
     } finally {
       await context.close();
     }
-  }
-});
+  });
+}
 
 test("simultaneous target gains bind to distinct growing blooms and persist", async ({ page }) => {
   const consoleMessages = [];
@@ -2264,6 +2440,7 @@ for (const config of [
     page.on("requestfailed", (request) => failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`));
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.setViewportSize(config.viewport);
+    await seedDeterministicMath(page, `reduced-restoration-${config.label}`);
     await resetPage(page, `pass2_reduced_motion_${config.label}`);
     await expectGreenhouseOwned(page, {
       stage: "withered",
@@ -2287,7 +2464,14 @@ for (const config of [
     expect(active.visibleBlooms).toBe(active.ingredients.filter((ingredient) => ingredient.slotProgress > 0).length);
     expect(active.width).toBeGreaterThanOrEqual(config.minWidth);
     expect(active.height).toBeGreaterThanOrEqual(config.minHeight);
-    await completeRoundWithReviewKey(page);
+    await completeRoundOneNaturally(page, `${config.label} reduced-motion restoration`);
+    await page.waitForFunction(() => {
+      const panel = document.querySelector("#roundOneRestoration");
+      const action = panel?.querySelector("button:not([hidden])");
+      return panel?.dataset.assemblyReady === "true"
+        && action?.offsetParent
+        && document.querySelectorAll(".objective-flight, .bouquet-bind-seal").length === 0;
+    }, null, { timeout: 3500 });
     await expectGreenhouseOwned(page, {
       stage: "withered",
       ownedStage: 0,
@@ -2295,8 +2479,12 @@ for (const config of [
       art: "first_greenhouse_withered.jpg",
       note: "Owned 0/3 · Next: Restore Greenhouse"
     });
-    await expect(page.locator("#roundOneRestoration button:not([hidden])")).toBeEnabled({ timeout: 700 });
-    const contract = await visibleContract(page);
+    const contract = await expectCeremony(
+      page,
+      "Restore Greenhouse",
+      `work/pass2-reduced-motion-${config.label}-round1-pending.png`,
+      "Coins restore the greenhouse."
+    );
     expect(contract.trophyState).toBe("assembled");
     expect(contract.craftedBouquets).toBe(1);
     expect(contract.craftedBlooms).toBe(14);
@@ -2305,19 +2493,25 @@ for (const config of [
     expect(contract.coins).toBe(120);
     expect(contract.overflowX).toBe(false);
     expect(contract.brokenImages).toEqual([]);
-    await page.screenshot({ path: `work/pass2-reduced-motion-${config.label}-round1-pending.png`, fullPage: true });
     const pendingScene = await restorationSceneEvidence(page);
     expectRoundOneSceneIdentity(pendingScene, `${config.label} reduced-motion pending`);
     const startedAt = Date.now();
     await page.evaluate(() => {
-      window.__roundOneRestorationTransferSource = document.querySelector(
-        "#bouquetTrophy .crafted-bouquet"
-      );
+      document.querySelector("#restoreGreenhouseBtn")?.addEventListener("click", () => {
+        window.__roundOneRestorationTransferSource = document.querySelector(
+          "#bouquetTrophy .crafted-bouquet"
+        );
+      }, { capture: true, once: true });
     });
     await page.locator("#restoreGreenhouseBtn").click();
     await page.waitForFunction(() => (
       document.querySelector("#roundOneRestoration")?.dataset.restorationPhase === "transforming"
     ), null, { timeout: 300 });
+    await page.waitForFunction(() => {
+      const bouquet = document.querySelector("#restorationBouquetIntake .crafted-bouquet");
+      return bouquet && bouquet.getAnimations({ subtree: true })
+        .every((animation) => animation.playState !== "running");
+    }, null, { timeout: 120 });
     const reducedTransfer = await page.evaluate(() => {
       const panel = document.querySelector("#roundOneRestoration");
       const intake = document.querySelector("#restorationBouquetIntake");
