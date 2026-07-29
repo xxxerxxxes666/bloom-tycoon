@@ -485,6 +485,7 @@ async function activeBouquetAssemblyState(page) {
           flowerId: Number(ingredient.dataset.flowerId),
           slot: Number(ingredient.dataset.liveSlot),
           unitIndex: Number(ingredient.dataset.unitIndex),
+          crownTier: Number(ingredient.dataset.crownTier),
           progress: ingredient.dataset.progress,
           slotProgress: Number(ingredient.dataset.slotProgress || 0),
           slotState: ingredient.dataset.slotState || "",
@@ -710,10 +711,19 @@ function expectPhysicalBouquetGeometry(assembly, composition) {
   expect(crownYSpread, "bouquet crown has three materially separated tiers instead of a flat row")
     .toBeGreaterThan(32);
   if (composition.length >= 24) {
-    const tierBands = new Set(assembly.ingredients.map((ingredient) => Math.round(ingredient.centerY / 10)));
-    expect(tierBands.size, "high-count crown resolves into at least five visible depth tiers").toBeGreaterThanOrEqual(5);
+    const tierCounts = assembly.ingredients.reduce((counts, ingredient) => {
+      counts[ingredient.crownTier] = (counts[ingredient.crownTier] || 0) + 1;
+      return counts;
+    }, {});
+    const expectedTierCounts = composition.length === 27
+      ? { 0: 3, 1: 5, 2: 7, 3: 6, 4: 4, 5: 2 }
+      : { 0: 3, 1: 5, 2: 7, 3: 5, 4: 4, 5: 2 };
+    expect(tierCounts, "high-count crown uses a deterministic wide-middle, tapered binding silhouette")
+      .toEqual(expectedTierCounts);
+    expect(new Set(assembly.ingredients.map((ingredient) => ingredient.crownTier)).size,
+      "high-count crown resolves into six visible depth tiers").toBe(6);
     expect(crownYSpread, "high-count crown has enough vertical authority to avoid a hedge silhouette")
-      .toBeGreaterThanOrEqual(48);
+      .toBeGreaterThanOrEqual(50);
   }
   expect(overlap.maximum, "bouquet heads cluster with natural overlap").toBeGreaterThan(.08);
   expect(overlap.maximum, `ingredient heads remain individually legible; closest slots ${overlap.pair.join("/")}`)
@@ -755,21 +765,26 @@ function expectPhysicalBouquetGeometry(assembly, composition) {
     )), "Round 1 unearned units remain closed rosette buds with folded petals and a botanical calyx").toBe(true);
   } else {
     expect(closed.every((ingredient) => (
-      ingredient.bud.width >= 19
-        && ingredient.bud.height >= 26
-        && ingredient.bud.opacity >= .9
-        && ingredient.bud.opacity <= .96
-        && ingredient.bud.backgroundImage === "none"
-        && ingredient.bud.borderStyle === "none"
-        && ingredient.bud.socketBackgroundImage.includes("radial-gradient")
+      ingredient.bud.width >= 12
+        && ingredient.bud.width <= 16
+        && ingredient.bud.height >= 16
+        && ingredient.bud.height <= 20
+        && ingredient.bud.opacity >= .42
+        && ingredient.bud.opacity <= .54
+        && ingredient.bud.backgroundImage.includes("linear-gradient")
+        && ingredient.bud.borderStyle === "solid"
+        && ingredient.bud.clipPath !== "none"
+        && ingredient.bud.socketBackgroundImage.includes("linear-gradient")
         && ingredient.bud.socketBorderStyle === "solid"
-        && ingredient.bud.socketWidth >= 18
-        && ingredient.bud.socketHeight >= 12
+        && ingredient.bud.socketWidth >= 6
+        && ingredient.bud.socketWidth <= 8
+        && ingredient.bud.socketHeight >= 8
+        && ingredient.bud.socketHeight <= 10
         && ingredient.bud.calyxBackgroundImage.includes("linear-gradient")
         && ingredient.bud.calyxBorderLeftStyle === "solid"
         && ingredient.bud.calyxBorderRightStyle === "solid"
         && ingredient.bud.calyxClipPath !== "none"
-    )), "high-count unearned units retain the accepted hollow cups and closed calyx").toBe(true);
+    )), "high-count unearned units remain subdued closed buds instead of equal-authority dark sockets").toBe(true);
   }
   expect(assembly.knot, "one binding knot remains visible").not.toBeNull();
   expect(assembly.knot.width, "binding knot remains materially legible").toBeGreaterThan(19);
@@ -2292,7 +2307,21 @@ test("nearly complete and mixed Round 2/3 progress stays legible in the physical
       composition: ROUND_TWO_COMPOSITION,
       species: [2, 4, 5],
       earnedHeads: { 2: 5, 4: 4, 5: 3 },
-      thornProgress: "2/3"
+      thornProgress: "2/3",
+      reloadTwice: true
+    },
+    {
+      label: "round3-empty",
+      round: 3,
+      counts: [0, 0, 0, 0, 0, 0],
+      clearedCursedThorns: 0,
+      cursedThorns: [],
+      expectedProgress: "0/27",
+      expectedState: "fresh",
+      composition: ROUND_THREE_COMPOSITION,
+      species: [],
+      earnedHeads: {},
+      thornProgress: ""
     },
     {
       label: "round3-mixed",
@@ -2305,6 +2334,20 @@ test("nearly complete and mixed Round 2/3 progress stays legible in the physical
       composition: ROUND_THREE_COMPOSITION,
       species: [0, 3],
       earnedHeads: { 0: 8, 3: 7 },
+      thornProgress: "",
+      reloadTwice: true
+    },
+    {
+      label: "round3-nearly",
+      round: 3,
+      counts: [12, 0, 0, 13, 0, 0],
+      clearedCursedThorns: 0,
+      cursedThorns: [],
+      expectedProgress: "25/27",
+      expectedState: "nearly",
+      composition: ROUND_THREE_COMPOSITION,
+      species: [0, 3],
+      earnedHeads: { 0: 12, 3: 13 },
       thornProgress: ""
     }
   ];
@@ -2381,7 +2424,7 @@ test("nearly complete and mixed Round 2/3 progress stays legible in the physical
         path: `work/live-bouquet-${viewport.label}-${fixture.label}.png`,
         fullPage: true
       });
-      if (fixture.composition.length >= 24) {
+      if (fixture.reloadTwice) {
         const expectedStableUnits = assembly.ingredients.map((ingredient) => ({
           flowerId: ingredient.flowerId,
           unitIndex: ingredient.unitIndex,

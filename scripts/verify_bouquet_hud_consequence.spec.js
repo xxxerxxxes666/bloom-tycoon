@@ -1281,7 +1281,7 @@ for (const viewport of VIEWPORTS) {
         await assertHudState(page, fixture, viewport, reload);
         if (
           reload === 0
-          && ["r1-active", "r1-pending", "r2-pending", "r3-pending"].includes(fixture.label)
+          && ["r1-active", "r1-pending", "r2-pending", "r3-active", "r3-pending"].includes(fixture.label)
         ) {
           await page.screenshot({
             path: `work/hud-consequence-${viewport.label}-${fixture.label}.png`,
