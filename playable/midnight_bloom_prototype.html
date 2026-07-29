@@ -1202,13 +1202,13 @@
     .live-bouquet-assembly::after {
       left: 50%;
       bottom: 1px;
-      width: calc(250px + var(--live-bouquet-fullness, 0) * 12px);
-      height: 68px;
+      width: calc(170px + var(--live-bouquet-fullness, 0) * 8px);
+      height: 54px;
       transform: translateX(-50%);
       background:
-        linear-gradient(116deg, #171109 0 16%, #806a46 17% 34%, #36291a 35% 50%, #8d754e 51% 70%, #171109 71% 100%),
-        radial-gradient(ellipse at 50% 15%, #ead99b57 0 38%, #0000 68%);
-      clip-path: polygon(2% 8%, 21% 0, 50% 25%, 79% 0, 98% 8%, 83% 42%, 66% 58%, 57% 100%, 43% 100%, 34% 58%, 17% 42%);
+        linear-gradient(116deg, #2b1b0e 0 12%, #9b7d51 13% 37%, #4e3620 38% 50%, #a98959 51% 73%, #2b1b0e 74% 100%),
+        radial-gradient(ellipse at 50% 20%, #f0dda36b 0 38%, #0000 68%);
+      clip-path: polygon(2% 8%, 27% 16%, 50% 34%, 73% 16%, 98% 8%, 78% 60%, 58% 100%, 42% 100%, 22% 60%);
       opacity: calc(.86 + var(--live-bouquet-fullness, 0) * .1);
       z-index: 3;
       filter: drop-shadow(0 2px 4px #000) drop-shadow(0 0 3px #b9874d24);
@@ -1252,9 +1252,11 @@
     }
 
     .live-bouquet-leaf[data-filled="false"] {
+      width: 10px;
+      height: 4px;
       border-color: #6f6d4b5c;
       background: linear-gradient(90deg, #0d0e0a, #464831 58%, #17170f);
-      opacity: .27;
+      opacity: .08;
       filter: saturate(.35) brightness(.78);
       box-shadow: 0 1px 2px #000;
     }
@@ -1264,11 +1266,12 @@
       left: 50%;
       bottom: 1px;
       z-index: 6;
-      width: 20px;
-      height: 20px;
-      transform: translateX(-50%) rotate(45deg);
+      width: 24px;
+      height: 12px;
+      transform: translateX(-50%);
       border: 1px solid #d4aa62;
-      background: radial-gradient(circle at 35% 30%, #edcf8c, #8c402a 42%, #2b0c0a 76%);
+      border-radius: 48%;
+      background: linear-gradient(90deg, #32100e, #963f2b 28%, #dfb56c 50%, #8a3527 72%, #2b0c0a);
       box-shadow: inset 0 0 5px #000, 0 0 6px #000, 0 0 5px #d7b16d42;
     }
 
@@ -1276,9 +1279,9 @@
     .live-bouquet-knot::after {
       content: "";
       position: absolute;
-      top: 10px;
+      top: 8px;
       width: 8px;
-      height: 21px;
+      height: 16px;
       background: linear-gradient(180deg, #873324, #3b1311);
       clip-path: polygon(0 0, 100% 0, 74% 100%, 50% 78%, 25% 100%);
       z-index: -1;
@@ -1386,11 +1389,18 @@
       position: relative;
       z-index: 1;
       width: 22px;
-      height: 28px;
-      border: 0;
-      background: none;
-      opacity: .94;
+      height: 22px;
+      border: 1px solid #777554;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 38% 32%, color-mix(in srgb, currentColor 28%, #8a8660), #44462f 42%, #171811 76%);
+      clip-path: polygon(50% 0, 66% 9%, 82% 16%, 91% 33%, 100% 50%, 91% 67%, 82% 84%, 66% 91%, 50% 100%, 34% 91%, 18% 84%, 9% 67%, 0 50%, 9% 33%, 18% 16%, 34% 9%);
+      opacity: .74;
       filter: drop-shadow(0 1px 2px #000);
+      box-shadow:
+        inset 2px 1px 2px #c4ba7938,
+        inset -3px -2px 4px #000,
+        0 0 0 1px #060605;
     }
 
     .live-bouquet-bud::before,
@@ -1401,34 +1411,32 @@
     }
 
     .live-bouquet-bud::before {
-      left: 1px;
-      top: 1px;
-      width: 18px;
+      left: 5px;
+      top: 4px;
+      width: 10px;
       height: 12px;
-      border: 1px solid #777554;
+      border: 1px solid #3c3d29;
+      border-right-color: #17180f;
+      border-left-color: #8a88605e;
       border-radius: 50%;
       background:
-        radial-gradient(ellipse at 50% 43%, #020202 0 35%, #090a07 38% 54%, #41432f 58% 70%, #14140e 74%);
-      box-shadow:
-        inset 0 3px 4px #000,
-        inset 0 -1px 1px #c4ba7952,
-        0 0 0 1px #060605,
-        0 1px 2px #000;
+        linear-gradient(90deg, #242519, color-mix(in srgb, currentColor 30%, #69694a) 48%, #202116);
+      clip-path: polygon(50% 0, 76% 22%, 100% 50%, 76% 78%, 50% 100%, 24% 78%, 0 50%, 24% 22%);
+      opacity: .82;
     }
 
     .live-bouquet-bud::after {
       left: 4px;
-      top: 10px;
+      bottom: -1px;
       width: 14px;
-      height: 15px;
-      border-right: 2px solid #4f5238;
-      border-bottom: 2px solid #717451;
-      border-left: 2px solid #343624;
-      border-radius: 0 0 48% 48% / 0 0 72% 72%;
+      height: 7px;
+      border-right: 1px solid #4f5238;
+      border-bottom: 1px solid #717451;
+      border-left: 1px solid #343624;
       background:
-        linear-gradient(78deg, #0000 0 39%, #55583c 42% 49%, #0000 52%),
-        linear-gradient(-78deg, #0000 0 39%, #2d3020 42% 49%, #0000 52%);
-      clip-path: polygon(0 0, 26% 18%, 50% 100%, 74% 18%, 100% 0, 86% 78%, 50% 100%, 14% 78%);
+        linear-gradient(78deg, #0000 0 37%, #55583c 40% 48%, #0000 51%),
+        linear-gradient(-78deg, #0000 0 37%, #2d3020 40% 48%, #0000 51%);
+      clip-path: polygon(0 0, 25% 18%, 50% 100%, 75% 18%, 100% 0, 84% 76%, 50% 100%, 16% 76%);
       opacity: .9;
     }
 
@@ -1437,7 +1445,24 @@
       height: 62px;
       z-index: 1;
       opacity: .72;
+      background:
+        linear-gradient(116deg, #171109 0 16%, #806a46 17% 34%, #36291a 35% 50%, #8d754e 51% 70%, #171109 71% 100%),
+        radial-gradient(ellipse at 50% 15%, #ead99b57 0 38%, #0000 68%);
       clip-path: polygon(5% 13%, 24% 4%, 50% 29%, 76% 4%, 95% 13%, 82% 42%, 65% 58%, 56% 100%, 44% 100%, 35% 58%, 18% 42%);
+    }
+
+    .live-bouquet-assembly[data-high-count="true"] .live-bouquet-knot {
+      width: 20px;
+      height: 20px;
+      transform: translateX(-50%) rotate(45deg);
+      border-radius: 0;
+      background: radial-gradient(circle at 35% 30%, #edcf8c, #8c402a 42%, #2b0c0a 76%);
+    }
+
+    .live-bouquet-assembly[data-high-count="true"] .live-bouquet-knot::before,
+    .live-bouquet-assembly[data-high-count="true"] .live-bouquet-knot::after {
+      top: 10px;
+      height: 21px;
     }
 
     .live-bouquet-assembly[data-high-count="true"] .live-bouquet-stem {
@@ -1450,9 +1475,59 @@
       height: 7px;
     }
 
+    .live-bouquet-assembly[data-high-count="true"] .live-bouquet-leaf[data-filled="false"] {
+      opacity: .27;
+    }
+
     .live-bouquet-assembly[data-high-count="true"] .live-bouquet-ingredient[data-slot-state="empty"] {
       width: var(--live-size, 26px) !important;
       height: var(--live-size, 26px) !important;
+    }
+
+    .live-bouquet-assembly[data-high-count="true"] .live-bouquet-bud {
+      width: 22px;
+      height: 28px;
+      border: 0;
+      border-radius: 0;
+      background: none;
+      clip-path: none;
+      opacity: .94;
+      box-shadow: none;
+    }
+
+    .live-bouquet-assembly[data-high-count="true"] .live-bouquet-bud::before {
+      left: 1px;
+      top: 1px;
+      width: 18px;
+      height: 12px;
+      border: 1px solid #777554;
+      border-radius: 50%;
+      background:
+        radial-gradient(ellipse at 50% 43%, #020202 0 35%, #090a07 38% 54%, #41432f 58% 70%, #14140e 74%);
+      clip-path: none;
+      opacity: 1;
+      box-shadow:
+        inset 0 3px 4px #000,
+        inset 0 -1px 1px #c4ba7952,
+        0 0 0 1px #060605,
+        0 1px 2px #000;
+    }
+
+    .live-bouquet-assembly[data-high-count="true"] .live-bouquet-bud::after {
+      left: 4px;
+      top: 10px;
+      bottom: auto;
+      width: 14px;
+      height: 15px;
+      border-right: 2px solid #4f5238;
+      border-bottom: 2px solid #717451;
+      border-left: 2px solid #343624;
+      border-radius: 0 0 48% 48% / 0 0 72% 72%;
+      background:
+        linear-gradient(78deg, #0000 0 39%, #55583c 42% 49%, #0000 52%),
+        linear-gradient(-78deg, #0000 0 39%, #2d3020 42% 49%, #0000 52%);
+      clip-path: polygon(0 0, 26% 18%, 50% 100%, 74% 18%, 100% 0, 86% 78%, 50% 100%, 14% 78%);
+      opacity: .9;
     }
 
     .live-bouquet-ingredient.order-pulse[data-gain-receiver="true"] {
@@ -9994,16 +10069,18 @@
       }
       const compactRowCount = compactRows[compactRow] || total;
       const compactRowIndex = index - compactRowStart;
-      const compactX = total === 14 && (compactRow === 0 || compactRow === 2)
-        ? [-74, -37, 37, 74][compactRowIndex]
-        : Math.round((compactRowIndex - (compactRowCount - 1) / 2) * 37);
+      const compactX = total === 14 && compactRow === 0
+        ? [-45, -19, 19, 45][compactRowIndex]
+        : total === 14 && compactRow === 2
+          ? [-36, -12, 12, 36][compactRowIndex]
+          : Math.round((compactRowIndex - (compactRowCount - 1) / 2) * (total === 14 ? 26 : 34));
       const compactMobile = window.matchMedia("(max-width: 760px)").matches;
       const layout = {
         x: compact
           ? compactX
           : Math.round(crafted.x * (tiered ? 1 : 1.03)),
         y: compact
-          ? (compactMobile ? [22, 40, 55] : [23, 40, 56])[compactRow]
+          ? (compactMobile ? [22, 40, 58] : [23, 40, 58])[compactRow]
           : tiered
             ? [15, 27, 39, 51, 63][crafted.tier] + [-1, 1, 0, 1, -1][index % 5]
             : Math.round(5 + crafted.y * .65 - (crafted.y > 75 ? 3 : 0)),
