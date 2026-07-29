@@ -2021,7 +2021,6 @@
         radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--tile-color) 36%, #fff2bd) 0 9%, #0000 38%),
         radial-gradient(circle at 50% 55%, color-mix(in srgb, var(--tile-color) 24%, #000) 0, #0000 64%);
       opacity: .34;
-      filter: blur(.2px);
       box-shadow:
         inset 0 0 10px #000,
         0 0 13px color-mix(in srgb, var(--tile-color) 34%, #0000);
@@ -2865,7 +2864,7 @@
     }
 
     .tile.thorn-hit {
-      animation: thorn-hit 760ms ease-out both;
+      animation: none;
     }
 
     .cursed-thorn-overlay {
@@ -3281,7 +3280,16 @@
     }
 
     .tile.harvest-flash {
-      animation: harvest-flash 540ms ease-out;
+      animation: none;
+    }
+
+    .tile.harvest-flash::after {
+      opacity: 1;
+      background:
+        radial-gradient(circle at 50% 45%, #fff0b455 0 10%, #9b1d2238 36%, #0000 68%),
+        linear-gradient(90deg, #0000 0 42%, #d7b16d8a 48%, #0000 55%);
+      animation: harvest-flash-overlay 480ms ease-out both;
+      will-change: transform, opacity;
     }
 
     .tile.super-bloom-hot {
@@ -3311,14 +3319,14 @@
     .tile.fall-in {
       animation: tile-fall 360ms cubic-bezier(0.12, 0.78, 0.18, 1) both;
       animation-delay: var(--fall-delay, 0ms);
+      will-change: transform, opacity;
     }
 
     .tile.refill-born {
       z-index: 2;
-      animation:
-        tile-fall 390ms cubic-bezier(0.12, 0.78, 0.18, 1) both,
-        refill-born-glow 580ms cubic-bezier(.12,.82,.18,1) both;
-      animation-delay: var(--fall-delay, 0ms), calc(var(--fall-delay, 0ms) + 70ms);
+      animation: tile-fall 390ms cubic-bezier(0.12, 0.78, 0.18, 1) both;
+      animation-delay: var(--fall-delay, 0ms);
+      will-change: transform, opacity;
     }
 
     .tile.refill-born::after {
@@ -3326,22 +3334,20 @@
       background:
         radial-gradient(circle at 50% 44%, color-mix(in srgb, var(--tile-color) 36%, #fff0b4) 0, #0000 58%),
         repeating-conic-gradient(from 12deg, #0000 0 16deg, #d7b16d66 17deg 19deg, #0000 20deg 38deg);
+      animation: refill-born-glow 520ms cubic-bezier(.12,.82,.18,1) both;
+      animation-delay: calc(var(--fall-delay, 0ms) + 40ms);
+      will-change: transform, opacity;
     }
 
-    .tile.settle-pop {
+    .tile.settle-pop:not(.refill-born) {
       animation: tile-settle-pop 300ms cubic-bezier(.12,.82,.18,1) both;
       animation-delay: calc(var(--fall-delay, 0ms) + 90ms);
+      will-change: transform;
     }
 
     .tile.refill-born.settle-pop {
-      animation:
-        tile-fall 390ms cubic-bezier(0.12, 0.78, 0.18, 1) both,
-        refill-born-glow 580ms cubic-bezier(.12,.82,.18,1) both,
-        tile-settle-pop 300ms cubic-bezier(.12,.82,.18,1) both;
-      animation-delay:
-        var(--fall-delay, 0ms),
-        calc(var(--fall-delay, 0ms) + 70ms),
-        calc(var(--fall-delay, 0ms) + 135ms);
+      animation: tile-fall 390ms cubic-bezier(0.12, 0.78, 0.18, 1) both;
+      animation-delay: var(--fall-delay, 0ms);
     }
 
     .refill-channel {
@@ -4314,7 +4320,6 @@
       0% {
         opacity: 0.35;
         transform: translateY(var(--fall-y, -120%)) scale(0.96);
-        filter: brightness(1.18);
       }
       70% {
         opacity: 1;
@@ -4323,20 +4328,28 @@
       100% {
         opacity: 1;
         transform: translateY(0) scale(1);
-        filter: brightness(1);
       }
     }
 
     @keyframes refill-born-glow {
       0% {
-        filter: brightness(1.32) saturate(1.24) drop-shadow(0 0 10px var(--tile-color));
+        opacity: 0;
+        transform: scale(.72);
       }
       60% {
-        filter: brightness(1.1) saturate(1.12) drop-shadow(0 0 8px #d7b16d);
+        opacity: .92;
+        transform: scale(1.04);
       }
       100% {
-        filter: brightness(1) saturate(1);
+        opacity: 0;
+        transform: scale(1);
       }
+    }
+
+    @keyframes harvest-flash-overlay {
+      0% { opacity: 0; transform: scale(.74); }
+      32% { opacity: 1; transform: scale(1.03); }
+      100% { opacity: 0; transform: scale(1); }
     }
 
     @keyframes refill-channel-fall {
@@ -8413,7 +8426,6 @@
 
     .black-candle-mark.black-candle-activation-source {
       z-index: 10;
-      filter: brightness(1.28) saturate(1.2);
       animation: black-candle-ignite 180ms ease-out both;
     }
 
@@ -8436,7 +8448,7 @@
       background:
         radial-gradient(circle at 50% 50%, #d7b16d2e 0, #0000 62%),
         linear-gradient(var(--burn-lane-angle, 0deg), #0000 0 42%, #9b1d22b8 46%, #fff0b4d9 50%, #b9874dbc 54%, #0000 58%);
-      filter: drop-shadow(0 0 5px #9b1d22) drop-shadow(0 0 7px #d7b16d);
+      box-shadow: inset 0 0 8px #9b1d2266, 0 0 7px #d7b16d70;
     }
 
     .tile.black-candle-burn-refill {
@@ -8460,7 +8472,6 @@
       z-index: 12;
       pointer-events: none;
       overflow: visible;
-      filter: drop-shadow(0 0 7px #d7b16d) drop-shadow(0 0 13px #9b1d22);
     }
 
     .black-candle-burn-sweep::before,
@@ -8508,15 +8519,15 @@
     }
 
     @keyframes black-candle-ignite {
-      0% { opacity: .4; transform: scale(.72); filter: brightness(.7); }
-      42% { opacity: 1; transform: scale(1.12); filter: brightness(1.5); }
-      100% { opacity: 1; transform: scale(1); filter: brightness(1.2); }
+      0% { opacity: .4; transform: scale(.72); }
+      42% { opacity: 1; transform: scale(1.12); }
+      100% { opacity: 1; transform: scale(1); }
     }
 
     @keyframes black-candle-cell-catch {
-      0% { filter: brightness(.72); }
-      45% { filter: brightness(1.35) saturate(1.2); }
-      100% { filter: brightness(.9); }
+      0% { opacity: .72; transform: scale(.985); }
+      45% { opacity: 1; transform: scale(1.015); }
+      100% { opacity: .92; transform: scale(1); }
     }
 
     @keyframes final-harvest-receiver-breathe {
@@ -8539,9 +8550,9 @@
     }
 
     @keyframes black-candle-refill-reveal {
-      0% { filter: brightness(.5) saturate(.7); }
-      55% { filter: brightness(1.2) saturate(1.08); }
-      100% { filter: brightness(1); }
+      0% { opacity: .48; transform: scale(.97); }
+      55% { opacity: 1; transform: scale(1.01); }
+      100% { opacity: 1; transform: scale(1); }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -9406,6 +9417,7 @@
     const WILD_CHAIN_RARE_BONUS = 18;
     const WILD_CHAIN_BONUS_CAP = 80;
     const MAX_BOARD_PARTICLES = 16;
+    const FOCUSED_BOARD_PARTICLES = 10;
     const LOW_PRIORITY_BOARD_PARTICLES = new Set([
       "settle-spark",
       "petal-pop",
@@ -9570,6 +9582,33 @@
           <img class="${className}" src="${flower[1]}" srcset="${flowerIconSrcset(flower[1])}" sizes="96px" alt="${alt}" draggable="false" data-fallback-img>
         </span>
       `;
+    }
+
+    function updatePlainTileIcon(tile, flowerId) {
+      const wrap = tile.firstElementChild;
+      const image = wrap?.querySelector(":scope > img[data-fallback-img]");
+      const fallback = wrap?.querySelector(":scope > .fallback-glyph");
+      if (
+        tile.children.length !== 1
+        || !wrap?.classList.contains("tile-icon-wrap")
+        || !image
+        || !fallback
+      ) {
+        return false;
+      }
+      if (tile.__bloomFlowerId === flowerId) {
+        return true;
+      }
+      const flower = flowers[flowerId] || flowers[0];
+      wrap.classList.remove("asset-missing");
+      wrap.style.setProperty("--icon-color", flower[4]);
+      fallback.textContent = flower[3];
+      image.src = flower[1];
+      image.srcset = flowerIconSrcset(flower[1]);
+      image.alt = flower[0];
+      image.removeAttribute("data-fallback-ready");
+      tile.__bloomFlowerId = flowerId;
+      return true;
     }
 
     function thornSealMarkup(className = "", alt = "") {
@@ -14120,7 +14159,15 @@
       boardEl.setAttribute("aria-busy", thornOutcomeFeedbackActive() ? "true" : "false");
       boardEl.setAttribute("aria-rowcount", String(BOARD_SIZE));
       boardEl.setAttribute("aria-colcount", String(BOARD_SIZE));
-      boardEl.innerHTML = "";
+      const reusableTiles = new Map(
+        Array.from(boardEl.children)
+          .filter((child) => child.classList.contains("tile"))
+          .map((tile) => [tile.id, tile])
+      );
+      Array.from(boardEl.children)
+        .filter((child) => !child.classList.contains("tile"))
+        .forEach((effect) => effect.remove());
+      let boardMarkupChanged = reusableTiles.size !== BOARD_SIZE * BOARD_SIZE;
       boardEl.dataset.cascadeWave = String(currentCascadeWave);
       boardEl.dataset.lastCascadeCount = String(lastSettledCascadeCount);
       boardEl.dataset.lastWildChainBonus = String(lastWildChain?.bonusCoins || 0);
@@ -14189,13 +14236,24 @@
             && targetMatchForecast?.incomingKey === forecastKey;
           const targetMatchEndpointClass = targetMatchEndpointIndex >= 0 ? "target-match-swap-endpoint" : "";
           const targetMatchResultClass = targetMatchResult ? "target-match-result" : "";
-          const tile = document.createElement("button");
-          tile.type = "button";
+          const tileId = `tile-${x}-${y}`;
+          const tile = reusableTiles.get(tileId) || document.createElement("button");
+          const newTile = !reusableTiles.has(tileId);
+          if (newTile) {
+            tile.type = "button";
+            tile.id = tileId;
+            tile.draggable = false;
+          } else {
+            Array.from(tile.attributes).forEach((attribute) => {
+              if (attribute.name.startsWith("data-")) {
+                tile.removeAttribute(attribute.name);
+              }
+            });
+            tile.removeAttribute("style");
+          }
           tile.dataset.x = x;
           tile.dataset.y = y;
           tile.dataset.flowerId = value;
-          tile.id = `tile-${x}-${y}`;
-          tile.draggable = false;
           tile.setAttribute("aria-rowindex", String(y + 1));
           tile.setAttribute("aria-colindex", String(x + 1));
           const selectedClass = selected && selected.x === x && selected.y === y ? "sel" : "";
@@ -14352,7 +14410,7 @@
             ? `offset-${x <= lineRelicArmingFeedback.x ? "left" : "right"}-${y <= lineRelicArmingFeedback.y ? "up" : "down"}`
             : "";
           tile.setAttribute("aria-label", `${flowers[value][0]} tile${relicLabel}${legalLabel}${destinationLabel}${laneLabel}${previewLabel}${targetMatchEndpointLabel}${targetMatchResultLabel}${finalHarvestLabel}${thornTeachLabel}${thornLabel}`);
-          tile.innerHTML = `
+          const tileMarkup = `
             ${iconMarkup(value, "", flowers[value][0], "tile-icon-wrap")}
             ${targetMatchResult ? `<span class="target-match-result-mark" aria-hidden="true">${targetMatchIncoming ? iconMarkup(targetMatchForecast.target.flowerId, "target-match-ghost-icon", "", "target-match-ghost-wrap") : ""}</span>` : ""}
             ${targetMatchEndpointIndex >= 0 ? `<span class="target-match-endpoint-mark" data-step="${targetMatchEndpointIndex + 1}" aria-hidden="true"></span>` : ""}
@@ -14364,7 +14422,34 @@
             ${thornTeachingActive && thorn ? '<span class="thorn-teach-marker blocker" aria-hidden="true">×</span>' : ""}
             ${thorn || thornClearedClass ? `<span class="cursed-thorn-overlay" aria-hidden="true"><span class="thorn-root"></span>${thornSealMarkup("cursed-thorn-art", "")}${thornHitClass ? `<span class="thorn-event ${thornEventOffsetClass}">${thornClearedClass ? "BREAK" : "CRACK"}</span>` : ""}</span>` : ""}
           `;
-          boardEl.appendChild(tile);
+          const plainTileMarkup = !targetMatchResult
+            && targetMatchEndpointIndex < 0
+            && !lineRelicLaneClass
+            && !armedRelic
+            && !blackCandleBurnCell
+            && !blackCandleBurnSourceClass
+            && !lineRelicDestinationClass
+            && !(thornTeachingActive && thorn)
+            && !thorn
+            && !thornClearedClass;
+          const updatedPlainTile = plainTileMarkup
+            && tile.__bloomPlainMarkup === true
+            && updatePlainTileIcon(tile, value);
+          if (updatedPlainTile) {
+            if (tile.__bloomFlowerId === value) {
+              boardMarkupChanged ||= tile.__bloomMarkup !== tileMarkup;
+            }
+            tile.__bloomMarkup = tileMarkup;
+          } else if (tile.__bloomMarkup !== tileMarkup) {
+            tile.innerHTML = tileMarkup;
+            tile.__bloomMarkup = tileMarkup;
+            tile.__bloomFlowerId = value;
+            boardMarkupChanged = true;
+          }
+          tile.__bloomPlainMarkup = plainTileMarkup;
+          if (newTile) {
+            boardEl.appendChild(tile);
+          }
         }
       }
       if (altarReweaveActive && !roundComplete && !isBouquetFailed(activePlan)) {
@@ -14388,9 +14473,14 @@
         boardEl.appendChild(sweep);
       }
       renderFirstSwapArrow(boardEl);
-      applyImageFallbacks(boardEl);
+      if (boardMarkupChanged) {
+        applyImageFallbacks(boardEl);
+      }
 
-      refillColumns.forEach((detail, column) => {
+      const refillChannelLimit = prefersReducedMotion()
+        ? 0
+        : window.matchMedia?.("(max-width: 760px)").matches ? 2 : 3;
+      Array.from(refillColumns.entries()).slice(0, refillChannelLimit).forEach(([column, detail]) => {
         const channel = document.createElement("span");
         channel.className = "refill-channel";
         channel.setAttribute("aria-hidden", "true");
@@ -14408,7 +14498,8 @@
         boardEl.appendChild(chainLabel);
       }
 
-      harvestFlashCells.forEach((cell) => {
+      const harvestMoteLimit = prefersReducedMotion() ? 0 : 2;
+      Array.from(harvestFlashCells).slice(0, harvestMoteLimit).forEach((cell) => {
         const [x, y] = cell.split(",").map(Number);
         const mote = document.createElement("span");
         mote.className = "harvest-mote";
@@ -16071,14 +16162,20 @@
       result.wildChain = chain;
       lastWildChain = chain;
       queueWildChainPayoff(result);
-      if (boardParticles.length > MAX_BOARD_PARTICLES) {
-        boardParticles = boardParticles.slice(-MAX_BOARD_PARTICLES);
+      const particleCap = activeBoardParticleCap();
+      if (boardParticles.length > particleCap) {
+        boardParticles = boardParticles.slice(-particleCap);
       }
+    }
+
+    function activeBoardParticleCap() {
+      return focusedSliceRound() ? FOCUSED_BOARD_PARTICLES : MAX_BOARD_PARTICLES;
     }
 
     function pushBoardParticle(particle) {
       boardParticles.push(particle);
-      if (boardParticles.length <= MAX_BOARD_PARTICLES) {
+      const particleCap = activeBoardParticleCap();
+      if (boardParticles.length <= particleCap) {
         return;
       }
       const dropIndex = boardParticles.findIndex((queued) => LOW_PRIORITY_BOARD_PARTICLES.has(queued.type));
@@ -16285,8 +16382,9 @@
           shape: Boolean(wave.strongestShape),
           flowerId: board[wave.clearCells[0]?.[1]]?.[wave.clearCells[0]?.[0]]
         });
-        if (boardParticles.length > MAX_BOARD_PARTICLES) {
-          boardParticles = boardParticles.slice(-MAX_BOARD_PARTICLES);
+        const particleCap = activeBoardParticleCap();
+        if (boardParticles.length > particleCap) {
+          boardParticles = boardParticles.slice(-particleCap);
         }
         harvestFlashCells = new Set(wave.clearKeys);
         superBloomCells = new Set(effectRareCells.map((cell) => cell.join(",")));
@@ -16609,7 +16707,7 @@
         scale: cleared ? 1.18 : 1,
         delay: baseDelay
       });
-      const shards = cleared ? 3 : 1;
+      const shards = 1;
       for (let index = 0; index < shards; index += 1) {
         const angle = fxRandom() * Math.PI * 2;
         const distance = (cleared ? 48 : 30) + fxRandom() * (cleared ? 50 : 26);
@@ -17546,8 +17644,12 @@
         ));
         flightOrigins.forEach((origin, flightIndex) => {
           const destinationRect = destinationRects[flightIndex];
+          const destinationX = destinationRect.left + destinationRect.width / 2;
+          const destinationY = destinationRect.top + destinationRect.height / 2;
           const originX = boardRect.left + ((origin[0] + 0.5) / BOARD_SIZE) * boardRect.width;
           const originY = boardRect.top + ((origin[1] + 0.5) / BOARD_SIZE) * boardRect.height;
+          const launchX = reducedMotion ? destinationX : originX;
+          const launchY = reducedMotion ? destinationY : originY;
           const flight = document.createElement("img");
           flight.className = "objective-flight";
           flight.dataset.flowerId = String(target.flowerId);
@@ -17557,17 +17659,17 @@
           flight.src = flowers[target.flowerId][1];
           flight.srcset = flowerIconSrcset(flowers[target.flowerId][1]);
           flight.sizes = "26px";
-          flight.style.left = `${originX - 13}px`;
-          flight.style.top = `${originY - 13}px`;
+          flight.style.left = `${launchX - 13}px`;
+          flight.style.top = `${launchY - 13}px`;
           document.body.appendChild(flight);
-          const dx = destinationRect.left + destinationRect.width / 2 - originX;
-          const dy = destinationRect.top + destinationRect.height / 2 - originY;
+          const dx = destinationX - launchX;
+          const dy = destinationY - launchY;
           const arc = (flightIndex - (flightOrigins.length - 1) / 2) * 22;
           const animation = flight.animate([
             { transform: `translate(${index * 8 - 4}px, 0) scale(.62) rotate(-8deg)`, opacity: 0 },
             {
               transform: reducedMotion
-                ? `translate(${dx}px, ${dy}px) scale(.72) rotate(0deg)`
+                ? "translate(0, 0) scale(.82) rotate(0deg)"
                 : `translate(${dx * .45 + arc}px, ${dy * .34 - 34}px) scale(1.16) rotate(7deg)`,
               opacity: 1,
               offset: reducedMotion ? .7 : .42
@@ -17638,7 +17740,7 @@
     function queueGreenhouseIntakeFlights(cells, cascadeIndex = 0, shape = null) {
       const boardEl = $("board");
       const targetEl = visibleGreenhouseIntakeTarget();
-      if (!boardEl || !targetEl || !cells?.length) {
+      if (prefersReducedMotion() || !boardEl || !targetEl || !cells?.length) {
         return;
       }
       const boardRect = boardEl.getBoundingClientRect();
