@@ -526,6 +526,8 @@ async function activeBouquetAssemblyState(page) {
             bottom: budRect.bottom,
             width: budRect.width,
             height: budRect.height,
+            authoredWidth: Number.parseFloat(budStyle.width),
+            authoredHeight: Number.parseFloat(budStyle.height),
             opacity: Number(budStyle.opacity),
             backgroundImage: budStyle.backgroundImage,
             borderStyle: budStyle.borderStyle,
@@ -764,27 +766,51 @@ function expectPhysicalBouquetGeometry(assembly, composition) {
         && ingredient.bud.calyxClipPath !== "none"
     )), "Round 1 unearned units remain closed rosette buds with folded petals and a botanical calyx").toBe(true);
   } else {
-    expect(closed.every((ingredient) => (
-      ingredient.bud.width >= 12
-        && ingredient.bud.width <= 16
-        && ingredient.bud.height >= 16
-        && ingredient.bud.height <= 20
-        && ingredient.bud.opacity >= .42
-        && ingredient.bud.opacity <= .54
-        && ingredient.bud.backgroundImage.includes("linear-gradient")
-        && ingredient.bud.borderStyle === "solid"
-        && ingredient.bud.clipPath !== "none"
-        && ingredient.bud.socketBackgroundImage.includes("linear-gradient")
-        && ingredient.bud.socketBorderStyle === "solid"
-        && ingredient.bud.socketWidth >= 6
-        && ingredient.bud.socketWidth <= 8
-        && ingredient.bud.socketHeight >= 8
-        && ingredient.bud.socketHeight <= 10
-        && ingredient.bud.calyxBackgroundImage.includes("linear-gradient")
-        && ingredient.bud.calyxBorderLeftStyle === "solid"
-        && ingredient.bud.calyxBorderRightStyle === "solid"
-        && ingredient.bud.calyxClipPath !== "none"
-    )), "high-count unearned units remain subdued closed buds instead of equal-authority dark sockets").toBe(true);
+    const invalidClosedBuds = closed.map((ingredient) => {
+      const checks = {
+        renderedWidthMin: ingredient.bud.width >= 15,
+        renderedHeightMin: ingredient.bud.height >= 19,
+        authoredWidthMin: ingredient.bud.authoredWidth >= 16,
+        authoredWidthMax: ingredient.bud.authoredWidth <= 18,
+        authoredHeightMin: ingredient.bud.authoredHeight >= 20,
+        authoredHeightMax: ingredient.bud.authoredHeight <= 22,
+        opacityMin: ingredient.bud.opacity >= .55,
+        opacityMax: ingredient.bud.opacity <= .62,
+        paintedBody: ingredient.bud.backgroundImage.includes("linear-gradient"),
+        bodyBorder: ingredient.bud.borderStyle === "solid",
+        bodySilhouette: ingredient.bud.clipPath !== "none",
+        foldedPetal: ingredient.bud.socketBackgroundImage.includes("linear-gradient"),
+        foldedPetalBorder: ingredient.bud.socketBorderStyle === "solid",
+        foldedPetalWidthMin: ingredient.bud.socketWidth >= 7,
+        foldedPetalWidthMax: ingredient.bud.socketWidth <= 9,
+        foldedPetalHeightMin: ingredient.bud.socketHeight >= 9,
+        foldedPetalHeightMax: ingredient.bud.socketHeight <= 11,
+        paintedCalyx: ingredient.bud.calyxBackgroundImage.includes("linear-gradient"),
+        calyxLeftEdge: ingredient.bud.calyxBorderLeftStyle === "solid",
+        calyxRightEdge: ingredient.bud.calyxBorderRightStyle === "solid",
+        calyxSilhouette: ingredient.bud.calyxClipPath !== "none"
+      };
+      return {
+        slot: ingredient.slot,
+        tier: ingredient.crownTier,
+        renderedWidth: ingredient.bud.width,
+        renderedHeight: ingredient.bud.height,
+        authoredWidth: ingredient.bud.authoredWidth,
+        authoredHeight: ingredient.bud.authoredHeight,
+        opacity: ingredient.bud.opacity,
+        foldedPetalWidth: ingredient.bud.socketWidth,
+        foldedPetalHeight: ingredient.bud.socketHeight,
+        failed: Object.entries(checks).filter(([, passed]) => !passed).map(([name]) => name)
+      };
+    }).filter((ingredient) => ingredient.failed.length);
+    expect(invalidClosedBuds,
+      "high-count unearned units remain subdued closed buds instead of equal-authority dark sockets").toEqual([]);
+    const filled = assembly.ingredients.filter((ingredient) => ingredient.slotState === "filled");
+    if (filled.length && closed.length) {
+      expect(Math.min(...filled.map((ingredient) => ingredient.imageWidth)),
+        "earned high-count flower heads remain materially larger than closed buds")
+        .toBeGreaterThan(Math.max(...closed.map((ingredient) => ingredient.bud.authoredWidth)) + 7);
+    }
   }
   expect(assembly.knot, "one binding knot remains visible").not.toBeNull();
   expect(assembly.knot.width, "binding knot remains materially legible").toBeGreaterThan(19);
