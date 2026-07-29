@@ -6780,6 +6780,18 @@
     .restoration-cracks { position:absolute; inset:8% 9%; z-index:6; pointer-events:none; opacity:.9; background:linear-gradient(38deg,#0000 0 43%,#d7b16d99 44% 45%,#0000 46%),linear-gradient(126deg,#0000 0 51%,#8a332aaa 52% 53%,#0000 54%),linear-gradient(83deg,#0000 0 62%,#d7b16d77 63% 64%,#0000 65%); clip-path:polygon(18% 3%,28% 45%,12% 78%,36% 51%,51% 96%,56% 49%,83% 88%,66% 42%,91% 14%,61% 35%,48% 5%,39% 38%); filter:drop-shadow(0 0 7px #000); transition:opacity 420ms ease,transform 840ms ease; }
     .restoration-root-web { position:absolute; left:5%; right:5%; bottom:0; height:54%; z-index:6; pointer-events:none; opacity:0; transform:translateY(18px); background:repeating-linear-gradient(77deg,#0000 0 18px,#6f944d 19px 21px,#0000 22px 42px),repeating-linear-gradient(104deg,#0000 0 24px,#d7b16d99 25px 26px,#0000 27px 54px),radial-gradient(ellipse at 50% 86%,#7fcf6578 0,#0000 62%); clip-path:polygon(0 100%,8% 66%,18% 100%,27% 58%,40% 100%,50% 45%,61% 100%,72% 58%,83% 100%,93% 66%,100% 100%); filter:drop-shadow(0 0 8px #7fcf6555); transition:opacity 650ms ease,transform 850ms cubic-bezier(.12,.82,.18,1); }
     .restoration-glass-rays { position:absolute; inset:0; z-index:7; pointer-events:none; opacity:0; background:repeating-conic-gradient(from 8deg at 50% 46%,#0000 0 12deg,#fff0b533 13deg 14deg,#0000 15deg 26deg),radial-gradient(circle at 50% 42%,#fff3b666 0,#7fcf652d 20%,#0000 54%); mix-blend-mode:screen; filter:blur(.4px); transform:scale(.92); transition:opacity 720ms ease,transform 900ms cubic-bezier(.12,.82,.18,1); }
+    .restoration-bouquet-intake { position:absolute; inset:8% 4% 10%; z-index:8; display:none; place-items:center; pointer-events:none; }
+    .round-one-restoration[data-payoff-round="1"][data-restoration-phase="transforming"] .restoration-bouquet-intake {
+      display:grid;
+    }
+    .round-one-restoration[data-payoff-round="1"][data-restoration-phase="transforming"] .restoration-bouquet-intake .crafted-bouquet {
+      width:min(238px,58%);
+      height:154px;
+      opacity:0;
+      transform-origin:50% 72%;
+      animation:bouquet-into-greenhouse 1120ms cubic-bezier(.16,.82,.2,1) both;
+      filter:drop-shadow(0 10px 12px #000) drop-shadow(0 0 18px #d7b16daa);
+    }
     .restoration-coin-stream { position:absolute; inset:0; z-index:8; pointer-events:none; opacity:0; }
     .restoration-coin-stream span { position:absolute; left:var(--coin-x); top:var(--coin-y); width:12px; height:12px; border:1px solid #ffe2a4; border-radius:50%; background:radial-gradient(circle at 34% 32%,#fff7c7 0 18%,#e9b652 42%,#7a421c 78%); box-shadow:0 0 10px #e9b652aa; transform:translate(-50%,-50%) scale(.55); }
     .restoration-before-label,.restoration-after-label { position:absolute; top:9px; z-index:10; padding:4px 7px; border:1px solid #61482c; background:#050403d9; color:#d1b27f; font:900 9px/1 system-ui,sans-serif; letter-spacing:.1em; text-transform:uppercase; text-shadow:0 2px 3px #000; transition:opacity 420ms ease,border-color 420ms ease,color 420ms ease; }
@@ -6833,6 +6845,13 @@
     .round-one-restoration.restoration-awakening .restoration-state { animation:restoration-state-pop 760ms ease-out both; }
     .round-one-restoration[data-payoff-round="1"][data-restoration-phase="transforming"] .greenhouse-art-withered {
       filter:brightness(1.04) contrast(1.12) saturate(.58);
+    }
+    .round-one-restoration[data-payoff-round="1"][data-restoration-phase="transforming"] .bouquet-trophy {
+      border-color:#6f944d;
+      background:radial-gradient(circle at 50% 44%,#17300e 0,#080704 62%,#030202 100%);
+    }
+    .round-one-restoration[data-payoff-round="1"][data-restoration-phase="transforming"] .bouquet-trophy::after {
+      opacity:.34;
     }
     .round-one-restoration[data-payoff-round="1"][data-restoration-phase="transforming"] .next-order-btn {
       display:none!important;
@@ -7076,6 +7095,15 @@
     body.post-recovery-guide.armed-line-relic-cue .first-swap-cue::before { content:"BLACK CANDLE"; }
     @media (max-width:760px) {
       .payoff-stage { grid-template-columns:1fr; }
+      .round-one-restoration[data-payoff-round="1"][data-restoration-phase="transforming"] .bouquet-trophy .bouquet-assembly,
+      .round-one-restoration[data-payoff-round="1"][data-restoration-phase="transforming"] .bouquet-trophy .bouquet-trophy-bonus {
+        display:none;
+      }
+      .round-one-restoration[data-payoff-round="1"][data-restoration-phase="transforming"] .restoration-bouquet-intake .crafted-bouquet {
+        width:208px;
+        height:130px;
+        animation-name:bouquet-into-greenhouse-mobile;
+      }
       .owned-renewal-ingredient {
         left:var(--renew-mobile-start-x);
         top:var(--renew-mobile-start-y);
@@ -7215,9 +7243,16 @@
       100% { opacity:0; transform:scale(1.065); }
     }
     @keyframes restored-glass-reveal {
-      0% { opacity:.35; clip-path:inset(0 100% 0 0); transform:scale(1.055); }
-      58% { opacity:1; clip-path:inset(0 0 0 0); transform:scale(1.025); }
+      0%, 18% { opacity:.24; clip-path:inset(0 100% 0 0); transform:scale(1.055); }
+      64% { opacity:1; clip-path:inset(0 0 0 0); transform:scale(1.025); }
       100% { opacity:1; clip-path:inset(0 0 0 0); transform:scale(1.015); }
+    }
+    @keyframes bouquet-into-greenhouse {
+      0% { opacity:1; transform:translateX(-112%) translateY(4%) scale(.72) rotate(-5deg); }
+      26% { opacity:1; transform:translateX(-42%) translateY(1%) scale(.66) rotate(-2deg); }
+      58% { opacity:1; transform:translateX(0) translateY(5%) scale(.54) rotate(0); filter:drop-shadow(0 8px 10px #000) drop-shadow(0 0 24px #d7b16d); }
+      76% { opacity:.94; transform:translateX(0) translateY(8%) scale(.48); filter:brightness(1.34) drop-shadow(0 0 26px #7fcf65); }
+      100% { opacity:0; transform:translateX(0) translateY(14%) scale(.34); filter:brightness(1.7) drop-shadow(0 0 34px #fff0b4); }
     }
     @keyframes restoration-light-bloom {
       0% { opacity:0; transform:scale(.82); }
@@ -7458,11 +7493,20 @@
       .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .crafted-stem,
       .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .crafted-binding,
       .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .crafted-vine,
+      .restoration-bouquet-intake .crafted-bouquet,
       .live-bouquet-assembly:has(.live-bouquet-ingredient.order-pulse[data-gain-receiver="true"]),
       .live-bouquet-assembly:has(.live-bouquet-ingredient.order-pulse[data-gain-receiver="true"]) .live-bouquet-knot,
       .live-bouquet-ingredient.order-pulse,
       .round-one-restoration.next-order-ready .next-order-btn {
         animation:none !important;
+      }
+      .round-one-restoration[data-payoff-round="1"][data-restoration-phase="transforming"] .restoration-bouquet-intake .crafted-bouquet {
+        opacity:1;
+        transform:translateY(8%) scale(.58);
+        filter:drop-shadow(0 8px 10px #000) drop-shadow(0 0 20px #d7b16d);
+      }
+      .round-one-restoration[data-payoff-round="1"][data-restoration-phase="transforming"] .bouquet-trophy {
+        transition:none!important;
       }
       .board-particle.chain-lash {
         display:none !important;
@@ -8145,7 +8189,15 @@
       body.round-two-upgrade-complete .round-one-restoration,
       body.round-three-final-pending .round-one-restoration,
       body.round-three-final-complete .round-one-restoration { margin-top:8px; padding:11px; gap:8px; }
-      body.round-one-active .restoration-scene { height:156px; }
+      body.round-one-active .restoration-scene { height:196px; }
+      body.round-one-active .round-one-restoration[data-payoff-round="1"][data-restoration-phase="transforming"] .bouquet-trophy {
+        height:72px!important;
+        min-height:72px!important;
+        grid-template-rows:auto auto;
+      }
+      body.round-one-active .round-one-restoration[data-payoff-round="1"][data-restoration-phase="transforming"] .restoration-scene {
+        height:440px;
+      }
       body.round-two-upgrade-pending .restoration-scene,
       body.round-two-upgrade-complete .restoration-scene,
       body.round-three-final-pending .restoration-scene,
@@ -8174,6 +8226,13 @@
       body.round-two-upgrade-pending .restoration-step,
       body.round-two-upgrade-complete .restoration-step,
       body.round-three-final-complete .restoration-step { min-height:34px; }
+    }
+    @keyframes bouquet-into-greenhouse-mobile {
+      0% { opacity:1; transform:translateY(-105%) scale(.82); }
+      26% { opacity:1; transform:translateY(-46%) scale(.76); }
+      58% { opacity:1; transform:translateY(5%) scale(.66); filter:drop-shadow(0 8px 10px #000) drop-shadow(0 0 24px #d7b16d); }
+      76% { opacity:.94; transform:translateY(12%) scale(.58); filter:brightness(1.34) drop-shadow(0 0 26px #7fcf65); }
+      100% { opacity:0; transform:translateY(20%) scale(.42); filter:brightness(1.7) drop-shadow(0 0 34px #fff0b4); }
     }
 
     /* Authoritative Black Candle clears keep the altar visible long enough to
@@ -9067,6 +9126,7 @@
             <span class="restoration-cracks" aria-hidden="true"></span>
             <span class="restoration-root-web" aria-hidden="true"></span>
             <span class="restoration-glass-rays" aria-hidden="true"></span>
+            <span class="restoration-bouquet-intake" id="restorationBouquetIntake" aria-hidden="true"></span>
             <span class="restoration-coin-stream" aria-hidden="true">
               <span style="--coin-x:24%;--coin-y:76%;--coin-delay:20ms;--coin-dx:82px;--coin-dy:-64px;"></span>
               <span style="--coin-x:35%;--coin-y:79%;--coin-delay:105ms;--coin-dx:54px;--coin-dy:-80px;"></span>
@@ -17069,8 +17129,39 @@
       `).join("");
     }
 
+    function beginRoundOneBouquetTransfer(panel, bouquet) {
+      const intake = $("restorationBouquetIntake");
+      if (!panel || !intake || !bouquet) return false;
+      const replacement = panel.querySelector("#bouquetTrophy .crafted-bouquet");
+      if (replacement && replacement !== bouquet) {
+        replacement.remove();
+      }
+      bouquet.dataset.restorationTransfer = "active";
+      intake.dataset.compositionKey = bouquet.dataset.compositionKey || "";
+      intake.replaceChildren(bouquet);
+      panel.dataset.bouquetTransfer = "active";
+      return true;
+    }
+
+    function settleRoundOneBouquetTransfer(panel, bouquet) {
+      const intake = $("restorationBouquetIntake");
+      const assembly = panel?.querySelector("#bouquetTrophy .bouquet-assembly");
+      if (!panel || !intake || !assembly || !bouquet) return false;
+      const replacement = assembly.querySelector(".crafted-bouquet");
+      if (replacement && replacement !== bouquet) {
+        replacement.remove();
+      }
+      bouquet.dataset.restorationTransfer = "settled";
+      assembly.append(bouquet);
+      delete intake.dataset.compositionKey;
+      panel.dataset.bouquetTransfer = "settled";
+      return true;
+    }
+
     function restoreRoundOneGreenhouse() {
       if (currentRound !== 1 || !roundComplete || roundOneRestored || coins < FIRST_GREENHOUSE_RESTORE_COST) return;
+      const panel = $("roundOneRestoration");
+      const transferBouquet = panel?.querySelector("#bouquetTrophy .crafted-bouquet") || null;
       coins -= FIRST_GREENHOUSE_RESTORE_COST;
       pulseCoinBalance();
       roundOneRestored = true;
@@ -17079,9 +17170,12 @@
       render();
       pulseActiveGreenhouseIntake();
       playBloomSound("restore");
-      const panel = $("roundOneRestoration");
-      const transformationDuration = prefersReducedMotion() ? 140 : 1280;
+      const transformationDuration = prefersReducedMotion() ? 320 : 1280;
       panel.dataset.restorationPhase = "transforming";
+      beginRoundOneBouquetTransfer(panel, transferBouquet);
+      $("restorationTitle").textContent = "Bouquet Nourishes Greenhouse";
+      panel.querySelector(".bouquet-trophy-kicker").textContent = "Bouquet Transferred";
+      $("restorationState").textContent = "BOUQUET ENTERING WITHERED GLASSHOUSE";
       panel.classList.add("spend-pulse");
       panel.classList.remove("restoration-awakening");
       void panel.offsetWidth;
@@ -17093,6 +17187,7 @@
         pulseNextOrderReady();
         queuePostRenderFocus("nextOrderBtn");
         render();
+        settleRoundOneBouquetTransfer(panel, transferBouquet);
       }, transformationDuration);
     }
 

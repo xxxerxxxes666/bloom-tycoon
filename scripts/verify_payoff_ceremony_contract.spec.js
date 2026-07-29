@@ -1094,7 +1094,11 @@ async function restorationSceneEvidence(page) {
     const withered = panel?.querySelector(".greenhouse-art-withered");
     const restored = panel?.querySelector(".greenhouse-art-restored");
     const cracks = panel?.querySelector(".restoration-cracks");
+    const intake = panel?.querySelector("#restorationBouquetIntake");
+    const transferBouquet = intake?.querySelector(".crafted-bouquet");
+    const trophyBouquet = panel?.querySelector("#bouquetTrophy .crafted-bouquet");
     const rect = sceneNode?.getBoundingClientRect();
+    const transferRect = transferBouquet?.getBoundingClientRect();
     const imageState = (image) => ({
       src: image?.getAttribute("src") || "",
       complete: Boolean(image?.complete),
@@ -1117,7 +1121,27 @@ async function restorationSceneEvidence(page) {
       } : null,
       withered: imageState(withered),
       restored: imageState(restored),
-      cracksDisplay: cracks ? getComputedStyle(cracks).display : ""
+      cracksDisplay: cracks ? getComputedStyle(cracks).display : "",
+      bouquetTransfer: {
+        panelState: panel?.dataset.bouquetTransfer || "",
+        intakeCompositionKey: intake?.dataset.compositionKey || "",
+        transferState: transferBouquet?.dataset.restorationTransfer || "",
+        transferCompositionKey: transferBouquet?.dataset.compositionKey || "",
+        exactSourceNode: Boolean(transferBouquet && window.__roundOneRestorationTransferSource === transferBouquet),
+        inScene: Boolean(transferBouquet && transferBouquet.closest(".restoration-scene") === sceneNode),
+        trophyBouquets: panel?.querySelectorAll("#bouquetTrophy .crafted-bouquet").length || 0,
+        transferBouquets: intake?.querySelectorAll(".crafted-bouquet").length || 0,
+        trophyCompositionKey: trophyBouquet?.dataset.compositionKey || "",
+        settledExactSourceNode: Boolean(trophyBouquet && window.__roundOneRestorationTransferSource === trophyBouquet),
+        rect: transferRect ? {
+          left: transferRect.left,
+          top: transferRect.top,
+          width: transferRect.width,
+          height: transferRect.height,
+          right: transferRect.right,
+          bottom: transferRect.bottom
+        } : null
+      }
     };
   });
   return { ...dom, pixels };
@@ -1185,6 +1209,11 @@ function expectRoundOneSceneIdentity(evidence, label) {
 
 async function restoreRoundOneAndCapturePeak(page, label, pendingEvidence) {
   await expect(page.locator("#restoreGreenhouseBtn")).toBeFocused();
+  await page.evaluate(() => {
+    window.__roundOneRestorationTransferSource = document.querySelector(
+      "#bouquetTrophy .crafted-bouquet"
+    );
+  });
   await page.keyboard.press("Enter");
   await page.waitForFunction(() => (
     document.querySelector("#roundOneRestoration")?.dataset.restorationPhase === "transforming"
@@ -1208,6 +1237,29 @@ async function restoreRoundOneAndCapturePeak(page, label, pendingEvidence) {
   const peakEvidence = await restorationSceneEvidence(page);
   expectRoundOneSceneIdentity(peakEvidence, `${label} transformation peak`);
   expect(peakEvidence.phase).toBe("transforming");
+  expect(peakEvidence.bouquetTransfer).toMatchObject({
+    panelState: "active",
+    transferState: "active",
+    exactSourceNode: true,
+    inScene: true,
+    trophyBouquets: 0,
+    transferBouquets: 1
+  });
+  expect(peakEvidence.bouquetTransfer.intakeCompositionKey)
+    .toBe(pendingEvidence.bouquetTransfer.trophyCompositionKey);
+  expect(peakEvidence.bouquetTransfer.transferCompositionKey)
+    .toBe(pendingEvidence.bouquetTransfer.trophyCompositionKey);
+  expect(peakEvidence.bouquetTransfer.rect, `${label} bouquet has measurable greenhouse overlap`).toBeTruthy();
+  expect(
+    Math.min(peakEvidence.bouquetTransfer.rect.right, peakEvidence.rect.right)
+      - Math.max(peakEvidence.bouquetTransfer.rect.left, peakEvidence.rect.left),
+    `${label} exact bouquet overlaps the same greenhouse horizontally`
+  ).toBeGreaterThan(40);
+  expect(
+    Math.min(peakEvidence.bouquetTransfer.rect.bottom, peakEvidence.rect.bottom)
+      - Math.max(peakEvidence.bouquetTransfer.rect.top, peakEvidence.rect.top),
+    `${label} exact bouquet overlaps the same greenhouse vertically`
+  ).toBeGreaterThan(40);
   expect(peakContract.coins, `${label} spend settles authoritatively at press time`).toBe(20);
   expect(peakContract.transactionText).toBe("100 coins spent · Greenhouse awakening · 20 coins remain.");
   expect(peakContract.buttons, `${label} no second action interrupts the bounded transformation`).toEqual([]);
@@ -1234,6 +1286,14 @@ async function restoreRoundOneAndCapturePeak(page, label, pendingEvidence) {
     document.querySelector("#roundOneRestoration")?.dataset.restorationPhase === "settled"
       && !document.querySelector("#roundOneRestoration")?.classList.contains("restoration-awakening")
   ), null, { timeout: 1600 });
+  const settledTransfer = await restorationSceneEvidence(page);
+  expect(settledTransfer.bouquetTransfer).toMatchObject({
+    panelState: "settled",
+    exactSourceNode: false,
+    settledExactSourceNode: true,
+    trophyBouquets: 1,
+    transferBouquets: 0
+  });
 }
 
 async function expectActiveBoard(page) {
@@ -2249,7 +2309,46 @@ for (const config of [
     const pendingScene = await restorationSceneEvidence(page);
     expectRoundOneSceneIdentity(pendingScene, `${config.label} reduced-motion pending`);
     const startedAt = Date.now();
+    await page.evaluate(() => {
+      window.__roundOneRestorationTransferSource = document.querySelector(
+        "#bouquetTrophy .crafted-bouquet"
+      );
+    });
     await page.locator("#restoreGreenhouseBtn").click();
+    await page.waitForFunction(() => (
+      document.querySelector("#roundOneRestoration")?.dataset.restorationPhase === "transforming"
+    ), null, { timeout: 300 });
+    const reducedTransfer = await page.evaluate(() => {
+      const panel = document.querySelector("#roundOneRestoration");
+      const intake = document.querySelector("#restorationBouquetIntake");
+      const bouquet = intake?.querySelector(".crafted-bouquet");
+      return {
+        panelState: panel?.dataset.bouquetTransfer || "",
+        transferState: bouquet?.dataset.restorationTransfer || "",
+        transferCompositionKey: bouquet?.dataset.compositionKey || "",
+        exactSourceNode: Boolean(bouquet && window.__roundOneRestorationTransferSource === bouquet),
+        inScene: Boolean(bouquet?.closest(".restoration-scene")),
+        trophyBouquets: panel?.querySelectorAll("#bouquetTrophy .crafted-bouquet").length || 0,
+        transferBouquets: intake?.querySelectorAll(".crafted-bouquet").length || 0,
+        runningAnimations: bouquet?.getAnimations({ subtree: true })
+          .filter((animation) => animation.playState === "running").length || 0
+      };
+    });
+    expect(reducedTransfer).toMatchObject({
+      panelState: "active",
+      transferState: "active",
+      exactSourceNode: true,
+      inScene: true,
+      trophyBouquets: 0,
+      transferBouquets: 1
+    });
+    expect(reducedTransfer.transferCompositionKey)
+      .toBe(pendingScene.bouquetTransfer.trophyCompositionKey);
+    expect(reducedTransfer.runningAnimations, "reduced motion keeps the bouquet-to-greenhouse handoff spatially static").toBe(0);
+    await page.screenshot({
+      path: `work/restoration-reduced-motion-${config.label}-transforming.png`,
+      fullPage: true
+    });
     await page.waitForFunction(() => (
       document.querySelector("#roundOneRestoration")?.dataset.restorationPhase === "settled"
     ), null, { timeout: 650 });
