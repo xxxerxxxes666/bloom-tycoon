@@ -410,6 +410,223 @@ async function finalHarvestAuthorityState(page) {
   });
 }
 
+async function commandSurfaceGeometryState(page) {
+  return page.evaluate(() => {
+    const visible = (node) => {
+      if (!node) return false;
+      const rect = node.getBoundingClientRect();
+      const style = getComputedStyle(node);
+      return style.display !== "none"
+        && style.visibility !== "hidden"
+        && Number(style.opacity || 1) !== 0
+        && rect.width > 0
+        && rect.height > 0;
+    };
+    const rectOf = (node) => {
+      if (!node) return null;
+      const rect = node.getBoundingClientRect();
+      return {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height
+      };
+    };
+    const glyphRect = (node) => {
+      if (!node || !visible(node)) return null;
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      const rect = range.getBoundingClientRect();
+      range.detach();
+      return {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height
+      };
+    };
+    const hitOwnership = (node) => {
+      if (!node || !visible(node)) return [];
+      const rect = node.getBoundingClientRect();
+      const inset = Math.min(8, rect.width / 4, rect.height / 4);
+      return [
+        ["center", rect.left + rect.width / 2, rect.top + rect.height / 2],
+        ["top-left", rect.left + inset, rect.top + inset],
+        ["top-right", rect.right - inset, rect.top + inset],
+        ["bottom-left", rect.left + inset, rect.bottom - inset],
+        ["bottom-right", rect.right - inset, rect.bottom - inset]
+      ].map(([point, x, y]) => {
+        const owner = document.elementFromPoint(x, y);
+        return {
+          point,
+          x,
+          y,
+          owned: Boolean(owner && (owner === node || node.contains(owner))),
+          ownerId: owner?.id || "",
+          ownerClass: String(owner?.className || "")
+        };
+      });
+    };
+    const panel = document.querySelector("#tutorialPanel");
+    const cue = document.querySelector("#firstSwapCue");
+    const surface = visible(panel) ? panel : visible(cue) ? cue : null;
+    const category = visible(panel)
+      ? panel.querySelector(".tutorial-icon")
+      : null;
+    const action = visible(panel)
+      ? document.querySelector("#tutorialCopy")
+      : surface;
+    const skip = document.querySelector("#tutorialSkipBtn");
+    const tiles = Array.from(document.querySelectorAll(".tile")).map((tile) => ({
+      x: Number(tile.dataset.x),
+      y: Number(tile.dataset.y),
+      rect: rectOf(tile)
+    }));
+    const representativeTileHits = [0, 7, 27, 36, 56, 63].map((index) => {
+      const tile = document.querySelectorAll(".tile")[index];
+      const rect = tile?.getBoundingClientRect();
+      const owner = rect
+        ? document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2)
+        : null;
+      return {
+        id: tile?.id || "",
+        owned: Boolean(owner && tile && (owner === tile || tile.contains(owner))),
+        ownerId: owner?.id || "",
+        ownerClass: String(owner?.className || "")
+      };
+    });
+    return {
+      viewport: {
+        width: innerWidth,
+        height: innerHeight,
+        scrollWidth: document.documentElement.scrollWidth,
+        scrollHeight: document.documentElement.scrollHeight
+      },
+      bodyClasses: document.body.className,
+      region: rectOf(document.querySelector("#tutorialCommandRegion")),
+      surface: rectOf(surface),
+      surfaceId: surface?.id || "",
+      surfaceText: surface?.textContent.replace(/\s+/g, " ").trim() || "",
+      category: {
+        text: category?.textContent.trim() || "",
+        box: rectOf(category),
+        glyphs: glyphRect(category)
+      },
+      action: {
+        text: action?.textContent.replace(/\s+/g, " ").trim() || "",
+        box: rectOf(action),
+        glyphs: glyphRect(action)
+      },
+      skip: {
+        visible: visible(skip),
+        text: skip?.textContent.trim() || "",
+        box: visible(skip) ? rectOf(skip) : null,
+        glyphs: glyphRect(skip),
+        hitOwnership: hitOwnership(skip)
+      },
+      greenhouse: rectOf(document.querySelector("#mobileGreenhouseProgress")),
+      board: rectOf(document.querySelector("#board")),
+      tiles,
+      representativeTileHits,
+      tileRows: new Set(tiles.map((tile) => tile.y)).size,
+      tileColumns: new Set(tiles.map((tile) => tile.x)).size,
+      overflowX: document.documentElement.scrollWidth > innerWidth + 1,
+      overflowY: document.documentElement.scrollHeight > innerHeight + 1
+    };
+  });
+}
+
+function geometryContains(outer, inner, tolerance = 0.5) {
+  return Boolean(
+    outer
+    && inner
+    && inner.left >= outer.left - tolerance
+    && inner.right <= outer.right + tolerance
+    && inner.top >= outer.top - tolerance
+    && inner.bottom <= outer.bottom + tolerance
+  );
+}
+
+function geometryOverlaps(first, second, tolerance = 0.5) {
+  return Boolean(
+    first
+    && second
+    && Math.min(first.right, second.right) - Math.max(first.left, second.left) > tolerance
+    && Math.min(first.bottom, second.bottom) - Math.max(first.top, second.top) > tolerance
+  );
+}
+
+function expectCommandSurfaceGeometry(geometry, label) {
+  const viewport = {
+    left: 0,
+    top: 0,
+    right: geometry.viewport.width,
+    bottom: geometry.viewport.height
+  };
+  expect(geometryContains(viewport, geometry.region), `${label} command region is in viewport`).toBe(true);
+  expect(geometryContains(geometry.region, geometry.surface), `${label} command surface is in its region`).toBe(true);
+  expect(geometryContains(viewport, geometry.surface), `${label} command surface is in viewport`).toBe(true);
+  expect(geometry.action.text, `${label} keeps literal action copy`).not.toBe("");
+  expect(geometryContains(geometry.surface, geometry.action.box), `${label} action box is contained`).toBe(true);
+  expect(geometryContains(geometry.surface, geometry.action.glyphs), `${label} action glyphs are contained`).toBe(true);
+  if (geometry.category.text) {
+    expect(geometryContains(geometry.surface, geometry.category.box), `${label} category box is contained`).toBe(true);
+    expect(geometryContains(geometry.surface, geometry.category.glyphs), `${label} category glyphs are contained`).toBe(true);
+    expect(
+      geometryOverlaps(geometry.category.glyphs, geometry.action.glyphs),
+      `${label} category and action glyphs do not overlap`
+    ).toBe(false);
+  }
+  if (geometry.skip.visible) {
+    expect(geometry.skip.text, `${label} complete Skip copy`).toBe("Skip");
+    expect(geometryContains(geometry.surface, geometry.skip.box), `${label} Skip control is contained`).toBe(true);
+    expect(geometryContains(geometry.surface, geometry.skip.glyphs), `${label} Skip glyphs are contained`).toBe(true);
+    expect(geometryContains(viewport, geometry.skip.box), `${label} Skip control is in viewport`).toBe(true);
+    expect(geometryContains(viewport, geometry.skip.glyphs), `${label} Skip glyphs are in viewport`).toBe(true);
+    expect(geometryOverlaps(geometry.action.glyphs, geometry.skip.glyphs), `${label} action and Skip do not overlap`).toBe(false);
+    if (geometry.category.text) {
+      expect(
+        geometryOverlaps(geometry.category.glyphs, geometry.skip.glyphs),
+        `${label} category and Skip do not overlap`
+      ).toBe(false);
+    }
+    expect(
+      geometry.skip.hitOwnership.filter((probe) => !probe.owned),
+      `${label} Skip center and inset probes belong to Skip`
+    ).toEqual([]);
+    if (geometry.viewport.width === 390) {
+      expect(geometry.skip.box.width, `${label} mobile Skip width`).toBeGreaterThanOrEqual(44);
+      expect(geometry.skip.box.height, `${label} mobile Skip height`).toBeGreaterThanOrEqual(44);
+    }
+  }
+  expect(geometryOverlaps(geometry.region, geometry.greenhouse), `${label} command clears greenhouse strip`).toBe(false);
+  expect(geometryOverlaps(geometry.surface, geometry.board), `${label} command clears board`).toBe(false);
+  expect(geometryOverlaps(geometry.greenhouse, geometry.board), `${label} greenhouse clears board`).toBe(false);
+  expect(geometry.tiles, `${label} keeps 64 tiles`).toHaveLength(64);
+  expect(geometry.tileRows, `${label} keeps eight tile rows`).toBe(8);
+  expect(geometry.tileColumns, `${label} keeps eight tile columns`).toBe(8);
+  expect(
+    geometry.representativeTileHits.filter((probe) => !probe.owned),
+    `${label} representative tile centers belong to their tiles`
+  ).toEqual([]);
+  expect(geometry.overflowX, `${label} has no horizontal overflow`).toBe(false);
+  expect(geometry.overflowY, `${label} has no vertical overflow`).toBe(false);
+  if (geometry.viewport.width === 390) {
+    expect(geometry.board.width, `${label} mobile board width`).toBeCloseTo(378, 5);
+    expect(geometry.board.height, `${label} mobile board height`).toBeCloseTo(378, 5);
+    expect(geometry.board.bottom, `${label} full board remains in viewport`)
+      .toBeLessThanOrEqual(geometry.viewport.height);
+    const tileWidths = new Set(geometry.tiles.map(({ rect }) => rect.width));
+    const tileHeights = new Set(geometry.tiles.map(({ rect }) => rect.height));
+    expect([...tileWidths], `${label} stable mobile tile widths`).toHaveLength(1);
+    expect([...tileHeights], `${label} stable mobile tile heights`).toHaveLength(1);
+  }
+}
+
 const GREENHOUSE_EXPECTATIONS = [
   {
     stage: 0,
@@ -881,7 +1098,8 @@ function expectTransientFinalHarvestAuthority(state, label) {
 async function expectEligibleFinalHarvest(page, round, label) {
   const state = {
     ...(await journeyState(page)),
-    ...(await finalHarvestAuthorityState(page))
+    ...(await finalHarvestAuthorityState(page)),
+    commandGeometry: await commandSurfaceGeometryState(page)
   };
   const targets = parsedFinalHarvestTargets(state);
   expect(state.finalHarvestPhase, `${label} eligibility phase`).toBe("eligible");
@@ -920,6 +1138,7 @@ async function expectEligibleFinalHarvest(page, round, label) {
   }
   expect(state.brokenImages, `${label} has no broken images`).toEqual([]);
   expect(state.liveRegionOwners, `${label} has exactly one visible narrator`).toHaveLength(1);
+  expectCommandSurfaceGeometry(state.commandGeometry, `${label} visible command`);
   expectTransientFinalHarvestAuthority(state, `${label} eligibility`);
   if (state.finalHarvestOwner === "stronger-guidance") {
     expect(state.liveRegionOwners[0].text, `${label} Black Candle remains sole narrator`)
@@ -2243,6 +2462,24 @@ async function runFinalHarvestJourney(browser, config) {
     await openFresh(page, "altar-rose", runLabel);
     for (let round = 1; round <= 3; round += 1) {
       let eligible = await playUntilFinalHarvest(page, round, `${runLabel} round ${round}`, "final-harvest");
+      if (round === 1) {
+        const command = eligible.commandGeometry;
+        console.log(`${runLabel} round 1 command geometry: ${JSON.stringify({
+          viewport: command.viewport,
+          region: command.region,
+          surface: command.surface,
+          category: command.category,
+          action: command.action,
+          skip: command.skip,
+          greenhouse: command.greenhouse,
+          board: command.board,
+          tileRows: command.tileRows,
+          tileColumns: command.tileColumns,
+          representativeTileHits: command.representativeTileHits,
+          overflowX: command.overflowX,
+          overflowY: command.overflowY
+        })}`);
+      }
       if (!config.mobile && round === 2) {
         eligible = await exerciseFinalHarvestLifecycle(page, eligible, `${runLabel} round ${round}`);
       }

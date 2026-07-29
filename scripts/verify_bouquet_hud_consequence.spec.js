@@ -1646,6 +1646,52 @@ for (const viewport of FAILURE_VIEWPORTS) {
               && rect.width > 0
               && rect.height > 0;
           };
+          const rect = (node) => {
+            const bounds = node?.getBoundingClientRect();
+            return bounds ? {
+              left: bounds.left,
+              top: bounds.top,
+              right: bounds.right,
+              bottom: bounds.bottom,
+              width: bounds.width,
+              height: bounds.height
+            } : null;
+          };
+          const glyphRect = (node) => {
+            if (!node || !visible(node)) return null;
+            const range = document.createRange();
+            range.selectNodeContents(node);
+            const bounds = range.getBoundingClientRect();
+            range.detach();
+            return {
+              left: bounds.left,
+              top: bounds.top,
+              right: bounds.right,
+              bottom: bounds.bottom,
+              width: bounds.width,
+              height: bounds.height
+            };
+          };
+          const contains = (outer, inner) => Boolean(
+            outer
+            && inner
+            && inner.left >= outer.left - 1
+            && inner.right <= outer.right + 1
+            && inner.top >= outer.top - 1
+            && inner.bottom <= outer.bottom + 1
+          );
+          const overlaps = (first, second) => Boolean(
+            first
+            && second
+            && Math.min(first.right, second.right) - Math.max(first.left, second.left) > 1
+            && Math.min(first.bottom, second.bottom) - Math.max(first.top, second.top) > 1
+          );
+          const commandRegion = rect(document.querySelector("#tutorialCommandRegion"));
+          const commandPanel = rect(document.querySelector("#tutorialPanel"));
+          const categoryGlyphs = glyphRect(document.querySelector("#tutorialPanel .tutorial-icon"));
+          const actionGlyphs = glyphRect(document.querySelector("#tutorialCopy"));
+          const greenhouse = rect(document.querySelector("#mobileGreenhouseProgress"));
+          const board = rect(document.querySelector("#board"));
           return {
             armedLineRelic: state.armedLineRelic,
             liveRegions: Array.from(document.querySelectorAll("[aria-live]"))
@@ -1666,7 +1712,21 @@ for (const viewport of FAILURE_VIEWPORTS) {
             destinations: document.querySelectorAll(".line-relic-destination").length,
             tiles: document.querySelectorAll(".tile").length,
             rows: new Set(Array.from(document.querySelectorAll(".tile"), (tile) => tile.dataset.y)).size,
-            overflowX: document.documentElement.scrollWidth > innerWidth + 1
+            overflowX: document.documentElement.scrollWidth > innerWidth + 1,
+            commandGeometry: {
+              viewport: { width: innerWidth, height: innerHeight },
+              region: commandRegion,
+              panel: commandPanel,
+              categoryGlyphs,
+              actionGlyphs,
+              regionContainsPanel: contains(commandRegion, commandPanel),
+              panelContainsCategory: contains(commandPanel, categoryGlyphs),
+              panelContainsAction: contains(commandPanel, actionGlyphs),
+              categoryActionOverlap: overlaps(categoryGlyphs, actionGlyphs),
+              regionGreenhouseOverlap: overlaps(commandRegion, greenhouse),
+              panelBoardOverlap: overlaps(commandPanel, board),
+              overflowY: document.documentElement.scrollHeight > innerHeight + 1
+            }
           };
         }, SAVE_KEY);
         expect(report.armedLineRelic, `${contextLabel} retains relic gameplay state`).toEqual(
@@ -1689,6 +1749,33 @@ for (const viewport of FAILURE_VIEWPORTS) {
         expect(report.tiles, `${contextLabel} tiles`).toBe(64);
         expect(report.rows, `${contextLabel} rows`).toBe(8);
         expect(report.overflowX, `${contextLabel} overflow`).toBe(false);
+        expect(
+          report.commandGeometry.regionContainsPanel,
+          `${contextLabel} failure panel belongs to command region`
+        ).toBe(true);
+        expect(
+          report.commandGeometry.panelContainsCategory,
+          `${contextLabel} Retry glyphs are contained`
+        ).toBe(true);
+        expect(
+          report.commandGeometry.panelContainsAction,
+          `${contextLabel} failure action glyphs are contained`
+        ).toBe(true);
+        expect(
+          report.commandGeometry.categoryActionOverlap,
+          `${contextLabel} failure category/action glyphs do not overlap`
+        ).toBe(false);
+        expect(
+          report.commandGeometry.regionGreenhouseOverlap,
+          `${contextLabel} failure command clears greenhouse strip`
+        ).toBe(false);
+        expect(
+          report.commandGeometry.panelBoardOverlap,
+          `${contextLabel} failure command clears board`
+        ).toBe(false);
+        if (report.commandGeometry.viewport.width === 390) {
+          expect(report.commandGeometry.overflowY, `${contextLabel} no mobile vertical overflow`).toBe(false);
+        }
       };
 
       for (let reload = 0; reload < 2; reload += 1) {

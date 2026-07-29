@@ -8904,6 +8904,41 @@
         width: auto;
       }
 
+      body.tutorial-active .tutorial-command-region > .tutorial-panel.black-candle-tutorial,
+      body.tutorial-active .tutorial-command-region > .tutorial-panel.final-harvest-tutorial,
+      body.tutorial-active .tutorial-command-region > .tutorial-panel.refused-tutorial,
+      body.tutorial-active .tutorial-command-region > .tutorial-panel.failed-tutorial {
+        box-sizing: border-box;
+        display: grid;
+        grid-template-columns: max-content minmax(0, 1fr) auto;
+        align-items: center;
+        width: 100%;
+        max-width: 100%;
+        min-height: 56px;
+        margin: 0;
+        padding: 5px 6px;
+        gap: 5px;
+        border-radius: 28px;
+      }
+
+      body.tutorial-active .tutorial-command-region > .tutorial-panel.black-candle-tutorial .tutorial-copy,
+      body.tutorial-active .tutorial-command-region > .tutorial-panel.final-harvest-tutorial .tutorial-copy,
+      body.tutorial-active .tutorial-command-region > .tutorial-panel.refused-tutorial .tutorial-copy,
+      body.tutorial-active .tutorial-command-region > .tutorial-panel.failed-tutorial .tutorial-copy {
+        min-width: 0;
+        white-space: normal;
+        line-height: 1.15;
+      }
+
+      body.tutorial-active .tutorial-command-region > .tutorial-panel.black-candle-tutorial .tutorial-skip,
+      body.tutorial-active .tutorial-command-region > .tutorial-panel.final-harvest-tutorial .tutorial-skip,
+      body.tutorial-active .tutorial-command-region > .tutorial-panel.refused-tutorial .tutorial-skip,
+      body.tutorial-active .tutorial-command-region > .tutorial-panel.failed-tutorial .tutorial-skip {
+        box-sizing: border-box;
+        min-width: 44px;
+        min-height: 44px;
+      }
+
       .tutorial-command-region > .first-swap-cue::before {
         display: none;
       }

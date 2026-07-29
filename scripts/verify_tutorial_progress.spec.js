@@ -1921,8 +1921,54 @@ async function invalidFeedbackState(page) {
     const saved = JSON.parse(localStorage.getItem(key) || "{}");
     const tutorialPanel = document.querySelector("#tutorialPanel");
     const tutorialIcon = tutorialPanel?.querySelector(".tutorial-icon");
+    const tutorialCopy = document.querySelector("#tutorialCopy");
+    const tutorialSkip = document.querySelector("#tutorialSkipBtn");
     const tutorialRect = tutorialPanel?.getBoundingClientRect();
     const tileRects = Array.from(document.querySelectorAll(".tile")).map((tile) => tile.getBoundingClientRect());
+    const rect = (node) => {
+      const bounds = node?.getBoundingClientRect();
+      return bounds ? {
+        left: bounds.left,
+        top: bounds.top,
+        right: bounds.right,
+        bottom: bounds.bottom,
+        width: bounds.width,
+        height: bounds.height
+      } : null;
+    };
+    const glyphRect = (node) => {
+      if (!node || !visible(node)) return null;
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      const bounds = range.getBoundingClientRect();
+      range.detach();
+      return {
+        left: bounds.left,
+        top: bounds.top,
+        right: bounds.right,
+        bottom: bounds.bottom,
+        width: bounds.width,
+        height: bounds.height
+      };
+    };
+    const skipBounds = tutorialSkip?.getBoundingClientRect();
+    const skipHitOwnership = skipBounds && visible(tutorialSkip)
+      ? [
+          ["center", skipBounds.left + skipBounds.width / 2, skipBounds.top + skipBounds.height / 2],
+          ["top-left", skipBounds.left + 8, skipBounds.top + 8],
+          ["top-right", skipBounds.right - 8, skipBounds.top + 8],
+          ["bottom-left", skipBounds.left + 8, skipBounds.bottom - 8],
+          ["bottom-right", skipBounds.right - 8, skipBounds.bottom - 8]
+        ].map(([point, x, y]) => {
+          const owner = document.elementFromPoint(x, y);
+          return {
+            point,
+            owned: Boolean(owner && (owner === tutorialSkip || tutorialSkip.contains(owner))),
+            ownerId: owner?.id || "",
+            ownerClass: String(owner?.className || "")
+          };
+        })
+      : [];
     const positiveFeedbackNodes = Array.from(document.querySelectorAll([
       ".board-particle.impact-sigil",
       ".board-particle.cascade-ring",
@@ -1960,6 +2006,27 @@ async function invalidFeedbackState(page) {
       })),
       refusedTutorial: tutorialPanel?.classList.contains("refused-tutorial") || false,
       tutorialVisible: visible(tutorialPanel),
+      commandGeometry: {
+        viewport: { width: innerWidth, height: innerHeight },
+        region: rect(document.querySelector("#tutorialCommandRegion")),
+        panel: rect(tutorialPanel),
+        category: {
+          box: rect(tutorialIcon),
+          glyphs: glyphRect(tutorialIcon)
+        },
+        action: {
+          box: rect(tutorialCopy),
+          glyphs: glyphRect(tutorialCopy)
+        },
+        skip: {
+          box: visible(tutorialSkip) ? rect(tutorialSkip) : null,
+          glyphs: glyphRect(tutorialSkip),
+          hitOwnership: skipHitOwnership
+        },
+        greenhouse: rect(document.querySelector("#mobileGreenhouseProgress")),
+        board: rect(document.querySelector("#board")),
+        overflowY: document.documentElement.scrollHeight > innerHeight + 1
+      },
       tutorialClipped: Boolean(
         tutorialPanel
         && (
@@ -2075,6 +2142,60 @@ function assertPassiveInputPreservesFeedback(before, after, label) {
   expect(after.brokenImages, `${label} no broken images`).toEqual([]);
 }
 
+function phaseRectContains(outer, inner) {
+  return Boolean(
+    outer
+    && inner
+    && inner.left >= outer.left - 1
+    && inner.right <= outer.right + 1
+    && inner.top >= outer.top - 1
+    && inner.bottom <= outer.bottom + 1
+  );
+}
+
+function phaseRectsOverlap(first, second) {
+  return Boolean(
+    first
+    && second
+    && Math.min(first.right, second.right) - Math.max(first.left, second.left) > 1
+    && Math.min(first.bottom, second.bottom) - Math.max(first.top, second.top) > 1
+  );
+}
+
+function assertAuthoredPhaseCommandGeometry(state, label, { skip = true } = {}) {
+  const geometry = state.commandGeometry;
+  const viewport = {
+    left: 0,
+    top: 0,
+    right: geometry.viewport.width,
+    bottom: geometry.viewport.height
+  };
+  expect(phaseRectContains(viewport, geometry.region), `${label} command region in viewport`).toBe(true);
+  expect(phaseRectContains(geometry.region, geometry.panel), `${label} panel in command region`).toBe(true);
+  expect(phaseRectContains(geometry.panel, geometry.category.glyphs), `${label} category glyphs contained`).toBe(true);
+  expect(phaseRectContains(geometry.panel, geometry.action.glyphs), `${label} action glyphs contained`).toBe(true);
+  expect(
+    phaseRectsOverlap(geometry.category.glyphs, geometry.action.glyphs),
+    `${label} category/action glyphs do not overlap`
+  ).toBe(false);
+  expect(phaseRectsOverlap(geometry.region, geometry.greenhouse), `${label} command clears greenhouse`).toBe(false);
+  expect(phaseRectsOverlap(geometry.panel, geometry.board), `${label} command clears board`).toBe(false);
+  expect(geometry.overflowY, `${label} no vertical overflow`).toBe(false);
+  if (skip) {
+    expect(phaseRectContains(geometry.panel, geometry.skip.box), `${label} Skip control contained`).toBe(true);
+    expect(phaseRectContains(geometry.panel, geometry.skip.glyphs), `${label} Skip glyphs contained`).toBe(true);
+    expect(phaseRectsOverlap(geometry.action.glyphs, geometry.skip.glyphs), `${label} action/Skip glyphs do not overlap`).toBe(false);
+    expect(
+      geometry.skip.hitOwnership.filter((probe) => !probe.owned),
+      `${label} Skip center/insets own their hits`
+    ).toEqual([]);
+    if (geometry.viewport.width === 390) {
+      expect(geometry.skip.box.width, `${label} mobile Skip width`).toBeGreaterThanOrEqual(44);
+      expect(geometry.skip.box.height, `${label} mobile Skip height`).toBeGreaterThanOrEqual(44);
+    }
+  }
+}
+
 function assertRefusalOwnsFeedback(state, label, { agency = false } = {}) {
   expect(state.tutorialIcon, `${label} refusal category`).toBe("NO BLOOM");
   expect(state.tutorialCopy, `${label} refusal copy`).toBe(
@@ -2088,6 +2209,7 @@ function assertRefusalOwnsFeedback(state, label, { agency = false } = {}) {
   expect(state.dataRows, `${label} data rows`).toBe(8);
   expect(state.overflowX, `${label} no horizontal overflow`).toBe(false);
   expect(state.brokenImages, `${label} no broken images`).toEqual([]);
+  assertAuthoredPhaseCommandGeometry(state, `${label} authored refusal`);
 }
 
 async function refuseInvalidPair(page, { touch = false, repeat = false } = {}) {
@@ -2776,6 +2898,22 @@ test("exact-mobile Black Candle Skip owns a complete touch target", async ({ bro
         height: bounds.height
       } : null;
     };
+    const glyphRect = (selector) => {
+      const node = document.querySelector(selector);
+      if (!node) return null;
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      const bounds = range.getBoundingClientRect();
+      range.detach();
+      return {
+        left: bounds.left,
+        top: bounds.top,
+        right: bounds.right,
+        bottom: bounds.bottom,
+        width: bounds.width,
+        height: bounds.height
+      };
+    };
     const overlaps = (a, b) => Boolean(
       a && b
       && a.left < b.right
@@ -2783,19 +2921,63 @@ test("exact-mobile Black Candle Skip owns a complete touch target", async ({ bro
       && a.top < b.bottom
       && a.bottom > b.top
     );
+    const contained = (outer, inner) => Boolean(
+      outer && inner
+      && inner.left >= outer.left - 1
+      && inner.right <= outer.right + 1
+      && inner.top >= outer.top - 1
+      && inner.bottom <= outer.bottom + 1
+    );
     const panel = rect("#tutorialPanel");
     const icon = rect("#tutorialPanel .tutorial-icon");
     const copy = rect("#tutorialCopy");
     const skip = rect("#tutorialSkipBtn");
+    const region = rect("#tutorialCommandRegion");
+    const greenhouse = rect("#mobileGreenhouseProgress");
     const board = rect("#board");
+    const skipNode = document.querySelector("#tutorialSkipBtn");
+    const hitInset = 8;
+    const skipHitOwnership = [
+      ["center", (skip.left + skip.right) / 2, (skip.top + skip.bottom) / 2],
+      ["top-left", skip.left + hitInset, skip.top + hitInset],
+      ["top-right", skip.right - hitInset, skip.top + hitInset],
+      ["bottom-left", skip.left + hitInset, skip.bottom - hitInset],
+      ["bottom-right", skip.right - hitInset, skip.bottom - hitInset]
+    ].map(([point, x, y]) => {
+      const owner = document.elementFromPoint(x, y);
+      return {
+        point,
+        owned: Boolean(owner && (owner === skipNode || skipNode.contains(owner))),
+        ownerId: owner?.id || "",
+        ownerClass: String(owner?.className || "")
+      };
+    });
     return {
+      viewport: { width: innerWidth, height: innerHeight },
+      region,
       panel,
       icon,
       copy,
       skip,
+      glyphs: {
+        icon: glyphRect("#tutorialPanel .tutorial-icon"),
+        copy: glyphRect("#tutorialCopy"),
+        skip: glyphRect("#tutorialSkipBtn")
+      },
+      skipText: skipNode?.textContent.trim() || "",
+      skipHitOwnership,
+      greenhouse,
       board,
       iconOverlap: overlaps(skip, icon),
       copyOverlap: overlaps(skip, copy),
+      iconGlyphOverlap: overlaps(glyphRect("#tutorialPanel .tutorial-icon"), glyphRect("#tutorialCopy")),
+      copySkipGlyphOverlap: overlaps(glyphRect("#tutorialCopy"), glyphRect("#tutorialSkipBtn")),
+      regionContainsPanel: contained(region, panel),
+      panelContainsIconGlyphs: contained(panel, glyphRect("#tutorialPanel .tutorial-icon")),
+      panelContainsCopyGlyphs: contained(panel, glyphRect("#tutorialCopy")),
+      panelContainsSkipGlyphs: contained(panel, glyphRect("#tutorialSkipBtn")),
+      regionOverlapsGreenhouse: overlaps(region, greenhouse),
+      panelOverlapsBoard: overlaps(panel, board),
       tiles: document.querySelectorAll(".tile").length,
       rows: new Set(Array.from(document.querySelectorAll(".tile")).map((tile) => tile.dataset.y)).size,
       visibleNonTileButtons: Array.from(document.querySelectorAll("button"))
@@ -2821,6 +3003,11 @@ test("exact-mobile Black Candle Skip owns a complete touch target", async ({ bro
 
   const assertSkipGeometry = async (label) => {
     const geometry = await skipGeometry();
+    expect(geometry.regionContainsPanel, `${label} command belongs to its region`).toBe(true);
+    expect(geometry.panelContainsIconGlyphs, `${label} category glyphs are contained`).toBe(true);
+    expect(geometry.panelContainsCopyGlyphs, `${label} action glyphs are contained`).toBe(true);
+    expect(geometry.panelContainsSkipGlyphs, `${label} Skip glyphs are contained`).toBe(true);
+    expect(geometry.skipText, `${label} keeps complete Skip text`).toBe("Skip");
     expect(geometry.skip.width, `${label} touch width`).toBeGreaterThanOrEqual(44);
     expect(geometry.skip.height, `${label} touch height`).toBeGreaterThanOrEqual(44);
     expect(geometry.skip.left, `${label} contained left`).toBeGreaterThanOrEqual(geometry.panel.left - 1);
@@ -2829,6 +3016,14 @@ test("exact-mobile Black Candle Skip owns a complete touch target", async ({ bro
     expect(geometry.skip.bottom, `${label} contained bottom`).toBeLessThanOrEqual(geometry.panel.bottom + 1);
     expect(geometry.iconOverlap, `${label} does not overlap BLACK CANDLE`).toBe(false);
     expect(geometry.copyOverlap, `${label} does not overlap action copy`).toBe(false);
+    expect(geometry.iconGlyphOverlap, `${label} category/action glyphs do not overlap`).toBe(false);
+    expect(geometry.copySkipGlyphOverlap, `${label} action/Skip glyphs do not overlap`).toBe(false);
+    expect(
+      geometry.skipHitOwnership.filter((probe) => !probe.owned),
+      `${label} center and inset points belong to Skip`
+    ).toEqual([]);
+    expect(geometry.regionOverlapsGreenhouse, `${label} command clears greenhouse strip`).toBe(false);
+    expect(geometry.panelOverlapsBoard, `${label} command clears board`).toBe(false);
     expect(geometry.board.bottom, `${label} altar remains in first viewport`).toBeLessThanOrEqual(844);
     expect(geometry.tiles, `${label} tile count`).toBe(64);
     expect(geometry.rows, `${label} complete board rows`).toBe(8);
