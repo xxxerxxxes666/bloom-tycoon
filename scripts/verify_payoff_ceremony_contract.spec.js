@@ -697,6 +697,12 @@ function expectPhysicalBouquetGeometry(assembly, composition) {
     .toBeGreaterThan(assembly.width * .52);
   expect(crownYSpread, "bouquet crown has three materially separated tiers instead of a flat row")
     .toBeGreaterThan(32);
+  if (composition.length >= 24) {
+    const tierBands = new Set(assembly.ingredients.map((ingredient) => Math.round(ingredient.centerY / 10)));
+    expect(tierBands.size, "high-count crown resolves into at least five visible depth tiers").toBeGreaterThanOrEqual(5);
+    expect(crownYSpread, "high-count crown has enough vertical authority to avoid a hedge silhouette")
+      .toBeGreaterThanOrEqual(48);
+  }
   expect(overlap.maximum, "bouquet heads cluster with natural overlap").toBeGreaterThan(.08);
   expect(overlap.maximum, `ingredient heads remain individually legible; closest slots ${overlap.pair.join("/")}`)
     .toBeLessThan(.82);
@@ -889,6 +895,14 @@ async function visibleContract(page) {
           const rect = node.getBoundingClientRect();
           return Math.round(Math.min(rect.width, rect.height));
         }),
+      craftedBloomCenters: Array.from(document.querySelectorAll(".crafted-flower-bloom"))
+        .map((node) => {
+          const rect = node.getBoundingClientRect();
+          return {
+            x: rect.left + rect.width / 2,
+            y: rect.top + rect.height / 2
+          };
+        }),
       craftedImageSources: Array.from(document.querySelectorAll(".crafted-flower-bloom img"))
         .map((image) => ({
           src: image.getAttribute("src") || "",
@@ -1064,6 +1078,17 @@ async function expectCeremony(page, expectedButton, screenshotPath, expectedGuid
   expect(Math.min(...contract.craftedBloomSizes), "unit heads remain larger than ingredient labels").toBeGreaterThan(
     Math.max(...contract.ingredientTokenHeights, 0)
   );
+  if (expectedBloomCount >= 24) {
+    const xSpread = Math.max(...contract.craftedBloomCenters.map((bloom) => bloom.x))
+      - Math.min(...contract.craftedBloomCenters.map((bloom) => bloom.x));
+    const ySpread = Math.max(...contract.craftedBloomCenters.map((bloom) => bloom.y))
+      - Math.min(...contract.craftedBloomCenters.map((bloom) => bloom.y));
+    const tierBands = new Set(contract.craftedBloomCenters.map((bloom) => Math.round(bloom.y / 14)));
+    expect(tierBands.size, "completed high-count bouquet preserves at least five crown tiers")
+      .toBeGreaterThanOrEqual(5);
+    expect(ySpread, "completed high-count bouquet remains physically deep rather than resetting to a hedge")
+      .toBeGreaterThanOrEqual(xSpread * .45);
+  }
   expect(contract.payoffTokenLayout.bonus, "ingredient row remains measurable").toMatchObject({
     display: "grid",
     minWidth: "0px",
@@ -2312,6 +2337,32 @@ test("nearly complete and mixed Round 2/3 progress stays legible in the physical
         path: `work/live-bouquet-${viewport.label}-${fixture.label}.png`,
         fullPage: true
       });
+      if (fixture.composition.length >= 24) {
+        const expectedStableUnits = assembly.ingredients.map((ingredient) => ({
+          flowerId: ingredient.flowerId,
+          unitIndex: ingredient.unitIndex,
+          slotProgress: ingredient.slotProgress,
+          slotState: ingredient.slotState,
+          centerX: ingredient.centerX,
+          centerY: ingredient.centerY
+        }));
+        for (let reload = 1; reload <= 2; reload += 1) {
+          await page.reload({ waitUntil: "networkidle" });
+          const reloaded = await activeBouquetAssemblyState(page);
+          expect(reloaded.compositionKey, `${fixture.label} reload ${reload} composition identity`)
+            .toBe(assembly.compositionKey);
+          expect(reloaded.ingredients.map((ingredient) => ({
+            flowerId: ingredient.flowerId,
+            unitIndex: ingredient.unitIndex,
+            slotProgress: ingredient.slotProgress,
+            slotState: ingredient.slotState,
+            centerX: ingredient.centerX,
+            centerY: ingredient.centerY
+          })), `${fixture.label} reload ${reload} exact unit geometry`).toEqual(expectedStableUnits);
+          expect(earnedHeadCounts(reloaded), `${fixture.label} reload ${reload} earned visibility`)
+            .toEqual(fixture.earnedHeads);
+        }
+      }
     }
   }
 

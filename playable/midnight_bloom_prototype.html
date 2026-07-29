@@ -1429,6 +1429,29 @@
       opacity: .72;
     }
 
+    .live-bouquet-assembly[data-high-count="true"]::after {
+      width: 190px;
+      height: 62px;
+      z-index: 1;
+      opacity: .72;
+      clip-path: polygon(5% 13%, 24% 4%, 50% 29%, 76% 4%, 95% 13%, 82% 42%, 65% 58%, 56% 100%, 44% 100%, 35% 58%, 18% 42%);
+    }
+
+    .live-bouquet-assembly[data-high-count="true"] .live-bouquet-stem {
+      z-index: 2;
+      width: 3px;
+    }
+
+    .live-bouquet-assembly[data-high-count="true"] .live-bouquet-leaf {
+      width: 15px;
+      height: 7px;
+    }
+
+    .live-bouquet-assembly[data-high-count="true"] .live-bouquet-ingredient[data-slot-state="empty"] {
+      width: var(--live-size, 26px) !important;
+      height: var(--live-size, 26px) !important;
+    }
+
     .live-bouquet-ingredient.order-pulse[data-gain-receiver="true"] {
       animation: live-bouquet-harvest 520ms cubic-bezier(.12,.82,.18,1) both;
     }
@@ -9856,14 +9879,34 @@
       return needed ? Math.max(0, Math.min(1, current / needed)) : 0;
     }
 
+    function tieredBouquetRowCounts(total) {
+      const weights = [.12, .2, .26, .24, .18];
+      const counts = weights.map((weight) => Math.max(1, Math.floor(total * weight)));
+      let placed = counts.reduce((sum, count) => sum + count, 0);
+      const remainderOrder = weights
+        .map((weight, index) => ({ index, remainder: total * weight - Math.floor(total * weight) }))
+        .sort((first, second) => second.remainder - first.remainder || first.index - second.index);
+      for (let index = 0; placed < total; index += 1, placed += 1) {
+        counts[remainderOrder[index % remainderOrder.length].index] += 1;
+      }
+      return counts;
+    }
+
     function bouquetCompositionLayout(index, total) {
       const compact = total <= 16;
-      const backCount = Math.min(total, Math.max(3, Math.round(total * (compact ? .29 : .26))));
-      const middleCount = Math.min(
-        total - backCount,
-        Math.max(4, Math.round(total * (compact ? .43 : .37)))
-      );
-      const rowCounts = [backCount, middleCount, total - backCount - middleCount].filter(Boolean);
+      const tiered = total >= 24;
+      const backCount = tiered
+        ? 0
+        : Math.min(total, Math.max(3, Math.round(total * (compact ? .29 : .26))));
+      const middleCount = tiered
+        ? 0
+        : Math.min(
+          total - backCount,
+          Math.max(4, Math.round(total * (compact ? .43 : .37)))
+        );
+      const rowCounts = tiered
+        ? tieredBouquetRowCounts(total)
+        : [backCount, middleCount, total - backCount - middleCount].filter(Boolean);
       let row = 0;
       let rowStart = 0;
       while (row < rowCounts.length - 1 && index >= rowStart + rowCounts[row]) {
@@ -9872,25 +9915,27 @@
       }
       const rowCount = rowCounts[row];
       const rowIndex = index - rowStart;
-      const size = compact ? 40 : total <= 20 ? 34 : 28;
-      const step = size * (compact ? .78 : .76);
+      const size = compact ? 40 : total <= 20 ? 34 : 30;
+      const step = size * (compact ? .78 : tiered ? .84 : .76);
       const rowOffsets = [0];
-      if (rowCounts.length > 1) {
+      if (!tiered && rowCounts.length > 1) {
         rowOffsets[1] = rowCounts[1] % 2 === rowCounts[0] % 2 ? step / 2 : 0;
       }
-      if (rowCounts.length > 2) {
+      if (!tiered && rowCounts.length > 2) {
         rowOffsets[2] = rowCounts[2] % 2 === rowCounts[1] % 2
           ? rowOffsets[1] === 0 ? step / 2 : 0
           : rowOffsets[1];
       }
-      const rowOffset = rowOffsets[row];
+      const rowOffset = rowOffsets[row] || 0;
       const x = Math.round((rowIndex - (rowCount - 1) / 2) * step + rowOffset);
-      const y = [34, 62, 88][row] + [-2, 1, 0, 2, -1][rowIndex % 5];
+      const y = (tiered ? [22, 43, 65, 87, 108] : [34, 62, 88])[row]
+        + [-2, 1, 0, 2, -1][rowIndex % 5];
       const knotY = 136;
       const stemRise = Math.max(18, knotY - (y + size * .12));
       return {
         x,
         y,
+        tier: row,
         size,
         rot: [-13, 8, -5, 14, -9, 4][index % 6],
         z: 4 + row * 10 + (rowIndex % 3),
@@ -9934,6 +9979,7 @@
     function liveBouquetLayout(index, total) {
       const crafted = bouquetCompositionLayout(index, total);
       const compact = total <= 16;
+      const tiered = total >= 24;
       const size = compact ? 42 : total <= 20 ? 31 : 26;
       const compactRows = [4, 6, Math.max(0, total - 10)].filter(Boolean);
       let compactRow = 0;
@@ -9952,12 +9998,16 @@
       const layout = {
         x: compact
           ? compactX
-          : Math.round(crafted.x * 1.03),
+          : Math.round(crafted.x * (tiered ? 1 : 1.03)),
         y: compact
           ? (compactMobile ? [22, 40, 55] : [23, 40, 56])[compactRow]
-          : Math.round(5 + crafted.y * .65 - (crafted.y > 75 ? 3 : 0)),
+          : tiered
+            ? [15, 27, 39, 51, 63][crafted.tier] + [-1, 1, 0, 1, -1][index % 5]
+            : Math.round(5 + crafted.y * .65 - (crafted.y > 75 ? 3 : 0)),
         size,
-        rot: compact ? [-5, 4, -3, 5, -4, 3][index % 6] : crafted.rot,
+        rot: compact
+          ? [-5, 4, -3, 5, -4, 3][index % 6]
+          : tiered ? [-9, 6, -4, 8, -6, 3][index % 6] : crafted.rot,
         z: crafted.z
       };
       const knotY = 75;
@@ -10047,6 +10097,7 @@
       return {
         fullness,
         complete,
+        highCount: composition.length >= 24,
         state: liveBouquetAssemblyState(fullness, complete),
         visibleBlooms: slotDetails.filter(({ slotProgress }) => slotProgress > 0).length,
         markup: `${stemsMarkup}<span class="live-bouquet-knot" aria-hidden="true"></span>${flowersMarkup}${thornMarkup}`
@@ -10065,6 +10116,7 @@
       assembly.dataset.assemblyComplete = String(rendered.complete);
       assembly.dataset.assemblyState = rendered.state;
       assembly.dataset.visibleBlooms = String(rendered.visibleBlooms);
+      assembly.dataset.highCount = String(rendered.highCount);
       assembly.dataset.compositionKey = bouquetCompositionKey(plan);
       assembly.dataset.finalHarvestPhase = visibleFinalHarvest?.phase || "";
       assembly.dataset.finalHarvestSlots = visibleFinalHarvest?.finalSlotIndexes.join(" ") || "";
