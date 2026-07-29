@@ -3,6 +3,7 @@ const zlib = require("zlib");
 
 const BASE_URL = process.env.BLOOM_TEST_URL || "http://127.0.0.1:4173/playable/midnight_bloom_prototype.html";
 const SAVE_KEY = "bloomTycoonPlayableStateV1";
+const paintedCeremonySamples = new WeakMap();
 
 test.setTimeout(120000);
 
@@ -955,6 +956,7 @@ async function visibleContract(page) {
       }));
     const visibleAction = visible("#roundOneRestoration button")[0] || null;
     return {
+      viewportWidth: innerWidth,
       bodyClass: document.body.className,
       assemblyReady: document.querySelector("#roundOneRestoration")?.dataset.assemblyReady || "",
       trophies: visible(".bouquet-trophy").length,
@@ -965,6 +967,8 @@ async function visibleContract(page) {
       craftedBloomCount: document.querySelector(".crafted-bouquet")?.dataset.craftedBloomCount || "",
       craftedTargetCounts: document.querySelector(".crafted-bouquet")?.dataset.craftedTargetCounts || "",
       craftedCompositionKey: document.querySelector(".crafted-bouquet")?.dataset.compositionKey || "",
+      trophyCompositionKey: document.querySelector("#bouquetTrophy")?.dataset.compositionKey || "",
+      trophyHighCount: document.querySelector("#bouquetTrophy")?.dataset.highCount || "",
       craftedComposition: Array.from(document.querySelectorAll(".crafted-flower-bloom"))
         .map((node) => Number(node.dataset.craftedFlower)),
       craftedFlowerNames: Array.from(document.querySelectorAll(".crafted-flower-bloom"))
@@ -973,6 +977,10 @@ async function visibleContract(page) {
         .map((node) => Number(node.dataset.craftedSlot)),
       craftedUnitIndices: Array.from(document.querySelectorAll(".crafted-flower-bloom"))
         .map((node) => Number(node.dataset.unitIndex)),
+      craftedUnitKeys: Array.from(document.querySelectorAll(".crafted-flower-bloom"))
+        .map((node) => node.dataset.compositionUnit || ""),
+      craftedCrownTiers: Array.from(document.querySelectorAll(".crafted-flower-bloom"))
+        .map((node) => Number(node.dataset.crownTier)),
       craftedBloomSizes: Array.from(document.querySelectorAll(".crafted-flower-bloom"))
         .map((node) => {
           const rect = node.getBoundingClientRect();
@@ -994,8 +1002,57 @@ async function visibleContract(page) {
           complete: image.complete
         })),
       craftedBinding: (() => {
-        const rect = document.querySelector(".crafted-binding")?.getBoundingClientRect();
-        return rect ? { width: Math.round(rect.width), height: Math.round(rect.height) } : { width: 0, height: 0 };
+        const binding = document.querySelector(".crafted-binding");
+        const rect = binding?.getBoundingClientRect();
+        const style = binding ? getComputedStyle(binding) : null;
+        return rect ? {
+          left: rect.left,
+          top: rect.top,
+          right: rect.right,
+          bottom: rect.bottom,
+          centerX: rect.left + rect.width / 2,
+          centerY: rect.top + rect.height / 2,
+          width: Math.round(rect.width),
+          height: Math.round(rect.height),
+          zIndex: Number(style.zIndex || 0),
+          borderRadius: style.borderRadius
+        } : { width: 0, height: 0 };
+      })(),
+      craftedPhysicalGeometry: (() => {
+        const bouquet = document.querySelector(".crafted-bouquet");
+        const bouquetRect = bouquet?.getBoundingClientRect();
+        const trophy = document.querySelector("#bouquetTrophy");
+        const ring = document.querySelector(".bouquet-assembly-ring");
+        const blooms = Array.from(document.querySelectorAll(".crafted-flower-bloom"));
+        if (!bouquet || !bouquetRect) return null;
+        return {
+          bouquet: {
+            left: bouquetRect.left,
+            top: bouquetRect.top,
+            right: bouquetRect.right,
+            bottom: bouquetRect.bottom,
+            width: bouquetRect.width,
+            height: bouquetRect.height
+          },
+          trophyAuraOpacity: Number(getComputedStyle(trophy, "::after").opacity),
+          ringOpacity: Number(getComputedStyle(ring).opacity),
+          bloomZIndexes: blooms.map((bloom) => Number(getComputedStyle(bloom).zIndex || 0)),
+          imageFilters: blooms.map((bloom) => getComputedStyle(bloom.querySelector("img")).filter),
+          stems: Array.from(document.querySelectorAll(".crafted-stem")).map((stem) => {
+            const style = getComputedStyle(stem);
+            const origin = style.transformOrigin.split(" ").map(Number.parseFloat);
+            const bounds = stem.getBoundingClientRect();
+            return {
+              unitKey: stem.dataset.compositionUnit || "",
+              anchorX: bouquetRect.left + stem.offsetLeft + (origin[0] || 0),
+              anchorY: bouquetRect.top + stem.offsetTop + (origin[1] || 0),
+              paintedWidth: Number.parseFloat(style.width),
+              renderedWidth: bounds.width,
+              renderedHeight: bounds.height,
+              opacity: Number(style.opacity)
+            };
+          })
+        };
       })(),
       ingredientTokenHeights: visible(".bouquet-payoff-token")
         .map((node) => Math.round(node.getBoundingClientRect().height)),
@@ -1072,6 +1129,39 @@ async function visibleContract(page) {
       brokenImages
     };
   });
+}
+
+async function craftedBouquetPaintedEvidence(page) {
+  await page.evaluate(() => window.scrollTo({ top: 0, left: 0, behavior: "auto" }));
+  const frame = await page.evaluate(() => {
+    const bouquet = document.querySelector(".crafted-bouquet");
+    const bouquetRect = bouquet?.getBoundingClientRect();
+    if (!bouquet || !bouquetRect) return null;
+    return {
+      pageWidth: innerWidth,
+      pageHeight: innerHeight,
+      width: bouquetRect.width,
+      height: bouquetRect.height,
+      heads: Array.from(bouquet.querySelectorAll(".crafted-flower-bloom img")).map((image) => {
+        const rect = image.getBoundingClientRect();
+        return {
+          left: rect.left,
+          top: rect.top,
+          right: rect.right,
+          bottom: rect.bottom
+        };
+      })
+    };
+  });
+  if (!frame) return null;
+  const png = decodePng(await page.screenshot({ animations: "disabled" }));
+  const scaleX = png.width / frame.pageWidth;
+  const scaleY = png.height / frame.pageHeight;
+  return {
+    width: frame.width,
+    height: frame.height,
+    heads: frame.heads.map((head) => pixelBoxStats(png, head, scaleX, scaleY))
+  };
 }
 
 function rectanglesOverlap(first, second) {
@@ -1156,6 +1246,10 @@ async function expectCeremony(page, expectedButton, screenshotPath, expectedGuid
     expect(unitIndices, "each species carries a stable zero-based unit identity")
       .toEqual(Array.from({ length: unitIndices.length }, (_, index) => index));
   });
+  expect(contract.craftedUnitKeys, "each ceremony head carries the authoritative ordered unit identity")
+    .toEqual(contract.craftedCompositionKey.split("|"));
+  expect(contract.trophyCompositionKey, "trophy and crafted object share one composition identity")
+    .toBe(contract.craftedCompositionKey);
   expect(new Set(contract.craftedFlowerNames).size, "both target flower names render in trophy").toBeGreaterThanOrEqual(2);
   expect(Math.min(...contract.craftedBloomSizes), "every unit head remains materially legible").toBeGreaterThanOrEqual(24);
   expect(Math.min(...contract.craftedBloomSizes), "unit heads remain larger than ingredient labels").toBeGreaterThan(
@@ -1166,11 +1260,83 @@ async function expectCeremony(page, expectedButton, screenshotPath, expectedGuid
       - Math.min(...contract.craftedBloomCenters.map((bloom) => bloom.x));
     const ySpread = Math.max(...contract.craftedBloomCenters.map((bloom) => bloom.y))
       - Math.min(...contract.craftedBloomCenters.map((bloom) => bloom.y));
-    const tierBands = new Set(contract.craftedBloomCenters.map((bloom) => Math.round(bloom.y / 14)));
-    expect(tierBands.size, "completed high-count bouquet preserves at least five crown tiers")
-      .toBeGreaterThanOrEqual(5);
+    const tierCounts = contract.craftedCrownTiers.reduce((counts, tier) => {
+      counts[tier] = (counts[tier] || 0) + 1;
+      return counts;
+    }, {});
+    expect(contract.trophyHighCount, "high-count ceremony owns its scoped physical presentation").toBe("true");
+    expect(tierCounts, "completed high-count bouquet preserves the authoritative tapered six-tier crown")
+      .toEqual(expectedBloomCount === 27
+        ? { 0: 3, 1: 5, 2: 7, 3: 6, 4: 4, 5: 2 }
+        : { 0: 3, 1: 5, 2: 7, 3: 5, 4: 4, 5: 2 });
     expect(ySpread, "completed high-count bouquet remains physically deep rather than resetting to a hedge")
       .toBeGreaterThanOrEqual(xSpread * .45);
+    expect(ySpread, "completed high-count crown has normal-scale vertical authority")
+      .toBeGreaterThanOrEqual(130);
+    expect(Math.min(...contract.craftedBloomSizes), "completed high-count earned heads remain dominant")
+      .toBeGreaterThanOrEqual(44);
+    const minimumHeadDistance = contract.craftedBloomCenters.reduce((minimum, first, index) => (
+      Math.min(
+        minimum,
+        ...contract.craftedBloomCenters.slice(index + 1)
+          .map((second) => Math.hypot(first.x - second.x, first.y - second.y))
+      )
+    ), Number.POSITIVE_INFINITY);
+    expect(minimumHeadDistance, "completed high-count heads retain individual silhouette spacing")
+      .toBeGreaterThanOrEqual(22);
+    expect(contract.craftedPhysicalGeometry.bouquet.width, "high-count object occupies a substantial trophy crown")
+      .toBeGreaterThanOrEqual(278);
+    expect(contract.craftedPhysicalGeometry.bouquet.height, "high-count object retains crown-to-knot depth")
+      .toBeGreaterThanOrEqual(208);
+    expect(contract.craftedBinding.width, "one compact shared knot replaces a tray-like binding bar")
+      .toBeGreaterThanOrEqual(48);
+    expect(contract.craftedBinding.width, "the central knot remains compact")
+      .toBeLessThanOrEqual(54);
+    expect(contract.craftedBinding.height, "the central knot is materially visible")
+      .toBeGreaterThanOrEqual(28);
+    expect(contract.craftedBinding.borderRadius, "the shared anchor reads as a knot rather than a tray")
+      .not.toBe("0px");
+    expect(contract.craftedBinding.zIndex, "the shared knot paints above every crown tier")
+      .toBeGreaterThan(Math.max(...contract.craftedPhysicalGeometry.bloomZIndexes));
+    expect(contract.craftedBinding.centerY, "the shared knot sits below the earned crown")
+      .toBeGreaterThan(Math.max(...contract.craftedBloomCenters.map((bloom) => bloom.y)) + 20);
+    const stemAnchorXSpread = Math.max(...contract.craftedPhysicalGeometry.stems.map((stem) => stem.anchorX))
+      - Math.min(...contract.craftedPhysicalGeometry.stems.map((stem) => stem.anchorX));
+    const stemAnchorYSpread = Math.max(...contract.craftedPhysicalGeometry.stems.map((stem) => stem.anchorY))
+      - Math.min(...contract.craftedPhysicalGeometry.stems.map((stem) => stem.anchorY));
+    expect(contract.craftedPhysicalGeometry.stems.map((stem) => stem.unitKey),
+      "every stable earned unit keeps its own physical support").toEqual(contract.craftedUnitKeys);
+    expect(Math.min(...contract.craftedPhysicalGeometry.stems.map((stem) => stem.paintedWidth)),
+      "high-count support remains visible at normal scale").toBeGreaterThanOrEqual(4);
+    expect(stemAnchorXSpread, "all earned stems converge horizontally on one knot").toBeLessThanOrEqual(1);
+    expect(stemAnchorYSpread, "all earned stems converge vertically on one knot").toBeLessThanOrEqual(1);
+    expect(Math.abs(contract.craftedPhysicalGeometry.stems[0].anchorX - contract.craftedBinding.centerX),
+      "the converged support meets the knot center").toBeLessThanOrEqual(3);
+    expect(Math.abs(contract.craftedPhysicalGeometry.stems[0].anchorY - contract.craftedBinding.centerY),
+      "the converged support meets the knot center").toBeLessThanOrEqual(5);
+    expect(contract.craftedPhysicalGeometry.trophyAuraOpacity, "ritual aura remains subordinate to earned heads")
+      .toBeLessThanOrEqual(.3);
+    expect(contract.craftedPhysicalGeometry.ringOpacity, "ritual ring remains subordinate to the bouquet silhouette")
+      .toBeLessThanOrEqual(.2);
+    expect(contract.craftedPhysicalGeometry.imageFilters.every((filter) => !/drop-shadow\([^)]*[89]px/.test(filter)),
+      "per-head filters do not rebuild the trophy as a glow cloud").toBe(true);
+    const sampledCompositions = paintedCeremonySamples.get(page) || new Set();
+    if (!sampledCompositions.has(expectedCounts)) {
+      const painted = await craftedBouquetPaintedEvidence(page);
+      expect(painted.heads, "painted screenshot contains every authoritative earned head")
+        .toHaveLength(expectedBloomCount);
+      expect(Math.min(...painted.heads.map((head) => head.p90)),
+        "every earned head has normal-screenshot highlight contrast").toBeGreaterThan(34);
+      expect(Math.min(...painted.heads.map((head) => head.coloredPixels / head.sampledPixels)),
+        "every earned head retains a painted botanical color silhouette").toBeGreaterThan(.08);
+      sampledCompositions.add(expectedCounts);
+      paintedCeremonySamples.set(page, sampledCompositions);
+    }
+  } else {
+    expect(contract.trophyHighCount, "accepted Round 1 remains outside the high-count override").toBe("false");
+    expect([...new Set(contract.craftedBloomSizes)].sort((first, second) => first - second),
+      "accepted Round 1 rotated head geometry remains unchanged")
+      .toEqual(contract.viewportWidth <= 760 ? [39, 40, 42, 44, 45] : [43, 45, 46, 48]);
   }
   expect(contract.payoffTokenLayout.bonus, "ingredient row remains measurable").toMatchObject({
     display: "grid",

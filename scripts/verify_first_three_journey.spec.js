@@ -244,7 +244,16 @@ async function journeyState(page) {
       })),
       liveBouquetVisible: visible(document.querySelector("#liveBouquetAssembly")),
       liveBouquetComposition: document.querySelector("#liveBouquetAssembly")?.dataset.compositionKey || "",
+      liveBouquetUnitKeys: Array.from(document.querySelectorAll(
+        "#liveBouquetAssembly .live-bouquet-ingredient"
+      )).map((unit) => unit.dataset.compositionUnit || ""),
       craftedBouquetComposition: document.querySelector(".crafted-bouquet")?.dataset.compositionKey || "",
+      craftedBouquetUnitKeys: Array.from(document.querySelectorAll(
+        ".crafted-bouquet .crafted-flower-bloom"
+      )).map((unit) => unit.dataset.compositionUnit || ""),
+      craftedStemUnitKeys: Array.from(document.querySelectorAll(
+        ".crafted-bouquet .crafted-stem"
+      )).map((unit) => unit.dataset.compositionUnit || ""),
       finalHarvestTransientNodes: document.querySelectorAll(
         ".objective-flight, .bouquet-bind-seal, .greenhouse-intake-flight"
       ).length,
@@ -1127,6 +1136,8 @@ async function expectEligibleFinalHarvest(page, round, label) {
   expect(state.finalHarvestObjectiveTargets, `${label} tactical objective agrees`).toBe(targets.length);
   expect(state.finalHarvestContractTargets, `${label} current-order deficit agrees`).toBe(targets.length);
   expect(state.liveBouquetComposition, `${label} receiver identity`).toBe(state.finalHarvestComposition);
+  expect(state.liveBouquetUnitKeys, `${label} receiver preserves every ordered unit identity`)
+    .toEqual(state.finalHarvestComposition.split("|"));
   expect(state.tiles, `${label} retains 64 tiles`).toBe(64);
   expect(state.tileRows, `${label} retains eight rows`).toBe(8);
   expect(state.overflowX, `${label} has no horizontal overflow`).toBe(false);
@@ -1235,6 +1246,8 @@ async function finishThroughFinalHarvest(page, state, activation, evidencePrefix
   expect(landing.liveBouquetVisible, `${evidencePrefix} live bouquet remains on the board`).toBe(true);
   expect(landing.liveBouquetComposition, `${evidencePrefix} landing identity`)
     .toBe(state.finalHarvestComposition);
+  expect(landing.liveBouquetUnitKeys, `${evidencePrefix} landing preserves exact ordered unit identity`)
+    .toEqual(state.liveBouquetUnitKeys);
   expect(landing.finalHarvestPhysicalSlots.every((slot) => (
     slot.state === "filled" && slot.gainReceiver === "true"
   )), `${evidencePrefix} every final physical slot receives its flower`).toBe(true);
@@ -1289,6 +1302,30 @@ async function finishThroughFinalHarvest(page, state, activation, evidencePrefix
       resolve({
         finalHarvestPhase: document.body.dataset.finalHarvestPhase || "",
         craftedBouquetComposition: document.querySelector(".crafted-bouquet")?.dataset.compositionKey || "",
+        craftedBouquetUnitKeys: Array.from(document.querySelectorAll(
+          ".crafted-bouquet .crafted-flower-bloom"
+        )).map((unit) => unit.dataset.compositionUnit || ""),
+        craftedStemUnitKeys: Array.from(document.querySelectorAll(
+          ".crafted-bouquet .crafted-stem"
+        )).map((unit) => unit.dataset.compositionUnit || ""),
+        craftedHighCount: document.querySelector(".crafted-bouquet")?.dataset.highCount || "",
+        craftedBindingPhase: (() => {
+          const binding = document.querySelector(".crafted-binding");
+          const rect = binding?.getBoundingClientRect();
+          const style = binding ? getComputedStyle(binding) : null;
+          return rect ? {
+            width: rect.width,
+            height: rect.height,
+            opacity: Number(style.opacity),
+            animationName: style.animationName
+          } : null;
+        })(),
+        craftedBloomAnimationNames: [...new Set(Array.from(document.querySelectorAll(
+          ".crafted-bouquet .crafted-flower-bloom"
+        )).map((unit) => getComputedStyle(unit).animationName))],
+        craftedBloomFilters: Array.from(document.querySelectorAll(
+          ".crafted-bouquet .crafted-flower-bloom"
+        )).map((unit) => getComputedStyle(unit).filter),
         cue: document.querySelector("#firstSwapCue")?.textContent.trim() || "",
         tutorialCopy: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
         tutorialVisible: visible(document.querySelector("#tutorialPanel")),
@@ -1347,6 +1384,27 @@ async function finishThroughFinalHarvest(page, state, activation, evidencePrefix
   expect(handoff.finalHarvestPhase, `${evidencePrefix} exact identity handoff phase`).toBe("ceremony");
   expect(handoff.craftedBouquetComposition, `${evidencePrefix} ceremony keeps bouquet identity`)
     .toBe(state.finalHarvestComposition);
+  expect(handoff.craftedBouquetUnitKeys, `${evidencePrefix} handoff keeps every ordered earned unit`)
+    .toEqual(state.liveBouquetUnitKeys);
+  expect(handoff.craftedStemUnitKeys, `${evidencePrefix} handoff keeps one support for every earned unit`)
+    .toEqual(state.liveBouquetUnitKeys);
+  if (state.liveBouquetUnitKeys.length >= 24) {
+    expect(handoff.craftedHighCount, `${evidencePrefix} high-count binding uses its scoped physical contract`)
+      .toBe("true");
+    expect(handoff.craftedBloomAnimationNames, `${evidencePrefix} handoff never invokes the generic glow animation`)
+      .not.toContain("crafted-bloom-bind");
+    expect(handoff.craftedBloomFilters.every((filter) => !/drop-shadow\([^)]*12px/.test(filter)),
+      `${evidencePrefix} binding does not rebuild a per-head glow cloud`).toBe(true);
+    expect(handoff.craftedBindingPhase, `${evidencePrefix} shared knot exists through binding`).not.toBeNull();
+    expect(handoff.craftedBindingPhase.width, `${evidencePrefix} shared knot remains visible through binding`)
+      .toBeGreaterThanOrEqual(42);
+    expect(handoff.craftedBindingPhase.height, `${evidencePrefix} shared knot remains material through binding`)
+      .toBeGreaterThanOrEqual(24);
+    expect(handoff.craftedBindingPhase.opacity, `${evidencePrefix} shared knot never collapses during binding`)
+      .toBeGreaterThanOrEqual(.7);
+    expect(handoff.craftedBindingPhase.animationName, `${evidencePrefix} knot never invokes the generic collapsing motion`)
+      .not.toBe("bouquet-vine-bind");
+  }
   expect(handoff.tutorialVisible, `${evidencePrefix} binding suppresses the shared narrator`).toBe(false);
   expect(handoff.tutorialCopy, `${evidencePrefix} binding has no hidden narrator copy`).toBe("");
   expect(handoff.floatingCommands, `${evidencePrefix} binding has no floating command surface`).toEqual([]);
@@ -1359,13 +1417,44 @@ async function finishThroughFinalHarvest(page, state, activation, evidencePrefix
     `${evidencePrefix} binding keeps title and wallet separate`
   ).toBe(false);
   expectTransientFinalHarvestAuthority(handoff, `${evidencePrefix} handoff`);
+  const bindingPeakDelay = !state.reducedMotion && state.liveBouquetUnitKeys.length >= 24 ? 390 : 0;
+  if (bindingPeakDelay) {
+    await page.waitForTimeout(390);
+  }
+  if (state.liveBouquetUnitKeys.length >= 24) {
+    const bindingPeak = await page.evaluate(() => {
+      const binding = document.querySelector(".crafted-binding");
+      return {
+        scrollY,
+        bloomAnimationNames: [...new Set(Array.from(document.querySelectorAll(
+          ".crafted-bouquet .crafted-flower-bloom"
+        )).map((unit) => getComputedStyle(unit).animationName))],
+        bloomFilters: Array.from(document.querySelectorAll(
+          ".crafted-bouquet .crafted-flower-bloom"
+        )).map((unit) => getComputedStyle(unit).filter),
+        knotAnimationName: binding ? getComputedStyle(binding).animationName : ""
+      };
+    });
+    if (state.reducedMotion) {
+      expect(bindingPeak.bloomAnimationNames.every((name) => ["none", "order-pulse"].includes(name)),
+        `${evidencePrefix} reduced binding has no moving crafted-head animation`).toBe(true);
+    } else {
+      expect(bindingPeak.bloomAnimationNames, `${evidencePrefix} visible binding peak uses restrained head motion`)
+        .toEqual(["crafted-high-count-bloom-bind"]);
+    }
+    expect(bindingPeak.bloomFilters.every((filter) => !/drop-shadow\([^)]*12px/.test(filter)),
+      `${evidencePrefix} visible binding peak keeps glow below head silhouettes`).toBe(true);
+    expect(bindingPeak.knotAnimationName, `${evidencePrefix} visible binding peak keeps one physical knot`)
+      .toBe(state.reducedMotion ? "none" : "crafted-high-count-knot-bind");
+    expect(bindingPeak.scrollY, `${evidencePrefix} binding keeps the complete ceremony in view`).toBe(0);
+  }
   await page.screenshot({ path: `${evidencePrefix}-binding.png`, fullPage: true });
   await page.locator("#roundOneRestoration").waitFor({ state: "visible", timeout: 5000 });
   await page.waitForFunction(() => !document.body.dataset.finalHarvestPhase, null, { timeout: 2500 });
   // The visibility edge can coincide with Chromium's view-transition snapshot.
   // Wait for that named transition and the bouquet seal to release before
   // keeping settled ceremony evidence.
-  await page.waitForTimeout(850);
+  await page.waitForTimeout(bindingPeakDelay ? 440 : 850);
   const settled = {
     ...(await journeyState(page)),
     ...(await finalHarvestAuthorityState(page))
@@ -1374,6 +1463,12 @@ async function finishThroughFinalHarvest(page, state, activation, evidencePrefix
   expect(settled.finalHarvestTransientNodes, `${evidencePrefix} transient nodes clear`).toBe(0);
   expect(settled.cue, `${evidencePrefix} landing copy clears`).not.toBe("Final flowers landing.");
   expect(settled.roundComplete).toBe(true);
+  expect(settled.craftedBouquetComposition, `${evidencePrefix} actionable ceremony keeps bouquet identity`)
+    .toBe(state.finalHarvestComposition);
+  expect(settled.craftedBouquetUnitKeys, `${evidencePrefix} actionable ceremony keeps every ordered earned unit`)
+    .toEqual(state.liveBouquetUnitKeys);
+  expect(settled.craftedStemUnitKeys, `${evidencePrefix} actionable ceremony keeps every converging support`)
+    .toEqual(state.liveBouquetUnitKeys);
   expect(settled.tiles).toBe(64);
   expect(settled.overflowX).toBe(false);
   expect(settled.brokenImages).toEqual([]);

@@ -6888,10 +6888,119 @@
     .crafted-binding::after { right:-23px; transform:skewY(-18deg); }
     .crafted-vine { position:absolute; left:50%; bottom:14px; z-index:10; width:144px; height:38px; transform:translateX(-50%); pointer-events:none; background:repeating-linear-gradient(104deg,#0000 0 13px,#6f944d 14px 16px,#0000 17px 31px); filter:drop-shadow(0 0 6px #000) drop-shadow(0 0 7px #6f944d55); clip-path:polygon(0 38%,18% 8%,50% 35%,82% 8%,100% 38%,88% 64%,50% 48%,12% 64%); opacity:.86; }
     .crafted-bouquet-state { position:absolute; left:50%; bottom:-2px; z-index:11; transform:translateX(-50%); padding:3px 7px; border:1px solid #6f944d; background:#050403e8; color:#e8ffc5; font:900 9px/1 system-ui,sans-serif; letter-spacing:.12em; text-transform:uppercase; white-space:nowrap; box-shadow:0 0 10px #000; }
+    .payoff-stage:has(.bouquet-trophy[data-high-count="true"]) { grid-template-columns:minmax(286px,.44fr) minmax(0,1fr); }
+    body.round-two-upgrade-pending .bouquet-trophy[data-high-count="true"],
+    body.round-two-upgrade-complete .bouquet-trophy[data-high-count="true"],
+    body.round-three-final-pending .bouquet-trophy[data-high-count="true"],
+    body.round-three-final-complete .bouquet-trophy[data-high-count="true"] { min-height:306px; }
+    .bouquet-trophy[data-high-count="true"]::after { opacity:.28; }
+    .bouquet-trophy[data-high-count="true"] .bouquet-assembly {
+      width:min(292px,100%);
+      min-height:218px;
+    }
+    .bouquet-trophy[data-high-count="true"] .bouquet-assembly-ring {
+      width:224px;
+      height:186px;
+      opacity:.16;
+      box-shadow:inset 0 0 16px #000,0 0 7px var(--bouquet-aura,#d7b16d33);
+    }
+    .crafted-bouquet[data-high-count="true"] {
+      width:280px;
+      height:210px;
+      transform:translateY(-1px);
+      filter:drop-shadow(0 9px 9px #000);
+    }
+    .crafted-bouquet[data-high-count="true"] .crafted-stem {
+      bottom:18px;
+      z-index:2;
+      width:4px;
+      background:linear-gradient(90deg,#18250f 0,#d4dc9a 42%,#66853d 68%,#171008 100%);
+      box-shadow:0 1px 3px #000,0 0 3px #8ca56055;
+    }
+    .crafted-bouquet[data-high-count="true"] .crafted-leaf {
+      z-index:3;
+      width:24px;
+      height:10px;
+      filter:none;
+    }
+    .crafted-bouquet[data-high-count="true"] .crafted-bloom {
+      filter:drop-shadow(0 3px 3px #000);
+    }
+    .crafted-bouquet[data-high-count="true"] .crafted-bloom img {
+      filter:
+        brightness(1.18)
+        saturate(1.16)
+        contrast(1.08)
+        drop-shadow(0 2px 2px #000)
+        drop-shadow(0 0 2px currentColor);
+    }
+    .crafted-bouquet[data-high-count="true"] .crafted-bloom.order-pulse[data-gain-receiver="true"] {
+      filter:brightness(1.08) drop-shadow(0 3px 3px #000);
+    }
+    .crafted-bouquet[data-high-count="true"] .crafted-binding {
+      bottom:7px;
+      z-index:70;
+      width:48px;
+      height:28px;
+      border-width:2px;
+      border-radius:48%;
+      background:
+        radial-gradient(circle at 50% 36%,#f0cf87 0 10%,#0000 34%),
+        linear-gradient(90deg,#35100e,#963d2b 27%,#dfb66f 50%,#963d2b 73%,#35100e);
+      box-shadow:inset 0 0 8px #000,0 2px 6px #000,0 0 5px #d7b16d42;
+    }
+    .crafted-bouquet[data-high-count="true"] .crafted-binding::before,
+    .crafted-bouquet[data-high-count="true"] .crafted-binding::after {
+      top:15px;
+      width:28px;
+      height:23px;
+      background:linear-gradient(180deg,#9b422d,#401311);
+      clip-path:polygon(0 0,100% 0,78% 100%,50% 75%,20% 100%);
+    }
+    .crafted-bouquet[data-high-count="true"] .crafted-binding::before {
+      left:-18px;
+      transform:rotate(18deg);
+    }
+    .crafted-bouquet[data-high-count="true"] .crafted-binding::after {
+      right:-18px;
+      transform:rotate(-18deg);
+    }
+    .crafted-bouquet[data-high-count="true"] .crafted-vine {
+      bottom:8px;
+      z-index:71;
+      width:76px;
+      height:32px;
+      opacity:.58;
+      filter:drop-shadow(0 1px 3px #000);
+    }
+    .crafted-bouquet[data-high-count="true"] .crafted-bouquet-state {
+      display:none;
+    }
+    .crafted-bouquet[data-high-count="true"] .thorn-charm {
+      z-index:62 !important;
+      width:32px;
+      height:32px;
+    }
+    .crafted-bouquet[data-high-count="true"] .thorn-charm .thorn-seal-icon {
+      width:30px;
+      height:30px;
+    }
     .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .crafted-bloom { animation:crafted-bloom-bind 720ms cubic-bezier(.12,.82,.18,1) both; }
     .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .crafted-stem { animation:crafted-stem-bind 760ms cubic-bezier(.12,.82,.18,1) both; }
     .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .crafted-binding,
     .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .crafted-vine { animation:bouquet-vine-bind 860ms ease-out 120ms both; }
+    .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .crafted-bouquet[data-high-count="true"] .crafted-bloom {
+      animation-name:crafted-high-count-bloom-bind;
+    }
+    .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .crafted-bouquet[data-high-count="true"] .crafted-stem {
+      animation-name:crafted-high-count-stem-bind;
+    }
+    .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .crafted-bouquet[data-high-count="true"] .crafted-binding {
+      animation-name:crafted-high-count-knot-bind;
+    }
+    .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .crafted-bouquet[data-high-count="true"] .crafted-vine {
+      animation-name:crafted-high-count-vine-bind;
+    }
     .bouquet-trophy-bonus { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); width:100%; min-width:0; gap:5px; align-items:stretch; }
     .bouquet-payoff-token { box-sizing:border-box; width:100%; min-width:0; max-width:100%; padding:4px 2px; border:1px solid #5a452a; background:#080606d9; color:#ead9a9; font:900 10px/1 system-ui,sans-serif; text-align:center; text-transform:uppercase; letter-spacing:.02em; white-space:nowrap; overflow-wrap:normal; }
     .bouquet-trophy-bonus:has(.bouquet-payoff-token:nth-child(3)) .bouquet-payoff-token { padding-inline:2px; font-size:9px; letter-spacing:0; }
@@ -7303,6 +7412,12 @@
       .crafted-binding { bottom:9px; width:108px; height:24px; }
       .crafted-vine { bottom:8px; width:126px; height:31px; }
       .crafted-bouquet-state { bottom:-1px; font-size:8px; }
+      .payoff-stage:has(.bouquet-trophy[data-high-count="true"]) { grid-template-columns:1fr; }
+      .crafted-bouquet[data-high-count="true"] {
+        width:280px;
+        height:210px;
+        transform:translateY(-1px);
+      }
       .bouquet-trophy-name { font-size:19px; }
       .bouquet-trophy-copy { max-width:30ch; }
     }
@@ -7365,10 +7480,30 @@
       42% { opacity:1; transform:translate(-50%, -50%) rotate(var(--bloom-rot, 0deg)) scale(1.12); filter:brightness(1.38) saturate(1.2) drop-shadow(0 0 12px currentColor); }
       100% { opacity:1; transform:translate(-50%, -50%) rotate(var(--bloom-rot, 0deg)) scale(1); filter:brightness(1) drop-shadow(0 7px 7px #000); }
     }
+    @keyframes crafted-high-count-bloom-bind {
+      0% { opacity:.86; transform:translate(-50%, -53%) rotate(var(--bloom-rot, 0deg)) scale(.94); filter:brightness(.96) drop-shadow(0 3px 3px #000); }
+      44% { opacity:1; transform:translate(-50%, -50%) rotate(var(--bloom-rot, 0deg)) scale(1.045); filter:brightness(1.14) saturate(1.08) drop-shadow(0 2px 3px #000); }
+      100% { opacity:1; transform:translate(-50%, -50%) rotate(var(--bloom-rot, 0deg)) scale(1); filter:brightness(1) drop-shadow(0 3px 3px #000); }
+    }
     @keyframes crafted-stem-bind {
       0% { opacity:.64; transform:rotate(var(--stem-rot, 0deg)) translateY(8px) scaleY(.88); }
       48% { opacity:1; transform:rotate(var(--stem-rot, 0deg)) translateY(-3px) scaleY(1.08); }
       100% { opacity:1; transform:rotate(var(--stem-rot, 0deg)) translateY(0) scaleY(1); }
+    }
+    @keyframes crafted-high-count-stem-bind {
+      0% { opacity:.76; transform:rotate(var(--stem-rot, 0deg)) translateY(4px) scaleY(.94); }
+      48% { opacity:1; transform:rotate(var(--stem-rot, 0deg)) translateY(-1px) scaleY(1.025); }
+      100% { opacity:1; transform:rotate(var(--stem-rot, 0deg)) translateY(0) scaleY(1); }
+    }
+    @keyframes crafted-high-count-knot-bind {
+      0% { opacity:.76; transform:translateX(-50%) scale(.9); filter:brightness(.92); }
+      48% { opacity:1; transform:translateX(-50%) scale(1.06); filter:brightness(1.16); }
+      100% { opacity:1; transform:translateX(-50%) scale(1); filter:brightness(1); }
+    }
+    @keyframes crafted-high-count-vine-bind {
+      0% { opacity:.36; transform:translateX(-50%) scaleX(.88); filter:brightness(.9); }
+      48% { opacity:.68; transform:translateX(-50%) scaleX(1.04); filter:brightness(1.08); }
+      100% { opacity:.58; transform:translateX(-50%) scaleX(1); filter:brightness(1); }
     }
     @keyframes owned-ingredient-tend {
       0% { left:var(--renew-start-x); top:var(--renew-start-y); opacity:0; transform:translate(-50%,-50%) scale(.54); }
@@ -8397,6 +8532,12 @@
       body.round-three-final-complete .restoration-scene { height:166px; }
       body.round-two-upgrade-pending .bouquet-trophy,
       body.round-two-upgrade-complete .bouquet-trophy { min-height:216px; }
+      body.round-two-upgrade-pending .bouquet-trophy[data-high-count="true"],
+      body.round-two-upgrade-complete .bouquet-trophy[data-high-count="true"],
+      body.round-three-final-pending .bouquet-trophy[data-high-count="true"],
+      body.round-three-final-complete .bouquet-trophy[data-high-count="true"] { min-height:300px; }
+      body.round-three-final-pending .restoration-scene,
+      body.round-three-final-complete .restoration-scene { height:150px; }
       body.round-two-upgrade-pending .restoration-scene,
       body.round-two-upgrade-complete .restoration-scene { height:132px; }
       body.round-two-upgrade-pending .restoration-copy,
@@ -10155,9 +10296,9 @@
       const finalHarvestComposition = visibleFinalHarvest?.compositionKey === bouquetCompositionKey(plan)
         ? new Set(visibleFinalHarvest.finalSlotIndexes)
         : null;
-      const stemsMarkup = slotDetails.map(({ layout, index, slotProgress, visualProgress }) => `
-        <span class="live-bouquet-stem" aria-hidden="true" data-filled="${slotProgress >= 1 ? "true" : "false"}" style="--ingredient-progress:${slotProgress.toFixed(3)};--ingredient-visual-progress:${visualProgress.toFixed(3)};--live-stem-x:${layout.stemX}px;--live-stem-top:${layout.stemTop}px;--live-stem-height:${layout.stemHeight}px;--live-stem-rot:${layout.stemRot}deg;"></span>
-        <span class="live-bouquet-leaf" aria-hidden="true" data-filled="${slotProgress >= 1 ? "true" : "false"}" style="--ingredient-progress:${slotProgress.toFixed(3)};--ingredient-visual-progress:${visualProgress.toFixed(3)};--live-leaf-x:${layout.leafX}px;--live-leaf-y:${layout.leafY}px;--live-leaf-rot:${index % 2 ? 202 : -22}deg;"></span>
+      const stemsMarkup = slotDetails.map(({ target, unitIndex, layout, index, slotProgress, visualProgress }) => `
+        <span class="live-bouquet-stem" aria-hidden="true" data-composition-unit="${index}:${target.flowerId}:${unitIndex}" data-filled="${slotProgress >= 1 ? "true" : "false"}" style="--ingredient-progress:${slotProgress.toFixed(3)};--ingredient-visual-progress:${visualProgress.toFixed(3)};--live-stem-x:${layout.stemX}px;--live-stem-top:${layout.stemTop}px;--live-stem-height:${layout.stemHeight}px;--live-stem-rot:${layout.stemRot}deg;"></span>
+        <span class="live-bouquet-leaf" aria-hidden="true" data-composition-unit="${index}:${target.flowerId}:${unitIndex}" data-filled="${slotProgress >= 1 ? "true" : "false"}" style="--ingredient-progress:${slotProgress.toFixed(3)};--ingredient-visual-progress:${visualProgress.toFixed(3)};--live-leaf-x:${layout.leafX}px;--live-leaf-y:${layout.leafY}px;--live-leaf-rot:${index % 2 ? 202 : -22}deg;"></span>
       `).join("");
       const flowersMarkup = slotDetails.map(({ target, flower, current, unitIndex, slotProgress, visualProgress, layout, index }) => {
         const gainReceiver = orderPulseSlots.get(target.flowerId)?.has(index) || false;
@@ -10171,6 +10312,7 @@
             data-flower-id="${target.flowerId}"
             data-live-slot="${index}"
             data-unit-index="${unitIndex}"
+            data-composition-unit="${index}:${target.flowerId}:${unitIndex}"
             data-crown-tier="${layout.tier}"
             data-slot-progress="${slotProgress.toFixed(2)}"
             data-slot-state="${slotState}"
@@ -10717,6 +10859,11 @@
         pulseBouquetSealFeedback(isOwnedRestorationReplay() ? transferHold : 0);
         if (plan.round >= 2) {
           pulseNextOrderReady();
+          window.requestAnimationFrame(() => window.scrollTo({
+            top: 0,
+            left: 0,
+            behavior: "auto"
+          }));
         }
         render();
         finalHarvestHandoffTimer = window.setTimeout(() => {
@@ -17391,10 +17538,13 @@
     function renderBouquetTrophy(plan = activeRoundPlan(), payoffState = "sealed", ownedReplay = false) {
       const trophy = $("bouquetTrophy");
       if (!trophy) return;
+      const composition = bouquetComposition(plan);
       const rewardFlower = flowers[plan.reward.flowerId] || flowers[0];
       const accent = rewardFlower[4] || "#d7b16d";
       trophy.dataset.bouquetPayoffState = payoffState;
       trophy.dataset.assemblyState = bouquetSealPulseActive ? "forming" : "assembled";
+      trophy.dataset.highCount = String(composition.length >= 24);
+      trophy.dataset.compositionKey = bouquetCompositionKey(plan);
       trophy.setAttribute("aria-label", `${plan.name} crafted bouquet trophy`);
       trophy.style.setProperty("--bouquet-aura", `${accent}55`);
       trophy.style.setProperty("--bouquet-ray", `${accent}2c`);
@@ -17425,31 +17575,62 @@
       applyImageFallbacks(trophy);
     }
 
+    function craftedBouquetLayout(layout, index, total) {
+      if (total < 24) {
+        return {
+          ...layout,
+          leafX: Math.round(layout.x * .46 + (index % 2 ? -7 : 6)),
+          leafY: 92 + (index % 3) * 8
+        };
+      }
+      const size = 44;
+      const x = Math.round(layout.x * 1.28);
+      const y = [22, 48, 75, 103, 132, 157][layout.tier]
+        + [-2, 1, 0, 2, -1][index % 5];
+      const knotY = 192;
+      const stemRise = Math.max(18, knotY - (y + size * .12));
+      return {
+        ...layout,
+        x,
+        y,
+        size,
+        rot: [-10, 7, -5, 9, -7, 4][index % 6],
+        stemHeight: Math.round(Math.hypot(x, stemRise)),
+        stemRot: Math.round(Math.atan2(x, stemRise) * 180 / Math.PI),
+        leafX: Math.round(x * .46 + (index % 2 ? -7 : 6)),
+        leafY: Math.round(knotY - stemRise * .46)
+      };
+    }
+
     function craftedBouquetMarkup(plan = activeRoundPlan()) {
       const composition = bouquetComposition(plan);
       const entries = composition.map(({ target }) => target);
-      const stems = composition.map(({ target, index, layout }) => {
+      const highCount = composition.length >= 24;
+      const stems = composition.map(({ target, index, layout: baseLayout, unitIndex }) => {
+        const layout = craftedBouquetLayout(baseLayout, index, composition.length);
+        const unitKey = `${index}:${target.flowerId}:${unitIndex}`;
         return `
-          <span class="crafted-stem" data-crafted-stem-flower="${target.flowerId}" style="--stem-height:${layout.stemHeight}px;--stem-rot:${layout.stemRot}deg;"></span>
-          <span class="crafted-leaf" data-crafted-leaf-flower="${target.flowerId}" style="--leaf-x:${Math.round(layout.x * .46 + (index % 2 ? -7 : 6))}px;--leaf-y:${92 + (index % 3) * 8}px;--leaf-rot:${index % 2 ? 202 : -22}deg;"></span>
+          <span class="crafted-stem" data-crafted-stem-flower="${target.flowerId}" data-composition-unit="${unitKey}" style="--stem-height:${layout.stemHeight}px;--stem-rot:${layout.stemRot}deg;"></span>
+          <span class="crafted-leaf" data-crafted-leaf-flower="${target.flowerId}" data-composition-unit="${unitKey}" style="--leaf-x:${layout.leafX}px;--leaf-y:${layout.leafY}px;--leaf-rot:${index % 2 ? 202 : -22}deg;"></span>
         `;
       }).join("");
-      const blooms = composition.map(({ target, index, unitIndex, layout }) => {
+      const blooms = composition.map(({ target, index, unitIndex, layout: baseLayout }) => {
+        const layout = craftedBouquetLayout(baseLayout, index, composition.length);
         const flower = flowers[target.flowerId] || flowers[0];
         const gainReceiver = orderPulseSlots.get(target.flowerId)?.has(index) || false;
         return `
-          <span class="crafted-bloom crafted-flower-bloom ${gainReceiver ? "order-pulse" : ""}" data-crafted-flower="${target.flowerId}" data-crafted-slot="${index}" data-unit-index="${unitIndex}" data-gain-receiver="${gainReceiver}" data-required-count="${target.needed}" data-flower-name="${flower[0]}" style="--bloom-x:calc(50% + ${layout.x}px);--bloom-y:${layout.y}px;--bloom-size:${layout.size}px;--bloom-rot:${layout.rot}deg;--bloom-z:${layout.z};--bloom-color:${flower[4]};--bloom-delay:${Math.min(index * 42, 620)}ms;" title="${flower[0]}">
+          <span class="crafted-bloom crafted-flower-bloom ${gainReceiver ? "order-pulse" : ""}" data-crafted-flower="${target.flowerId}" data-crafted-slot="${index}" data-unit-index="${unitIndex}" data-composition-unit="${index}:${target.flowerId}:${unitIndex}" data-crown-tier="${layout.tier}" data-gain-receiver="${gainReceiver}" data-required-count="${target.needed}" data-flower-name="${flower[0]}" style="--bloom-x:calc(50% + ${layout.x}px);--bloom-y:${layout.y}px;--bloom-size:${layout.size}px;--bloom-rot:${layout.rot}deg;--bloom-z:${layout.z};--bloom-color:${flower[4]};--bloom-delay:${Math.min(index * 42, 620)}ms;" title="${flower[0]}">
             ${iconMarkup(target.flowerId, "crafted-bouquet-icon", flower[0], "crafted-bouquet-wrap")}
           </span>
         `;
       }).join("");
       const thornCharm = plan.thornGoal ? `
-        <span class="crafted-bloom thorn-charm" style="--bloom-x:calc(50% + 44px);--bloom-y:34px;--bloom-z:9;--bloom-rot:10deg;--bloom-delay:360ms;" title="${plan.thornGoal.order}">
+        <span class="crafted-bloom thorn-charm" style="--bloom-x:calc(50% + ${highCount ? 102 : 44}px);--bloom-y:${highCount ? 154 : 34}px;--bloom-z:${highCount ? 62 : 9};--bloom-rot:10deg;--bloom-delay:360ms;" title="${plan.thornGoal.order}">
           ${thornSealMarkup("", "")}
         </span>
       ` : "";
       return `
-        <span class="crafted-bouquet" data-crafted-bouquet="true" data-composition-key="${bouquetCompositionKey(plan)}" data-crafted-bloom-count="${entries.length}" data-crafted-target-counts="${plan.targets.map((target) => `${target.flowerId}:${target.needed}`).join(",")}">
+        <span class="crafted-bouquet" data-crafted-bouquet="true" data-high-count="${highCount}" data-composition-key="${bouquetCompositionKey(plan)}" data-crafted-bloom-count="${entries.length}" data-crafted-target-counts="${plan.targets.map((target) => `${target.flowerId}:${target.needed}`).join(",")}">
           ${stems}
           ${blooms}
           ${thornCharm}
