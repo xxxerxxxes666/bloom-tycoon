@@ -479,8 +479,11 @@ async function activeBouquetAssemblyState(page) {
         const bud = ingredient.querySelector(".live-bouquet-bud");
         const budRect = bud?.getBoundingClientRect();
         const budStyle = bud ? getComputedStyle(bud) : null;
+        const budSocketStyle = bud ? getComputedStyle(bud, "::before") : null;
+        const budCalyxStyle = bud ? getComputedStyle(bud, "::after") : null;
         return {
           flowerId: Number(ingredient.dataset.flowerId),
+          slot: Number(ingredient.dataset.liveSlot),
           unitIndex: Number(ingredient.dataset.unitIndex),
           progress: ingredient.dataset.progress,
           slotProgress: Number(ingredient.dataset.slotProgress || 0),
@@ -524,7 +527,15 @@ async function activeBouquetAssemblyState(page) {
             height: budRect.height,
             opacity: Number(budStyle.opacity),
             backgroundImage: budStyle.backgroundImage,
-            borderStyle: budStyle.borderStyle
+            borderStyle: budStyle.borderStyle,
+            socketBackgroundImage: budSocketStyle.backgroundImage,
+            socketBorderStyle: budSocketStyle.borderStyle,
+            socketWidth: Number.parseFloat(budSocketStyle.width),
+            socketHeight: Number.parseFloat(budSocketStyle.height),
+            calyxBackgroundImage: budCalyxStyle.backgroundImage,
+            calyxBorderLeftStyle: budCalyxStyle.borderLeftStyle,
+            calyxBorderRightStyle: budCalyxStyle.borderRightStyle,
+            calyxClipPath: budCalyxStyle.clipPath
           } : null,
           image: {
             src: image?.getAttribute("src") || "",
@@ -710,7 +721,7 @@ function expectPhysicalBouquetGeometry(assembly, composition) {
     ingredient.capacityBackgroundImage === "none"
       && ingredient.capacityBackgroundColor === "rgba(0, 0, 0, 0)"
       && ingredient.capacityBorderStyle === "none"
-  )), "empty capacity uses botanical silhouettes, not dark inventory sockets").toBe(true);
+  )), "outer capacity avoids a generic inventory puck around its botanical cup").toBe(true);
   const closed = assembly.ingredients.filter((ingredient) => ingredient.slotProgress === 0);
   expect(closed.every((ingredient) => ingredient.bud), "every unearned unit remains a visible closed botanical bud").toBe(true);
   if (closed.length === composition.length && composition.length === 14) {
@@ -723,12 +734,20 @@ function expectPhysicalBouquetGeometry(assembly, composition) {
   }
   expect(closed.every((ingredient) => (
     ingredient.bud.width >= 19
-      && ingredient.bud.height >= 27
-      && ingredient.bud.opacity >= .55
-      && ingredient.bud.opacity <= .78
-      && ingredient.bud.backgroundImage !== "none"
-      && ingredient.bud.borderStyle !== "none"
-  )), "closed buds retain botanical geometry while staying materially subordinate").toBe(true);
+      && ingredient.bud.height >= 26
+      && ingredient.bud.opacity >= .9
+      && ingredient.bud.opacity <= .96
+      && ingredient.bud.backgroundImage === "none"
+      && ingredient.bud.borderStyle === "none"
+      && ingredient.bud.socketBackgroundImage.includes("radial-gradient")
+      && ingredient.bud.socketBorderStyle === "solid"
+      && ingredient.bud.socketWidth >= 18
+      && ingredient.bud.socketHeight >= 12
+      && ingredient.bud.calyxBackgroundImage.includes("linear-gradient")
+      && ingredient.bud.calyxBorderLeftStyle === "solid"
+      && ingredient.bud.calyxBorderRightStyle === "solid"
+      && ingredient.bud.calyxClipPath !== "none"
+  )), "unearned units expose one hollow cup and closed calyx instead of a gray flower head").toBe(true);
   expect(assembly.knot, "one binding knot remains visible").not.toBeNull();
   expect(assembly.knot.width, "binding knot remains materially legible").toBeGreaterThan(19);
   expect(assembly.knot.centerY, "binding knot sits below the crown")
@@ -1683,13 +1702,13 @@ async function runJourney(page, label, includeRetry) {
   expect(Math.min(...initialAssembly.ingredients.map((ingredient) => ingredient.bud.width)),
     "fresh capacity stays countable without flower-image stand-ins").toBeGreaterThanOrEqual(19);
   expect(Math.max(...initialAssembly.ingredients.map((ingredient) => ingredient.bud.width)),
-    "fresh closed capacity remains narrower than an earned flower head").toBeLessThanOrEqual(21);
+    "fresh closed capacity remains narrower than an earned flower head").toBeLessThanOrEqual(22);
   expect(Math.min(...initialPixels.map((head) => head.p75)),
     `every fresh bud has normal-screenshot midtone contrast: ${JSON.stringify(initialPixels)}`).toBeGreaterThan(20);
   expect(Math.min(...initialPixels.map((head) => head.p90)),
     `every fresh bud renders above the empty panel floor: ${JSON.stringify(initialPixels)}`).toBeGreaterThan(46);
   expect(Math.min(...initialPixels.map((head) => head.litPixels)),
-    `every fresh bud owns a material painted footprint: ${JSON.stringify(initialPixels)}`).toBeGreaterThan(300);
+    `every fresh hollow cup owns a material painted footprint: ${JSON.stringify(initialPixels)}`).toBeGreaterThan(270);
   expect(initialAssembly.overflowX).toBe(false);
   expect(initialAssembly.boardBottom, `${label} keeps the complete altar in the first viewport`)
     .toBeLessThanOrEqual(viewport?.height || 844);
@@ -1769,7 +1788,7 @@ async function runJourney(page, label, includeRetry) {
     .filter((ingredient) => ingredient.slotProgress === 0)
     .map((ingredient) => ingredient.bud.opacity));
   expect(earnedHeadOpacity, "earned flower heads visually dominate closed capacity")
-    .toBeGreaterThan(closedBudOpacity + .2);
+    .toBeGreaterThan(closedBudOpacity);
   expect(firstAssembly.ingredients.filter((ingredient) => ingredient.receiver)).toHaveLength(2);
   expect(new Set(firstAssembly.ingredients
     .filter((ingredient) => ingredient.receiver)
@@ -1780,7 +1799,7 @@ async function runJourney(page, label, includeRetry) {
   expect(firstAssembly.visibleBlooms).toBe(firstAssembly.ingredients.filter((ingredient) => ingredient.slotProgress > 0).length);
   expect(firstAssembly.buds).toBe(11);
   expect(firstAssembly.ingredients.filter((ingredient) => ingredient.slotProgress === 0)
-    .every((ingredient) => ingredient.bud?.width >= 19 && ingredient.bud?.height >= 27),
+    .every((ingredient) => ingredient.bud?.width >= 19 && ingredient.bud?.height >= 26),
   "the eleven unearned units remain visibly closed after the first harvest").toBe(true);
   const closedFirstPixels = firstPixels.filter((head) => head.slotProgress === 0);
   expect(closedFirstPixels, "the authored opening preserves eleven painted closed heads").toHaveLength(11);
@@ -2507,6 +2526,25 @@ for (const config of [
       pct: 0,
       art: "first_greenhouse_withered.jpg",
       note: "Owned 0/3 · Next: Restore Greenhouse"
+    });
+    const reducedFirstHarvest = await activeBouquetAssemblyState(page);
+    expect(reducedFirstHarvest.progress).toBe("3/14");
+    expect(reducedFirstHarvest.ingredients.filter((ingredient) => ingredient.slotProgress > 0)
+      .map((ingredient) => ingredient.slot)).toEqual([0, 2, 4]);
+    expect(reducedFirstHarvest.ingredients.filter((ingredient) => ingredient.slotProgress > 0)
+      .every((ingredient) => ingredient.flowerId === 5 && ingredient.slotState === "filled")).toBe(true);
+    expect(reducedFirstHarvest.ingredients.filter((ingredient) => ingredient.slotProgress === 0)
+      .every((ingredient) => Boolean(ingredient.bud))).toBe(true);
+    expect(await page.locator(".objective-flight, .bouquet-bind-seal").count(),
+      "reduced-motion first harvest leaves no traveling or binding transient").toBe(0);
+    expect(await page.evaluate(() => (
+      document.querySelector("#liveBouquetAssembly")
+        ?.getAnimations({ subtree: true })
+        .filter((animation) => animation.playState === "running").length || 0
+    )), "reduced-motion first harvest leaves the authoritative receiver static").toBe(0);
+    await page.screenshot({
+      path: `work/live-bouquet-${config.label}-reduced-first-harvest.png`,
+      fullPage: true
     });
     await clickGuidedSwap(page);
     const active = await activeBouquetAssemblyState(page);

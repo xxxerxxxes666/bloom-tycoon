@@ -1246,16 +1246,16 @@
     }
 
     .live-bouquet-stem[data-filled="false"] {
-      opacity: .48;
-      background: linear-gradient(90deg, #181912, #757451 46%, #363724 72%, #0b0b08);
+      opacity: .38;
+      background: linear-gradient(90deg, #11120d, #55563d 46%, #292a1d 72%, #080806);
       box-shadow: 0 1px 2px #000;
     }
 
     .live-bouquet-leaf[data-filled="false"] {
-      border-color: #817b5270;
-      background: linear-gradient(90deg, #12130e, #626347 58%, #1d1c14);
-      opacity: .34;
-      filter: saturate(.45) brightness(.88);
+      border-color: #6f6d4b5c;
+      background: linear-gradient(90deg, #0d0e0a, #464831 58%, #17170f);
+      opacity: .27;
+      filter: saturate(.35) brightness(.78);
       box-shadow: 0 1px 2px #000;
     }
 
@@ -1385,20 +1385,12 @@
     .live-bouquet-bud {
       position: relative;
       z-index: 1;
-      width: 20px;
-      height: 30px;
-      border: 1px solid #a59a69;
-      border-radius: 54% 54% 42% 42% / 70% 70% 30% 30%;
-      background:
-        linear-gradient(90deg, #171711 0 16%, #777151 45%, #3b3928 72%, #0c0c09 100%);
-      clip-path: polygon(50% 0, 72% 11%, 88% 36%, 82% 68%, 63% 88%, 50% 100%, 37% 88%, 18% 68%, 12% 36%, 28% 11%);
-      opacity: .76;
-      box-shadow:
-        inset 2px 1px 2px #e0d59a52,
-        inset -3px -2px 4px #000,
-        0 0 0 1px #070605,
-        0 1px 3px #000,
-        0 0 4px #b5a66b2b;
+      width: 22px;
+      height: 28px;
+      border: 0;
+      background: none;
+      opacity: .94;
+      filter: drop-shadow(0 1px 2px #000);
     }
 
     .live-bouquet-bud::before,
@@ -1409,24 +1401,35 @@
     }
 
     .live-bouquet-bud::before {
-      left: 50%;
-      top: 4px;
-      width: 2px;
-      height: 17px;
-      transform: translateX(-50%);
-      background: linear-gradient(#ded49aa3, #343425 72%, #0000);
-      box-shadow: -4px 4px 0 #4f4e37, 4px 4px 0 #28281c;
+      left: 1px;
+      top: 1px;
+      width: 18px;
+      height: 12px;
+      border: 1px solid #777554;
+      border-radius: 50%;
+      background:
+        radial-gradient(ellipse at 50% 43%, #020202 0 35%, #090a07 38% 54%, #41432f 58% 70%, #14140e 74%);
+      box-shadow:
+        inset 0 3px 4px #000,
+        inset 0 -1px 1px #c4ba7952,
+        0 0 0 1px #060605,
+        0 1px 2px #000;
     }
 
     .live-bouquet-bud::after {
-      left: 1px;
-      right: 1px;
-      bottom: 0;
-      height: 10px;
-      border-top: 1px solid #a39a6994;
-      background: linear-gradient(135deg, #50523a 0 34%, #202117 35% 62%, #676649 63% 100%);
-      clip-path: polygon(0 100%, 18% 15%, 43% 65%, 50% 0, 59% 65%, 82% 15%, 100% 100%);
-      opacity: .72;
+      left: 4px;
+      top: 10px;
+      width: 14px;
+      height: 15px;
+      border-right: 2px solid #4f5238;
+      border-bottom: 2px solid #717451;
+      border-left: 2px solid #343624;
+      border-radius: 0 0 48% 48% / 0 0 72% 72%;
+      background:
+        linear-gradient(78deg, #0000 0 39%, #55583c 42% 49%, #0000 52%),
+        linear-gradient(-78deg, #0000 0 39%, #2d3020 42% 49%, #0000 52%);
+      clip-path: polygon(0 0, 26% 18%, 50% 100%, 74% 18%, 100% 0, 86% 78%, 50% 100%, 14% 78%);
+      opacity: .9;
     }
 
     .live-bouquet-assembly[data-high-count="true"]::after {
