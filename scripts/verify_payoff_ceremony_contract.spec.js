@@ -468,6 +468,7 @@ async function activeBouquetAssemblyState(page) {
     };
     const assembly = document.querySelector("#liveBouquetAssembly");
     const rect = assembly?.getBoundingClientRect();
+    const receiverCopyRect = document.querySelector(".bouquet-receiver-copy")?.getBoundingClientRect();
     const bindingStyle = assembly ? getComputedStyle(assembly, "::before") : null;
     const vineStyle = assembly ? getComputedStyle(assembly, "::after") : null;
     const ingredients = Array.from(document.querySelectorAll("#liveBouquetAssembly .live-bouquet-ingredient"))
@@ -574,6 +575,10 @@ async function activeBouquetAssemblyState(page) {
       emptyText: assembly?.querySelector(".live-bouquet-empty")?.textContent.replace(/\s+/g, " ").trim() || "",
       width: rect?.width || 0,
       height: rect?.height || 0,
+      top: rect?.top || 0,
+      bottom: rect?.bottom || 0,
+      left: rect?.left || 0,
+      right: rect?.right || 0,
       bindingWidth: Number.parseFloat(bindingStyle?.width || "0"),
       bindingHeight: Number.parseFloat(bindingStyle?.height || "0"),
       vineWidth: Number.parseFloat(vineStyle?.width || "0"),
@@ -599,6 +604,16 @@ async function activeBouquetAssemblyState(page) {
         width: thornRect.width,
         height: thornRect.height
       } : null,
+      receiverCopy: receiverCopyRect ? {
+        left: receiverCopyRect.left,
+        right: receiverCopyRect.right,
+        top: receiverCopyRect.top,
+        bottom: receiverCopyRect.bottom
+      } : null,
+      desktopAltar: window.matchMedia("(min-width: 1180px)").matches,
+      boardLeft: board?.left || 0,
+      boardRight: board?.right || 0,
+      boardTop: board?.top || 0,
       boardBottom: board?.bottom || 0,
       overflowX: document.documentElement.scrollWidth > innerWidth + 1,
       visibleLinearMeter: visible(document.querySelector("#bouquetOrderProgress .progress-meter")),
@@ -703,6 +718,15 @@ function expectPhysicalBouquetGeometry(assembly, composition) {
     && ingredient.image.naturalWidth > 0
     && ingredient.image.naturalHeight > 0
   )), "every earned ingredient head is a complete repo-local image").toBe(true);
+  if (assembly.desktopAltar) {
+    const assemblyCenter = (assembly.left + assembly.right) / 2;
+    const boardCenter = (assembly.boardLeft + assembly.boardRight) / 2;
+    expect(Math.abs(assemblyCenter - boardCenter),
+      "desktop live bouquet stays centered over the altar").toBeLessThanOrEqual(1);
+    expect(Math.max(...assembly.ingredients.map((ingredient) => ingredient.right)),
+      "desktop crown clears its connected progress and reward copy")
+      .toBeLessThanOrEqual(assembly.receiverCopy.left - 1);
+  }
   const crownLeft = Math.min(...assembly.ingredients.map((ingredient) => ingredient.left));
   const crownRight = Math.max(...assembly.ingredients.map((ingredient) => ingredient.right));
   const crownWidth = crownRight - crownLeft;
@@ -713,7 +737,9 @@ function expectPhysicalBouquetGeometry(assembly, composition) {
     .toBeLessThan(assembly.width * .78);
   expect(crownWidth, "compact crown remains visually substantial")
     .toBeGreaterThan(assembly.width * (composition.length <= 16 ? .42 : .52));
-  expect(crownYSpread, "bouquet crown has three materially separated tiers instead of a flat row")
+  expect(new Set(assembly.ingredients.map((ingredient) => ingredient.crownTier)).size,
+    "bouquet crown retains its authored depth tiers").toBeGreaterThanOrEqual(3);
+  expect(crownYSpread, "bouquet crown has materially separated tiers instead of a flat row")
     .toBeGreaterThan(32);
   if (composition.length >= 24) {
     const tierCounts = assembly.ingredients.reduce((counts, ingredient) => {
@@ -1928,12 +1954,21 @@ async function runJourney(page, label, includeRetry) {
   expect(initialAssembly.width, "fresh live bouquet is readable in the progress strip").toBeGreaterThanOrEqual(compactReceiver ? 220 : 210);
   expect(initialAssembly.height, "fresh live bouquet owns substantial crown and wrap depth")
     .toBeGreaterThanOrEqual(label.includes("mobile390") ? 82 : 80);
-  expect(initialAssembly.bindingWidth, "fresh live bouquet shows a material binding").toBeGreaterThanOrEqual(84);
-  expect(initialAssembly.vineWidth, "fresh wrapper stays broad enough to bind the crown")
-    .toBeGreaterThan(initialAssembly.width * .48);
-  expect(initialAssembly.vineWidth, "fresh wrapper hugs the crown instead of spreading into wings")
-    .toBeLessThan(initialAssembly.width * .56);
-  expect(initialAssembly.vineHeight, "fresh wrap has material depth below the crown").toBeGreaterThanOrEqual(52);
+  expect(initialAssembly.bindingWidth, "fresh live bouquet shows a material binding")
+    .toBeGreaterThanOrEqual(label.includes("mobile390") ? 84 : 78);
+  expect(initialAssembly.vineWidth, "fresh wrapper remains wider than the binding it converges into")
+    .toBeGreaterThan(initialAssembly.bindingWidth + 30);
+  expect(initialAssembly.vineWidth, "fresh wrapper hugs the stems instead of spreading into wings")
+    .toBeLessThan(initialAssembly.width * (label.includes("mobile390") ? .56 : .38));
+  expect(initialAssembly.vineHeight, "fresh wrap has material depth below the crown")
+    .toBeGreaterThanOrEqual(label.includes("mobile390") ? 52 : 36);
+  if (!label.includes("mobile390")) {
+    expect(initialAssembly.boardTop - initialAssembly.bottom,
+      "desktop receiver leaves a visible terminus before the altar frame").toBeGreaterThanOrEqual(5);
+    expect(initialAssembly.bottom - (
+      initialAssembly.knot.centerY + initialAssembly.knot.height / 2
+    ), "desktop knot remains visibly bounded inside the receiver").toBeGreaterThanOrEqual(1);
+  }
   expectPhysicalBouquetGeometry(initialAssembly, ROUND_ONE_COMPOSITION);
   expect(initialAssembly.ingredients.every((ingredient) => ingredient.slotState === "empty")).toBe(true);
   expect(initialAssembly.ingredients.every((ingredient) => ingredient.slotProgress === 0)).toBe(true);
