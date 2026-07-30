@@ -14218,6 +14218,7 @@
 
     function renderFocusedPayoffCeremony(ceremony) {
       const panel = $("roundOneRestoration");
+      const bouquetTransferActive = panel.dataset.bouquetTransfer === "active";
       const ownedRenewalPhase = ownedReplayPresentationPhase(ceremony);
       const presentationPending = focusedSliceRound(ceremony.plan)
         && (Boolean(blackCandleActivationPresentation)
@@ -14228,14 +14229,18 @@
       panel.dataset.payoffMode = ceremony.ownedReplay ? "owned-replay" : "restoration";
       panel.dataset.ownedRenewalPhase = ceremony.ownedReplay ? ownedRenewalPhase || "settled" : "";
       panel.dataset.assemblyReady = String(!presentationPending);
-      if (!panel.classList.contains("restoration-awakening")) {
+      if (!bouquetTransferActive && !panel.classList.contains("restoration-awakening")) {
         panel.dataset.restorationPhase = ceremony.plan.round === 1
           ? ceremony.primary === "spend" ? "pending" : "settled"
           : "";
       }
       panel.classList.toggle("owned-replay", ceremony.ownedReplay);
-      $("restorationTitle").textContent = ceremony.title;
-      $("restorationState").textContent = finalHarvestCommit?.phase === "ceremony" && !ceremony.ownedReplay
+      $("restorationTitle").textContent = bouquetTransferActive
+        ? "Bouquet Nourishes Greenhouse"
+        : ceremony.title;
+      $("restorationState").textContent = bouquetTransferActive
+        ? "BOUQUET ENTERING WITHERED GLASSHOUSE"
+        : finalHarvestCommit?.phase === "ceremony" && !ceremony.ownedReplay
         ? `BOUQUET BOUND · ${ceremony.plan.name.toUpperCase()}`
         : ownedRenewalPhase === "binding"
           ? "BOUQUET BOUND · OWNED CONSERVATORY"
@@ -14244,7 +14249,9 @@
             : ["renewal", "acknowledgment"].includes(ownedRenewalPhase)
               ? "CONSERVATORY NOURISHED · REMAINS 100% RAISED"
               : ceremony.state;
-      $("payoffTransaction").textContent = ceremony.transaction;
+      $("payoffTransaction").textContent = bouquetTransferActive
+        ? `${FIRST_GREENHOUSE_RESTORE_COST} coins spent · Greenhouse awakening · ${coins} coins remain.`
+        : ceremony.transaction;
       $("restorationCopy").textContent = ceremony.copy;
       $("payoffTransaction").style.visibility = presentationPending ? "hidden" : "";
       $("restorationCopy").style.visibility = presentationPending ? "hidden" : "";
@@ -14252,6 +14259,10 @@
       $("nextOrderBtn").textContent = ceremony.nextText;
       $("restoreGreenhouseBtn").hidden = ceremony.primary !== "spend" || presentationPending;
       $("nextOrderBtn").hidden = ceremony.primary !== "next" || presentationPending;
+      if (bouquetTransferActive) {
+        $("restoreGreenhouseBtn").hidden = true;
+        $("nextOrderBtn").hidden = true;
+      }
       $("restoreGreenhouseBtn").disabled = presentationPending
         || (currentRound === 1 && (!roundComplete || roundOneRestored || coins < FIRST_GREENHOUSE_RESTORE_COST))
         || (currentRound === 2 && roundComplete && (!roundOneRestored || roundTwoGreenhouseUpgraded || coins < MOONLIT_GREENHOUSE_UPGRADE_COST))
@@ -14262,6 +14273,9 @@
         scene.setAttribute("aria-label", "Owned Bloodroot Conservatory remains fully raised");
       }
       renderBouquetTrophy(ceremony.plan, ceremony.payoffState, ceremony.ownedReplay);
+      if (bouquetTransferActive) {
+        panel.querySelector(".bouquet-trophy-kicker").textContent = "Bouquet Transferred";
+      }
       renderOwnedReplayRenewal(ceremony, ownedRenewalPhase);
     }
 
@@ -17538,17 +17552,26 @@
     function renderBouquetTrophy(plan = activeRoundPlan(), payoffState = "sealed", ownedReplay = false) {
       const trophy = $("bouquetTrophy");
       if (!trophy) return;
+      const panel = trophy.closest("#roundOneRestoration");
+      const transferOwnsBouquet = panel?.dataset.bouquetTransfer === "active";
+      const compositionKey = bouquetCompositionKey(plan);
+      const settledBouquet = trophy.querySelector(
+        '.crafted-bouquet[data-restoration-transfer="settled"]'
+      );
+      const preserveSettledBouquet = settledBouquet?.dataset.compositionKey === compositionKey;
       const composition = bouquetComposition(plan);
       const rewardFlower = flowers[plan.reward.flowerId] || flowers[0];
       const accent = rewardFlower[4] || "#d7b16d";
       trophy.dataset.bouquetPayoffState = payoffState;
       trophy.dataset.assemblyState = bouquetSealPulseActive ? "forming" : "assembled";
       trophy.dataset.highCount = String(composition.length >= 24);
-      trophy.dataset.compositionKey = bouquetCompositionKey(plan);
+      trophy.dataset.compositionKey = compositionKey;
       trophy.setAttribute("aria-label", `${plan.name} crafted bouquet trophy`);
       trophy.style.setProperty("--bouquet-aura", `${accent}55`);
       trophy.style.setProperty("--bouquet-ray", `${accent}2c`);
-      const assemblyMarkup = craftedBouquetMarkup(plan);
+      const assemblyMarkup = transferOwnsBouquet || preserveSettledBouquet
+        ? ""
+        : craftedBouquetMarkup(plan);
       const ingredientSummary = bouquetIngredientSummaryMarkup(plan);
       const copy = ownedReplay
         ? "Order complete. The Bloodroot Conservatory remains fully raised."
@@ -17572,6 +17595,9 @@
         </span>
         <span class="bouquet-trophy-bonus" aria-label="Bouquet ingredients">${ingredientSummary}</span>
       `;
+      if (preserveSettledBouquet) {
+        trophy.querySelector(".bouquet-assembly")?.append(settledBouquet);
+      }
       applyImageFallbacks(trophy);
     }
 
@@ -18506,6 +18532,16 @@
         return;
       }
       let shapeDemoIndex = 0;
+
+      window.__bloomCeremonyRerenderFixture = () => {
+        const panel = $("roundOneRestoration");
+        const transferState = panel?.dataset.bouquetTransfer || "";
+        if (!["active", "settled"].includes(transferState)) {
+          return "";
+        }
+        render();
+        return transferState;
+      };
 
       window.__bloomDeadBoardRecoveryFixture = (options = {}) => {
         if (isResolving || roundComplete || isBouquetFailed()) {

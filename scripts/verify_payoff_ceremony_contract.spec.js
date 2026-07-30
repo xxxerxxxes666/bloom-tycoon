@@ -1643,6 +1643,8 @@ async function restoreRoundOneAndCapturePeak(page, label, pendingEvidence) {
   await page.waitForFunction(() => (
     document.querySelector("#roundOneRestoration")?.dataset.restorationPhase === "transforming"
   ), null, { timeout: 500 });
+  expect(await page.evaluate(() => window.__bloomCeremonyRerenderFixture?.()))
+    .toBe("active");
   await waitForBouquetTransferProgress(page, .06);
   const earlyEvidence = await page.evaluate(() => {
     const panel = document.querySelector("#roundOneRestoration");
@@ -1761,6 +1763,18 @@ async function restoreRoundOneAndCapturePeak(page, label, pendingEvidence) {
     trophyBouquets: 1,
     transferBouquets: 0
   });
+  expect(await page.evaluate(() => window.__bloomCeremonyRerenderFixture?.()))
+    .toBe("settled");
+  const rerenderedSettlement = await restorationSceneEvidence(page);
+  expect(rerenderedSettlement.bouquetTransfer).toMatchObject({
+    panelState: "settled",
+    exactSourceNode: false,
+    settledExactSourceNode: true,
+    trophyBouquets: 1,
+    transferBouquets: 0
+  });
+  expect(rerenderedSettlement.bouquetTransfer.trophyCompositionKey)
+    .toBe(pendingEvidence.bouquetTransfer.trophyCompositionKey);
 }
 
 async function expectActiveBoard(page) {
@@ -2861,6 +2875,8 @@ for (const config of [
       return bouquet && bouquet.getAnimations({ subtree: true })
         .every((animation) => animation.playState !== "running");
     }, null, { timeout: 120 });
+    expect(await page.evaluate(() => window.__bloomCeremonyRerenderFixture?.()))
+      .toBe("active");
     const reducedTransfer = await page.evaluate(() => {
       const panel = document.querySelector("#roundOneRestoration");
       const intake = document.querySelector("#restorationBouquetIntake");
@@ -2904,6 +2920,18 @@ for (const config of [
     );
     const settledScene = await restorationSceneEvidence(page);
     expectRoundOneSceneIdentity(settledScene, `${config.label} reduced-motion settled`);
+    expect(await page.evaluate(() => window.__bloomCeremonyRerenderFixture?.()))
+      .toBe("settled");
+    const rerenderedSettledScene = await restorationSceneEvidence(page);
+    expect(rerenderedSettledScene.bouquetTransfer).toMatchObject({
+      panelState: "settled",
+      exactSourceNode: false,
+      settledExactSourceNode: true,
+      trophyBouquets: 1,
+      transferBouquets: 0
+    });
+    expect(rerenderedSettledScene.bouquetTransfer.trophyCompositionKey)
+      .toBe(pendingScene.bouquetTransfer.trophyCompositionKey);
     expect(settled.coins).toBe(20);
     expect(settled.transactionText).toBe("Restored for 100. 20 coins remain.");
     expect(settled.buttons).toEqual(["Next Order → Moonlit Wreath"]);
