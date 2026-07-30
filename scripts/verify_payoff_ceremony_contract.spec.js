@@ -520,6 +520,8 @@ async function activeBouquetAssemblyState(page) {
           imageWidth: imageRect?.width || 0,
           imageHeight: imageRect?.height || 0,
           imageOpacity: image ? Number(getComputedStyle(ingredient.querySelector(".icon-wrap")).opacity) : 0,
+          imageFilter: image ? getComputedStyle(image).filter : "",
+          headAuraOpacity: Number(capacityStyle.opacity || 0),
           bud: budRect ? {
             left: budRect.left,
             right: budRect.right,
@@ -2530,6 +2532,19 @@ test("nearly complete and mixed Round 2/3 progress stays legible in the physical
       thornProgress: ""
     },
     {
+      label: "round3-single-bloodroot",
+      round: 3,
+      counts: [0, 0, 0, 8, 0, 0],
+      clearedCursedThorns: 0,
+      cursedThorns: [],
+      expectedProgress: "8/27",
+      expectedState: "mid",
+      composition: ROUND_THREE_COMPOSITION,
+      species: [3],
+      earnedHeads: { 3: 8 },
+      thornProgress: ""
+    },
+    {
       label: "round3-mixed",
       round: 3,
       counts: [8, 0, 0, 7, 0, 0],
@@ -2554,6 +2569,19 @@ test("nearly complete and mixed Round 2/3 progress stays legible in the physical
       composition: ROUND_THREE_COMPOSITION,
       species: [0, 3],
       earnedHeads: { 0: 12, 3: 13 },
+      thornProgress: ""
+    },
+    {
+      label: "round3-full",
+      round: 3,
+      counts: [13, 0, 0, 14, 0, 0],
+      clearedCursedThorns: 0,
+      cursedThorns: [],
+      expectedProgress: "27/27",
+      expectedState: "complete",
+      composition: ROUND_THREE_COMPOSITION,
+      species: [0, 3],
+      earnedHeads: { 0: 13, 3: 14 },
       thornProgress: ""
     }
   ];
@@ -2603,6 +2631,17 @@ test("nearly complete and mixed Round 2/3 progress stays legible in the physical
       expect(assembly.ingredients.filter((ingredient) => ingredient.slotProgress > 0).length)
         .toBeGreaterThanOrEqual(fixture.species.length);
       const renderedPixels = await renderedBouquetPixelStats(page);
+      if (fixture.composition.length >= 24) {
+        expect(minimumCenterDistance(assembly.ingredients),
+          `${fixture.label} keeps each high-count unit physically separable at normal scale`)
+          .toBeGreaterThanOrEqual(15);
+        const earnedIngredients = assembly.ingredients.filter((ingredient) => ingredient.slotProgress > 0);
+        expect(earnedIngredients.every((ingredient) => ingredient.headAuraOpacity <= .16),
+          `${fixture.label} per-head aura remains subordinate to painted flower silhouettes`).toBe(true);
+        expect(earnedIngredients.every((ingredient) => !/drop-shadow\([^)]*\\b(?:[3-9]|\\d{2,})px\\b[^)]*currentColor/i.test(
+          ingredient.imageFilter
+        )), `${fixture.label} does not rebuild earned heads as a glow cloud`).toBe(true);
+      }
       fixture.species.forEach((flowerId) => {
         const speciesHeads = renderedPixels.filter((head) => head.flowerId === flowerId && head.slotProgress > 0);
         expect(speciesHeads.length, `${fixture.label} visibly contributes species ${flowerId}`).toBeGreaterThan(0);

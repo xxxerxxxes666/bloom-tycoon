@@ -1498,6 +1498,23 @@
       height: var(--live-size, 26px) !important;
     }
 
+    .live-bouquet-assembly[data-high-count="true"] .live-bouquet-ingredient[data-slot-state="filled"]::before {
+      inset: 14%;
+      background: radial-gradient(circle, color-mix(in srgb, currentColor 44%, #fff0b4) 0 8%, currentColor 20%, #0000 64%);
+      box-shadow: 0 0 2px currentColor;
+      opacity: .16;
+      filter: none;
+    }
+
+    .live-bouquet-assembly[data-high-count="true"] .live-bouquet-ingredient[data-slot-state="filled"] img {
+      filter:
+        brightness(1.24)
+        saturate(1.18)
+        contrast(1.12)
+        drop-shadow(0 1px 2px #000)
+        drop-shadow(0 0 1px currentColor);
+    }
+
     .live-bouquet-assembly[data-high-count="true"] .live-bouquet-bud {
       width: 17px;
       height: 21px;
@@ -10216,7 +10233,23 @@
       const crafted = bouquetCompositionLayout(index, total);
       const compact = total <= 16;
       const tiered = total >= 24;
-      const size = compact ? 42 : total <= 20 ? 31 : 26;
+      const size = compact ? 42 : total <= 20 ? 31 : tiered ? 24 : 26;
+      const highCountRows = tiered ? tieredBouquetRowCounts(total) : [];
+      const highCountTierXOffsets = highCountRows.reduce((offsets, rowCount, tier) => {
+        if (tier === 0) {
+          offsets.push(0);
+          return offsets;
+        }
+        const previousCount = highCountRows[tier - 1];
+        const sameParity = rowCount % 2 === previousCount % 2;
+        offsets.push(sameParity ? (offsets[tier - 1] >= 6 ? 0 : 12) : offsets[tier - 1]);
+        return offsets;
+      }, []);
+      const highCountXCenter = highCountRows.reduce((
+        weightedOffset,
+        rowCount,
+        tier
+      ) => weightedOffset + rowCount * highCountTierXOffsets[tier], 0) / (total || 1);
       const compactRows = [4, 6, Math.max(0, total - 10)].filter(Boolean);
       let compactRow = 0;
       let compactRowStart = 0;
@@ -10236,11 +10269,12 @@
       const layout = {
         x: compact
           ? compactX
-          : Math.round(crafted.x * (tiered ? .98 : 1.03)),
+          : Math.round(crafted.x * (tiered ? 1.1 : 1.03)
+            + (tiered ? (highCountTierXOffsets[crafted.tier] || 0) - highCountXCenter : 0)),
         y: compact
           ? (compactMobile ? [22, 40, 58] : [23, 40, 58])[compactRow]
           : tiered
-            ? [14, 23, 33, 44, 56, 64][crafted.tier] + [-1, 1, 0, 1, -1][index % 5]
+            ? [14, 25, 36, 47, 58, 68][crafted.tier]
             : Math.round(5 + crafted.y * .65 - (crafted.y > 75 ? 3 : 0)),
         size,
         rot: compact
