@@ -1617,6 +1617,14 @@
       filter: brightness(1.16);
     }
 
+    body.final-harvest-active .live-bouquet-assembly[data-high-count="true"] .live-bouquet-ingredient[data-final-harvest-slot="true"][data-crown-tier="5"],
+    body.final-harvest-transfer-active .live-bouquet-assembly[data-high-count="true"] .live-bouquet-ingredient[data-final-harvest-slot="true"][data-crown-tier="5"] {
+      transform:
+        translate(-50%, -50%)
+        rotate(var(--live-rot, 0deg))
+        scale(.96);
+    }
+
     body.final-harvest-active .live-bouquet-ingredient[data-final-harvest-slot="true"]::after,
     body.final-harvest-transfer-active .live-bouquet-ingredient[data-final-harvest-slot="true"]::after {
       content: "";
