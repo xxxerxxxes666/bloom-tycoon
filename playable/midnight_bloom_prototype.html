@@ -9148,7 +9148,69 @@
         align-self: start;
         justify-self: center;
         width: min(300px, calc(100% - 18px));
-        height: 360px;
+        height: var(--desktop-altar-size);
+        background:
+          linear-gradient(90deg, #0009 0, #0000 23% 77%, #0009 100%),
+          radial-gradient(
+            ellipse at 50% 39%,
+            color-mix(in srgb, var(--stage-secondary, #d1a15e) 18%, #0000) 0 12%,
+            #0000 48%
+          ),
+          linear-gradient(180deg, #00000008 0 64%, #00000068 84%, #000000b8 100%),
+          var(--active-greenhouse-image, url("../assets/greenhouse/first_greenhouse_withered.jpg"))
+            center 44% / cover no-repeat;
+        filter:
+          contrast(1.08)
+          saturate(calc(var(--stage-art-saturation, 1.06) * 0.88))
+          brightness(calc(var(--stage-art-brightness, 1.04) * 0.98));
+        box-shadow:
+          inset 0 0 0 1px color-mix(in srgb, var(--stage-accent, #b9874d) 42%, #2b1c13),
+          inset 0 0 24px #000,
+          inset 0 -28px 54px #000c,
+          0 0 22px #000,
+          0 0 24px color-mix(in srgb, var(--stage-accent, #b9874d) 18%, #0000);
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .hero::before {
+        top: 16px;
+        bottom: auto;
+        padding: 4px 7px;
+        border-left: 2px solid color-mix(in srgb, var(--stage-accent, #b9874d) 70%, #5a3720);
+        background: linear-gradient(90deg, #030202dc, #0302028c 72%, #0000);
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .hero::after {
+        inset: 10px;
+        box-shadow:
+          inset 0 0 24px #000b,
+          inset 0 0 34px color-mix(in srgb, var(--stage-accent, #b9874d) 18%, #0000);
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .hero-greenhouse-depth {
+        opacity: 0.64;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .hero-greenhouse-depth .rib-center {
+        border-color: color-mix(in srgb, var(--stage-secondary, #d1a15e) 58%, #160c08);
+        opacity: 0.72;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .hero .greenhouse-restoration-dial {
+        bottom: 20px;
+        width: calc(100% - 34px);
+        min-height: 112px;
+        border-color: color-mix(in srgb, var(--stage-accent, #b9874d) 58%, #21150e);
+        background:
+          linear-gradient(90deg, #050302ed, #130c08e6 48%, #050302ed),
+          radial-gradient(
+            ellipse at 50% 0,
+            color-mix(in srgb, var(--stage-accent, #b9874d) 22%, #0000),
+            #0000 66%
+          );
+        box-shadow:
+          inset 0 0 12px #000,
+          0 0 0 1px #030202,
+          0 0 18px color-mix(in srgb, var(--stage-accent, #b9874d) 20%, #0000);
       }
 
       body.focused-active-play:not(.focused-slice-failed) .active-orders-card {
@@ -9247,7 +9309,7 @@
       }
 
       .tutorial-command-region {
-        left: 105px;
+        left: 120px;
         right: 0;
         top: -51px;
         transform: none;
@@ -9307,10 +9369,10 @@
       }
 
       .mobile-greenhouse-progress {
-        grid-template-columns: 105px;
+        grid-template-columns: 120px;
         justify-content: start;
         justify-self: start;
-        width: 105px;
+        width: 120px;
         margin: 5px 0 -30px;
         gap: 0;
       }
@@ -9318,7 +9380,7 @@
       body.round-one-active:not(.focused-payoff-active) .mobile-greenhouse-progress,
       body.restored-next-order-focus:not(.focused-payoff-active) .mobile-greenhouse-progress,
       body.round-three-focus-active:not(.focused-payoff-active) .mobile-greenhouse-progress {
-        width: 105px;
+        width: 120px;
         margin: 5px 0 -30px;
       }
 
@@ -9326,7 +9388,7 @@
       .mobile-greenhouse-progress .greenhouse-restoration-dial {
         grid-column: 1;
         grid-row: 1;
-        width: 105px;
+        width: 120px;
       }
 
       .mobile-greenhouse-identity {
@@ -9344,7 +9406,7 @@
       }
 
       .mobile-greenhouse-identity img {
-        object-position: center;
+        object-position: center 44%;
         filter:
           brightness(calc(var(--stage-art-brightness, 1.04) * 1.34))
           contrast(1.18)
@@ -9360,7 +9422,7 @@
         gap: 3px;
         border-color: transparent;
         background: none;
-        box-shadow: inset 0 0 8px #0008;
+        box-shadow: inset 0 0 5px #0005;
       }
 
       .mobile-greenhouse-progress .restoration-dial-topline {

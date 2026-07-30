@@ -867,7 +867,7 @@ async function assertHudState(page, fixture, viewport, reload) {
         `Owned ${savedOwnedStage}/3`
       );
       expect(report.mobileGreenhouse.art, `${label} persisted stage crop`).toContain(expectedOwned.art);
-      expect(report.mobileGreenhouse.rect.width, `${label} greenhouse yields command lane`).toBeLessThanOrEqual(110);
+      expect(report.mobileGreenhouse.rect.width, `${label} greenhouse yields command lane`).toBeLessThanOrEqual(122);
       expect(report.mobileGreenhouse.rect.height, `${label} recognizable greenhouse height`).toBeCloseTo(78, 0);
       expect(report.mobileGreenhouse.artRect, `${label} visible place crop fills compact surface`).toEqual(
         report.mobileGreenhouse.dialRect
@@ -2495,7 +2495,7 @@ test("mobile greenhouse renders recognizable persisted architecture without yiel
       expect(report.greenhouse.stage, `${label} ownership stage`).toBe(stageCase.key);
       expect(report.mobileGreenhouse.art, `${label} persisted original art`).toContain(stageCase.art);
       expect(report.mobileGreenhouse.rect, `${label} bounded architectural crop`).toMatchObject({
-        width: 105,
+        width: 120,
         height: 78
       });
       expect(report.mobileGreenhouse.rect.bottom, `${label} crop clears altar`).toBeLessThanOrEqual(
@@ -2515,7 +2515,7 @@ test("mobile greenhouse renders recognizable persisted architecture without yiel
         `${label} visible command center hit authority`
       ).toEqual(report.commandHitTargets.map(({ id }) => ({ id, owner: id })));
 
-      expect(pixels.width, `${label} rendered crop width`).toBe(105);
+      expect(pixels.width, `${label} rendered crop width`).toBe(120);
       expect(pixels.height, `${label} rendered crop height`).toBe(78);
       expect(pixels.sampledArtRows, `${label} exposed architectural depth`).toBeGreaterThanOrEqual(48);
       expect(pixels.structuredRows, `${label} visible facade structure`).toBeGreaterThanOrEqual(30);
@@ -2673,7 +2673,9 @@ test("active hierarchy scales the roomy altar without moving the accepted short 
       screenshot: "work/active-hierarchy-r1-desktop1280.png",
       expectedBoard: 600,
       expectedTile: 69,
-      maxGreenhouseAreaRatio: 0.53,
+      expectedGreenhouseHeight: 600,
+      minGreenhouseAreaRatio: 0.46,
+      maxGreenhouseAreaRatio: 0.51,
       centered: true,
       activeOrders: true,
       contract: ROUND_CONTRACTS[1],
@@ -2685,7 +2687,9 @@ test("active hierarchy scales the roomy altar without moving the accepted short 
       screenshot: "work/active-hierarchy-r1-roomy1440.png",
       expectedBoard: 650,
       expectedTile: 75.25,
-      maxGreenhouseAreaRatio: 0.27,
+      expectedGreenhouseHeight: 650,
+      minGreenhouseAreaRatio: 0.43,
+      maxGreenhouseAreaRatio: 0.47,
       centered: true,
       contract: ROUND_CONTRACTS[1]
     },
@@ -2706,7 +2710,9 @@ test("active hierarchy scales the roomy altar without moving the accepted short 
       screenshot: "work/active-hierarchy-r2-thorn-roomy1440.png",
       expectedBoard: 650,
       expectedTile: 75.25,
-      maxGreenhouseAreaRatio: 0.27,
+      expectedGreenhouseHeight: 650,
+      minGreenhouseAreaRatio: 0.43,
+      maxGreenhouseAreaRatio: 0.47,
       centered: true,
       contract: ROUND_CONTRACTS[2],
       state: {
@@ -2728,7 +2734,9 @@ test("active hierarchy scales the roomy altar without moving the accepted short 
       screenshot: "work/active-hierarchy-r3-low-move-roomy1440.png",
       expectedBoard: 650,
       expectedTile: 75.25,
-      maxGreenhouseAreaRatio: 0.27,
+      expectedGreenhouseHeight: 650,
+      minGreenhouseAreaRatio: 0.43,
+      maxGreenhouseAreaRatio: 0.47,
       centered: true,
       activeOrders: true,
       contract: ROUND_CONTRACTS[3],
@@ -2885,6 +2893,12 @@ test("active hierarchy scales the roomy altar without moving the accepted short 
       expect(report.heroDialText, `${capture.label} greenhouse ownership and next restoration`).toMatch(
         /\d+%.*(?:Withered|restored|upgrade owned).*OWNED \d\/3.*NEXT:/i
       );
+      expect(report.hero.height, `${capture.label} greenhouse uses the full same-place rail`)
+        .toBeCloseTo(capture.expectedGreenhouseHeight, 0);
+      expect(
+        (report.hero.width * report.hero.height) / (report.board.width * report.board.height),
+        `${capture.label} greenhouse is a materially legible owned place`
+      ).toBeGreaterThanOrEqual(capture.minGreenhouseAreaRatio);
       expect(
         (report.hero.width * report.hero.height) / (report.board.width * report.board.height),
         `${capture.label} greenhouse remains subordinate to altar`

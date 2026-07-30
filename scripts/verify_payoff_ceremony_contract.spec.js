@@ -2330,11 +2330,27 @@ for (const config of [
         const tiles = Array.from(document.querySelectorAll(".tile"));
         const rowTops = new Set(tiles.map((tile) => Math.round(tile.getBoundingClientRect().top)));
         const board = document.querySelector("#board")?.getBoundingClientRect();
+        const hero = document.querySelector(".hero");
+        const heroRect = hero?.getBoundingClientRect();
+        const heroDial = document.querySelector("#heroRestorationDial");
         return {
           tiles: tiles.length,
           rows: rowTops.size,
+          boardWidth: board?.width || 0,
+          boardHeight: board?.height || 0,
           boardBottom: board?.bottom || 0,
-          overflowX: document.documentElement.scrollWidth > innerWidth + 1
+          overflowX: document.documentElement.scrollWidth > innerWidth + 1,
+          greenhouse: {
+            stageKey: document.body.dataset.activeGreenhouseStage || "",
+            ariaLabel: hero?.getAttribute("aria-label") || "",
+            backgroundImage: hero ? getComputedStyle(hero).backgroundImage : "",
+            width: heroRect?.width || 0,
+            height: heroRect?.height || 0,
+            visible: Boolean(heroRect && getComputedStyle(hero).display !== "none"),
+            ownedStage: heroDial?.dataset.ownedStage || "",
+            pct: heroDial?.dataset.restorationDialPct || "",
+            dialText: heroDial?.textContent.replace(/\s+/g, " ").trim() || ""
+          }
         };
       });
       expect(active.tiles).toBe(64);
@@ -2353,7 +2369,7 @@ for (const config of [
         expect(continuity.renderedWidth).toBeGreaterThanOrEqual(80);
         expect(continuity.renderedHeight).toBeGreaterThanOrEqual(44);
         expect(continuity.objectFit).toBe("cover");
-        expect(continuity.objectPosition).toBe("50% 50%");
+        expect(continuity.objectPosition).toBe("50% 44%");
         expect(continuity.ownedStage).toBe("1");
         expect(continuity.pct).toBe("33");
         expect(continuity.dialText).toContain("RESTORED");
@@ -2369,6 +2385,29 @@ for (const config of [
         });
       } else {
         expect(continuity.visible, "desktop keeps its accepted greenhouse composition").toBe(false);
+        expect(active.boardWidth, "desktop altar width remains authoritative").toBeCloseTo(600, 0);
+        expect(active.boardHeight, "desktop altar height remains authoritative").toBeCloseTo(600, 0);
+        expect(active.greenhouse).toMatchObject({
+          stageKey: "restored",
+          ariaLabel: "Restored Greenhouse",
+          width: 300,
+          height: 600,
+          visible: true,
+          ownedStage: "1",
+          pct: "33"
+        });
+        expect(active.greenhouse.backgroundImage).toContain("first_greenhouse_restored.jpg");
+        expect(active.greenhouse.dialText).toContain("RESTORED");
+        expect(active.greenhouse.dialText).toMatch(/OWNED 1\/3/i);
+        expect(
+          (active.greenhouse.width * active.greenhouse.height)
+            / (active.boardWidth * active.boardHeight),
+          "desktop greenhouse is legible but the altar remains larger"
+        ).toBeLessThanOrEqual(.51);
+        await page.screenshot({
+          path: "work/restoration-desktop-round2-continuity.png",
+          fullPage: true
+        });
       }
       expect(consoleMessages).toEqual([]);
       expect(pageErrors).toEqual([]);
