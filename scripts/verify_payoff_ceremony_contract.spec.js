@@ -1803,6 +1803,10 @@ async function restoreRoundOneAndCapturePeak(page, label, pendingEvidence) {
     document.querySelector("#roundOneRestoration")?.dataset.restorationPhase === "settled"
       && !document.querySelector("#roundOneRestoration")?.classList.contains("restoration-awakening")
   ), null, { timeout: 2300 });
+  await expect(page.locator("#nextOrderBtn"), `${label} settlement reveals the next order without a repair render`)
+    .toBeVisible();
+  await expect(page.locator("#nextOrderBtn"), `${label} settlement hands focus to its sole action`)
+    .toBeFocused();
   const settledTransfer = await restorationSceneEvidence(page);
   expect(settledTransfer.bouquetTransfer).toMatchObject({
     panelState: "settled",
@@ -2436,6 +2440,119 @@ for (const config of [
     } finally {
       await context.close();
     }
+  });
+}
+
+for (const config of [
+  { label: "desktop", viewport: { width: 1280, height: 720 }, mobile: false, reducedMotion: "no-preference" },
+  { label: "desktop-reduced", viewport: { width: 1280, height: 720 }, mobile: false, reducedMotion: "reduce" },
+  { label: "mobile390", viewport: { width: 390, height: 844 }, mobile: true, reducedMotion: "no-preference" },
+  { label: "mobile390-reduced", viewport: { width: 390, height: 844 }, mobile: true, reducedMotion: "reduce" }
+]) {
+  test(`Round 1 restoration spend recovers its sole next action after interruption on ${config.label}`, async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: config.viewport,
+      hasTouch: config.mobile,
+      isMobile: config.mobile,
+      reducedMotion: config.reducedMotion
+    });
+    const page = await context.newPage();
+    const browserMessages = [];
+    const pageErrors = [];
+    const failedSameOriginResponses = [];
+    page.on("console", (message) => {
+      if (["warning", "error"].includes(message.type())) {
+        browserMessages.push(`${message.type()}: ${message.text()}`);
+      }
+    });
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    page.on("response", (response) => {
+      if (response.status() >= 400 && new URL(response.url()).origin === new URL(BASE_URL).origin) {
+        failedSameOriginResponses.push(`${response.status()} ${response.url()}`);
+      }
+    });
+    const fixtureBoard = Array.from({ length: 8 }, (_, y) => (
+      Array.from({ length: 8 }, (_, x) => [0, 2, 3, 4][(x + y * 2) % 4])
+    ));
+    const fixtureState = {
+      focusedEconomyVersion: 2,
+      board: fixtureBoard,
+      armedLineRelic: null,
+      moves: 0,
+      coins: 120,
+      counts: [0, 6, 0, 0, 0, 8],
+      cursedThorns: [],
+      clearedCursedThorns: 0,
+      currentRound: 1,
+      roundComplete: true,
+      roundOneRestored: false,
+      roundTwoGreenhouseUpgraded: false,
+      roundThreeConservatoryRaised: false,
+      hasMadeValidMove: true,
+      restoredRoundTwoGuideMoves: 0,
+      tutorialSkipped: true,
+      tutorialActive: false,
+      blackCandleLessonComplete: true
+    };
+    const fixtureMarker = `restoration-interruption:${config.label}`;
+    await page.addInitScript(({ key, marker, state }) => {
+      if (!sessionStorage.getItem(marker)) {
+        localStorage.setItem(key, JSON.stringify(state));
+        sessionStorage.setItem(marker, "seeded");
+      }
+    }, { key: SAVE_KEY, marker: fixtureMarker, state: fixtureState });
+    await page.goto(`${BASE_URL}?restoration_interruption_${config.label}`, { waitUntil: "networkidle" });
+    await expect(page.locator(".tile")).toHaveCount(64);
+    await expect(page.locator("#restoreGreenhouseBtn")).toBeVisible();
+
+    await page.locator("#restoreGreenhouseBtn").click();
+    await page.waitForFunction(() => (
+      document.querySelector("#roundOneRestoration")?.dataset.restorationPhase === "transforming"
+    ), null, { timeout: 500 });
+    await page.reload({ waitUntil: "networkidle" });
+
+    await expect(page.locator("#nextOrderBtn")).toBeVisible();
+    await expect(page.locator("#nextOrderBtn")).toBeFocused();
+    const recovered = await page.evaluate((key) => {
+      const panel = document.querySelector("#roundOneRestoration");
+      const saved = JSON.parse(localStorage.getItem(key) || "{}");
+      return {
+        coins: saved.coins,
+        restored: saved.roundOneRestored,
+        transfer: panel?.dataset.bouquetTransfer || "",
+        phase: panel?.dataset.restorationPhase || "",
+        visibleActions: Array.from(document.querySelectorAll("button:not([hidden])"))
+          .filter((button) => button.offsetParent !== null)
+          .map((button) => button.id),
+        tiles: document.querySelectorAll(".tile").length,
+        rows: new Set(Array.from(document.querySelectorAll(".tile"), (tile) => tile.dataset.y)).size,
+        selected: document.querySelectorAll(".tile.selected").length,
+        overflowX: document.documentElement.scrollWidth > innerWidth + 1,
+        brokenImages: Array.from(document.images)
+          .filter((image) => image.offsetParent !== null && (!image.complete || image.naturalWidth === 0))
+          .map((image) => image.currentSrc || image.src)
+      };
+    }, SAVE_KEY);
+    expect(recovered).toEqual({
+      coins: 20,
+      restored: true,
+      transfer: "",
+      phase: "settled",
+      visibleActions: ["nextOrderBtn"],
+      tiles: 64,
+      rows: 8,
+      selected: 0,
+      overflowX: false,
+      brokenImages: []
+    });
+    await page.screenshot({
+      path: `work/restoration-interruption-${config.label}.png`,
+      fullPage: true
+    });
+    expect(browserMessages).toEqual([]);
+    expect(pageErrors).toEqual([]);
+    expect(failedSameOriginResponses).toEqual([]);
+    await context.close();
   });
 }
 

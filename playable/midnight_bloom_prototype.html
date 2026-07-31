@@ -17930,10 +17930,10 @@
       window.setTimeout(() => {
         panel.classList.remove("spend-pulse", "restoration-awakening");
         panel.dataset.restorationPhase = "settled";
+        settleRoundOneBouquetTransfer(panel, transferBouquet);
         pulseNextOrderReady();
         queuePostRenderFocus("nextOrderBtn");
         render();
-        settleRoundOneBouquetTransfer(panel, transferBouquet);
       }, transformationDuration);
     }
 

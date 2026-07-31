@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-07-31 restored the Round 1 continuation action
+
+- Player-visible result: spending 100 coins after First Bouquet now always settles into the single focused `Next Order -> Moonlit Wreath` action. Previously, the authoritative spend and greenhouse ownership completed but the bouquet-transfer flag was cleared after the final render, leaving both ceremony actions hidden until an unrelated rerender or reload.
+- Scope: the existing restoration callback now returns the physical bouquet to its settled trophy before rendering the restored ceremony. No copy, timing duration, animation, move, board rule, save field, economy value, control, round, or progression changed.
+- Permanent contract: the full ceremony test now requires `Next Order` to be visible and focused immediately at settlement, before any review rerender. A deterministic interruption matrix spends through the real control and reloads during awakening at desktop `1280x720` and exact mobile `390x844`, under full and reduced motion; each case recovers 20 coins, restored ownership, one action, no selection, 64 tiles/eight rows, loaded images, no overflow, and empty browser error collections.
+- Concurrent-main integration: rebased onto `493c9c1`, preserving its more recognizable active bouquet wrap and botanical geometry. The integrated natural exact-mobile full-motion ceremony plus all four interruption modes pass together `5/5`; an earlier isolated reduced-motion exact-mobile ceremony also passed the changed settlement boundary. Inspected desktop and mobile captures show one intact fourteen-flower trophy, the restored greenhouse, contained transaction copy, and the sole continuation action.
+- Verification: `python3 scripts/verify_project.py`, `python3 scripts/verify_html_match_shapes.py`, changed spec and extracted inline JavaScript syntax, `git diff --check`, and the changed-file credential/tracker scan pass. The broader natural reduced-motion sampler can still stall before ceremony while waiting for a Round 1 idle guide; that unrelated pre-boundary variability does not occur in the deterministic restoration/interruption matrix.
+
 ## 2026-07-31 kept mobile Help clear of the altar
 
 - Player-visible result: exact-mobile active play now keeps the full `44x44px` Help target above the altar when a long Black Candle command wraps beside it. The previously reproduced Round 3 state placed Help at `y=294..338` over the altar at `y=323`; the corrected state places Help at `y=289..333`, reserves the command stack through `y=340`, and starts the unchanged `378x378` altar at `y=341`.
