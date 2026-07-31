@@ -1,5 +1,12 @@
 # Codex Build Notes
 
+## 2026-07-31 kept every Round 3 objective count readable on mobile
+
+- Player-visible result: exact-mobile Round 3 now shows the complete Bloodroot and Sol Rot progress values from `0/14` and `0/13` through `14/14` and `13/13`. Previously the first 130px chip needed 142px of horizontal content, clipping the final Bloodroot digit and intruding into its sibling; each existing 13px name/count now uses two compact lines beside the unchanged flower icon.
+- Scope: one CSS rule inside the existing `max-width:760px` active-Round-3 layout changes only the internal flow of the two non-compact objective chips. The objective remains one horizontal row with Moves visible, and desktop plus R1/R2 geometry are outside the selector. No copy, node, control, timer, input behavior, move, board rule, save field, economy value, round, progression, or asset changed.
+- Permanent contract: `scripts/verify_tutorial_progress.spec.js` covers exact `390x844` initial, single-digit-progress, and completed R3 counts under full and reduced motion. It requires both target chips to satisfy `scrollWidth <= clientWidth`, every 13px name/count to stay inset by at least one pixel, target/target/Moves separation, one-row vertical alignment, exact `378x378` altar geometry, 64 tiles/eight rows, `scrollY=0`, loaded images, and no horizontal or vertical overflow.
+- Local browser verification: the new six-state objective matrix and the complete R1-R3 exact-mobile Help replay/touch regression pass together `2/2`. A natural goal-following exact-mobile journey also passes from fresh R1 through R3 payoff `1/1`, closing Bloodroot Compact at 27/27 with three moves remaining. The inspected artifact `work/mobile-round-three-objective-fit.png` keeps the initial `Bloodroot 0/14`, `Sol Rot 0/13`, and `Moves 8` fully readable on one row above the exact altar; browser console, page, request, image, hierarchy, and overflow collections are clean.
+
 ## 2026-07-31 contained every mobile Help replay action
 
 - Player-visible result: exact-mobile ordinary Help replay now keeps its complete icon, instruction, and `44x44px` Skip action inside the tutorial pill and viewport. Previously the ordinary R1-R3 panel stayed at its intrinsic flex width, putting Skip at `x=352.47..396.47` on a 390px viewport; the corrected ordinary replay is `x=133..377`, with its full Skip at `x=323.38..370` and readable wrapped copy.
