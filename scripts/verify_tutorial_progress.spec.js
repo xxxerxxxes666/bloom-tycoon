@@ -7185,13 +7185,61 @@ test("exact-mobile Round 3 objective counts stay inside the compact goal row", a
   await openFreshNoReview(page, "mobile-round-three-objective-fit");
 
   const states = [
-    { label: "initial", counts: [0, 0, 0, 0, 0, 0], moves: 8, expected: ["0/14", "0/13"] },
-    { label: "single-digit", counts: [8, 0, 0, 9, 0, 0], moves: 4, expected: ["9/14", "8/13"] },
-    { label: "complete", counts: [13, 0, 0, 14, 0, 0], moves: 1, expected: ["14/14", "13/13"] }
+    {
+      label: "initial",
+      counts: [0, 0, 0, 0, 0, 0],
+      moves: 8,
+      expected: ["0/14", "0/13"],
+      completeTargets: [false, false]
+    },
+    {
+      label: "single-digit",
+      counts: [8, 0, 0, 9, 0, 0],
+      moves: 4,
+      expected: ["9/14", "8/13"],
+      completeTargets: [false, false]
+    },
+    {
+      label: "Bloodroot sealed with empty Sol Rot",
+      counts: [0, 0, 0, 14, 0, 0],
+      moves: 4,
+      expected: ["14/14", "0/13"],
+      completeTargets: [true, false]
+    },
+    {
+      label: "Bloodroot sealed with near-complete Sol Rot",
+      counts: [12, 0, 0, 14, 0, 0],
+      moves: 2,
+      expected: ["14/14", "12/13"],
+      completeTargets: [true, false]
+    },
+    {
+      label: "Sol Rot sealed with empty Bloodroot",
+      counts: [13, 0, 0, 0, 0, 0],
+      moves: 4,
+      expected: ["0/14", "13/13"],
+      completeTargets: [false, true]
+    },
+    {
+      label: "Sol Rot sealed with near-complete Bloodroot",
+      counts: [13, 0, 0, 13, 0, 0],
+      moves: 2,
+      expected: ["13/14", "13/13"],
+      completeTargets: [false, true]
+    },
+    {
+      label: "complete on last move",
+      counts: [13, 0, 0, 14, 0, 0],
+      moves: 1,
+      expected: ["14/14", "13/13"],
+      completeTargets: [true, true]
+    }
   ];
 
   for (const reducedMotion of ["no-preference", "reduce"]) {
     await page.emulateMedia({ reducedMotion });
+    let baselineTargetHeight = null;
+    let baselineBoardTop = null;
     for (const stateCase of states) {
       await page.evaluate(({ key, stateCase }) => {
         const state = JSON.parse(localStorage.getItem(key) || "{}");
@@ -7233,11 +7281,17 @@ test("exact-mobile Round 3 objective counts stay inside the compact goal row", a
         const targets = Array.from(document.querySelectorAll("#objective .objective-target"));
         const moves = document.querySelector("#objective .moves-counter");
         const board = document.querySelector("#board");
+        const textBounds = (node) => {
+          const range = document.createRange();
+          range.selectNodeContents(node);
+          return bounds(range);
+        };
         return {
           targets: targets.map((target) => ({
             bounds: bounds(target),
             clientWidth: target.clientWidth,
             scrollWidth: target.scrollWidth,
+            complete: target.classList.contains("complete"),
             name: {
               text: target.querySelector(".objective-target-name")?.textContent.trim(),
               bounds: bounds(target.querySelector(".objective-target-name")),
@@ -7246,8 +7300,13 @@ test("exact-mobile Round 3 objective counts stay inside the compact goal row", a
             count: {
               text: target.querySelector(".objective-target-count")?.textContent.trim(),
               bounds: bounds(target.querySelector(".objective-target-count")),
+              textBounds: textBounds(target.querySelector(".objective-target-count")),
               fontSize: getComputedStyle(target.querySelector(".objective-target-count")).fontSize
-            }
+            },
+            seal: target.querySelector(".objective-target-seal") ? {
+              text: target.querySelector(".objective-target-seal").textContent.trim(),
+              bounds: bounds(target.querySelector(".objective-target-seal"))
+            } : null
           })),
           moves: { text: moves.textContent.trim(), bounds: bounds(moves) },
           board: bounds(board),
@@ -7266,9 +7325,17 @@ test("exact-mobile Round 3 objective counts stay inside the compact goal row", a
       expect(geometry.targets, `${label} target count`).toHaveLength(2);
       expect(geometry.targets.map((target) => target.count.text), `${label} visible counts`)
         .toEqual(stateCase.expected);
+      expect(geometry.targets.map((target) => target.complete), `${label} completion owners`)
+        .toEqual(stateCase.completeTargets);
+      if (baselineTargetHeight === null) {
+        baselineTargetHeight = geometry.targets[0].bounds.height;
+        baselineBoardTop = geometry.board.top;
+      }
       geometry.targets.forEach((target, index) => {
         expect(target.scrollWidth, `${label} target ${index + 1} does not clip`)
           .toBeLessThanOrEqual(target.clientWidth);
+        expect(target.bounds.height, `${label} target ${index + 1} keeps baseline height`)
+          .toBeCloseTo(baselineTargetHeight, 1);
         expect(target.name.fontSize, `${label} target ${index + 1} name type`).toBe("13px");
         expect(target.count.fontSize, `${label} target ${index + 1} count type`).toBe("13px");
         for (const [part, partBounds] of [["name", target.name.bounds], ["count", target.count.bounds]]) {
@@ -7281,7 +7348,26 @@ test("exact-mobile Round 3 objective counts stay inside the compact goal row", a
           expect(partBounds.bottom, `${label} target ${index + 1} ${part} bottom inset`)
             .toBeLessThanOrEqual(target.bounds.bottom - 1);
         }
+        if (stateCase.completeTargets[index]) {
+          expect(target.seal?.text, `${label} target ${index + 1} keeps completion meaning`).toBe("Sealed");
+          expect(target.seal.bounds.left, `${label} target ${index + 1} seal left inset`)
+            .toBeGreaterThanOrEqual(target.bounds.left + 1);
+          expect(target.seal.bounds.right, `${label} target ${index + 1} seal right inset`)
+            .toBeLessThanOrEqual(target.bounds.right - 1);
+          expect(target.seal.bounds.top, `${label} target ${index + 1} seal top inset`)
+            .toBeGreaterThanOrEqual(target.bounds.top + 1);
+          expect(target.seal.bounds.bottom, `${label} target ${index + 1} seal bottom inset`)
+            .toBeLessThanOrEqual(target.bounds.bottom - 1);
+          expect(target.count.textBounds.right, `${label} target ${index + 1} count clears seal`)
+            .toBeLessThanOrEqual(target.seal.bounds.left - 1);
+        } else {
+          expect(target.seal, `${label} target ${index + 1} has no premature seal`).toBeNull();
+        }
       });
+      expect(geometry.targets[0].bounds.top, `${label} target tops align`)
+        .toBeCloseTo(geometry.targets[1].bounds.top, 1);
+      expect(geometry.targets[0].bounds.bottom, `${label} target bottoms align`)
+        .toBeCloseTo(geometry.targets[1].bounds.bottom, 1);
       expect(geometry.targets[0].bounds.right, `${label} target chips stay separate`)
         .toBeLessThanOrEqual(geometry.targets[1].bounds.left - 1);
       expect(geometry.targets[1].bounds.right, `${label} Moves stays separate`)
@@ -7291,6 +7377,15 @@ test("exact-mobile Round 3 objective counts stay inside the compact goal row", a
         .toBeLessThan(geometry.targets[0].bounds.bottom);
       expect(geometry.moves.bounds.bottom, `${label} Moves shares the goal row`)
         .toBeGreaterThan(geometry.targets[0].bounds.top);
+      expect(
+        (geometry.moves.bounds.top + geometry.moves.bounds.bottom) / 2,
+        `${label} Moves stays centered with targets`
+      ).toBeCloseTo(
+        (geometry.targets[0].bounds.top + geometry.targets[0].bounds.bottom) / 2,
+        1
+      );
+      expect(geometry.board.top, `${label} target completion does not push the altar`)
+        .toBeCloseTo(baselineBoardTop, 1);
       expect(geometry.board.width, `${label} altar width`).toBeCloseTo(378, 1);
       expect(geometry.board.height, `${label} altar height`).toBeCloseTo(378, 1);
       expect(geometry.board.bottom, `${label} altar stays in the first viewport`).toBeLessThanOrEqual(844);

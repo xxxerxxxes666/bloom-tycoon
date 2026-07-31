@@ -1,5 +1,12 @@
 # Codex Build Notes
 
+## 2026-07-31 stabilized asymmetric Round 3 objectives on mobile
+
+- Player-visible result: sealing either Bloodroot or Sol Rot no longer grows one objective chip into a third row and pushes the active board downward. Exact-mobile Round 3 keeps both target chips at the same compact `32px` height, with Moves vertically aligned, while the completed target retains a visible `SEALED` badge beside its count.
+- Scope: two CSS rules inside the existing `max-width:760px` active-Round-3 non-compact objective layout reserve count space and position the existing completion badge within the second line. Desktop and R1/R2 are outside the selector. No copy, node, control, timer, input behavior, move, board rule, save field, economy value, round, progression, or asset changed.
+- Permanent contract: `scripts/verify_tutorial_progress.spec.js` now covers initial, ordinary-progress, both asymmetric completion directions from empty through near-complete sibling progress, and both-target completion at the last move under full and reduced motion. It requires unchanged 13px name/count type, readable `SEALED` meaning, count/badge separation, identical target top/bottom/height, centered Moves, stable altar top, count containment, exact `378x378` altar geometry, 64 tiles/eight rows, `scrollY=0`, loaded images, and no viewport overflow.
+- Local browser verification: the strengthened objective matrix and the complete exact-mobile R1-R3 Help replay/touch regression pass together `2/2`. A fresh goal-following exact-mobile R1-R3 journey passes `1/1`, closing Bloodroot Compact at 27/27 with two moves remaining; its first run hit the pre-existing ceremony visibility timeout and passed unchanged on immediate rerun. The inspected asymmetric artifact `work/mobile-r3-asymmetric-sealed-final.png` keeps `Bloodroot 14/14 SEALED`, `Sol Rot 12/13`, and `Moves 2` level on one row above the unchanged exact altar.
+
 ## 2026-07-31 kept every Round 3 objective count readable on mobile
 
 - Player-visible result: exact-mobile Round 3 now shows the complete Bloodroot and Sol Rot progress values from `0/14` and `0/13` through `14/14` and `13/13`. Previously the first 130px chip needed 142px of horizontal content, clipping the final Bloodroot digit and intruding into its sibling; each existing 13px name/count now uses two compact lines beside the unchanged flower icon.
