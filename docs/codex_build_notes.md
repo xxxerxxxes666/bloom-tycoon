@@ -1,5 +1,14 @@
 # Codex Build Notes
 
+## 2026-07-31 kept mobile Help clear of the altar
+
+- Player-visible result: exact-mobile active play now keeps the full `44x44px` Help target above the altar when a long Black Candle command wraps beside it. The previously reproduced Round 3 state placed Help at `y=294..338` over the altar at `y=323`; the corrected state places Help at `y=289..333`, reserves the command stack through `y=340`, and starts the unchanged `378x378` altar at `y=341`.
+- Scope: mobile-only spacing in `playable/midnight_bloom_prototype.html` removes Help's inherited top margin and reserves an extra `16px` only while the existing armed Black Candle cue owns the board. No node, control, copy, timing, move, objective, board mechanic, save field, economy value, round, progression, desktop geometry, or greenhouse geometry changed.
+- Permanent contract: `scripts/verify_tutorial_progress.spec.js` now covers an authoritative active Round 3 armed-relic save in the established first-three-round Help matrix. It requires zero Help/cue/greenhouse/altar intersections, exact `44x44` Help and `378x378` altar geometry, 64 tiles/eight rows, no overflow or broken images, a real bottom-edge touch, focused replay Skip, authoritative source focus after dismissal, and no move/count mutation.
+- Local browser verification: the strengthened exact-mobile R1-R3/owned-state/eight-point Help matrix passes `1/1`; the desktop/mobile full/reduced short-viewport matrix passes `4/4`; and the high-count Round 2/3 bouquet progression matrix passes `1/1`. In-app Chromium independently reproduced the original overlap through an ordinary guided Round 3 match, then verified the corrected `1px` command-to-altar clearance, board bottom `719`, `scrollY=0`, 64 tiles/eight rows, and zero broken images at exact `390x844`.
+- Static/security verification: `python3 scripts/verify_project.py`, `python3 scripts/verify_html_match_shapes.py`, changed spec and extracted inline JavaScript syntax, `git diff --check`, and the changed-file credential/tracker/network scan pass. No secrets, trackers, analytics, backend, external network hooks, SDKs, or permissions were added.
+- Known test drift: the broader legacy guided-Round-1 sampler currently times out or misses post-restoration visibility on the unmodified `023c758` upstream baseline; the changed exact-mobile Help contract and independent viewport/high-count preservation gates pass. The product path exercised for this slice has no console, page, image, request, hierarchy, or overflow defect.
+
 ## 2026-07-26 separated mobile Help from greenhouse progress
 
 - Player-visible result: exact-mobile Help no longer obscures the greenhouse stage, percentage, phase, or progress track. The existing `44x44px` target now occupies reserved command space between the live greenhouse strip and the unchanged altar; Round 2's longer Thorn command may wrap, but Help remains fully separate from both progress and board.

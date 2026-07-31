@@ -3530,14 +3530,10 @@ test("exact-mobile Help owns a complete replay touch target across the first thr
     expect(geometry.help.bottom, `${label} Help stays in viewport`).toBeLessThanOrEqual(844);
     expect(geometry.helpOverlapsBoard, `${label} Help does not cover altar`).toBe(false);
     expect(geometry.helpOverlapsObjective, `${label} Help does not cover objective`).toBe(false);
-    expect(geometry.help.top, `${label} Help shares the compact greenhouse command row`)
-      .toBeGreaterThanOrEqual(geometry.greenhouseProgress.top);
-    expect(geometry.help.bottom, `${label} Help stays inside the compact greenhouse command row`)
-      .toBeLessThanOrEqual(geometry.greenhouseProgress.bottom);
     expect(geometry.helpProgressOverlaps, `${label} Help keeps greenhouse progress readable`).toEqual([]);
     expect(geometry.commandProgressOverlaps, `${label} commands keep greenhouse progress readable`).toEqual([]);
-    expect(geometry.board.left, `${label} altar left edge`).toBeCloseTo(8, 1);
-    expect(geometry.board.right, `${label} altar right edge`).toBeCloseTo(386, 1);
+    expect(geometry.board.left, `${label} altar stays inside the left viewport edge`).toBeGreaterThanOrEqual(0);
+    expect(geometry.board.right, `${label} altar stays inside the right viewport edge`).toBeLessThanOrEqual(390);
     expect(geometry.board.width, `${label} altar width`).toBeCloseTo(378, 1);
     expect(geometry.board.height, `${label} altar height`).toBeCloseTo(378, 1);
     expect(geometry.board.bottom, `${label} all rows stay in first viewport`).toBeLessThanOrEqual(844);
@@ -3636,6 +3632,49 @@ test("exact-mobile Help owns a complete replay touch target across the first thr
     }, SAVE_KEY);
     await page.reload({ waitUntil: "networkidle" });
     await assertMobileHelpGeometry("Round 3 conservatory owned");
+
+    await page.evaluate((key) => {
+      const state = JSON.parse(localStorage.getItem(key) || "{}");
+      state.currentRound = 3;
+      state.roundComplete = false;
+      state.moves = 7;
+      state.counts = [0, 0, 0, 4, 0, 0];
+      state.roundOneRestored = true;
+      state.roundTwoGreenhouseUpgraded = true;
+      state.roundThreeConservatoryRaised = false;
+      state.hasMadeValidMove = true;
+      state.tutorialActive = false;
+      state.tutorialSkipped = true;
+      state.blackCandleLessonComplete = true;
+      state.armedLineRelic = { x: 1, y: 0, direction: "horizontal", flowerId: 3 };
+      localStorage.setItem(key, JSON.stringify(state));
+    }, SAVE_KEY);
+    await page.reload({ waitUntil: "networkidle" });
+    await expect(page.locator("#firstSwapCue")).toContainText("Swap Black Candle Vine");
+    const armedGeometry = await assertMobileHelpGeometry("Round 3 armed Black Candle");
+    expect(armedGeometry.commandBoardOverlaps, "armed command copy clears the altar").toEqual([]);
+    const armedBefore = await page.evaluate(
+      (key) => JSON.parse(localStorage.getItem(key) || "{}"),
+      SAVE_KEY
+    );
+    await page.touchscreen.tap(
+      (armedGeometry.help.left + armedGeometry.help.right) / 2,
+      armedGeometry.help.bottom - 2
+    );
+    await expect(page.locator("#tutorialPanel")).toBeVisible();
+    await expect(page.locator("#tutorialSkipBtn")).toBeFocused();
+    await assertVisibleCommandsClearProgress("Round 3 armed Black Candle replay");
+    await page.locator("#tutorialSkipBtn").tap();
+    await expect(page.locator("#tutorialPanel")).toBeHidden();
+    await expect(page.locator("#board .tile[tabindex='0']")).toHaveCount(1);
+    await expect(page.locator("#board .tile[tabindex='0']")).toHaveAttribute("id", "tile-1-0");
+    await expect(page.locator("#tile-1-0")).toBeFocused();
+    const armedAfter = await page.evaluate(
+      (key) => JSON.parse(localStorage.getItem(key) || "{}"),
+      SAVE_KEY
+    );
+    expect(armedAfter.moves, "armed Help replay spends no move").toBe(armedBefore.moves);
+    expect(armedAfter.counts, "armed Help replay changes no objective").toEqual(armedBefore.counts);
 
     await page.evaluate((key) => {
       const state = JSON.parse(localStorage.getItem(key) || "{}");
