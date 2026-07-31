@@ -3468,6 +3468,10 @@ test("exact-mobile Help owns a complete replay touch target across the first thr
       } : null;
     };
     const help = bounds("#tutorialHelpBtn");
+    const tutorialPanel = bounds("#tutorialPanel");
+    const tutorialIcon = bounds("#tutorialPanel .tutorial-icon");
+    const tutorialCopy = bounds("#tutorialCopy");
+    const tutorialSkip = bounds("#tutorialSkipBtn");
     const board = bounds("#board");
     const objective = bounds("#objective");
     const greenhouseProgress = bounds("#mobileGreenhouseProgress");
@@ -3491,8 +3495,41 @@ test("exact-mobile Help owns a complete replay touch target across the first thr
       && a.top < b.bottom
       && a.bottom > b.top
     );
+    const contains = (outer, inner, inset = 1) => Boolean(
+      outer && inner
+      && inner.left >= outer.left + inset
+      && inner.right <= outer.right - inset
+      && inner.top >= outer.top + inset
+      && inner.bottom <= outer.bottom - inset
+    );
+    const skipNode = document.querySelector("#tutorialSkipBtn");
+    const skipHitOwnership = tutorialSkip ? [
+      ["center", (tutorialSkip.left + tutorialSkip.right) / 2, (tutorialSkip.top + tutorialSkip.bottom) / 2],
+      ["top-left", tutorialSkip.left + 8, tutorialSkip.top + 8],
+      ["top", (tutorialSkip.left + tutorialSkip.right) / 2, tutorialSkip.top + 2],
+      ["top-right", tutorialSkip.right - 8, tutorialSkip.top + 8],
+      ["right", tutorialSkip.right - 2, (tutorialSkip.top + tutorialSkip.bottom) / 2],
+      ["bottom-right", tutorialSkip.right - 8, tutorialSkip.bottom - 8],
+      ["bottom", (tutorialSkip.left + tutorialSkip.right) / 2, tutorialSkip.bottom - 2],
+      ["bottom-left", tutorialSkip.left + 8, tutorialSkip.bottom - 8],
+      ["left", tutorialSkip.left + 2, (tutorialSkip.top + tutorialSkip.bottom) / 2]
+    ].map(([point, x, y]) => {
+      const owner = document.elementFromPoint(x, y);
+      return {
+        point,
+        owned: Boolean(owner && (owner === skipNode || skipNode?.contains(owner)))
+      };
+    }) : [];
     return {
       help,
+      tutorialPanel,
+      tutorialIcon,
+      tutorialCopy,
+      tutorialSkip,
+      panelContainsIcon: contains(tutorialPanel, tutorialIcon),
+      panelContainsCopy: contains(tutorialPanel, tutorialCopy),
+      panelContainsSkip: contains(tutorialPanel, tutorialSkip),
+      skipHitOwnership,
       board,
       objective,
       greenhouseProgress,
@@ -3552,7 +3589,31 @@ test("exact-mobile Help owns a complete replay touch target across the first thr
     expect(geometry.commandBoardOverlaps, `${label} keeps the altar interactive`).toEqual([]);
   };
 
-  const tapHelpAndReturnToGuide = async (label, pointFor) => {
+  const assertReplayPanelGeometry = async (label) => {
+    const geometry = await mobileHelpGeometry();
+    expect(geometry.tutorialPanel, `${label} replay panel is visible`).toBeTruthy();
+    expect(geometry.tutorialPanel.left, `${label} panel clears left viewport edge`).toBeGreaterThanOrEqual(1);
+    expect(geometry.tutorialPanel.right, `${label} panel clears right viewport edge`).toBeLessThanOrEqual(389);
+    expect(geometry.tutorialPanel.top, `${label} panel clears top viewport edge`).toBeGreaterThanOrEqual(1);
+    expect(geometry.tutorialPanel.bottom, `${label} panel clears bottom viewport edge`).toBeLessThanOrEqual(843);
+    expect(geometry.panelContainsIcon, `${label} panel contains its icon`).toBe(true);
+    expect(geometry.panelContainsCopy, `${label} panel contains its copy`).toBe(true);
+    expect(geometry.panelContainsSkip, `${label} panel contains the full Skip target`).toBe(true);
+    expect(geometry.tutorialSkip.width, `${label} Skip width`).toBeGreaterThanOrEqual(44);
+    expect(geometry.tutorialSkip.height, `${label} Skip height`).toBeGreaterThanOrEqual(44);
+    expect(
+      geometry.skipHitOwnership.filter((probe) => !probe.owned),
+      `${label} Skip owns every corner and edge probe`
+    ).toEqual([]);
+    expect(geometry.commandProgressOverlaps, `${label} panel clears greenhouse progress`).toEqual([]);
+    expect(geometry.commandBoardOverlaps, `${label} panel clears the altar`).toEqual([]);
+    return geometry;
+  };
+
+  const tapHelpAndReturnToGuide = async (label, pointFor, skipPointFor = (box) => [
+    (box.left + box.right) / 2,
+    (box.top + box.bottom) / 2
+  ]) => {
     const before = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}"), SAVE_KEY);
     const geometry = await assertMobileHelpGeometry(label);
     const [x, y] = pointFor(geometry.help);
@@ -3560,11 +3621,16 @@ test("exact-mobile Help owns a complete replay touch target across the first thr
     await expect(page.locator("#tutorialPanel")).toBeVisible();
     await expect(page.locator("#tutorialSkipBtn")).toBeFocused();
     await assertVisibleCommandsClearProgress(`${label} replay`);
+    const replayGeometry = await assertReplayPanelGeometry(`${label} replay`);
+    if (label === "Round 1 center") {
+      await page.screenshot({ path: "work/mobile-ordinary-help-replay-contained.png", fullPage: true });
+    }
     const hintedIds = await page.locator("#board .tile.idle-hint").evaluateAll(
       (tiles) => tiles.map((tile) => tile.id)
     );
     expect(hintedIds, `${label} Help restores a guide`).toHaveLength(2);
-    await page.locator("#tutorialSkipBtn").tap();
+    const [skipX, skipY] = skipPointFor(replayGeometry.tutorialSkip);
+    await page.touchscreen.tap(skipX, skipY);
     await expect(page.locator("#tutorialPanel")).toBeHidden();
     const focusedId = await page.evaluate(() => document.activeElement?.id || "");
     expect(hintedIds, `${label} Skip returns to a guided endpoint`).toContain(focusedId);
@@ -3591,6 +3657,7 @@ test("exact-mobile Help owns a complete replay touch target across the first thr
     await seedDeterministicMath(page, "mobile-help-touch-target");
     await openFreshNoReview(page, "mobile-help-touch-target");
     await expect(page.locator("#tutorialPanel")).toBeVisible({ timeout: 3000 });
+    await assertReplayPanelGeometry("Round 1 opening");
     await page.locator("#tutorialSkipBtn").tap();
     await expect(page.locator("#tutorialHelpBtn")).toBeVisible();
     await tapHelpAndReturnToGuide("Round 1 center", (box) => [
@@ -3609,7 +3676,7 @@ test("exact-mobile Help owns a complete replay touch target across the first thr
       }, { key: SAVE_KEY, state: untouchedRoundTwo });
       await page.reload({ waitUntil: "networkidle" });
       await expect(page.locator("#tutorialHelpBtn")).toBeVisible();
-      await tapHelpAndReturnToGuide(`Round 2 ${edge}`, pointFor);
+      await tapHelpAndReturnToGuide(`Round 2 ${edge}`, pointFor, pointFor);
     }
     await page.screenshot({ path: "work/mobile-help-touch-target-round-two.png", fullPage: true });
 
@@ -3622,6 +3689,7 @@ test("exact-mobile Help owns a complete replay touch target across the first thr
     await expect(page.locator("#tutorialPanel")).toBeVisible();
     await expect(page.locator("#tutorialSkipBtn")).toBeFocused();
     await assertVisibleCommandsClearProgress("Round 3 replay");
+    await assertReplayPanelGeometry("Round 3 replay");
 
     await page.evaluate((key) => {
       const state = JSON.parse(localStorage.getItem(key) || "{}");
@@ -3664,6 +3732,7 @@ test("exact-mobile Help owns a complete replay touch target across the first thr
     await expect(page.locator("#tutorialPanel")).toBeVisible();
     await expect(page.locator("#tutorialSkipBtn")).toBeFocused();
     await assertVisibleCommandsClearProgress("Round 3 armed Black Candle replay");
+    await assertReplayPanelGeometry("Round 3 armed Black Candle replay");
     await page.locator("#tutorialSkipBtn").tap();
     await expect(page.locator("#tutorialPanel")).toBeHidden();
     await expect(page.locator("#board .tile[tabindex='0']")).toHaveCount(1);

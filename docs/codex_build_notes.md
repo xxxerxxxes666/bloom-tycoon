@@ -1,5 +1,12 @@
 # Codex Build Notes
 
+## 2026-07-31 contained every mobile Help replay action
+
+- Player-visible result: exact-mobile ordinary Help replay now keeps its complete icon, instruction, and `44x44px` Skip action inside the tutorial pill and viewport. Previously the ordinary R1-R3 panel stayed at its intrinsic flex width, putting Skip at `x=352.47..396.47` on a 390px viewport; the corrected ordinary replay is `x=133..377`, with its full Skip at `x=323.38..370` and readable wrapped copy.
+- Scope: the existing mobile grid, wrapping, and touch-target containment that already governed specialized Black Candle, final-harvest, refusal, and failure tutorials now governs every active tutorial panel. The correction is mobile-only; no node, control, copy, timer, input behavior, move, board rule, save field, economy value, round, progression, or desktop geometry changed.
+- Permanent contract: the exact `390x844` R1-R3 Help matrix now requires the panel to clear every viewport edge, contain its icon/copy/Skip by at least one pixel, retain all nine center/corner/edge Skip ownership probes, and remain separate from greenhouse progress and the altar. Round 2 replays independently activate and dismiss through all eight realistic Help and Skip edge/corner points without move, count, selection, board, or save mutation; specialized armed Black Candle replay and the existing standalone Black Candle Skip matrix remain covered.
+- Local browser verification: the strengthened Help matrix, complete Black Candle Skip touch matrix, and fresh tutorial journey pass together `3/3`. The inspected exact-mobile artifact `work/mobile-ordinary-help-replay-contained.png` shows a fully contained ordinary replay, exact `378x378` altar, 64 tiles/eight rows, loaded imagery, readable greenhouse progress, and no clipping or overflow. The desktop control remains outside the mobile media rule with its compact `30px` Help target.
+
 ## 2026-07-31 restored the Round 1 continuation action
 
 - Player-visible result: spending 100 coins after First Bouquet now always settles into the single focused `Next Order -> Moonlit Wreath` action. Previously, the authoritative spend and greenhouse ownership completed but the bouquet-transfer flag was cleared after the final render, leaving both ceremony actions hidden until an unrelated rerender or reload.
