@@ -2072,7 +2072,7 @@ for (const config of ROUND_TWO_HANDOFF_INPUTS) {
     expect(sealed.thornComplete, `${config.label} thorn goal retired`).toBe(true);
     expect(sealed.thornSeal, `${config.label} thorn goal seal`).toBe("Sealed");
     expect(sealed.thornAriaLabel, `${config.label} thorn goal semantics`).toBe(
-      "Cursed Thorn goal sealed, 3 of 3 cleared"
+      "Cursed Thorn, 3 of 3, sealed"
     );
 
     await actionPage.reload({ waitUntil: "networkidle" });
@@ -2428,7 +2428,7 @@ test("mobile greenhouse renders recognizable persisted architecture without yiel
       key: "withered",
       fixture: HUD_CASES.find((fixture) => fixture.label === "r1-active"),
       art: "first_greenhouse_withered.jpg",
-      boardTop: 324
+      boardTop: 325
     },
     {
       key: "restored",
@@ -2440,14 +2440,14 @@ test("mobile greenhouse renders recognizable persisted architecture without yiel
       key: "moonlit",
       fixture: HUD_CASES.find((fixture) => fixture.label === "r3-active"),
       art: "moonlit_wreath_greenhouse.jpg",
-      boardTop: 324,
+      boardTop: 325,
       reducedMotion: "reduce"
     },
     {
       key: "bloodroot",
       fixture: HUD_CASES.find((fixture) => fixture.label === "r1-owned-replay-active"),
       art: "bloodroot_compact_greenhouse.jpg",
-      boardTop: 324
+      boardTop: 325
     }
   ];
   const renderedStages = new Map();
@@ -2699,7 +2699,7 @@ test("active hierarchy scales the roomy altar without moving the accepted short 
       mobile: true,
       screenshot: "work/active-hierarchy-r1-mobile390.png",
       expectedBoard: 378,
-      expectedTile: 42.875,
+      expectedTile: 44.1875,
       mobileBaseline: true,
       contract: ROUND_CONTRACTS[1],
       exerciseOpening: true
@@ -2938,10 +2938,10 @@ test("active hierarchy scales the roomy altar without moving the accepted short 
       expect(report.orderContractVisible, `${capture.label} contract remains hidden with its rail`).toBe(false);
       expect(report.visibleObjectiveTargets, `${capture.label} compact objective targets remain visible`).toBe(2);
       expect(report.heroDialVisible, `${capture.label} desktop greenhouse rail remains absent`).toBe(false);
-      expect(report.board.top, `${capture.label} accepted altar top`).toBeCloseTo(324, 0);
+      expect(report.board.top, `${capture.label} accepted altar top`).toBeCloseTo(325, 0);
       expect(report.objective.top, `${capture.label} accepted objective top`).toBeCloseTo(59, 0);
-      expect(report.progress.top, `${capture.label} accepted bouquet HUD top`).toBeCloseTo(125, 0);
-      expect(report.mobileGreenhouse.top, `${capture.label} accepted greenhouse HUD top`).toBeCloseTo(240, 0);
+      expect(report.progress.top, `${capture.label} accepted bouquet HUD top`).toBeCloseTo(126, 0);
+      expect(report.mobileGreenhouse.top, `${capture.label} accepted greenhouse HUD top`).toBeCloseTo(241, 0);
     }
 
     await page.screenshot({ path: capture.screenshot, fullPage: false });
