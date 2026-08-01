@@ -74,6 +74,8 @@ function pixelBoxStats(png, box, scaleX, scaleY) {
   let litPixels = 0;
   let nearWhitePixels = 0;
   let deepDarkPixels = 0;
+  let warmPixels = 0;
+  let coolPixels = 0;
   for (let y = top; y < bottom; y += 1) {
     for (let x = left; x < right; x += 1) {
       const offset = y * png.stride + x * png.channels;
@@ -87,6 +89,8 @@ function pixelBoxStats(png, box, scaleX, scaleY) {
       if (value > 20 && chroma > 14) coloredPixels += 1;
       if (value > 235 && chroma < 32) nearWhitePixels += 1;
       if (value < 28) deepDarkPixels += 1;
+      if (value > 18 && red > blue * 1.16 && red > green * 1.12) warmPixels += 1;
+      if (value > 18 && blue > red * 1.08 && blue > green * 1.04) coolPixels += 1;
     }
   }
   luminance.sort((a, b) => a - b);
@@ -99,6 +103,8 @@ function pixelBoxStats(png, box, scaleX, scaleY) {
     coloredPixels,
     nearWhitePixels,
     deepDarkPixels,
+    warmPixels,
+    coolPixels,
     sampledPixels: luminance.length
   };
 }
@@ -1301,7 +1307,13 @@ function expectPayoffCommandAuthority(contract, label, expectedActions) {
   }
 }
 
-async function expectCeremony(page, expectedButton, screenshotPath, expectedGuide = "") {
+async function expectCeremony(
+  page,
+  expectedButton,
+  screenshotPath,
+  expectedGuide = "",
+  fullPage = true
+) {
   await page.waitForTimeout(250);
   const waitingForBouquet = await visibleContract(page);
   if (waitingForBouquet.assemblyReady === "false") {
@@ -1495,7 +1507,7 @@ async function expectCeremony(page, expectedButton, screenshotPath, expectedGuid
   expect(contract.text).not.toMatch(/Path \/ Ledger|Flowerpedia|Chapter|Chest|Storage|Reward Choice|Bouquet Streak|Greenhouse \+\d+ XP/);
   expect(contract.overflowX, "no horizontal overflow").toBe(false);
   expect(contract.brokenImages, "no visible broken images").toEqual([]);
-  await page.screenshot({ path: screenshotPath, fullPage: true });
+  await page.screenshot({ path: screenshotPath, fullPage });
   return contract;
 }
 
@@ -1596,6 +1608,26 @@ async function restorationSceneEvidence(page, screenshotPath = "") {
     1,
     1
   );
+  const architecture = {
+    leftRibs: pixelBoxStats(png, {
+      left: png.width * .05,
+      top: png.height * .16,
+      right: png.width * .38,
+      bottom: png.height * .76
+    }, 1, 1),
+    centralArch: pixelBoxStats(png, {
+      left: png.width * .36,
+      top: png.height * .12,
+      right: png.width * .64,
+      bottom: png.height * .88
+    }, 1, 1),
+    rightRibs: pixelBoxStats(png, {
+      left: png.width * .62,
+      top: png.height * .16,
+      right: png.width * .95,
+      bottom: png.height * .76
+    }, 1, 1)
+  };
   const bouquetPixels = dom.bouquetTransfer.localRect
     ? pixelBoxStats(png, dom.bouquetTransfer.localRect, 1, 1)
     : null;
@@ -1606,6 +1638,7 @@ async function restorationSceneEvidence(page, screenshotPath = "") {
   return {
     ...dom,
     pixels,
+    architecture,
     bouquetTransfer: {
       ...dom.bouquetTransfer,
       bouquetPixels,
@@ -1672,6 +1705,38 @@ function expectRoundOneSceneIdentity(evidence, label) {
     expect(image.naturalHeight, `${label} ${state} image has real pixels`).toBe(941);
     expect(image.objectPosition, `${label} ${state} keeps the shared composition`).toBe("50% 50%");
   }
+}
+
+function expectBloodrootSceneIdentity(evidence, label) {
+  expect(evidence.artKey, `${label} scene uses the Round 3 art pair`).toBe("bloodroot");
+  expect(evidence.ariaLabel, `${label} scene names the Bloodroot transformation`)
+    .toMatch(/Bloodroot Compact greenhouse transformation/i);
+  expect(evidence.withered.src, `${label} current-stage source`).toContain("moonlit_wreath_greenhouse.jpg");
+  expect(evidence.restored.src, `${label} raised-stage source`).toContain("bloodroot_compact_greenhouse.jpg");
+  for (const [state, image] of Object.entries({
+    moonlit: evidence.withered,
+    bloodroot: evidence.restored
+  })) {
+    expect(image.complete, `${label} ${state} image loaded`).toBe(true);
+    expect(image.naturalWidth, `${label} ${state} image has real pixels`).toBe(1280);
+    expect(image.naturalHeight, `${label} ${state} image has real pixels`).toBe(720);
+    expect(image.objectPosition, `${label} ${state} keeps the identical camera crop`).toBe("50% 50%");
+  }
+}
+
+function expectBloodrootArchitecturalAnchors(evidence, label) {
+  for (const [anchor, pixels] of Object.entries(evidence.architecture)) {
+    expect(pixels.p75, `${label} ${anchor} clears the near-black floor`).toBeGreaterThan(10);
+    expect(pixels.p90, `${label} ${anchor} glazing and ribs remain readable`).toBeGreaterThan(28);
+    expect(
+      pixels.litPixels / pixels.sampledPixels,
+      `${label} ${anchor} owns a painted architectural footprint`
+    ).toBeGreaterThan(.17);
+  }
+  expect(
+    evidence.pixels.deepDarkPixels / evidence.pixels.sampledPixels,
+    `${label} retains gothic darkness around the readable structure`
+  ).toBeGreaterThan(.32);
 }
 
 async function waitForBouquetTransferProgress(page, minimum) {
@@ -2272,6 +2337,9 @@ async function runJourney(page, label, includeRetry) {
   await expectCeremony(page, "Raise Conservatory", `work/pass2-${label}-round3-pending.png`, "Raise Conservatory.");
   await assertReloadKeeps(page, "Raise Conservatory", `work/pass2-${label}-round3-pending-reload.png`, "Raise Conservatory.");
   await clickPrimary(page);
+  await page.waitForFunction(() => (
+    document.querySelector("#roundOneRestoration")?.dataset.restorationPhase === "settled"
+  ), null, { timeout: 3000 });
   await expectCeremony(page, "Play Again", `work/pass2-${label}-round3-raised.png`, "Play again.");
   await assertReloadKeeps(page, "Play Again", `work/pass2-${label}-round3-raised-reload.png`, "Play again.");
   await clickPrimary(page);
@@ -2610,6 +2678,451 @@ for (const config of [
     expect(pageErrors).toEqual([]);
     expect(failedSameOriginResponses).toEqual([]);
     await context.close();
+  });
+}
+
+async function loadRoundThreePendingFixture(page, label) {
+  const fixtureBoard = Array.from({ length: 8 }, (_, y) => (
+    Array.from({ length: 8 }, (_, x) => [0, 2, 3, 4][(x + y * 2) % 4])
+  ));
+  await page.goto(`${BASE_URL}?bloodroot-place-${label}`, { waitUntil: "networkidle" });
+  await page.evaluate(({ key, state }) => {
+    localStorage.setItem(key, JSON.stringify(state));
+  }, {
+    key: SAVE_KEY,
+    state: {
+      focusedEconomyVersion: 2,
+      board: fixtureBoard,
+      armedLineRelic: null,
+      moves: 0,
+      coins: 230,
+      counts: [13, 0, 0, 14, 0, 0],
+      cursedThorns: [],
+      clearedCursedThorns: 0,
+      currentRound: 3,
+      roundComplete: true,
+      roundOneRestored: true,
+      roundTwoGreenhouseUpgraded: true,
+      roundThreeConservatoryRaised: false,
+      hasMadeValidMove: true,
+      restoredRoundTwoGuideMoves: 2,
+      tutorialSkipped: true,
+      tutorialActive: false,
+      blackCandleLessonComplete: true
+    }
+  });
+  await page.reload({ waitUntil: "networkidle" });
+  await expect(page.locator(".tile")).toHaveCount(64);
+  await expect(page.locator("#restoreGreenhouseBtn")).toBeVisible();
+}
+
+async function activateRoundThreeCeremonyAction(page, mobile) {
+  const action = page.locator("#roundOneRestoration button:not([hidden])");
+  if (mobile) {
+    await action.tap();
+  } else {
+    await action.click();
+  }
+}
+
+async function bloodrootPageIntegrity(page) {
+  return page.evaluate(() => {
+    const visible = (node) => {
+      if (!node) return false;
+      const style = getComputedStyle(node);
+      const rect = node.getBoundingClientRect();
+      return style.display !== "none"
+        && style.visibility !== "hidden"
+        && Number(style.opacity || 1) !== 0
+        && rect.width > 0
+        && rect.height > 0;
+    };
+    const panel = document.querySelector("#roundOneRestoration");
+    const scene = panel?.querySelector(".restoration-scene")?.getBoundingClientRect();
+    const save = JSON.parse(localStorage.getItem("bloomTycoonPlayableStateV1") || "{}");
+    return {
+      phase: panel?.dataset.restorationPhase || "",
+      transfer: panel?.dataset.bouquetTransfer || "",
+      coins: save.coins,
+      owned: {
+        roundOne: save.roundOneRestored,
+        roundTwo: save.roundTwoGreenhouseUpgraded,
+        roundThree: save.roundThreeConservatoryRaised
+      },
+      currentRound: save.currentRound,
+      roundComplete: save.roundComplete,
+      stage: document.body.dataset.activeGreenhouseStage || "",
+      trophyBouquets: panel?.querySelectorAll("#bouquetTrophy .crafted-bouquet").length || 0,
+      transferBouquets: panel?.querySelectorAll("#restorationBouquetIntake .crafted-bouquet").length || 0,
+      craftedHeads: panel?.querySelectorAll(".crafted-flower-bloom").length || 0,
+      visibleActions: Array.from(panel?.querySelectorAll("button") || [])
+        .filter(visible)
+        .map((button) => button.textContent.trim()),
+      actionableActions: Array.from(panel?.querySelectorAll("button") || [])
+        .filter((button) => visible(button) && !button.disabled)
+        .map((button) => button.textContent.trim()),
+      focusedAction: document.activeElement?.closest("#roundOneRestoration button")?.id || "",
+      tiles: document.querySelectorAll(".tile").length,
+      rows: new Set(Array.from(document.querySelectorAll(".tile"), (tile) => tile.dataset.y)).size,
+      scene: scene ? { width: scene.width, height: scene.height } : null,
+      overflowX: document.documentElement.scrollWidth > innerWidth + 1,
+      overflowY: document.documentElement.scrollHeight > innerHeight,
+      brokenImages: Array.from(document.images)
+        .filter((image) => visible(image) && (!image.complete || image.naturalWidth === 0))
+        .map((image) => image.getAttribute("src") || "")
+    };
+  });
+}
+
+for (const config of [
+  { label: "desktop-full", viewport: { width: 1280, height: 720 }, mobile: false, reducedMotion: "no-preference" },
+  { label: "desktop-reduced", viewport: { width: 1280, height: 720 }, mobile: false, reducedMotion: "reduce" },
+  { label: "mobile390-full", viewport: { width: 390, height: 844 }, mobile: true, reducedMotion: "no-preference" },
+  { label: "mobile390-reduced", viewport: { width: 390, height: 844 }, mobile: true, reducedMotion: "reduce" }
+]) {
+  test(`Round 3 keeps one recognizable conservatory through spend and reload on ${config.label}`, async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: config.viewport,
+      hasTouch: config.mobile,
+      isMobile: config.mobile,
+      reducedMotion: config.reducedMotion
+    });
+    const page = await context.newPage();
+    const browserMessages = [];
+    const pageErrors = [];
+    const failedRequests = [];
+    const failedSameOriginResponses = [];
+    page.on("console", (message) => {
+      if (["warning", "error"].includes(message.type())) {
+        browserMessages.push(`${message.type()}: ${message.text()}`);
+      }
+    });
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    page.on("requestfailed", (request) => failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`));
+    page.on("response", (response) => {
+      if (response.status() >= 400 && new URL(response.url()).origin === new URL(BASE_URL).origin) {
+        failedSameOriginResponses.push(`${response.status()} ${response.url()}`);
+      }
+    });
+
+    try {
+      await loadRoundThreePendingFixture(page, config.label);
+      const pendingContract = await expectCeremony(
+        page,
+        "Raise Conservatory",
+        `work/bloodroot-conservatory-${config.label}-before.png`,
+        "Raise Conservatory.",
+        false
+      );
+      const pending = await restorationSceneEvidence(page);
+      const pendingIntegrity = await bloodrootPageIntegrity(page);
+      expectBloodrootSceneIdentity(pending, `${config.label} pending`);
+      expectBloodrootArchitecturalAnchors(pending, `${config.label} pending`);
+      expect(pending.phase).toBe("pending");
+      expect(pending.withered.opacity).toBe(1);
+      expect(pending.restored.opacity).toBeCloseTo(.1, 2);
+      expect(pending.cracksDisplay, "Round 3 removes the unrelated crossed-beam overlay").toBe("none");
+      expect(pendingContract.coins).toBe(230);
+      expect(pendingContract.transactionText).toBe("Earned 180 coins. Conservatory costs 180.");
+      expect(pendingIntegrity).toMatchObject({
+        phase: "pending",
+        coins: 230,
+        owned: { roundOne: true, roundTwo: true, roundThree: false },
+        stage: "moonlit",
+        trophyBouquets: 1,
+        transferBouquets: 0,
+        craftedHeads: 27,
+        visibleActions: ["Raise Conservatory · 180 coins"],
+        tiles: 64,
+        rows: 8,
+        overflowX: false,
+        overflowY: false,
+        brokenImages: []
+      });
+
+      await page.reload({ waitUntil: "networkidle" });
+      await expectCeremony(
+        page,
+        "Raise Conservatory",
+        `work/bloodroot-conservatory-${config.label}-before-reload.png`,
+        "Raise Conservatory.",
+        false
+      );
+      const pendingReload = await restorationSceneEvidence(page);
+      expectBloodrootSceneIdentity(pendingReload, `${config.label} pending reload`);
+      expectBloodrootArchitecturalAnchors(pendingReload, `${config.label} pending reload`);
+      expect(pendingReload.rect.width).toBeCloseTo(pending.rect.width, 0);
+      expect(pendingReload.rect.height).toBeCloseTo(pending.rect.height, 0);
+
+      await page.evaluate(() => {
+        window.__roundOneRestorationTransferSource = document.querySelector(
+          "#bouquetTrophy .crafted-bouquet"
+        );
+      });
+      await activateRoundThreeCeremonyAction(page, config.mobile);
+
+      if (config.reducedMotion === "no-preference") {
+        await page.waitForFunction(() => (
+          document.querySelector("#roundOneRestoration")?.dataset.restorationPhase === "transforming"
+        ), null, { timeout: 500 });
+        await page.waitForFunction(() => {
+          const bouquet = document.querySelector("#restorationBouquetIntake .crafted-bouquet");
+          const animation = bouquet?.getAnimations().find((candidate) => (
+            candidate.animationName === "bloodroot-bouquet-into-conservatory"
+            || candidate.animationName === "bloodroot-bouquet-into-conservatory-mobile"
+          ));
+          const progress = animation?.effect?.getComputedTiming().progress;
+          return Number.isFinite(progress) && progress >= .48;
+        }, null, { timeout: 1100 });
+        const peakIntegrity = await bloodrootPageIntegrity(page);
+        expect(peakIntegrity).toMatchObject({
+          phase: "transforming",
+          coins: 50,
+          owned: { roundOne: true, roundTwo: true, roundThree: true },
+          currentRound: 3,
+          roundComplete: true,
+          visibleActions: [],
+          actionableActions: [],
+          focusedAction: "",
+          overflowX: false,
+          overflowY: false,
+          brokenImages: []
+        });
+        expect(await page.evaluate(() => {
+          const panel = document.querySelector("#roundOneRestoration");
+          const futureAction = document.querySelector("#nextOrderBtn");
+          futureAction.focus();
+          const acceptedFocus = document.activeElement === futureAction;
+          futureAction.click();
+          const save = JSON.parse(localStorage.getItem("bloomTycoonPlayableStateV1") || "{}");
+          const rect = futureAction.getBoundingClientRect();
+          return {
+            hidden: futureAction.hidden,
+            disabled: futureAction.disabled,
+            visible: getComputedStyle(futureAction).display !== "none"
+              && getComputedStyle(futureAction).visibility !== "hidden"
+              && rect.width > 0
+              && rect.height > 0,
+            acceptedFocus,
+            focusedAction: document.activeElement?.closest("#roundOneRestoration button")?.id || "",
+            phase: panel?.dataset.restorationPhase || "",
+            coins: save.coins,
+            currentRound: save.currentRound,
+            roundComplete: save.roundComplete,
+            roundThreeConservatoryRaised: save.roundThreeConservatoryRaised
+          };
+        }), "full-motion transfer rejects the future replay command").toEqual({
+          hidden: true,
+          disabled: true,
+          visible: false,
+          acceptedFocus: false,
+          focusedAction: "",
+          phase: "transforming",
+          coins: 50,
+          currentRound: 3,
+          roundComplete: true,
+          roundThreeConservatoryRaised: true
+        });
+        const peak = await restorationSceneEvidence(
+          page,
+          `work/bloodroot-conservatory-${config.label}-transformation-peak-scene.png`
+        );
+        await page.screenshot({
+          path: `work/bloodroot-conservatory-${config.label}-transformation-peak.png`,
+          fullPage: false
+        });
+        expectBloodrootSceneIdentity(peak, `${config.label} transformation peak`);
+        expect(peak.phase).toBe("transforming");
+        expect(peak.bouquetTransfer).toMatchObject({
+          panelState: "active",
+          exactSourceNode: true,
+          inScene: true,
+          trophyBouquets: 0,
+          transferBouquets: 1,
+          transferCompositionKey: ROUND_THREE_COMPOSITION
+            .map((flowerId, index) => `${index}:${flowerId}:${ROUND_THREE_COMPOSITION.slice(0, index).filter((entry) => entry === flowerId).length}`)
+            .join("|")
+        });
+        expect(peak.bouquetTransfer.heads.map((head) => head.flowerId))
+          .toEqual(ROUND_THREE_COMPOSITION);
+        expect(peak.bouquetTransfer.heads.every((head) => (
+          head.imageComplete && head.naturalWidth > 0 && head.naturalHeight > 0
+        )), "all transferred Bloodroot Compact heads remain painted").toBe(true);
+        expect(peak.bouquetTransfer.localRect.left, "transferred bouquet is not clipped left")
+          .toBeGreaterThanOrEqual(-2);
+        expect(peak.bouquetTransfer.localRect.right, "transferred bouquet is not clipped right")
+          .toBeLessThanOrEqual(peak.rect.width + 2);
+        expect(peak.bouquetTransfer.localRect.top, "transferred bouquet is not clipped above")
+          .toBeGreaterThanOrEqual(-2);
+        expect(peak.bouquetTransfer.localRect.bottom, "transferred bouquet is not clipped below")
+          .toBeLessThanOrEqual(peak.rect.height + 2);
+      } else {
+        await page.waitForFunction(() => (
+          document.querySelector("#roundOneRestoration")?.dataset.restorationPhase === "settled"
+        ), null, { timeout: 500 });
+        const immediate = await bloodrootPageIntegrity(page);
+        expect(immediate).toMatchObject({
+          phase: "settled",
+          transfer: "",
+          trophyBouquets: 1,
+          transferBouquets: 0,
+          craftedHeads: 27,
+          visibleActions: ["Play Again → First Bouquet"],
+          actionableActions: ["Play Again → First Bouquet"],
+          focusedAction: "nextOrderBtn",
+          overflowX: false,
+          overflowY: false,
+          brokenImages: []
+        });
+        expect(await page.locator("#roundOneRestoration").evaluate((panel) => ({
+          transformingClass: panel.classList.contains("restoration-awakening")
+            || panel.classList.contains("spend-pulse"),
+          transformationAnimations: panel.getAnimations({ subtree: true })
+            .filter((animation) => (
+              animation.playState === "running"
+              && /bloodroot-bouquet|restoration-intake|restored-glass|withered-glass/.test(
+                animation.animationName
+              )
+            )).map((animation) => animation.animationName)
+        })), "reduced motion has no fake transformation transient").toEqual({
+          transformingClass: false,
+          transformationAnimations: []
+        });
+        await page.screenshot({
+          path: `work/bloodroot-conservatory-${config.label}-immediate-change.png`,
+          fullPage: false
+        });
+      }
+
+      await page.waitForFunction(() => (
+        document.querySelector("#roundOneRestoration")?.dataset.restorationPhase === "settled"
+      ), null, { timeout: 3000 });
+      const settledContract = await expectCeremony(
+        page,
+        "Play Again",
+        `work/bloodroot-conservatory-${config.label}-after.png`,
+        "Play again.",
+        false
+      );
+      const settled = await restorationSceneEvidence(page);
+      const settledIntegrity = await bloodrootPageIntegrity(page);
+      expectBloodrootSceneIdentity(settled, `${config.label} settled`);
+      expectBloodrootArchitecturalAnchors(settled, `${config.label} settled`);
+      expect(settled.rect.width, "same scene width before and after").toBeCloseTo(pending.rect.width, 0);
+      expect(settled.rect.height, "same scene height before and after").toBeCloseTo(pending.rect.height, 0);
+      expect(settled.withered.opacity).toBe(0);
+      expect(settled.restored.opacity).toBe(1);
+      expect(settled.pixels.warmPixels, "Bloodroot material lighting replaces Moonlit violet")
+        .toBeGreaterThan(pending.pixels.warmPixels * 1.8);
+      expect(settled.pixels.coolPixels, "settled state is materially warmer than the Moonlit before state")
+        .toBeLessThan(pending.pixels.coolPixels * .6);
+      expect(settledContract.coins).toBe(50);
+      expect(settledContract.transactionText).toBe("Raised for 180. 50 coins remain.");
+      expect(settledIntegrity).toMatchObject({
+        phase: "settled",
+        coins: 50,
+        owned: { roundOne: true, roundTwo: true, roundThree: true },
+        stage: "bloodroot",
+        trophyBouquets: 1,
+        transferBouquets: 0,
+        craftedHeads: 27,
+        visibleActions: ["Play Again → First Bouquet"],
+        actionableActions: ["Play Again → First Bouquet"],
+        focusedAction: "nextOrderBtn",
+        tiles: 64,
+        rows: 8,
+        overflowX: false,
+        overflowY: false,
+        brokenImages: []
+      });
+
+      for (let reload = 1; reload <= 2; reload += 1) {
+        await page.reload({ waitUntil: "networkidle" });
+        await expectCeremony(
+          page,
+          "Play Again",
+          `work/bloodroot-conservatory-${config.label}-after-reload${reload}.png`,
+          "Play again.",
+          false
+        );
+        const reloaded = await bloodrootPageIntegrity(page);
+        expect(reloaded).toMatchObject({
+          phase: "settled",
+          transfer: "",
+          coins: 50,
+          owned: { roundOne: true, roundTwo: true, roundThree: true },
+          stage: "bloodroot",
+          trophyBouquets: 1,
+          transferBouquets: 0,
+          craftedHeads: 27,
+          visibleActions: ["Play Again → First Bouquet"],
+          actionableActions: ["Play Again → First Bouquet"],
+          focusedAction: "nextOrderBtn",
+          tiles: 64,
+          rows: 8,
+          overflowX: false,
+          overflowY: false,
+          brokenImages: []
+        });
+      }
+
+      await activateRoundThreeCeremonyAction(page, config.mobile);
+      await expectActiveBoard(page);
+      const replay = await bloodrootPageIntegrity(page);
+      expect(replay).toMatchObject({
+        coins: 50,
+        owned: { roundOne: true, roundTwo: true, roundThree: true },
+        currentRound: 1,
+        roundComplete: false,
+        stage: "bloodroot",
+        tiles: 64,
+        rows: 8,
+        overflowX: false,
+        brokenImages: []
+      });
+      await page.screenshot({
+        path: `work/bloodroot-conservatory-${config.label}-owned-replay.png`,
+        fullPage: false
+      });
+
+      if (config.reducedMotion === "no-preference") {
+        await loadRoundThreePendingFixture(page, `${config.label}-interruption`);
+        await activateRoundThreeCeremonyAction(page, config.mobile);
+        await page.waitForFunction(() => (
+          document.querySelector("#roundOneRestoration")?.dataset.restorationPhase === "transforming"
+        ), null, { timeout: 500 });
+        await page.reload({ waitUntil: "networkidle" });
+        await expectCeremony(
+          page,
+          "Play Again",
+          `work/bloodroot-conservatory-${config.label}-interruption-recovered.png`,
+          "Play again.",
+          false
+        );
+        expect(await bloodrootPageIntegrity(page)).toMatchObject({
+          phase: "settled",
+          transfer: "",
+          coins: 50,
+          owned: { roundOne: true, roundTwo: true, roundThree: true },
+          trophyBouquets: 1,
+          transferBouquets: 0,
+          craftedHeads: 27,
+          visibleActions: ["Play Again → First Bouquet"],
+          actionableActions: ["Play Again → First Bouquet"],
+          focusedAction: "nextOrderBtn",
+          overflowX: false,
+          overflowY: false,
+          brokenImages: []
+        });
+      }
+
+      expect(browserMessages).toEqual([]);
+      expect(pageErrors).toEqual([]);
+      expect(failedRequests).toEqual([]);
+      expect(failedSameOriginResponses).toEqual([]);
+    } finally {
+      await context.close();
+    }
   });
 }
 

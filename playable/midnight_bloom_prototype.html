@@ -6092,6 +6092,12 @@
     }
 
     @media (min-width: 761px) and (max-height: 820px) {
+      body.round-three-final-pending,
+      body.round-three-final-complete {
+        height:100vh;
+        min-height:0;
+        overflow:hidden;
+      }
       body.round-two-upgrade-pending .game,
       body.round-two-upgrade-complete .game,
       body.round-three-final-pending .game,
@@ -7134,6 +7140,31 @@
     .round-one-restoration[data-payoff-round="1"][data-restoration-phase="transforming"] .restoration-bouquet-intake .crafted-bloom img {
       filter:brightness(1.02) saturate(1.18) contrast(1.12) drop-shadow(0 0 2px #fff0b4) drop-shadow(0 3px 4px #000) drop-shadow(0 0 8px currentColor);
     }
+    .round-one-restoration[data-payoff-round="3"][data-restoration-phase="transforming"] .restoration-bouquet-intake {
+      display:grid;
+    }
+    .round-one-restoration[data-payoff-round="3"][data-restoration-phase="transforming"] .restoration-bouquet-intake::before {
+      background:radial-gradient(ellipse at 50% 48%,#090102f2 0 27%,#220508df 46%,#3c170da8 58%,#0000 76%);
+      box-shadow:0 0 32px #090102d9,inset 0 0 28px #b51d2f42;
+      animation:restoration-intake-pocket 1680ms ease-out both;
+    }
+    .round-one-restoration[data-payoff-round="3"][data-restoration-phase="transforming"] .restoration-bouquet-intake::after {
+      border-color:#f0c477a8;
+      box-shadow:0 0 0 7px #160204b8,0 0 20px #b51d2f99,inset 0 0 18px #d7b16d52;
+      animation:restoration-intake-focus 1680ms cubic-bezier(.16,.82,.2,1) both;
+    }
+    .round-one-restoration[data-payoff-round="3"][data-restoration-phase="transforming"] .restoration-bouquet-intake .crafted-bouquet {
+      width:280px;
+      height:210px;
+      z-index:2;
+      opacity:0;
+      transform-origin:50% 72%;
+      animation:bloodroot-bouquet-into-conservatory 1680ms cubic-bezier(.16,.82,.2,1) both;
+      filter:drop-shadow(0 10px 12px #000) drop-shadow(0 0 3px #050403) drop-shadow(0 0 16px #b51d2f9c);
+    }
+    .round-one-restoration[data-payoff-round="3"][data-restoration-phase="transforming"] .restoration-bouquet-intake .crafted-bloom img {
+      filter:brightness(1.04) saturate(1.16) contrast(1.12) drop-shadow(0 0 2px #fff0b4) drop-shadow(0 3px 4px #000) drop-shadow(0 0 7px currentColor);
+    }
     .restoration-coin-stream { position:absolute; inset:0; z-index:8; pointer-events:none; opacity:0; }
     .restoration-coin-stream span { position:absolute; left:var(--coin-x); top:var(--coin-y); width:12px; height:12px; border:1px solid #ffe2a4; border-radius:50%; background:radial-gradient(circle at 34% 32%,#fff7c7 0 18%,#e9b652 42%,#7a421c 78%); box-shadow:0 0 10px #e9b652aa; transform:translate(-50%,-50%) scale(.55); }
     .restoration-before-label,.restoration-after-label { position:absolute; top:9px; z-index:10; padding:4px 7px; border:1px solid #61482c; background:#050403d9; color:#d1b27f; font:900 9px/1 system-ui,sans-serif; letter-spacing:.1em; text-transform:uppercase; text-shadow:0 2px 3px #000; transition:opacity 420ms ease,border-color 420ms ease,color 420ms ease; }
@@ -7203,6 +7234,18 @@
       color:#fff4bd;
       box-shadow:inset 0 0 12px #000,0 0 18px #e2b65f4d;
     }
+    .round-one-restoration[data-payoff-round="3"][data-restoration-phase="transforming"] .bouquet-trophy {
+      border-color:#b51d2f;
+      background:radial-gradient(circle at 50% 44%,#3b0d12 0,#0c0506 62%,#030202 100%);
+    }
+    .round-one-restoration[data-payoff-round="3"][data-restoration-phase="transforming"] .bouquet-trophy::after {
+      opacity:.2;
+    }
+    .round-one-restoration[data-payoff-round="3"][data-restoration-phase="transforming"] .payoff-transaction {
+      border-color:#f0c477;
+      color:#fff4bd;
+      box-shadow:inset 0 0 12px #000,0 0 18px #b51d2f66;
+    }
     .restoration-state { position:absolute; inset:auto 0 8px; z-index:10; color:#ead9a9; font-weight:800; letter-spacing:.12em; text-shadow:0 2px 4px #000,0 0 10px #000; }
     .restoration-title { position:relative; z-index:4; color:#f3dfaa; font:700 21px/1.15 Georgia,serif; }
     .coin-payoff { position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:2; }
@@ -7250,11 +7293,45 @@
     .round-one-restoration.third-greenhouse-finale .restoration-state { left:5%; right:5%; bottom:7px; z-index:10; padding:5px 8px; border-top:1px solid #d7b16d88; background:linear-gradient(90deg,#08030300,#080303e8 14%,#080303e8 86%,#08030300); font-size:12px; line-height:1.1; letter-spacing:.1em; }
     .round-one-restoration.third-greenhouse-finale .payoff-transaction { border-color:#d7b16d; color:#fff1bd; box-shadow:inset 0 0 12px #000,0 0 16px #d7b16d38; }
     .round-one-restoration.third-greenhouse-finale .restore-btn { border-color:#d7b16d; background:linear-gradient(#9b1d22,#451017); box-shadow:0 0 18px #b51d2f45,inset 0 0 12px #000; }
-    body.round-three-final-pending .round-one-restoration.third-greenhouse-finale .greenhouse-art-withered { opacity:1; filter:brightness(.92) contrast(1.1) saturate(1.08); transform:scale(1.02); }
-    body.round-three-final-pending .round-one-restoration.third-greenhouse-finale .greenhouse-art-restored { opacity:.16; filter:brightness(.7) saturate(.92); transform:scale(1.055); }
+    body.round-three-final-pending .round-one-restoration.third-greenhouse-finale .greenhouse-art-withered { opacity:1; filter:brightness(1.2) contrast(1.16) saturate(.9); transform:scale(1.015); }
+    body.round-three-final-pending .round-one-restoration.third-greenhouse-finale .greenhouse-art-restored { opacity:.1; filter:brightness(.82) contrast(1.08) saturate(.9); transform:scale(1.015); }
     body.round-three-final-pending .round-one-restoration.third-greenhouse-finale .restoration-after-label { opacity:.72; border-color:#b51d2f; color:#ffd0d5; }
     body.round-three-final-pending .round-one-restoration.third-greenhouse-finale .restoration-before-label { opacity:.84; }
-    body.round-three-final-pending .round-one-restoration.third-greenhouse-finale .restoration-root-web { opacity:.46; background:repeating-linear-gradient(77deg,#0000 0 18px,#9b1d22 19px 21px,#0000 22px 42px),repeating-linear-gradient(104deg,#0000 0 24px,#d7b16d99 25px 26px,#0000 27px 54px),radial-gradient(ellipse at 50% 86%,#9b1d2270 0,#0000 62%); }
+    body.round-three-final-pending .round-one-restoration.third-greenhouse-finale .restoration-root-web { opacity:.2; background:repeating-linear-gradient(77deg,#0000 0 18px,#9b1d22 19px 21px,#0000 22px 42px),repeating-linear-gradient(104deg,#0000 0 24px,#d7b16d99 25px 26px,#0000 27px 54px),radial-gradient(ellipse at 50% 86%,#9b1d2270 0,#0000 62%); }
+    .round-one-restoration.third-greenhouse-finale .restoration-scene[data-greenhouse-art="bloodroot"] .greenhouse-art {
+      object-position:50% 50%;
+    }
+    body.round-three-final-pending .round-one-restoration.third-greenhouse-finale .restoration-scene::before {
+      background:
+        radial-gradient(ellipse at 50% 53%,#0000 0 59%,#07020370 84%,#020101aa 100%),
+        linear-gradient(180deg,#1404082e,#0000 31%,#08020324 72%,#02010178);
+      box-shadow:inset 0 0 24px #0009;
+    }
+    body.round-three-final-pending .round-one-restoration.third-greenhouse-finale .greenhouse-light {
+      opacity:.18;
+      filter:blur(10px);
+    }
+    body.round-three-final-pending .round-one-restoration.third-greenhouse-finale .restoration-veil {
+      opacity:.12;
+      background:
+        radial-gradient(ellipse at 50% 54%,#0000 0 62%,#10030752 100%),
+        linear-gradient(180deg,#2a071016,#0000 56%,#10020524);
+      box-shadow:inset 0 0 18px #0008;
+    }
+    body.round-three-final-pending .round-one-restoration.third-greenhouse-finale .restoration-cracks {
+      display:none;
+    }
+    body.round-three-final-complete .round-one-restoration.third-greenhouse-finale .greenhouse-light {
+      opacity:.5;
+      background:radial-gradient(circle at 50% 43%,#fff1bd70 0 6%,#b51d2f64 18%,#d7b16d1f 38%,#0000 64%);
+      filter:blur(7px);
+    }
+    body.round-three-final-complete .round-one-restoration.third-greenhouse-finale .restoration-glass-rays {
+      opacity:.42;
+      background:
+        repeating-conic-gradient(from 8deg at 50% 46%,#0000 0 12deg,#fff0b520 13deg 14deg,#0000 15deg 26deg),
+        radial-gradient(circle at 50% 42%,#fff3b63d 0,#b51d2f24 18%,#0000 48%);
+    }
     body.round-three-final-complete .round-one-restoration.third-greenhouse-finale .next-order-btn { display:block; border-color:#d7b16d; background:linear-gradient(#9b1d22,#451017); }
     body.focused-payoff-active .round-one-restoration.owned-replay {
       border-color:#b9874d;
@@ -7446,6 +7523,15 @@
         height:130px;
         animation-name:bouquet-into-greenhouse-mobile;
       }
+      .round-one-restoration[data-payoff-round="3"][data-restoration-phase="transforming"] .bouquet-trophy .bouquet-assembly,
+      .round-one-restoration[data-payoff-round="3"][data-restoration-phase="transforming"] .bouquet-trophy .bouquet-trophy-bonus {
+        display:none;
+      }
+      .round-one-restoration[data-payoff-round="3"][data-restoration-phase="transforming"] .restoration-bouquet-intake .crafted-bouquet {
+        width:260px;
+        height:195px;
+        animation-name:bloodroot-bouquet-into-conservatory-mobile;
+      }
       .owned-renewal-ingredient {
         left:var(--renew-mobile-start-x);
         top:var(--renew-mobile-start-y);
@@ -7622,6 +7708,22 @@
       78% { opacity:1; transform:translateX(0) translateY(8%) scale(.64); filter:brightness(1.06) contrast(1.12) drop-shadow(0 8px 10px #000) drop-shadow(0 0 20px #7fcf65); }
       90% { opacity:1; transform:translateX(0) translateY(11%) scale(.58); filter:brightness(1.1) contrast(1.1) drop-shadow(0 6px 9px #000) drop-shadow(0 0 22px #d7b16d); }
       100% { opacity:0; transform:translateX(0) translateY(14%) scale(.46); filter:brightness(1.24) drop-shadow(0 0 24px #fff0b4); }
+    }
+    @keyframes bloodroot-bouquet-into-conservatory {
+      0% { opacity:1; transform:translateX(-112%) translateY(3%) scale(.76) rotate(-4deg); }
+      26% { opacity:1; transform:translateX(-42%) translateY(1%) scale(.72) rotate(-2deg); }
+      58% { opacity:1; transform:translateX(0) translateY(3%) scale(.66); filter:contrast(1.08) drop-shadow(0 8px 10px #000) drop-shadow(0 0 18px #b51d2f); }
+      78% { opacity:1; transform:translateX(0) translateY(6%) scale(.6); filter:brightness(1.06) contrast(1.12) drop-shadow(0 8px 10px #000) drop-shadow(0 0 20px #d7b16d); }
+      90% { opacity:1; transform:translateX(0) translateY(9%) scale(.54); filter:brightness(1.1) contrast(1.1) drop-shadow(0 6px 9px #000) drop-shadow(0 0 22px #b51d2f); }
+      100% { opacity:0; transform:translateX(0) translateY(12%) scale(.44); filter:brightness(1.24) drop-shadow(0 0 24px #fff0b4); }
+    }
+    @keyframes bloodroot-bouquet-into-conservatory-mobile {
+      0% { opacity:1; transform:translateY(-112%) scale(.76); }
+      26% { opacity:1; transform:translateY(-48%) scale(.72); }
+      58% { opacity:1; transform:translateY(2%) scale(.66); filter:contrast(1.08) drop-shadow(0 8px 10px #000) drop-shadow(0 0 18px #b51d2f); }
+      78% { opacity:1; transform:translateY(7%) scale(.6); filter:brightness(1.06) contrast(1.12) drop-shadow(0 8px 10px #000) drop-shadow(0 0 20px #d7b16d); }
+      90% { opacity:1; transform:translateY(11%) scale(.54); filter:brightness(1.1) contrast(1.1) drop-shadow(0 6px 9px #000) drop-shadow(0 0 22px #b51d2f); }
+      100% { opacity:0; transform:translateY(15%) scale(.44); filter:brightness(1.24) drop-shadow(0 0 24px #fff0b4); }
     }
     @keyframes restoration-intake-pocket {
       0% { opacity:0; transform:translate(-50%,-50%) scale(.72); }
@@ -8652,6 +8754,14 @@
       body.round-three-final-complete .bouquet-trophy[data-high-count="true"] { min-height:300px; }
       body.round-three-final-pending .restoration-scene,
       body.round-three-final-complete .restoration-scene { height:150px; }
+      body.round-three-final-complete .round-one-restoration[data-payoff-round="3"][data-restoration-phase="transforming"] .bouquet-trophy {
+        height:72px!important;
+        min-height:72px!important;
+        grid-template-rows:auto auto;
+      }
+      body.round-three-final-complete .round-one-restoration[data-payoff-round="3"][data-restoration-phase="transforming"] .restoration-scene {
+        height:300px;
+      }
       body.round-two-upgrade-pending .restoration-scene,
       body.round-two-upgrade-complete .restoration-scene { height:132px; }
       body.round-two-upgrade-pending .restoration-copy,
@@ -9967,6 +10077,7 @@
     let invalidSwapReturnSelection = null;
     let validSwapTimer = null;
     let bouquetSealPulseTimer = null;
+    let roundThreeConservatoryTransferTimer = null;
     let nextOrderPulseTimer = null;
     let coinBalancePulseTimer = null;
     let coinBalancePulseActive = false;
@@ -14483,16 +14594,28 @@
       panel.dataset.ownedRenewalPhase = ceremony.ownedReplay ? ownedRenewalPhase || "settled" : "";
       panel.dataset.assemblyReady = String(!presentationPending);
       if (!bouquetTransferActive && !panel.classList.contains("restoration-awakening")) {
-        panel.dataset.restorationPhase = ceremony.plan.round === 1
+        panel.dataset.restorationPhase = [1, 3].includes(ceremony.plan.round)
           ? ceremony.primary === "spend" ? "pending" : "settled"
           : "";
       }
       panel.classList.toggle("owned-replay", ceremony.ownedReplay);
+      const transferRound = Number(panel.dataset.bouquetTransferRound || ceremony.plan.round);
+      const transferPresentation = transferRound === 3
+        ? {
+            title: "Bouquet Raises Conservatory",
+            state: "BLOODROOT COMPACT ENTERING MOONLIT CONSERVATORY",
+            transaction: `Raised for ${BLOODROOT_CONSERVATORY_COST}. ${coins} coins remain.`
+          }
+        : {
+            title: "Bouquet Nourishes Greenhouse",
+            state: "BOUQUET ENTERING WITHERED GLASSHOUSE",
+            transaction: `${FIRST_GREENHOUSE_RESTORE_COST} coins spent · Greenhouse awakening · ${coins} coins remain.`
+          };
       $("restorationTitle").textContent = bouquetTransferActive
-        ? "Bouquet Nourishes Greenhouse"
+        ? transferPresentation.title
         : ceremony.title;
       $("restorationState").textContent = bouquetTransferActive
-        ? "BOUQUET ENTERING WITHERED GLASSHOUSE"
+        ? transferPresentation.state
         : finalHarvestCommit?.phase === "ceremony" && !ceremony.ownedReplay
         ? `BOUQUET BOUND · ${ceremony.plan.name.toUpperCase()}`
         : ownedRenewalPhase === "binding"
@@ -14503,7 +14626,7 @@
               ? "CONSERVATORY NOURISHED · REMAINS 100% RAISED"
               : ceremony.state;
       $("payoffTransaction").textContent = bouquetTransferActive
-        ? `${FIRST_GREENHOUSE_RESTORE_COST} coins spent · Greenhouse awakening · ${coins} coins remain.`
+        ? transferPresentation.transaction
         : ceremony.transaction;
       $("restorationCopy").textContent = ceremony.copy;
       $("payoffTransaction").style.visibility = presentationPending ? "hidden" : "";
@@ -14516,11 +14639,14 @@
         $("restoreGreenhouseBtn").hidden = true;
         $("nextOrderBtn").hidden = true;
       }
-      $("restoreGreenhouseBtn").disabled = presentationPending
+      $("restoreGreenhouseBtn").disabled = bouquetTransferActive
+        || presentationPending
         || (currentRound === 1 && (!roundComplete || roundOneRestored || coins < FIRST_GREENHOUSE_RESTORE_COST))
         || (currentRound === 2 && roundComplete && (!roundOneRestored || roundTwoGreenhouseUpgraded || coins < MOONLIT_GREENHOUSE_UPGRADE_COST))
         || (currentRound === 3 && roundComplete && (roundThreeConservatoryRaised || coins < BLOODROOT_CONSERVATORY_COST));
-      $("nextOrderBtn").disabled = ceremony.primary !== "next" || presentationPending;
+      $("nextOrderBtn").disabled = bouquetTransferActive
+        || ceremony.primary !== "next"
+        || presentationPending;
       const scene = panel.querySelector(".restoration-scene");
       if (scene && ceremony.ownedReplay) {
         scene.setAttribute("aria-label", "Owned Bloodroot Conservatory remains fully raised");
@@ -17936,7 +18062,7 @@
       `).join("");
     }
 
-    function beginRoundOneBouquetTransfer(panel, bouquet) {
+    function beginGreenhouseBouquetTransfer(panel, bouquet, payoffRound) {
       const intake = $("restorationBouquetIntake");
       if (!panel || !intake || !bouquet) return false;
       const replacement = panel.querySelector("#bouquetTrophy .crafted-bouquet");
@@ -17947,10 +18073,11 @@
       intake.dataset.compositionKey = bouquet.dataset.compositionKey || "";
       intake.replaceChildren(bouquet);
       panel.dataset.bouquetTransfer = "active";
+      panel.dataset.bouquetTransferRound = String(payoffRound);
       return true;
     }
 
-    function settleRoundOneBouquetTransfer(panel, bouquet) {
+    function settleGreenhouseBouquetTransfer(panel, bouquet) {
       const intake = $("restorationBouquetIntake");
       const assembly = panel?.querySelector("#bouquetTrophy .bouquet-assembly");
       if (!panel || !intake || !assembly || !bouquet) return false;
@@ -17962,6 +18089,30 @@
       assembly.append(bouquet);
       delete intake.dataset.compositionKey;
       panel.dataset.bouquetTransfer = "settled";
+      delete panel.dataset.bouquetTransferRound;
+      return true;
+    }
+
+    function settleRoundThreeConservatoryTransfer({ repaint = true, readyAction = true } = {}) {
+      if (roundThreeConservatoryTransferTimer && window.clearTimeout) {
+        window.clearTimeout(roundThreeConservatoryTransferTimer);
+      }
+      roundThreeConservatoryTransferTimer = null;
+      const panel = $("roundOneRestoration");
+      if (!panel || panel.dataset.bouquetTransferRound !== "3") {
+        return false;
+      }
+      const transferBouquet = panel.querySelector("#restorationBouquetIntake .crafted-bouquet");
+      panel.classList.remove("spend-pulse", "restoration-awakening");
+      panel.dataset.restorationPhase = "settled";
+      settleGreenhouseBouquetTransfer(panel, transferBouquet);
+      if (readyAction && currentRound === 3 && roundComplete) {
+        pulseNextOrderReady();
+        queuePostRenderFocus("nextOrderBtn");
+      }
+      if (repaint) {
+        render();
+      }
       return true;
     }
 
@@ -17979,7 +18130,7 @@
       playBloomSound("restore");
       const transformationDuration = prefersReducedMotion() ? 320 : 1880;
       panel.dataset.restorationPhase = "transforming";
-      beginRoundOneBouquetTransfer(panel, transferBouquet);
+      beginGreenhouseBouquetTransfer(panel, transferBouquet, 1);
       $("restorationTitle").textContent = "Bouquet Nourishes Greenhouse";
       panel.querySelector(".bouquet-trophy-kicker").textContent = "Bouquet Transferred";
       $("restorationState").textContent = "BOUQUET ENTERING WITHERED GLASSHOUSE";
@@ -17991,7 +18142,7 @@
       window.setTimeout(() => {
         panel.classList.remove("spend-pulse", "restoration-awakening");
         panel.dataset.restorationPhase = "settled";
-        settleRoundOneBouquetTransfer(panel, transferBouquet);
+        settleGreenhouseBouquetTransfer(panel, transferBouquet);
         pulseNextOrderReady();
         queuePostRenderFocus("nextOrderBtn");
         render();
@@ -18036,23 +18187,35 @@
       ) {
         return;
       }
+      const panel = $("roundOneRestoration");
+      const transferBouquet = panel?.querySelector("#bouquetTrophy .crafted-bouquet") || null;
+      const reducedMotion = prefersReducedMotion();
       coins -= BLOODROOT_CONSERVATORY_COST;
       pulseCoinBalance();
       roundThreeConservatoryRaised = true;
       ritualMessage = "<strong>Bloodroot conservatory raised.</strong> Crimson glass seals the first three orders into one complete run.";
-      pulseNextOrderReady();
-      queuePostRenderFocus("nextOrderBtn");
+      if (reducedMotion) {
+        pulseNextOrderReady();
+        queuePostRenderFocus("nextOrderBtn");
+      } else {
+        panel.dataset.restorationPhase = "transforming";
+        beginGreenhouseBouquetTransfer(panel, transferBouquet, 3);
+      }
+      saveProgress();
       render();
       pulseActiveGreenhouseIntake();
       playBloomSound("restore");
-      const panel = $("roundOneRestoration");
+      if (reducedMotion) {
+        return;
+      }
       panel.classList.add("spend-pulse");
       panel.classList.remove("restoration-awakening");
       void panel.offsetWidth;
       panel.classList.add("restoration-awakening");
-      window.setTimeout(() => panel.classList.remove("spend-pulse"), 680);
-      window.setTimeout(() => panel.classList.remove("restoration-awakening"), 1280);
-      saveProgress();
+      roundThreeConservatoryTransferTimer = window.setTimeout(() => {
+        roundThreeConservatoryTransferTimer = null;
+        settleRoundThreeConservatoryTransfer();
+      }, 1780);
     }
 
     function advanceGreenhouseUpgrade() {
@@ -18689,6 +18852,7 @@
         return;
       }
       if (currentRound === 3 && roundComplete && roundThreeConservatoryRaised) {
+        settleRoundThreeConservatoryTransfer({ repaint: false, readyAction: false });
         replayFocusedSlice();
         return;
       }
