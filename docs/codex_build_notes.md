@@ -1,5 +1,12 @@
 # Codex Build Notes
 
+## 2026-07-31 kept the First Bouquet objective readable on mobile
+
+- Player-visible result: exact-mobile First Bouquet now shows complete `Thorn Rose 0/8` and `Bone Star 0/6` objectives instead of clipping the final Thorn Rose digit. Each existing 13px flower name and count uses a compact two-line chip beside its icon, and either target can display the existing `SEALED` badge without growing the row or moving the altar.
+- Scope: the already accepted mobile two-target objective pattern now also applies to active Round 1, with a `22px` icon and one-pixel tighter internal gap to retain the full Thorn Rose name at the widest `LAST MOVE` boundary. The correction is inside the existing `max-width:760px` rule; desktop, R2, R3, copy, nodes, controls, timing, input, mechanics, saves, economy, rounds, progression, and assets are unchanged.
+- Permanent contract: `scripts/verify_tutorial_progress.spec.js` covers exact `390x844` initial `0/8 + 0/6`, ordinary progress, either target sealed while its sibling remains unfinished, and both sealed at the last move under full and reduced motion. It requires unchanged 13px name/count type, readable completion meaning, target `scrollWidth <= clientWidth`, internal count/badge separation, identical target geometry, centered Moves, stable altar top, exact `378x378` board, 64 tiles/eight rows, `scrollY=0`, loaded images, and no viewport overflow.
+- Local browser verification: the new Round 1 objective contract, accepted Round 3 objective contract, fresh tutorial/replay flow, and exact-mobile touch destination pass together `4/4`. Inspected captures `work/mobile-r1-objective-fit-final.png` and `work/mobile-r1-objective-asymmetric-final.png` show the full objectives at initial play and `Thorn Rose 8/8 SEALED + Bone Star 5/6` with an unchanged altar at `y=325..703`. The broader mobile goal-following sampler reached its global timeout during browser-context teardown after `5.1m`; no changed objective assertion failed, and the focused natural first-action/touch paths pass.
+
 ## 2026-07-31 stabilized asymmetric Round 3 objectives on mobile
 
 - Player-visible result: sealing either Bloodroot or Sol Rot no longer grows one objective chip into a third row and pushes the active board downward. Exact-mobile Round 3 keeps both target chips at the same compact `32px` height, with Moves vertically aligned, while the completed target retains a visible `SEALED` badge beside its count.

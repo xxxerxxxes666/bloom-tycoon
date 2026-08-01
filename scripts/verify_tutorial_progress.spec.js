@@ -7166,6 +7166,155 @@ test("invalid, cancel, mobile touch, and reduced motion drag paths stay clean", 
   await expect(page.locator("#firstSwapCue")).not.toContainText("No bloom");
 });
 
+test("exact-mobile First Bouquet objectives stay readable without moving the altar", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const consoleMessages = [];
+  const pageErrors = [];
+  const failedRequests = [];
+  page.on("console", (message) => {
+    if (message.type() === "error" || message.type() === "warning") {
+      consoleMessages.push(`${message.type()}: ${message.text()}`);
+    }
+  });
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("requestfailed", (request) => {
+    failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`);
+  });
+
+  await seedDeterministicMath(page, "mobile-round-one-objective-fit");
+  await openFreshNoReview(page, "mobile-round-one-objective-fit");
+
+  const states = [
+    { label: "initial", counts: [0, 0, 0, 0, 0, 0], moves: 6, expected: ["0/8", "0/6"], complete: [false, false] },
+    { label: "ordinary progress", counts: [0, 3, 0, 0, 0, 4], moves: 4, expected: ["4/8", "3/6"], complete: [false, false] },
+    { label: "Thorn Rose sealed", counts: [0, 5, 0, 0, 0, 8], moves: 2, expected: ["8/8", "5/6"], complete: [true, false] },
+    { label: "Bone Star sealed", counts: [0, 6, 0, 0, 0, 7], moves: 2, expected: ["7/8", "6/6"], complete: [false, true] },
+    { label: "both sealed", counts: [0, 6, 0, 0, 0, 8], moves: 1, expected: ["8/8", "6/6"], complete: [true, true] }
+  ];
+
+  for (const reducedMotion of ["no-preference", "reduce"]) {
+    await page.emulateMedia({ reducedMotion });
+    let baselineTargetHeight = null;
+    let baselineBoardTop = null;
+    for (const stateCase of states) {
+      await page.evaluate(({ key, stateCase }) => {
+        const state = JSON.parse(localStorage.getItem(key) || "{}");
+        Object.assign(state, {
+          currentRound: 1,
+          roundComplete: false,
+          moves: stateCase.moves,
+          counts: stateCase.counts,
+          roundOneRestored: false,
+          roundTwoGreenhouseUpgraded: false,
+          roundThreeConservatoryRaised: false,
+          hasMadeValidMove: stateCase.counts.some(Boolean),
+          tutorialSkipped: true,
+          tutorialActive: false,
+          blackCandleLessonComplete: true,
+          armedLineRelic: null,
+          cursedThorns: [],
+          clearedCursedThorns: 0,
+          restoredRoundTwoGuideMoves: 0
+        });
+        localStorage.setItem(key, JSON.stringify(state));
+      }, { key: SAVE_KEY, stateCase });
+      await page.reload({ waitUntil: "networkidle" });
+      await expect(page.locator("#board .tile")).toHaveCount(64);
+      await page.waitForFunction(() => Array.from(document.images).every((image) => image.complete));
+
+      const geometry = await page.evaluate(() => {
+        const bounds = (node) => {
+          const rect = node.getBoundingClientRect();
+          return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom, width: rect.width, height: rect.height };
+        };
+        const textBounds = (node) => {
+          const range = document.createRange();
+          range.selectNodeContents(node);
+          return bounds(range);
+        };
+        const targets = Array.from(document.querySelectorAll("#objective .objective-target"));
+        const moves = document.querySelector("#objective .moves-counter");
+        const board = document.querySelector("#board");
+        return {
+          targets: targets.map((target) => {
+            const name = target.querySelector(".objective-target-name");
+            const count = target.querySelector(".objective-target-count");
+            const seal = target.querySelector(".objective-target-seal");
+            return {
+              bounds: bounds(target),
+              clientWidth: target.clientWidth,
+              scrollWidth: target.scrollWidth,
+              complete: target.classList.contains("complete"),
+              name: { text: name.textContent.trim(), bounds: bounds(name), fontSize: getComputedStyle(name).fontSize },
+              count: { text: count.textContent.trim(), bounds: bounds(count), textBounds: textBounds(count), fontSize: getComputedStyle(count).fontSize },
+              seal: seal ? { text: seal.textContent.trim(), bounds: bounds(seal) } : null
+            };
+          }),
+          moves: { text: moves.textContent.trim(), bounds: bounds(moves) },
+          board: bounds(board),
+          tiles: document.querySelectorAll("#board .tile").length,
+          rows: new Set(Array.from(document.querySelectorAll("#board .tile")).map((tile) => tile.dataset.y)).size,
+          scrollY,
+          overflowX: document.documentElement.scrollWidth > innerWidth + 1,
+          overflowY: document.documentElement.scrollHeight > innerHeight + 1,
+          brokenImages: Array.from(document.images)
+            .filter((image) => image.getClientRects().length && image.naturalWidth === 0)
+            .map((image) => image.getAttribute("src"))
+        };
+      });
+
+      const label = `${reducedMotion} ${stateCase.label}`;
+      expect(geometry.targets.map((target) => target.count.text), `${label} visible counts`).toEqual(stateCase.expected);
+      expect(geometry.targets.map((target) => target.complete), `${label} completion owners`).toEqual(stateCase.complete);
+      if (baselineTargetHeight === null) {
+        baselineTargetHeight = geometry.targets[0].bounds.height;
+        baselineBoardTop = geometry.board.top;
+      }
+      geometry.targets.forEach((target, index) => {
+        expect(target.scrollWidth, `${label} target ${index + 1} does not clip`).toBeLessThanOrEqual(target.clientWidth);
+        expect(target.bounds.height, `${label} target ${index + 1} keeps baseline height`).toBeCloseTo(baselineTargetHeight, 1);
+        expect(target.name.fontSize, `${label} target ${index + 1} name type`).toBe("13px");
+        expect(target.count.fontSize, `${label} target ${index + 1} count type`).toBe("13px");
+        for (const [part, partBounds] of [["name", target.name.bounds], ["count", target.count.bounds]]) {
+          expect(partBounds.left, `${label} target ${index + 1} ${part} left inset`).toBeGreaterThanOrEqual(target.bounds.left + 1);
+          expect(partBounds.right, `${label} target ${index + 1} ${part} right inset`).toBeLessThanOrEqual(target.bounds.right - 1);
+          expect(partBounds.top, `${label} target ${index + 1} ${part} top inset`).toBeGreaterThanOrEqual(target.bounds.top + 1);
+          expect(partBounds.bottom, `${label} target ${index + 1} ${part} bottom inset`).toBeLessThanOrEqual(target.bounds.bottom - 1);
+        }
+        if (stateCase.complete[index]) {
+          expect(target.seal?.text, `${label} target ${index + 1} keeps completion meaning`).toBe("Sealed");
+          expect(target.seal.bounds.left, `${label} target ${index + 1} seal left inset`).toBeGreaterThanOrEqual(target.bounds.left + 1);
+          expect(target.seal.bounds.right, `${label} target ${index + 1} seal right inset`).toBeLessThanOrEqual(target.bounds.right - 1);
+          expect(target.seal.bounds.top, `${label} target ${index + 1} seal top inset`).toBeGreaterThanOrEqual(target.bounds.top + 1);
+          expect(target.seal.bounds.bottom, `${label} target ${index + 1} seal bottom inset`).toBeLessThanOrEqual(target.bounds.bottom - 1);
+          expect(target.count.textBounds.right, `${label} target ${index + 1} count clears seal`).toBeLessThanOrEqual(target.seal.bounds.left - 1);
+        } else {
+          expect(target.seal, `${label} target ${index + 1} has no premature seal`).toBeNull();
+        }
+      });
+      expect(geometry.targets[0].bounds.top, `${label} target tops align`).toBeCloseTo(geometry.targets[1].bounds.top, 1);
+      expect(geometry.targets[0].bounds.bottom, `${label} target bottoms align`).toBeCloseTo(geometry.targets[1].bounds.bottom, 1);
+      expect(geometry.targets[0].bounds.right, `${label} target chips stay separate`).toBeLessThanOrEqual(geometry.targets[1].bounds.left - 1);
+      expect(geometry.targets[1].bounds.right, `${label} Moves stays separate`).toBeLessThanOrEqual(geometry.moves.bounds.left - 1);
+      expect((geometry.moves.bounds.top + geometry.moves.bounds.bottom) / 2, `${label} Moves stays centered`).toBeCloseTo((geometry.targets[0].bounds.top + geometry.targets[0].bounds.bottom) / 2, 1);
+      expect(geometry.board.top, `${label} objective progress does not move the altar`).toBeCloseTo(baselineBoardTop, 1);
+      expect(geometry.board.width, `${label} altar width`).toBeCloseTo(378, 1);
+      expect(geometry.board.height, `${label} altar height`).toBeCloseTo(378, 1);
+      expect(geometry.board.bottom, `${label} altar stays in the first viewport`).toBeLessThanOrEqual(844);
+      expect(geometry.tiles, `${label} tile count`).toBe(64);
+      expect(geometry.rows, `${label} board rows`).toBe(8);
+      expect(geometry.scrollY, `${label} page stays fixed`).toBe(0);
+      expect(geometry.overflowX, `${label} no horizontal overflow`).toBe(false);
+      expect(geometry.overflowY, `${label} no vertical overflow`).toBe(false);
+      expect(geometry.brokenImages, `${label} no broken images`).toEqual([]);
+    }
+  }
+
+  expect(consoleMessages).toEqual([]);
+  expect(pageErrors).toEqual([]);
+  expect(failedRequests).toEqual([]);
+});
+
 test("exact-mobile Round 3 objective counts stay inside the compact goal row", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const consoleMessages = [];
