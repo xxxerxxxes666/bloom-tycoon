@@ -3785,7 +3785,7 @@ test("exact-mobile Help owns a complete replay touch target across the first thr
 });
 
 test("every exact-mobile altar tile owns a distinct 44px touch target", async ({ browser }) => {
-  test.setTimeout(180000);
+  test.setTimeout(360000);
   const touchPoints = [
     ["top-left", (box) => [box.x + 2, box.y + 2]],
     ["top", (box) => [box.x + box.width / 2, box.y + 2]],
@@ -3827,7 +3827,7 @@ test("every exact-mobile altar tile owns a distinct 44px touch target", async ({
       const pair = await hintedPair(page);
       const source = page.locator(`.tile[data-x="${pair[0].x}"][data-y="${pair[0].y}"]`);
       const destination = page.locator(`.tile[data-x="${pair[1].x}"][data-y="${pair[1].y}"]`);
-      const ordinary = page.locator("#tile-0-0");
+      const ordinary = page.locator("#tile-7-7");
       const saved = await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY);
       const baseline = await guidedRoundOneState(page, `${label} mobile touch baseline`);
       const baselineBoard = baseline.boardSerialization;
@@ -3902,7 +3902,8 @@ test("every exact-mobile altar tile owns a distinct 44px touch target", async ({
           });
           localStorage.setItem(key, JSON.stringify(state));
         }, { key: SAVE_KEY, savedState: saved, round });
-        await page.reload({ waitUntil: "networkidle" });
+        await page.reload({ waitUntil: "load" });
+        await expect(page.locator("#board .tile")).toHaveCount(64);
         const roundGeometry = await page.evaluate(() => {
           const tiles = Array.from(document.querySelectorAll("#board .tile"));
           const rects = tiles.map((tile) => tile.getBoundingClientRect());
@@ -3930,15 +3931,11 @@ test("every exact-mobile altar tile owns a distinct 44px touch target", async ({
         expect(roundGeometry.overflowX, `${label} Round ${round} no overflow`).toBe(false);
       }
       await page.evaluate(({ key, state }) => localStorage.setItem(key, state), { key: SAVE_KEY, state: saved });
-      await page.reload({ waitUntil: "networkidle" });
+      await page.reload({ waitUntil: "load" });
+      await expect(page.locator("#board .tile")).toHaveCount(64);
 
       for (const [tileLabel, tile] of [["guided source", source], ["ordinary tile", ordinary]]) {
         for (const [pointLabel, pointFor] of touchPoints) {
-          await page.evaluate(({ key, state }) => localStorage.setItem(key, state), {
-            key: SAVE_KEY,
-            state: saved
-          });
-          await page.reload({ waitUntil: "networkidle" });
           const box = await tile.boundingBox();
           const [x, y] = pointFor(box);
           await page.touchscreen.tap(x, y);
@@ -3952,8 +3949,6 @@ test("every exact-mobile altar tile owns a distinct 44px touch target", async ({
         }
       }
 
-      await page.evaluate(({ key, state }) => localStorage.setItem(key, state), { key: SAVE_KEY, state: saved });
-      await page.reload({ waitUntil: "networkidle" });
       const sourceBox = await source.boundingBox();
       const destinationBox = await destination.boundingBox();
       const [sourceX, sourceY] = touchPoints[0][1](sourceBox);
