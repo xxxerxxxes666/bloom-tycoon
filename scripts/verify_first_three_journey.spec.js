@@ -97,6 +97,21 @@ async function journeyState(page) {
         height: rect.height
       };
     };
+    const visibleTextRect = (node) => {
+      if (!visible(node)) return null;
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      const rect = range.getBoundingClientRect();
+      range.detach();
+      return {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height
+      };
+    };
     const tileRows = [...new Set(Array.from(document.querySelectorAll(".tile"))
       .map((tile) => Math.round(tile.getBoundingClientRect().top)))].length;
     const boardRect = document.querySelector(".board")?.getBoundingClientRect();
@@ -206,6 +221,15 @@ async function journeyState(page) {
       handoffCueBottom: document.querySelector("#nextOrderCue")?.getBoundingClientRect().bottom || 0,
       replayEntryGeometry: {
         receipt: visibleRect(replayEntrySurface),
+        receiptText: visibleTextRect(replayEntrySurface),
+        receiptClientWidth: replayEntrySurface?.clientWidth || 0,
+        receiptScrollWidth: replayEntrySurface?.scrollWidth || 0,
+        receiptClientHeight: replayEntrySurface?.clientHeight || 0,
+        receiptScrollHeight: replayEntrySurface?.scrollHeight || 0,
+        receiptWhiteSpace: replayEntrySurface ? getComputedStyle(replayEntrySurface).whiteSpace : "",
+        receiptFontSize: replayEntrySurface
+          ? Number.parseFloat(getComputedStyle(replayEntrySurface).fontSize)
+          : 0,
         detachedReceipt: visibleRect(document.querySelector("#nextOrderCue")),
         masthead: visibleRect(document.querySelector(".title")),
         help: visibleRect(document.querySelector("#tutorialHelpBtn")),
@@ -2247,6 +2271,22 @@ function expectOwnedReplayEntryGeometry(state, config, label) {
   }
   if (config.mobile) {
     expect(geometry.greenhouseContinuity, `${label} compact greenhouse continuity geometry`).toBeTruthy();
+    expect(geometry.receiptText, `${label} receipt text geometry`).toBeTruthy();
+    expect(geometry.receiptText.left, `${label} receipt text clears its left edge`)
+      .toBeGreaterThanOrEqual(geometry.receipt.left + 1);
+    expect(geometry.receiptText.right, `${label} receipt text clears its right edge`)
+      .toBeLessThanOrEqual(geometry.receipt.right - 1);
+    expect(geometry.receiptText.top, `${label} receipt text clears its top edge`)
+      .toBeGreaterThanOrEqual(geometry.receipt.top + 1);
+    expect(geometry.receiptText.bottom, `${label} receipt text clears its bottom edge`)
+      .toBeLessThanOrEqual(geometry.receipt.bottom - 1);
+    expect(geometry.receiptScrollWidth, `${label} receipt has no clipped horizontal content`)
+      .toBeLessThanOrEqual(geometry.receiptClientWidth);
+    expect(geometry.receiptScrollHeight, `${label} receipt has no clipped vertical content`)
+      .toBeLessThanOrEqual(geometry.receiptClientHeight);
+    expect(geometry.receiptWhiteSpace, `${label} receipt may wrap within its command lane`).toBe("normal");
+    expect(geometry.receiptFontSize, `${label} receipt keeps its established readable type`).toBeCloseTo(8.5, 1);
+    expect(geometry.receipt.height, `${label} receipt keeps the compact command height`).toBeCloseTo(30, 1);
     expect(
       rectanglesOverlap(geometry.receipt, geometry.greenhouseContinuity),
       `${label} receipt stays disjoint from greenhouse continuity`
@@ -3090,5 +3130,84 @@ test("reduced-motion exact-mobile replay boundary preserves the owned wallet", a
     expect(failedRequests).toEqual([]);
   } finally {
     await context.close();
+  }
+});
+
+test("owned replay receipt remains fully readable at the active-board handoff", async ({ browser }) => {
+  for (const config of [
+    { label: "desktop", viewport: { width: 1280, height: 720 }, mobile: false },
+    { label: "mobile390", viewport: { width: 390, height: 844 }, mobile: true },
+    { label: "mobile390-reduced", viewport: { width: 390, height: 844 }, mobile: true, reducedMotion: true }
+  ]) {
+    const context = await browser.newContext({
+      viewport: config.viewport,
+      hasTouch: config.mobile,
+      isMobile: config.mobile,
+      reducedMotion: config.reducedMotion ? "reduce" : "no-preference"
+    });
+    const page = await context.newPage();
+    const consoleMessages = [];
+    const pageErrors = [];
+    const failedRequests = [];
+    page.on("console", (message) => {
+      if (message.type() === "warning" || message.type() === "error") {
+        consoleMessages.push(`${message.type()}: ${message.text()}`);
+      }
+    });
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    page.on("requestfailed", (request) => {
+      failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`);
+    });
+
+    try {
+      await openFresh(page, `replay-receipt-${config.label}`, config.label);
+      await page.evaluate((key) => {
+        const state = JSON.parse(localStorage.getItem(key) || "{}");
+        Object.assign(state, {
+          currentRound: 3,
+          roundComplete: true,
+          roundOneRestored: true,
+          roundTwoGreenhouseUpgraded: true,
+          roundThreeConservatoryRaised: true,
+          moves: 2,
+          coins: 50,
+          counts: [13, 0, 0, 14, 0, 0],
+          cursedThorns: [],
+          clearedCursedThorns: 0,
+          tutorialSkipped: true,
+          tutorialActive: false,
+          blackCandleLessonComplete: true
+        });
+        localStorage.setItem(key, JSON.stringify(state));
+      }, SAVE_KEY);
+      await page.reload({ waitUntil: "load" });
+      await expect(page.locator("#roundOneRestoration button:not([hidden])")).toBeVisible();
+      await spendPrimaryCeremonyAction(page, config.mobile ? "touch" : "pointer");
+      await page.waitForFunction(() => document.body.classList.contains("owned-replay-entry"));
+
+      const handoff = await journeyState(page);
+      expect(handoff.replayEntryReceipt, `${config.label} exact receipt`)
+        .toBe("50 coins kept · Conservatory owned · New order ready.");
+      expectOwnedReplayEntryGeometry(handoff, config, `${config.label} owned replay receipt`);
+      expect(handoff.round, `${config.label} returns to First Bouquet`).toBe(1);
+      expect(handoff.moves, `${config.label} starts with six moves`).toBe(6);
+      expect(handoff.bouquet, `${config.label} starts an empty bouquet`).toBe("Bouquet · 0/14");
+      expect(handoff.coins, `${config.label} keeps the wallet`).toBe(50);
+      expect(handoff.activeElementId, `${config.label} restores opening board focus`).toBe("tile-1-0");
+      expect(handoff.rovingTileIds, `${config.label} focus and roving model agree`).toEqual(["tile-1-0"]);
+      expect(handoff.selectedTileCount, `${config.label} creates no selection`).toBe(0);
+      expect(handoff.tiles, `${config.label} tile count`).toBe(64);
+      expect(handoff.tileRows, `${config.label} row count`).toBe(8);
+      expect(handoff.overflowX, `${config.label} no horizontal overflow`).toBe(false);
+      expect(handoff.boardBottom, `${config.label} board stays in viewport`).toBeLessThanOrEqual(config.viewport.height);
+      expect(handoff.brokenImages, `${config.label} no broken visible images`).toEqual([]);
+      await page.screenshot({ path: `work/replay-receipt-${config.label}.png`, fullPage: true });
+
+      expect(consoleMessages).toEqual([]);
+      expect(pageErrors).toEqual([]);
+      expect(failedRequests.filter((failure) => !failure.includes("ERR_ABORTED"))).toEqual([]);
+    } finally {
+      await context.close();
+    }
   }
 });

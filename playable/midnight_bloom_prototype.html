@@ -6736,7 +6736,7 @@
         box-shadow:0 0 12px #7fcf6528,inset 0 0 9px #000;
         font:900 8.5px/1.05 system-ui,sans-serif;
         letter-spacing:.01em;
-        white-space:nowrap;
+        white-space:normal;
       }
       body.owned-replay-entry .first-swap-cue::before {
         display:none;
@@ -9561,6 +9561,19 @@
       .tutorial-command-region > .first-swap-cue,
       .tutorial-command-region > .next-order-cue {
         max-width: calc(100% - 49px);
+      }
+
+      body.owned-replay-entry.round-one-active:not(.round-one-complete):not(.first-move-made) .tutorial-command-region > .first-swap-cue {
+        flex: 1 1 0;
+        width: auto;
+        max-width: none;
+        height: 30px;
+        min-height: 30px;
+        margin: 7px 0 0;
+        padding: 3px 8px;
+        font: 900 8.5px/1.05 system-ui, sans-serif;
+        letter-spacing: .01em;
+        white-space: normal;
       }
 
       .mobile-greenhouse-progress {

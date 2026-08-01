@@ -486,6 +486,7 @@ def verify_source_hooks():
         "${balance} coins kept · Conservatory owned · New order ready.",
         "body.owned-replay-entry .next-order-cue",
         "body.owned-replay-entry .bouquet-reward-promise",
+        "body.owned-replay-entry.round-one-active:not(.round-one-complete):not(.first-move-made) .tutorial-command-region > .first-swap-cue",
         "function firstFocusedCycleClosingBalance()",
         "function isOwnedRestorationReplay()",
         "Reward added · +${plan.reward.coins} coins · ${coins} coins balance.",

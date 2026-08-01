@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-08-01 kept the owned-replay receipt readable on mobile
+
+- Player-visible result: entering a new First Bouquet after `Play Again` now shows the complete `50 coins kept · Conservatory owned · New order ready.` receipt at exact mobile instead of clipping it after `Conservatory o...`. The established command lane uses the same compact `8.5px` type on two centered lines, with the full receipt visible above the altar.
+- Scope: one exact-mobile owned-replay cue rule now wraps and fills its already reserved `254x30px` command lane. Desktop keeps its existing bouquet-header receipt, and no copy, node, control, board rule, timing, move, save, wallet, restoration, round, progression, or asset changed.
+- Permanent contract: a real `Play Again` action is exercised on desktop `1280x720`, exact `390x844`, and exact-mobile reduced motion. It requires the exact receipt, text and scroll containment, disjoint greenhouse/cue/altar geometry, the unchanged `378x378` mobile or `600x600` desktop altar, 64 tiles/eight rows, wallet and order continuity, source focus/roving agreement, no selection, and clean image/overflow/console/page/request state.
+- Local verification: the focused three-viewport receipt matrix passes `1/1`. Inspected `work/replay-receipt-{mobile390,mobile390-reduced,desktop}.png` keeps the full mobile receipt in the command lane with the altar at `y=325..703`, greenhouse at `x=8..128`, `scrollY=0`, and unchanged desktop hierarchy.
+- Preservation/security: the natural no-review Black Candle journey passes on desktop and exact-mobile; the desktop case passed on its clean isolated rerun after one transient three-second restoration-ceremony visibility timeout. Project/HTML verification, changed-spec syntax, `git diff --check`, and the changed-added-line credential/tracker/network/private-IP scan pass with no findings.
+
 ## 2026-08-01 made Bloodroot Compact read as one hand-tied bouquet
 
 - Player-visible result: Round 3's 27-unit Bloodroot Compact now grows as one compact six-tier crown centered over a conspicuous shared paper collar and dominant knot. The prior full receiver spread the flowers into a shallow hedge/tray; the new silhouette preserves every Bloodroot/Sol Rot unit while making the gathered stems, shared binding, and crown depth legible at normal desktop and exact-mobile scale.
