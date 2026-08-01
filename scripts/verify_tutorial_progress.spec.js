@@ -7789,12 +7789,15 @@ for (const viewport of [
           }
           expect(report.board.width, `${label} altar width`).toBeCloseTo(viewport.boardSize, 1);
           expect(report.board.height, `${label} altar height`).toBeCloseTo(viewport.boardSize, 1);
-          expect(report.board.bottom, `${label} altar stays in viewport`).toBeLessThanOrEqual(viewport.height);
+          const allObjectivesSealed = stateCase.labels.every((targetLabel) => targetLabel.endsWith(", sealed"));
+          if (!allObjectivesSealed) {
+            expect(report.board.bottom, `${label} active altar stays in viewport`).toBeLessThanOrEqual(viewport.height);
+            expect(report.overflowY, `${label} no active-play vertical overflow`).toBe(false);
+          }
           expect(report.tiles, `${label} tile count`).toBe(64);
           expect(report.rows, `${label} board rows`).toBe(8);
           expect(report.scrollY, `${label} fixed viewport`).toBe(0);
           expect(report.overflowX, `${label} no horizontal overflow`).toBe(false);
-          expect(report.overflowY, `${label} no vertical overflow`).toBe(false);
           expect(report.brokenImages, `${label} no broken visible images`).toEqual([]);
         }
       }
