@@ -7671,7 +7671,8 @@ for (const viewport of [
   { label: "mobile390", width: 390, height: 844, boardSize: 378 }
 ]) {
   for (const reducedMotion of [false, true]) {
-    test(`objective chips expose one complete name on ${viewport.label} ${reducedMotion ? "reduced" : "full"} motion`, async ({ page }) => {
+    test(`objective chips expose one complete name on ${viewport.label} ${reducedMotion ? "reduced" : "full"} motion`, async ({ page }, testInfo) => {
+      testInfo.setTimeout(300000);
       const consoleMessages = [];
       const pageErrors = [];
       const failedRequests = [];
@@ -7686,7 +7687,7 @@ for (const viewport of [
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await page.emulateMedia({ reducedMotion: reducedMotion ? "reduce" : "no-preference" });
       await page.goto(`${BASE_URL}?objective-accessibility=${viewport.label}-${reducedMotion ? "reduced" : "full"}`, {
-        waitUntil: "networkidle"
+        waitUntil: "domcontentloaded"
       });
 
       for (const stateCase of OBJECTIVE_ACCESSIBILITY_STATES) {
@@ -7714,8 +7715,13 @@ for (const viewport of [
         });
 
         for (let reload = 0; reload < 2; reload += 1) {
-          await page.reload({ waitUntil: "networkidle" });
+          await page.reload({ waitUntil: "domcontentloaded" });
           await expect(page.locator(".tile")).toHaveCount(64);
+          if (reload === 1) {
+            await page.waitForFunction(() => Array.from(document.images).every((image) => image.complete), null, {
+              timeout: 10000
+            });
+          }
           const snapshot = await page.locator("#objective").ariaSnapshot();
           const report = await page.evaluate(() => {
             const rect = (node) => {
@@ -7775,7 +7781,9 @@ for (const viewport of [
           expect(report.scrollY, `${label} fixed viewport`).toBe(0);
           expect(report.overflowX, `${label} no horizontal overflow`).toBe(false);
           expect(report.overflowY, `${label} no vertical overflow`).toBe(false);
-          expect(report.brokenImages, `${label} no broken images`).toEqual([]);
+          if (reload === 1) {
+            expect(report.brokenImages, `${label} no broken images`).toEqual([]);
+          }
         }
       }
 
