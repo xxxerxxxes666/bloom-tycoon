@@ -882,15 +882,20 @@ for (const testCase of CASES) {
     page.on("pageerror", (error) => browserErrors.push(error.message));
 
     try {
+      const untouchedSave = JSON.stringify(NATURAL_UNTOUCHED_ROUND_TWO_SAVE);
+      await page.addInitScript(({ key, state, fixtureKey }) => {
+        if (!sessionStorage.getItem(fixtureKey)) {
+          localStorage.setItem(key, state);
+          sessionStorage.setItem(fixtureKey, "1");
+        }
+      }, {
+        key: SAVE_KEY,
+        state: untouchedSave,
+        fixtureKey: `untouched-round-two-focus-${testCase.label}`
+      });
       await page.goto(`${BASE_URL}?untouched-round-two-focus=${testCase.label}`, {
         waitUntil: "networkidle"
       });
-      const untouchedSave = JSON.stringify(NATURAL_UNTOUCHED_ROUND_TWO_SAVE);
-      await page.evaluate(({ key, state }) => localStorage.setItem(key, state), {
-        key: SAVE_KEY,
-        state: untouchedSave
-      });
-      await page.reload({ waitUntil: "networkidle" });
       await expect(page.locator(".tile.thorn-teach")).toHaveCount(2, { timeout: 7000 });
       for (let reload = 1; reload <= 2; reload += 1) {
         await page.reload({ waitUntil: "networkidle" });
