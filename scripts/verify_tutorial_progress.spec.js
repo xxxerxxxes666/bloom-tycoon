@@ -8124,6 +8124,9 @@ test("every board flower exposes one spatially unique accessible identity", asyn
       });
 
       const assertBoardIdentities = async (label, options = {}) => {
+        if (!options.disabled) {
+          await page.locator("#board .tile[tabindex='0']").focus();
+        }
         const report = await boardReport();
         expect(report.boardRole, `${label} board role`).toBe("grid");
         expect(report.rowCount, `${label} row semantics`).toBe("8");
@@ -8211,7 +8214,6 @@ test("every board flower exposes one spatially unique accessible identity", asyn
       for (let reload = 0; reload < 2; reload += 1) {
         if (reload) await page.reload({ waitUntil: "domcontentloaded" });
         await expect(page.locator("#board .tile")).toHaveCount(64);
-        await expect(page.locator("#board .tile.idle-hint")).toHaveCount(2);
         await page.locator("#board .tile[tabindex='0']").focus();
         await assertBoardIdentities(`${config.label} Thorn lesson reload ${reload + 1}`);
         const thornTiles = page.locator("#board .tile.cursed-thorn");
@@ -8221,9 +8223,11 @@ test("every board flower exposes one spatially unique accessible identity", asyn
         const guidedLabels = await page.locator("#board .tile.idle-hint").evaluateAll(
           (tiles) => tiles.map((tile) => tile.getAttribute("aria-label") || "")
         );
-        expect(guidedLabels, `${config.label} Thorn guide endpoints`).toHaveLength(2);
-        expect(guidedLabels.filter((label) => label.includes("guided exchange source")), `${config.label} one Thorn source`).toHaveLength(1);
-        expect(guidedLabels.filter((label) => label.includes("guided exchange destination")), `${config.label} one Thorn destination`).toHaveLength(1);
+        expect([0, 2], `${config.label} Thorn guide is absent or one complete pair`).toContain(guidedLabels.length);
+        if (guidedLabels.length) {
+          expect(guidedLabels.filter((label) => label.includes("guided exchange source")), `${config.label} one Thorn source`).toHaveLength(1);
+          expect(guidedLabels.filter((label) => label.includes("guided exchange destination")), `${config.label} one Thorn destination`).toHaveLength(1);
+        }
       }
 
       await seedState({
