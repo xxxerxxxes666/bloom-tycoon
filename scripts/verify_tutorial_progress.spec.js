@@ -7612,3 +7612,176 @@ test("keyboard play follows the board and payoff focus", async ({ page }) => {
   expect(pageErrors).toEqual([]);
   expect(failedRequests).toEqual([]);
 });
+
+const OBJECTIVE_ACCESSIBILITY_STATES = [
+  {
+    label: "round-one-initial",
+    state: { currentRound: 1, moves: 6, counts: [0, 0, 0, 0, 0, 0] },
+    labels: ["Thorn Rose, 0 of 8", "Bone Star, 0 of 6"]
+  },
+  {
+    label: "round-one-asymmetric-last-move",
+    state: { currentRound: 1, moves: 1, counts: [0, 5, 0, 0, 0, 8] },
+    labels: ["Thorn Rose, 8 of 8, sealed", "Bone Star, 5 of 6"]
+  },
+  {
+    label: "round-one-both-complete",
+    state: { currentRound: 1, moves: 1, counts: [0, 6, 0, 0, 0, 8] },
+    labels: ["Thorn Rose, 8 of 8, sealed", "Bone Star, 6 of 6, sealed"]
+  },
+  {
+    label: "round-two-initial",
+    state: { currentRound: 2, moves: 9, counts: [0, 0, 0, 0, 0, 0], clearedCursedThorns: 0 },
+    labels: ["Nightshade, 0 of 10", "Amber Seed, 0 of 9", "Thorn Rose, 0 of 7", "Cursed Thorn, 0 of 3"]
+  },
+  {
+    label: "round-two-partial-thorn-sealed-low-move",
+    state: { currentRound: 2, moves: 2, counts: [0, 0, 6, 0, 5, 4], clearedCursedThorns: 3 },
+    labels: ["Nightshade, 6 of 10", "Amber Seed, 5 of 9", "Thorn Rose, 4 of 7", "Cursed Thorn, 3 of 3, sealed"]
+  },
+  {
+    label: "round-two-both-complete",
+    state: { currentRound: 2, moves: 1, counts: [0, 0, 10, 0, 9, 7], clearedCursedThorns: 3 },
+    labels: ["Nightshade, 10 of 10, sealed", "Amber Seed, 9 of 9, sealed", "Thorn Rose, 7 of 7, sealed", "Cursed Thorn, 3 of 3, sealed"]
+  },
+  {
+    label: "round-three-initial",
+    state: { currentRound: 3, moves: 8, counts: [0, 0, 0, 0, 0, 0] },
+    labels: ["Bloodroot, 0 of 14", "Sol Rot, 0 of 13"]
+  },
+  {
+    label: "round-three-bloodroot-sealed-last-move",
+    state: { currentRound: 3, moves: 1, counts: [12, 0, 0, 14, 0, 0] },
+    labels: ["Bloodroot, 14 of 14, sealed", "Sol Rot, 12 of 13"]
+  },
+  {
+    label: "round-three-sol-rot-sealed-low-move",
+    state: { currentRound: 3, moves: 2, counts: [13, 0, 0, 9, 0, 0] },
+    labels: ["Bloodroot, 9 of 14", "Sol Rot, 13 of 13, sealed"]
+  },
+  {
+    label: "round-three-both-complete",
+    state: { currentRound: 3, moves: 1, counts: [13, 0, 0, 14, 0, 0] },
+    labels: ["Bloodroot, 14 of 14, sealed", "Sol Rot, 13 of 13, sealed"]
+  }
+];
+
+for (const viewport of [
+  { label: "desktop", width: 1280, height: 720, boardSize: 600 },
+  { label: "mobile390", width: 390, height: 844, boardSize: 378 }
+]) {
+  for (const reducedMotion of [false, true]) {
+    test(`objective chips expose one complete name on ${viewport.label} ${reducedMotion ? "reduced" : "full"} motion`, async ({ page }) => {
+      const consoleMessages = [];
+      const pageErrors = [];
+      const failedRequests = [];
+      page.on("console", (message) => {
+        if (message.type() === "warning" || message.type() === "error") {
+          consoleMessages.push(`${message.type()}: ${message.text()}`);
+        }
+      });
+      page.on("pageerror", (error) => pageErrors.push(error.message));
+      page.on("requestfailed", (request) => failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`));
+
+      await page.setViewportSize({ width: viewport.width, height: viewport.height });
+      await page.emulateMedia({ reducedMotion: reducedMotion ? "reduce" : "no-preference" });
+      await page.goto(`${BASE_URL}?objective-accessibility=${viewport.label}-${reducedMotion ? "reduced" : "full"}`, {
+        waitUntil: "networkidle"
+      });
+
+      for (const stateCase of OBJECTIVE_ACCESSIBILITY_STATES) {
+        const roundOwnership = stateCase.state.currentRound >= 3
+          ? { roundOneRestored: true, roundTwoGreenhouseUpgraded: true, coins: 50 }
+          : stateCase.state.currentRound === 2
+            ? { roundOneRestored: true, coins: 20 }
+            : { coins: 0 };
+        await page.evaluate(({ key, state }) => {
+          localStorage.setItem(key, JSON.stringify(state));
+        }, {
+          key: SAVE_KEY,
+          state: {
+            focusedEconomyVersion: FOCUSED_ECONOMY_VERSION,
+            roundComplete: false,
+            hasMadeValidMove: stateCase.state.counts.some((count) => count > 0),
+            tutorialSkipped: true,
+            tutorialActive: false,
+            blackCandleLessonComplete: true,
+            cursedThorns: [],
+            clearedCursedThorns: 0,
+            ...roundOwnership,
+            ...stateCase.state
+          }
+        });
+
+        for (let reload = 0; reload < 2; reload += 1) {
+          await page.reload({ waitUntil: "networkidle" });
+          await expect(page.locator(".tile")).toHaveCount(64);
+          const snapshot = await page.locator("#objective").ariaSnapshot();
+          const report = await page.evaluate(() => {
+            const rect = (node) => {
+              const bounds = node.getBoundingClientRect();
+              return {
+                width: bounds.width,
+                height: bounds.height,
+                bottom: bounds.bottom
+              };
+            };
+            return {
+              objectiveLive: document.querySelector("#objective")?.getAttribute("aria-live"),
+              targets: Array.from(document.querySelectorAll("#objective .objective-target")).map((target) => ({
+                label: target.getAttribute("aria-label"),
+                role: target.getAttribute("role"),
+                complete: target.classList.contains("complete"),
+                name: target.querySelector(".objective-target-name")?.textContent.trim(),
+                compactName: target.querySelector(".objective-target-name")?.dataset.compactLabel,
+                childAriaHidden: Array.from(target.querySelectorAll(".objective-target-name, .objective-target-count, .objective-target-seal"))
+                  .every((node) => node.getAttribute("aria-hidden") === "true"),
+                imageAlt: target.querySelector("img")?.getAttribute("alt")
+              })),
+              board: rect(document.querySelector("#board")),
+              tiles: document.querySelectorAll("#board .tile").length,
+              rows: new Set(Array.from(document.querySelectorAll("#board .tile")).map((tile) => tile.dataset.y)).size,
+              scrollY,
+              overflowX: document.documentElement.scrollWidth > innerWidth + 1,
+              overflowY: document.documentElement.scrollHeight > innerHeight + 1,
+              brokenImages: Array.from(document.images)
+                .filter((image) => image.complete && image.naturalWidth === 0)
+                .map((image) => image.getAttribute("src"))
+            };
+          });
+          const label = `${viewport.label} ${reducedMotion ? "reduced" : "full"} ${stateCase.label} reload ${reload + 1}`;
+          expect(report.objectiveLive, `${label} objective row remains quiet`).toBeNull();
+          expect(report.targets.map((target) => target.label), `${label} authoritative labels`).toEqual(stateCase.labels);
+          expect(report.targets.every((target) => target.role === "group"), `${label} grouped objective semantics`).toBe(true);
+          expect(report.targets.every((target) => target.childAriaHidden), `${label} visual children stay silent`).toBe(true);
+          expect(report.targets.every((target) => target.imageAlt === ""), `${label} icons stay decorative`).toBe(true);
+          report.targets.forEach((target, index) => {
+            expect(target.label.endsWith(", sealed"), `${label} target ${index + 1} sealed meaning`)
+              .toBe(target.complete);
+            const duplicateVisualName = `${target.name}${target.compactName}`;
+            expect(snapshot, `${label} excludes ${duplicateVisualName}`).not.toContain(duplicateVisualName);
+          });
+          if (viewport.label === "mobile390") {
+            stateCase.labels.forEach((expectedLabel) => {
+              expect(snapshot.split(`group \"${expectedLabel}\"`).length - 1, `${label} announces ${expectedLabel} once`)
+                .toBe(1);
+            });
+          }
+          expect(report.board.width, `${label} altar width`).toBeCloseTo(viewport.boardSize, 1);
+          expect(report.board.height, `${label} altar height`).toBeCloseTo(viewport.boardSize, 1);
+          expect(report.board.bottom, `${label} altar stays in viewport`).toBeLessThanOrEqual(viewport.height);
+          expect(report.tiles, `${label} tile count`).toBe(64);
+          expect(report.rows, `${label} board rows`).toBe(8);
+          expect(report.scrollY, `${label} fixed viewport`).toBe(0);
+          expect(report.overflowX, `${label} no horizontal overflow`).toBe(false);
+          expect(report.overflowY, `${label} no vertical overflow`).toBe(false);
+          expect(report.brokenImages, `${label} no broken images`).toEqual([]);
+        }
+      }
+
+      expect(consoleMessages).toEqual([]);
+      expect(pageErrors).toEqual([]);
+      expect(failedRequests).toEqual([]);
+    });
+  }
+}

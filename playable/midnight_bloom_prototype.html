@@ -10201,13 +10201,14 @@
         : "";
       const completeClass = displayCount >= needed ? "complete" : "";
       const pct = needed ? Math.min(100, (displayCount / needed) * 100) : 0;
+      const accessibleLabel = `${flower[0]}, ${displayCount} of ${needed}${completeClass ? ", sealed" : ""}`;
       return `
-        <span class="objective-target ${pulseClass} ${literacyClass} ${finalHarvestClass} ${completeClass}" data-flower-id="${flowerId}" style="--target-pct:${pct}%">
+        <span class="objective-target ${pulseClass} ${literacyClass} ${finalHarvestClass} ${completeClass}" data-flower-id="${flowerId}" style="--target-pct:${pct}%" role="group" aria-label="${accessibleLabel}">
           <span class="objective-target-fill" aria-hidden="true"></span>
-          ${iconMarkup(flowerId, "objective-icon", flower[0])}
-          <span class="objective-target-name" data-compact-label="${compactFlowerLabel(flowerId)}">${flower[0]}</span>
-          <span class="objective-target-count">${displayCount}/${needed}</span>
-          ${completeClass ? '<span class="objective-target-seal">Sealed</span>' : ""}
+          ${iconMarkup(flowerId, "objective-icon")}
+          <span class="objective-target-name" data-compact-label="${compactFlowerLabel(flowerId)}" aria-hidden="true">${flower[0]}</span>
+          <span class="objective-target-count" aria-hidden="true">${displayCount}/${needed}</span>
+          ${completeClass ? '<span class="objective-target-seal" aria-hidden="true">Sealed</span>' : ""}
         </span>
       `;
     }
@@ -10238,15 +10239,13 @@
       const progress = thornGoalProgress(plan);
       const pulseClass = thornPulseCells.size || thornClearedCells.size ? "order-pulse" : "";
       const completeClass = thornGoalComplete(plan) ? "complete" : "";
-      const stateLabel = completeClass
-        ? `Cursed Thorn goal sealed, ${progress} of ${needed} cleared`
-        : `Cursed Thorn goal, ${progress} of ${needed} cleared`;
+      const stateLabel = `Cursed Thorn, ${progress} of ${needed}${completeClass ? ", sealed" : ""}`;
       return `
-        <span class="objective-target ${pulseClass} ${completeClass}" data-thorn-objective="true" aria-label="${stateLabel}">
-          ${thornSealMarkup("thorn-goal-glyph", "Cursed Thorn")}
-          <span class="objective-target-name" data-compact-label="Thorn">Cursed Thorn</span>
-          <span class="objective-target-count">${progress}/${needed}</span>
-          ${completeClass ? '<span class="objective-target-seal">Sealed</span>' : ""}
+        <span class="objective-target ${pulseClass} ${completeClass}" data-thorn-objective="true" role="group" aria-label="${stateLabel}">
+          ${thornSealMarkup("thorn-goal-glyph")}
+          <span class="objective-target-name" data-compact-label="Thorn" aria-hidden="true">Cursed Thorn</span>
+          <span class="objective-target-count" aria-hidden="true">${progress}/${needed}</span>
+          ${completeClass ? '<span class="objective-target-seal" aria-hidden="true">Sealed</span>' : ""}
         </span>
       `;
     }
