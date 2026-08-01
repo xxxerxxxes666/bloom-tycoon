@@ -1,5 +1,12 @@
 # Codex Build Notes
 
+## 2026-08-01 made every board flower spatially distinct to assistive technology
+
+- Player-visible result: every live flower button now speaks its full flower name plus human-readable row and column, so repeated species can be distinguished during screen-reader, voice, and keyboard play. Guided source/destination, selected/refused, Cursed Thorn, final-harvest, and armed Black Candle meanings remain attached to that one spatial identity instead of being split across decorative child images.
+- Scope: only tile accessible-name composition and decorative image semantics changed. The board remains a semantic 8x8 grid of native buttons with the established roving tab stop, row/column indices, Arrow/Enter/Space behavior, pointer/touch/drag paths, visible art, geometry, timing, moves, saves, economy, rounds, and progression unchanged.
+- Permanent contract: desktop `1280x720` and exact `390x844`, each under full and reduced motion, require 64 unique coordinate-bearing names, one roving button, decorative tile images, correct arrow traversal, one Enter/Space commit, and state meaning exactly once across the R1 opening guide, two R2 Thorn reloads, ordinary R3 selection/refusal, two armed Black Candle reloads, Retry, and completion boundaries.
+- Local verification: the focused four-viewport accessibility/keyboard matrix passes `1/1`; the existing objective accessibility and exact-mobile `44px` tile-touch preservation matrix passes `5/5`. Project/HTML verification and `git diff --check` pass.
+
 ## 2026-08-01 kept the owned-replay receipt readable on mobile
 
 - Player-visible result: entering a new First Bouquet after `Play Again` now shows the complete `50 coins kept · Conservatory owned · New order ready.` receipt at exact mobile instead of clipping it after `Conservatory o...`. The established command lane uses the same compact `8.5px` type on two centered lines, with the full receipt visible above the altar.

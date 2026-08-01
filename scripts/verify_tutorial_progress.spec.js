@@ -8000,3 +8000,328 @@ for (const viewport of [
     });
   }
 }
+
+test("every board flower exposes one spatially unique accessible identity", async ({ browser }) => {
+  test.setTimeout(240000);
+  const viewports = [
+    { label: "desktop", viewport: { width: 1280, height: 720 }, boardSize: 600 },
+    { label: "desktop-reduced", viewport: { width: 1280, height: 720 }, boardSize: 600, reducedMotion: true },
+    { label: "mobile390", viewport: { width: 390, height: 844 }, boardSize: 378, mobile: true },
+    { label: "mobile390-reduced", viewport: { width: 390, height: 844 }, boardSize: 378, mobile: true, reducedMotion: true }
+  ];
+  const flowerNames = ["Sol Rot", "Bone Star", "Nightshade", "Bloodroot", "Amber Seed", "Thorn Rose"];
+  const occurrences = (value, needle) => value.split(needle).length - 1;
+
+  for (const config of viewports) {
+    const context = await browser.newContext({
+      viewport: config.viewport,
+      hasTouch: Boolean(config.mobile),
+      isMobile: Boolean(config.mobile),
+      reducedMotion: config.reducedMotion ? "reduce" : "no-preference"
+    });
+    const page = await context.newPage();
+    const consoleMessages = [];
+    const pageErrors = [];
+    const failedRequests = [];
+    page.on("console", (message) => {
+      if (message.type() === "warning" || message.type() === "error") {
+        consoleMessages.push(`${message.type()}: ${message.text()}`);
+      }
+    });
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    page.on("requestfailed", (request) => {
+      failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`);
+    });
+
+    try {
+      await seedDeterministicMath(page, `tile-accessibility-${config.label}`);
+      await openFreshNoReview(page, `tile-accessibility-${config.label}`);
+      const baseState = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}"), SAVE_KEY);
+
+      const seedState = async (overrides) => {
+        const state = {
+          ...baseState,
+          focusedEconomyVersion: FOCUSED_ECONOMY_VERSION,
+          currentRound: 1,
+          roundComplete: false,
+          moves: 6,
+          counts: [0, 0, 0, 0, 0, 0],
+          coins: 0,
+          roundOneRestored: false,
+          roundTwoGreenhouseUpgraded: false,
+          roundThreeConservatoryRaised: false,
+          hasMadeValidMove: false,
+          tutorialSkipped: true,
+          tutorialActive: false,
+          blackCandleLessonComplete: false,
+          cursedThorns: [],
+          clearedCursedThorns: 0,
+          restoredRoundTwoGuideMoves: 0,
+          armedLineRelic: null,
+          board: baseState.board.map((row) => row.slice()),
+          ...overrides
+        };
+        if (overrides.armedLineRelic === "horizontal-source") {
+          state.armedLineRelic = {
+            x: 1,
+            y: 0,
+            direction: "horizontal",
+            flowerId: state.board[0][1]
+          };
+        }
+        await page.evaluate(({ key, state }) => {
+          localStorage.setItem(key, JSON.stringify(state));
+        }, { key: SAVE_KEY, state });
+        await page.reload({ waitUntil: "domcontentloaded" });
+        await expect(page.locator("#board .tile")).toHaveCount(64);
+      };
+
+      const boardReport = async () => page.evaluate(() => {
+        const board = document.querySelector("#board");
+        const boardRect = board.getBoundingClientRect();
+        const tiles = Array.from(board.querySelectorAll(".tile"));
+        return {
+          boardRole: board.getAttribute("role"),
+          rowCount: board.getAttribute("aria-rowcount"),
+          colCount: board.getAttribute("aria-colcount"),
+          boardRect: {
+            left: boardRect.left,
+            top: boardRect.top,
+            right: boardRect.right,
+            bottom: boardRect.bottom,
+            width: boardRect.width,
+            height: boardRect.height
+          },
+          tiles: tiles.map((tile) => {
+            const rect = tile.getBoundingClientRect();
+            return {
+              id: tile.id,
+              tag: tile.tagName,
+              role: tile.getAttribute("role"),
+              label: tile.getAttribute("aria-label") || "",
+              rowIndex: tile.getAttribute("aria-rowindex"),
+              colIndex: tile.getAttribute("aria-colindex"),
+              x: Number(tile.dataset.x),
+              y: Number(tile.dataset.y),
+              flowerId: Number(tile.dataset.flowerId),
+              tabIndex: tile.tabIndex,
+              disabled: tile.disabled,
+              selected: tile.classList.contains("sel") || tile.classList.contains("selected"),
+              imageAlt: tile.querySelector("img")?.getAttribute("alt"),
+              width: rect.width,
+              height: rect.height
+            };
+          }),
+          activeElementId: document.activeElement?.id || "",
+          selected: tiles.filter((tile) => tile.classList.contains("sel") || tile.classList.contains("selected")).length,
+          overflowX: document.documentElement.scrollWidth > innerWidth + 1,
+          overflowY: document.documentElement.scrollHeight > innerHeight + 1,
+          scrollY,
+          brokenImages: Array.from(document.images)
+            .filter((image) => image.getClientRects().length && image.complete && image.naturalWidth === 0)
+            .map((image) => image.getAttribute("src"))
+        };
+      });
+
+      const assertBoardIdentities = async (label, options = {}) => {
+        const report = await boardReport();
+        expect(report.boardRole, `${label} board role`).toBe("grid");
+        expect(report.rowCount, `${label} row semantics`).toBe("8");
+        expect(report.colCount, `${label} column semantics`).toBe("8");
+        expect(report.tiles, `${label} tile count`).toHaveLength(64);
+        expect(new Set(report.tiles.map((tile) => tile.label)).size, `${label} unique names`).toBe(64);
+        expect(new Set(report.tiles.map((tile) => tile.y)).size, `${label} eight rows`).toBe(8);
+        expect(report.tiles.every((tile) => tile.tag === "BUTTON" && tile.role === null), `${label} buttons remain actionable`).toBe(true);
+        expect(report.tiles.every((tile) => tile.imageAlt === ""), `${label} tile images stay decorative`).toBe(true);
+        for (const tile of report.tiles) {
+          const coordinate = `row ${tile.y + 1}, column ${tile.x + 1}`;
+          expect(tile.label.startsWith(`${flowerNames[tile.flowerId]} tile, `), `${label} full flower name for ${tile.id}`).toBe(true);
+          expect(occurrences(tile.label, coordinate), `${label} one coordinate for ${tile.id}`).toBe(1);
+          expect(tile.rowIndex, `${label} row index for ${tile.id}`).toBe(String(tile.y + 1));
+          expect(tile.colIndex, `${label} column index for ${tile.id}`).toBe(String(tile.x + 1));
+        }
+        const expectedBoardSize = options.boardSize ?? (options.disabled && !config.mobile ? 480 : config.boardSize);
+        expect(report.boardRect.width, `${label} board width`).toBeCloseTo(expectedBoardSize, 1);
+        expect(report.boardRect.height, `${label} board height`).toBeCloseTo(expectedBoardSize, 1);
+        expect(report.scrollY, `${label} fixed viewport`).toBe(0);
+        expect(report.overflowX, `${label} no horizontal overflow`).toBe(false);
+        expect(report.brokenImages, `${label} loaded images`).toEqual([]);
+        if (options.disabled) {
+          expect(report.tiles.every((tile) => tile.disabled), `${label} board is retired`).toBe(true);
+          expect(report.tiles.filter((tile) => tile.tabIndex === 0), `${label} retired board has no roving stop`).toEqual([]);
+        } else {
+          expect(report.tiles.every((tile) => !tile.disabled), `${label} board remains enabled`).toBe(true);
+          const roving = report.tiles.filter((tile) => tile.tabIndex === 0);
+          expect(roving, `${label} one roving tile`).toHaveLength(1);
+          expect(report.activeElementId, `${label} DOM focus agrees with roving model`).toBe(roving[0].id);
+        }
+        return report;
+      };
+
+      await seedState({});
+      await assertBoardIdentities(`${config.label} opening`);
+      const openingSnapshot = await page.locator("#board").ariaSnapshot();
+      expect(openingSnapshot, `${config.label} has no separately announced flower images`).not.toContain("- img \"");
+      await expect(page.locator("#board .tile.idle-hint")).toHaveCount(2);
+      const openingSource = page.locator('#board .tile.idle-hint[aria-label*="guided exchange source"]');
+      const openingDestination = page.locator('#board .tile.idle-hint[aria-label*="guided exchange destination"]');
+      await expect(openingSource).toHaveCount(1);
+      await expect(openingDestination).toHaveCount(1);
+      const sourceCell = await openingSource.evaluate((tile) => ({ x: Number(tile.dataset.x), y: Number(tile.dataset.y), id: tile.id }));
+      const destinationCell = await openingDestination.evaluate((tile) => ({ x: Number(tile.dataset.x), y: Number(tile.dataset.y), id: tile.id }));
+      const stableOpeningSource = page.locator(`#${sourceCell.id}`);
+      const stableOpeningDestination = page.locator(`#${destinationCell.id}`);
+      expect(
+        Math.abs(destinationCell.x - sourceCell.x) + Math.abs(destinationCell.y - sourceCell.y),
+        `${config.label} guided pair is adjacent`
+      ).toBe(1);
+      const traversalKey = sourceCell.x < 7 ? "ArrowRight" : "ArrowLeft";
+      const returnKey = sourceCell.x < 7 ? "ArrowLeft" : "ArrowRight";
+      const traversalX = sourceCell.x < 7 ? sourceCell.x + 1 : sourceCell.x - 1;
+      const traversalTile = page.locator(`#tile-${traversalX}-${sourceCell.y}`);
+      await stableOpeningSource.press(traversalKey);
+      await expect(traversalTile).toBeFocused();
+      expect(await traversalTile.getAttribute("aria-label"), `${config.label} arrows expose destination coordinates`)
+        .toContain(`row ${sourceCell.y + 1}, column ${traversalX + 1}`);
+      await traversalTile.press(returnKey);
+      await expect(stableOpeningSource).toBeFocused();
+      await stableOpeningSource.press("Enter");
+      await expect(stableOpeningSource).toHaveClass(/\bsel\b/);
+      const selectedLabel = await stableOpeningSource.getAttribute("aria-label");
+      expect(occurrences(selectedLabel, "selected"), `${config.label} selected meaning once`).toBe(1);
+      const destinationLabel = await stableOpeningDestination.getAttribute("aria-label");
+      expect(destinationLabel, `${config.label} destination keeps its coordinate`)
+        .toContain(`row ${destinationCell.y + 1}, column ${destinationCell.x + 1}`);
+      const beforeOpeningMove = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}").moves, SAVE_KEY);
+      await stableOpeningDestination.press("Space");
+      await waitForSettledBoard(page);
+      const afterOpeningMove = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}").moves, SAVE_KEY);
+      expect(afterOpeningMove, `${config.label} Enter/Space commits once`).toBe(beforeOpeningMove - 1);
+      await expect(page.locator("#board .tile.sel, #board .tile.selected")).toHaveCount(0);
+
+      await seedState({
+        currentRound: 2,
+        moves: 9,
+        coins: 20,
+        roundOneRestored: true,
+        tutorialSkipped: true,
+        blackCandleLessonComplete: true
+      });
+      for (let reload = 0; reload < 2; reload += 1) {
+        if (reload) await page.reload({ waitUntil: "domcontentloaded" });
+        await expect(page.locator("#board .tile")).toHaveCount(64);
+        await expect(page.locator("#board .tile.idle-hint")).toHaveCount(2);
+        await page.locator("#board .tile[tabindex='0']").focus();
+        await assertBoardIdentities(`${config.label} Thorn lesson reload ${reload + 1}`);
+        const thornTiles = page.locator("#board .tile.cursed-thorn");
+        await expect(thornTiles).toHaveCount(3);
+        const thornLabels = await thornTiles.evaluateAll((tiles) => tiles.map((tile) => tile.getAttribute("aria-label") || ""));
+        expect(thornLabels.every((label) => occurrences(label, "Cursed Thorn blocker") === 1), `${config.label} blockers speak once`).toBe(true);
+        const guidedLabels = await page.locator("#board .tile.idle-hint").evaluateAll(
+          (tiles) => tiles.map((tile) => tile.getAttribute("aria-label") || "")
+        );
+        expect(guidedLabels, `${config.label} Thorn guide endpoints`).toHaveLength(2);
+        expect(guidedLabels.filter((label) => label.includes("guided exchange source")), `${config.label} one Thorn source`).toHaveLength(1);
+        expect(guidedLabels.filter((label) => label.includes("guided exchange destination")), `${config.label} one Thorn destination`).toHaveLength(1);
+      }
+
+      await seedState({
+        currentRound: 3,
+        moves: 7,
+        counts: [3, 0, 0, 3, 0, 0],
+        coins: 50,
+        roundOneRestored: true,
+        roundTwoGreenhouseUpgraded: true,
+        hasMadeValidMove: true,
+        blackCandleLessonComplete: true
+      });
+      await assertBoardIdentities(`${config.label} ordinary Round 3`);
+      const invalidPair = await page.evaluate(() => {
+        const values = Array.from({ length: 8 }, () => Array(8).fill(-1));
+        document.querySelectorAll("#board .tile").forEach((tile) => {
+          values[Number(tile.dataset.y)][Number(tile.dataset.x)] = Number(tile.dataset.flowerId);
+        });
+        const endpointMatches = (board, x, y) => {
+          const value = board[y][x];
+          let horizontal = 1;
+          let vertical = 1;
+          for (let step = x - 1; step >= 0 && board[y][step] === value; step -= 1) horizontal += 1;
+          for (let step = x + 1; step < 8 && board[y][step] === value; step += 1) horizontal += 1;
+          for (let step = y - 1; step >= 0 && board[step][x] === value; step -= 1) vertical += 1;
+          for (let step = y + 1; step < 8 && board[step][x] === value; step += 1) vertical += 1;
+          return horizontal >= 3 || vertical >= 3;
+        };
+        for (let y = 0; y < 8; y += 1) {
+          for (let x = 0; x < 8; x += 1) {
+            for (const [dx, dy] of [[1, 0], [0, 1]]) {
+              const nx = x + dx;
+              const ny = y + dy;
+              if (nx >= 8 || ny >= 8) continue;
+              const next = values.map((row) => row.slice());
+              [next[y][x], next[ny][nx]] = [next[ny][nx], next[y][x]];
+              if (!endpointMatches(next, x, y) && !endpointMatches(next, nx, ny)) {
+                return [{ x, y }, { x: nx, y: ny }];
+              }
+            }
+          }
+        }
+        return null;
+      });
+      expect(invalidPair, `${config.label} ordinary board has a refusal pair`).toBeTruthy();
+      const invalidSource = page.locator(`#tile-${invalidPair[0].x}-${invalidPair[0].y}`);
+      const invalidDestination = page.locator(`#tile-${invalidPair[1].x}-${invalidPair[1].y}`);
+      const movesBeforeRefusal = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}").moves, SAVE_KEY);
+      await invalidSource.press("Enter");
+      await invalidDestination.press("Space");
+      await expect(page.locator("#board .tile.invalid-swap")).toHaveCount(2);
+      const refusalLabels = await page.locator("#board .tile.invalid-swap").evaluateAll(
+        (tiles) => tiles.map((tile) => tile.getAttribute("aria-label") || "")
+      );
+      expect(refusalLabels.every((label) => occurrences(label, "invalid swap refused") === 1), `${config.label} refusal speaks once`).toBe(true);
+      await waitForSettledBoard(page);
+      const movesAfterRefusal = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}").moves, SAVE_KEY);
+      expect(movesAfterRefusal, `${config.label} refusal spends no move`).toBe(movesBeforeRefusal);
+
+      await seedState({
+        currentRound: 3,
+        moves: 7,
+        counts: [3, 0, 0, 4, 0, 0],
+        coins: 50,
+        roundOneRestored: true,
+        roundTwoGreenhouseUpgraded: true,
+        hasMadeValidMove: true,
+        blackCandleLessonComplete: true,
+        armedLineRelic: "horizontal-source"
+      });
+      for (let reload = 0; reload < 2; reload += 1) {
+        if (reload) await page.reload({ waitUntil: "domcontentloaded" });
+        await expect(page.locator("#board .tile")).toHaveCount(64);
+        await assertBoardIdentities(`${config.label} armed Black Candle reload ${reload + 1}`);
+        const relicLabel = await page.locator('#board .tile[data-line-relic="black-candle-vine"]').getAttribute("aria-label");
+        const relicDestinationLabel = await page.locator("#board .tile.line-relic-destination").getAttribute("aria-label");
+        expect(occurrences(relicLabel, "armed Black Candle Vine"), `${config.label} armed source speaks once`).toBe(1);
+        expect(occurrences(relicDestinationLabel, "Black Candle activation destination"), `${config.label} destination speaks once`).toBe(1);
+      }
+
+      await seedState({ moves: 0 });
+      await assertBoardIdentities(`${config.label} failed order`, { disabled: true });
+      await expect(page.locator("#renewBtn.visible")).toBeFocused();
+
+      await seedState({
+        roundComplete: true,
+        moves: 2,
+        counts: [0, 6, 0, 0, 0, 8],
+        coins: 120,
+        blackCandleLessonComplete: true
+      });
+      await assertBoardIdentities(`${config.label} completed order`, { disabled: true, boardSize: 0 });
+      await expect(page.locator("#roundOneRestoration button:not([hidden])")).toBeFocused();
+
+      expect(consoleMessages).toEqual([]);
+      expect(pageErrors).toEqual([]);
+      expect(failedRequests.filter((failure) => !failure.includes("ERR_ABORTED"))).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  }
+});

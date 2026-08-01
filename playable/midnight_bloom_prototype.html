@@ -10216,7 +10216,7 @@
       fallback.textContent = flower[3];
       image.src = flower[1];
       image.srcset = flowerIconSrcset(flower[1]);
-      image.alt = flower[0];
+      image.alt = "";
       image.removeAttribute("data-fallback-ready");
       tile.__bloomFlowerId = flowerId;
       return true;
@@ -14927,6 +14927,7 @@
           ? visibleFinalHarvest.matchingCells.map((cell) => [`${cell.x},${cell.y}`, cell.flowerId])
           : []
       );
+      const hintedPair = hintedPairCells();
 
       for (let y = 0; y < BOARD_SIZE; y += 1) {
         for (let x = 0; x < BOARD_SIZE; x += 1) {
@@ -14935,6 +14936,7 @@
           const targetMatchEndpointIndex = targetMatchForecast?.pair.findIndex((cell) => (
             cell.x === x && cell.y === y
           )) ?? -1;
+          const hintedPairIndex = hintedPair.findIndex((cell) => cell.x === x && cell.y === y);
           const targetMatchResult = Boolean(targetMatchForecast?.cellKeys.has(forecastKey));
           const targetMatchIncoming = targetMatchResult
             && targetMatchForecast?.incomingKey === forecastKey;
@@ -15095,9 +15097,12 @@
                 : " Cursed Thorn match lane"
             : "";
           const thornLabel = thorn ? " with Cursed Thorn blocker" : thornClearedClass ? " where a Cursed Thorn cracked" : "";
-          const previewLabel = previewClass ? " in selected harvest preview" : relicPreviewClass ? " in Black Candle Vine lane preview" : "";
+          const previewLabel = previewClass ? " in harvest preview" : relicPreviewClass ? " in Black Candle Vine lane preview" : "";
           const targetMatchEndpointLabel = targetMatchEndpointIndex >= 0
             ? ` guided exchange ${targetMatchEndpointIndex === 0 ? "source" : "destination"}`
+            : "";
+          const hintedPairLabel = targetMatchEndpointIndex < 0 && hintedPairIndex >= 0
+            ? ` guided exchange ${hintedPairIndex === 0 ? "source" : "destination"}`
             : "";
           const targetMatchResultLabel = targetMatchResult
             ? ` in forecast ${flowers[targetMatchForecast.target.flowerId][0]} match`
@@ -15110,12 +15115,32 @@
           const relicLabel = armedRelic
             ? ` armed Black Candle Vine, clears ${armedRelic.direction === "vertical" ? "column" : "row"} when swapped`
             : "";
+          const selectedLabel = selectedClass ? " selected" : "";
+          const invalidLabel = invalidFeedback ? " invalid swap refused" : "";
+          const semanticLabels = [
+            relicLabel,
+            selectedLabel,
+            invalidLabel,
+            legalLabel,
+            destinationLabel,
+            laneLabel,
+            previewLabel,
+            targetMatchEndpointLabel,
+            hintedPairLabel,
+            targetMatchResultLabel,
+            finalHarvestLabel,
+            thornTeachLabel,
+            thornLabel
+          ].map((label) => label.trim()).filter(Boolean);
           const thornEventOffsetClass = thornHitClass && lineRelicArmingFeedback
             ? `offset-${x <= lineRelicArmingFeedback.x ? "left" : "right"}-${y <= lineRelicArmingFeedback.y ? "up" : "down"}`
             : "";
-          tile.setAttribute("aria-label", `${flowers[value][0]} tile${relicLabel}${legalLabel}${destinationLabel}${laneLabel}${previewLabel}${targetMatchEndpointLabel}${targetMatchResultLabel}${finalHarvestLabel}${thornTeachLabel}${thornLabel}`);
+          tile.setAttribute(
+            "aria-label",
+            `${flowers[value][0]} tile, row ${y + 1}, column ${x + 1}${semanticLabels.length ? `, ${semanticLabels.join(", ")}` : ""}`
+          );
           const tileMarkup = `
-            ${iconMarkup(value, "", flowers[value][0], "tile-icon-wrap")}
+            ${iconMarkup(value, "", "", "tile-icon-wrap")}
             ${targetMatchResult ? `<span class="target-match-result-mark" aria-hidden="true">${targetMatchIncoming ? iconMarkup(targetMatchForecast.target.flowerId, "target-match-ghost-icon", "", "target-match-ghost-wrap") : ""}</span>` : ""}
             ${targetMatchEndpointIndex >= 0 ? `<span class="target-match-endpoint-mark" data-step="${targetMatchEndpointIndex + 1}" aria-hidden="true"></span>` : ""}
             ${lineRelicLaneClass ? `<span class="line-relic-lane-mark ${activeRelicGuidance.direction}" aria-hidden="true"></span>` : ""}
