@@ -7691,6 +7691,13 @@ for (const viewport of [
 
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await page.emulateMedia({ reducedMotion: reducedMotion ? "reduce" : "no-preference" });
+      await page.addInitScript((key) => {
+        const seededState = sessionStorage.getItem("bloom-objective-accessibility-seed");
+        if (seededState) {
+          localStorage.setItem(key, seededState);
+          sessionStorage.removeItem("bloom-objective-accessibility-seed");
+        }
+      }, SAVE_KEY);
       await page.goto(`${BASE_URL}?objective-accessibility=${viewport.label}-${reducedMotion ? "reduced" : "full"}`, {
         waitUntil: "domcontentloaded"
       });
@@ -7701,22 +7708,19 @@ for (const viewport of [
           : stateCase.state.currentRound === 2
             ? { roundOneRestored: true, coins: 20 }
             : { coins: 0 };
-        await page.evaluate(({ key, state }) => {
-          localStorage.setItem(key, JSON.stringify(state));
+        await page.evaluate((state) => {
+          sessionStorage.setItem("bloom-objective-accessibility-seed", JSON.stringify(state));
         }, {
-          key: SAVE_KEY,
-          state: {
-            focusedEconomyVersion: FOCUSED_ECONOMY_VERSION,
-            roundComplete: false,
-            hasMadeValidMove: stateCase.state.counts.some((count) => count > 0),
-            tutorialSkipped: true,
-            tutorialActive: false,
-            blackCandleLessonComplete: true,
-            cursedThorns: [],
-            clearedCursedThorns: 0,
-            ...roundOwnership,
-            ...stateCase.state
-          }
+          focusedEconomyVersion: FOCUSED_ECONOMY_VERSION,
+          roundComplete: false,
+          hasMadeValidMove: stateCase.state.counts.some((count) => count > 0),
+          tutorialSkipped: true,
+          tutorialActive: false,
+          blackCandleLessonComplete: true,
+          cursedThorns: [],
+          clearedCursedThorns: 0,
+          ...roundOwnership,
+          ...stateCase.state
         });
 
         for (let reload = 0; reload < 2; reload += 1) {
