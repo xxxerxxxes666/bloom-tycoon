@@ -1463,35 +1463,48 @@
 
     .live-bouquet-assembly[data-high-count="true"]::after {
       bottom: 2px;
-      width: 116px;
-      height: 39px;
+      width: 96px;
+      height: 38px;
       z-index: 1;
-      opacity: .68;
+      opacity: .78;
       background:
-        linear-gradient(112deg, #171109 0 13%, #725c3b 14% 35%, #302317 36% 50%, #7c6441 51% 72%, #171109 73% 100%),
-        radial-gradient(ellipse at 50% 20%, #ead99b3d 0 34%, #0000 67%);
+        radial-gradient(ellipse at 50% 20%, #f1dfa25c 0 20%, #0000 58%),
+        linear-gradient(112deg, #171109 0 10%, #8c7048 11% 43%, #3b2a1a 44% 50%, #96794d 51% 89%, #171109 90% 100%);
       clip-path: polygon(3% 3%, 28% 15%, 50% 31%, 72% 15%, 97% 3%, 79% 62%, 58% 100%, 42% 100%, 21% 62%);
     }
 
     .live-bouquet-assembly[data-high-count="true"]::before {
       bottom: 4px;
-      width: 58px;
-      height: 16px;
+      width: 68px;
+      height: 18px;
       border-radius: 42% 42% 30% 30%;
       clip-path: polygon(0 24%, 16% 3%, 50% 20%, 84% 3%, 100% 24%, 89% 78%, 50% 100%, 11% 78%);
     }
 
     .live-bouquet-assembly[data-high-count="true"] .live-bouquet-knot {
-      bottom: 1px;
-      width: 26px;
-      height: 14px;
+      bottom: 2px;
+      z-index: 66;
+      width: 44px;
+      height: 18px;
       transform: translateX(-50%);
       border-radius: 48%;
-      background: linear-gradient(90deg, #35100e, #9b422d 29%, #e0bd78 50%, #903829 71%, #2b0c0a);
+      border-width: 2px;
+      background:
+        radial-gradient(circle at 50% 32%, #f4d491 0 9%, #0000 31%),
+        linear-gradient(90deg, #35100e, #9b422d 27%, #e0bd78 50%, #903829 73%, #2b0c0a);
+      box-shadow: inset 0 0 6px #000, 0 2px 6px #000, 0 0 6px #d7b16d52;
     }
 
     .live-bouquet-assembly[data-high-count="true"] .live-bouquet-wrap-front {
-      display: none;
+      display: block;
+      bottom: -1px;
+      z-index: 64;
+      width: 82px;
+      height: 24px;
+      background:
+        radial-gradient(ellipse at 50% 10%, #e6c77d3d 0 16%, #0000 48%),
+        linear-gradient(104deg, #160e08 0 8%, #705a39 9% 47%, #342417 48% 52%, #7a613d 53% 91%, #160e08 92% 100%);
+      clip-path: polygon(3% 0, 97% 0, 78% 68%, 62% 100%, 38% 100%, 22% 68%);
     }
 
     .live-bouquet-assembly[data-high-count="true"] .live-bouquet-knot::before,
@@ -1503,6 +1516,7 @@
     .live-bouquet-assembly[data-high-count="true"] .live-bouquet-stem {
       z-index: 3;
       width: 3px;
+      bottom: 10px;
     }
 
     .live-bouquet-assembly[data-high-count="true"] .live-bouquet-stem[data-filled="false"] {
@@ -1526,8 +1540,8 @@
     .live-bouquet-assembly[data-high-count="true"] .live-bouquet-ingredient[data-slot-state="filled"]::before {
       inset: 14%;
       background: radial-gradient(circle, color-mix(in srgb, currentColor 44%, #fff0b4) 0 8%, currentColor 20%, #0000 64%);
-      box-shadow: 0 0 2px currentColor;
-      opacity: .16;
+      box-shadow: 0 0 1px currentColor;
+      opacity: .12;
       filter: none;
     }
 
@@ -1537,6 +1551,7 @@
         saturate(1.18)
         contrast(1.12)
         drop-shadow(0 1px 2px #000)
+        drop-shadow(0 0 2px #000)
         drop-shadow(0 0 1px currentColor);
     }
 
@@ -6989,10 +7004,10 @@
       filter:brightness(1.08) drop-shadow(0 3px 3px #000);
     }
     .crafted-bouquet[data-high-count="true"] .crafted-binding {
-      bottom:7px;
+      bottom:5px;
       z-index:70;
-      width:48px;
-      height:28px;
+      width:62px;
+      height:32px;
       border-width:2px;
       border-radius:48%;
       background:
@@ -7002,18 +7017,18 @@
     }
     .crafted-bouquet[data-high-count="true"] .crafted-binding::before,
     .crafted-bouquet[data-high-count="true"] .crafted-binding::after {
-      top:15px;
-      width:28px;
-      height:23px;
+      top:18px;
+      width:32px;
+      height:24px;
       background:linear-gradient(180deg,#9b422d,#401311);
       clip-path:polygon(0 0,100% 0,78% 100%,50% 75%,20% 100%);
     }
     .crafted-bouquet[data-high-count="true"] .crafted-binding::before {
-      left:-18px;
+      left:-20px;
       transform:rotate(18deg);
     }
     .crafted-bouquet[data-high-count="true"] .crafted-binding::after {
-      right:-18px;
+      right:-20px;
       transform:rotate(-18deg);
     }
     .crafted-bouquet[data-high-count="true"] .crafted-vine {
@@ -10429,7 +10444,8 @@
       const compact = total <= 16;
       const tiered = total >= 24;
       const desktopAltar = window.matchMedia("(min-width: 1180px)").matches;
-      const size = compact ? 42 : total <= 20 ? 31 : tiered ? 24 : 26;
+      const highCountTierSizes = [20, 21, 23, 24, 23, 20];
+      const size = compact ? 42 : total <= 20 ? 31 : tiered ? highCountTierSizes[crafted.tier] : 26;
       const highCountRows = tiered ? tieredBouquetRowCounts(total) : [];
       const highCountTierXOffsets = highCountRows.reduce((offsets, rowCount, tier) => {
         if (tier === 0) {
@@ -10464,25 +10480,29 @@
             ? [-36, -12, 12, 36][compactRowIndex]
             : Math.round((compactRowIndex - (compactRowCount - 1) / 2) * (total === 14 ? 27 : 34));
       const compactMobile = window.matchMedia("(max-width: 760px)").matches;
+      const highCountTierFanOffsets = [0, 0, 0, 0, 0, -4];
       const crownX = compact
         ? compactX
-        : Math.round(crafted.x * (tiered ? 1.1 : 1.03)
-          + (tiered ? (highCountTierXOffsets[crafted.tier] || 0) - highCountXCenter : 0));
+        : Math.round(crafted.x * (tiered ? .74 : 1.03)
+          + (tiered
+            ? ((highCountTierXOffsets[crafted.tier] || 0) - highCountXCenter) * .55
+              + highCountTierFanOffsets[crafted.tier]
+            : 0));
       const layout = {
-        x: desktopAltar && !compact ? Math.round(crownX * 1.12) : crownX,
+        x: desktopAltar && !compact && !tiered ? Math.round(crownX * 1.12) : crownX,
         y: compact
           ? (compactMobile ? [22, 40, 58] : [22, 40, 58])[compactRow]
           : tiered
-            ? [14, 25, 36, 47, 58, 68][crafted.tier]
+            ? [13, 26, 38, 50, 61, 70][crafted.tier]
             : Math.round(5 + crafted.y * .65 - (crafted.y > 75 ? 3 : 0)),
         size,
         rot: compact
           ? [-5, 4, -3, 5, -4, 3][index % 6]
-          : tiered ? [-9, 6, -4, 8, -6, 3][index % 6] : crafted.rot,
+          : tiered ? [-6, 5, -4, 6, -5, 3][index % 6] : crafted.rot,
         z: crafted.z,
         tier: crafted.tier
       };
-      const knotY = 75;
+      const knotY = tiered ? 72 : 75;
       const stemTargetY = layout.y + layout.size * .08;
       const stemRise = Math.max(10, knotY - stemTargetY);
       return {

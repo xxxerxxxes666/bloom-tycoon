@@ -1,5 +1,14 @@
 # Codex Build Notes
 
+## 2026-08-01 made Bloodroot Compact read as one hand-tied bouquet
+
+- Player-visible result: Round 3's 27-unit Bloodroot Compact now grows as one compact six-tier crown centered over a conspicuous shared paper collar and dominant knot. The prior full receiver spread the flowers into a shallow hedge/tray; the new silhouette preserves every Bloodroot/Sol Rot unit while making the gathered stems, shared binding, and crown depth legible at normal desktop and exact-mobile scale.
+- Scope: only the existing deterministic high-count composition geometry and material treatment changed. Stable species/unit/slot ordering, objective counts, saves, rewards, economy, moves, RNG, board geometry, controls, rounds, and small-order Round 1 composition remain unchanged. The permanent payoff contract now covers a complete 29/29 Round 2 fixture plus compactness, crown depth, collar, knot, support, containment, and identity boundaries.
+- Verification: `python3 scripts/verify_project.py`, `python3 scripts/verify_html_match_shapes.py`, changed-spec syntax, and `git diff --check` pass. The complete payoff/physical-bouquet matrix passes `14/14` serially across desktop, exact `390x844` mobile, full/reduced motion, empty/partial/mixed/near/full high-count states, completion/handoff, spend interruption, two reloads, and the natural Round 1 Black Candle baseline.
+- Visual evidence: before/after captures in `work/bloodroot-compact-{before,after}-{desktop,mobile390}-full27.png` show the full crown changing from a wide shallow strip into a compact tied object. The final eight-state desktop/mobile sets cover empty, one-species partial, mixed, near-full, full, binding, actionable ceremony, and post-spend continuity.
+- Security: the packaged added-line scanner reviewed 117 production/test additions with zero credential, tracker, network-capability, or private-IP hits. No dependencies, network calls, analytics, backend, permissions, debug hooks, or secrets were added.
+- Regression ledger: the unrelated legacy Pass 3 journey remains non-green in desktop/mobile because it still expects the pre-`0d6a966` Cursed Thorn accessibility label (`Cursed Thorn goal, … cleared`); current production intentionally exposes the concise accepted label (`Cursed Thorn, …`) and this slice does not alter that surface. The changed-surface matrix is green; the legacy broad run is not represented as green.
+
 ## 2026-08-01 made earned bouquet growth visually authoritative
 
 - Player-visible result: the live physical bouquet now begins as one wrapped receiver with fourteen small, recessed oxidized sockets rather than a crown of nearly-owned buds. The real opening match replaces three latent positions with three large candlelit Thorn Roses, making `0/14 → 3/14` legible from the object itself while preserving the exact completed bouquet and ceremony handoff.

@@ -497,6 +497,7 @@ async function activeBouquetAssemblyState(page) {
           gainReceiver: ingredient.dataset.gainReceiver === "true",
           nextObjective: ingredient.dataset.nextObjective === "true",
           opacity: Number(style.opacity),
+          zIndex: Number(style.zIndex || 0),
           transform: style.transform,
           left: rect.left,
           top: rect.top,
@@ -557,13 +558,23 @@ async function activeBouquetAssemblyState(page) {
     const board = document.querySelector(".board")?.getBoundingClientRect();
     const knotRect = assembly?.querySelector(".live-bouquet-knot")?.getBoundingClientRect();
     const frontWrapRect = assembly?.querySelector(".live-bouquet-wrap-front")?.getBoundingClientRect();
+    const knotStyle = assembly?.querySelector(".live-bouquet-knot")
+      ? getComputedStyle(assembly.querySelector(".live-bouquet-knot"))
+      : null;
+    const frontWrapStyle = assembly?.querySelector(".live-bouquet-wrap-front")
+      ? getComputedStyle(assembly.querySelector(".live-bouquet-wrap-front"))
+      : null;
     const thorn = assembly?.querySelector(".live-bouquet-thorn");
     const thornRect = thorn?.getBoundingClientRect();
     const stemDetails = Array.from(assembly?.querySelectorAll(".live-bouquet-stem") || []).map((stem) => {
-      const origin = getComputedStyle(stem).transformOrigin.split(" ").map(Number.parseFloat);
+      const stemStyle = getComputedStyle(stem);
+      const origin = stemStyle.transformOrigin.split(" ").map(Number.parseFloat);
       return {
         anchorX: (rect?.left || 0) + stem.offsetLeft + (origin[0] || 0),
-        anchorY: (rect?.top || 0) + stem.offsetTop + (origin[1] || 0)
+        anchorY: (rect?.top || 0) + stem.offsetTop + (origin[1] || 0),
+        paintedWidth: Number.parseFloat(stemStyle.width),
+        opacity: Number(stemStyle.opacity),
+        filled: stem.dataset.filled === "true"
       };
     });
     return {
@@ -594,7 +605,8 @@ async function activeBouquetAssemblyState(page) {
         centerX: knotRect.left + knotRect.width / 2,
         centerY: knotRect.top + knotRect.height / 2,
         width: knotRect.width,
-        height: knotRect.height
+        height: knotRect.height,
+        zIndex: Number(knotStyle?.zIndex || 0)
       } : null,
       frontWrap: frontWrapRect ? {
         left: frontWrapRect.left,
@@ -604,7 +616,8 @@ async function activeBouquetAssemblyState(page) {
         centerX: frontWrapRect.left + frontWrapRect.width / 2,
         centerY: frontWrapRect.top + frontWrapRect.height / 2,
         width: frontWrapRect.width,
-        height: frontWrapRect.height
+        height: frontWrapRect.height,
+        zIndex: Number(frontWrapStyle?.zIndex || 0)
       } : null,
       thorn: thornRect ? {
         progress: thorn.dataset.thornProgress || "",
@@ -741,13 +754,16 @@ function expectPhysicalBouquetGeometry(assembly, composition) {
   const crownLeft = Math.min(...assembly.ingredients.map((ingredient) => ingredient.left));
   const crownRight = Math.max(...assembly.ingredients.map((ingredient) => ingredient.right));
   const crownWidth = crownRight - crownLeft;
+  const crownTop = Math.min(...assembly.ingredients.map((ingredient) => ingredient.top));
+  const crownBottom = Math.max(...assembly.ingredients.map((ingredient) => ingredient.bottom));
+  const crownHeight = crownBottom - crownTop;
   const crownYSpread = Math.max(...assembly.ingredients.map((ingredient) => ingredient.centerY))
     - Math.min(...assembly.ingredients.map((ingredient) => ingredient.centerY));
   const overlap = maxIngredientOverlapRatio(assembly.ingredients);
   expect(crownWidth, "all heads form a compact crown instead of spanning the rail")
     .toBeLessThan(assembly.width * .78);
   expect(crownWidth, "compact crown remains visually substantial")
-    .toBeGreaterThan(assembly.width * (composition.length <= 16 ? .42 : .52));
+    .toBeGreaterThan(assembly.width * (composition.length <= 16 ? .42 : composition.length >= 24 ? .34 : .52));
   expect(new Set(assembly.ingredients.map((ingredient) => ingredient.crownTier)).size,
     "bouquet crown retains its authored depth tiers").toBeGreaterThanOrEqual(3);
   expect(crownYSpread, "bouquet crown has materially separated tiers instead of a flat row")
@@ -766,6 +782,21 @@ function expectPhysicalBouquetGeometry(assembly, composition) {
       "high-count crown resolves into six visible depth tiers").toBe(6);
     expect(crownYSpread, "high-count crown has enough vertical authority to avoid a hedge silhouette")
       .toBeGreaterThanOrEqual(50);
+    expect(crownWidth, "high-count crown is compact enough to read as one hand-tied object")
+      .toBeLessThanOrEqual(assembly.width * .5);
+    expect(crownHeight / crownWidth, "high-count silhouette has bouquet depth instead of tray proportions")
+      .toBeGreaterThanOrEqual(.48);
+    expect(assembly.frontWrap, "high-count bouquets retain one foreground paper collar").not.toBeNull();
+    expect(assembly.frontWrap.width, "high-count paper collar is conspicuous at normal scale")
+      .toBeGreaterThanOrEqual(80);
+    expect(assembly.frontWrap.height, "high-count paper collar has visible depth beneath the crown")
+      .toBeGreaterThanOrEqual(23);
+    expect(assembly.frontWrap.left, "high-count paper collar stays inside the receiver")
+      .toBeGreaterThanOrEqual(assembly.left);
+    expect(assembly.frontWrap.right, "high-count paper collar stays inside the receiver")
+      .toBeLessThanOrEqual(assembly.right);
+    expect(assembly.frontWrap.zIndex, "high-count paper collar gathers the lowest crown tier in front")
+      .toBeGreaterThan(Math.max(...assembly.ingredients.map((ingredient) => ingredient.zIndex)));
   }
   expect(overlap.maximum, "bouquet heads cluster with natural overlap").toBeGreaterThan(.08);
   expect(overlap.maximum, `ingredient heads remain individually legible; closest slots ${overlap.pair.join("/")}`)
@@ -868,6 +899,20 @@ function expectPhysicalBouquetGeometry(assembly, composition) {
   }
   expect(assembly.knot, "one binding knot remains visible").not.toBeNull();
   expect(assembly.knot.width, "binding knot remains materially legible").toBeGreaterThan(19);
+  if (composition.length >= 24) {
+    expect(assembly.knot.width, "high-count knot dominates the converged support bundle")
+      .toBeGreaterThanOrEqual(44);
+    expect(assembly.knot.height, "high-count knot remains conspicuous below the crown")
+      .toBeGreaterThanOrEqual(18);
+    expect(Math.abs(assembly.knot.centerX - (assembly.left + assembly.right) / 2),
+      "high-count crown binds on the receiver centerline").toBeLessThanOrEqual(1);
+    expect(assembly.knot.zIndex, "high-count knot paints above every crown tier")
+      .toBeGreaterThan(Math.max(...assembly.ingredients.map((ingredient) => ingredient.zIndex)));
+    expect(Math.min(...assembly.stemDetails.map((stem) => stem.paintedWidth)),
+      "every high-count unit keeps a visible physical support").toBeGreaterThanOrEqual(3);
+    expect(assembly.stemDetails.filter((stem) => stem.filled).every((stem) => stem.opacity >= .9),
+      "earned high-count supports remain visible into the shared binding").toBe(true);
+  }
   expect(assembly.knot.centerY, "binding knot sits below the crown")
     .toBeGreaterThan(assembly.ingredients.reduce((sum, ingredient) => sum + ingredient.centerY, 0) / composition.length + 14);
   const stemXSpread = Math.max(...assembly.stemDetails.map((stem) => stem.anchorX))
@@ -1341,12 +1386,12 @@ async function expectCeremony(page, expectedButton, screenshotPath, expectedGuid
       .toBeGreaterThanOrEqual(278);
     expect(contract.craftedPhysicalGeometry.bouquet.height, "high-count object retains crown-to-knot depth")
       .toBeGreaterThanOrEqual(208);
-    expect(contract.craftedBinding.width, "one compact shared knot replaces a tray-like binding bar")
-      .toBeGreaterThanOrEqual(48);
+    expect(contract.craftedBinding.width, "one dominant shared knot replaces a tray-like binding bar")
+      .toBeGreaterThanOrEqual(60);
     expect(contract.craftedBinding.width, "the central knot remains compact")
-      .toBeLessThanOrEqual(54);
+      .toBeLessThanOrEqual(66);
     expect(contract.craftedBinding.height, "the central knot is materially visible")
-      .toBeGreaterThanOrEqual(28);
+      .toBeGreaterThanOrEqual(32);
     expect(contract.craftedBinding.borderRadius, "the shared anchor reads as a knot rather than a tray")
       .not.toBe("0px");
     expect(contract.craftedBinding.zIndex, "the shared knot paints above every crown tier")
@@ -2755,6 +2800,19 @@ test("nearly complete and mixed Round 2/3 progress stays legible in the physical
       reloadTwice: true
     },
     {
+      label: "round2-full-29-progress",
+      round: 2,
+      counts: [0, 0, 10, 0, 9, 7],
+      clearedCursedThorns: 3,
+      cursedThorns: [],
+      expectedProgress: "29/29",
+      expectedState: "complete",
+      composition: ROUND_TWO_COMPOSITION,
+      species: [2, 4, 5],
+      earnedHeads: { 2: 10, 4: 9, 5: 7 },
+      thornProgress: "3/3"
+    },
+    {
       label: "round3-empty",
       round: 3,
       counts: [0, 0, 0, 0, 0, 0],
@@ -2870,7 +2928,7 @@ test("nearly complete and mixed Round 2/3 progress stays legible in the physical
       if (fixture.composition.length >= 24) {
         expect(minimumCenterDistance(assembly.ingredients),
           `${fixture.label} keeps each high-count unit physically separable at normal scale`)
-          .toBeGreaterThanOrEqual(15);
+          .toBeGreaterThanOrEqual(12);
         const earnedIngredients = assembly.ingredients.filter((ingredient) => ingredient.slotProgress > 0);
         expect(earnedIngredients.every((ingredient) => ingredient.headAuraOpacity <= .16),
           `${fixture.label} per-head aura remains subordinate to painted flower silhouettes`).toBe(true);
