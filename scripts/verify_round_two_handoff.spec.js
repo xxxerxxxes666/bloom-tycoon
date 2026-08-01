@@ -74,7 +74,7 @@ async function activatePair(page, pair, input) {
     await page.keyboard.press("Enter");
     await expect(tileAt(pair[0])).toHaveClass(/\bsel\b/);
     await tileAt(pair[1]).focus();
-    await page.keyboard.press("Space");
+    await page.keyboard.press("Enter");
     return;
   }
   await tileAt(pair[0]).click();
@@ -783,7 +783,10 @@ function expectReadyHandoff(report, testCase, label) {
   expect(report.forbiddenGenericNarration, `${label} no generic competing narration`).toBe(false);
   if (testCase.mobile) {
     expect(report.greenhouseText, `${label} compact owned restoration consequence`).toContain("RESTORED");
-    expect(report.greenhouseText, `${label} restored pane consequence`).toContain("First panes restored");
+    expect(report.greenhouseText, `${label} truthful owned stage`).toContain("Owned 1/3");
+    expect(report.greenhouseText, `${label} next spend consequence`).toContain("Next: Upgrade Greenhouse");
+    expect(report.greenhouseText, `${label} retired atmospheric phrase stays absent`)
+      .not.toContain("First panes restored");
     expect(report.mobileIdentityVisible, `${label} restored greenhouse image remains visible`).toBe(true);
     expect(report.mobileIdentityStage, `${label} visual stage follows ownership`).toBe("restored");
     expect(report.mobileIdentitySrc, `${label} same restored greenhouse asset`).toContain("first_greenhouse_restored.jpg");
