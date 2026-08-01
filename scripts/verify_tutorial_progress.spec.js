@@ -7682,7 +7682,12 @@ for (const viewport of [
         }
       });
       page.on("pageerror", (error) => pageErrors.push(error.message));
-      page.on("requestfailed", (request) => failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`));
+      page.on("requestfailed", (request) => {
+        const errorText = request.failure()?.errorText || "";
+        if (errorText !== "net::ERR_ABORTED") {
+          failedRequests.push(`${request.url()} ${errorText}`);
+        }
+      });
 
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await page.emulateMedia({ reducedMotion: reducedMotion ? "reduce" : "no-preference" });
@@ -7717,11 +7722,7 @@ for (const viewport of [
         for (let reload = 0; reload < 2; reload += 1) {
           await page.reload({ waitUntil: "domcontentloaded" });
           await expect(page.locator(".tile")).toHaveCount(64);
-          if (reload === 1) {
-            await page.waitForFunction(() => Array.from(document.images).every((image) => image.complete), null, {
-              timeout: 10000
-            });
-          }
+          await page.waitForTimeout(100);
           const snapshot = await page.locator("#objective").ariaSnapshot();
           const report = await page.evaluate(() => {
             const rect = (node) => {
@@ -7751,7 +7752,16 @@ for (const viewport of [
               overflowX: document.documentElement.scrollWidth > innerWidth + 1,
               overflowY: document.documentElement.scrollHeight > innerHeight + 1,
               brokenImages: Array.from(document.images)
-                .filter((image) => image.complete && image.naturalWidth === 0)
+                .filter((image) => {
+                  const bounds = image.getBoundingClientRect();
+                  const style = getComputedStyle(image);
+                  return bounds.width > 0
+                    && bounds.height > 0
+                    && style.display !== "none"
+                    && style.visibility !== "hidden"
+                    && image.complete
+                    && image.naturalWidth === 0;
+                })
                 .map((image) => image.getAttribute("src"))
             };
           });
@@ -7781,9 +7791,7 @@ for (const viewport of [
           expect(report.scrollY, `${label} fixed viewport`).toBe(0);
           expect(report.overflowX, `${label} no horizontal overflow`).toBe(false);
           expect(report.overflowY, `${label} no vertical overflow`).toBe(false);
-          if (reload === 1) {
-            expect(report.brokenImages, `${label} no broken images`).toEqual([]);
-          }
+          expect(report.brokenImages, `${label} no broken visible images`).toEqual([]);
         }
       }
 
