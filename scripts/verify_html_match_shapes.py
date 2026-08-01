@@ -328,6 +328,7 @@ def verify_source_hooks():
         "function pulseMoveUrgency()",
         'aria-live="${moveUrgencyPulseActive && lowMoves ? "polite" : "off"}"',
         "body.round-one-active .objective-target",
+        "max-width:378px; gap:1.5px; padding:5px;",
         "function firstSwapCueText(a, b)",
         "function primeFocusedFirstMoveHint",
         "Crack the marked thorns",

@@ -3784,6 +3784,203 @@ test("exact-mobile Help owns a complete replay touch target across the first thr
   }
 });
 
+test("every exact-mobile altar tile owns a distinct 44px touch target", async ({ browser }) => {
+  test.setTimeout(180000);
+  const touchPoints = [
+    ["top-left", (box) => [box.x + 2, box.y + 2]],
+    ["top", (box) => [box.x + box.width / 2, box.y + 2]],
+    ["top-right", (box) => [box.x + box.width - 2, box.y + 2]],
+    ["right", (box) => [box.x + box.width - 2, box.y + box.height / 2]],
+    ["bottom-right", (box) => [box.x + box.width - 2, box.y + box.height - 2]],
+    ["bottom", (box) => [box.x + box.width / 2, box.y + box.height - 2]],
+    ["bottom-left", (box) => [box.x + 2, box.y + box.height - 2]],
+    ["left", (box) => [box.x + 2, box.y + box.height / 2]]
+  ];
+
+  for (const reducedMotion of [false, true]) {
+    const context = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      hasTouch: true,
+      isMobile: true,
+      reducedMotion: reducedMotion ? "reduce" : "no-preference"
+    });
+    const page = await context.newPage();
+    const consoleMessages = [];
+    const pageErrors = [];
+    const failedRequests = [];
+    page.on("console", (message) => {
+      if (message.type() === "error" || message.type() === "warning") {
+        consoleMessages.push(`${message.type()}: ${message.text()}`);
+      }
+    });
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    page.on("requestfailed", (request) => {
+      failedRequests.push(`${request.url()} ${request.failure()?.errorText || ""}`);
+    });
+
+    const label = reducedMotion ? "reduced" : "full";
+    try {
+      await seedDeterministicMath(page, `mobile-tile-touch-${label}`);
+      await openFreshNoReview(page, `mobile-tile-touch-${label}`);
+      await expect(page.locator("#tutorialPanel")).toBeVisible();
+      await page.locator("#tutorialSkipBtn").tap();
+      const pair = await hintedPair(page);
+      const source = page.locator(`.tile[data-x="${pair[0].x}"][data-y="${pair[0].y}"]`);
+      const destination = page.locator(`.tile[data-x="${pair[1].x}"][data-y="${pair[1].y}"]`);
+      const ordinary = page.locator("#tile-0-0");
+      const saved = await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY);
+      const baseline = await guidedRoundOneState(page, `${label} mobile touch baseline`);
+      const baselineBoard = baseline.boardSerialization;
+
+      const geometry = await page.evaluate(() => {
+        const tiles = Array.from(document.querySelectorAll("#board .tile"));
+        const rects = tiles.map((tile) => {
+          const rect = tile.getBoundingClientRect();
+          const probes = [
+            [rect.left + 2, rect.top + 2],
+            [rect.left + rect.width / 2, rect.top + 2],
+            [rect.right - 2, rect.top + 2],
+            [rect.right - 2, rect.top + rect.height / 2],
+            [rect.right - 2, rect.bottom - 2],
+            [rect.left + rect.width / 2, rect.bottom - 2],
+            [rect.left + 2, rect.bottom - 2],
+            [rect.left + 2, rect.top + rect.height / 2]
+          ];
+          return {
+            id: tile.id,
+            width: rect.width,
+            height: rect.height,
+            probes: probes.map(([x, y]) => {
+              const owner = document.elementFromPoint(x, y);
+              return Boolean(owner && (owner === tile || tile.contains(owner)));
+            })
+          };
+        });
+        const board = document.querySelector("#board").getBoundingClientRect();
+        return {
+          board: { left: board.left, top: board.top, right: board.right, bottom: board.bottom, width: board.width, height: board.height },
+          tileCount: rects.length,
+          rows: new Set(tiles.map((tile) => tile.dataset.y)).size,
+          minimumWidth: Math.min(...rects.map((rect) => rect.width)),
+          minimumHeight: Math.min(...rects.map((rect) => rect.height)),
+          unownedProbes: rects.filter((rect) => rect.probes.some((owned) => !owned)).map((rect) => rect.id),
+          scrollY,
+          overflowX: document.documentElement.scrollWidth > innerWidth + 1,
+          overflowY: document.documentElement.scrollHeight > innerHeight + 1
+        };
+      });
+      expect(geometry.tileCount, `${label} tile count`).toBe(64);
+      expect(geometry.rows, `${label} row count`).toBe(8);
+      expect(geometry.minimumWidth, `${label} minimum tile hit width`).toBeGreaterThanOrEqual(44);
+      expect(geometry.minimumHeight, `${label} minimum tile hit height`).toBeGreaterThanOrEqual(44);
+      expect(geometry.unownedProbes, `${label} every inset point belongs to its tile`).toEqual([]);
+      expect(geometry.board.width, `${label} altar width`).toBeCloseTo(378, 1);
+      expect(geometry.board.height, `${label} altar height`).toBeCloseTo(378, 1);
+      expect(geometry.board.bottom, `${label} altar stays in the exact viewport`).toBeLessThanOrEqual(844);
+      expect(geometry.scrollY, `${label} fixed viewport`).toBe(0);
+      expect(geometry.overflowX, `${label} no horizontal overflow`).toBe(false);
+      expect(geometry.overflowY, `${label} no vertical overflow`).toBe(false);
+
+      for (const round of [2, 3]) {
+        await page.evaluate(({ key, savedState, round }) => {
+          const state = JSON.parse(savedState);
+          Object.assign(state, {
+            currentRound: round,
+            roundComplete: false,
+            moves: round === 2 ? 9 : 8,
+            counts: [0, 0, 0, 0, 0, 0],
+            roundOneRestored: true,
+            roundTwoGreenhouseUpgraded: round === 3,
+            roundThreeConservatoryRaised: false,
+            hasMadeValidMove: false,
+            tutorialActive: false,
+            tutorialSkipped: true,
+            blackCandleLessonComplete: true,
+            armedLineRelic: null,
+            cursedThorns: [],
+            clearedCursedThorns: 0
+          });
+          localStorage.setItem(key, JSON.stringify(state));
+        }, { key: SAVE_KEY, savedState: saved, round });
+        await page.reload({ waitUntil: "networkidle" });
+        const roundGeometry = await page.evaluate(() => {
+          const tiles = Array.from(document.querySelectorAll("#board .tile"));
+          const rects = tiles.map((tile) => tile.getBoundingClientRect());
+          const board = document.querySelector("#board").getBoundingClientRect();
+          return {
+            tiles: tiles.length,
+            rows: new Set(tiles.map((tile) => tile.dataset.y)).size,
+            minimumWidth: Math.min(...rects.map((rect) => rect.width)),
+            minimumHeight: Math.min(...rects.map((rect) => rect.height)),
+            boardWidth: board.width,
+            boardHeight: board.height,
+            boardBottom: board.bottom,
+            scrollY,
+            overflowX: document.documentElement.scrollWidth > innerWidth + 1
+          };
+        });
+        expect(roundGeometry.tiles, `${label} Round ${round} tile count`).toBe(64);
+        expect(roundGeometry.rows, `${label} Round ${round} rows`).toBe(8);
+        expect(roundGeometry.minimumWidth, `${label} Round ${round} hit width`).toBeGreaterThanOrEqual(44);
+        expect(roundGeometry.minimumHeight, `${label} Round ${round} hit height`).toBeGreaterThanOrEqual(44);
+        expect(roundGeometry.boardWidth, `${label} Round ${round} altar width`).toBeCloseTo(378, 1);
+        expect(roundGeometry.boardHeight, `${label} Round ${round} altar height`).toBeCloseTo(378, 1);
+        expect(roundGeometry.boardBottom, `${label} Round ${round} altar in viewport`).toBeLessThanOrEqual(844);
+        expect(roundGeometry.scrollY, `${label} Round ${round} fixed viewport`).toBe(0);
+        expect(roundGeometry.overflowX, `${label} Round ${round} no overflow`).toBe(false);
+      }
+      await page.evaluate(({ key, state }) => localStorage.setItem(key, state), { key: SAVE_KEY, state: saved });
+      await page.reload({ waitUntil: "networkidle" });
+
+      for (const [tileLabel, tile] of [["guided source", source], ["ordinary tile", ordinary]]) {
+        for (const [pointLabel, pointFor] of touchPoints) {
+          await page.evaluate(({ key, state }) => localStorage.setItem(key, state), {
+            key: SAVE_KEY,
+            state: saved
+          });
+          await page.reload({ waitUntil: "networkidle" });
+          const box = await tile.boundingBox();
+          const [x, y] = pointFor(box);
+          await page.touchscreen.tap(x, y);
+          await expect(tile, `${label} ${tileLabel} ${pointLabel} selection`).toHaveClass(/\bsel\b/);
+          await expect(page.locator("#board .tile.sel"), `${label} ${tileLabel} ${pointLabel} single selection`)
+            .toHaveCount(1);
+          const selected = await guidedRoundOneState(page, `${label} ${tileLabel} ${pointLabel}`);
+          expect(selected.moves, `${label} ${tileLabel} ${pointLabel} spends no move`).toBe(baseline.moves);
+          expect(selected.counts, `${label} ${tileLabel} ${pointLabel} changes no objective`).toEqual(baseline.counts);
+          expect(selected.boardSerialization, `${label} ${tileLabel} ${pointLabel} changes no flower`).toBe(baselineBoard);
+        }
+      }
+
+      await page.evaluate(({ key, state }) => localStorage.setItem(key, state), { key: SAVE_KEY, state: saved });
+      await page.reload({ waitUntil: "networkidle" });
+      const sourceBox = await source.boundingBox();
+      const destinationBox = await destination.boundingBox();
+      const [sourceX, sourceY] = touchPoints[0][1](sourceBox);
+      const [destinationX, destinationY] = touchPoints[4][1](destinationBox);
+      await page.touchscreen.tap(sourceX, sourceY);
+      await expect(source).toHaveClass(/\bsel\b/);
+      await page.touchscreen.tap(destinationX, destinationY);
+      await expect.poll(async () => (await guidedRoundOneState(page, `${label} guided commit`)).moves)
+        .toBe(baseline.moves - 1);
+      await waitForSettledBoard(page);
+      const committed = await guidedRoundOneState(page, `${label} guided settled`);
+      expect(committed.counts[5], `${label} guided edge taps harvest once`).toBe(3);
+      expect(committed.tiles, `${label} post-touch tile count`).toBe(64);
+      expect(committed.rows, `${label} post-touch row count`).toBe(8);
+      expect(committed.overflowX, `${label} post-touch overflow`).toBe(false);
+      expect(committed.brokenImages, `${label} post-touch images`).toEqual([]);
+      await page.screenshot({ path: `work/mobile-tile-touch-${label}.png`, fullPage: true });
+
+      expect(consoleMessages).toEqual([]);
+      expect(pageErrors).toEqual([]);
+      expect(failedRequests).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  }
+});
+
 test("Round 1 agency retires and restores guidance across real input boundaries", async ({ browser }) => {
   const cases = [
     { label: "desktop-pointer", viewport: { width: 1280, height: 720 }, input: "pointer" },

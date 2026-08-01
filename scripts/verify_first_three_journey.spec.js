@@ -1144,8 +1144,10 @@ async function expectEligibleFinalHarvest(page, round, label) {
   if (state.viewportWidth === 390) {
     expect(state.boardBottom, `${label} keeps every row in the exact mobile viewport`)
       .toBeLessThanOrEqual(state.viewportHeight);
-    expect(state.minimumTileWidth, `${label} mobile tile hit width stays stable`).toBeGreaterThanOrEqual(40);
-    expect(state.minimumTileHeight, `${label} mobile tile hit height stays stable`).toBeGreaterThanOrEqual(40);
+    expect(state.minimumTileWidth, `${label} mobile tile hit width meets the primary-control target`)
+      .toBeGreaterThanOrEqual(44);
+    expect(state.minimumTileHeight, `${label} mobile tile hit height meets the primary-control target`)
+      .toBeGreaterThanOrEqual(44);
   }
   expect(state.brokenImages, `${label} has no broken images`).toEqual([]);
   expect(state.liveRegionOwners, `${label} has exactly one visible narrator`).toHaveLength(1);
@@ -2206,6 +2208,10 @@ async function assertActiveBoard(page, mobile) {
   if (mobile) {
     expect(state.ritualLogVisible, "active mobile ritual log hidden").toBe(false);
     expect(state.boardBottom, "exact mobile board stays in first viewport").toBeLessThanOrEqual(844);
+    expect(state.minimumTileWidth, "every exact-mobile tile owns a 44px hit width")
+      .toBeGreaterThanOrEqual(44);
+    expect(state.minimumTileHeight, "every exact-mobile tile owns a 44px hit height")
+      .toBeGreaterThanOrEqual(44);
   }
 }
 
