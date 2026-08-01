@@ -12478,6 +12478,19 @@
       }
     }
 
+    function isUntouchedRoundTwoThornLessonAuthority(plan = activeRoundPlan()) {
+      return plan.round === 2
+        && isRestoredNextOrderFocus()
+        && !hasMadeValidMove
+        && moves === plan.moves
+        && thornGoalProgress(plan) === 0
+        && !armedLineRelic
+        && !isBouquetFailed(plan)
+        && !isResolving
+        && !selected
+        && !roundComplete;
+    }
+
     function isRoundTwoThornLessonEligible(
       { allowPartialProgress = false } = {},
       plan = activeRoundPlan()
@@ -19398,6 +19411,10 @@
     }
     ensureCursedThornsForPlan(activeRoundPlan());
     roundOneSecondTargetDiscoveryActive = isRoundOneSecondTargetAuthorityReady();
+    if (isUntouchedRoundTwoThornLessonAuthority()) {
+      tutorialSkipped = false;
+      tutorialActive = true;
+    }
     if (isRoundTwoThornLessonEligible({ allowPartialProgress: true })) {
       restoreAuthoritativeRoundTwoThornLesson({
         resetSelection: true,

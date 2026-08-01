@@ -1,5 +1,12 @@
 # Codex Build Notes
 
+## 2026-08-01 restored the untouched Thorn lesson after reload
+
+- Player-visible result: reloading the untouched Moonlit Wreath lesson now returns keyboard and screen-reader control to its visible authored source, `tile-1-2`, instead of leaving focus on the page body while an unrelated socket remained the board's roving entry. The exact `tile-1-2` to `tile-1-3` Thorn guide, `Match beside the Thorn.` copy, spatial accessible names, and three blocker targets remain unchanged.
+- Scope: startup derives one narrow authority from the existing saved Round 2 state: full nine-move budget, zero flower/Thorn progress, no valid move, restored greenhouse handoff, unfinished order, and no relic, failure, resolution, or selection owner. It reactivates the existing lesson before the established restore routine seeds its pair and queued board focus. Skip/Help, ordinary settled reloads, armed Black Candle, Retry, and payoff owners retain precedence; no save field, visible UI, copy, timer, move, board, economy, round, or progression changed.
+- Permanent contract: the natural First Bouquet restoration and real Next Order route now covers desktop `1280x720` and exact `390x844`, full and reduced motion. Two consecutive untouched Round 2 reloads require `activeElement ===` the sole roving `tile-1-2`, destination `tile-1-3` at `tabindex=-1`, 64 unique coordinate-bearing tile names, no selection or save mutation, 64 tiles/eight rows, loaded images, and no overflow. Enter on the source plus Space on the destination must spend exactly one move, seal all three Thorns with localized CRACK/BREAK feedback, and return control.
+- Local verification: the focused four-viewport natural interruption matrix passes `4/4` in `2.2m`. Project/HTML verification, changed-spec and extracted inline JavaScript syntax checks, and `git diff --check` pass.
+
 ## 2026-08-01 made every board flower spatially distinct to assistive technology
 
 - Player-visible result: every live flower button now speaks its full flower name plus human-readable row and column, so repeated species can be distinguished during screen-reader, voice, and keyboard play. Guided source/destination, selected/refused, Cursed Thorn, final-harvest, and armed Black Candle meanings remain attached to that one spatial identity instead of being split across decorative child images.

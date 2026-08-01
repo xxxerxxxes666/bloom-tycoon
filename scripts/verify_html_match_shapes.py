@@ -555,6 +555,8 @@ def verify_source_hooks():
         'panel.classList.toggle("refused-tutorial", refusedTutorial)',
         ".tutorial-panel.refused-tutorial {",
         "function isAuthoritativeRoundTwoThornLesson",
+        "function isUntouchedRoundTwoThornLessonAuthority",
+        "if (isUntouchedRoundTwoThornLessonAuthority())",
         "function restoreAuthoritativeRoundTwoThornLesson",
         "if (isRoundTwoThornLessonEligible({ allowPartialProgress: true }))",
         "allowPartialProgress: true",

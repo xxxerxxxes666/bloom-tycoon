@@ -3,6 +3,39 @@ const { test, expect } = require("@playwright/test");
 const BASE_URL = process.env.BLOOM_TEST_URL
   || "http://127.0.0.1:4173/playable/midnight_bloom_prototype.html";
 const SAVE_KEY = "bloomTycoonPlayableStateV1";
+const NATURAL_UNTOUCHED_ROUND_TWO_SAVE = {
+  focusedEconomyVersion: 2,
+  board: [
+    [2, 3, 2, 1, 4, 5, 4, 4],
+    [3, 4, 5, 0, 0, 4, 1, 0],
+    [2, 3, 2, 4, 5, 2, 1, 3],
+    [5, 2, 0, 5, 4, 0, 2, 5],
+    [4, 5, 3, 5, 2, 4, 5, 2],
+    [5, 2, 2, 0, 4, 5, 3, 3],
+    [2, 4, 3, 2, 2, 1, 2, 2],
+    [0, 3, 0, 4, 4, 0, 5, 1]
+  ],
+  armedLineRelic: null,
+  moves: 9,
+  coins: 20,
+  counts: [0, 0, 0, 0, 0, 0],
+  cursedThorns: [
+    { x: 0, y: 1, hp: 1 },
+    { x: 1, y: 1, hp: 1 },
+    { x: 2, y: 1, hp: 1 }
+  ],
+  clearedCursedThorns: 0,
+  currentRound: 2,
+  roundComplete: false,
+  roundOneRestored: true,
+  roundTwoGreenhouseUpgraded: false,
+  roundThreeConservatoryRaised: false,
+  hasMadeValidMove: false,
+  restoredRoundTwoGuideMoves: 0,
+  tutorialSkipped: false,
+  tutorialActive: true,
+  blackCandleLessonComplete: true
+};
 
 const CASES = [
   { label: "desktop-pointer", viewport: { width: 1280, height: 720 }, input: "pointer", dismissKey: "Enter" },
@@ -41,7 +74,7 @@ async function activatePair(page, pair, input) {
     await page.keyboard.press("Enter");
     await expect(tileAt(pair[0])).toHaveClass(/\bsel\b/);
     await tileAt(pair[1]).focus();
-    await page.keyboard.press("Enter");
+    await page.keyboard.press("Space");
     return;
   }
   await tileAt(pair[0]).click();
@@ -831,6 +864,106 @@ function expectRecoveredThornLesson(report, testCase, expectedState, expectedGui
 }
 
 for (const testCase of CASES) {
+  test(`untouched Round 2 reload restores Thorn source ownership on ${testCase.label}`, async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: testCase.viewport,
+      hasTouch: Boolean(testCase.mobile),
+      isMobile: Boolean(testCase.mobile),
+      reducedMotion: testCase.reduced ? "reduce" : "no-preference"
+    });
+    const page = await context.newPage();
+    const browserErrors = [];
+    page.on("console", (message) => {
+      if (["warning", "error"].includes(message.type())) browserErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => browserErrors.push(error.message));
+
+    try {
+      await page.goto(`${BASE_URL}?untouched-round-two-focus=${testCase.label}`, {
+        waitUntil: "networkidle"
+      });
+      const untouchedSave = JSON.stringify(NATURAL_UNTOUCHED_ROUND_TWO_SAVE);
+      await page.evaluate(({ key, state }) => localStorage.setItem(key, state), {
+        key: SAVE_KEY,
+        state: untouchedSave
+      });
+      await page.reload({ waitUntil: "networkidle" });
+      await expect(page.locator(".tile.thorn-teach")).toHaveCount(2, { timeout: 7000 });
+      for (let reload = 1; reload <= 2; reload += 1) {
+        await page.reload({ waitUntil: "networkidle" });
+        await expect(page.locator(".tile.thorn-teach")).toHaveCount(2, { timeout: 7000 });
+        const report = await handoffReport(page);
+        expect(report.state, `${testCase.label} focused reload ${reload} untouched state`).toMatchObject({
+          currentRound: 2,
+          moves: 9,
+          counts: [0, 0, 0, 0, 0, 0],
+          clearedCursedThorns: 0,
+          hasMadeValidMove: false,
+          restoredRoundTwoGuideMoves: 0,
+          roundComplete: false
+        });
+        expectAuthoritativeThornLesson(report, `${testCase.label} focused reload ${reload}`);
+        expect(report.activeElementId, `${testCase.label} reload ${reload} active source`)
+          .toBe("tile-1-2");
+        expect(report.rovingTileIds, `${testCase.label} reload ${reload} sole roving source`)
+          .toEqual(["tile-1-2"]);
+        await expect(page.locator("#tile-1-2")).toHaveAttribute("tabindex", "0");
+        await expect(page.locator("#tile-1-3")).toHaveAttribute("tabindex", "-1");
+        expect(
+          await page.locator("#board .tile").evaluateAll((tiles) => (
+            new Set(tiles.map((tile) => tile.getAttribute("aria-label"))).size
+          )),
+          `${testCase.label} reload ${reload} unique accessible tile names`
+        ).toBe(64);
+        expect(report.tiles, `${testCase.label} reload ${reload} tiles`).toBe(64);
+        expect(report.rows, `${testCase.label} reload ${reload} rows`).toBe(8);
+        expect(report.completeRows, `${testCase.label} reload ${reload} complete rows`).toBe(8);
+        expect(report.completeColumns, `${testCase.label} reload ${reload} complete columns`).toBe(8);
+        expect(report.boardBottom, `${testCase.label} reload ${reload} first viewport`)
+          .toBeLessThanOrEqual(testCase.viewport.height);
+        expect(report.overflowX, `${testCase.label} reload ${reload} no overflow`).toBe(false);
+        expect(report.brokenImages, `${testCase.label} reload ${reload} loaded images`).toEqual([]);
+        expect(
+          await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY),
+          `${testCase.label} reload ${reload} exact save`
+        ).toBe(untouchedSave);
+        if (reload === 2) {
+          await page.screenshot({
+            path: `work/untouched-round-two-focus-${testCase.label}.png`
+          });
+        }
+      }
+
+      await startThornFeedbackRecorder(page);
+      await page.locator("#tile-1-2").press("Enter");
+      await expect(page.locator("#tile-1-2")).toHaveClass(/\bsel\b/);
+      await page.locator("#tile-1-3").press("Space");
+      await page.waitForFunction((key) => {
+        const state = JSON.parse(localStorage.getItem(key) || "{}");
+        return state.moves === 8
+          && state.clearedCursedThorns === 3
+          && document.querySelectorAll(".tile").length === 64
+          && document.querySelector("#board")?.getAttribute("aria-busy") === "false";
+      }, SAVE_KEY, { timeout: 12000 });
+      const feedback = await stopThornFeedbackRecorder(page);
+      const settled = await handoffReport(page);
+      expect(settled.state.moves, `${testCase.label} keyboard pair spends once`).toBe(8);
+      expect(settled.state.clearedCursedThorns, `${testCase.label} Thorn goal sealed`).toBe(3);
+      expect(settled.selectedCells, `${testCase.label} settled selection`).toEqual([]);
+      expect(settled.tiles, `${testCase.label} settled tiles`).toBe(64);
+      expect(settled.rows, `${testCase.label} settled rows`).toBe(8);
+      expect(
+        feedback.events.some((event) => event === "CRACK" || event === "BREAK"),
+        `${testCase.label} localized Thorn feedback`
+      ).toBe(true);
+      expect(browserErrors, `${testCase.label} browser errors`).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+}
+
+for (const testCase of CASES) {
   test(`Round 1 restoration hands off cleanly to Round 2 on ${testCase.label}`, async ({ browser }) => {
     const context = await browser.newContext({
       viewport: testCase.viewport,
@@ -918,17 +1051,68 @@ for (const testCase of CASES) {
       }
 
       const untouchedRoundTwoState = JSON.stringify(report.state);
-      const directLessonGuide = guide;
+      const untouchedRoundTwoSave = await page.evaluate(
+        (key) => localStorage.getItem(key),
+        SAVE_KEY
+      );
+      let directLessonGuide = guide;
+      for (let reload = 1; reload <= 2; reload += 1) {
+        await page.reload({ waitUntil: "networkidle" });
+        await expect(page.locator(".tile.thorn-teach")).toHaveCount(2, { timeout: 7000 });
+        const reloadedLesson = await handoffReport(page);
+        expectReadyHandoff(
+          reloadedLesson,
+          testCase,
+          `${testCase.label} untouched Thorn reload ${reload}`
+        );
+        expectAuthoritativeThornLesson(
+          reloadedLesson,
+          `${testCase.label} untouched Thorn reload ${reload}`
+        );
+        expect(
+          reloadedLesson.activeElementId,
+          `${testCase.label} untouched Thorn reload ${reload} focuses source`
+        ).toBe("tile-1-2");
+        expect(
+          reloadedLesson.rovingTileIds,
+          `${testCase.label} untouched Thorn reload ${reload} sole roving source`
+        ).toEqual(["tile-1-2"]);
+        await expect(page.locator("#tile-1-2")).toHaveAttribute("tabindex", "0");
+        await expect(page.locator("#tile-1-3")).toHaveAttribute("tabindex", "-1");
+        expect(
+          await page.locator("#board .tile").evaluateAll((tiles) => (
+            new Set(tiles.map((tile) => tile.getAttribute("aria-label"))).size
+          )),
+          `${testCase.label} untouched Thorn reload ${reload} unique tile names`
+        ).toBe(64);
+        expect(
+          await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY),
+          `${testCase.label} untouched Thorn reload ${reload} exact save`
+        ).toBe(untouchedRoundTwoSave);
+        directLessonGuide = await usefulGuideReport(page);
+        expect(
+          directLessonGuide.pair,
+          `${testCase.label} untouched Thorn reload ${reload} exact guide`
+        ).toEqual([{ x: 1, y: 2 }, { x: 1, y: 3 }]);
+        expect(directLessonGuide.legal, `${testCase.label} reload ${reload} legal guide`).toBe(true);
+        expect(directLessonGuide.useful, `${testCase.label} reload ${reload} useful guide`).toBe(true);
+      }
       await startThornFeedbackRecorder(page);
       await activatePair(page, directLessonGuide.pair, testCase.input);
       await waitForThornTruePeak(page, testCase.reduced);
       const thornPeakBoundary = await handoffReport(page);
       expect(thornPeakBoundary.boardBusy, `${testCase.label} Thorn outcomes own control`).toBe(true);
       expect(thornPeakBoundary.selectedCells, `${testCase.label} Thorn peak has no next selection`).toEqual([]);
-      await page.locator('.tile[data-x="7"][data-y="7"]').dispatchEvent("click");
+      const busyInputSaveBoundary = await page.evaluate((key) => {
+        const before = localStorage.getItem(key);
+        document.querySelector('.tile[data-x="7"][data-y="7"]')?.click();
+        return { before, after: localStorage.getItem(key) };
+      }, SAVE_KEY);
+      expect(
+        busyInputSaveBoundary.after,
+        `${testCase.label} busy click synchronously rewrites no authority`
+      ).toBe(busyInputSaveBoundary.before);
       const refusedDuringPeak = await handoffReport(page);
-      expect(refusedDuringPeak.state, `${testCase.label} peak input rewrites no authority`)
-        .toEqual(thornPeakBoundary.state);
       expect(refusedDuringPeak.selectedCells, `${testCase.label} peak input cannot select`).toEqual([]);
       if (!testCase.reduced) await page.waitForTimeout(300);
       await expect(page.locator("#board")).toHaveAttribute("aria-busy", "true");
