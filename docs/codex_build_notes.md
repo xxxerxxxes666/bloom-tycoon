@@ -1,5 +1,12 @@
 # Codex Build Notes
 
+## 2026-08-01 retired settled Black Candle Thorn feedback
+
+- Player-visible result: a Round 2 Black Candle still shows all three localized `BREAK` outcomes during its row-burn response, but those red X marks now retire after the readable feedback window instead of remaining painted over the live board indefinitely. The former blocker sockets and their accessible names return to ordinary flower state before the next action.
+- Scope: the existing board-particle cleanup no longer exits early when particles have already retired but Thorn outcome state remains. The established `560ms` plus cascade cleanup delay, formation, two-reload authority, physical blocker clearing, objective credit, focus, narration, moves, saves, economy, rounds, and progression are unchanged.
+- Permanent contract: desktop `1280x720` and exact `390x844`, full and reduced motion, must preserve the accepted `9 -> 8` formation and `8 -> 7` activation with three localized Thorn outcomes at peak. Within `1.2s` of settled control, every `.thorn-hit`, `.thorn-cleared`, `BREAK`/X overlay, board particle, and `where a Cursed Thorn cracked` accessible-name suffix must be gone without another interaction, while focus/roving agreement, ordinary guidance, 64 enabled tiles/eight rows, images, and containment remain healthy.
+- Local verification: the focused natural Round 2 authority matrix, activation interruption boundaries, ordinary match/partial Thorn feedback, project/HTML verification, syntax, diff, security, browser viewport, and public-delivery evidence are recorded with the shipping commit.
+
 ## 2026-08-01 kept Round 2 Black Candle burns physically truthful
 
 - Player-visible result: forming a horizontal Black Candle Vine during the opening Moonlit Wreath lesson can no longer let a simultaneous match drop the armed flower away from the three visible Cursed Thorns. The persisted row preview now always intersects every live blocker, so following the narrated activation spends one move, burns the actual row, emits localized CRACK/BREAK feedback, and seals Thorn `3/3` instead of leaving the order at `0/3`.

@@ -17667,7 +17667,7 @@
       }
       const clearDelay = 560 + Math.min(4, Math.max(0, Number(cascadeCount) || 0)) * 52;
       boardParticleClearTimer = window.setTimeout(() => {
-        if (!boardParticles.length) {
+        if (!boardParticles.length && !thornPulseCells.size && !thornClearedCells.size) {
           return;
         }
         const releasingThornOutcome = thornOutcomeFeedbackActive();

@@ -1009,6 +1009,119 @@ for (const testCase of CASES) {
   });
 }
 
+test("Black Candle Thorn outcomes retire after their readable peak", async ({ browser }) => {
+  for (const testCase of CASES) {
+    const context = await browser.newContext({
+      viewport: testCase.viewport,
+      hasTouch: Boolean(testCase.mobile),
+      isMobile: Boolean(testCase.mobile),
+      reducedMotion: testCase.reduced ? "reduce" : "no-preference"
+    });
+    const page = await context.newPage();
+    const consoleErrors = [];
+    const pageErrors = [];
+    const failedRequests = [];
+    page.on("console", (message) => {
+      if (message.type() === "error") consoleErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    page.on("requestfailed", (request) => {
+      const url = request.url();
+      const errorText = request.failure()?.errorText || "";
+      const canceledThornSeal = errorText === "net::ERR_ABORTED"
+        && /\/assets\/tiles\/altar\/cursed_thorn_seal\.svg$/.test(url);
+      if (!canceledThornSeal) failedRequests.push(`${url} ${errorText}`);
+    });
+
+    try {
+      await seedDeterministicMath(page, `round-two-thorn-feedback-retirement-${testCase.label}`);
+      await page.goto(`${BASE_URL}?round-two-thorn-feedback-retirement=${testCase.label}`, {
+        waitUntil: "networkidle"
+      });
+      await page.evaluate((key) => {
+        const state = JSON.parse(localStorage.getItem(key));
+        state.currentRound = 2;
+        state.moves = 8;
+        state.counts = [0, 0, 0, 0, 4, 0];
+        state.coins = 20;
+        state.roundComplete = false;
+        state.roundOneRestored = true;
+        state.roundTwoGreenhouseUpgraded = false;
+        state.tutorialSkipped = false;
+        state.tutorialActive = true;
+        state.hasMadeValidMove = true;
+        state.restoredRoundTwoGuideMoves = 1;
+        state.clearedCursedThorns = 0;
+        state.cursedThorns = [0, 1, 2].map((x) => ({ x, y: 1, hp: 1 }));
+        state.board = Array.from({ length: 8 }, (_, y) => (
+          Array.from({ length: 8 }, (_, x) => (x + 2 * y) % 6)
+        ));
+        state.board[0][3] = 4;
+        state.armedLineRelic = { x: 3, y: 0, direction: "horizontal", flowerId: 4 };
+        localStorage.setItem(key, JSON.stringify(state));
+      }, SAVE_KEY);
+      await page.reload({ waitUntil: "networkidle" });
+      let report = await roundTwoRelicReport(page);
+      expectRoundTwoRelicAuthority(report, testCase, report.state, `${testCase.label} armed feedback case`);
+      const activationPair = report.hints.map(({ x, y }) => ({ x, y }));
+
+      await startThornFeedbackRecorder(page);
+      await activatePair(page, activationPair, testCase.input);
+      await page.waitForFunction((key) => {
+        const state = JSON.parse(localStorage.getItem(key) || "{}");
+        return state.moves === 7
+          && state.clearedCursedThorns === 3
+          && !state.armedLineRelic;
+      }, SAVE_KEY, { timeout: 12000 });
+      await page.waitForFunction(() => (
+        document.querySelector("#board")?.getAttribute("aria-busy") !== "true"
+        && Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled)
+      ), null, { timeout: 20000 });
+      const peak = await stopThornFeedbackRecorder(page);
+      expect(peak.events, `${testCase.label} localized BREAK label`).toContain("BREAK");
+      expect(peak.geometry.sawThreeOutcomes, `${testCase.label} three simultaneous Thorn outcomes`).toBe(true);
+      expect(peak.geometry.sawReadableLabels, `${testCase.label} three readable Thorn labels`).toBe(true);
+
+      await expect.poll(async () => {
+        const settled = await roundTwoRelicReport(page);
+        return [
+          settled.thornHitTiles,
+          settled.thornClearedTiles,
+          settled.thornEvents,
+          settled.crackedSuffixTiles,
+          settled.boardParticles
+        ];
+      }, {
+        message: `${testCase.label} retires all Thorn outcome residue`,
+        timeout: 1200
+      }).toEqual([0, 0, 0, 0, 0]);
+
+      report = await roundTwoRelicReport(page);
+      expect(report.state.moves, `${testCase.label} activation spends once`).toBe(7);
+      expect(report.state.clearedCursedThorns, `${testCase.label} all blockers stay sealed`).toBe(3);
+      expect(report.focusedTile, `${testCase.label} focus returns to board`).toBeTruthy();
+      expect(report.rovingTiles, `${testCase.label} one roving tile`).toBe(1);
+      expect(report.tiles, `${testCase.label} tile integrity`).toBe(64);
+      expect(report.rows, `${testCase.label} row integrity`).toBe(8);
+      expect(report.disabledTiles, `${testCase.label} board returns control`).toBe(0);
+      if (testCase.mobile) {
+        expect(report.completeRows, `${testCase.label} all rows remain in viewport`).toBe(8);
+      }
+      expect(report.overflowX, `${testCase.label} containment`).toBe(false);
+      expect(report.brokenImages, `${testCase.label} images`).toEqual([]);
+      await page.screenshot({
+        path: `work/round-two-thorn-feedback-retired-${testCase.label}.png`,
+        fullPage: true
+      });
+      expect(consoleErrors, `${testCase.label} console errors`).toEqual([]);
+      expect(pageErrors, `${testCase.label} page errors`).toEqual([]);
+      expect(failedRequests, `${testCase.label} request errors`).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  }
+});
+
 for (const testCase of CASES) {
   test(`Round 1 restoration hands off cleanly to Round 2 on ${testCase.label}`, async ({ browser }) => {
     const context = await browser.newContext({
@@ -1664,6 +1777,13 @@ async function roundTwoRelicReport(page) {
       laneTiles: document.querySelectorAll(".tile.line-relic-lane-preview").length,
       destinations: document.querySelectorAll(".tile.line-relic-destination").length,
       relicTiles: document.querySelectorAll('.tile[data-line-relic="black-candle-vine"]').length,
+      thornHitTiles: document.querySelectorAll(".tile.thorn-hit").length,
+      thornClearedTiles: document.querySelectorAll(".tile.thorn-cleared").length,
+      thornEvents: document.querySelectorAll(".thorn-event").length,
+      crackedSuffixTiles: Array.from(document.querySelectorAll(".tile[aria-label]"))
+        .filter((tile) => tile.getAttribute("aria-label").includes("where a Cursed Thorn cracked")).length,
+      boardParticles: document.querySelectorAll(".board-particle").length,
+      disabledTiles: document.querySelectorAll(".tile:disabled").length,
       thornCauses: document.querySelectorAll(".tile.thorn-teach").length,
       thornTargets: document.querySelectorAll(".tile.thorn-teach-blocker").length,
       guideOverlays: document.querySelectorAll(".swap-path-arrow, .first-action-swap-guide").length,
@@ -1815,6 +1935,30 @@ for (const testCase of CASES) {
       ).toBe(true);
       expect(report.tiles, `${testCase.label} post-activation tiles`).toBe(64);
       expect(report.rows, `${testCase.label} post-activation rows`).toBe(8);
+      await expect.poll(async () => {
+        const settled = await roundTwoRelicReport(page);
+        return {
+          thornHitTiles: settled.thornHitTiles,
+          thornClearedTiles: settled.thornClearedTiles,
+          thornEvents: settled.thornEvents,
+          crackedSuffixTiles: settled.crackedSuffixTiles,
+          boardParticles: settled.boardParticles
+        };
+      }, {
+        message: `${testCase.label} activation feedback retires after its readable peak`,
+        timeout: 1200
+      }).toEqual({
+        thornHitTiles: 0,
+        thornClearedTiles: 0,
+        thornEvents: 0,
+        crackedSuffixTiles: 0,
+        boardParticles: 0
+      });
+      report = await roundTwoRelicReport(page);
+      expect(report.focusedTile, `${testCase.label} settled focus remains on board`).toBeTruthy();
+      expect(report.rovingTiles, `${testCase.label} one settled roving tile`).toBe(1);
+      expect(report.overflowX, `${testCase.label} settled containment`).toBe(false);
+      expect(report.brokenImages, `${testCase.label} settled images`).toEqual([]);
 
       await Promise.all([
         page.waitForNavigation({ waitUntil: "networkidle" }),
