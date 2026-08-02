@@ -9240,18 +9240,104 @@
           linear-gradient(180deg, #1c120b, #070403);
       }
 
-      body.focused-active-play:not(.focused-slice-failed) .live-bouquet-assembly:not([data-high-count="true"])::before {
+      body.focused-active-play:not(.focused-slice-failed) .live-bouquet-assembly[data-round="1"]:not([data-high-count="true"]) {
+        width: 430px;
+        background:
+          radial-gradient(ellipse at 50% 25%, #c6a05c3d 0, #65502b1c 46%, #0000 67%),
+          radial-gradient(ellipse at 50% 72%, #7891543d 0, #0000 48%),
+          linear-gradient(180deg, #1a110a, #060403);
+      }
+
+      body.round-one-active.focused-active-play:not(.focused-slice-failed) .bouquet-receiver-copy {
+        width: 150px;
+        padding-right: 52px;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .live-bouquet-assembly[data-round="1"]:not([data-high-count="true"])::before {
         bottom: 4px;
-        width: calc(88px + var(--live-bouquet-fullness, 0) * 8px);
+        width: calc(80px + var(--live-bouquet-fullness, 0) * 6px);
         height: 18px;
       }
 
-      body.focused-active-play:not(.focused-slice-failed) .live-bouquet-assembly:not([data-high-count="true"])::after {
+      body.focused-active-play:not(.focused-slice-failed) .live-bouquet-assembly[data-round="1"]:not([data-high-count="true"])::after {
         bottom: 2px;
-        width: calc(134px + var(--live-bouquet-fullness, 0) * 6px);
-        height: 46px;
-        opacity: calc(.94 + var(--live-bouquet-fullness, 0) * .05);
-        clip-path: polygon(3% 5%, 25% 11%, 50% 27%, 75% 11%, 97% 5%, 77% 59%, 58% 100%, 42% 100%, 23% 59%);
+        width: calc(114px + var(--live-bouquet-fullness, 0) * 5px);
+        height: 44px;
+        opacity: calc(.8 + var(--live-bouquet-fullness, 0) * .08);
+        background:
+          radial-gradient(ellipse at 50% 18%, #e2c47c52 0 14%, #0000 46%),
+          linear-gradient(112deg, #171008 0 9%, #7f6844 10% 46%, #392719 47% 53%, #8b7149 54% 90%, #171008 91% 100%);
+        clip-path: polygon(4% 3%, 27% 12%, 50% 29%, 73% 12%, 96% 3%, 78% 58%, 57% 100%, 43% 100%, 22% 58%);
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .live-bouquet-assembly[data-round="1"] .live-bouquet-wrap-front {
+        bottom: 0;
+        width: 88px;
+        height: 22px;
+        background:
+          radial-gradient(ellipse at 50% 6%, #e6ca8738 0 16%, #0000 48%),
+          linear-gradient(104deg, #1a1008 0 9%, #816b46 10% 46%, #3b2818 47% 53%, #8d744b 54% 90%, #1a1008 91% 100%);
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .live-bouquet-assembly[data-round="1"] .live-bouquet-knot {
+        bottom: 1px;
+        width: 36px;
+        height: 15px;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .live-bouquet-assembly[data-round="1"] .live-bouquet-stem[data-filled="false"] {
+        opacity: .72;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .live-bouquet-assembly[data-round="1"] .live-bouquet-leaf[data-filled="false"] {
+        width: 14px;
+        height: 6px;
+        opacity: .2;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .live-bouquet-assembly[data-round="1"] .live-bouquet-bud {
+        width: 22px;
+        height: 25px;
+        border-color: #87805e;
+        background:
+          radial-gradient(ellipse at 50% 42%, #070705 0 24%, #44432f 30% 45%, #15160f 51% 68%, #0000 73%),
+          linear-gradient(112deg, #0b0c08, #6e6949 42%, #313426 60%, #090a07);
+        opacity: .82;
+        filter: drop-shadow(0 2px 3px #000) drop-shadow(0 0 2px #8a805c55);
+        box-shadow:
+          inset 1px 1px 2px #b7ad7952,
+          inset -2px -3px 4px #000,
+          0 0 0 1px #050504;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .live-bouquet-assembly[data-round="1"] .live-bouquet-bud::before {
+        left: 5px;
+        top: 4px;
+        width: 10px;
+        height: 12px;
+        border-color: #5e5d43;
+        border-left-color: #928a615c;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .live-bouquet-assembly[data-round="1"] .live-bouquet-bud::after {
+        left: 1px;
+        bottom: -2px;
+        width: 19px;
+        height: 11px;
+        border-right-color: #5f6248;
+        border-bottom-color: #727356;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .live-bouquet-assembly[data-round="1"] .live-bouquet-ingredient[data-slot-state="filled"]::before {
+        opacity: .42;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .live-bouquet-assembly[data-round="1"] .live-bouquet-ingredient[data-slot-state="filled"] img {
+        filter:
+          brightness(1.26)
+          saturate(1.16)
+          drop-shadow(0 1px 3px #000)
+          drop-shadow(0 0 4px currentColor);
       }
 
       body.focused-active-play:not(.focused-slice-failed) .live-bouquet-assembly[data-high-count="true"]::before {
@@ -10573,6 +10659,7 @@
       const compact = total <= 16;
       const tiered = total >= 24;
       const desktopAltar = window.matchMedia("(min-width: 1180px)").matches;
+      const desktopRoundOne = desktopAltar && total === 14;
       const highCountTierSizes = [20, 21, 23, 24, 23, 20];
       const size = compact ? 42 : total <= 20 ? 31 : tiered ? highCountTierSizes[crafted.tier] : 26;
       const highCountRows = tiered ? tieredBouquetRowCounts(total) : [];
@@ -10602,11 +10689,11 @@
       const compactRowCount = compactRows[compactRow] || total;
       const compactRowIndex = index - compactRowStart;
       const compactX = total === 14 && compactRow === 0
-        ? [-48, -17, 17, 48][compactRowIndex]
+        ? (desktopRoundOne ? [-60, -20, 20, 60] : [-48, -17, 17, 48])[compactRowIndex]
         : total === 14 && compactRow === 1
-          ? [-69, -41, -14, 14, 41, 69][compactRowIndex]
+          ? (desktopRoundOne ? [-90, -54, -18, 18, 54, 90] : [-69, -41, -14, 14, 41, 69])[compactRowIndex]
           : total === 14 && compactRow === 2
-            ? [-36, -12, 12, 36][compactRowIndex]
+            ? (desktopRoundOne ? [-55, -18, 18, 55] : [-36, -12, 12, 36])[compactRowIndex]
             : Math.round((compactRowIndex - (compactRowCount - 1) / 2) * (total === 14 ? 27 : 34));
       const compactMobile = window.matchMedia("(max-width: 760px)").matches;
       const highCountTierFanOffsets = [0, 0, 0, 0, 0, -4];
@@ -10620,7 +10707,7 @@
       const layout = {
         x: desktopAltar && !compact && !tiered ? Math.round(crownX * 1.12) : crownX,
         y: compact
-          ? (compactMobile ? [22, 40, 58] : [22, 40, 58])[compactRow]
+          ? (desktopRoundOne ? [22, 40, 58] : compactMobile ? [22, 40, 58] : [22, 40, 58])[compactRow]
           : tiered
             ? [13, 26, 38, 50, 61, 70][crafted.tier]
             : Math.round(5 + crafted.y * .65 - (crafted.y > 75 ? 3 : 0)),
@@ -10631,7 +10718,7 @@
         z: crafted.z,
         tier: crafted.tier
       };
-      const knotY = tiered ? 72 : 75;
+      const knotY = tiered ? 72 : desktopRoundOne ? 76 : 75;
       const stemTargetY = layout.y + layout.size * .08;
       const stemRise = Math.max(10, knotY - stemTargetY);
       return {

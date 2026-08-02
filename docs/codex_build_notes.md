@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-08-02 made the desktop First Bouquet physically authoritative
+
+- Player-visible result: at desktop normal scale, the fresh 14-unit First Bouquet now reads as one broad hand-tied botanical receiver rather than a shallow paper cup. Fourteen materially painted closed buds converge through visible stems into one restrained wrap and knot; the real opening harvest replaces exactly three positions with dominant Thorn Roses while the eleven remaining positions stay legible.
+- Scope: only the desktop Round 1 live-bouquet receiver, compact-unit spacing, latent-bud material, wrap, and focused geometry contract changed. Exact-mobile presentation, the 600px desktop and 378px mobile altars, target-flight authority, unit identity, completion/binding, Round 2/3 high-count bouquets, moves, RNG, objectives, saves, economy, restoration, controls, rounds, and progression are unchanged.
+- Visual evidence: uninterrupted before/after desktop captures at fresh `0/14` and real `3/14` show the widened crown and materially closed capacity without shrinking or displacing the board. Final focused captures also preserve exact-mobile fresh/first-harvest, desktop/mobile binding, Round 2/3 mixed/full states, and reduced motion without clipping, duplication, or visual reset.
+- Verification: `python3 scripts/verify_project.py`, `python3 scripts/verify_html_match_shapes.py`, changed-spec and extracted inline-script syntax, and `git diff --check` pass. The complete payoff/physical-bouquet matrix passes `18/18` across desktop/mobile, full/reduced motion, real opening input, progress/reload, restoration interruption, completion/binding, and Round 2/3 preservation. The complete failure/Retry matrix passes `12/12` across all three rounds on desktop/mobile and full/reduced motion.
+- Security/scope scan: 132 added production/test lines were checked for credential assignments, trackers/analytics, external network hooks, and private IPs with zero findings. No dependencies, assets, network calls, backend, permissions, debug hooks, or protected-source expression were added.
+
 ## 2026-08-01 retired settled Black Candle Thorn feedback
 
 - Player-visible result: a Round 2 Black Candle still shows all three localized `BREAK` outcomes during its row-burn response, but those red X marks now retire after the readable feedback window instead of remaining painted over the live board indefinitely. The former blocker sockets and their accessible names return to ordinary flower state before the next action.
