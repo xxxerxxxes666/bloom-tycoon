@@ -1062,6 +1062,10 @@ test("Black Candle Thorn outcomes retire after their readable peak", async ({ br
       }, SAVE_KEY);
       await page.reload({ waitUntil: "networkidle" });
       let report = await roundTwoRelicReport(page);
+      expect(
+        report.state.armedLineRelic,
+        `${testCase.label} seeded relic survives reload ${JSON.stringify(report.state)}`
+      ).toBeTruthy();
       expectRoundTwoRelicAuthority(report, testCase, report.state, `${testCase.label} armed feedback case`);
       const activationPair = report.hints.map(({ x, y }) => ({ x, y }));
 
