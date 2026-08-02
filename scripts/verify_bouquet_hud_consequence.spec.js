@@ -1816,8 +1816,31 @@ for (const viewport of FAILURE_VIEWPORTS) {
               slotProgress: Number(ingredient.dataset.slotProgress),
               slotState: ingredient.dataset.slotState
             })),
+            tutorialVisible: (() => {
+              const panel = document.querySelector("#tutorialPanel");
+              if (!panel) return false;
+              const bounds = panel.getBoundingClientRect();
+              const style = getComputedStyle(panel);
+              return style.display !== "none"
+                && style.visibility !== "hidden"
+                && bounds.width > 0
+                && bounds.height > 0;
+            })(),
+            tutorialCopy: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
+            liveOwners: Array.from(document.querySelectorAll("[aria-live]"))
+              .filter((node) => {
+                const bounds = node.getBoundingClientRect();
+                const style = getComputedStyle(node);
+                return style.display !== "none"
+                  && style.visibility !== "hidden"
+                  && bounds.width > 0
+                  && bounds.height > 0
+                  && ["polite", "assertive"].includes(node.getAttribute("aria-live"));
+              })
+              .map((node) => ({ id: node.id, live: node.getAttribute("aria-live") })),
             coinLive: document.querySelector("#coinBalance")?.getAttribute("aria-live") || "",
             ceremonyLive: document.querySelector("#roundOneRestoration")?.getAttribute("aria-live") || "",
+            tutorialLive: document.querySelector("#tutorialPanel")?.getAttribute("aria-live") || "",
             tiles: document.querySelectorAll(".tile").length,
             rows: new Set(Array.from(document.querySelectorAll(".tile"), (tile) => tile.dataset.y)).size,
             tabStops: tabStops.length,
@@ -1854,8 +1877,15 @@ for (const viewport of FAILURE_VIEWPORTS) {
           .toEqual(Array(expectedComposition.length).fill(0));
         expect(recovered.bouquetComposition.map((slot) => slot.slotState), `${viewport.label} Round ${round} ${key} empty slot state`)
           .toEqual(Array(expectedComposition.length).fill("empty"));
-        expect(recovered.coinLive, `${viewport.label} Round ${round} ${key} coin live`).toBe("polite");
-        expect(recovered.ceremonyLive, `${viewport.label} Round ${round} ${key} ceremony live`).toBe("polite");
+        expect(recovered.tutorialVisible, `${viewport.label} Round ${round} ${key} tutorial resumes`).toBe(true);
+        expect(recovered.tutorialCopy, `${viewport.label} Round ${round} ${key} instruction`).not.toBe("");
+        expect(recovered.liveOwners, `${viewport.label} Round ${round} ${key} one narrator`).toEqual([{
+          id: "tutorialPanel",
+          live: "polite"
+        }]);
+        expect(recovered.coinLive, `${viewport.label} Round ${round} ${key} quiet coin`).toBe("off");
+        expect(recovered.ceremonyLive, `${viewport.label} Round ${round} ${key} quiet ceremony`).toBe("off");
+        expect(recovered.tutorialLive, `${viewport.label} Round ${round} ${key} tutorial live`).toBe("polite");
         expect(recovered.tiles, `${viewport.label} Round ${round} ${key} tiles`).toBe(64);
         expect(recovered.rows, `${viewport.label} Round ${round} ${key} rows`).toBe(8);
         expect(recovered.tabStops, `${viewport.label} Round ${round} ${key} tab stop`).toBe(1);

@@ -360,6 +360,13 @@ async function handoffReport(page) {
         helpRect.top + helpRect.height / 2
       )
       : null;
+    const liveRegions = Array.from(document.querySelectorAll("[aria-live]"))
+      .filter(visible)
+      .map((node) => ({
+        id: node.id,
+        live: node.getAttribute("aria-live"),
+        text: node.textContent.replace(/\s+/g, " ").trim()
+      }));
     return {
       state,
       bodyClasses: document.body.className,
@@ -393,6 +400,12 @@ async function handoffReport(page) {
       ].filter(visible).length,
       tutorialVisible: visible(document.querySelector("#tutorialPanel")),
       tutorialCopy: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
+      liveRegions,
+      liveRegionOwners: liveRegions.filter(({ live }) => live === "polite" || live === "assertive"),
+      coinLive: document.querySelector("#coinBalance")?.getAttribute("aria-live") || "",
+      ceremonyLive: document.querySelector("#roundOneRestoration")?.getAttribute("aria-live") || "",
+      tutorialLive: document.querySelector("#tutorialPanel")?.getAttribute("aria-live") || "",
+      firstCueLive: document.querySelector("#firstSwapCue")?.getAttribute("aria-live") || "",
       helpCenterTargetId: helpCenterTarget?.id || "",
       helpCenterBelongsToHelp: Boolean(help && helpCenterTarget && help.contains(helpCenterTarget)),
       firstCueVisible: visible(document.querySelector("#firstSwapCue")),
@@ -834,6 +847,23 @@ function expectAuthoritativeThornLesson(report, label, { selected = null } = {})
   expect(report.thornTargets, `${label} three blocker targets`).toBe(3);
   expect(report.guideOverlays, `${label} one guide overlay`).toBe(1);
   expect(report.selectedCells, `${label} coherent selection`).toEqual(selected ? [selected] : []);
+  expectTutorialNarrationOwnership(report, label);
+}
+
+function expectTutorialNarrationOwnership(report, label) {
+  expect(
+    report.liveRegionOwners.map(({ id, live }) => ({ id, live })),
+    `${label} one visible live narrator`
+  ).toEqual([{
+    id: "tutorialPanel",
+    live: "polite"
+  }]);
+  expect(report.liveRegionOwners[0]?.text, `${label} tutorial instruction owns narration`)
+    .toContain(report.tutorialCopy);
+  expect(report.coinLive, `${label} quiet wallet`).toBe("off");
+  expect(report.ceremonyLive, `${label} quiet ceremony subtree`).toBe("off");
+  expect(report.tutorialLive, `${label} polite tutorial`).toBe("polite");
+  expect(report.firstCueLive, `${label} quiet fallback cue`).toBe("off");
 }
 
 function expectRecoveredThornLesson(report, testCase, expectedState, expectedGuideCells, label) {
@@ -858,6 +888,7 @@ function expectRecoveredThornLesson(report, testCase, expectedState, expectedGui
   expect(report.boardBottom, `${label} board in first viewport`).toBeLessThanOrEqual(testCase.viewport.height);
   expect(report.overflowX, `${label} no horizontal overflow`).toBe(false);
   expect(report.brokenImages, `${label} no broken images`).toEqual([]);
+  expectTutorialNarrationOwnership(report, label);
   if (testCase.mobile) {
     expect(report.mobileIdentityVisible, `${label} restored greenhouse survives recovery`).toBe(true);
     expect(report.mobileIdentityStage, `${label} recovered visual stage`).toBe("restored");
@@ -958,6 +989,13 @@ for (const testCase of CASES) {
       expect(settled.state.moves, `${testCase.label} keyboard pair spends once`).toBe(8);
       expect(settled.state.clearedCursedThorns, `${testCase.label} Thorn goal sealed`).toBe(3);
       expect(settled.selectedCells, `${testCase.label} settled selection`).toEqual([]);
+      expect(settled.tutorialVisible, `${testCase.label} tutorial retires after close`).toBe(false);
+      expect(settled.coinLive, `${testCase.label} wallet semantics restore after close`).toBe("polite");
+      expect(settled.firstCueLive, `${testCase.label} fallback cue semantics restore after close`).toBe("polite");
+      expect(
+        settled.liveRegionOwners.some(({ id }) => id === "tutorialPanel"),
+        `${testCase.label} retired tutorial does not own narration`
+      ).toBe(false);
       expect(settled.tiles, `${testCase.label} settled tiles`).toBe(64);
       expect(settled.rows, `${testCase.label} settled rows`).toBe(8);
       expect(
@@ -1001,8 +1039,10 @@ for (const testCase of CASES) {
       await page.evaluate((key) => localStorage.removeItem(key), SAVE_KEY);
       await page.reload({ waitUntil: "networkidle" });
       await expect(page.locator(".tile")).toHaveCount(64);
+      await expect(page.locator("#tutorialPanel")).toBeVisible({ timeout: 3000 });
       const freshReport = await handoffReport(page);
       expect(freshReport.state.roundOneRestored, `${testCase.label} fresh ownership`).toBe(false);
+      expectTutorialNarrationOwnership(freshReport, `${testCase.label} opening tutorial`);
       expect(freshReport.mobileIdentityStage, `${testCase.label} fresh visual stage`).toBe("withered");
       expect(freshReport.mobileIdentitySrc, `${testCase.label} fresh greenhouse asset`)
         .toContain("first_greenhouse_withered.jpg");
@@ -1293,6 +1333,7 @@ for (const testCase of CASES) {
       await page.waitForTimeout(120);
       report = await handoffReport(page);
       expect(report.tutorialCopy, `${testCase.label} refusal peak copy`).toBe("Use the glowing pair.");
+      expectTutorialNarrationOwnership(report, `${testCase.label} refusal peak`);
       expect(report.invalidTiles, `${testCase.label} refusal marks`).toBe(2);
       expect(report.guideCells, `${testCase.label} refusal retains glowing pair`).toEqual(["1,2", "1,3"]);
       expect(report.thornSwapTiles, `${testCase.label} refusal retains causes`).toBe(2);
@@ -1309,6 +1350,7 @@ for (const testCase of CASES) {
       await page.waitForTimeout(120);
       report = await handoffReport(page);
       expect(report.tutorialCopy, `${testCase.label} repeated refusal peak copy`).toBe("Use the glowing pair.");
+      expectTutorialNarrationOwnership(report, `${testCase.label} repeated refusal peak`);
       expect(report.invalidTiles, `${testCase.label} repeated refusal marks`).toBe(2);
       expect(report.guideCells, `${testCase.label} repeated refusal retains pair`).toEqual(["1,2", "1,3"]);
       expect(report.guideOverlays, `${testCase.label} repeated refusal retains guide overlay`).toBe(1);
@@ -1586,6 +1628,13 @@ async function roundTwoRelicReport(page) {
     const focusedTile = document.activeElement?.classList.contains("tile")
       ? `${document.activeElement.dataset.x},${document.activeElement.dataset.y}`
       : "";
+    const liveRegions = Array.from(document.querySelectorAll("[aria-live]"))
+      .filter(visible)
+      .map((node) => ({
+        id: node.id,
+        live: node.getAttribute("aria-live"),
+        text: node.textContent.replace(/\s+/g, " ").trim()
+      }));
     const tileRects = Array.from(document.querySelectorAll(".tile")).map((tile) => ({
       y: tile.dataset.y,
       rect: tile.getBoundingClientRect()
@@ -1595,6 +1644,13 @@ async function roundTwoRelicReport(page) {
       tutorialCopy: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
       tutorialIcon: document.querySelector("#tutorialPanel .tutorial-icon")?.textContent.trim() || "",
       namedTutorial: document.querySelector("#tutorialPanel")?.classList.contains("black-candle-tutorial") || false,
+      tutorialVisible: visible(document.querySelector("#tutorialPanel")),
+      liveRegions,
+      liveRegionOwners: liveRegions.filter(({ live }) => live === "polite" || live === "assertive"),
+      coinLive: document.querySelector("#coinBalance")?.getAttribute("aria-live") || "",
+      ceremonyLive: document.querySelector("#roundOneRestoration")?.getAttribute("aria-live") || "",
+      tutorialLive: document.querySelector("#tutorialPanel")?.getAttribute("aria-live") || "",
+      firstCueLive: document.querySelector("#firstSwapCue")?.getAttribute("aria-live") || "",
       instructionCount: [
         document.querySelector("#tutorialPanel"),
         document.querySelector("#firstSwapCue")
@@ -1639,6 +1695,7 @@ function expectRoundTwoRelicAuthority(report, testCase, expectedState, label) {
   expect(report.tutorialCopy, `${label} directional row action`).toBe("Swap right to burn this row.");
   expect(report.tutorialIcon, `${label} visible category`).toBe("BLACK CANDLE");
   expect(report.namedTutorial, `${label} named tutorial styling`).toBe(true);
+  expectTutorialNarrationOwnership(report, label);
   expect(report.instructionCount, `${label} one narrator`).toBe(1);
   expect(report.hints, `${label} exact activation pair`).toHaveLength(2);
   expect(report.hints.filter((tile) => tile.relic), `${label} relic is hinted`).toHaveLength(1);
@@ -1799,6 +1856,7 @@ for (const testCase of CASES) {
       }, SAVE_KEY, { timeout: 12000 });
       report = await handoffReport(page);
       expect(report.state.clearedCursedThorns, `${testCase.label} one Thorn clears`).toBe(1);
+      expectTutorialNarrationOwnership(report, `${testCase.label} partial Thorn recovery`);
       expect(report.state.cursedThorns, `${testCase.label} two damaged blockers remain`).toHaveLength(2);
       expect(report.tutorialCopy, `${testCase.label} Thorn narrator resumes after relic`).toBe("Match beside the Thorn.");
       expect(report.guideTiles, `${testCase.label} recomputed pair`).toBe(2);
@@ -1824,6 +1882,7 @@ for (const testCase of CASES) {
         expect(report.state.clearedCursedThorns, `${testCase.label} partial reload ${reload} progress`).toBe(1);
         expect(report.state.cursedThorns, `${testCase.label} partial reload ${reload} blockers`).toHaveLength(2);
         expect(report.tutorialCopy, `${testCase.label} partial reload ${reload} narrator`).toBe("Match beside the Thorn.");
+        expectTutorialNarrationOwnership(report, `${testCase.label} partial reload ${reload}`);
         expect(report.guideCells, `${testCase.label} partial reload ${reload} pair`).toEqual(partialGuideCells);
         expect(report.thornSwapTiles, `${testCase.label} partial reload ${reload} causes`).toBe(2);
         expect(report.thornTargets, `${testCase.label} partial reload ${reload} targets`).toBe(2);

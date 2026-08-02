@@ -1,5 +1,12 @@
 # Codex Build Notes
 
+## 2026-08-01 gave active instructions sole narration ownership
+
+- Player-visible result: when Bloom Tycoon is actively teaching an opening swap, a Cursed Thorn break, a Black Candle action, a refusal correction, or a failed-bouquet Retry, assistive technology now hears that board instruction as the sole visible polite live region. The static coin balance no longer competes with the action the player needs to take.
+- Scope: the existing live-region authority function now treats an active focused tutorial panel as a stronger narrator, temporarily setting the wallet, restoration ceremony, and fallback cue regions to `aria-live="off"`. When the instruction retires, the prior non-tutorial wallet and cue semantics return. Payoff, final-harvest, failure, focus, copy, timing, saves, moves, economy, board rules, rounds, and progression are unchanged.
+- Permanent contract: desktop `1280x720` and exact `390x844`, full and reduced motion, enumerate visible live regions through the opening lesson, direct and partial Thorn teaching, refusal, Black Candle formation and two reloads, failure and Retry recovery, and the settled post-close boundary. Every active instruction requires `tutorialPanel` as the only polite/assertive owner; the real Enter/Space Thorn close must spend once, seal all three blockers, retire the panel, and restore ordinary semantics without changing 64 tiles/eight rows, focus, images, or layout.
+- Local verification: the authoritative untouched-R2 reload and Enter/Space matrix passes `4/4`; the broad natural R1-to-R2 narration path passes `1/1`; Black Candle authority passes three full cases plus the narration boundary in the fourth, whose unrelated deterministic row-burn setup remains non-green; the established Retry matrix passes desktop and reduced-mobile directly, with its ordinary-mobile transient icon-attribute timeout passing on isolated rerun. Project/HTML verification and the final static, syntax, diff, security, browser, and public-delivery gates are recorded with the shipping commit.
+
 ## 2026-08-01 restored the untouched Thorn lesson after reload
 
 - Player-visible result: reloading the untouched Moonlit Wreath lesson now returns keyboard and screen-reader control to its visible authored source, `tile-1-2`, instead of leaving focus on the page body while an unrelated socket remained the board's roving entry. The exact `tile-1-2` to `tile-1-3` Thorn guide, `Match beside the Thorn.` copy, spatial accessible names, and three blocker targets remain unchanged.

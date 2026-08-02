@@ -14697,9 +14697,12 @@
       const finalHarvestNarration = Boolean(visibleFinalHarvest)
         && ["eligible", "landing"].includes(visibleFinalHarvest.phase);
       const payoffOwnsNarration = focusedPayoffOwnsCommand(plan);
+      const tutorialPanelOwnsNarration = focusedSliceRound(plan)
+        && !payoffOwnsNarration
+        && tutorialActive;
       const tutorialOwnsNarration = focusedSliceRound(plan)
         && !payoffOwnsNarration
-        && (isBouquetFailed(plan) || finalHarvestNarration);
+        && (tutorialPanelOwnsNarration || isBouquetFailed(plan) || finalHarvestNarration);
       $("coinBalance")?.setAttribute(
         "aria-live",
         payoffOwnsNarration || tutorialOwnsNarration ? "off" : "polite"
@@ -14710,11 +14713,13 @@
       );
       $("tutorialPanel")?.setAttribute(
         "aria-live",
-        payoffOwnsNarration || (finalHarvestNarration && !tutorialActive) ? "off" : "polite"
+        tutorialPanelOwnsNarration
+          ? "polite"
+          : payoffOwnsNarration || finalHarvestNarration ? "off" : "polite"
       );
       $("firstSwapCue")?.setAttribute(
         "aria-live",
-        payoffOwnsNarration || (finalHarvestNarration && tutorialActive) ? "off" : "polite"
+        payoffOwnsNarration || tutorialPanelOwnsNarration ? "off" : "polite"
       );
     }
 
