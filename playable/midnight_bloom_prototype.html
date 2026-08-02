@@ -16543,7 +16543,7 @@
       foundMatches.forEach((match) => {
         const shape = analyzeMatchShape(match);
         const lineRelic = !armedLineRelic && !createdLineRelic && options.playerSwap
-          ? lineRelicForMatch(match, shape, options.playerSwap)
+          ? lineRelicForMatch(match, shape, options.playerSwap, foundMatches)
           : null;
         const rareSeedRune = rareSeedRuneForMatch(match, shape);
         if (lineRelic) {
@@ -16608,7 +16608,7 @@
       };
     }
 
-    function lineRelicForMatch(match, shape, playerSwap = null) {
+    function lineRelicForMatch(match, shape, playerSwap = null, waveMatches = null) {
       if (!shape || shape.kind !== "line" || match.len !== 4 || !Array.isArray(match.runs) || match.runs.length !== 1) {
         return null;
       }
@@ -16623,8 +16623,43 @@
       ));
       const matchKeys = new Set(run.cells.map((cell) => cell.join(",")));
       const swapCells = playerSwap ? [playerSwap.a, playerSwap.b].filter(Boolean) : [];
-      const anchor = swapCells.find((cell) => matchKeys.has(`${cell.x},${cell.y}`))
+      let anchor = swapCells.find((cell) => matchKeys.has(`${cell.x},${cell.y}`))
         || { x: run.cells[1][0], y: run.cells[1][1] };
+      // Keep Round 2's relic on a settled row that can physically burn every live blocker.
+      if (
+        direction === "horizontal"
+        && currentRound === 2
+        && cursedThorns.length > 0
+        && Array.isArray(waveMatches)
+      ) {
+        const clearKeys = new Set(waveMatches.flatMap((waveMatch) => (
+          waveMatch.cells.map((cell) => cell.join(","))
+        )));
+        const rankedAnchors = run.cells.map(([x, y]) => {
+          const dropRows = Array.from({ length: BOARD_SIZE - y - 1 }, (_, offset) => y + offset + 1)
+            .filter((clearY) => clearKeys.has(`${x},${clearY}`)).length;
+          const settledY = y + dropRows;
+          return {
+            x,
+            y,
+            dropRows,
+            thornCoverage: cursedThorns.filter((thorn) => Math.abs(thorn.y - settledY) <= 1).length,
+            keepsRightActivation: x < BOARD_SIZE - 1,
+            distanceFromSwap: Math.abs(x - anchor.x) + Math.abs(y - anchor.y)
+          };
+        }).sort((a, b) => (
+          (b.thornCoverage - a.thornCoverage)
+          || (a.dropRows - b.dropRows)
+          || (Number(b.keepsRightActivation) - Number(a.keepsRightActivation))
+          || (a.distanceFromSwap - b.distanceFromSwap)
+          || (a.x - b.x)
+        ));
+        const authoritativeAnchor = rankedAnchors[0];
+        if (!authoritativeAnchor || authoritativeAnchor.thornCoverage < cursedThorns.length) {
+          return null;
+        }
+        anchor = { x: authoritativeAnchor.x, y: authoritativeAnchor.y };
+      }
       return {
         name: "Black Candle Vine",
         direction,

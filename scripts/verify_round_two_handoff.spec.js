@@ -1692,6 +1692,10 @@ function expectRoundTwoRelicAuthority(report, testCase, expectedState, label) {
   expect(report.state.moves, `${label} exact move state`).toBe(expectedState.moves);
   expect(report.state.counts, `${label} exact flower state`).toEqual(expectedState.counts);
   expect(report.state.clearedCursedThorns, `${label} Thorn progress stays zero`).toBe(0);
+  expect(
+    report.state.cursedThorns.every((thorn) => Math.abs(thorn.y - relic.y) <= 1),
+    `${label} persisted burn lane physically intersects every Thorn`
+  ).toBe(true);
   expect(report.tutorialCopy, `${label} directional row action`).toBe("Swap right to burn this row.");
   expect(report.tutorialIcon, `${label} visible category`).toBe("BLACK CANDLE");
   expect(report.namedTutorial, `${label} named tutorial styling`).toBe(true);
