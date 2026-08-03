@@ -31,7 +31,7 @@ async function openFixture(page, fixture, marker) {
   await openFresh(page, marker);
   if (fixture.naturalOpening) {
     const pair = page.locator("#board .tile.idle-hint");
-    await expect(pair).toHaveCount(2);
+    await expect(pair).toHaveCount(2, { timeout: 12000 });
     const ids = await pair.evaluateAll((tiles) => tiles.map((tile) => tile.id));
     await page.locator(`#${ids[0]}`).click();
     await page.locator(`#${ids[1]}`).click();
@@ -91,6 +91,36 @@ async function openFixture(page, fixture, marker) {
   }
 }
 
+async function openSkippedRoundOneBlackCandleCue(page, marker) {
+  await openFresh(page, marker);
+  await page.evaluate((key) => {
+    const state = JSON.parse(localStorage.getItem(key) || "{}");
+    Object.assign(state, {
+      currentRound: 1,
+      roundComplete: false,
+      moves: 4,
+      counts: [0, 0, 0, 0, 0, 6],
+      cursedThorns: [],
+      clearedCursedThorns: 0,
+      roundOneRestored: false,
+      roundTwoGreenhouseUpgraded: false,
+      roundThreeConservatoryRaised: false,
+      hasMadeValidMove: true,
+      restoredRoundTwoGuideMoves: 0,
+      tutorialSkipped: true,
+      tutorialActive: false,
+      blackCandleLessonComplete: true
+    });
+    localStorage.setItem(key, JSON.stringify(state));
+  }, SAVE_KEY);
+  await page.reload({ waitUntil: "networkidle" });
+  await expect(page.locator("#board .tile")).toHaveCount(64);
+  await expect(page.locator("body")).toHaveClass(/round-one-black-candle-cue/);
+  await expect(page.locator("#firstSwapCue")).toContainText("Make 4 Bone Stars");
+  await expect(page.locator("#shuffleBtn")).toBeVisible();
+  await expect(page.locator("#shuffleBtn")).toBeEnabled();
+}
+
 async function viewportReport(page) {
   return page.evaluate(() => {
     const rect = (node) => {
@@ -126,7 +156,12 @@ async function viewportReport(page) {
       viewport: { width: innerWidth, height: innerHeight },
       game: rect(document.querySelector(".game")),
       sigil: rect(document.querySelector(".sigil")),
+      title: rect(document.querySelector(".title")),
       board: boardRect,
+      cue: rect(document.querySelector("#firstSwapCue")),
+      shuffle: rect(document.querySelector("#shuffleBtn")),
+      shuffleVisible: getComputedStyle(document.querySelector("#shuffleBtn")).display !== "none",
+      activeOrders: rect(document.querySelector(".active-orders-card")),
       boardFrame: {
         left: boardRect.left - frameOutset,
         right: boardRect.right + frameOutset,
@@ -144,6 +179,10 @@ async function viewportReport(page) {
       brokenImages: visibleBrokenImages.map((image) => image.getAttribute("src"))
     };
   });
+}
+
+function intersects(a, b) {
+  return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
 }
 
 function expectIntegrity(report, config, label) {
@@ -248,6 +287,65 @@ for (const config of CONFIGS) {
         expect(await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY),
           `${label} navigation does not mutate the save`).toBe(savedBefore);
       }
+      expect(consoleMessages).toEqual([]);
+      expect(pageErrors).toEqual([]);
+      expect(failedRequests).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+}
+
+for (const config of CONFIGS) {
+  test(`skipped Round 1 commands stay inside the short viewport on ${config.label}`, async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: config.viewport,
+      hasTouch: Boolean(config.mobile),
+      isMobile: Boolean(config.mobile),
+      reducedMotion: config.reduced ? "reduce" : "no-preference"
+    });
+    const page = await context.newPage();
+    const consoleMessages = [];
+    const pageErrors = [];
+    const failedRequests = [];
+    page.on("console", (message) => {
+      if (message.type() === "warning" || message.type() === "error") {
+        consoleMessages.push(`${message.type()}: ${message.text()}`);
+      }
+    });
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    page.on("requestfailed", (request) => {
+      const errorText = request.failure()?.errorText || "";
+      if (errorText !== "net::ERR_ABORTED") failedRequests.push(`${request.url()} ${errorText}`);
+    });
+
+    try {
+      await openSkippedRoundOneBlackCandleCue(page, `commands-${config.label}`);
+      const label = `${config.label} skipped Round 1 commands`;
+      const before = await viewportReport(page);
+      expectIntegrity(before, config, label);
+      expect(before.title.top, `${label} title top`).toBeGreaterThanOrEqual(0);
+      expect(before.title.bottom, `${label} title bottom`).toBeLessThanOrEqual(before.viewport.height);
+      expect(intersects(before.title, before.cue), `${label} cue clears title`).toBe(false);
+      expect(before.shuffleVisible, `${label} Shuffle visible`).toBe(true);
+      expect(before.shuffle.left, `${label} Shuffle left`).toBeGreaterThanOrEqual(0);
+      expect(before.shuffle.right, `${label} Shuffle right`).toBeLessThanOrEqual(before.viewport.width);
+      expect(before.shuffle.top, `${label} Shuffle top`).toBeGreaterThanOrEqual(0);
+      expect(before.shuffle.bottom, `${label} Shuffle bottom`).toBeLessThanOrEqual(before.viewport.height);
+      expect(intersects(before.shuffle, before.board), `${label} Shuffle clears altar`).toBe(false);
+      expect(intersects(before.shuffle, before.activeOrders), `${label} Shuffle clears orders`).toBe(false);
+
+      await page.locator("#shuffleBtn").focus();
+      await page.keyboard.press(config.reduced ? "Space" : "Enter");
+      await page.waitForFunction((key) => JSON.parse(localStorage.getItem(key) || "{}").moves === 3, SAVE_KEY);
+      await expect(page.locator("#board .tile")).toHaveCount(64);
+      await expect(page.locator("#shuffleBtn")).toBeVisible();
+      const after = await viewportReport(page);
+      expectIntegrity(after, config, `${label} after keyboard Shuffle`);
+      expect(after.title.top, `${label} post-Shuffle title top`).toBeGreaterThanOrEqual(0);
+      expect(after.shuffle.bottom, `${label} post-Shuffle bottom`).toBeLessThanOrEqual(after.viewport.height);
+      expect(after.activeId, `${label} post-Shuffle focus remains visible`).not.toBe("");
+      expect(after.activeId, `${label} post-Shuffle focus avoids BODY`).not.toBe("BODY");
       expect(consoleMessages).toEqual([]);
       expect(pageErrors).toEqual([]);
       expect(failedRequests).toEqual([]);

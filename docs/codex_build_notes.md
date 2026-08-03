@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-08-03 kept active First Bouquet commands inside short desktop
+
+- Player-visible result: at exact `1280x720`, the skipped First Bouquet's visible `Shuffle (-1 move)` now occupies the unused lower portion of the current-order rail instead of creating an implicit third grid row below the `600x600` altar. The complete button, title, sigil, Black Candle cue, greenhouse, current order, and outer frame remain visible while the board stays full size.
+- Scope: one large-desktop grid placement reuses the existing right rail for the existing controls row; the compact command cue uses its already intended `11px` large-desktop type so it clears the title. Exact mobile remains unchanged at a `378x378` altar with the `44px` Help target and visible Shuffle below the board. No node, control, copy, mechanic, timer, move, save, economy, round, or progression changed.
+- Permanent contract: the short-viewport matrix now covers the skipped Round 1 Black Candle-formation boundary at desktop `1280x720` and exact `390x844`, full and reduced motion. It requires complete title/cue/control containment, no title/cue or Shuffle/altar/order intersection, keyboard Shuffle spending exactly once, one visible focus owner, 64 tiles/eight rows, loaded images, and no x/y overflow or browser errors.
+- Local verification: the focused Chromium matrix passes `8/8`. Independent in-app inspection measured desktop title `y=27..59`, cue `y=72.9..104`, exact board `600x600` at `y=105..705`, and Shuffle `y=644..705`; exact mobile remained `378x378` at `y=326..704` with Shuffle `y=711..749`. Both layouts report fixed viewport dimensions, `scrollY=0`, 64 tiles/eight rows, and no broken images.
+- Security/scope scan: the production change is CSS-only and the permanent test uses the existing local save fixture. No credential material, private keys, tokens, trackers, analytics, external network hooks, dependencies, assets, backend, permissions, or save-schema fields were added.
+
 ## 2026-08-03 corrected the settled Black Candle Thorn result
 
 - Player-visible result: after a Round 2 Black Candle burns its row and the localized `BREAK` marks finish, the existing board cue gives one concise confirmation from settled blocker progress. Full clear remains `Black Candle burned the row. Cursed Thorn 3 of 3 sealed.`; a one-of-three partial clear now truthfully says `Black Candle burned the row. Cursed Thorn 1 of 3 cleared. 2 Cursed Thorns cracked.` before ordinary guidance returns.

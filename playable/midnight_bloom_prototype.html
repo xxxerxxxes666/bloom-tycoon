@@ -9519,6 +9519,16 @@
         padding: 10px 11px 11px;
       }
 
+      body.focused-active-play:not(.focused-slice-failed) .controls {
+        grid-column: 3;
+        grid-row: 2;
+        align-self: end;
+        justify-self: center;
+        width: min(300px, calc(100% - 18px));
+        margin: 0;
+        z-index: 2;
+      }
+
       body.focused-active-play:not(.focused-slice-failed) .tutorial-command-region {
         grid-column: 1;
         grid-row: 1;
@@ -9527,6 +9537,13 @@
         width: calc(100% - 12px);
         max-width: none;
         margin: 0 0 1px;
+      }
+
+      body.focused-active-play:not(.focused-slice-failed) .tutorial-command-region > .first-swap-cue {
+        min-height: 26px;
+        padding: 3px 7px;
+        gap: 5px;
+        font: 800 11px/1.05 Georgia, serif;
       }
     }
 
