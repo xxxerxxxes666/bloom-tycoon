@@ -17978,9 +17978,9 @@
       const lane = result.blackCandleActivation.direction === "vertical" ? "column" : "row";
       const progress = thornGoalProgress(plan);
       const needed = thornGoalNeeded(plan);
-      const cracked = Math.max(0, result.thornsDamaged - result.thornsCleared);
-      const crackedCopy = cracked > 0
-        ? ` ${cracked} Cursed Thorn${cracked === 1 ? "" : "s"} cracked.`
+      const remaining = Math.max(0, needed - progress);
+      const crackedCopy = remaining > 0
+        ? ` ${remaining} Cursed Thorn${remaining === 1 ? "" : "s"} cracked.`
         : "";
       return `Black Candle burned the ${lane}. Cursed Thorn ${progress} of ${needed} ${progress >= needed ? "sealed" : "cleared"}.${crackedCopy}`;
     }
