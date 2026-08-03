@@ -1,5 +1,12 @@
 # Codex Build Notes
 
+## 2026-08-02 announced the settled Black Candle Thorn result once
+
+- Player-visible result: after a Round 2 Black Candle burns its row and the localized `BREAK` marks finish, the existing board cue now gives one concise, outcome-derived confirmation such as `Black Candle burned the row. Cursed Thorn 3 of 3 sealed.` Partial burns report the real cleared count and the number still cracked. The cue then retires into ordinary guidance instead of leaving assistive play with only the unchanged wallet live region.
+- Scope: the existing `firstSwapCue` temporarily becomes the sole polite narrator for a brief readable handoff after Thorn visual cleanup. Coin, ceremony, and tutorial live regions stay quiet during that handoff; the established tutorial or wallet ownership then returns. The transient result is not saved and never replays on reload. No node, panel, control, copy surface, move, objective, board rule, reward, save field, economy, round, or progression changed.
+- Permanent contract: desktop `1280x720` and exact `390x844`, full and reduced motion, require the accepted Black Candle formation, two-reload authority, physical blocker clear, three readable `BREAK` peaks, and clean visual retirement. The settled full and partial outcomes must each own exactly one visible polite region, preserve focus/roving agreement and 64 enabled tiles/eight rows, then retire once; two subsequent reloads must not replay the outcome.
+- Verification: focused browser, static, security, deployment, and public-host evidence is recorded with the shipping commit.
+
 ## 2026-08-02 made the desktop First Bouquet physically authoritative
 
 - Player-visible result: at desktop normal scale, the fresh 14-unit First Bouquet now reads as one broad hand-tied botanical receiver rather than a shallow paper cup. Fourteen materially painted closed buds converge through visible stems into one restrained wrap and knot; the real opening harvest replaces exactly three positions with dominant Thorn Roses while the eleven remaining positions stay legible.

@@ -42,7 +42,7 @@ const CASES = [
   { label: "mobile390-touch", viewport: { width: 390, height: 844 }, input: "touch", mobile: true, dismissKey: "Enter" },
   { label: "desktop-keyboard-reduced", viewport: { width: 1280, height: 720 }, input: "keyboard", reduced: true, dismissKey: "Space" },
   { label: "mobile390-touch-reduced", viewport: { width: 390, height: 844 }, input: "touch", mobile: true, reduced: true, dismissKey: "Space" }
-];
+].filter(({ label }) => !process.env.BLOOM_TEST_CASE || label === process.env.BLOOM_TEST_CASE);
 
 test.setTimeout(240000);
 
@@ -1077,10 +1077,13 @@ test("Black Candle Thorn outcomes retire after their readable peak", async ({ br
           && state.clearedCursedThorns === 3
           && !state.armedLineRelic;
       }, SAVE_KEY, { timeout: 12000 });
-      await page.waitForFunction(() => (
-        document.querySelector("#board")?.getAttribute("aria-busy") !== "true"
-        && Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled)
-      ), null, { timeout: 20000 });
+      await expect.poll(async () => {
+        const settled = await roundTwoRelicReport(page);
+        return { busy: settled.boardBusy, disabled: settled.disabledTiles };
+      }, {
+        message: `${testCase.label} returns settled board control`,
+        timeout: 20000
+      }).toEqual({ busy: false, disabled: 0 });
       const peak = await stopThornFeedbackRecorder(page);
       expect(peak.events, `${testCase.label} localized BREAK label`).toContain("BREAK");
       expect(peak.geometry.sawThreeOutcomes, `${testCase.label} three simultaneous Thorn outcomes`).toBe(true);
@@ -1100,7 +1103,38 @@ test("Black Candle Thorn outcomes retire after their readable peak", async ({ br
         timeout: 1200
       }).toEqual([0, 0, 0, 0, 0]);
 
+      await expect.poll(async () => (
+        (await roundTwoRelicReport(page)).firstCue
+      ), {
+        message: `${testCase.label} presents the settled Thorn result after the BREAK peak`,
+        timeout: 2200
+      }).toBe("Black Candle burned the row. Cursed Thorn 3 of 3 sealed.");
+
       report = await roundTwoRelicReport(page);
+      expect(
+        report.firstCueVisible,
+        `${testCase.label} settled result is visible ${JSON.stringify({
+          cue: report.firstCue,
+          classes: report.bodyClasses,
+          owners: report.liveRegionOwners
+        })}`
+      ).toBe(true);
+      expect(report.firstCue, `${testCase.label} exact settled result`).toBe(
+        "Black Candle burned the row. Cursed Thorn 3 of 3 sealed."
+      );
+      expect(report.bodyClasses, `${testCase.label} settled result authority class`)
+        .toContain("black-candle-thorn-outcome-cue");
+      expect(
+        report.liveRegionOwners.map(({ id, live, text }) => ({ id, live, text })),
+        `${testCase.label} settled result is the sole live narrator`
+      ).toEqual([{
+        id: "firstSwapCue",
+        live: "polite",
+        text: "Black Candle burned the row. Cursed Thorn 3 of 3 sealed."
+      }]);
+      expect(report.coinLive, `${testCase.label} wallet stays quiet during result`).toBe("off");
+      expect(report.ceremonyLive, `${testCase.label} ceremony stays quiet during result`).toBe("off");
+      expect(report.tutorialLive, `${testCase.label} tutorial stays quiet during result`).toBe("off");
       expect(report.state.moves, `${testCase.label} activation spends once`).toBe(7);
       expect(report.state.clearedCursedThorns, `${testCase.label} all blockers stay sealed`).toBe(3);
       expect(report.focusedTile, `${testCase.label} focus returns to board`).toBeTruthy();
@@ -1113,6 +1147,46 @@ test("Black Candle Thorn outcomes retire after their readable peak", async ({ br
       }
       expect(report.overflowX, `${testCase.label} containment`).toBe(false);
       expect(report.brokenImages, `${testCase.label} images`).toEqual([]);
+      await page.screenshot({
+        path: `work/round-two-thorn-outcome-${testCase.label}.png`,
+        fullPage: true
+      });
+      await expect.poll(async () => (
+        (await roundTwoRelicReport(page)).bodyClasses.includes("black-candle-thorn-outcome-cue")
+      ), {
+        message: `${testCase.label} outcome speaks once then returns ordinary narration`,
+        timeout: 4200
+      }).toBe(false);
+      const retiredNarration = await roundTwoRelicReport(page);
+      const retiredOwners = retiredNarration.liveRegionOwners
+        .map(({ id, live }) => ({ id, live }));
+      const ordinaryWalletNarration = !retiredNarration.firstCueVisible
+        && JSON.stringify(retiredOwners) === JSON.stringify([{ id: "coinBalance", live: "polite" }]);
+      const restoredPathNarration = retiredNarration.firstCueVisible
+        && JSON.stringify(retiredOwners) === JSON.stringify([{ id: "firstSwapCue", live: "polite" }]);
+      expect(
+        ordinaryWalletNarration || restoredPathNarration,
+        `${testCase.label} exact ordinary owner ${JSON.stringify({
+          cue: retiredNarration.firstCue,
+          visible: retiredNarration.firstCueVisible,
+          owners: retiredOwners,
+          classes: retiredNarration.bodyClasses
+        })}`
+      ).toBe(true);
+      const settledState = JSON.stringify((await roundTwoRelicReport(page)).state);
+      for (let reload = 1; reload <= 2; reload += 1) {
+        await page.reload({ waitUntil: "networkidle" });
+        const reloaded = await roundTwoRelicReport(page);
+        expect(JSON.stringify(reloaded.state), `${testCase.label} reload ${reload} exact state`)
+          .toBe(settledState);
+        expect(reloaded.firstCueVisible, `${testCase.label} reload ${reload} does not replay result`).toBe(false);
+        expect(reloaded.bodyClasses, `${testCase.label} reload ${reload} has no transient authority`)
+          .not.toContain("black-candle-thorn-outcome-cue");
+        expect(
+          reloaded.liveRegionOwners.map(({ id, live }) => ({ id, live })),
+          `${testCase.label} reload ${reload} restores ordinary narration`
+        ).toEqual([{ id: "coinBalance", live: "polite" }]);
+      }
       await page.screenshot({
         path: `work/round-two-thorn-feedback-retired-${testCase.label}.png`,
         fullPage: true
@@ -1768,6 +1842,9 @@ async function roundTwoRelicReport(page) {
       ceremonyLive: document.querySelector("#roundOneRestoration")?.getAttribute("aria-live") || "",
       tutorialLive: document.querySelector("#tutorialPanel")?.getAttribute("aria-live") || "",
       firstCueLive: document.querySelector("#firstSwapCue")?.getAttribute("aria-live") || "",
+      firstCueVisible: visible(document.querySelector("#firstSwapCue")),
+      firstCue: document.querySelector("#firstSwapCue")?.textContent.trim() || "",
+      bodyClasses: document.body.className,
       instructionCount: [
         document.querySelector("#tutorialPanel"),
         document.querySelector("#firstSwapCue")
@@ -1787,6 +1864,7 @@ async function roundTwoRelicReport(page) {
       crackedSuffixTiles: Array.from(document.querySelectorAll(".tile[aria-label]"))
         .filter((tile) => tile.getAttribute("aria-label").includes("where a Cursed Thorn cracked")).length,
       boardParticles: document.querySelectorAll(".board-particle").length,
+      boardBusy: document.querySelector("#board")?.getAttribute("aria-busy") === "true",
       disabledTiles: document.querySelectorAll(".tile:disabled").length,
       thornCauses: document.querySelectorAll(".tile.thorn-teach").length,
       thornTargets: document.querySelectorAll(".tile.thorn-teach-blocker").length,
@@ -2006,6 +2084,28 @@ for (const testCase of CASES) {
           && document.querySelectorAll(".tile").length === 64
           && Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled);
       }, SAVE_KEY, { timeout: 12000 });
+      await expect.poll(async () => {
+        const outcome = await roundTwoRelicReport(page);
+        return {
+          cue: outcome.firstCue,
+          visible: outcome.firstCueVisible,
+          owners: outcome.liveRegionOwners.map(({ id, live }) => ({ id, live }))
+        };
+      }, {
+        message: `${testCase.label} partial Black Candle result owns narration after its peak`,
+        timeout: 1200
+      }).toEqual({
+        cue: "Black Candle burned the row. Cursed Thorn 1 of 3 cleared. 2 Cursed Thorns cracked.",
+        visible: true,
+        owners: [{ id: "firstSwapCue", live: "polite" }]
+      });
+      await expect.poll(async () => {
+        const outcome = await roundTwoRelicReport(page);
+        return outcome.firstCueVisible;
+      }, {
+        message: `${testCase.label} partial outcome retires into the Thorn lesson`,
+        timeout: 4200
+      }).toBe(false);
       report = await handoffReport(page);
       expect(report.state.clearedCursedThorns, `${testCase.label} one Thorn clears`).toBe(1);
       expectTutorialNarrationOwnership(report, `${testCase.label} partial Thorn recovery`);
