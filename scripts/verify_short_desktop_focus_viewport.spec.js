@@ -17,6 +17,16 @@ const FIXTURES = [
   { label: "active-r3", round: 3, counts: [3, 0, 0, 3, 0, 0], moves: 7 },
   { label: "owned-replay-r1", round: 1, ownedReplay: true }
 ];
+const ROUND_ONE_SAFE_BOARD = [
+  [3, 0, 4, 4, 0, 3, 3, 0],
+  [2, 0, 0, 2, 3, 4, 0, 2],
+  [4, 2, 0, 0, 2, 3, 4, 0],
+  [0, 2, 0, 3, 3, 0, 4, 2],
+  [0, 4, 2, 4, 0, 2, 3, 3],
+  [2, 3, 4, 3, 3, 4, 0, 4],
+  [3, 4, 2, 2, 0, 2, 4, 3],
+  [4, 2, 2, 4, 3, 3, 0, 3]
+];
 
 test.setTimeout(180000);
 
@@ -93,9 +103,10 @@ async function openFixture(page, fixture, marker) {
 
 async function openSkippedRoundOneBlackCandleCue(page, marker) {
   await openFresh(page, marker);
-  await page.evaluate((key) => {
+  await page.addInitScript(({ key, board }) => {
     const state = JSON.parse(localStorage.getItem(key) || "{}");
     Object.assign(state, {
+      board,
       currentRound: 1,
       roundComplete: false,
       moves: 4,
@@ -112,7 +123,7 @@ async function openSkippedRoundOneBlackCandleCue(page, marker) {
       blackCandleLessonComplete: true
     });
     localStorage.setItem(key, JSON.stringify(state));
-  }, SAVE_KEY);
+  }, { key: SAVE_KEY, board: ROUND_ONE_SAFE_BOARD });
   await page.reload({ waitUntil: "networkidle" });
   await expect(page.locator("#board .tile")).toHaveCount(64);
   await expect(page.locator("body")).toHaveClass(/round-one-black-candle-cue/);
