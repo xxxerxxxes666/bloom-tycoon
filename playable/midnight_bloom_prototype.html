@@ -15781,12 +15781,23 @@
       tutorialActive = true;
       tutorialReplayOwnsNarration = Boolean(replay);
       tutorialReplayReturnsFocusToHelp = Boolean(replay && returnFocusToHelp);
+      const untouchedOpeningFocus = !replay
+        && currentRound === 1
+        && !hasMadeValidMove
+        && !selected
+        && (!document.activeElement || ["BODY", "HTML"].includes(document.activeElement.tagName));
       if (restartRoundOneAgencyHint) {
         beginRoundOneAgencyDiscovery();
       }
       if (replay) {
         restoreAuthoritativeRoundTwoThornLesson();
         queuePostRenderFocus("tutorialSkipBtn");
+      } else if (untouchedOpeningFocus) {
+        const openingSource = currentTutorialBoardGuidePair()?.source || firstHintFocusCell();
+        if (openingSource) {
+          boardFocusCell = clampBoardFocusCell(openingSource);
+          queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
+        }
       }
       render();
       if (replay) {

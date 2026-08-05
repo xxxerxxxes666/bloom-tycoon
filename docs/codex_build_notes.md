@@ -1,5 +1,12 @@
 # Codex Build Notes
 
+## 2026-08-05 handed the fresh tutorial directly to the board
+
+- Player-visible result: when the untouched First Bouquet tutorial appears, keyboard and screen-reader focus now lands on its authored glowing source instead of remaining on the page body. The source is also the sole roving board tile, so Arrow keys, Enter, and Space work immediately while the existing instruction remains the sole polite narrator.
+- Focus boundary: the handoff is limited to fresh Round 1 with no valid move, selection, or existing focused control. A player who Tabs, taps, or begins the pair during the tutorial delay keeps that board focus and selection; Help replay, saved tutorial, skipped reload, Round 2/3 teaching, relic, failure, and payoff owners are unchanged.
+- Permanent contract: desktop `1280x720` and exact `390x844`, full and reduced motion, cover untouched keyboard/touch entry plus a pre-panel touch interruption. The matrix requires source focus and sole roving ownership without a move or selection, Tab/Shift+Tab reachability of Skip, one Enter/Space or touch commit, 64 tiles/eight rows, exact mobile altar geometry, loaded images, no overflow, and no browser errors.
+- Scope/security: no copy, timing, UI node, control, board rule, move, objective, save field, economy, round, progression, dependency, network hook, tracker, credential, or permission changed.
+
 ## 2026-08-05 corrected settled result announcement order
 
 - Background-delay correction: hiding the page now clears a result while it is still pending behind HIT/CRACK/BREAK feedback as well as after its empty live owner exists. Presentation also fails closed if the document is already hidden, so returning to the game cannot release a stale receipt.
