@@ -269,6 +269,7 @@ def verify_source_hooks():
         "})();",
         "round-one-active",
         "body.round-one-active:not(.first-move-made) #shuffleBtn",
+        "#shuffleBtn {\n        box-sizing: border-box;\n        min-height: 44px;",
         "firstSwapCue",
         "Swap the glowing pair",
         "swap-path-arrow",

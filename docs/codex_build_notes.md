@@ -1,5 +1,12 @@
 # Codex Build Notes
 
+## 2026-08-05 exact-mobile Shuffle touch authority
+
+- Player-visible correction: the existing paid Shuffle command now owns a full `44px` minimum touch height at exact mobile, matching the established board-tile, Help, and Skip touch contract. The button's visible treatment, width, copy, cost, and placement remain unchanged; the `378x378` altar does not move or shrink.
+- Scope: one `max-width:600px` CSS rule changes only `#shuffleBtn` sizing. Desktop geometry, final-move retirement, tutorial gating, focus, board rules, RNG, moves, objectives, saves, economy, rounds, and progression are untouched.
+- Permanent contract: `scripts/verify_last_move_shuffle_guard.spec.js` now measures the visible active First Bouquet control at `390x844` in full and reduced motion, requires the entire Shuffle rect inside the viewport and clear of the altar, and probes all eight 2px-inset corners/edge midpoints with real touchscreen coordinates. Every probe must belong to Shuffle, spend exactly one move, leave no selection, and retain 64 tiles/eight rows, the exact altar, `scrollY=0`, loaded images, no overflow, and clean browser/request logs.
+- Local evidence: the focused touch contract passes `1/1`, the complete last-move/Shuffle contract passes `2/2`, and the existing skipped-command desktop/mobile matrix passes `4/4`. Exact-mobile measured Shuffle `216x44` at `x=88..304`, `y=710..754`, clear of the unchanged `378x378` altar at `y=325..703`; desktop remained `250x60` beside the unchanged `600x600` altar. Static project/HTML, inline JavaScript, all spec syntax, diff, and changed-line security gates pass.
+
 ## 2026-08-05 restored desktop final-harvest command authority
 
 - Player-visible correction: plain `FINAL HARVEST` commands now retain the established `13px`/`900` large-desktop treatment instead of inheriting the later compact `11px` ordinary-cue shorthand. The fix is limited to eligible/landing final-harvest ownership in the shared command region; ordinary cues stay compact, while authored Black Candle guidance still outranks the final cue and remains the sole narrator.

@@ -47,6 +47,29 @@ function lastMoveRelicState() {
   };
 }
 
+function activeShuffleState() {
+  return {
+    focusedEconomyVersion: 2,
+    currentRound: 1,
+    moves: 5,
+    counts: [0, 3, 0, 0, 0, 3],
+    coins: 0,
+    board: BOARD.map((row) => [...row]),
+    armedLineRelic: null,
+    cursedThorns: [],
+    clearedCursedThorns: 0,
+    roundComplete: false,
+    roundOneRestored: false,
+    roundTwoGreenhouseUpgraded: false,
+    roundThreeConservatoryRaised: false,
+    hasMadeValidMove: true,
+    restoredRoundTwoGuideMoves: 0,
+    tutorialSkipped: true,
+    tutorialActive: false,
+    blackCandleLessonComplete: true
+  };
+}
+
 async function openState(page, marker) {
   await page.addInitScript(({ key, saved, fixtureMarker }) => {
     if (!sessionStorage.getItem(fixtureMarker)) {
@@ -225,6 +248,125 @@ test("the final First Bouquet move belongs to its armed Black Candle", async ({ 
       expect(completedReload.restoreVisible).toBe(true);
       expect(await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY), `${label} reward reload`)
         .toBe(completedSave);
+      expect(errors, `${label} browser errors`).toEqual([]);
+      expect(failedRequests, `${label} request failures`).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  }
+});
+
+test("exact-mobile Shuffle owns a complete 44px touch target", async ({ browser }) => {
+  const touchPoints = [
+    ["top-left", (box) => [box.x + 2, box.y + 2]],
+    ["top", (box) => [box.x + box.width / 2, box.y + 2]],
+    ["top-right", (box) => [box.x + box.width - 2, box.y + 2]],
+    ["right", (box) => [box.x + box.width - 2, box.y + box.height / 2]],
+    ["bottom-right", (box) => [box.x + box.width - 2, box.y + box.height - 2]],
+    ["bottom", (box) => [box.x + box.width / 2, box.y + box.height - 2]],
+    ["bottom-left", (box) => [box.x + 2, box.y + box.height - 2]],
+    ["left", (box) => [box.x + 2, box.y + box.height / 2]]
+  ];
+
+  for (const reducedMotion of [false, true]) {
+    const context = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      hasTouch: true,
+      isMobile: true,
+      reducedMotion: reducedMotion ? "reduce" : "no-preference"
+    });
+    const page = await context.newPage();
+    const errors = [];
+    const failedRequests = [];
+    page.on("console", (message) => {
+      if (["warning", "error"].includes(message.type())) errors.push(message.text());
+    });
+    page.on("pageerror", (error) => errors.push(error.message));
+    page.on("requestfailed", (request) => {
+      const errorText = request.failure()?.errorText || "";
+      if (errorText !== "net::ERR_ABORTED") failedRequests.push(`${request.url()} ${errorText}`);
+    });
+
+    const mode = reducedMotion ? "reduced" : "full";
+    const label = `${mode} Round 1`;
+    const saved = activeShuffleState();
+    try {
+      await page.addInitScript(({ key, state }) => {
+        localStorage.setItem(key, JSON.stringify(state));
+      }, { key: SAVE_KEY, state: saved });
+      await page.goto(`${BASE_URL}?mobile-shuffle-touch=${mode}`, { waitUntil: "networkidle" });
+      await expect(page.locator("#board .tile")).toHaveCount(64);
+      await expect(page.locator("#shuffleBtn")).toBeVisible();
+      await expect(page.locator("#shuffleBtn")).toBeEnabled();
+
+      const geometry = await page.evaluate(() => {
+        const rect = (node) => {
+          const bounds = node.getBoundingClientRect();
+          return {
+            left: bounds.left,
+            top: bounds.top,
+            right: bounds.right,
+            bottom: bounds.bottom,
+            width: bounds.width,
+            height: bounds.height
+          };
+        };
+        const board = document.querySelector("#board");
+        const shuffle = document.querySelector("#shuffleBtn");
+        const tiles = Array.from(board.querySelectorAll(".tile"));
+        return {
+          board: rect(board),
+          shuffle: rect(shuffle),
+          tiles: tiles.length,
+          rows: new Set(tiles.map((tile) => tile.dataset.y)).size,
+          scrollY,
+          overflowX: document.documentElement.scrollWidth > innerWidth + 1,
+          overflowY: document.documentElement.scrollHeight > innerHeight + 1,
+          brokenImages: Array.from(document.images)
+            .filter((image) => image.complete && image.naturalWidth === 0)
+            .map((image) => image.getAttribute("src"))
+        };
+      });
+      expect(geometry.shuffle.width, `${label} Shuffle width`).toBeGreaterThanOrEqual(44);
+      expect(geometry.shuffle.height, `${label} Shuffle height`).toBeGreaterThanOrEqual(44);
+      expect(geometry.shuffle.left, `${label} left containment`).toBeGreaterThanOrEqual(1);
+      expect(geometry.shuffle.right, `${label} right containment`).toBeLessThanOrEqual(389);
+      expect(geometry.shuffle.top, `${label} clears altar`)
+        .toBeGreaterThanOrEqual(geometry.board.bottom + 1);
+      expect(geometry.shuffle.bottom, `${label} bottom containment`).toBeLessThanOrEqual(843);
+      expect(geometry.board.width, `${label} altar width`).toBeCloseTo(378, 1);
+      expect(geometry.board.height, `${label} altar height`).toBeCloseTo(378, 1);
+      expect(geometry.tiles).toBe(64);
+      expect(geometry.rows).toBe(8);
+      expect(geometry.scrollY).toBe(0);
+      expect(geometry.overflowX).toBe(false);
+      expect(geometry.overflowY).toBe(false);
+      expect(geometry.brokenImages).toEqual([]);
+
+      for (const [pointLabel, pointFor] of touchPoints) {
+        await page.reload({ waitUntil: "networkidle" });
+        await expect(page.locator("#shuffleBtn")).toBeEnabled();
+        const box = await page.locator("#shuffleBtn").boundingBox();
+        const [x, y] = pointFor(box);
+        const owner = await page.evaluate(({ x, y }) => (
+          document.elementFromPoint(x, y)?.closest("#shuffleBtn")?.id || ""
+        ), { x, y });
+        expect(owner, `${label} ${pointLabel} belongs to Shuffle`).toBe("shuffleBtn");
+        await page.touchscreen.tap(x, y);
+        await page.waitForFunction((key) => (
+          JSON.parse(localStorage.getItem(key) || "{}").moves === 4
+        ), SAVE_KEY);
+        await page.waitForTimeout(250);
+        const after = await report(page);
+        expect(after.moves, `${label} ${pointLabel} spends exactly one move`).toBe(4);
+        expect(after.selected, `${label} ${pointLabel} leaves no selection`).toBe(0);
+        expect(after.tiles).toBe(64);
+        expect(after.rows).toBe(8);
+        expect(after.overflowX).toBe(false);
+        expect(after.overflowY).toBe(false);
+        expect(after.brokenImages).toEqual([]);
+      }
+
       expect(errors, `${label} browser errors`).toEqual([]);
       expect(failedRequests, `${label} request failures`).toEqual([]);
     } finally {
