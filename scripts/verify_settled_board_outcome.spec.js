@@ -45,6 +45,24 @@ const CASES = [
   }
 ];
 
+const SHUFFLE_CASES = [
+  { label: "desktop-full-pointer", viewport: { width: 1280, height: 720 }, input: "pointer" },
+  { label: "desktop-reduced-keyboard", viewport: { width: 1280, height: 720 }, input: "keyboard", reduced: true },
+  { label: "mobile-full-touch", viewport: { width: 390, height: 844 }, input: "touch", mobile: true },
+  { label: "mobile-reduced-touch", viewport: { width: 390, height: 844 }, input: "touch", mobile: true, reduced: true }
+].flatMap((config) => [5, 4].map((moves) => ({ ...config, moves })));
+
+const SHUFFLE_BOARD = [
+  [3, 0, 4, 4, 0, 3, 3, 0],
+  [2, 0, 0, 2, 3, 4, 0, 2],
+  [4, 2, 0, 0, 2, 3, 4, 0],
+  [1, 2, 1, 1, 3, 5, 4, 1],
+  [0, 4, 2, 4, 0, 2, 3, 3],
+  [2, 3, 4, 3, 3, 4, 0, 4],
+  [3, 4, 2, 2, 0, 2, 4, 3],
+  [4, 2, 2, 4, 3, 3, 0, 3]
+];
+
 async function seedCase(page, testCase) {
   const seedToken = `settled-outcome-seeded-${testCase.label}`;
   await page.addInitScript(({ key, testCase, seedToken }) => {
@@ -121,6 +139,52 @@ async function activatePair(page, testCase) {
   }
 }
 
+async function seedShuffleCase(page, testCase, suffix = "") {
+  const seedKey = `shuffle-outcome-${testCase.label}-${testCase.moves}-${suffix}`;
+  await page.addInitScript(({ key, testCase, seedKey, board }) => {
+    if (sessionStorage.getItem(seedKey)) {
+      return;
+    }
+    localStorage.setItem(key, JSON.stringify({
+      focusedEconomyVersion: 2,
+      currentRound: 1,
+      moves: testCase.moves,
+      counts: [0, 3, 0, 0, 0, 3],
+      coins: 0,
+      board,
+      armedLineRelic: null,
+      cursedThorns: [],
+      clearedCursedThorns: 0,
+      roundComplete: false,
+      roundOneRestored: false,
+      roundTwoGreenhouseUpgraded: false,
+      roundThreeConservatoryRaised: false,
+      hasMadeValidMove: true,
+      restoredRoundTwoGuideMoves: 0,
+      tutorialSkipped: true,
+      tutorialActive: false,
+      blackCandleLessonComplete: true
+    }));
+    sessionStorage.setItem(seedKey, "1");
+  }, { key: SAVE_KEY, testCase, seedKey, board: SHUFFLE_BOARD });
+  await page.goto(`${BASE_URL}?shuffle-outcome=${seedKey}`, { waitUntil: "networkidle" });
+  await expect(page.locator("#board .tile")).toHaveCount(64);
+  await expect(page.locator("#shuffleBtn")).toBeVisible();
+  await expect(page.locator("#shuffleBtn")).toBeEnabled();
+}
+
+async function activateShuffle(page, testCase) {
+  const shuffle = page.locator("#shuffleBtn");
+  if (testCase.input === "touch") {
+    await shuffle.tap();
+  } else if (testCase.input === "keyboard") {
+    await shuffle.focus();
+    await page.keyboard.press("Space");
+  } else {
+    await shuffle.click();
+  }
+}
+
 async function observeOutcomeChronology(page) {
   await page.evaluate(() => {
     const cue = document.querySelector("#firstSwapCue");
@@ -180,6 +244,7 @@ async function report(page) {
       && node.getBoundingClientRect().height > 0;
     const tiles = Array.from(document.querySelectorAll("#board .tile"));
     const board = document.querySelector("#board")?.getBoundingClientRect();
+    const shuffle = document.querySelector("#shuffleBtn")?.getBoundingClientRect();
     return {
       state: JSON.parse(localStorage.getItem(key) || "{}"),
       cue: document.querySelector("#firstSwapCue")?.textContent.trim() || "",
@@ -192,11 +257,15 @@ async function report(page) {
       focused: document.activeElement?.id || "",
       roving: tiles.filter((tile) => tile.tabIndex === 0).map((tile) => tile.id),
       selected: tiles.filter((tile) => tile.classList.contains("sel")).length,
+      hints: tiles.filter((tile) => tile.classList.contains("idle-hint")).map((tile) => tile.id),
       tiles: tiles.length,
       rows: new Set(tiles.map((tile) => tile.dataset.y)).size,
       disabled: tiles.filter((tile) => tile.disabled).length,
       boardWidth: board?.width || 0,
       boardBottom: board?.bottom || 0,
+      shuffleWidth: shuffle?.width || 0,
+      shuffleHeight: shuffle?.height || 0,
+      moveLive: document.querySelector(".moves-counter")?.getAttribute("aria-live") || "",
       overflowX: document.documentElement.scrollWidth > innerWidth + 1,
       overflowY: document.documentElement.scrollHeight > innerHeight + 1,
       scrollY,
@@ -313,6 +382,204 @@ for (const testCase of CASES) {
     }
   });
 }
+
+for (const testCase of SHUFFLE_CASES) {
+  test(`${testCase.label} Moves ${testCase.moves} Shuffle announces once and stays board-first`, async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: testCase.viewport,
+      hasTouch: Boolean(testCase.mobile),
+      isMobile: Boolean(testCase.mobile),
+      reducedMotion: testCase.reduced ? "reduce" : "no-preference"
+    });
+    const page = await context.newPage();
+    const browserErrors = [];
+    const failedRequests = [];
+    page.on("console", (message) => {
+      if (["warning", "error"].includes(message.type())) browserErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => browserErrors.push(error.message));
+    page.on("requestfailed", (request) => {
+      const errorText = request.failure()?.errorText || "";
+      if (errorText !== "net::ERR_ABORTED") failedRequests.push(`${request.url()} ${errorText}`);
+    });
+
+    try {
+      await seedShuffleCase(page, testCase);
+      const before = await report(page);
+      await observeOutcomeChronology(page);
+      await activateShuffle(page, testCase);
+      const movesLeft = testCase.moves - 1;
+      await expect.poll(async () => (await report(page)).cue, {
+        message: `${testCase.label} exposes the settled Shuffle receipt`,
+        timeout: 5000
+      }).toBe(`Board shuffled. ${movesLeft} moves left.`);
+      const settled = await report(page);
+      const chronology = await page.evaluate(() => window.__settledOutcomeChronology || []);
+      const timeline = await page.evaluate(() => window.__settledOutcomeTimeline || []);
+      expect(timeline, `${testCase.label} owner precedes result`).toEqual(["owner", "result"]);
+      expect(chronology, `${testCase.label} result mutates once`).toHaveLength(1);
+      expect(chronology[0].text).toBe(settled.cue);
+      expect(chronology[0].display).not.toBe("none");
+      expect(chronology[0].cueLive).toBe("polite");
+      expect(chronology[0].visibleOwners).toEqual([{ id: "firstSwapCue", live: "polite" }]);
+      expect(chronology[0].competingOwners).toEqual([]);
+      expect(settled.bodyClasses).toContain("settled-board-outcome-cue");
+      expect(settled.bodyClasses).toContain("shuffle-board-outcome-cue");
+      expect(settled.liveOwners).toEqual([{ id: "firstSwapCue", live: "polite" }]);
+      expect(settled.moveLive, `${testCase.label} move counter does not compete`).toBe("off");
+      expect(settled.state.moves, `${testCase.label} spends exactly once`).toBe(movesLeft);
+      expect(settled.selected).toBe(0);
+      expect(settled.focused, `${testCase.label} Shuffle keeps focus`).toBe("shuffleBtn");
+      expect(settled.roving, `${testCase.label} one board entry remains`).toHaveLength(1);
+      expect(settled.tiles).toBe(64);
+      expect(settled.rows).toBe(8);
+      expect(settled.disabled).toBe(0);
+      expect(settled.boardBottom).toBeLessThanOrEqual(testCase.viewport.height);
+      expect(settled.overflowX).toBe(false);
+      expect(settled.scrollY).toBe(0);
+      expect(settled.brokenImages).toEqual([]);
+      if (testCase.mobile) {
+        expect(settled.boardWidth).toBeCloseTo(378, 1);
+        expect(settled.shuffleWidth).toBeGreaterThanOrEqual(44);
+        expect(settled.shuffleHeight).toBeGreaterThanOrEqual(44);
+        expect(settled.overflowY).toBe(false);
+      } else {
+        expect(settled.boardWidth).toBeCloseTo(600, 1);
+      }
+
+      const settledSave = await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY);
+      await expect.poll(async () => (await report(page)).bodyClasses, {
+        message: `${testCase.label} receipt retires`,
+        timeout: 5000
+      }).not.toContain("settled-board-outcome-cue");
+      const retired = await report(page);
+      expect(retired.cue).not.toContain("Board shuffled.");
+      expect(retired.focused, `${testCase.label} retirement does not steal focus`).toBe("shuffleBtn");
+      expect(retired.roving, `${testCase.label} roving identity survives retirement`)
+        .toEqual(settled.roving);
+      await expect.poll(async () => (await report(page)).hints.length, {
+        message: `${testCase.label} ordinary objective guide resumes`,
+        timeout: 8500
+      }).toBe(2);
+      const guided = await report(page);
+      expect(guided.focused, `${testCase.label} delayed guide does not steal focus`).toBe("shuffleBtn");
+      expect(guided.state.moves).toBe(movesLeft);
+
+      await page.reload({ waitUntil: "networkidle" });
+      const reloaded = await report(page);
+      expect(await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY), `${testCase.label} reload atomicity`)
+        .toBe(settledSave);
+      expect(reloaded.bodyClasses).not.toContain("settled-board-outcome-cue");
+      expect(reloaded.cue).not.toContain("Board shuffled.");
+      expect(reloaded.state.moves).toBe(movesLeft);
+      expect(reloaded.tiles).toBe(64);
+      expect(reloaded.rows).toBe(8);
+      expect(browserErrors, `${testCase.label} browser errors`).toEqual([]);
+      expect(failedRequests, `${testCase.label} request failures`).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+}
+
+test("Shuffle receipt cancels on interaction and immediate reload", async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+  const page = await context.newPage();
+  const testCase = SHUFFLE_CASES.find(({ label, moves }) => label === "desktop-full-pointer" && moves === 5);
+  try {
+    await seedShuffleCase(page, testCase, "interaction");
+    await activateShuffle(page, testCase);
+    await expect(page.locator("#firstSwapCue")).toContainText("Board shuffled.", { timeout: 5000 });
+    await page.locator("#tile-0-0").click();
+    await page.waitForTimeout(2800);
+    const interrupted = await report(page);
+    expect(interrupted.bodyClasses).not.toContain("settled-board-outcome-cue");
+    expect(interrupted.cue).not.toContain("Board shuffled.");
+    expect(interrupted.state.moves).toBe(4);
+    expect(interrupted.selected).toBe(1);
+    expect(interrupted.focused).toBe("tile-0-0");
+
+    await page.evaluate((key) => {
+      const state = JSON.parse(localStorage.getItem(key) || "{}");
+      state.moves = 5;
+      localStorage.setItem(key, JSON.stringify(state));
+    }, SAVE_KEY);
+    await page.reload({ waitUntil: "networkidle" });
+    await activateShuffle(page, testCase);
+    await page.reload({ waitUntil: "networkidle" });
+    await page.waitForTimeout(900);
+    const reloaded = await report(page);
+    expect(reloaded.state.moves).toBe(4);
+    expect(reloaded.bodyClasses).not.toContain("settled-board-outcome-cue");
+    expect(reloaded.cue).not.toContain("Board shuffled.");
+    expect(reloaded.tiles).toBe(64);
+    expect(reloaded.rows).toBe(8);
+  } finally {
+    await context.close();
+  }
+});
+
+test("Shuffle receipt cancels in both background interruption windows", async ({ browser }) => {
+  for (const phase of ["pending", "owner"]) {
+    const context = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      hasTouch: true,
+      isMobile: true
+    });
+    const page = await context.newPage();
+    const testCase = SHUFFLE_CASES.find(({ label, moves }) => label === "mobile-full-touch" && moves === 5);
+    try {
+      await seedShuffleCase(page, testCase, `background-${phase}`);
+      await observeOutcomeChronology(page);
+      await page.evaluate((phase) => {
+        let forcedHidden = false;
+        Object.defineProperty(document, "hidden", {
+          configurable: true,
+          get: () => forcedHidden
+        });
+        window.__setShuffleOutcomeDocumentHidden = (hidden) => {
+          forcedHidden = hidden;
+          document.dispatchEvent(new Event("visibilitychange"));
+        };
+        if (phase === "owner") {
+          const observer = new MutationObserver(() => {
+            if (
+              document.body.classList.contains("settled-board-outcome-cue")
+              && !(document.querySelector("#firstSwapCue")?.textContent.trim())
+            ) {
+              window.__setShuffleOutcomeDocumentHidden(true);
+              observer.disconnect();
+            }
+          });
+          observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+        }
+      }, phase);
+      await activateShuffle(page, testCase);
+      if (phase === "pending") {
+        await page.evaluate(() => window.__setShuffleOutcomeDocumentHidden(true));
+      }
+      await page.waitForTimeout(1000);
+      await page.evaluate(() => window.__setShuffleOutcomeDocumentHidden(false));
+      await page.waitForTimeout(2600);
+      const interrupted = await report(page);
+      const chronology = await page.evaluate(() => window.__settledOutcomeChronology || []);
+      expect(chronology, `${phase} background never mutates the receipt`).toEqual([]);
+      expect(interrupted.bodyClasses).not.toContain("settled-board-outcome-cue");
+      expect(interrupted.cue).not.toContain("Board shuffled.");
+      expect(interrupted.state.moves).toBe(4);
+      expect(interrupted.focused).toBe("shuffleBtn");
+      expect(interrupted.roving).toHaveLength(1);
+      expect(interrupted.tiles).toBe(64);
+      expect(interrupted.rows).toBe(8);
+      expect(interrupted.boardWidth).toBeCloseTo(378, 1);
+      expect(interrupted.overflowX).toBe(false);
+      expect(interrupted.overflowY).toBe(false);
+      expect(interrupted.brokenImages).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  }
+});
 
 test("background interruption cancels the inter-frame result mutation", async ({ browser }) => {
   const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });

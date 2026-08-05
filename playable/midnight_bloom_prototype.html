@@ -6559,6 +6559,7 @@
     body.focused-active-play.armed-line-relic-cue .first-swap-cue::before,
     body.focused-active-play.settled-board-outcome-cue .first-swap-cue::before { content:"HARVEST"; }
     body.focused-active-play.black-candle-thorn-outcome-cue .first-swap-cue::before { content:"BLACK CANDLE"; }
+    body.focused-active-play.shuffle-board-outcome-cue .first-swap-cue::before { content:"SHUFFLE"; }
     body.settled-board-outcome-cue .tutorial-panel,
     body.settled-board-outcome-cue .tutorial-help { display:none!important; }
     body.focused-active-play.settled-board-outcome-cue .first-swap-cue { display:flex!important; }
@@ -14995,6 +14996,10 @@
         "black-candle-thorn-outcome-cue",
         settledBoardOutcome?.kind === "black-candle"
       );
+      document.body.classList.toggle(
+        "shuffle-board-outcome-cue",
+        settledBoardOutcome?.kind === "shuffle"
+      );
       document.body.classList.toggle("target-match-forecast-active", Boolean(targetMatchForecast));
       if (targetMatchForecast) {
         document.body.dataset.targetMatchForecast = flowers[targetMatchForecast.target.flowerId][0];
@@ -15476,6 +15481,8 @@
       const settledMovePressure = !isResolving && !roundComplete && !failed && moves > 0;
       const lowMoves = settledMovePressure && moves <= 3;
       const lastMove = settledMovePressure && moves === 1;
+      const shuffleOutcomeNarrationPending = pendingSettledBoardOutcome?.kind === "shuffle"
+        || settledBoardOutcome?.kind === "shuffle";
       const moveCounterText = lastMove ? "LAST MOVE · 1" : `Moves ${moves}`;
       const moveCounterLabel = lastMove
         ? "Last move. 1 move remaining."
@@ -15493,7 +15500,7 @@
         <span
           class="moves-counter ${lowMoves ? "moves-low" : ""} ${lastMove ? "moves-last" : ""} ${moveUrgencyPulseActive && lowMoves ? "move-decrement-pulse" : ""}"
           role="status"
-          aria-live="${moveUrgencyPulseActive && lowMoves ? "polite" : "off"}"
+          aria-live="${moveUrgencyPulseActive && lowMoves && !shuffleOutcomeNarrationPending ? "polite" : "off"}"
           aria-atomic="true"
           aria-label="${moveCounterLabel}"
         >${moveCounterText}</span>
@@ -17921,6 +17928,8 @@
 
     function clearSettledBoardOutcome({ renderAfter = false, restoreCue = false } = {}) {
       const returnCue = settledBoardOutcome?.returnCue || "";
+      const clearingShuffleOutcome = pendingSettledBoardOutcome?.kind === "shuffle"
+        || settledBoardOutcome?.kind === "shuffle";
       if (settledBoardOutcomeRevealFrame && window.cancelAnimationFrame) {
         window.cancelAnimationFrame(settledBoardOutcomeRevealFrame);
       }
@@ -17931,6 +17940,9 @@
       settledBoardOutcomeTimer = null;
       pendingSettledBoardOutcome = null;
       settledBoardOutcome = null;
+      if (clearingShuffleOutcome && $("firstSwapCue")) {
+        $("firstSwapCue").textContent = "";
+      }
       if (renderAfter) {
         render();
       }
@@ -17963,7 +17975,9 @@
       }
       settledBoardOutcome = {
         ...pendingSettledBoardOutcome,
-        returnCue: $("firstSwapCue").textContent
+        returnCue: pendingSettledBoardOutcome.kind === "shuffle"
+          ? ""
+          : $("firstSwapCue").textContent
       };
       const outcome = settledBoardOutcome;
       pendingSettledBoardOutcome = null;
@@ -17983,15 +17997,18 @@
         $("firstSwapCue").textContent = outcome.text;
         settledBoardOutcomeTimer = window.setTimeout(() => {
           const returnCue = settledBoardOutcome?.returnCue || "";
+          const outcomeKind = settledBoardOutcome?.kind || "";
           settledBoardOutcomeTimer = null;
           settledBoardOutcome = null;
           if (returnCue) {
             $("firstSwapCue").textContent = returnCue;
+          } else if (outcomeKind === "shuffle") {
+            $("firstSwapCue").textContent = "";
           }
           if (currentRound === 2 && thornGoalComplete() && tutorialActive) {
             concludeTutorial();
           }
-          if (!roundComplete && !isBouquetFailed()) {
+          if (!roundComplete && !isBouquetFailed() && outcomeKind !== "shuffle") {
             queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
           }
           render();
@@ -19168,6 +19185,13 @@
       armedLineRelic = null;
       ritualMessage = "The greenhouse table shuffles. One move is spent.";
       build();
+      if (currentRound === 1 && moves >= 3 && !roundObjectivesComplete(activeRoundPlan())) {
+        pendingSettledBoardOutcome = {
+          kind: "shuffle",
+          text: `Board shuffled. ${moves} move${moves === 1 ? "" : "s"} left.`
+        };
+        $("firstSwapCue").textContent = "";
+      }
       if (shouldRetireShuffleForFinalMove()) {
         boardFocusCell = clampBoardFocusCell();
         queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
@@ -19189,6 +19213,9 @@
         pulseMoveUrgency();
       }
       render();
+      if (pendingSettledBoardOutcome?.kind === "shuffle") {
+        scheduleBoardParticleClear(0);
+      }
       scheduleIdleHint();
     }
 
