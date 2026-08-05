@@ -1,5 +1,12 @@
 # Codex Build Notes
 
+## 2026-08-05 corrected settled result announcement order
+
+- Accessibility ordering correction: the existing `firstSwapCue` now enters the accessibility tree empty as the sole polite owner before its settled receipt is assigned on the next animation frame. The readable-duration clock starts only after that one mutation; interaction, reload, or background interruption cancels a pending reveal without replaying it.
+- Chronology coverage: every ordinary and Black Candle case records an explicit `owner -> result` sequence, then requires the cue to be displayed with `aria-live="polite"`, every competing visible owner off, and exactly one receipt mutation. A dedicated inter-frame background interruption cancels that mutation while preserving the accepted board state. This proves announcement order rather than only inspecting the final DOM.
+- Verification: the focused desktop/mobile, pointer/touch/keyboard, full/reduced matrix passes `5/5`, including quiet reloads, exact mobile altar geometry, 64 tiles/eight rows, focus/roving continuity, loaded images, no overflow, and no browser errors. The untouched Round 2 Thorn reload/close matrix passes `4/4`, and the dedicated Black Candle peak/cleanup contract passes `1/1`.
+- Scope/security: no new node, visible UI, copy, control, move, mechanic, timer duration, save field, economy, round, progression, dependency, network hook, tracker, credential, or permission was added.
+
 ## 2026-08-04 announced each settled board result once
 
 - Player-visible result: accepted matches now finish with one concise `HARVEST` receipt on the existing board cue. It reports only objective credit earned by the fully resolved cascade, each resulting objective count, Cursed Thorn progress when affected, and remaining moves. Black Candle activations retain their established `BLACK CANDLE` identity and physical-lane result.

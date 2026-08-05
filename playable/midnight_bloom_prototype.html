@@ -10237,6 +10237,7 @@
     let thornClearedCells = new Set();
     let pendingSettledBoardOutcome = null;
     let settledBoardOutcome = null;
+    let settledBoardOutcomeRevealFrame = null;
     let settledBoardOutcomeTimer = null;
     let thornTeachingCells = new Set();
     let thornTeachingSwapCells = new Set();
@@ -17831,15 +17832,23 @@
       }, 480);
     }
 
-    function clearSettledBoardOutcome({ renderAfter = false } = {}) {
+    function clearSettledBoardOutcome({ renderAfter = false, restoreCue = false } = {}) {
+      const returnCue = settledBoardOutcome?.returnCue || "";
+      if (settledBoardOutcomeRevealFrame && window.cancelAnimationFrame) {
+        window.cancelAnimationFrame(settledBoardOutcomeRevealFrame);
+      }
       if (settledBoardOutcomeTimer && window.clearTimeout) {
         window.clearTimeout(settledBoardOutcomeTimer);
       }
+      settledBoardOutcomeRevealFrame = null;
       settledBoardOutcomeTimer = null;
       pendingSettledBoardOutcome = null;
       settledBoardOutcome = null;
       if (renderAfter) {
         render();
+      }
+      if (restoreCue && returnCue) {
+        $("firstSwapCue").textContent = returnCue;
       }
     }
 
@@ -17869,26 +17878,38 @@
         ...pendingSettledBoardOutcome,
         returnCue: $("firstSwapCue").textContent
       };
+      const outcome = settledBoardOutcome;
       pendingSettledBoardOutcome = null;
-      $("firstSwapCue").textContent = settledBoardOutcome.text;
-      if (settledBoardOutcomeTimer && window.clearTimeout) {
-        window.clearTimeout(settledBoardOutcomeTimer);
-      }
-      settledBoardOutcomeTimer = window.setTimeout(() => {
-        const returnCue = settledBoardOutcome?.returnCue || "";
-        settledBoardOutcomeTimer = null;
-        settledBoardOutcome = null;
-        if (returnCue) {
-          $("firstSwapCue").textContent = returnCue;
+      $("firstSwapCue").textContent = "";
+      // Establish the empty cue as the sole live owner before its one result mutation.
+      render();
+      settledBoardOutcomeRevealFrame = window.requestAnimationFrame(() => {
+        settledBoardOutcomeRevealFrame = null;
+        if (
+          document.hidden
+          || settledBoardOutcome !== outcome
+          || !settledBoardOutcomeCanOwnNarration(activeRoundPlan(), outcome)
+        ) {
+          clearSettledBoardOutcome({ renderAfter: true, restoreCue: true });
+          return;
         }
-        if (currentRound === 2 && thornGoalComplete() && tutorialActive) {
-          concludeTutorial();
-        }
-        if (!roundComplete && !isBouquetFailed()) {
-          queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
-        }
-        render();
-      }, SETTLED_BOARD_OUTCOME_MS);
+        $("firstSwapCue").textContent = outcome.text;
+        settledBoardOutcomeTimer = window.setTimeout(() => {
+          const returnCue = settledBoardOutcome?.returnCue || "";
+          settledBoardOutcomeTimer = null;
+          settledBoardOutcome = null;
+          if (returnCue) {
+            $("firstSwapCue").textContent = returnCue;
+          }
+          if (currentRound === 2 && thornGoalComplete() && tutorialActive) {
+            concludeTutorial();
+          }
+          if (!roundComplete && !isBouquetFailed()) {
+            queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
+          }
+          render();
+        }, SETTLED_BOARD_OUTCOME_MS);
+      });
       return true;
     }
 
@@ -19724,6 +19745,11 @@
     $("board").addEventListener("dragstart", (event) => event.preventDefault());
     $("board").addEventListener("click", handleBoardClick);
     $("board").addEventListener("keydown", handleBoardKeyDown);
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden && settledBoardOutcome) {
+        clearSettledBoardOutcome({ renderAfter: true, restoreCue: true });
+      }
+    });
     window.__bloomAudioProbe = () => ({
       eventCount: bloomAudioEventCount,
       voiceCount: bloomAudioVoiceCount,

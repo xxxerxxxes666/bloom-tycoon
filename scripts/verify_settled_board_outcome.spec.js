@@ -116,6 +116,57 @@ async function activatePair(page, testCase) {
   }
 }
 
+async function observeOutcomeChronology(page) {
+  await page.evaluate(() => {
+    const cue = document.querySelector("#firstSwapCue");
+    window.__settledOutcomeChronology = [];
+    window.__settledOutcomeTimeline = [];
+    const visible = (node) => Boolean(node) && !node.hidden
+      && getComputedStyle(node).display !== "none"
+      && node.getBoundingClientRect().width > 0
+      && node.getBoundingClientRect().height > 0;
+    const recordOwnerExposure = () => {
+      const text = cue?.textContent.trim() || "";
+      if (
+        !text
+        && document.body.classList.contains("settled-board-outcome-cue")
+        && !window.__settledOutcomeTimeline.includes("owner")
+      ) {
+        window.__settledOutcomeTimeline.push("owner");
+      }
+    };
+    const ownerObserver = new MutationObserver(recordOwnerExposure);
+    const cueObserver = new MutationObserver(() => {
+      const text = cue?.textContent.trim() || "";
+      if (!text.includes("moves left.") || !document.body.classList.contains("settled-board-outcome-cue")) {
+        return;
+      }
+      window.__settledOutcomeTimeline.push("result");
+      const liveRegions = Array.from(document.querySelectorAll("[aria-live]"));
+      window.__settledOutcomeChronology.push({
+        text,
+        display: getComputedStyle(cue).display,
+        cueLive: cue.getAttribute("aria-live"),
+        visibleOwners: liveRegions
+          .filter(visible)
+          .filter((node) => ["polite", "assertive"].includes(node.getAttribute("aria-live")))
+          .map((node) => ({ id: node.id, live: node.getAttribute("aria-live") })),
+        competingOwners: liveRegions
+          .filter(visible)
+          .filter((node) => node !== cue)
+          .filter((node) => ["polite", "assertive"].includes(node.getAttribute("aria-live")))
+          .map((node) => node.id)
+      });
+    });
+    ownerObserver.observe(document.body, {
+      attributes: true,
+      attributeFilter: ["class"]
+    });
+    cueObserver.observe(cue, { childList: true, characterData: true, subtree: true });
+    window.__settledOutcomeObserver = { ownerObserver, cueObserver };
+  });
+}
+
 async function report(page) {
   return page.evaluate((key) => {
     const visible = (node) => Boolean(node) && !node.hidden
@@ -172,6 +223,7 @@ for (const testCase of CASES) {
       if (testCase.mode === "ordinary") {
         await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 8500 });
       }
+      await observeOutcomeChronology(page);
       await activatePair(page, testCase);
       await expect.poll(async () => (
         (await report(page)).bodyClasses.includes("settled-board-outcome-cue")
@@ -185,6 +237,21 @@ for (const testCase of CASES) {
           && document.querySelector("#board")?.getAttribute("aria-busy") === "false";
       }, SAVE_KEY, { timeout: 12000 });
       const settled = await report(page);
+      const chronology = await page.evaluate(() => window.__settledOutcomeChronology || []);
+      const timeline = await page.evaluate(() => window.__settledOutcomeTimeline || []);
+      expect(timeline, `${testCase.label} exposes the empty owner before its result`)
+        .toEqual(["owner", "result"]);
+      expect(chronology, `${testCase.label} mutates the settled result exactly once`).toHaveLength(1);
+      expect(chronology[0].text, `${testCase.label} chronology captures the final receipt`)
+        .toBe(settled.cue);
+      expect(chronology[0].display, `${testCase.label} cue is exposed before result mutation`)
+        .not.toBe("none");
+      expect(chronology[0].cueLive, `${testCase.label} cue owns polite narration before mutation`)
+        .toBe("polite");
+      expect(chronology[0].visibleOwners, `${testCase.label} one owner exists at mutation time`)
+        .toEqual([{ id: "firstSwapCue", live: "polite" }]);
+      expect(chronology[0].competingOwners, `${testCase.label} competing owners are off at mutation time`)
+        .toEqual([]);
       expect(settled.cue, `${testCase.label} names the actual target gain`).toContain("+");
       expect(settled.cue, `${testCase.label} gives the settled objective count`)
         .toMatch(/\d+ of \d+/);
@@ -241,3 +308,55 @@ for (const testCase of CASES) {
     }
   });
 }
+
+test("background interruption cancels the inter-frame result mutation", async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+  const page = await context.newPage();
+  try {
+    const testCase = CASES[0];
+    await seedCase(page, testCase);
+    await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 8500 });
+    await observeOutcomeChronology(page);
+    await page.evaluate(() => {
+      let forcedHidden = false;
+      Object.defineProperty(document, "hidden", {
+        configurable: true,
+        get: () => forcedHidden
+      });
+      const interruptionObserver = new MutationObserver(() => {
+        if (
+          document.body.classList.contains("settled-board-outcome-cue")
+          && !(document.querySelector("#firstSwapCue")?.textContent.trim())
+        ) {
+          forcedHidden = true;
+          document.dispatchEvent(new Event("visibilitychange"));
+          interruptionObserver.disconnect();
+        }
+      });
+      interruptionObserver.observe(document.body, {
+        attributes: true,
+        attributeFilter: ["class"]
+      });
+    });
+    await activatePair(page, testCase);
+    await page.waitForFunction((key) => {
+      const state = JSON.parse(localStorage.getItem(key) || "{}");
+      return state.moves === 3
+        && document.querySelector("#board")?.getAttribute("aria-busy") === "false";
+    }, SAVE_KEY, { timeout: 12000 });
+    await page.waitForTimeout(100);
+    const interrupted = await report(page);
+    const chronology = await page.evaluate(() => window.__settledOutcomeChronology || []);
+    expect(chronology, "background interruption never mutates the result text").toEqual([]);
+    expect(interrupted.bodyClasses, "background interruption retires transient authority")
+      .not.toContain("settled-board-outcome-cue");
+    expect(interrupted.cue, "background interruption restores the quiet prior cue")
+      .not.toContain("moves left.");
+    expect(interrupted.state.moves, "background interruption preserves accepted state").toBe(3);
+    expect(interrupted.tiles, "background interruption preserves tile integrity").toBe(64);
+    expect(interrupted.rows, "background interruption preserves row integrity").toBe(8);
+    expect(interrupted.selected, "background interruption preserves no selection").toBe(0);
+  } finally {
+    await context.close();
+  }
+});
