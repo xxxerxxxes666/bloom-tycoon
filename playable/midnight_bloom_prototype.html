@@ -19647,6 +19647,7 @@
         roundOneRestored,
         roundTwoGreenhouseUpgraded,
         roundThreeConservatoryRaised,
+        freshConservatorySettlement,
         hasMadeValidMove,
         restoredRoundTwoGuideMoves,
         tutorialSkipped,
@@ -19692,6 +19693,10 @@
         roundOneRestored = Boolean(state.roundOneRestored);
         roundTwoGreenhouseUpgraded = Boolean(state.roundTwoGreenhouseUpgraded || currentRound > 2);
         roundThreeConservatoryRaised = Boolean(state.roundThreeConservatoryRaised || currentRound > 3);
+        freshConservatorySettlement = Boolean(state.freshConservatorySettlement)
+          && currentRound === 3
+          && roundComplete
+          && conservatoryFullyOwned();
         if (currentRound > FOCUSED_LEVEL_COUNT) {
           currentRound = FOCUSED_LEVEL_COUNT;
           const migratedPlan = buildRoundPlan(currentRound);

@@ -1,5 +1,12 @@
 # Codex Build Notes
 
+## 2026-08-05 preserved first Conservatory ownership through reload
+
+- Player-visible result: the first Bloodroot Conservatory raise now remains the same truthful first-ownership ceremony through an interrupted transfer and settled reloads. It continues to show `Raised for 180. 50 coins remain.` with the sole focused `Play Again -> First Bouquet` action instead of changing history to an owned-replay reinvestment receipt after refresh.
+- Authority boundary: `freshConservatorySettlement` is now persisted with the existing settled save and restored only for an authoritative completed Round 3 with all three ownership flags. Play Again already retires and saves that authority before entering owned replay. No economy version bump or migration was added; old owned and inflated saves default to replay authority and still normalize to the 50-coin seed.
+- Permanent contract: the natural `vesper-thorn` first cycle on desktop `1280x720` and exact mobile `390x844` reloads during the full-motion bouquet-to-conservatory transfer, then reloads the settled first-raise ceremony twice. Exact first-raise transaction/copy, 50 coins, one 27-flower bouquet, sole Play Again focus, 64 tiles/eight semantic rows, loaded images, and no overflow remain stable. Exact-mobile reduced motion independently performs two settled reloads; Play Again then proves the first-settlement flag is retired.
+- Regression evidence: the focused browser matrix passed `4/4` in `4.0m`, covering desktop/mobile natural first ownership plus two complete owned cycles, exact-mobile reduced motion, and desktop/mobile inflated-profile normalization. Owned R1/R2/R3 still settle and reload at exactly 50 with their exact 120/150/180 reinvestment receipts. Static project/HTML verification, changed-spec and inline-JavaScript syntax, diff, and scoped security checks pass.
+
 ## 2026-08-05 reinvested owned-replay rewards in the conservatory
 
 - Player-visible result: once the Bloodroot Conservatory is owned, completing First Bouquet, Moonlit Wreath, or Bloodroot Compact now sends the existing `120`/`150`/`180` reward into the existing bouquet-to-conservatory nourishment ceremony. The settled receipt truthfully reads `Reward reinvested · ... coins nourished the Conservatory · 50 coins kept.` instead of growing a wallet with no remaining purchase.

@@ -119,6 +119,8 @@ async function journeyState(page) {
     };
     const tileRows = [...new Set(Array.from(document.querySelectorAll(".tile"))
       .map((tile) => Math.round(tile.getBoundingClientRect().top)))].length;
+    const tileAriaRows = new Set(Array.from(document.querySelectorAll(".tile"))
+      .map((tile) => tile.getAttribute("aria-rowindex"))).size;
     const boardRect = document.querySelector(".board")?.getBoundingClientRect();
     const progressRect = document.querySelector("#bouquetProgress")?.getBoundingClientRect();
     const coinRect = document.querySelector("#coinBalance")?.getBoundingClientRect();
@@ -154,6 +156,7 @@ async function journeyState(page) {
       roundOneRestored: Boolean(state.roundOneRestored),
       roundTwoGreenhouseUpgraded: Boolean(state.roundTwoGreenhouseUpgraded),
       roundThreeConservatoryRaised: Boolean(state.roundThreeConservatoryRaised),
+      freshConservatorySettlement: Boolean(state.freshConservatorySettlement),
       coins: state.coins,
       counts: state.counts || [],
       focusedEconomyVersion: state.focusedEconomyVersion,
@@ -294,6 +297,7 @@ async function journeyState(page) {
       selectedTileCount: document.querySelectorAll(".tile.sel").length,
       tiles: document.querySelectorAll(".tile").length,
       tileRows,
+      tileAriaRows,
       boardBottom: boardRect ? boardRect.bottom : 0,
       viewportWidth: innerWidth,
       viewportHeight: innerHeight,
@@ -1546,6 +1550,30 @@ async function spendPrimaryCeremonyAction(page, activation = "pointer") {
   return text;
 }
 
+async function spendFreshConservatoryWithTransferReload(page, activation = "pointer") {
+  const button = page.getByRole("button", { name: "Raise Conservatory · 180 coins", exact: true });
+  await expect(button).toBeEnabled({ timeout: 2000 });
+  if (activation === "touch") {
+    await button.tap();
+  } else {
+    await button.click();
+  }
+  await page.waitForFunction(() => {
+    const panel = document.querySelector("#roundOneRestoration");
+    const state = JSON.parse(localStorage.getItem("bloomTycoonPlayableStateV1") || "{}");
+    return panel?.dataset.restorationPhase === "transforming"
+      && panel?.dataset.bouquetTransfer === "active"
+      && state.freshConservatorySettlement === true;
+  });
+  const interrupted = await journeyState(page);
+  expect(interrupted.coins).toBe(50);
+  expect(interrupted.freshConservatorySettlement).toBe(true);
+  expect(interrupted.visibleButtons).toEqual([]);
+  await page.reload({ waitUntil: "networkidle" });
+  await expect(page.locator(".tile")).toHaveCount(64);
+  return "Raise Conservatory · 180 coins";
+}
+
 async function installOwnedRenewalRecorder(page) {
   await page.evaluate(() => {
     const previous = window.__ownedRenewalRecorder;
@@ -1764,7 +1792,12 @@ async function playFocusedCycle(page, config, runLabel, strategy, options = {}) 
     expectFocusedPayoffNarration(pendingState, `${runLabel} round ${round} pending spend`);
     const earnedCoins = pendingState.coins;
     await expectVisibleCoinBalance(page, earnedCoins, { pulsing: true });
-    const firstAction = await spendPrimaryCeremonyAction(page);
+    const firstAction = round === 3 && options.interruptFreshConservatoryTransfer
+      ? await spendFreshConservatoryWithTransferReload(
+          page,
+          config.mobile ? "touch" : "pointer"
+        )
+      : await spendPrimaryCeremonyAction(page);
     if (round === 3) {
       await page.waitForSelector("#nextOrderBtn:not([hidden])", { timeout: 3000 });
     }
@@ -1782,6 +1815,27 @@ async function playFocusedCycle(page, config, runLabel, strategy, options = {}) 
       const transactionBox = await page.locator("#payoffTransaction").boundingBox();
       expect((transactionBox?.y || 0) + (transactionBox?.height || 0)).toBeLessThanOrEqual(config.viewport.height);
       await page.screenshot({ path: `${options.evidencePrefix}-owned-balance.png`, fullPage: true });
+    }
+    if (round === 3 && options.verifyFreshConservatoryReloads) {
+      expect(spentState.freshConservatorySettlement).toBe(true);
+      for (let reload = 0; reload < 2; reload += 1) {
+        await page.reload({ waitUntil: "networkidle" });
+        await expect(page.locator(".tile")).toHaveCount(64);
+        const reloaded = await journeyState(page);
+        expect(reloaded.freshConservatorySettlement, `fresh conservatory reload ${reload + 1} keeps first-settlement authority`).toBe(true);
+        expect(reloaded.coins, `fresh conservatory reload ${reload + 1} keeps the settled wallet`).toBe(50);
+        expect(reloaded.payoffTransaction).toBe("Raised for 180. 50 coins remain.");
+        expect(reloaded.payoffCopy).toBe("Begin a new growing cycle with your balance intact.");
+        expect(reloaded.payoffMode).toBe("restoration");
+        expect(reloaded.visibleButtons).toEqual(["Play Again → First Bouquet"]);
+        expect(reloaded.craftedTargetCounts).toBe("3:14,0:13");
+        expect(reloaded.craftedComposition).toHaveLength(27);
+        expect(reloaded.tiles).toBe(64);
+        expect(reloaded.tileAriaRows).toBe(8);
+        expect(reloaded.overflowX).toBe(false);
+        expect(reloaded.brokenImages).toEqual([]);
+        await expect(page.getByRole("button", { name: "Play Again → First Bouquet", exact: true })).toBeFocused();
+      }
     }
     if (round === 1 && options.verifyRestoredRoundOne) {
       const expectedRestoredCoins = startCoins + 20;
@@ -2860,7 +2914,9 @@ for (const config of [
 
       const firstCycle = await playFocusedCycle(page, config, `${runLabel}-cycle1`, "goal-following", {
         evidencePrefix: `work/economy-${config.label}-cycle1`,
-        stopBeforeReplay: true
+        stopBeforeReplay: true,
+        verifyFreshConservatoryReloads: true,
+        interruptFreshConservatoryTransfer: true
       });
       expect(firstCycle[2].balances).toEqual([50, 230, 50]);
       expect(firstCycle[2].actions).toEqual(["Raise Conservatory · 180 coins"]);
@@ -2871,6 +2927,7 @@ for (const config of [
       expect(firstReplayAction).toBe("Play Again → First Bouquet");
       firstCycle[2].balances.push((await journeyState(page)).coins);
       firstCycle[2].actions.push(firstReplayAction);
+      expect((await journeyState(page)).freshConservatorySettlement).toBe(false);
       expect(firstCycle.map((round) => round.balances)).toEqual([
         [0, 120, 20, 20],
         [20, 170, 50, 50],
@@ -3089,13 +3146,30 @@ test("reduced-motion exact-mobile replay boundary preserves the owned wallet", a
     expect(finalCeremony.coins).toBe(50);
     expect(finalCeremony.payoffTransaction).toBe("Raised for 180. 50 coins remain.");
     expect(finalCeremony.visibleButtons).toEqual(["Play Again → First Bouquet"]);
+    expect(finalCeremony.freshConservatorySettlement).toBe(true);
     await expectGreenhouseOwned(page, 3, "reduced-motion first-cycle final ceremony");
     await page.screenshot({ path: "work/replay-final-mobile390-reduced.png", fullPage: true });
+
+    for (let reload = 0; reload < 2; reload += 1) {
+      await page.reload({ waitUntil: "networkidle" });
+      const reloaded = await journeyState(page);
+      expect(reloaded.freshConservatorySettlement).toBe(true);
+      expect(reloaded.coins).toBe(50);
+      expect(reloaded.payoffTransaction).toBe("Raised for 180. 50 coins remain.");
+      expect(reloaded.payoffCopy).toBe("Begin a new growing cycle with your balance intact.");
+      expect(reloaded.visibleButtons).toEqual(["Play Again → First Bouquet"]);
+      expect(reloaded.tiles).toBe(64);
+      expect(reloaded.tileAriaRows).toBe(8);
+      expect(reloaded.overflowX).toBe(false);
+      expect(reloaded.brokenImages).toEqual([]);
+      await expect(page.getByRole("button", { name: "Play Again → First Bouquet", exact: true })).toBeFocused();
+    }
 
     await spendPrimaryCeremonyAction(page, "touch");
     const handoff = await journeyState(page);
     expect(handoff.reducedMotion).toBe(true);
     expect(handoff.coins).toBe(50);
+    expect(handoff.freshConservatorySettlement).toBe(false);
     expect(handoff.replayEntryReceipt).toBe("50 coins kept · Conservatory owned · New order ready.");
     expectOwnedReplayEntryGeometry(handoff, config, "reduced-motion first replay handoff");
     expect(handoff.tiles).toBe(64);
@@ -3220,6 +3294,7 @@ test("inflated owned profiles converge to the carried seed without replaying a p
         expect(state.coins, `${config.label} reload ${reload + 1} normalizes the spendless wallet`).toBe(50);
         expect(state.round).toBe(1);
         expect(state.roundComplete).toBe(false);
+        expect(state.freshConservatorySettlement).toBe(false);
         expect(state.moves).toBe(6);
         expect(state.counts).toEqual([0, 0, 0, 0, 0, 0]);
         expect(state.tiles).toBe(64);
