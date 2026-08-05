@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-08-04 announced each settled board result once
+
+- Player-visible result: accepted matches now finish with one concise `HARVEST` receipt on the existing board cue. It reports only objective credit earned by the fully resolved cascade, each resulting objective count, Cursed Thorn progress when affected, and remaining moves. Black Candle activations retain their established `BLACK CANDLE` identity and physical-lane result.
+- Narration authority: the result waits for localized HIT/CRACK/BREAK and board particles to retire, then temporarily makes `firstSwapCue` the sole visible polite live region. Active tutorial, refusal, failure/Retry, final harvest, handoff, relic instruction, and payoff owners retain precedence. The static wallet stays quiet during the receipt and returns afterward.
+- Atomicity: settled-result state is deliberately transient and absent from the save schema. Reload/background interruption cannot replay it or mutate moves, counts, board identity, focus, or selection; the current ordinary wallet or board guide resumes instead.
+- Permanent coverage: the new focused matrix exercises ordinary R1 and R3 target matches plus R1/R3 Black Candle activations across desktop pointer, exact-mobile touch, keyboard, full, and reduced motion. The existing four-case natural Round 2 Thorn lesson and Black Candle matrices now assert exact settled copy, one polite owner, two quiet reloads, focus/roving agreement, 64 tiles/eight rows, exact mobile altar geometry, images, overflow, and browser logs.
+- Security/scope: no credentials, tokens, trackers, analytics, network hooks, dependencies, nodes, controls, save fields, timers, moves, economy, rounds, or progression were added.
+
 ## 2026-08-03 reserved First Bouquet's final move for the board
 
 - Player-visible result: when an unfinished Board-First order reaches `LAST MOVE`, the paid `Shuffle (-1 move)` retires instead of offering a one-click route to Retry. In the First Bouquet's authored close, the persisted Black Candle source remains focused and playable so the final row burn can complete the visible order.

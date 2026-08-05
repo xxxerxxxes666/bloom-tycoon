@@ -6548,14 +6548,15 @@
     body.round-one-active.round-one-followup-cue:not(.round-one-complete) .first-swap-cue,
     body.round-one-active.round-one-refused:not(.round-one-complete) .first-swap-cue,
     body.focused-active-play.armed-line-relic-cue:not(.round-one-complete) .first-swap-cue,
-    body.focused-active-play.black-candle-thorn-outcome-cue .first-swap-cue { display:flex; width:max-content; max-width:calc(100% - 20px); min-height:30px; margin:7px auto 0; padding:5px 10px; align-items:center; gap:8px; border:1px solid #8e6b35; border-radius:999px; color:#fff0b4; background:linear-gradient(90deg,#17100c,#2b1d0d,#17100c); box-shadow:0 0 12px #c58a3326,inset 0 0 9px #000; font:800 14px Georgia,serif; letter-spacing:.035em; text-align:center; }
+    body.focused-active-play.settled-board-outcome-cue .first-swap-cue { display:flex; width:max-content; max-width:calc(100% - 20px); min-height:30px; margin:7px auto 0; padding:5px 10px; align-items:center; gap:8px; border:1px solid #8e6b35; border-radius:999px; color:#fff0b4; background:linear-gradient(90deg,#17100c,#2b1d0d,#17100c); box-shadow:0 0 12px #c58a3326,inset 0 0 9px #000; font:800 14px Georgia,serif; letter-spacing:.035em; text-align:center; }
     .first-swap-cue::before { content:"GLYPH GUIDE"; flex:none; padding-right:8px; border-right:1px solid #76582e; color:#b9965f; font:700 9px/1.1 system-ui,sans-serif; letter-spacing:.12em; }
     body.round-one-active.round-one-black-candle-cue .first-swap-cue::before,
     body.focused-active-play.armed-line-relic-cue .first-swap-cue::before,
+    body.focused-active-play.settled-board-outcome-cue .first-swap-cue::before { content:"HARVEST"; }
     body.focused-active-play.black-candle-thorn-outcome-cue .first-swap-cue::before { content:"BLACK CANDLE"; }
-    body.black-candle-thorn-outcome-cue .tutorial-panel,
-    body.black-candle-thorn-outcome-cue .tutorial-help { display:none!important; }
-    body.focused-active-play.black-candle-thorn-outcome-cue .first-swap-cue { display:flex!important; }
+    body.settled-board-outcome-cue .tutorial-panel,
+    body.settled-board-outcome-cue .tutorial-help { display:none!important; }
+    body.focused-active-play.settled-board-outcome-cue .first-swap-cue { display:flex!important; }
     body.round-one-active.round-one-black-candle-cue .first-swap-cue { position:relative; z-index:12; }
     body.restored-greenhouse-handoff.round-one-active .first-swap-cue { display:none!important; }
     body.focused-active-play.final-harvest-active:not(.tutorial-active) .first-swap-cue,
@@ -9677,7 +9678,7 @@
         max-width: calc(100% - 49px);
       }
 
-      body.focused-active-play.black-candle-thorn-outcome-cue .tutorial-command-region > .first-swap-cue {
+      body.focused-active-play.settled-board-outcome-cue .tutorial-command-region > .first-swap-cue {
         min-height: 44px;
         padding: 5px 8px;
         font-size: 10px;
@@ -10175,7 +10176,7 @@
     const BLACK_CANDLE_REFILL_MS = 100;
     const BLACK_CANDLE_REDUCED_HOLD_MS = 190;
     const BLACK_CANDLE_REDUCED_REFILL_MS = 70;
-    const BLACK_CANDLE_THORN_OUTCOME_MS = 2400;
+    const SETTLED_BOARD_OUTCOME_MS = 2400;
 
     let board = [];
     let selected = null;
@@ -10234,9 +10235,9 @@
     let roundOneSecondTargetDiscoveryActive = false;
     let thornPulseCells = new Set();
     let thornClearedCells = new Set();
-    let pendingBlackCandleThornOutcomeCue = "";
-    let blackCandleThornOutcomeCue = "";
-    let blackCandleThornOutcomeTimer = null;
+    let pendingSettledBoardOutcome = null;
+    let settledBoardOutcome = null;
+    let settledBoardOutcomeTimer = null;
     let thornTeachingCells = new Set();
     let thornTeachingSwapCells = new Set();
     let thornTeachingTimer = null;
@@ -12830,7 +12831,9 @@
         if (recoverRoundOneAgencySelection) {
           selected = null;
         }
-        clearBlackCandleThornOutcomeCue();
+        if (!pendingSettledBoardOutcome) {
+          clearSettledBoardOutcome();
+        }
         if (boardDragInputActive()) {
           scheduleIdleHint();
           return;
@@ -12927,7 +12930,7 @@
     function notePlayerInteraction() {
       const preserveThornLesson = isAuthoritativeRoundTwoThornLesson();
       const restartPostOnboardingHint = isPostOnboardingIdleHintActive();
-      clearBlackCandleThornOutcomeCue();
+      clearSettledBoardOutcome();
       clearTargetLiteracy(false);
       if (!postRecoveryGuideActive && !preserveThornLesson) {
         clearIdleHint();
@@ -12980,7 +12983,7 @@
       superBloomCells.clear();
       thornPulseCells.clear();
       thornClearedCells.clear();
-      clearBlackCandleThornOutcomeCue();
+      clearSettledBoardOutcome();
       transmuteFlashCell = "";
       orderPulseTargets.clear();
       orderPulseSlots.clear();
@@ -14022,9 +14025,9 @@
         postRecoveryGuideActive = false;
         return false;
       }
-      const pendingThornOutcome = pendingBlackCandleThornOutcomeCue;
+      const pendingBoardOutcome = pendingSettledBoardOutcome;
       clearCompetingReweaveFeedback();
-      pendingBlackCandleThornOutcomeCue = pendingThornOutcome;
+      pendingSettledBoardOutcome = pendingBoardOutcome;
       postRecoveryGuideActive = false;
       altarReweaveActive = true;
       altarReweaveSequence += 1;
@@ -14832,16 +14835,16 @@
       const finalHarvestNarration = Boolean(visibleFinalHarvest)
         && ["eligible", "landing"].includes(visibleFinalHarvest.phase);
       const payoffOwnsNarration = focusedPayoffOwnsCommand(plan);
-      const blackCandleOutcomeOwnsNarration = focusedSliceRound(plan)
+      const settledBoardOutcomeOwnsNarration = focusedSliceRound(plan)
         && !payoffOwnsNarration
-        && Boolean(blackCandleThornOutcomeCue);
+        && Boolean(settledBoardOutcome);
       const tutorialPanelOwnsNarration = focusedSliceRound(plan)
         && !payoffOwnsNarration
-        && !blackCandleOutcomeOwnsNarration
+        && !settledBoardOutcomeOwnsNarration
         && tutorialActive;
       const boardCueOwnsNarration = focusedSliceRound(plan)
         && !payoffOwnsNarration
-        && !blackCandleOutcomeOwnsNarration
+        && !settledBoardOutcomeOwnsNarration
         && !tutorialPanelOwnsNarration
         && postRecoveryGuideActive;
       const tutorialOwnsNarration = focusedSliceRound(plan)
@@ -14849,7 +14852,7 @@
         && (tutorialPanelOwnsNarration || isBouquetFailed(plan) || finalHarvestNarration);
       $("coinBalance")?.setAttribute(
         "aria-live",
-        payoffOwnsNarration || tutorialOwnsNarration || blackCandleOutcomeOwnsNarration || boardCueOwnsNarration
+        payoffOwnsNarration || tutorialOwnsNarration || settledBoardOutcomeOwnsNarration || boardCueOwnsNarration
           ? "off"
           : "polite"
       );
@@ -14857,13 +14860,13 @@
         "aria-live",
         payoffOwnsNarration
           ? "polite"
-          : tutorialOwnsNarration || blackCandleOutcomeOwnsNarration || boardCueOwnsNarration ? "off" : "polite"
+          : tutorialOwnsNarration || settledBoardOutcomeOwnsNarration || boardCueOwnsNarration ? "off" : "polite"
       );
       $("tutorialPanel")?.setAttribute(
         "aria-live",
         tutorialPanelOwnsNarration
           ? "polite"
-          : payoffOwnsNarration || finalHarvestNarration || blackCandleOutcomeOwnsNarration || boardCueOwnsNarration
+          : payoffOwnsNarration || finalHarvestNarration || settledBoardOutcomeOwnsNarration || boardCueOwnsNarration
             ? "off"
             : "polite"
       );
@@ -14961,8 +14964,12 @@
       document.body.classList.toggle("round-one-refused", roundOneActive && !roundComplete && $("firstSwapCue").classList.contains("swap-refused"));
       document.body.classList.toggle("tutorial-active", tutorialActive);
       document.body.classList.toggle(
+        "settled-board-outcome-cue",
+        Boolean(settledBoardOutcome)
+      );
+      document.body.classList.toggle(
         "black-candle-thorn-outcome-cue",
-        Boolean(blackCandleThornOutcomeCue)
+        settledBoardOutcome?.kind === "black-candle"
       );
       document.body.classList.toggle("target-match-forecast-active", Boolean(targetMatchForecast));
       if (targetMatchForecast) {
@@ -16381,7 +16388,7 @@
           ? focusedRoundTwoHarvestSummary(result)
           : harvestSummary(result) + rareDropMessage);
         const blackCandleActivation = result.blackCandleActivation || null;
-        pendingBlackCandleThornOutcomeCue = blackCandleThornOutcomeMessage(result);
+        pendingSettledBoardOutcome = settledBoardOutcomeForResult(result);
         const completedDuringBlackCandle = blackCandleActivation
           ? maybeCompleteRound(harvestMessage, { deferFeedback: true })
           : false;
@@ -16452,7 +16459,7 @@
       } finally {
         isResolving = false;
         if (!roundComplete && result?.blackCandleActivation) {
-          pendingBlackCandleThornOutcomeCue = blackCandleThornOutcomeMessage(result);
+          pendingSettledBoardOutcome = settledBoardOutcomeForResult(result);
         }
         if (!roundComplete && !isBouquetFailed() && restoreAuthoritativeRoundTwoThornLesson({
           resetSelection: true,
@@ -17192,7 +17199,7 @@
       settledCells.clear();
       refillBornCells.clear();
       refillColumns.clear();
-      clearBlackCandleThornOutcomeCue();
+      clearSettledBoardOutcome();
       lastWildChain = null;
       bouquetSealPulseActive = false;
       nextOrderPulseActive = false;
@@ -17231,7 +17238,7 @@
       superBloomCells.clear();
       thornPulseCells.clear();
       thornClearedCells.clear();
-      clearBlackCandleThornOutcomeCue();
+      clearSettledBoardOutcome();
       settledCells.clear();
       refillBornCells.clear();
       refillColumns.clear();
@@ -17268,7 +17275,7 @@
       superBloomCells.clear();
       thornPulseCells.clear();
       thornClearedCells.clear();
-      clearBlackCandleThornOutcomeCue();
+      clearSettledBoardOutcome();
       settledCells.clear();
       refillBornCells.clear();
       refillColumns.clear();
@@ -17824,31 +17831,56 @@
       }, 480);
     }
 
-    function clearBlackCandleThornOutcomeCue({ renderAfter = false } = {}) {
-      if (blackCandleThornOutcomeTimer && window.clearTimeout) {
-        window.clearTimeout(blackCandleThornOutcomeTimer);
+    function clearSettledBoardOutcome({ renderAfter = false } = {}) {
+      if (settledBoardOutcomeTimer && window.clearTimeout) {
+        window.clearTimeout(settledBoardOutcomeTimer);
       }
-      blackCandleThornOutcomeTimer = null;
-      pendingBlackCandleThornOutcomeCue = "";
-      blackCandleThornOutcomeCue = "";
+      settledBoardOutcomeTimer = null;
+      pendingSettledBoardOutcome = null;
+      settledBoardOutcome = null;
       if (renderAfter) {
         render();
       }
     }
 
-    function presentBlackCandleThornOutcomeCue() {
-      if (!pendingBlackCandleThornOutcomeCue) {
+    function settledBoardOutcomeCanOwnNarration(
+      plan = activeRoundPlan(),
+      outcome = pendingSettledBoardOutcome
+    ) {
+      const blackCandleOutcome = outcome?.kind === "black-candle";
+      return focusedSliceRound(plan)
+        && !roundComplete
+        && !isBouquetFailed(plan)
+        && (!tutorialActive || blackCandleOutcome)
+        && (!postRecoveryGuideActive || blackCandleOutcome)
+        && !visibleFinalHarvest
+        && !isArmedLineRelicGuidanceActive();
+    }
+
+    function presentSettledBoardOutcome() {
+      if (!pendingSettledBoardOutcome) {
         return false;
       }
-      blackCandleThornOutcomeCue = pendingBlackCandleThornOutcomeCue;
-      pendingBlackCandleThornOutcomeCue = "";
-      $("firstSwapCue").textContent = blackCandleThornOutcomeCue;
-      if (blackCandleThornOutcomeTimer && window.clearTimeout) {
-        window.clearTimeout(blackCandleThornOutcomeTimer);
+      if (!settledBoardOutcomeCanOwnNarration()) {
+        pendingSettledBoardOutcome = null;
+        return false;
       }
-      blackCandleThornOutcomeTimer = window.setTimeout(() => {
-        blackCandleThornOutcomeTimer = null;
-        blackCandleThornOutcomeCue = "";
+      settledBoardOutcome = {
+        ...pendingSettledBoardOutcome,
+        returnCue: $("firstSwapCue").textContent
+      };
+      pendingSettledBoardOutcome = null;
+      $("firstSwapCue").textContent = settledBoardOutcome.text;
+      if (settledBoardOutcomeTimer && window.clearTimeout) {
+        window.clearTimeout(settledBoardOutcomeTimer);
+      }
+      settledBoardOutcomeTimer = window.setTimeout(() => {
+        const returnCue = settledBoardOutcome?.returnCue || "";
+        settledBoardOutcomeTimer = null;
+        settledBoardOutcome = null;
+        if (returnCue) {
+          $("firstSwapCue").textContent = returnCue;
+        }
         if (currentRound === 2 && thornGoalComplete() && tutorialActive) {
           concludeTutorial();
         }
@@ -17856,7 +17888,7 @@
           queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
         }
         render();
-      }, BLACK_CANDLE_THORN_OUTCOME_MS);
+      }, SETTLED_BOARD_OUTCOME_MS);
       return true;
     }
 
@@ -17870,7 +17902,7 @@
           !boardParticles.length
           && !thornPulseCells.size
           && !thornClearedCells.size
-          && !pendingBlackCandleThornOutcomeCue
+          && !pendingSettledBoardOutcome
         ) {
           return;
         }
@@ -17885,8 +17917,8 @@
         thornPulseCells.clear();
         thornClearedCells.clear();
         transmuteFlashCell = "";
-        if (pendingBlackCandleThornOutcomeCue) {
-          presentBlackCandleThornOutcomeCue();
+        if (pendingSettledBoardOutcome) {
+          presentSettledBoardOutcome();
         }
         if (releasingThornOutcome && !roundComplete && !isBouquetFailed()) {
           queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
@@ -17999,18 +18031,53 @@
       return messages.length ? ` ${messages.join("; ")}.` : "";
     }
 
-    function blackCandleThornOutcomeMessage(result, plan = activeRoundPlan()) {
-      if (!result?.blackCandleActivation || !plan.thornGoal || !result.thornsDamaged) {
-        return "";
+    function settledBoardOutcomeForResult(result, plan = activeRoundPlan()) {
+      if (
+        !result?.matched
+        || (result.deadBoardRecovered && !result.blackCandleActivation)
+        || result.armedLineRelics?.length
+        || !focusedSliceRound(plan)
+      ) {
+        return null;
       }
-      const lane = result.blackCandleActivation.direction === "vertical" ? "column" : "row";
-      const progress = thornGoalProgress(plan);
-      const needed = thornGoalNeeded(plan);
-      const remaining = Math.max(0, needed - progress);
-      const crackedCopy = remaining > 0
-        ? ` ${remaining} Cursed Thorn${remaining === 1 ? "" : "s"} cracked.`
+      const targetResults = plan.targets.flatMap((target) => {
+        const gained = Math.max(0, Number(result.gained?.[target.flowerId]) || 0);
+        const current = targetProgress(target);
+        const previous = Math.min(target.needed, Math.max(0, counts[target.flowerId] - gained));
+        const credited = Math.max(0, current - previous);
+        if (!credited) {
+          return [];
+        }
+        const sealed = current >= target.needed ? " sealed" : "";
+        return [`${flowers[target.flowerId][0]} +${credited}, ${current} of ${target.needed}${sealed}.`];
+      });
+      const thornResult = plan.thornGoal && result.thornsDamaged
+        ? `Cursed Thorn ${thornGoalProgress(plan)} of ${thornGoalNeeded(plan)}${thornGoalComplete(plan) ? " sealed" : " cleared"}.`
         : "";
-      return `Black Candle burned the ${lane}. Cursed Thorn ${progress} of ${needed} ${progress >= needed ? "sealed" : "cleared"}.${crackedCopy}`;
+      if (!targetResults.length && !thornResult) {
+        return null;
+      }
+      const blackCandle = Boolean(result.blackCandleActivation);
+      if (blackCandle && thornResult) {
+        const progress = thornGoalProgress(plan);
+        const needed = thornGoalNeeded(plan);
+        const remaining = Math.max(0, needed - progress);
+        const crackedCopy = remaining > 0
+          ? ` ${remaining} Cursed Thorn${remaining === 1 ? "" : "s"} cracked.`
+          : "";
+        return {
+          kind: "black-candle",
+          text: `Black Candle burned the ${result.blackCandleActivation.direction === "vertical" ? "column" : "row"}. Cursed Thorn ${progress} of ${needed} ${progress >= needed ? "sealed" : "cleared"}.${crackedCopy}`
+        };
+      }
+      const laneResult = blackCandle
+        ? `Black Candle burned the ${result.blackCandleActivation.direction === "vertical" ? "column" : "row"}.`
+        : "";
+      const moveResult = `${moves} move${moves === 1 ? "" : "s"} left.`;
+      return {
+        kind: blackCandle ? "black-candle" : "harvest",
+        text: [laneResult, ...targetResults, thornResult, moveResult].filter(Boolean).join(" ")
+      };
     }
 
     function orderGainMessage(gained) {

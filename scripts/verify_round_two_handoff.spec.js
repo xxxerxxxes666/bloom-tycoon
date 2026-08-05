@@ -985,13 +985,30 @@ for (const testCase of CASES) {
           && document.querySelector("#board")?.getAttribute("aria-busy") === "false";
       }, SAVE_KEY, { timeout: 12000 });
       const feedback = await stopThornFeedbackRecorder(page);
-      const settled = await handoffReport(page);
+      await expect.poll(async () => (
+        (await handoffReport(page)).firstCue
+      ), {
+        message: `${testCase.label} announces the settled Thorn lesson result`,
+        timeout: 2200
+      }).toBe("Nightshade +3, 3 of 10. Cursed Thorn 3 of 3 sealed. 8 moves left.");
+      let settled = await handoffReport(page);
       expect(settled.state.moves, `${testCase.label} keyboard pair spends once`).toBe(8);
       expect(settled.state.clearedCursedThorns, `${testCase.label} Thorn goal sealed`).toBe(3);
       expect(settled.selectedCells, `${testCase.label} settled selection`).toEqual([]);
       expect(settled.tutorialVisible, `${testCase.label} tutorial retires after close`).toBe(false);
-      expect(settled.coinLive, `${testCase.label} wallet semantics restore after close`).toBe("polite");
+      expect(settled.coinLive, `${testCase.label} wallet stays quiet during settled result`).toBe("off");
       expect(settled.firstCueLive, `${testCase.label} fallback cue semantics restore after close`).toBe("polite");
+      expect(settled.firstCueVisible, `${testCase.label} settled result is visible`).toBe(true);
+      expect(settled.bodyClasses, `${testCase.label} settled result authority class`)
+        .toContain("settled-board-outcome-cue");
+      expect(
+        settled.liveRegionOwners.map(({ id, live, text }) => ({ id, live, text })),
+        `${testCase.label} settled result is the sole live narrator`
+      ).toEqual([{
+        id: "firstSwapCue",
+        live: "polite",
+        text: "Nightshade +3, 3 of 10. Cursed Thorn 3 of 3 sealed. 8 moves left."
+      }]);
       expect(
         settled.liveRegionOwners.some(({ id }) => id === "tutorialPanel"),
         `${testCase.label} retired tutorial does not own narration`
@@ -1002,6 +1019,24 @@ for (const testCase of CASES) {
         feedback.events.some((event) => event === "CRACK" || event === "BREAK"),
         `${testCase.label} localized Thorn feedback`
       ).toBe(true);
+      const settledSave = await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY);
+      for (let reload = 1; reload <= 2; reload += 1) {
+        await page.reload({ waitUntil: "networkidle" });
+        settled = await handoffReport(page);
+        expect(
+          await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY),
+          `${testCase.label} settled reload ${reload} exact save`
+        ).toBe(settledSave);
+        expect(settled.firstCueVisible, `${testCase.label} reload ${reload} does not replay result`).toBe(false);
+        expect(settled.bodyClasses, `${testCase.label} reload ${reload} retires transient authority`)
+          .not.toContain("settled-board-outcome-cue");
+        expect(
+          settled.liveRegionOwners.map(({ id, live }) => ({ id, live })),
+          `${testCase.label} reload ${reload} restores ordinary narration`
+        ).toEqual([{ id: "coinBalance", live: "polite" }]);
+        expect(settled.tiles, `${testCase.label} reload ${reload} tiles`).toBe(64);
+        expect(settled.rows, `${testCase.label} reload ${reload} rows`).toBe(8);
+      }
       expect(browserErrors, `${testCase.label} browser errors`).toEqual([]);
     } finally {
       await context.close();
@@ -1630,7 +1665,18 @@ for (const testCase of CASES) {
         `${testCase.label} localized crack feedback`
       ).toBe(true);
       expect(after.transitionNodeCount, `${testCase.label} shared transition surface retained`).toBe(1);
-      expect(after.instructionCount, `${testCase.label} lesson retires`).toBe(0);
+      expect(after.instructionCount, `${testCase.label} lesson yields to one settled result`).toBe(1);
+      expect(after.firstCueVisible, `${testCase.label} settled result is visible`).toBe(true);
+      expect(after.firstCue, `${testCase.label} settled result names Thorn closure`)
+        .toContain("Cursed Thorn 3 of 3 sealed.");
+      expect(after.firstCue, `${testCase.label} settled result names remaining moves`)
+        .toContain(`${after.state.moves} moves left.`);
+      expect(after.bodyClasses, `${testCase.label} settled result authority`)
+        .toContain("settled-board-outcome-cue");
+      expect(
+        after.liveRegionOwners.map(({ id, live }) => ({ id, live })),
+        `${testCase.label} one settled narration owner`
+      ).toEqual([{ id: "firstSwapCue", live: "polite" }]);
       expect(after.guideTiles, `${testCase.label} guide pair retires`).toBe(0);
       expect(after.thornSwapTiles, `${testCase.label} cause highlight retires`).toBe(0);
       expect(after.thornTargets, `${testCase.label} target highlight retires`).toBe(0);
