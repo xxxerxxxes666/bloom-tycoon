@@ -326,6 +326,8 @@ def verify_source_hooks():
         "LAST MOVE · 1",
         "function clearMoveUrgencyPulse()",
         "function pulseMoveUrgency()",
+        "function shouldRetireShuffleForFinalMove",
+        "shuffle-retired-final-move",
         'aria-live="${moveUrgencyPulseActive && lowMoves ? "polite" : "off"}"',
         "body.round-one-active .objective-target",
         "max-width:378px; gap:1.5px; padding:5px;",

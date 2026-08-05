@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-08-03 reserved First Bouquet's final move for the board
+
+- Player-visible result: when an unfinished Board-First order reaches `LAST MOVE`, the paid `Shuffle (-1 move)` retires instead of offering a one-click route to Retry. In the First Bouquet's authored close, the persisted Black Candle source remains focused and playable so the final row burn can complete the visible order.
+- Scope: one existing-control guard hides and disables Shuffle at exactly one remaining move in active Rounds 1-3, including direct/programmatic activation protection. It does not add a move, refund, bailout, control, copy, timer, save field, economy value, round, or progression surface; legacy rounds are untouched.
+- Permanent contract: desktop `1280x720` and exact `390x844`, pointer/touch/Enter+Space, and full/reduced motion seed the authoritative Round 1 last-move relic state. They require hidden/disabled Shuffle, source focus and sole roving ownership, two byte-stable reloads, a single physical lane activation, `14/14` completion at Moves `0`, one `120`-coin reward, no Retry, 64 tiles/eight rows, exact altar geometry, loaded images, and no overflow or browser/request errors.
+- Verification: focused and public delivery evidence is recorded with the shipping commit.
+- Security/scope scan: the production change is local state/UI gating only, and the permanent test uses the existing local save fixture. No credential material, private keys, tokens, trackers, analytics, external network hooks, dependencies, assets, backend, permissions, or save-schema fields were added.
+
 ## 2026-08-03 kept active First Bouquet commands inside short desktop
 
 - Player-visible result: at exact `1280x720`, the skipped First Bouquet's visible `Shuffle (-1 move)` now occupies the unused lower portion of the current-order rail instead of creating an implicit third grid row below the `600x600` altar. The complete button, title, sigil, Black Candle cue, greenhouse, current order, and outer frame remain visible while the board stays full size.

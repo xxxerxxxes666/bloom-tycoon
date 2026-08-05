@@ -7282,6 +7282,7 @@
     body.focused-slice-failed #shuffleBtn,
     body.focused-slice-failed #tutorialHelpBtn,
     body.focused-slice-failed #tutorialSkipBtn { display:none!important; }
+    body.shuffle-retired-final-move #shuffleBtn { display:none!important; }
     body.focused-slice-failed #renewBtn.visible { position:fixed; left:50%; bottom:14px; z-index:1000; display:block!important; min-width:190px; transform:translateX(-50%); box-shadow:0 0 22px #9b1d2266,0 10px 24px #000c; }
     .round-one-restoration.second-greenhouse-upgrade .restoration-scene { border-color:#7d49b2; box-shadow:inset 0 0 30px #7d49b255,0 0 28px #9b1d2245; }
     .round-one-restoration.second-greenhouse-upgrade .restoration-scene::before { background:radial-gradient(circle at 50% 30%,#7d49b244 0 14%,#0000 42%),radial-gradient(circle at 50% 42%,#0000 0 48%,#0008 88%),linear-gradient(180deg,#0008,#2c092055 34%,#0004 76%,#000a); }
@@ -10456,6 +10457,14 @@
 
     function resolvingMoveWillFail(plan = activeRoundPlan()) {
       return !roundComplete && moves <= 0 && !roundObjectivesComplete(plan);
+    }
+
+    function shouldRetireShuffleForFinalMove(plan = activeRoundPlan()) {
+      return focusedSliceRound(plan)
+        && !roundComplete
+        && !isBouquetFailed(plan)
+        && moves === 1
+        && !roundObjectivesComplete(plan);
     }
 
     function targetMarkup(flowerId, current, needed) {
@@ -14933,6 +14942,7 @@
       document.body.classList.toggle("post-recovery-guide", postRecoveryGuideActive && !roundComplete && !isBouquetFailed(activePlan));
       document.body.classList.toggle("armed-line-relic-cue", Boolean(activeRelicGuidance));
       document.body.classList.toggle("focused-slice-failed", activePlan.round <= 3 && isBouquetFailed(activePlan));
+      document.body.classList.toggle("shuffle-retired-final-move", shouldRetireShuffleForFinalMove(activePlan));
       document.body.classList.toggle("focused-payoff-active", focusedSliceRound(activePlan) && roundComplete && !finalHarvestLanding);
       document.body.classList.toggle("final-harvest-active", visibleFinalHarvest?.phase === "eligible");
       document.body.classList.toggle("final-harvest-transfer-active", finalHarvestLanding);
@@ -15492,6 +15502,7 @@
       $("shuffleBtn").disabled = isResolving
         || roundComplete
         || moves < 1
+        || shouldRetireShuffleForFinalMove(activePlan)
         || (currentRound === 1 && moves === 2 && !roundObjectivesComplete(activePlan))
         || (currentRound === 1 && tutorialActive);
       $("ritualLog").innerHTML = ritualMessage;
@@ -18953,6 +18964,9 @@
       if (currentRound === 1 && tutorialActive) {
         return;
       }
+      if (shouldRetireShuffleForFinalMove()) {
+        return;
+      }
       if (roundComplete) {
         ritualMessage = "The bouquet is sealed. Press Next Bouquet to continue.";
         render();
@@ -18978,6 +18992,10 @@
       armedLineRelic = null;
       ritualMessage = "The greenhouse table shuffles. One move is spent.";
       build();
+      if (shouldRetireShuffleForFinalMove()) {
+        boardFocusCell = clampBoardFocusCell();
+        queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
+      }
       if (
         currentRound === 1
         && moves === 2
