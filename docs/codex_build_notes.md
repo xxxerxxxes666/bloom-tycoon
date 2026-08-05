@@ -1,5 +1,12 @@
 # Codex Build Notes
 
+## 2026-08-05 reinvested owned-replay rewards in the conservatory
+
+- Player-visible result: once the Bloodroot Conservatory is owned, completing First Bouquet, Moonlit Wreath, or Bloodroot Compact now sends the existing `120`/`150`/`180` reward into the existing bouquet-to-conservatory nourishment ceremony. The settled receipt truthfully reads `Reward reinvested · ... coins nourished the Conservatory · 50 coins kept.` instead of growing a wallet with no remaining purchase.
+- Economy boundary: the first ownership cycle remains exactly `0 -> 120 -> 20 -> 170 -> 50 -> 230 -> 50`. Fully owned play keeps the canonical `50`-coin carried seed at every active round, settlement, reload, and Play Again boundary. Existing inflated fully owned profiles normalize to `50` on load without changing their board, moves, objectives, ownership, or save schema.
+- Permanent contract: the natural `vesper-thorn` journey now completes the first ownership cycle and two complete owned cycles on desktop `1280x720` and exact mobile `390x844`; reduced-motion exact mobile repeats both owned cycles. Every owned order samples binding, ingredient transfer or reduced acknowledgment, greenhouse response, settlement, two reloads, one sole focused Next Order/Play Again action, and an exact `50` balance. Separate desktop/mobile interruption cases reload during binding, transfer, and renewal, while a migration case proves `7820 -> 50` is atomic and quiet.
+- Verification: focused natural economy tests pass on desktop and exact mobile, the reduced-motion two-cycle case passes, the interruption matrix passes `2/2`, and the inflated-profile migration passes. Inspected ceremony captures retain the `600x600` desktop and `378x378` mobile hierarchy with complete receipt text, 64 tiles/eight rows, loaded images, no overflow, and no warning/error logs. No reward value, cost, timer, node, control, save field/version, mechanic, round, progression, dependency, network hook, tracker, credential, or permission changed.
+
 ## 2026-08-05 preserved fresh board focus through reload
 
 - Player-visible result: refreshing the untouched First Bouquet tutorial before its first move now returns DOM focus and the sole roving tab stop to the same authored glowing source. Reload no longer changes the board-first instruction into a Skip-first interaction solely because the page was refreshed.
