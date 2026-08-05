@@ -360,3 +360,63 @@ test("background interruption cancels the inter-frame result mutation", async ({
     await context.close();
   }
 });
+
+test("background interruption cancels pending feedback before owner exposure", async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  const page = await context.newPage();
+  try {
+    const testCase = CASES[1];
+    await seedCase(page, testCase);
+    await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 8500 });
+    await observeOutcomeChronology(page);
+    await page.evaluate(() => {
+      let forcedHidden = false;
+      Object.defineProperty(document, "hidden", {
+        configurable: true,
+        get: () => forcedHidden
+      });
+      window.__setSettledOutcomeDocumentHidden = (hidden) => {
+        forcedHidden = hidden;
+        document.dispatchEvent(new Event("visibilitychange"));
+      };
+    });
+    await activatePair(page, testCase);
+    await page.waitForFunction((key) => {
+      const state = JSON.parse(localStorage.getItem(key) || "{}");
+      return state.moves === 3
+        && document.querySelector("#board")?.getAttribute("aria-busy") === "false"
+        && !document.body.classList.contains("settled-board-outcome-cue")
+        && (
+          document.querySelectorAll(".board-particle").length > 0
+          || document.querySelectorAll(".tile.harvest-flash, .tile.thorn-hit, .tile.thorn-cleared").length > 0
+        );
+    }, SAVE_KEY, { timeout: 12000 });
+    await page.evaluate(() => window.__setSettledOutcomeDocumentHidden(true));
+    await page.waitForTimeout(1400);
+    await page.evaluate(() => window.__setSettledOutcomeDocumentHidden(false));
+    await page.waitForTimeout(150);
+    const interrupted = await report(page);
+    const timeline = await page.evaluate(() => window.__settledOutcomeTimeline || []);
+    const chronology = await page.evaluate(() => window.__settledOutcomeChronology || []);
+    expect(timeline, "feedback-delay interruption never exposes an owner or result").toEqual([]);
+    expect(chronology, "feedback-delay interruption never mutates a result").toEqual([]);
+    expect(interrupted.bodyClasses, "feedback-delay interruption leaves no transient authority")
+      .not.toContain("settled-board-outcome-cue");
+    expect(interrupted.cue, "feedback-delay interruption cannot announce on foreground")
+      .not.toContain("moves left.");
+    expect(interrupted.state.moves, "feedback-delay interruption preserves accepted state").toBe(3);
+    expect(interrupted.tiles, "feedback-delay interruption preserves tile integrity").toBe(64);
+    expect(interrupted.rows, "feedback-delay interruption preserves row integrity").toBe(8);
+    expect(interrupted.selected, "feedback-delay interruption preserves no selection").toBe(0);
+    expect(interrupted.focused, "feedback-delay interruption keeps visible board focus").toMatch(/^tile-/);
+    expect(interrupted.roving, "feedback-delay interruption keeps focus and roving aligned")
+      .toEqual([interrupted.focused]);
+    expect(interrupted.boardWidth, "feedback-delay interruption keeps exact mobile altar")
+      .toBeCloseTo(378, 1);
+    expect(interrupted.overflowX, "feedback-delay interruption keeps horizontal containment").toBe(false);
+    expect(interrupted.overflowY, "feedback-delay interruption keeps vertical containment").toBe(false);
+    expect(interrupted.brokenImages, "feedback-delay interruption keeps images loaded").toEqual([]);
+  } finally {
+    await context.close();
+  }
+});

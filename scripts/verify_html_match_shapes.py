@@ -828,6 +828,8 @@ def verify_source_hooks():
         "settledBoardOutcomeRevealFrame",
         "function settledBoardOutcomeForResult",
         "function presentSettledBoardOutcome",
+        "document.hidden || !settledBoardOutcomeCanOwnNarration()",
+        "pendingSettledBoardOutcome || settledBoardOutcome",
         "Establish the empty cue as the sole live owner before its one result mutation.",
         "settled-board-outcome-cue",
         'Black Candle burned the ${result.blackCandleActivation.direction',
