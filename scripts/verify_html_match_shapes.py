@@ -312,6 +312,8 @@ def verify_source_hooks():
         "queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);",
         "function shouldRestoreSettledActiveBoardFocus(plan = activeRoundPlan())",
         "function shouldRestoreSavedTutorialPrimaryFocus(plan = activeRoundPlan())",
+        "function shouldRestoreUntouchedRoundOneTutorialFocus(plan = activeRoundPlan())",
+        "|| shouldRestoreUntouchedRoundOneTutorialFocus(activeRoundPlan())",
         'queuePostRenderFocus("tutorialSkipBtn");',
         "else if (!postRenderFocusTarget && shouldRestoreSettledActiveBoardFocus())",
         ".tutorial-panel.black-candle-tutorial .tutorial-icon,",

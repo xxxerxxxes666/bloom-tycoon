@@ -1,5 +1,12 @@
 # Codex Build Notes
 
+## 2026-08-05 preserved fresh board focus through reload
+
+- Player-visible result: refreshing the untouched First Bouquet tutorial before its first move now returns DOM focus and the sole roving tab stop to the same authored glowing source. Reload no longer changes the board-first instruction into a Skip-first interaction solely because the page was refreshed.
+- Authority boundary: startup derives this exception only from the existing fresh tutorial state: active unskipped Round 1, full move budget, zero order progress, no valid move or selection, no relic/transient board owner, and an unfinished Black Candle lesson. Skip then Help uses the already-complete lesson flag and keeps its accepted focused Skip on reload; later tutorials and stronger failure, relic, and payoff owners remain unchanged. No save field was added.
+- Permanent contract: the desktop `1280x720` and exact `390x844`, full/reduced matrix now reloads the untouched active tutorial twice before input. Every boundary requires exact save stability, `tile-1-0` as DOM focus and sole roving tile, destination `tabindex=-1`, no selection/move/count drift, one tutorial narrator, Tab/Shift+Tab access to Skip, and one real keyboard/touch commit. A separate exact-mobile case proves untouched Help replay still restores focused Skip.
+- Verification/scope: the focused reload matrix passes `6/6` with 64 tiles/eight rows, `600×600` desktop and `378×378` mobile altars, `scrollY=0`, loaded images, no overflow, and no browser warnings/errors. No UI, copy, timer, move, board rule, save schema, economy, round, progression, dependency, network hook, tracker, credential, or permission changed.
+
 ## 2026-08-05 handed the fresh tutorial directly to the board
 
 - Player-visible result: when the untouched First Bouquet tutorial appears, keyboard and screen-reader focus now lands on its authored glowing source instead of remaining on the page body. The source is also the sole roving board tile, so Arrow keys, Enter, and Space work immediately while the existing instruction remains the sole polite narrator.

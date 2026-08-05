@@ -38,10 +38,12 @@ const CASES = [
 ];
 
 async function openFresh(page, label) {
-  await page.addInitScript((key) => {
-    localStorage.removeItem(key);
-    sessionStorage.clear();
-  }, SAVE_KEY);
+  await page.addInitScript(({ key, seedToken }) => {
+    if (!sessionStorage.getItem(seedToken)) {
+      localStorage.removeItem(key);
+      sessionStorage.setItem(seedToken, "1");
+    }
+  }, { key: SAVE_KEY, seedToken: `fresh-tutorial-focus-${label}` });
   await page.goto(`${BASE_URL}?fresh-tutorial-focus=${label}`, { waitUntil: "networkidle" });
   await expect(page.locator("#board .tile")).toHaveCount(64);
   await expect(page.locator("#tutorialPanel")).toBeVisible({ timeout: 3000 });
@@ -117,6 +119,28 @@ for (const testCase of CASES) {
       expect(initial.state.moves, `${testCase.label} focus spends no move`).toBe(6);
       expect(initial.state.counts, `${testCase.label} focus changes no objectives`).toEqual([0, 0, 0, 0, 0, 0]);
       expect(initial.liveOwners, `${testCase.label} tutorial remains the sole narrator`).toEqual(["tutorialPanel"]);
+
+      const untouchedSave = await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY);
+      for (let reload = 1; reload <= 2; reload += 1) {
+        await page.reload({ waitUntil: "networkidle" });
+        await expect(page.locator("#tutorialPanel")).toBeVisible();
+        const restored = await stateReport(page);
+        expect(
+          await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY),
+          `${testCase.label} reload ${reload} exact save`
+        ).toBe(untouchedSave);
+        expect(restored.activeId, `${testCase.label} reload ${reload} source focus`).toBe(pair.source.id);
+        expect(restored.rovingIds, `${testCase.label} reload ${reload} sole roving source`)
+          .toEqual([pair.source.id]);
+        await expect(page.locator(`#${pair.destination.id}`), `${testCase.label} reload ${reload} destination stays out of tab order`)
+          .toHaveAttribute("tabindex", "-1");
+        expect(restored.selectedIds, `${testCase.label} reload ${reload} no selection`).toEqual([]);
+        expect(restored.state.moves, `${testCase.label} reload ${reload} no move spent`).toBe(6);
+        expect(restored.state.counts, `${testCase.label} reload ${reload} no objective drift`)
+          .toEqual([0, 0, 0, 0, 0, 0]);
+        expect(restored.liveOwners, `${testCase.label} reload ${reload} tutorial narration`)
+          .toEqual(["tutorialPanel"]);
+      }
 
       if (testCase.input === "keyboard") {
         await page.keyboard.press("Tab");
@@ -198,6 +222,40 @@ test("fresh tutorial does not steal focus after pre-panel board input", async ({
     expect(settled.boardWidth).toBeCloseTo(378, 1);
     expect(settled.overflowX).toBe(false);
     expect(settled.overflowY).toBe(false);
+  } finally {
+    await context.close();
+  }
+});
+
+test("untouched Help replay reload keeps Skip as the stronger focus owner", async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  const page = await context.newPage();
+  try {
+    await openFresh(page, "untouched-help-replay");
+    const pair = await openingPair(page);
+    await expect(page.locator(`#${pair.source.id}`)).toBeFocused();
+    await page.locator("#tutorialSkipBtn").tap();
+    await expect(page.locator("#tutorialPanel")).toBeHidden();
+    await expect(page.locator(`#${pair.source.id}`)).toBeFocused();
+    await page.locator("#tutorialHelpBtn").tap();
+    await expect(page.locator("#tutorialPanel")).toBeVisible();
+    await expect(page.locator("#tutorialSkipBtn")).toBeFocused();
+    const replaySave = await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY);
+    await page.reload({ waitUntil: "networkidle" });
+    await expect(page.locator("#tutorialPanel")).toBeVisible();
+    await expect(page.locator("#tutorialSkipBtn")).toBeFocused();
+    expect(await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY)).toBe(replaySave);
+    const restored = await stateReport(page);
+    expect(restored.state.moves).toBe(6);
+    expect(restored.state.counts).toEqual([0, 0, 0, 0, 0, 0]);
+    expect(restored.selectedIds).toEqual([]);
+    expect(restored.rovingIds).toEqual([pair.source.id]);
+    expect(restored.tiles).toBe(64);
+    expect(restored.rows).toBe(8);
+    expect(restored.boardWidth).toBeCloseTo(378, 1);
+    expect(restored.scrollY).toBe(0);
+    expect(restored.overflowX).toBe(false);
+    expect(restored.overflowY).toBe(false);
   } finally {
     await context.close();
   }

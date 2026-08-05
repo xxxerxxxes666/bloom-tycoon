@@ -15957,8 +15957,24 @@
     function shouldRestoreSavedTutorialPrimaryFocus(plan = activeRoundPlan()) {
       return focusedSliceRound(plan)
         && tutorialActive
+        && !shouldRestoreUntouchedRoundOneTutorialFocus(plan)
         && !roundComplete
         && !isBouquetFailed(plan);
+    }
+
+    function shouldRestoreUntouchedRoundOneTutorialFocus(plan = activeRoundPlan()) {
+      return plan.round === 1
+        && tutorialActive
+        && !tutorialSkipped
+        && !blackCandleLessonComplete
+        && !hasMadeValidMove
+        && moves === plan.moves
+        && roundProgress(plan).earned === 0
+        && !selected
+        && !armedLineRelic
+        && !roundComplete
+        && !isBouquetFailed(plan)
+        && !boardGuideTransientStateActive();
     }
 
     function currentTutorialBoardGuidePair() {
@@ -19808,7 +19824,10 @@
         idleHintCells = new Set(firstMove.map((cell) => `${cell.x},${cell.y}`));
         boardFocusCell = clampBoardFocusCell(firstMove[0]);
         $("firstSwapCue").textContent = roundStartCueText(activeRoundPlan(), firstMove);
-        if (tutorialSkipped && !tutorialActive) {
+        if (
+          (tutorialSkipped && !tutorialActive)
+          || shouldRestoreUntouchedRoundOneTutorialFocus(activeRoundPlan())
+        ) {
           queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
         }
       }
