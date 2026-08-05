@@ -14874,7 +14874,9 @@
       );
       $("firstSwapCue")?.setAttribute(
         "aria-live",
-        settledBoardOutcomeOwnsNarration || boardCueOwnsNarration ? "polite" : "off"
+        settledBoardOutcomeOwnsNarration || boardCueOwnsNarration || finalHarvestNarration
+          ? "polite"
+          : "off"
       );
     }
 
@@ -14899,6 +14901,9 @@
       visibleFinalHarvest = finalHarvestCommit && ["landing", "ceremony"].includes(finalHarvestCommit.phase)
         ? finalHarvestCommit
         : finalHarvestEligibility(activePlan);
+      if (visibleFinalHarvest && (pendingSettledBoardOutcome || settledBoardOutcome)) {
+        clearSettledBoardOutcome();
+      }
       if (visibleFinalHarvest?.phase === "eligible" && idleHintTimer && window.clearTimeout) {
         window.clearTimeout(idleHintTimer);
         idleHintTimer = null;
