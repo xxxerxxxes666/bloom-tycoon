@@ -46,9 +46,12 @@ const CASES = [
 ];
 
 async function seedCase(page, testCase) {
-  await page.goto(`${BASE_URL}?settled-outcome=${testCase.label}`, { waitUntil: "networkidle" });
-  await page.evaluate(({ key, testCase }) => {
-    const state = JSON.parse(localStorage.getItem(key) || "{}");
+  const seedToken = `settled-outcome-seeded-${testCase.label}`;
+  await page.addInitScript(({ key, testCase, seedToken }) => {
+    if (sessionStorage.getItem(seedToken)) {
+      return;
+    }
+    const state = {};
     const board = Array.from({ length: 8 }, (_, y) => (
       Array.from({ length: 8 }, (_, x) => (x + 2 * y) % 6)
     ));
@@ -76,6 +79,7 @@ async function seedCase(page, testCase) {
     state.moves = 4;
     state.counts = [0, 0, 0, 0, 0, 0];
     state.coins = 20;
+    state.focusedEconomyVersion = 2;
     state.roundComplete = false;
     state.roundOneRestored = true;
     state.roundTwoGreenhouseUpgraded = testCase.round >= 3;
@@ -88,8 +92,9 @@ async function seedCase(page, testCase) {
     state.cursedThorns = [];
     state.clearedCursedThorns = testCase.round === 2 ? 3 : 0;
     localStorage.setItem(key, JSON.stringify(state));
-  }, { key: SAVE_KEY, testCase });
-  await page.reload({ waitUntil: "networkidle" });
+    sessionStorage.setItem(seedToken, "1");
+  }, { key: SAVE_KEY, testCase, seedToken });
+  await page.goto(`${BASE_URL}?settled-outcome=${testCase.label}`, { waitUntil: "networkidle" });
   await expect(page.locator("#board .tile")).toHaveCount(64);
 }
 
