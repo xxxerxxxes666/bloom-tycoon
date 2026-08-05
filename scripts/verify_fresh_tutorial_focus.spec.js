@@ -172,7 +172,7 @@ test("fresh tutorial does not steal focus after pre-panel board input", async ({
       localStorage.removeItem(key);
       sessionStorage.clear();
     }, SAVE_KEY);
-    await page.goto(`${BASE_URL}?fresh-tutorial-focus=pre-panel-touch`, { waitUntil: "networkidle" });
+    await page.goto(`${BASE_URL}?fresh-tutorial-focus=pre-panel-touch`, { waitUntil: "domcontentloaded" });
     await expect(page.locator("#tutorialPanel")).toBeHidden();
     const pair = await openingPair(page);
     await page.locator(`#${pair.source.id}`).tap();
