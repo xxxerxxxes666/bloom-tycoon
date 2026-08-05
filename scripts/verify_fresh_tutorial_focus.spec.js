@@ -37,6 +37,15 @@ const CASES = [
   }
 ];
 
+const POST_OPENING_CASES = [
+  { label: "desktop-keyboard", viewport: { width: 1280, height: 720 }, input: "keyboard" },
+  { label: "desktop-pointer", viewport: { width: 1280, height: 720 }, input: "pointer" },
+  { label: "desktop-keyboard-reduced", viewport: { width: 1280, height: 720 }, input: "keyboard", reduced: true },
+  { label: "desktop-pointer-reduced", viewport: { width: 1280, height: 720 }, input: "pointer", reduced: true },
+  { label: "mobile-touch", viewport: { width: 390, height: 844 }, input: "touch", mobile: true },
+  { label: "mobile-touch-reduced", viewport: { width: 390, height: 844 }, input: "touch", mobile: true, reduced: true }
+];
+
 async function openFresh(page, label) {
   await page.addInitScript(({ key, seedToken }) => {
     if (!sessionStorage.getItem(seedToken)) {
@@ -96,6 +105,29 @@ async function stateReport(page) {
       tutorialLive: document.querySelector("#tutorialPanel")?.getAttribute("aria-live") || ""
     };
   }, SAVE_KEY);
+}
+
+async function activateTile(page, id, input, key = "Enter") {
+  const tile = page.locator(`#${id}`);
+  if (input === "touch") await tile.tap();
+  else if (input === "pointer") await tile.click();
+  else await tile.press(key);
+}
+
+async function activateHelp(page, input) {
+  if (input === "touch") await page.locator("#tutorialHelpBtn").tap();
+  else if (input === "pointer") await page.locator("#tutorialHelpBtn").click();
+  else {
+    await page.keyboard.press("Tab");
+    await expect(page.locator("#tutorialHelpBtn")).toBeFocused();
+    await page.keyboard.press("Enter");
+  }
+}
+
+async function dismissHelp(page, input) {
+  if (input === "touch") await page.locator("#tutorialSkipBtn").tap();
+  else if (input === "pointer") await page.locator("#tutorialSkipBtn").click();
+  else await page.keyboard.press("Enter");
 }
 
 async function openOwnedReplayRoundOne(page, label) {
@@ -443,6 +475,120 @@ test("Help preserves a selected flower that already belongs to its guided pair",
     await context.close();
   }
 });
+
+for (const testCase of POST_OPENING_CASES) {
+  for (const selectedEndpoint of ["source", "destination"]) {
+    test(`post-opening Help preserves ${selectedEndpoint} continuation on ${testCase.label}`, async ({ browser }) => {
+      const context = await browser.newContext({
+        viewport: testCase.viewport,
+        hasTouch: Boolean(testCase.mobile),
+        isMobile: Boolean(testCase.mobile),
+        reducedMotion: testCase.reduced ? "reduce" : "no-preference"
+      });
+      const page = await context.newPage();
+      const browserErrors = [];
+      page.on("console", (message) => {
+        if (["warning", "error"].includes(message.type())) browserErrors.push(message.text());
+      });
+      page.on("pageerror", (error) => browserErrors.push(error.message));
+
+      try {
+        await openFresh(page, `post-opening-${selectedEndpoint}-${testCase.label}`);
+        const opening = await openingPair(page);
+        await page.locator("#tutorialSkipBtn").click();
+        await activateTile(page, opening.source.id, testCase.input);
+        await activateTile(page, opening.destination.id, testCase.input, "Space");
+        await page.waitForFunction((key) => {
+          const state = JSON.parse(localStorage.getItem(key) || "{}");
+          return state.moves === 5
+            && document.querySelector("#board")?.getAttribute("aria-busy") === "false";
+        }, SAVE_KEY, { timeout: 12000 });
+        await expect(page.locator("#board .tile.idle-hint")).toHaveCount(2, { timeout: 10000 });
+        await expect(page.locator("#firstSwapCue")).toContainText("Match Thorn Rose with the glowing pair.");
+
+        const followupIds = await page.locator("#board .tile.idle-hint").evaluateAll((tiles) => (
+          tiles.map((tile) => tile.id).sort()
+        ));
+        expect(followupIds).toEqual(["tile-3-0", "tile-3-1"]);
+        const followup = {
+          source: "tile-3-0",
+          destination: "tile-3-1"
+        };
+        const selectedId = followup[selectedEndpoint];
+        const counterpartId = selectedEndpoint === "source" ? followup.destination : followup.source;
+        const beforeSelection = await stateReport(page);
+
+        await activateTile(page, selectedId, testCase.input);
+        await expect(page.locator(`#${selectedId}`)).toHaveClass(/sel|selected/);
+        await expect(page.locator("#board .tile.idle-hint")).toHaveCount(2);
+        const selectedState = await stateReport(page);
+        expect(selectedState.selectedIds).toEqual([selectedId]);
+        expect(selectedState.rovingIds).toEqual([selectedId]);
+        expect(selectedState.state.moves).toBe(5);
+        expect(selectedState.state.counts).toEqual(beforeSelection.state.counts);
+        expect(selectedState.state.board).toEqual(beforeSelection.state.board);
+
+        await activateHelp(page, testCase.input);
+        await expect(page.locator("#tutorialPanel")).toBeVisible();
+        await expect(page.locator("#tutorialSkipBtn")).toBeFocused();
+        await expect(page.locator("#tutorialCopy")).toHaveText("Match Thorn Rose.");
+        await expect(page.locator("#board .tile.idle-hint")).toHaveCount(2);
+        const duringHelpIds = await page.locator("#board .tile.idle-hint").evaluateAll((tiles) => (
+          tiles.map((tile) => tile.id).sort()
+        ));
+        expect(duringHelpIds).toEqual(followupIds);
+        const duringHelp = await stateReport(page);
+        expect(duringHelp.selectedIds).toEqual([selectedId]);
+        expect(duringHelp.rovingIds).toEqual([selectedId]);
+        expect(duringHelp.liveOwners).toEqual(["tutorialPanel"]);
+        expect(duringHelp.state.moves).toBe(5);
+        expect(duringHelp.state.counts).toEqual(beforeSelection.state.counts);
+        expect(duringHelp.state.board).toEqual(beforeSelection.state.board);
+
+        await dismissHelp(page, testCase.input);
+        await expect(page.locator("#tutorialPanel")).toBeHidden();
+        await expect(page.locator("#board .tile.idle-hint")).toHaveCount(2);
+        const afterSkipIds = await page.locator("#board .tile.idle-hint").evaluateAll((tiles) => (
+          tiles.map((tile) => tile.id).sort()
+        ));
+        expect(afterSkipIds).toEqual(followupIds);
+        const afterSkip = await stateReport(page);
+        expect(afterSkip.selectedIds).toEqual([selectedId]);
+        expect(afterSkip.rovingIds).toEqual([selectedId]);
+        expect(afterSkip.state.moves).toBe(5);
+        expect(afterSkip.state.counts).toEqual(beforeSelection.state.counts);
+        expect(afterSkip.state.board).toEqual(beforeSelection.state.board);
+
+        await activateTile(page, counterpartId, testCase.input, "Space");
+        await page.waitForFunction((key) => {
+          const state = JSON.parse(localStorage.getItem(key) || "{}");
+          return state.moves === 4
+            && document.querySelector("#board")?.getAttribute("aria-busy") === "false";
+        }, SAVE_KEY, { timeout: 12000 });
+        const settled = await stateReport(page);
+        expect(settled.state.moves).toBe(4);
+        expect(settled.state.counts[5]).toBeGreaterThan(beforeSelection.state.counts[5]);
+        expect(settled.selectedIds).toEqual([]);
+        expect(settled.activeId).toMatch(/^tile-/);
+        expect(settled.rovingIds).toEqual([settled.activeId]);
+        expect(settled.tiles).toBe(64);
+        expect(settled.rows).toBe(8);
+        expect(settled.scrollY).toBe(0);
+        expect(settled.overflowX).toBe(false);
+        expect(settled.brokenImages).toEqual([]);
+        if (testCase.mobile) {
+          expect(settled.boardWidth).toBeCloseTo(378, 1);
+          expect(settled.overflowY).toBe(false);
+        } else {
+          expect(settled.boardWidth).toBeCloseTo(600, 1);
+        }
+        expect(browserErrors).toEqual([]);
+      } finally {
+        await context.close();
+      }
+    });
+  }
+}
 
 for (const testCase of CASES) {
   test(`visible owned-replay board cue solely owns narration on ${testCase.label}`, async ({ browser }) => {

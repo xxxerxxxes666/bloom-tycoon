@@ -12921,6 +12921,7 @@
             hintCells.has(`${cell.x},${cell.y}`)
             && (
               (currentRound === 1 && !hasMadeValidMove)
+              || isRoundOneAgencyHandoffActive()
               || isRestoredNextOrderFocus()
               || isArmedLineRelicGuidanceActive()
               || postRecoveryGuideActive
@@ -13774,7 +13775,10 @@
       if (!cell || !canBeginBoardDrag(cell)) {
         return;
       }
-      if (isPostOnboardingIdleHintActive()) {
+      if (
+        isPostOnboardingIdleHintActive()
+        && !shouldPreserveSelectedHintPair(idleHintCells, cell)
+      ) {
         notePlayerInteraction();
       }
       boardFocusCell = { x: cell.x, y: cell.y };
@@ -13846,7 +13850,10 @@
         touchSwipeStart = null;
         return;
       }
-      if (isPostOnboardingIdleHintActive()) {
+      if (
+        isPostOnboardingIdleHintActive()
+        && !shouldPreserveSelectedHintPair(idleHintCells, cell)
+      ) {
         notePlayerInteraction();
       }
       boardFocusCell = { x: cell.x, y: cell.y };
@@ -15778,6 +15785,9 @@
       if (tutorialSkipped && !replay) {
         return;
       }
+      const selectedReplayHintPair = replay
+        ? selectedGuidedHintPair()
+        : [];
       const restartRoundOneAgencyHint = isRoundOneAgencyHandoffActive();
       if (isPostOnboardingIdleHintActive()) {
         clearIdleHint();
@@ -15800,6 +15810,7 @@
         const replayGuide = lineRelicGuidance();
         const hintedReplayPair = hintedPairCells();
         const replayPair = replayGuide?.pair
+          || (selectedReplayHintPair.length === 2 ? selectedReplayHintPair : null)
           || (hintedReplayPair.length === 2 ? hintedReplayPair : null)
           || (currentRound === 1 && !hasMadeValidMove ? focusedOpeningGuideMove() : null);
         const selectedKey = selected ? `${selected.x},${selected.y}` : "";
@@ -15812,6 +15823,9 @@
         if (selected && replayGuideSource && !selectedIsGuided) {
           selected = null;
           boardFocusCell = clampBoardFocusCell(replayGuideSource);
+        }
+        if (replayPair?.length === 2) {
+          idleHintCells = new Set(replayPair.map((cell) => `${cell.x},${cell.y}`));
         }
         queuePostRenderFocus("tutorialSkipBtn");
       } else if (untouchedOpeningFocus) {
@@ -15830,7 +15844,7 @@
         }
       }
       saveProgress();
-      if (restartRoundOneAgencyHint) {
+      if (restartRoundOneAgencyHint && !selectedReplayHintPair.length) {
         scheduleIdleHint();
       }
     }
@@ -15839,6 +15853,7 @@
       if (blackCandleActivationPresentation) {
         clearBlackCandleActivationPresentation();
       }
+      const selectedReplayHintPair = selectedGuidedHintPair();
       const guidedFocusCell = lineRelicGuidance()?.source
         || currentTutorialBoardGuidePair()?.source
         || firstHintFocusCell()
@@ -15855,6 +15870,9 @@
       if (skippingRoundOneAgency) {
         clearTargetLiteracy(false);
         clearIdleHint();
+        if (selectedReplayHintPair.length === 2) {
+          idleHintCells = new Set(selectedReplayHintPair.map((cell) => `${cell.x},${cell.y}`));
+        }
       }
       if (skippingThornLesson) {
         clearIdleHint();
@@ -15882,7 +15900,7 @@
         });
       }
       saveProgress();
-      if (skippingRoundOneAgency || restartPostOnboardingHint) {
+      if (!selectedReplayHintPair.length && (skippingRoundOneAgency || restartPostOnboardingHint)) {
         scheduleIdleHint();
       }
     }
@@ -15928,6 +15946,16 @@
         const [x, y] = cell.split(",").map(Number);
         return { x, y };
       });
+    }
+
+    function selectedGuidedHintPair(hintCells = idleHintCells, cell = selected) {
+      if (!cell || !shouldPreserveSelectedHintPair(hintCells, cell)) {
+        return [];
+      }
+      const pair = [...hintCells].map((key) => cellFromKey(key)).filter(Boolean);
+      return pair.length === 2 && isAdjacentPair(pair[0], pair[1]) && isLegalSwap(pair[0], pair[1])
+        ? pair
+        : [];
     }
 
     function isAdjacentPair(a, b) {

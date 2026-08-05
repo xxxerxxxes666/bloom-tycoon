@@ -1,5 +1,12 @@
 # Codex Build Notes
 
+## 2026-08-05 post-opening Help continuation authority
+
+- Player-visible result: after the taught First Bouquet swap, selecting either flower in the delayed objective-useful glowing pair and opening Help now keeps that exact pair and selection coherent. Help restores the same two hints, Skip leaves the chosen endpoint selected, and one activation of the counterpart commits the intended match once instead of discarding the guide and requiring another selection.
+- Product scope: `playable/midnight_bloom_prototype.html` preserves a post-onboarding Round 1 hint only when pointer, touch, or keyboard input selects one of its two legal endpoints. Help snapshots that selected pair before ordinary agency narration clears idle guidance, restores it for the tutorial, and defers the normal idle-timer restart until the continuation is resolved. Unrelated selections still retire under the accepted opening conflict rule; opening, Black Candle, Thorn, narration, geometry, saves, moves, economy, rounds, and progression are unchanged.
+- Permanent contract: `scripts/verify_fresh_tutorial_focus.spec.js` adds source-first and destination-first cases for desktop keyboard, desktop pointer, exact-mobile touch, full motion, and reduced motion. Each naturally commits the opening pair, waits for exact `tile-3-0`/`tile-3-1` objective guidance, proves Help/Skip preserve pair, selection, board, moves, counts, sole tutorial narration, and roving ownership, then proves the counterpart spends Moves `5 -> 4` exactly once with target credit, 64 tiles/eight rows, 600px/378px altar geometry, no overflow, broken images, or browser errors.
+- Verification: the focused post-opening matrix passes `12/12`; the complete fresh tutorial focus/narration suite passes `27/27`. `scripts/verify_html_match_shapes.py` guards the selected-pair snapshot and idle-timer precedence markers.
+
 ## 2026-08-05 coherent Help replay after an unrelated selection
 
 - Player-visible result: asking for Help after selecting an unrelated flower no longer leaves that stale selection behind while the tutorial highlights and focuses a different pair. Help retires only the conflicting transient selection, makes the authored source the board's sole roving entry, and lets the restored source/destination commit with the normal two actions instead of consuming the first action to clear the wrong tile.
