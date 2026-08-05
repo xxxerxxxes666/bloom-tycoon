@@ -1,5 +1,11 @@
 # Codex Build Notes
 
+## 2026-08-05 single live owner for visible board guidance
+
+- Player-visible result: the actionable board cue now solely owns polite narration whenever it is visibly guiding an opening swap, follow-up, refusal, Black Candle action, or settled harvest. The unchanged coin balance and greenhouse stay quiet until that board instruction retires, preventing a static wallet announcement from competing with the move the player needs to make.
+- Scope: the correction reuses `#firstSwapCue` and the existing live-region ownership function. It changes no visible copy, DOM node, geometry, focus order, timer, move, objective, reward, save, economy, round, or progression behavior; tutorial, failure, final-harvest, and payoff owners retain their stronger precedence.
+- Permanent contract: owned-replay R1 is covered at desktop `1280x720` and exact mobile `390x844`, full/reduced motion, first entry plus two reloads, Help/Skip ownership transfer, keyboard/touch opening commit, one polite owner, focus/roving agreement, 64 tiles/eight rows, exact mobile altar, overflow, image, and browser-error gates.
+
 ## 2026-08-05 restored spendable owned-replay rewards
 
 - Player-visible result: an owned Conservatory keeps its bounded nourishment/renewal presentation, but every completed order now adds its advertised `120`/`150`/`180` coins exactly once. The first ownership cycle remains `0 -> 120 -> 20 -> 170 -> 50 -> 230 -> 50`; owned cycles continue `50 -> 170 -> 320 -> 500` and `500 -> 620 -> 770 -> 950`, with truthful `Reward added` receipts and no replay purchase or spend.

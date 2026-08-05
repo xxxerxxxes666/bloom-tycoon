@@ -14836,11 +14836,19 @@
         && !payoffOwnsNarration
         && !settledBoardOutcomeOwnsNarration
         && tutorialActive;
+      const firstSwapCue = $("firstSwapCue");
+      const visibleBoardCue = Boolean(firstSwapCue)
+        && !firstSwapCue.hidden
+        && getComputedStyle(firstSwapCue).display !== "none"
+        && firstSwapCue.getBoundingClientRect().width > 0
+        && firstSwapCue.getBoundingClientRect().height > 0;
       const boardCueOwnsNarration = focusedSliceRound(plan)
         && !payoffOwnsNarration
         && !settledBoardOutcomeOwnsNarration
         && !tutorialPanelOwnsNarration
-        && postRecoveryGuideActive;
+        && !finalHarvestNarration
+        && !isBouquetFailed(plan)
+        && visibleBoardCue;
       const tutorialOwnsNarration = focusedSliceRound(plan)
         && !payoffOwnsNarration
         && (tutorialPanelOwnsNarration || isBouquetFailed(plan) || finalHarvestNarration);
@@ -14866,7 +14874,7 @@
       );
       $("firstSwapCue")?.setAttribute(
         "aria-live",
-        payoffOwnsNarration || tutorialPanelOwnsNarration ? "off" : "polite"
+        settledBoardOutcomeOwnsNarration || boardCueOwnsNarration ? "polite" : "off"
       );
     }
 

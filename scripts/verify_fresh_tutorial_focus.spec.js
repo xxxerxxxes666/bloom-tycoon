@@ -89,9 +89,49 @@ async function stateReport(page) {
       liveOwners: Array.from(document.querySelectorAll("[aria-live]"))
         .filter(visible)
         .filter((node) => ["polite", "assertive"].includes(node.getAttribute("aria-live")))
-        .map((node) => node.id)
+        .map((node) => node.id),
+      coinLive: document.querySelector("#coinBalance")?.getAttribute("aria-live") || "",
+      firstCueLive: document.querySelector("#firstSwapCue")?.getAttribute("aria-live") || "",
+      firstCueVisible: visible(document.querySelector("#firstSwapCue")),
+      tutorialLive: document.querySelector("#tutorialPanel")?.getAttribute("aria-live") || ""
     };
   }, SAVE_KEY);
+}
+
+async function openOwnedReplayRoundOne(page, label) {
+  await page.goto(`${BASE_URL}?owned-replay-cue=${label}`, { waitUntil: "networkidle" });
+  await page.evaluate((key) => {
+    localStorage.removeItem(key);
+  }, SAVE_KEY);
+  await page.reload({ waitUntil: "networkidle" });
+  await page.evaluate((key) => {
+    const state = JSON.parse(localStorage.getItem(key) || "{}");
+    Object.assign(state, {
+      currentRound: 3,
+      roundComplete: true,
+      moves: 0,
+      coins: 50,
+      counts: [13, 0, 0, 14, 0, 0],
+      cursedThorns: [],
+      clearedCursedThorns: 0,
+      roundOneRestored: true,
+      roundTwoGreenhouseUpgraded: true,
+      roundThreeConservatoryRaised: true,
+      freshConservatorySettlement: false,
+      hasMadeValidMove: true,
+      restoredRoundTwoGuideMoves: 2,
+      tutorialSkipped: true,
+      tutorialActive: false,
+      blackCandleLessonComplete: true
+    });
+    localStorage.setItem(key, JSON.stringify(state));
+  }, SAVE_KEY);
+  await page.reload({ waitUntil: "networkidle" });
+  await expect(page.locator("#nextOrderBtn")).toBeVisible();
+  await page.locator("#nextOrderBtn").click();
+  await expect(page.locator("body")).toHaveClass(/owned-replay-entry/);
+  await expect(page.locator("#firstSwapCue")).toBeVisible();
+  await expect(page.locator("#board .tile")).toHaveCount(64);
 }
 
 for (const testCase of CASES) {
@@ -260,3 +300,88 @@ test("untouched Help replay reload keeps Skip as the stronger focus owner", asyn
     await context.close();
   }
 });
+
+for (const testCase of CASES) {
+  test(`visible owned-replay board cue solely owns narration on ${testCase.label}`, async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: testCase.viewport,
+      hasTouch: Boolean(testCase.mobile),
+      isMobile: Boolean(testCase.mobile),
+      reducedMotion: testCase.reduced ? "reduce" : "no-preference"
+    });
+    const page = await context.newPage();
+    const browserErrors = [];
+    page.on("console", (message) => {
+      if (["warning", "error"].includes(message.type())) browserErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => browserErrors.push(error.message));
+
+    try {
+      await openOwnedReplayRoundOne(page, testCase.label);
+      for (let load = 0; load < 3; load += 1) {
+        if (load > 0) await page.reload({ waitUntil: "networkidle" });
+        await expect(page.locator("#firstSwapCue")).toBeVisible();
+        const cueState = await stateReport(page);
+        expect(cueState.liveOwners, `${testCase.label} load ${load} cue is sole narrator`)
+          .toEqual(["firstSwapCue"]);
+        expect(cueState.coinLive, `${testCase.label} load ${load} wallet is quiet`).toBe("off");
+        expect(cueState.firstCueLive, `${testCase.label} load ${load} cue is polite`).toBe("polite");
+        expect(cueState.activeId, `${testCase.label} load ${load} board owns focus`).toMatch(/^tile-/);
+        expect(cueState.rovingIds, `${testCase.label} load ${load} focus and roving agree`)
+          .toEqual([cueState.activeId]);
+        expect(cueState.tiles).toBe(64);
+        expect(cueState.rows).toBe(8);
+        expect(cueState.selectedIds).toEqual([]);
+      }
+
+      await page.locator("#tutorialHelpBtn").click();
+      await expect(page.locator("#tutorialPanel")).toBeVisible();
+      const tutorialState = await stateReport(page);
+      expect(tutorialState.liveOwners, `${testCase.label} Help replay owns narration`)
+        .toEqual(["tutorialPanel"]);
+      expect(tutorialState.coinLive).toBe("off");
+      expect(tutorialState.firstCueLive).toBe("off");
+
+      await page.locator("#tutorialSkipBtn").click();
+      await expect(page.locator("#firstSwapCue")).toBeVisible();
+      const restoredCue = await stateReport(page);
+      expect(restoredCue.liveOwners, `${testCase.label} Skip restores cue ownership`)
+        .toEqual(["firstSwapCue"]);
+
+      const pair = await openingPair(page);
+      if (testCase.input === "keyboard") {
+        await page.locator(`#${pair.source.id}`).press("Enter");
+        await page.locator(`#${pair.destination.id}`).press("Space");
+      } else {
+        await page.locator(`#${pair.source.id}`).tap();
+        await page.locator(`#${pair.destination.id}`).tap();
+      }
+      await page.waitForFunction((key) => {
+        const state = JSON.parse(localStorage.getItem(key) || "{}");
+        return state.moves === 5 && document.querySelector("#board")?.getAttribute("aria-busy") === "false";
+      }, SAVE_KEY, { timeout: 12000 });
+      await expect(page.locator("#firstSwapCue"), `${testCase.label} settled receipt becomes visible`)
+        .toBeVisible({ timeout: 3000 });
+      const settled = await stateReport(page);
+      expect(settled.state.moves, `${testCase.label} opening commits once`).toBe(5);
+      expect(settled.state.counts[5], `${testCase.label} Thorn Rose progress`).toBeGreaterThan(0);
+      expect(settled.liveOwners, `${testCase.label} visible result/follow-up cue remains sole narrator`)
+        .toEqual(["firstSwapCue"]);
+      expect(settled.coinLive).toBe("off");
+      expect(settled.activeId).toMatch(/^tile-/);
+      expect(settled.rovingIds).toEqual([settled.activeId]);
+      expect(settled.tiles).toBe(64);
+      expect(settled.rows).toBe(8);
+      expect(settled.scrollY).toBe(0);
+      expect(settled.overflowX).toBe(false);
+      expect(settled.brokenImages).toEqual([]);
+      if (testCase.mobile) {
+        expect(settled.boardWidth).toBeCloseTo(378, 1);
+        expect(settled.overflowY).toBe(false);
+      }
+      expect(browserErrors, `${testCase.label} browser errors`).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+}
