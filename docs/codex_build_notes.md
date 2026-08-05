@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-08-05 restored desktop final-harvest command authority
+
+- Player-visible correction: plain `FINAL HARVEST` commands now retain the established `13px`/`900` large-desktop treatment instead of inheriting the later compact `11px` ordinary-cue shorthand. The fix is limited to eligible/landing final-harvest ownership in the shared command region; ordinary cues stay compact, while authored Black Candle guidance still outranks the final cue and remains the sole narrator.
+- Root cause and scope: the large-desktop `.tutorial-command-region > .first-swap-cue` shorthand followed the general final-harvest rule with equal specificity, so the non-tutorial Round 2 surface computed to `11px`. One adjacent production CSS exception restores the final-harvest type contract; no copy, DOM, state, timing, input, move, objective, RNG, economy, save, ceremony, asset, dependency, or URL changed.
+- Exact browser gate: `node_modules/.bin/playwright test scripts/verify_first_three_journey.spec.js --grep "final harvest causally closes all three natural orders" --workers=1 --reporter=line` passed `2/2` in `1.9m`. Natural Rounds 1-3 completed on desktop `1280x720` and exact mobile `390x844`, with pointer/keyboard/touch activation, mobile reduced motion, final flights/receiver fill, ceremony handoff and sole action, 64 tiles/eight rows, loaded images, no overflow, exactly one live narrator, and clean console/page/request ledgers.
+- Visual/computed evidence: inspected `work/final-harvest-desktop-round2-eligible.png` and `work/final-harvest-mobile390-round2-eligible.png` at normal scale. Desktop Round 2 is `13px`/`900`, contrast `15.49:1`, rect `296×36.59` at `(30,66.41)`, unclipped; desktop Round 3 is `13px`/`900`. Mobile Round 2 is `15px`/`900`, contrast `15.49:1`, rect `234×47` at `(138,264)`, unclipped; mobile Round 3 and reduced-motion Round 3 are `15px`/`900`. Category contrast remains `10.29:1`.
+- Static evidence: `python3 scripts/verify_project.py`, `python3 scripts/verify_html_match_shapes.py`, inline playable JavaScript parsing with `new Function`, and `git diff --check` passed. Files changed are the playable and this note; work remains local with no commit, push, deployment, or public-URL change.
+
 ## 2026-08-05 post-opening Help continuation authority
 
 - Player-visible result: after the taught First Bouquet swap, selecting either flower in the delayed objective-useful glowing pair and opening Help now keeps that exact pair and selection coherent. Help restores the same two hints, Skip leaves the chosen endpoint selected, and one activation of the counterpart commits the intended match once instead of discarding the guide and requiring another selection.
