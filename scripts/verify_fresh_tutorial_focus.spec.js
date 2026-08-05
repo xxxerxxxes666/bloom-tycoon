@@ -302,6 +302,149 @@ test("untouched Help replay reload keeps Skip as the stronger focus owner", asyn
 });
 
 for (const testCase of CASES) {
+  test(`Help retires only a conflicting transient selection on ${testCase.label}`, async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: testCase.viewport,
+      hasTouch: Boolean(testCase.mobile),
+      isMobile: Boolean(testCase.mobile),
+      reducedMotion: testCase.reduced ? "reduce" : "no-preference"
+    });
+    const page = await context.newPage();
+    const browserErrors = [];
+    page.on("console", (message) => {
+      if (["warning", "error"].includes(message.type())) browserErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => browserErrors.push(error.message));
+
+    try {
+      await openFresh(page, `conflicting-selection-${testCase.label}`);
+      const pair = await openingPair(page);
+      await page.locator("#tutorialSkipBtn").click();
+      await expect(page.locator(`#${pair.source.id}`)).toBeFocused();
+      await page.waitForTimeout(150);
+      const unrelated = page.locator("#tile-0-0");
+      if (testCase.input === "touch") await unrelated.tap();
+      else await unrelated.press("Enter");
+      await expect(unrelated).toHaveClass(/sel|selected/);
+      const beforeHelp = await stateReport(page);
+      expect(beforeHelp.selectedIds).toEqual(["tile-0-0"]);
+      expect(beforeHelp.activeId).toBe("tile-0-0");
+      expect(beforeHelp.rovingIds).toEqual(["tile-0-0"]);
+
+      const beforeState = beforeHelp.state;
+      if (testCase.input === "touch") {
+        await page.locator("#tutorialHelpBtn").tap();
+      } else {
+        await page.keyboard.press("Tab");
+        await expect(page.locator("#tutorialHelpBtn")).toBeFocused();
+        await page.keyboard.press("Enter");
+      }
+      await expect(page.locator("#tutorialPanel")).toBeVisible();
+      await expect(page.locator("#tutorialSkipBtn")).toBeFocused();
+      await expect(page.locator("#board .tile.idle-hint")).toHaveCount(2);
+      const duringHelp = await stateReport(page);
+      expect(duringHelp.selectedIds, `${testCase.label} conflicting selection retires`).toEqual([]);
+      expect(duringHelp.rovingIds, `${testCase.label} guide source owns board entry`).toEqual([pair.source.id]);
+      expect(duringHelp.state.moves, `${testCase.label} Help spends no move`).toBe(beforeState.moves);
+      expect(duringHelp.state.counts, `${testCase.label} Help changes no objective`).toEqual(beforeState.counts);
+      expect(duringHelp.state.board, `${testCase.label} Help preserves board identity`).toEqual(beforeState.board);
+      expect(duringHelp.liveOwners, `${testCase.label} Help remains sole narrator`).toEqual(["tutorialPanel"]);
+
+      if (testCase.input === "touch") await page.locator("#tutorialSkipBtn").tap();
+      else await page.keyboard.press("Enter");
+      await expect(page.locator("#tutorialPanel")).toBeHidden();
+      await expect(page.locator("#board .tile[tabindex='0']")).toHaveAttribute("id", pair.source.id);
+      await expect(page.locator(`#${pair.destination.id}`)).toHaveAttribute("tabindex", "-1");
+
+      if (testCase.input === "touch") {
+        await expect(page.locator(`#${pair.source.id}`)).toBeFocused();
+        await page.locator(`#${pair.source.id}`).tap();
+        await page.locator(`#${pair.destination.id}`).tap();
+      } else {
+        await expect(page.locator("#tutorialHelpBtn")).toBeFocused();
+        await page.keyboard.press("Shift+Tab");
+        await expect(page.locator(`#${pair.source.id}`)).toBeFocused();
+        await page.keyboard.press("Enter");
+        await page.locator(`#${pair.destination.id}`).press("Space");
+      }
+      await page.waitForFunction((key) => {
+        const state = JSON.parse(localStorage.getItem(key) || "{}");
+        return state.moves === 5
+          && document.querySelector("#board")?.getAttribute("aria-busy") === "false";
+      }, SAVE_KEY, { timeout: 12000 });
+      const settled = await stateReport(page);
+      expect(settled.state.moves, `${testCase.label} guided pair commits once`).toBe(5);
+      expect(settled.state.counts[5], `${testCase.label} guided pair earns target credit`).toBeGreaterThan(0);
+      expect(settled.selectedIds).toEqual([]);
+      expect(settled.activeId).toMatch(/^tile-/);
+      expect(settled.rovingIds).toEqual([settled.activeId]);
+      expect(settled.tiles).toBe(64);
+      expect(settled.rows).toBe(8);
+      expect(settled.scrollY).toBe(0);
+      expect(settled.overflowX).toBe(false);
+      expect(settled.brokenImages).toEqual([]);
+      if (testCase.mobile) {
+        expect(settled.boardWidth).toBeCloseTo(378, 1);
+        expect(settled.overflowY).toBe(false);
+      }
+      expect(browserErrors, `${testCase.label} browser errors`).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+}
+
+test("Help preserves a selected flower that already belongs to its guided pair", async ({ browser }) => {
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    hasTouch: true,
+    isMobile: true
+  });
+  const page = await context.newPage();
+  try {
+    await openFresh(page, "guided-selection-preserved");
+    const pair = await openingPair(page);
+    await page.locator("#tutorialSkipBtn").tap();
+    await expect(page.locator(`#${pair.source.id}`)).toBeFocused();
+    await page.waitForTimeout(150);
+    await page.locator(`#${pair.source.id}`).tap();
+    await expect(page.locator(`#${pair.source.id}`)).toHaveClass(/sel|selected/);
+
+    await page.locator("#tutorialHelpBtn").tap();
+    await expect(page.locator("#tutorialPanel")).toBeVisible();
+    await expect(page.locator("#board .tile.idle-hint")).toHaveCount(2);
+    const duringHelp = await stateReport(page);
+    expect(duringHelp.selectedIds).toEqual([pair.source.id]);
+    expect(duringHelp.rovingIds).toEqual([pair.source.id]);
+    expect(duringHelp.state.moves).toBe(6);
+    expect(duringHelp.state.counts).toEqual([0, 0, 0, 0, 0, 0]);
+
+    await page.locator("#tutorialSkipBtn").tap();
+    await expect(page.locator(`#${pair.source.id}`)).toBeFocused();
+    await page.locator(`#${pair.destination.id}`).tap();
+    await page.waitForFunction((key) => {
+      const state = JSON.parse(localStorage.getItem(key) || "{}");
+      return state.moves === 5
+        && document.querySelector("#board")?.getAttribute("aria-busy") === "false";
+    }, SAVE_KEY, { timeout: 12000 });
+    const settled = await stateReport(page);
+    expect(settled.state.moves).toBe(5);
+    expect(settled.state.counts[5]).toBeGreaterThan(0);
+    expect(settled.selectedIds).toEqual([]);
+    expect(settled.rovingIds).toEqual([settled.activeId]);
+    expect(settled.tiles).toBe(64);
+    expect(settled.rows).toBe(8);
+    expect(settled.boardWidth).toBeCloseTo(378, 1);
+    expect(settled.scrollY).toBe(0);
+    expect(settled.overflowX).toBe(false);
+    expect(settled.overflowY).toBe(false);
+    expect(settled.brokenImages).toEqual([]);
+  } finally {
+    await context.close();
+  }
+});
+
+for (const testCase of CASES) {
   test(`visible owned-replay board cue solely owns narration on ${testCase.label}`, async ({ browser }) => {
     const context = await browser.newContext({
       viewport: testCase.viewport,

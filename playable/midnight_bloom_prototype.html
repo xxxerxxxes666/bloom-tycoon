@@ -15797,6 +15797,22 @@
       }
       if (replay) {
         restoreAuthoritativeRoundTwoThornLesson();
+        const replayGuide = lineRelicGuidance();
+        const hintedReplayPair = hintedPairCells();
+        const replayPair = replayGuide?.pair
+          || (hintedReplayPair.length === 2 ? hintedReplayPair : null)
+          || (currentRound === 1 && !hasMadeValidMove ? focusedOpeningGuideMove() : null);
+        const selectedKey = selected ? `${selected.x},${selected.y}` : "";
+        const selectedIsGuided = Boolean(selectedKey) && Boolean(replayPair?.some((cell) => (
+          cell.x === selected.x && cell.y === selected.y
+        )));
+        const replayGuideSource = selectedIsGuided
+          ? { ...selected }
+          : replayPair?.[0] || null;
+        if (selected && replayGuideSource && !selectedIsGuided) {
+          selected = null;
+          boardFocusCell = clampBoardFocusCell(replayGuideSource);
+        }
         queuePostRenderFocus("tutorialSkipBtn");
       } else if (untouchedOpeningFocus) {
         const openingSource = currentTutorialBoardGuidePair()?.source || firstHintFocusCell();

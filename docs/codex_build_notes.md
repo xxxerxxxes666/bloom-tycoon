@@ -1,5 +1,11 @@
 # Codex Build Notes
 
+## 2026-08-05 coherent Help replay after an unrelated selection
+
+- Player-visible result: asking for Help after selecting an unrelated flower no longer leaves that stale selection behind while the tutorial highlights and focuses a different pair. Help retires only the conflicting transient selection, makes the authored source the board's sole roving entry, and lets the restored source/destination commit with the normal two actions instead of consuming the first action to clear the wrong tile.
+- Authority boundary: an already-selected flower inside the active guided pair remains authoritative; only a selection outside the real replay pair is retired. The correction changes no saved board, move, objective, wallet, tutorial copy, timer, mechanic, round, or progression state. Help still owns focus/narration while open; touch dismissal returns to the source, while the existing keyboard Help-return path leaves Help focused and exposes the source through Shift+Tab.
+- Permanent contract: desktop `1280x720` and exact mobile `390x844`, full/reduced motion, select an unrelated tile, open Help through keyboard/touch, require no selection plus the authored sole roving source, dismiss, and commit the pair exactly once with the established focus path. The matrix retains 64 tiles/eight rows, exact mobile altar geometry, `scrollY=0`, loaded images, no overflow, and empty browser-error collections.
+
 ## 2026-08-05 single live owner for visible board guidance
 
 - Player-visible result: the actionable board cue now solely owns polite narration whenever it is visibly guiding an opening swap, follow-up, refusal, Black Candle action, or settled harvest. The unchanged coin balance and greenhouse stay quiet until that board instruction retires, preventing a static wallet announcement from competing with the move the player needs to make.
