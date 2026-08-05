@@ -14431,12 +14431,6 @@
       return 0;
     }
 
-    function ownedReplaySeedBalance() {
-      return roundTemplates[0].reward.coins - FIRST_GREENHOUSE_RESTORE_COST
-        + roundTemplates[1].reward.coins - MOONLIT_GREENHOUSE_UPGRADE_COST
-        + roundTemplates[2].reward.coins - BLOODROOT_CONSERVATORY_COST;
-    }
-
     function conservatoryFullyOwned() {
       return roundOneRestored && roundTwoGreenhouseUpgraded && roundThreeConservatoryRaised;
     }
@@ -14446,7 +14440,7 @@
     }
 
     function ownedReplayRewardTransaction(plan) {
-      return `Reward reinvested · ${plan.reward.coins} coins nourished the Conservatory · ${coins} coins kept.`;
+      return `Reward added · +${plan.reward.coins} coins · ${coins} coins balance.`;
     }
 
     function greenhouseOwnedProgress() {
@@ -18295,13 +18289,10 @@
       if (roundComplete || !targetsComplete || !thornGoalComplete(plan) || authoredLessonPending) {
         return false;
       }
-      const ownedReplayCompletion = isOwnedRestorationReplay();
       roundComplete = true;
       retireRoundOneSecondTargetDiscovery({ clearHint: true });
       const streakPayout = completionCoinPayout(plan);
-      coins = ownedReplayCompletion
-        ? ownedReplaySeedBalance()
-        : coins + streakPayout.total;
+      coins += streakPayout.total;
       const completionMessage = focusedSliceCompletionMessage(plan, streakPayout);
       ritualMessage = carryMessage ? `${carryMessage} ${completionMessage}` : completionMessage;
       if (focusedSliceRound(plan)) {
@@ -18338,7 +18329,12 @@
 
     function focusedSliceCompletionMessage(plan, payout) {
       if (isOwnedRestorationReplay()) {
-        return `<strong>${plan.name} fulfilled.</strong> ${payout.total} coins nourish the owned conservatory.`;
+        const ownedStage = plan.round === 1
+          ? "Greenhouse restoration"
+          : plan.round === 2
+            ? "Moonlit upgrade"
+            : "Raised conservatory";
+        return `<strong>${plan.name} fulfilled.</strong> +${payout.total} coins. ${ownedStage} already owned.`;
       }
       if (plan.round === 1) {
         return `<strong>${plan.name} fulfilled.</strong> +${payout.total} coins. Restore the greenhouse.`;
@@ -19255,7 +19251,6 @@
       thornClearedCells.clear();
       clearThornTeachingCue(false);
       freshConservatorySettlement = false;
-      coins = ownedReplaySeedBalance();
       currentRound = 1;
       restoredRoundTwoGuideMoves = 0;
       roundOneLastSwapMissedOrder = false;
@@ -19716,10 +19711,6 @@
         }
         if (savedFocusedEconomyVersion < FOCUSED_ECONOMY_SAVE_VERSION) {
           coins = focusedEconomyBalanceForProgress();
-          shouldSaveMigratedProgress = true;
-        }
-        if (conservatoryFullyOwned() && coins !== ownedReplaySeedBalance()) {
-          coins = ownedReplaySeedBalance();
           shouldSaveMigratedProgress = true;
         }
         hasMadeValidMove = Boolean(state.hasMadeValidMove)

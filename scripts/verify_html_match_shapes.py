@@ -258,6 +258,7 @@ def verify_source_hooks():
         "const FOCUSED_LEVEL_COUNT = 3",
         "Math.min(FOCUSED_LEVEL_COUNT, Math.max(1, Number(roundNumber) || 1))",
         "function maybeCompleteRound",
+        "coins += streakPayout.total;",
         "function resolvingMoveWillFail(plan = activeRoundPlan())",
         "function completeBouquetForReview",
         "function supremeBloomForReview",
@@ -491,10 +492,9 @@ def verify_source_hooks():
         "body.owned-replay-entry .next-order-cue",
         "body.owned-replay-entry .bouquet-reward-promise",
         "body.owned-replay-entry.round-one-active:not(.round-one-complete):not(.first-move-made) .tutorial-command-region > .first-swap-cue",
-        "function ownedReplaySeedBalance()",
         "function conservatoryFullyOwned()",
         "function isOwnedRestorationReplay()",
-        "Reward reinvested · ${plan.reward.coins} coins nourished the Conservatory · ${coins} coins kept.",
+        "Reward added · +${plan.reward.coins} coins · ${coins} coins balance.",
         "function isPostOnboardingIdleHintActive(plan = activeRoundPlan())",
         "plan.round >= 2",
         "const usefulMove = postOnboardingIdleHintAfterDelay",
@@ -526,7 +526,7 @@ def verify_source_hooks():
         '"CONSERVATORY NOURISHED · REMAINS 100% RAISED"',
         ".owned-replay-renewal[data-renewal-phase=\"transfer\"] .owned-renewal-ingredient",
         ".owned-replay-renewal[data-renewal-phase=\"renewal\"] .owned-renewal-response",
-        "${payout.total} coins nourish the owned conservatory.",
+        "${ownedStage} already owned.",
         "Next Order → Moonlit Wreath",
         "greenhouse-upgrade-ladder",
         "function renderGreenhouseUpgradeLadders()",
@@ -1143,6 +1143,9 @@ def verify_source_hooks():
             f"{dormant_runtime_hits}"
         )
     forbidden = [
+        "ownedReplaySeedBalance",
+        "Reward reinvested ·",
+        "coins nourished the Conservatory",
         "Restored Greenhouse - Moonlit Wreath begins",
         'class="bouquet-stem-count"',
         'filter: "blur(2px) brightness(1.35)"',

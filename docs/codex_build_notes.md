@@ -1,5 +1,12 @@
 # Codex Build Notes
 
+## 2026-08-05 restored spendable owned-replay rewards
+
+- Player-visible result: an owned Conservatory keeps its bounded nourishment/renewal presentation, but every completed order now adds its advertised `120`/`150`/`180` coins exactly once. The first ownership cycle remains `0 -> 120 -> 20 -> 170 -> 50 -> 230 -> 50`; owned cycles continue `50 -> 170 -> 320 -> 500` and `500 -> 620 -> 770 -> 950`, with truthful `Reward added` receipts and no replay purchase or spend.
+- State authority: completion is additive again; Play Again and load never clamp the wallet. The persisted `freshConservatorySettlement` authority keeps the genuine first Round 3 `Raise Conservatory` settlement truthful across reload, then retires on Play Again. Failure/Retry preserves the accumulated `500`, and a fully-owned `7820` profile remains `7820` through two reloads before a natural First Bouquet credits it to `7940` once.
+- Permanent contract and evidence: the affected browser gate covers desktop/exact-mobile accumulation, interruption, reduced motion, inflated profiles, all ownership flags, highest-stage art, one focused action, zero actions during binding/transfer/renewal, two reloads at settlement/active boundaries, Play Again, accumulated failure/Retry, 64 tiles/eight rows, exact `390x844` containment, loaded rendered images, and browser error collections.
+- Visual/static evidence: inspect `work/economy-desktop-cycle2-round3-owned.png`, `work/economy-mobile390-cycle2-round3-owned.png`, and `work/replay-second-entry-{desktop,mobile390}-transient.png`. No reward, cost, objective, move, RNG, save version, dependency, asset, control, network hook, tracker, credential, or permission changed.
+
 ## 2026-08-05 preserved first Conservatory ownership through reload
 
 - Player-visible result: the first Bloodroot Conservatory raise now remains the same truthful first-ownership ceremony through an interrupted transfer and settled reloads. It continues to show `Raised for 180. 50 coins remain.` with the sole focused `Play Again -> First Bouquet` action instead of changing history to an owned-replay reinvestment receipt after refresh.
