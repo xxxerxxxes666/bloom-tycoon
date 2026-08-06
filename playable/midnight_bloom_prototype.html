@@ -13468,7 +13468,10 @@
     }
 
     function retireInvalidSwapFeedback() {
-      if (invalidSwapTimer === null && invalidSwapCells.size === 0) {
+      const cue = $("firstSwapCue");
+      const visibleRefusal = Boolean(cue?.classList.contains("swap-refused"))
+        || Boolean(document.querySelector("#board .tile.invalid-swap"));
+      if (invalidSwapTimer === null && invalidSwapCells.size === 0 && !visibleRefusal) {
         return;
       }
       if (invalidSwapTimer !== null && window.clearTimeout) {
@@ -13476,7 +13479,6 @@
       }
       invalidSwapTimer = null;
       invalidSwapCells.clear();
-      const cue = $("firstSwapCue");
       if (cue) {
         cue.classList.remove("swap-refused");
         cue.textContent = invalidSwapReturnCue;
@@ -15848,7 +15850,11 @@
       }
       const ordinaryRefusalReplay = replay
         && (currentRound === 2 || currentRound === 3)
-        && invalidSwapCells.size > 0;
+        && (
+          invalidSwapCells.size > 0
+          || Boolean($("firstSwapCue")?.classList.contains("swap-refused"))
+          || Boolean(document.querySelector("#board .tile.invalid-swap"))
+        );
       if (ordinaryRefusalReplay) {
         retireInvalidSwapFeedback();
         clearIdleHint();
