@@ -15834,11 +15834,7 @@
       }
     }
 
-    function startTutorial({
-      replay = false,
-      returnFocusToHelp = false,
-      retireOrdinaryRefusal = false
-    } = {}) {
+    function startTutorial({ replay = false, returnFocusToHelp = false } = {}) {
       if (blackCandleActivationPresentation) {
         clearBlackCandleActivationPresentation();
       }
@@ -15851,11 +15847,6 @@
       }
       if (tutorialSkipped && !replay) {
         return;
-      }
-      const ordinaryRefusalReplay = replay && retireOrdinaryRefusal;
-      if (ordinaryRefusalReplay) {
-        retireInvalidSwapFeedback();
-        clearIdleHint();
       }
       const selectedReplayHintPair = replay
         ? selectedGuidedHintPair()
@@ -19924,10 +19915,13 @@
           || Boolean($("firstSwapCue")?.classList.contains("swap-refused"))
           || Boolean(document.querySelector("#board .tile.invalid-swap"))
         );
+      if (retireOrdinaryRefusal) {
+        retireInvalidSwapFeedback();
+        clearIdleHint();
+      }
       startTutorial({
         replay: true,
-        returnFocusToHelp: event.detail === 0,
-        retireOrdinaryRefusal
+        returnFocusToHelp: event.detail === 0
       });
     });
     $("board").addEventListener("pointerdown", handleBoardPointerDown);
