@@ -15784,6 +15784,9 @@
       if (visibleFinalHarvest?.phase === "eligible") {
         return finalHarvestCue(visibleFinalHarvest);
       }
+      if ([2, 3].includes(plan.round) && selectedGuidedHintPair().length === 2) {
+        return "Tap the other glowing flower.";
+      }
       if (plan.round === 2 && hasMadeValidMove) {
         return "Finish the Moonlit Wreath.";
       }

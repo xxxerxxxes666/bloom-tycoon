@@ -1,5 +1,11 @@
 # Codex Build Notes
 
+## 2026-08-06 - Help names the preserved counterpart action
+
+- Player-visible correction: when ordinary post-onboarding Round 2 or Round 3 Help opens with one endpoint of its validated objective-useful pair already selected, the sole tutorial narrator now says `Tap the other glowing flower.` instead of falling back to the broad order objective. The exact selected endpoint and counterpart are already visible, so Help now names the one action that continues play.
+- Authority boundary: the copy requires `selectedGuidedHintPair()` to return the exact two-cell legal pair. Unselected Help and Help after an unrelated selection retain `Finish the Moonlit Wreath.` / `Complete Bloodroot Compact.` Relic activation, Cursed Thorn, refusal, failure, final-harvest, payoff, authored Round 1, selection preservation, focus, timers, board generation, saves, economy, geometry, and progression are unchanged.
+- Permanent contract: the existing R2/R3 source/destination desktop `1280x720` and exact-mobile `390x844`, full/reduced, pointer/keyboard/touch matrix now requires the exact continuation copy alongside sole `tutorialPanel` live ownership, pair/selection stability, and one real objective-credit commit. The unrelated-selection matrix now locks the exact generic R2/R3 copy after cleanup. Static verification locks the selected ordinary-pair copy branch.
+
 ## 2026-08-06 - Ordinary idle guidance survives Help
 
 - Player-visible correction: selecting either endpoint of the existing objective-useful quiet-window pair in ordinary post-onboarding Round 2 or Round 3 now keeps that exact legal pair authoritative through Help and Skip. One activation of the counterpart then commits the intended match once, spends one move, and earns real order progress instead of abandoning the continuation.

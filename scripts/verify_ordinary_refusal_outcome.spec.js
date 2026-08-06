@@ -392,6 +392,9 @@ for (const config of VIEWPORTS) {
         await activateControlOnce(page, "#tutorialHelpBtn", config.input);
         await expect(page.locator("#tutorialPanel")).toBeVisible();
         await expect(page.locator("#tutorialSkipBtn")).toBeFocused();
+        await expect(page.locator("#tutorialCopy")).toHaveText(
+          round === 2 ? "Finish the Moonlit Wreath." : "Complete Bloodroot Compact."
+        );
         const duringHelp = await stateReport(page);
         expect(duringHelp.selectedIds).toEqual([]);
         expect(duringHelp.selectedSuffixIds).toEqual([]);

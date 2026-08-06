@@ -610,6 +610,8 @@ def verify_source_hooks():
         "|| isObjectiveUsefulIdleHintPair(hintCells, cell)",
         "const selectedReplayFocus = selected && selectedReplayHintPair.find",
         "|| selectedReplayFocus",
+        "[2, 3].includes(plan.round) && selectedGuidedHintPair().length === 2",
+        'return "Tap the other glowing flower.";',
         "(currentRound === 1 && tutorialActive)",
         "const selectedHintPair = new Set(idleHintCells);",
         "idleHintCells = selectedHintPair;",
