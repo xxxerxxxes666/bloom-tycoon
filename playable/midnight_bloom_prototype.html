@@ -10237,6 +10237,7 @@
     let invalidSwapReturnCue = "";
     let invalidSwapReturnHintCells = new Set();
     let invalidSwapReturnSelection = null;
+    let ordinaryRefusalHelpReplayActive = false;
     let validSwapTimer = null;
     let bouquetSealPulseTimer = null;
     let roundThreeConservatoryTransferTimer = null;
@@ -15929,6 +15930,7 @@
       tutorialActive = false;
       tutorialReplayOwnsNarration = false;
       tutorialReplayReturnsFocusToHelp = false;
+      ordinaryRefusalHelpReplayActive = false;
       blackCandleLessonComplete = true;
       if (skippingRoundOneAgency) {
         clearTargetLiteracy(false);
@@ -15980,6 +15982,7 @@
       tutorialActive = false;
       tutorialReplayOwnsNarration = false;
       tutorialReplayReturnsFocusToHelp = false;
+      ordinaryRefusalHelpReplayActive = false;
       blackCandleLessonComplete = true;
       clearTargetLiteracy(false);
     }
@@ -16337,6 +16340,9 @@
 
     async function tap(x, y, options = {}) {
       if (isResolving || thornOutcomeFeedbackActive()) {
+        return;
+      }
+      if (ordinaryRefusalHelpReplayActive && tutorialActive && tutorialReplayOwnsNarration) {
         return;
       }
       boardFocusCell = clampBoardFocusCell({ x, y });
@@ -19915,6 +19921,7 @@
           || Boolean($("firstSwapCue")?.classList.contains("swap-refused"))
           || Boolean(document.querySelector("#board .tile.invalid-swap"))
         );
+      ordinaryRefusalHelpReplayActive = retireOrdinaryRefusal;
       if (retireOrdinaryRefusal) {
         retireInvalidSwapFeedback();
         clearIdleHint();

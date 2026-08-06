@@ -593,6 +593,8 @@ def verify_source_hooks():
         "const visibleRefusal = Boolean(cue?.classList.contains(\"swap-refused\"))",
         "|| Boolean(document.querySelector(\"#board .tile.invalid-swap\"))",
         "const retireOrdinaryRefusal = (currentRound === 2 || currentRound === 3)",
+        "ordinaryRefusalHelpReplayActive = retireOrdinaryRefusal;",
+        "ordinaryRefusalHelpReplayActive && tutorialActive && tutorialReplayOwnsNarration",
         "if (retireOrdinaryRefusal) {\n        retireInvalidSwapFeedback();\n        clearIdleHint();",
         "retireInvalidSwapFeedback();\n      commitFinalHarvestForPair",
         "retireInvalidSwapFeedback();\n        clearIdleHint();",
