@@ -1,5 +1,11 @@
 # Codex Build Notes
 
+## 2026-08-05 - Mobile replay entry keeps one truthful reward contract
+
+- Player-visible correction: during the existing 2.2-second exact-mobile Play Again acknowledgment, the bouquet strip now remains `Nourish 120 · Keep {wallet}` instead of contradicting the adjacent `coins kept` receipt with fresh-cycle `Complete for 120 coins` wording. The compact promise's accessible label names the same Conservatory nourishment and authoritative retained wallet.
+- Scope: the correction changes only the active fully owned replay reward branch. Desktop keeps its accepted receipt-in-promise geometry, fresh first-cycle R1-R3 still promise spendable completion rewards, and payoff receipts, dynamic wallets, timing, focus, input, saves, board geometry, and progression are unchanged.
+- Permanent contract: the owned replay entry matrix covers wallets `50` and `7820` on desktop `1280x720` and exact mobile `390x844`, full/reduced motion, at immediate and 1.7-second samples, then early swap retirement and reload interruption. It asserts exact visible/semantic reward truth alongside the accepted receipt, 64 tiles/eight rows, focus/roving, 600px/378px altars, overflow, images, and browser logs.
+
 ## 2026-08-05 - Owned replay entry is an atomic Play Again handoff
 
 - Player-visible result: the existing `Play Again -> First Bouquet` action now establishes and renders its bounded `coins kept · Conservatory owned · New order ready` acknowledgment inside one transition. The board still opens immediately with the authored pair and source focus; the existing 2.2-second timeout then yields to the steady owned-order HUD.

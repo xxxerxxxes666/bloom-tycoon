@@ -234,6 +234,7 @@ async function journeyState(page) {
         action: visibleRect(payoffAction)
       },
       rewardPromise: document.querySelector("#bouquetRewardPromise")?.textContent.trim() || "",
+      rewardPromiseAriaLabel: document.querySelector("#bouquetRewardPromise")?.getAttribute("aria-label") || "",
       replayEntryReceipt: replayEntrySurface?.textContent.trim() || "",
       replayEntryActive: document.body.classList.contains("owned-replay-entry"),
       handoffCue: document.querySelector("#nextOrderCue")?.textContent.trim() || "",
@@ -3550,6 +3551,17 @@ test("owned replay receipt remains fully readable at the active-board handoff", 
         const handoff = await journeyState(page);
         expect(handoff.replayEntryReceipt, `${config.label} ${retainedBalance} exact receipt`)
           .toBe(`${retainedBalance} coins kept · Conservatory owned · New order ready.`);
+        if (config.mobile) {
+          expect(handoff.rewardPromise, `${config.label} ${retainedBalance} keeps truthful mobile reward promise`)
+            .toBe(`Nourish 120 · Keep ${retainedBalance}`);
+          expect(handoff.rewardPromiseAriaLabel, `${config.label} ${retainedBalance} keeps truthful mobile reward name`)
+            .toBe(`120 coins nourish the Conservatory; ${retainedBalance} coins kept`);
+        } else {
+          expect(handoff.rewardPromise, `${config.label} ${retainedBalance} keeps desktop receipt geometry`)
+            .toBe(`${retainedBalance} coins kept · Conservatory owned · New order ready.`);
+          expect(handoff.rewardPromiseAriaLabel, `${config.label} ${retainedBalance} desktop receipt is not mislabeled`)
+            .toBe("");
+        }
         expectOwnedReplayEntryGeometry(handoff, config, `${config.label} ${retainedBalance} owned replay receipt`);
         expect(handoff.round, `${config.label} returns to First Bouquet`).toBe(1);
         expect(handoff.moves, `${config.label} starts with six moves`).toBe(6);
@@ -3569,6 +3581,12 @@ test("owned replay receipt remains fully readable at the active-board handoff", 
         expect(sustainedHandoff.replayEntryActive, `${config.label} ${retainedBalance} receipt lasts through 1.7s`).toBe(true);
         expect(sustainedHandoff.replayEntryReceipt, `${config.label} ${retainedBalance} sustained receipt`)
           .toBe(`${retainedBalance} coins kept · Conservatory owned · New order ready.`);
+        expect(
+          sustainedHandoff.rewardPromise,
+          `${config.label} ${retainedBalance} sustained promise remains authoritative`
+        ).toBe(config.mobile
+          ? `Nourish 120 · Keep ${retainedBalance}`
+          : `${retainedBalance} coins kept · Conservatory owned · New order ready.`);
         expect(sustainedHandoff.activeElementId, `${config.label} ${retainedBalance} sustained board focus`).toBe("tile-1-0");
         expect(sustainedHandoff.rovingTileIds, `${config.label} ${retainedBalance} sustained roving owner`)
           .toEqual(["tile-1-0"]);

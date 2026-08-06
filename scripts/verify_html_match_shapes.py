@@ -494,6 +494,8 @@ def verify_source_hooks():
         "function startOwnedReplayEntryAcknowledgment",
         "${balance} coins kept · Conservatory owned · New order ready.",
         "ownedReplayEntryActive = true;\n      render();\n      restoredGreenhouseHandoffTimer",
+        "const activeOwnedReplayOrder = isOwnedRestorationReplay() && !roundComplete;",
+        "if (activeOwnedReplayOrder && !desktopOwnedReplayReceipt)",
         "body.owned-replay-entry .next-order-cue",
         "body.owned-replay-entry .bouquet-reward-promise",
         "body.owned-replay-entry.round-one-active:not(.round-one-complete):not(.first-move-made) .tutorial-command-region > .first-swap-cue",

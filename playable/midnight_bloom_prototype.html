@@ -15603,17 +15603,17 @@
         label.textContent = compactBouquetOrderLabel(plan, progress);
       }
       if (reward) {
-        const ownedReplayPromise = isOwnedRestorationReplay()
-          && !ownedReplayEntryActive
-          && !roundComplete;
-        reward.textContent = ownedReplayEntryActive && window.matchMedia("(min-width: 761px)").matches
+        const activeOwnedReplayOrder = isOwnedRestorationReplay() && !roundComplete;
+        const desktopOwnedReplayReceipt = ownedReplayEntryActive
+          && window.matchMedia("(min-width: 761px)").matches;
+        reward.textContent = desktopOwnedReplayReceipt
           ? `${coins} coins kept · Conservatory owned · New order ready.`
           : roundComplete
             ? `Reward · ${plan.reward.coins} coins`
-            : ownedReplayPromise
+            : activeOwnedReplayOrder
               ? `Nourish ${plan.reward.coins} · Keep ${coins}`
               : `Complete for ${plan.reward.coins} coins`;
-        if (ownedReplayPromise) {
+        if (activeOwnedReplayOrder && !desktopOwnedReplayReceipt) {
           reward.setAttribute(
             "aria-label",
             `${plan.reward.coins} coins nourish the Conservatory; ${coins} coins kept`
