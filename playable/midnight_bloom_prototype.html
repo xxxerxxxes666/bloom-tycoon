@@ -19919,14 +19919,11 @@
     $("nextOrderBtn").addEventListener("click", advanceGreenhousePayoffAction);
     $("tutorialSkipBtn").addEventListener("click", skipTutorial);
     $("tutorialHelpBtn").addEventListener("click", (event) => {
-      const retireOrdinaryRefusal = (currentRound === 2 || currentRound === 3)
-        && (
-          invalidSwapCells.size > 0
-          || Boolean($("firstSwapCue")?.classList.contains("swap-refused"))
-          || Boolean(document.querySelector("#board .tile.invalid-swap"))
-        );
-      ordinaryRefusalHelpReplayActive = retireOrdinaryRefusal;
-      if (retireOrdinaryRefusal) {
+      const retireRefusal = invalidSwapCells.size > 0
+        || Boolean($("firstSwapCue")?.classList.contains("swap-refused"))
+        || Boolean(document.querySelector("#board .tile.invalid-swap"));
+      ordinaryRefusalHelpReplayActive = [2, 3].includes(Number(currentRound)) && retireRefusal;
+      if (retireRefusal) {
         retireInvalidSwapFeedback();
         clearIdleHint();
       }
