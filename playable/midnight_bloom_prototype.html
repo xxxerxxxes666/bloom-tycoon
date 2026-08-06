@@ -10350,6 +10350,7 @@
     let orderPulseTargets = new Set();
     let orderPulseSlots = new Map();
     let visibleFinalHarvest = null;
+    let finalHarvestFocusAuthorityKey = "";
     let finalHarvestCommit = null;
     let finalHarvestTransferTimer = null;
     let finalHarvestHandoffTimer = null;
@@ -11405,6 +11406,28 @@
       }
       const labels = presentation.targetFlowerIds.map((flowerId) => flowers[flowerId][0]);
       return `Finish with ${labels.join(" + ")}.`;
+    }
+
+    function claimFinalHarvestPrimaryFocus(presentation = visibleFinalHarvest) {
+      const focusablePresentation = presentation?.phase === "eligible"
+        && !presentation.guidanceYielded
+        && presentation.pair?.length === 2;
+      if (!focusablePresentation) {
+        finalHarvestFocusAuthorityKey = "";
+        return false;
+      }
+      const authorityKey = [
+        presentation.round,
+        presentation.compositionKey,
+        ...presentation.pair.map((cell) => `${cell.x},${cell.y}`)
+      ].join("|");
+      if (finalHarvestFocusAuthorityKey === authorityKey) {
+        return false;
+      }
+      finalHarvestFocusAuthorityKey = authorityKey;
+      boardFocusCell = clampBoardFocusCell(presentation.pair[0]);
+      queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
+      return true;
     }
 
     function clearFinalHarvestPresentation({ renderAfter = false } = {}) {
@@ -15089,6 +15112,7 @@
       visibleFinalHarvest = finalHarvestCommit && ["landing", "ceremony"].includes(finalHarvestCommit.phase)
         ? finalHarvestCommit
         : finalHarvestEligibility(activePlan);
+      claimFinalHarvestPrimaryFocus(visibleFinalHarvest);
       if (visibleFinalHarvest && (pendingSettledBoardOutcome || settledBoardOutcome)) {
         clearSettledBoardOutcome();
       }
@@ -15377,6 +15401,10 @@
           const finalHarvestEndpointClass = finalHarvestEndpointKeys.has(`${x},${y}`)
             ? "final-harvest-endpoint"
             : "";
+          const finalHarvestEndpointIndex = visibleFinalHarvest?.phase === "eligible"
+            && !visibleFinalHarvest.guidanceYielded
+            ? visibleFinalHarvest.pair.findIndex((cell) => cell.x === x && cell.y === y)
+            : -1;
           const finalHarvestFlowerId = finalHarvestCells.get(`${x},${y}`);
           const finalHarvestMatchClass = finalHarvestFlowerId !== undefined
             ? "final-harvest-match"
@@ -15516,8 +15544,8 @@
           const targetMatchResultLabel = targetMatchResult
             ? ` in forecast ${flowers[targetMatchForecast.target.flowerId][0]} match`
             : "";
-          const finalHarvestLabel = finalHarvestEndpointClass
-            ? " final harvest swap endpoint"
+          const finalHarvestLabel = finalHarvestEndpointIndex >= 0
+            ? ` final harvest swap ${finalHarvestEndpointIndex === 0 ? "source" : "destination"}`
             : finalHarvestMatchClass
               ? ` in final ${flowers[finalHarvestFlowerId][0]} match`
               : "";

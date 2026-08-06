@@ -1168,9 +1168,19 @@ async function expectEligibleFinalHarvest(page, round, label) {
     expect(state.finalHarvestPair.slice().sort(), `${label} uses the exact Black Candle pair`)
       .toEqual([state.armedRelicSource, state.armedRelicDestination].sort());
   } else {
+    const [sourceKey, destinationKey] = state.finalHarvestPair;
+    const tileId = (key) => `tile-${key.split(",").join("-")}`;
     expect(state.finalHarvestKind, `${label} plain finishing opportunity`).toBe("plain-match");
     expect(state.finalHarvestEndpointCount, `${label} pair endpoints agree`).toBe(2);
     expect(state.finalHarvestMatchCount, `${label} plain target match is visible`).toBeGreaterThanOrEqual(3);
+    expect(state.activeElementId, `${label} source owns DOM focus`).toBe(tileId(sourceKey));
+    expect(state.rovingTileIds, `${label} source is the sole roving entry`).toEqual([tileId(sourceKey)]);
+    await expect(page.locator(`#${tileId(sourceKey)}`), `${label} source identity`)
+      .toHaveAttribute("aria-label", /final harvest swap source/);
+    await expect(page.locator(`#${tileId(destinationKey)}`), `${label} destination identity`)
+      .toHaveAttribute("aria-label", /final harvest swap destination/);
+    await expect(page.locator(`#${tileId(destinationKey)}`), `${label} destination remains outside tab order`)
+      .toHaveAttribute("tabindex", "-1");
   }
   expect(targets.length, `${label} has remaining target species`).toBeGreaterThanOrEqual(1);
   expect(targets.every(({ deficit, gain }) => deficit > 0 && gain >= deficit), `${label} gains close every deficit`).toBe(true);
@@ -1253,7 +1263,7 @@ async function performFinalHarvestInput(page, state, activation) {
   });
   const tile = (cell) => page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`);
   if (activation === "keyboard") {
-    await tile(pair[0]).focus();
+    await expect(tile(pair[0]), "final harvest keyboard entry already owns focus").toBeFocused();
     await page.keyboard.press("Enter");
     const key = pair[1].x > pair[0].x
       ? "ArrowRight"
