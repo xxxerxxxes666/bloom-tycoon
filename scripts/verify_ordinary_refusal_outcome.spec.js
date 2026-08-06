@@ -423,15 +423,28 @@ for (const config of VIEWPORTS) {
         const pair = await findInvalidAdjacentPair(page);
         expect(pair, `${config.label} R${round} has an invalid adjacent pair for Help`).toBeTruthy();
         const before = await stateReport(page);
+        await page.evaluate(() => {
+          window.__ordinaryRefusalAtHelpActivation = null;
+          document.querySelector("#tutorialHelpBtn").addEventListener("click", () => {
+            const tiles = Array.from(document.querySelectorAll("#board .tile"));
+            window.__ordinaryRefusalAtHelpActivation = {
+              cueRefused: document.querySelector("#firstSwapCue")?.classList.contains("swap-refused") || false,
+              invalidCount: tiles.filter((tile) => tile.classList.contains("invalid-swap")).length,
+              invalidSuffixCount: tiles.filter((tile) => (tile.getAttribute("aria-label") || "")
+                .includes("invalid swap refused")).length
+            };
+          }, { capture: true, once: true });
+        });
         await activatePair(page, pair, config.input);
         await expect(page.locator("#board .tile.invalid-swap")).toHaveCount(2);
-        const refused = await stateReport(page);
-        expect(refused.cueRefused).toBe(true);
-        expect(refused.invalidIds).toHaveLength(2);
-        expect(refused.invalidSuffixIds).toHaveLength(2);
         await activateControl(page, "#tutorialHelpBtn", config.input);
         await expect(page.locator("#tutorialPanel")).toBeVisible();
         await expect(page.locator("#tutorialSkipBtn")).toBeFocused();
+        expect(await page.evaluate(() => window.__ordinaryRefusalAtHelpActivation)).toEqual({
+          cueRefused: true,
+          invalidCount: 2,
+          invalidSuffixCount: 2
+        });
 
         const sourceId = `tile-${pair[0].x}-${pair[0].y}`;
         const expectedCopy = round === 2
