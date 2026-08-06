@@ -14933,6 +14933,10 @@
     }
 
     function render() {
+      if (ordinaryRefusalHelpReplayActive && tutorialActive && tutorialReplayOwnsNarration) {
+        retireInvalidSwapFeedback();
+        clearIdleHint();
+      }
       clearDragPreview({ resetInputs: true });
       const finalHarvestLanding = finalHarvestTransferActive();
       const roundOneActive = currentRound === 1;

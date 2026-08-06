@@ -595,6 +595,7 @@ def verify_source_hooks():
         "const retireOrdinaryRefusal = (currentRound === 2 || currentRound === 3)",
         "ordinaryRefusalHelpReplayActive = retireOrdinaryRefusal;",
         "ordinaryRefusalHelpReplayActive && tutorialActive && tutorialReplayOwnsNarration",
+        "function render() {\n      if (ordinaryRefusalHelpReplayActive && tutorialActive && tutorialReplayOwnsNarration)",
         "if (retireOrdinaryRefusal) {\n        retireInvalidSwapFeedback();\n        clearIdleHint();",
         "retireInvalidSwapFeedback();\n      commitFinalHarvestForPair",
         "retireInvalidSwapFeedback();\n        clearIdleHint();",

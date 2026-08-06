@@ -425,7 +425,22 @@ for (const config of VIEWPORTS) {
         const before = await stateReport(page);
         await activatePair(page, pair, config.input);
         await expect(page.locator("#board .tile.invalid-swap")).toHaveCount(2);
-        await activateControl(page, "#tutorialHelpBtn", config.input);
+        const refusalAtHelpActivation = await page.evaluate(() => {
+          const invalidTiles = Array.from(document.querySelectorAll("#board .tile.invalid-swap"));
+          const snapshot = {
+            cueRefused: document.querySelector("#firstSwapCue")?.classList.contains("swap-refused") || false,
+            invalidCount: invalidTiles.length,
+            invalidSuffixCount: invalidTiles.filter((tile) => (tile.getAttribute("aria-label") || "")
+              .includes("invalid swap refused")).length
+          };
+          document.querySelector("#tutorialHelpBtn").click();
+          return snapshot;
+        });
+        expect(refusalAtHelpActivation).toEqual({
+          cueRefused: true,
+          invalidCount: 2,
+          invalidSuffixCount: 2
+        });
         await expect(page.locator("#tutorialPanel")).toBeVisible();
         await expect(page.locator("#tutorialSkipBtn")).toBeFocused();
 
