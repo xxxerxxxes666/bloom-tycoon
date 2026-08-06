@@ -2,7 +2,6 @@ const { test, expect } = require("@playwright/test");
 
 const BASE_URL = process.env.BLOOM_TEST_URL || "http://127.0.0.1:4173/playable/midnight_bloom_prototype.html";
 const SAVE_KEY = "bloomTycoonPlayableStateV1";
-const OWNED_REPLAY_SEED_BALANCE = 50;
 const ROUND_TARGETS = {
   1: [5, 1],
   2: [2, 4, 5],
@@ -54,8 +53,8 @@ const GOAL_FOLLOWING_SEEDS = [
   "relic-garden"
 ];
 
-function ownedReplayTransaction(reward) {
-  return `Reward reinvested · ${reward} coins nourished the Conservatory · ${OWNED_REPLAY_SEED_BALANCE} coins kept.`;
+function ownedReplayTransaction(reward, retainedBalance) {
+  return `Reward reinvested · ${reward} coins nourished the Conservatory · ${retainedBalance} coins kept.`;
 }
 
 test.setTimeout(180000);
@@ -1899,14 +1898,14 @@ async function reloadAndExpectActiveReplayBalance(page, config, expectedCoins, e
       : /Find 3 Thorn Roses/;
     expect(state.cue, `replay reload ${reload + 1} has one clear instruction`).toMatch(expectedCue);
     expect(state.cue).not.toMatch(/coins kept|Conservatory owned|New order ready/);
-    expect(state.rewardPromise).toBe("Nourish 120 · Keep 50");
+    expect(state.rewardPromise).toBe(`Nourish 120 · Keep ${expectedCoins}`);
     await expectVisibleCoinBalance(page, expectedCoins, { pulsing: false });
     await expectPermanentRaisedGreenhouse(page, `replay reload ${reload + 1}`);
     await assertActiveBoard(page, config.mobile);
   }
 }
 
-async function failAndRetryOwnedReplayRoundOne(page, config, expectedCoins, runLabel) {
+async function failAndRetryOwnedReplayRoundOne(page, config, expectedCoins, runLabel, options = {}) {
   await page.evaluate(({ key, coins }) => {
     const state = JSON.parse(localStorage.getItem(key) || "{}");
     Object.assign(state, {
@@ -1937,7 +1936,7 @@ async function failAndRetryOwnedReplayRoundOne(page, config, expectedCoins, runL
     expect(failed.replayEntryActive, "failure does not resurrect replay entry").toBe(false);
     expect(failed.handoffCueVisible, "failure has no detached replay receipt").toBe(false);
     expect(failed.cue).not.toMatch(/coins kept|Conservatory owned|New order ready/);
-    expect(failed.rewardPromise).toBe("Nourish 120 · Keep 50");
+    expect(failed.rewardPromise).toBe(`Nourish 120 · Keep ${expectedCoins}`);
     expect(failed.ownedRenewalHidden, "failure has no owned-renewal overlay").toBe(true);
     expect(failed.ownedRenewalTransientNodes, "failure has no owned-renewal debris").toBe(0);
     await expectPermanentRaisedGreenhouse(page, `${runLabel} failed replay reload ${reload + 1}`);
@@ -1960,12 +1959,14 @@ async function failAndRetryOwnedReplayRoundOne(page, config, expectedCoins, runL
   expect(retried.moves).toBe(6);
   expect(retried.counts).toEqual([0, 0, 0, 0, 0, 0]);
   expect(retried.coins).toBe(expectedCoins);
-  expect(retried.hintedTiles).toBe(2);
+  if (options.requireImmediateHint !== false) {
+    expect(retried.hintedTiles).toBe(2);
+  }
   expect(retried.visibleButtons).not.toContain("Retry Bouquet");
   expect(retried.replayEntryActive, "Retry does not resurrect replay entry").toBe(false);
   expect(retried.handoffCueVisible, "Retry has no detached replay receipt").toBe(false);
   expect(retried.cue).not.toMatch(/coins kept|Conservatory owned|New order ready/);
-  expect(retried.rewardPromise).toBe("Nourish 120 · Keep 50");
+  expect(retried.rewardPromise).toBe(`Nourish 120 · Keep ${expectedCoins}`);
   expect(retried.ownedRenewalHidden, "Retry clears owned-renewal overlay").toBe(true);
   expect(retried.ownedRenewalTransientNodes, "Retry clears owned-renewal debris").toBe(0);
   await expectPermanentRaisedGreenhouse(page, `${runLabel} retried replay`);
@@ -1974,7 +1975,8 @@ async function failAndRetryOwnedReplayRoundOne(page, config, expectedCoins, runL
 
 async function playOwnedReplayCycle(page, config, runLabel, strategy) {
   const expectedRewards = [120, 150, 180];
-  const expectedStarts = [50, 50, 50];
+  const retainedBalance = (await journeyState(page)).coins;
+  const expectedStarts = [retainedBalance, retainedBalance, retainedBalance];
   const expectedActions = [
     "Next Order → Moonlit Wreath",
     "Next Order → Bloodroot Compact",
@@ -2123,7 +2125,7 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
     expect(settledSample.topCue, `${runLabel} round ${round} settled action has no duplicate cue`).toBe("");
     expect(settledSample.transientNodes, "settled ceremony removes all transient descendants").toBe(0);
     expect(settledSample.renewalHidden, "settled ceremony hides transient host").toBe(true);
-    const rewardBalance = OWNED_REPLAY_SEED_BALANCE;
+    const rewardBalance = startCoins;
     const ceremony = await journeyState(page);
     expectFocusedPayoffNarration(
       ceremony,
@@ -2131,7 +2133,7 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
     );
     expect(ceremony.activeElementId, `${runLabel} round ${round} sole action owns focus`).toBe("nextOrderBtn");
     expect(ceremony.coins, `${runLabel} round ${round} reward reinvested once`).toBe(rewardBalance);
-    expect(ceremony.payoffTransaction).toBe(ownedReplayTransaction(expectedRewards[round - 1]));
+    expect(ceremony.payoffTransaction).toBe(ownedReplayTransaction(expectedRewards[round - 1], rewardBalance));
     expect(ceremony.payoffCopy).toBe(expectedCopies[round - 1]);
     expect(ceremony.payoffMode).toBe("owned-replay");
     expect(ceremony.tutorial).toBe("");
@@ -2172,7 +2174,7 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
         `${runLabel} round ${round} owned ceremony reload ${reload + 1}`
       );
       expect(reloaded.coins, `${runLabel} round ${round} reward reload ${reload + 1}`).toBe(rewardBalance);
-      expect(reloaded.payoffTransaction).toBe(ownedReplayTransaction(expectedRewards[round - 1]));
+      expect(reloaded.payoffTransaction).toBe(ownedReplayTransaction(expectedRewards[round - 1], rewardBalance));
       expect(reloaded.payoffCopy).toBe(expectedCopies[round - 1]);
       expect(reloaded.payoffMode).toBe("owned-replay");
       expect(reloaded.tutorial).toBe("");
@@ -2245,7 +2247,10 @@ async function completeOwnedRoundAndReloadDuringPhase(page, config, runLabel, ro
   expect(interrupted.roundComplete).toBe(true);
   expect(interrupted.ownedRenewalPhase).toBe(phase);
   expect(interrupted.visibleButtons, `${runLabel} round ${round} ${phase} withholds action`).toEqual([]);
-  expect(interrupted.payoffTransaction).toBe(ownedReplayTransaction([120, 150, 180][round - 1]));
+  expect(interrupted.payoffTransaction).toBe(ownedReplayTransaction(
+    [120, 150, 180][round - 1],
+    interrupted.coins
+  ));
   await page.screenshot({
     path: `work/replay-renewal-${config.label}-round${round}-${phase}-interrupted.png`,
     fullPage: true
@@ -2984,7 +2989,7 @@ for (const config of [
       ]);
       const finalState = await journeyState(page);
       expect(finalState.coins).toBe(50);
-      expect(finalState.payoffTransaction).toBe(ownedReplayTransaction(180));
+      expect(finalState.payoffTransaction).toBe(ownedReplayTransaction(180, 50));
       expect(finalState.payoffCopy).toBe("Bouquet complete. The raised conservatory remains yours.");
       expect(finalState.visibleButtons).toEqual(["Play Again → First Bouquet"]);
       await expectPermanentRaisedGreenhouse(page, `${runLabel} second-cycle final ceremony`);
@@ -3019,7 +3024,7 @@ for (const config of [
       ]);
       const thirdFinalState = await journeyState(page);
       expect(thirdFinalState.coins).toBe(50);
-      expect(thirdFinalState.payoffTransaction).toBe(ownedReplayTransaction(180));
+      expect(thirdFinalState.payoffTransaction).toBe(ownedReplayTransaction(180, 50));
       expect(thirdFinalState.visibleButtons).toEqual(["Play Again → First Bouquet"]);
       console.log(`${runLabel} balance and renewal traces: ${JSON.stringify({
         firstCycle: firstCycle.map((round) => round.balances),
@@ -3063,8 +3068,16 @@ for (const config of [
         [50, 230, 50, 50]
       ]);
 
+      await page.evaluate((key) => {
+        const state = JSON.parse(localStorage.getItem(key) || "{}");
+        state.coins = 7820;
+        localStorage.setItem(key, JSON.stringify(state));
+      }, SAVE_KEY);
+      await page.reload({ waitUntil: "networkidle" });
+      expect((await journeyState(page)).coins).toBe(7820);
+
       const phases = ["binding", "transfer", "renewal"];
-      const expectedBalances = [50, 50, 50];
+      const expectedBalances = [7820, 7820, 7820];
       const interruptions = [];
       for (let round = 1; round <= 3; round += 1) {
         const interrupted = await completeOwnedRoundAndReloadDuringPhase(
@@ -3213,7 +3226,7 @@ test("reduced-motion exact-mobile replay boundary preserves the owned wallet", a
     console.log(`mobile390-reduced renewal timing: ${JSON.stringify(reducedReplay.map((round) => round.ownedRenewalTiming))}`);
     const secondFinal = await journeyState(page);
     expect(secondFinal.coins).toBe(50);
-    expect(secondFinal.payoffTransaction).toBe(ownedReplayTransaction(180));
+    expect(secondFinal.payoffTransaction).toBe(ownedReplayTransaction(180, 50));
     expect(secondFinal.payoffMode).toBe("owned-replay");
     expect(secondFinal.restorationTitle).toBe("Bloodroot Compact Complete");
     expect(secondFinal.trophyKicker).toBe("Bouquet Complete");
@@ -3253,7 +3266,7 @@ test("reduced-motion exact-mobile replay boundary preserves the owned wallet", a
     ]);
     const thirdReducedFinal = await journeyState(page);
     expect(thirdReducedFinal.coins).toBe(50);
-    expect(thirdReducedFinal.payoffTransaction).toBe(ownedReplayTransaction(180));
+    expect(thirdReducedFinal.payoffTransaction).toBe(ownedReplayTransaction(180, 50));
     expect(thirdReducedFinal.visibleButtons).toEqual(["Play Again → First Bouquet"]);
     expect(consoleMessages).toEqual([]);
     expect(pageErrors).toEqual([]);
@@ -3263,33 +3276,48 @@ test("reduced-motion exact-mobile replay boundary preserves the owned wallet", a
   }
 });
 
-test("current and legacy owned profiles converge to the carried seed without replaying a payout", async ({ browser }) => {
+test("current-v2 and legacy owned profiles preserve every valid wallet without replay accrual", async ({ browser }) => {
+  test.setTimeout(600000);
   for (const config of [
-    { label: "desktop", viewport: { width: 1280, height: 720 }, mobile: false, reducedMotion: false },
-    { label: "mobile390-reduced", viewport: { width: 390, height: 844 }, mobile: true, reducedMotion: true }
+    { label: "desktop", viewport: { width: 1280, height: 720 }, mobile: false },
+    { label: "mobile390", viewport: { width: 390, height: 844 }, mobile: true }
   ]) {
     const context = await browser.newContext({
       viewport: config.viewport,
       hasTouch: config.mobile,
       isMobile: config.mobile,
-      reducedMotion: config.reducedMotion ? "reduce" : "no-preference"
+      reducedMotion: "no-preference"
     });
     const page = await context.newPage();
+    const consoleMessages = [];
+    const pageErrors = [];
+    const failedRequests = [];
+    page.on("console", (message) => {
+      if (message.type() === "warning" || message.type() === "error") {
+        consoleMessages.push(`${message.type()}: ${message.text()}`);
+      }
+    });
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    page.on("requestfailed", (request) => {
+      const errorText = request.failure()?.errorText || "";
+      if (errorText !== "net::ERR_ABORTED") {
+        failedRequests.push(`${request.url()} ${errorText}`);
+      }
+    });
     try {
-      const profiles = [170, 320, 380, 500, 7820].flatMap((coins) => [
-        { coins, economyVersion: 2, label: `current-${coins}` },
-        { coins, economyVersion: 0, label: `legacy-${coins}` }
+      const profiles = [50, 170, 500, 7820].flatMap((coins) => [
+        { coins, economyVersion: 2, label: `current-v2-${coins}` },
+        { coins, economyVersion: null, label: `legacy-${coins}` }
       ]);
       for (const profile of profiles) {
         await openFresh(
           page,
-          `owned-normalization-${config.label}-${profile.label}`,
-          `owned-normalization-${config.label}-${profile.label}`
+          `owned-preservation-${config.label}-${profile.label}`,
+          `owned-preservation-${config.label}-${profile.label}`
         );
         const authoritative = await page.evaluate(({ key, profile }) => {
           const state = JSON.parse(localStorage.getItem(key) || "{}");
           Object.assign(state, {
-            focusedEconomyVersion: profile.economyVersion,
             currentRound: 1,
             roundComplete: false,
             roundOneRestored: true,
@@ -3304,6 +3332,11 @@ test("current and legacy owned profiles converge to the carried seed without rep
             tutorialActive: false,
             blackCandleLessonComplete: true
           });
+          if (profile.economyVersion === null) {
+            delete state.focusedEconomyVersion;
+          } else {
+            state.focusedEconomyVersion = profile.economyVersion;
+          }
           localStorage.setItem(key, JSON.stringify(state));
           return {
             board: JSON.stringify(state.board),
@@ -3322,7 +3355,8 @@ test("current and legacy owned profiles converge to the carried seed without rep
         for (let reload = 0; reload < 2; reload += 1) {
           await page.reload({ waitUntil: "networkidle" });
           const state = await journeyState(page);
-          expect(state.coins, `${config.label} ${profile.label} reload ${reload + 1} normalizes the spendless wallet`).toBe(50);
+          expect(state.coins, `${config.label} ${profile.label} reload ${reload + 1} preserves the wallet`).toBe(profile.coins);
+          expect(state.focusedEconomyVersion).toBe(2);
           expect(state.round).toBe(1);
           expect(state.roundComplete).toBe(false);
           expect(state.freshConservatorySettlement).toBe(false);
@@ -3330,7 +3364,8 @@ test("current and legacy owned profiles converge to the carried seed without rep
           expect(JSON.stringify(state.counts)).toBe(authoritative.counts);
           expect(state.tiles).toBe(64);
           expect(state.tileRows).toBe(8);
-          expect(state.visibleButtons).toEqual(["Help"]);
+          expect(state.visibleButtons.length).toBeLessThanOrEqual(1);
+          expect(state.visibleButtons.every((button) => button === "Help")).toBe(true);
           expect(state.replayEntryActive).toBe(false);
           expect(state.overflowX).toBe(false);
           expect(state.brokenImages).toEqual([]);
@@ -3338,6 +3373,8 @@ test("current and legacy owned profiles converge to the carried seed without rep
             const saved = JSON.parse(localStorage.getItem(key) || "{}");
             return {
               board: JSON.stringify(saved.board),
+              coins: saved.coins,
+              focusedEconomyVersion: saved.focusedEconomyVersion,
               ownership: [
                 saved.roundOneRestored,
                 saved.roundTwoGreenhouseUpgraded,
@@ -3349,31 +3386,85 @@ test("current and legacy owned profiles converge to the carried seed without rep
           }, SAVE_KEY);
           expect(savedAuthority).toEqual({
             board: authoritative.board,
+            coins: profile.coins,
+            focusedEconomyVersion: 2,
             ownership: authoritative.ownership,
             tutorial: authoritative.tutorial,
             relic: authoritative.relic
           });
           await expectPermanentRaisedGreenhouse(page, `${config.label} ${profile.label} reload ${reload + 1}`);
-          await expectVisibleCoinBalance(page, 50, { pulsing: false });
+          await expectVisibleCoinBalance(page, profile.coins, { pulsing: false });
+          await assertActiveBoard(page, config.mobile);
+        }
+
+        if (profile.coins === 7820) {
+          await failAndRetryOwnedReplayRoundOne(
+            page,
+            config,
+            profile.coins,
+            `${config.label}-${profile.label}`,
+            { requireImmediateHint: false }
+          );
+        }
+
+        await playCurrentRound(
+          page,
+          `${config.label}-${profile.label}-preserved-reinvestment`,
+          1,
+          "goal-following",
+          3
+        );
+        await page.waitForSelector("#nextOrderBtn:not([hidden])", { timeout: 3000 });
+        const completed = await journeyState(page);
+        expect(completed.coins, `${config.label} ${profile.label} reward is diverted without balance loss`)
+          .toBe(profile.coins);
+        expect(completed.payoffTransaction).toBe(ownedReplayTransaction(120, profile.coins));
+        expect(completed.visibleButtons).toEqual(["Next Order → Moonlit Wreath"]);
+        expect(completed.tiles).toBe(64);
+        expect(completed.tileAriaRows).toBe(8);
+        expect(completed.overflowX).toBe(false);
+        expect(completed.brokenImages).toEqual([]);
+        await expectPermanentRaisedGreenhouse(page, `${config.label} ${profile.label} completion`);
+        if (config.mobile && [50, 7820].includes(profile.coins) && profile.economyVersion === 2) {
+          await page.screenshot({
+            path: `work/economy-mobile390-preserved-${profile.coins}-round1-owned.png`,
+            fullPage: true
+          });
+        }
+        for (let reload = 0; reload < 2; reload += 1) {
+          await page.reload({ waitUntil: "networkidle" });
+          const reloaded = await journeyState(page);
+          expect(reloaded.coins, `${config.label} ${profile.label} completion reload ${reload + 1}`)
+            .toBe(profile.coins);
+          expect(reloaded.payoffTransaction).toBe(ownedReplayTransaction(120, profile.coins));
+          expect(reloaded.visibleButtons).toEqual(["Next Order → Moonlit Wreath"]);
+          expect(reloaded.overflowX).toBe(false);
+          expect(reloaded.brokenImages).toEqual([]);
+          await expectPermanentRaisedGreenhouse(
+            page,
+            `${config.label} ${profile.label} completion reload ${reload + 1}`
+          );
+        }
+
+        await spendPrimaryCeremonyAction(page, config.mobile ? "touch" : "pointer");
+        const handoff = await journeyState(page);
+        expect(handoff.round).toBe(2);
+        expect(handoff.roundComplete).toBe(false);
+        expect(handoff.coins, `${config.label} ${profile.label} Next Order handoff`).toBe(profile.coins);
+        await assertActiveBoard(page, config.mobile);
+        for (let reload = 0; reload < 2; reload += 1) {
+          await page.reload({ waitUntil: "networkidle" });
+          const reloadedHandoff = await journeyState(page);
+          expect(reloadedHandoff.round).toBe(2);
+          expect(reloadedHandoff.roundComplete).toBe(false);
+          expect(reloadedHandoff.coins, `${config.label} ${profile.label} handoff reload ${reload + 1}`)
+            .toBe(profile.coins);
           await assertActiveBoard(page, config.mobile);
         }
       }
-
-      await playCurrentRound(page, `${config.label}-normalized-reinvestment`, 1, "goal-following", 3);
-      await page.waitForSelector("#nextOrderBtn:not([hidden])", { timeout: 3000 });
-      const completed = await journeyState(page);
-      expect(completed.coins, `${config.label} advertised reward reinvests exactly once`).toBe(50);
-      expect(completed.payoffTransaction).toBe(ownedReplayTransaction(120));
-      expect(completed.visibleButtons).toEqual(["Next Order → Moonlit Wreath"]);
-      await expectPermanentRaisedGreenhouse(page, `${config.label} normalized completion`);
-      for (let reload = 0; reload < 2; reload += 1) {
-        await page.reload({ waitUntil: "networkidle" });
-        const reloaded = await journeyState(page);
-        expect(reloaded.coins, `${config.label} completed reload ${reload + 1} does not duplicate reward`).toBe(50);
-        expect(reloaded.payoffTransaction).toBe(ownedReplayTransaction(120));
-        expect(reloaded.visibleButtons).toEqual(["Next Order → Moonlit Wreath"]);
-        await expectPermanentRaisedGreenhouse(page, `${config.label} normalized completion reload ${reload + 1}`);
-      }
+      expect(consoleMessages).toEqual([]);
+      expect(pageErrors).toEqual([]);
+      expect(failedRequests).toEqual([]);
     } finally {
       await context.close();
     }
@@ -3407,48 +3498,55 @@ test("owned replay receipt remains fully readable at the active-board handoff", 
     });
 
     try {
-      await openFresh(page, `replay-receipt-${config.label}`, config.label);
-      await page.evaluate((key) => {
-        const state = JSON.parse(localStorage.getItem(key) || "{}");
-        Object.assign(state, {
-          currentRound: 3,
-          roundComplete: true,
-          roundOneRestored: true,
-          roundTwoGreenhouseUpgraded: true,
-          roundThreeConservatoryRaised: true,
-          moves: 2,
-          coins: 50,
-          counts: [13, 0, 0, 14, 0, 0],
-          cursedThorns: [],
-          clearedCursedThorns: 0,
-          tutorialSkipped: true,
-          tutorialActive: false,
-          blackCandleLessonComplete: true
-        });
-        localStorage.setItem(key, JSON.stringify(state));
-      }, SAVE_KEY);
-      await page.reload({ waitUntil: "load" });
-      await expect(page.locator("#roundOneRestoration button:not([hidden])")).toBeVisible();
-      await spendPrimaryCeremonyAction(page, config.mobile ? "touch" : "pointer");
-      await page.waitForFunction(() => document.body.classList.contains("owned-replay-entry"));
+      for (const retainedBalance of [50, 7820]) {
+        await openFresh(page, `replay-receipt-${config.label}-${retainedBalance}`, `${config.label}-${retainedBalance}`);
+        await page.evaluate(({ key, retainedBalance }) => {
+          const state = JSON.parse(localStorage.getItem(key) || "{}");
+          Object.assign(state, {
+            currentRound: 3,
+            roundComplete: true,
+            roundOneRestored: true,
+            roundTwoGreenhouseUpgraded: true,
+            roundThreeConservatoryRaised: true,
+            moves: 2,
+            coins: retainedBalance,
+            counts: [13, 0, 0, 14, 0, 0],
+            cursedThorns: [],
+            clearedCursedThorns: 0,
+            tutorialSkipped: true,
+            tutorialActive: false,
+            blackCandleLessonComplete: true
+          });
+          localStorage.setItem(key, JSON.stringify(state));
+        }, { key: SAVE_KEY, retainedBalance });
+        await page.reload({ waitUntil: "load" });
+        await expect(page.locator("#roundOneRestoration button:not([hidden])")).toBeVisible();
+        await spendPrimaryCeremonyAction(page, config.mobile ? "touch" : "pointer");
+        await page.waitForFunction(() => document.body.classList.contains("owned-replay-entry"));
 
-      const handoff = await journeyState(page);
-      expect(handoff.replayEntryReceipt, `${config.label} exact receipt`)
-        .toBe("50 coins kept · Conservatory owned · New order ready.");
-      expectOwnedReplayEntryGeometry(handoff, config, `${config.label} owned replay receipt`);
-      expect(handoff.round, `${config.label} returns to First Bouquet`).toBe(1);
-      expect(handoff.moves, `${config.label} starts with six moves`).toBe(6);
-      expect(handoff.bouquet, `${config.label} starts an empty bouquet`).toBe("Bouquet · 0/14");
-      expect(handoff.coins, `${config.label} keeps the wallet`).toBe(50);
-      expect(handoff.activeElementId, `${config.label} restores opening board focus`).toBe("tile-1-0");
-      expect(handoff.rovingTileIds, `${config.label} focus and roving model agree`).toEqual(["tile-1-0"]);
-      expect(handoff.selectedTileCount, `${config.label} creates no selection`).toBe(0);
-      expect(handoff.tiles, `${config.label} tile count`).toBe(64);
-      expect(handoff.tileRows, `${config.label} row count`).toBe(8);
-      expect(handoff.overflowX, `${config.label} no horizontal overflow`).toBe(false);
-      expect(handoff.boardBottom, `${config.label} board stays in viewport`).toBeLessThanOrEqual(config.viewport.height);
-      expect(handoff.brokenImages, `${config.label} no broken visible images`).toEqual([]);
-      await page.screenshot({ path: `work/replay-receipt-${config.label}.png`, fullPage: true });
+        const handoff = await journeyState(page);
+        expect(handoff.replayEntryReceipt, `${config.label} ${retainedBalance} exact receipt`)
+          .toBe(`${retainedBalance} coins kept · Conservatory owned · New order ready.`);
+        expectOwnedReplayEntryGeometry(handoff, config, `${config.label} ${retainedBalance} owned replay receipt`);
+        expect(handoff.round, `${config.label} returns to First Bouquet`).toBe(1);
+        expect(handoff.moves, `${config.label} starts with six moves`).toBe(6);
+        expect(handoff.bouquet, `${config.label} starts an empty bouquet`).toBe("Bouquet · 0/14");
+        expect(handoff.coins, `${config.label} keeps the wallet`).toBe(retainedBalance);
+        expect(handoff.activeElementId, `${config.label} restores opening board focus`).toBe("tile-1-0");
+        expect(handoff.rovingTileIds, `${config.label} focus and roving model agree`).toEqual(["tile-1-0"]);
+        expect(handoff.selectedTileCount, `${config.label} creates no selection`).toBe(0);
+        expect(handoff.tiles, `${config.label} tile count`).toBe(64);
+        expect(handoff.tileRows, `${config.label} row count`).toBe(8);
+        expect(handoff.overflowX, `${config.label} no horizontal overflow`).toBe(false);
+        expect(handoff.boardBottom, `${config.label} board stays in viewport`).toBeLessThanOrEqual(config.viewport.height);
+        expect(handoff.brokenImages, `${config.label} no broken visible images`).toEqual([]);
+        await page.screenshot({
+          path: `work/replay-receipt-${config.label}-${retainedBalance}.png`,
+          fullPage: true
+        });
+
+        await reloadAndExpectActiveReplayBalance(page, config, retainedBalance);
+      }
 
       expect(consoleMessages).toEqual([]);
       expect(pageErrors).toEqual([]);

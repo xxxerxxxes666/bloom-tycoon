@@ -806,10 +806,10 @@ async function assertHudState(page, fixture, viewport, reload) {
   const expectedRewardPromise = state.roundComplete
     ? `Reward · ${ROUND_CONTRACTS[state.currentRound].reward} coins`
     : ownedReplayActive
-      ? `Nourish ${ROUND_CONTRACTS[state.currentRound].reward} · Keep 50`
+      ? `Nourish ${ROUND_CONTRACTS[state.currentRound].reward} · Keep ${state.coins}`
       : `Complete for ${ROUND_CONTRACTS[state.currentRound].reward} coins`;
   const expectedRewardSemantics = ownedReplayActive
-    ? `${ROUND_CONTRACTS[state.currentRound].reward} coins nourish the Conservatory; 50 coins kept`
+    ? `${ROUND_CONTRACTS[state.currentRound].reward} coins nourish the Conservatory; ${state.coins} coins kept`
     : expectedRewardPromise;
   const desktopViewport = viewport.width >= 761;
   expect(report.text, `${label} exact consequence`).toBe(fixture.expected);
@@ -886,7 +886,7 @@ async function assertHudState(page, fixture, viewport, reload) {
     );
     expect(report.contract.consequenceText, `${label} truthful desktop consequence`).toBe(
       restorationAlreadyOwned
-        ? "CONSERVATORY NOURISHED 50 coins remain Restoration remains yours"
+        ? `CONSERVATORY NOURISHED ${state.coins} coins remain Restoration remains yours`
         : `THEN ${expectedContract.restoration.split(" ")[0].toUpperCase()} ${expectedContract.restoration} ${expectedContract.restorationCost} coins`
     );
     if (restorationAlreadyOwned) {
@@ -977,7 +977,7 @@ async function assertHudState(page, fixture, viewport, reload) {
       `${label} one visible total narration`
     ).toBe(1);
     const visiblePromisePattern = ownedReplayActive
-      ? /Nourish \d+ · Keep 50/gi
+      ? /Nourish \d+ · Keep \d+/gi
       : /Complete for \d+ coins/gi;
     expect(
       (report.visibleBouquetSurfaceText.match(visiblePromisePattern) || []).length,

@@ -14449,12 +14449,6 @@
       return 0;
     }
 
-    function ownedReplaySeedBalance() {
-      return roundTemplates[0].reward.coins - FIRST_GREENHOUSE_RESTORE_COST
-        + roundTemplates[1].reward.coins - MOONLIT_GREENHOUSE_UPGRADE_COST
-        + roundTemplates[2].reward.coins - BLOODROOT_CONSERVATORY_COST;
-    }
-
     function conservatoryFullyOwned() {
       return roundOneRestored && roundTwoGreenhouseUpgraded && roundThreeConservatoryRaised;
     }
@@ -15617,12 +15611,12 @@
           : roundComplete
             ? `Reward · ${plan.reward.coins} coins`
             : ownedReplayPromise
-              ? `Nourish ${plan.reward.coins} · Keep ${ownedReplaySeedBalance()}`
+              ? `Nourish ${plan.reward.coins} · Keep ${coins}`
               : `Complete for ${plan.reward.coins} coins`;
         if (ownedReplayPromise) {
           reward.setAttribute(
             "aria-label",
-            `${plan.reward.coins} coins nourish the Conservatory; ${ownedReplaySeedBalance()} coins kept`
+            `${plan.reward.coins} coins nourish the Conservatory; ${coins} coins kept`
           );
         } else {
           reward.removeAttribute("aria-label");
@@ -18265,7 +18259,7 @@
         rewardLabel: alreadyOwned ? "Reward reinvested" : "Exact reward",
         rewardCopy: alreadyOwned ? `${plan.reward.coins} coins` : `+${plan.reward.coins} coins`,
         consequenceLabel: alreadyOwned ? "Conservatory nourished" : `Then ${milestone.action.split(" ")[0].toLowerCase()}`,
-        consequenceCopy: alreadyOwned ? `${ownedReplaySeedBalance()} coins remain` : milestone.action,
+        consequenceCopy: alreadyOwned ? `${coins} coins remain` : milestone.action,
         consequenceDetail: alreadyOwned ? "Restoration remains yours" : `${milestone.cost} coins`,
         ownedLabel: `${ownership.ownedLabel} · ${greenhouseDialPhase(ownership)}`,
         ownedStage: ownership.stage
@@ -18398,11 +18392,12 @@
         return false;
       }
       const ownedReplayCompletion = isOwnedRestorationReplay();
+      const retainedOwnedReplayBalance = ownedReplayCompletion ? coins : null;
       roundComplete = true;
       retireRoundOneSecondTargetDiscovery({ clearHint: true });
       const streakPayout = completionCoinPayout(plan);
       coins = ownedReplayCompletion
-        ? ownedReplaySeedBalance()
+        ? retainedOwnedReplayBalance
         : coins + streakPayout.total;
       const completionMessage = focusedSliceCompletionMessage(plan, streakPayout);
       ritualMessage = carryMessage ? `${carryMessage} ${completionMessage}` : completionMessage;
@@ -19367,7 +19362,6 @@
       thornClearedCells.clear();
       clearThornTeachingCue(false);
       freshConservatorySettlement = false;
-      coins = ownedReplaySeedBalance();
       currentRound = 1;
       restoredRoundTwoGuideMoves = 0;
       roundOneLastSwapMissedOrder = false;
@@ -19826,12 +19820,14 @@
           ritualMessage = "<strong>First three orders complete.</strong> Replay First Bouquet to start another polished greenhouse run.";
           shouldSaveMigratedProgress = true;
         }
+        const savedCoins = Number(state.coins);
+        const hasAuthoritativeOwnedWallet = conservatoryFullyOwned()
+          && Number.isFinite(savedCoins)
+          && savedCoins >= 0;
         if (savedFocusedEconomyVersion < FOCUSED_ECONOMY_SAVE_VERSION) {
-          coins = focusedEconomyBalanceForProgress();
-          shouldSaveMigratedProgress = true;
-        }
-        if (isOwnedRestorationReplay() && coins !== ownedReplaySeedBalance()) {
-          coins = ownedReplaySeedBalance();
+          if (!hasAuthoritativeOwnedWallet) {
+            coins = focusedEconomyBalanceForProgress();
+          }
           shouldSaveMigratedProgress = true;
         }
         hasMadeValidMove = Boolean(state.hasMadeValidMove)
