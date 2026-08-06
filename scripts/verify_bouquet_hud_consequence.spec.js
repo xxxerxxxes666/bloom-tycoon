@@ -590,7 +590,10 @@ async function hudReport(page) {
         restoration: contract?.dataset.contractRestoration || "",
         restorationCost: contract?.dataset.contractRestorationCost || "",
         ownedStage: contract?.dataset.contractOwnedStage || "",
+        ariaLabel: contract?.getAttribute("aria-label") || "",
         text: contract?.innerText.replace(/\s+/g, " ").trim() || "",
+        rewardText: contract?.querySelector(".order-contract-reward")?.innerText.replace(/\s+/g, " ").trim() || "",
+        consequenceText: contract?.querySelector(".order-contract-consequence")?.innerText.replace(/\s+/g, " ").trim() || "",
         progressbars: contract ? Array.from(contract.querySelectorAll('[role="progressbar"]')).filter(visible).length : 0,
         linearMeters: contract?.querySelectorAll(".order-fill, .progress-meter").length || 0,
         ingredients: Array.from(contract?.querySelectorAll("[data-contract-target]") || [], (row) => ({
@@ -873,6 +876,24 @@ async function assertHudState(page, fixture, viewport, reload) {
       restorationAlreadyOwned ? "" : String(expectedContract.restorationCost)
     );
     expect(report.contract.ownedStage, `${label} owned greenhouse state`).toBe(String(savedOwnedStage));
+    expect(report.contract.ariaLabel, `${label} accessible order region identity`).toBe(
+      `Round ${state.currentRound} current order: ${expectedContract.name}`
+    );
+    expect(report.contract.rewardText, `${label} truthful desktop reward`).toBe(
+      restorationAlreadyOwned
+        ? `REWARD REINVESTED ${expectedContract.reward} coins`
+        : `EXACT REWARD +${expectedContract.reward} coins`
+    );
+    expect(report.contract.consequenceText, `${label} truthful desktop consequence`).toBe(
+      restorationAlreadyOwned
+        ? "CONSERVATORY NOURISHED 50 coins remain Restoration remains yours"
+        : `THEN ${expectedContract.restoration.split(" ")[0].toUpperCase()} ${expectedContract.restoration} ${expectedContract.restorationCost} coins`
+    );
+    if (restorationAlreadyOwned) {
+      expect(report.contract.text, `${label} no wallet-inflation promise`).not.toContain(
+        `+${expectedContract.reward} coins`
+      );
+    }
     expect(report.contract.progressbars, `${label} rail adds no progressbar`).toBe(0);
     expect(report.contract.linearMeters, `${label} rail adds no linear fill`).toBe(0);
     expect(report.contract.text, `${label} one-order language`).not.toMatch(

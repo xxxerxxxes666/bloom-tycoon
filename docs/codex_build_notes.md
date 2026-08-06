@@ -1,5 +1,11 @@
 # Codex Build Notes
 
+## 2026-08-05 aligned the desktop order card with replay reinvestment
+
+- Player-visible result: the existing desktop Current Order card now agrees with the active owned-replay bouquet HUD and settled economy. Fully owned R1/R2/R3 cards say `Reward reinvested` with `120/150/180 coins`, then `Conservatory nourished`, `50 coins remain`, and `Restoration remains yours`; the misleading `+N coins` wallet-growth promise is gone.
+- First-cycle authority and scope: fresh R1/R2/R3 cards remain exactly `Exact reward`, `+120/+150/+180 coins`, the real restoration action, and its existing cost. The correction only changes text assembled inside the existing reward/consequence fields when `greenhouseOrderConsequence().alreadyOwned` is true; mobile, bouquet HUD, economy, saves, ceremonies, actions, focus, and mechanics are unchanged.
+- Permanent/local evidence: the desktop/mobile full/reduced HUD matrix now asserts exact Current Order reward/consequence text, region identity, no owned `+N coins`, two reloads, 64 tiles/eight rows, 600px/378px altar containment, imagery, overflow, and browser errors, passing `4/4`. Inspected `work/hud-consequence-desktop-r2-owned-replay-partial.png`; the existing outcome row contains the reinvested reward and retained balance without overlap or board movement. Project/HTML, inline JavaScript, changed-spec syntax, diff, and scoped security gates pass before release.
+
 ## 2026-08-05 made active owned-replay rewards truthful
 
 - Player-visible result: active fully owned First Bouquet, Moonlit Wreath, and Bloodroot Compact orders now use the existing bouquet reward slot to promise `Nourish 120/150/180 · Keep 50` instead of advertising spendable coins that the settled economy reinvests. The first ownership cycle retains its existing `Complete for 120/150/180 coins` promise because those rewards still fund the three greenhouse purchases.

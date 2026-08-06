@@ -18262,6 +18262,11 @@
         action: alreadyOwned ? "Nourish owned conservatory" : milestone.action,
         eyebrow: alreadyOwned ? "Greenhouse owned" : `Then ${milestone.action.split(" ")[0].toLowerCase()}`,
         cost: alreadyOwned ? null : milestone.cost,
+        rewardLabel: alreadyOwned ? "Reward reinvested" : "Exact reward",
+        rewardCopy: alreadyOwned ? `${plan.reward.coins} coins` : `+${plan.reward.coins} coins`,
+        consequenceLabel: alreadyOwned ? "Conservatory nourished" : `Then ${milestone.action.split(" ")[0].toLowerCase()}`,
+        consequenceCopy: alreadyOwned ? `${ownedReplaySeedBalance()} coins remain` : milestone.action,
+        consequenceDetail: alreadyOwned ? "Restoration remains yours" : `${milestone.cost} coins`,
         ownedLabel: `${ownership.ownedLabel} · ${greenhouseDialPhase(ownership)}`,
         ownedStage: ownership.stage
       };
@@ -18325,14 +18330,14 @@
           </div>
           <div class="order-contract-outcome">
             <span class="order-contract-reward">
-              <small>Exact reward</small>
-              <strong>+${plan.reward.coins} coins</strong>
+              <small>${consequence.rewardLabel}</small>
+              <strong>${consequence.rewardCopy}</strong>
             </span>
             <span class="order-contract-flow" aria-hidden="true">→</span>
             <span class="order-contract-consequence">
-              <small>${consequence.eyebrow}</small>
-              <strong>${consequence.action}</strong>
-              <span>${consequence.cost === null ? "Restoration remains yours" : `${consequence.cost} coins`}</span>
+              <small>${consequence.consequenceLabel}</small>
+              <strong>${consequence.consequenceCopy}</strong>
+              <span>${consequence.consequenceDetail}</span>
             </span>
           </div>
           <span class="order-contract-owned">${consequence.ownedLabel}</span>

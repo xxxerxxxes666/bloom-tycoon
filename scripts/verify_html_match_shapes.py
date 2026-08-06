@@ -1076,6 +1076,8 @@ def verify_source_hooks():
         "Complete for ${plan.reward.coins} coins",
         "Nourish ${plan.reward.coins} · Keep ${ownedReplaySeedBalance()}",
         "${plan.reward.coins} coins nourish the Conservatory; ${ownedReplaySeedBalance()} coins kept",
+        'rewardLabel: alreadyOwned ? "Reward reinvested" : "Exact reward"',
+        'consequenceCopy: alreadyOwned ? `${ownedReplaySeedBalance()} coins remain` : milestone.action',
         "function compactBouquetOrderLabel",
         "Large desktop authority",
         "--desktop-altar-size: min(650px, calc(100vh - 120px), calc(100vw - 630px))",
