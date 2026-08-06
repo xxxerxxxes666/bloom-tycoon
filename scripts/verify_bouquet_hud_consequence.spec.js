@@ -138,6 +138,20 @@ const HUD_CASES = [
     }
   },
   {
+    label: "r2-owned-replay-partial",
+    expected: "Bouquet · 6/29",
+    state: {
+      currentRound: 2,
+      moves: 8,
+      counts: [0, 0, 3, 0, 0, 0],
+      coins: 50,
+      clearedCursedThorns: 3,
+      roundOneRestored: true,
+      roundTwoGreenhouseUpgraded: true,
+      roundThreeConservatoryRaised: true
+    }
+  },
+  {
     label: "r2-failed",
     expected: "Bouquet Paused · 0/29",
     retry: true,
@@ -203,6 +217,19 @@ const HUD_CASES = [
     }
   },
   {
+    label: "r3-owned-replay-partial",
+    expected: "Bouquet · 15/27",
+    state: {
+      currentRound: 3,
+      moves: 6,
+      counts: [3, 0, 0, 12, 0, 0],
+      coins: 50,
+      roundOneRestored: true,
+      roundTwoGreenhouseUpgraded: true,
+      roundThreeConservatoryRaised: true
+    }
+  },
+  {
     label: "r3-failed",
     expected: "Bouquet Paused · 0/27",
     retry: true,
@@ -250,6 +277,12 @@ const VIEWPORTS = [
   { label: "desktop", width: 1280, height: 720 },
   { label: "mobile390", width: 390, height: 844 }
 ];
+
+const REDUCED_OWNED_PROMISE_VIEWPORTS = VIEWPORTS.map((viewport) => ({
+  ...viewport,
+  label: `${viewport.label}-reduced`,
+  reducedMotion: "reduce"
+}));
 
 const FAILURE_VIEWPORTS = [
   ...VIEWPORTS,
@@ -528,6 +561,9 @@ async function hudReport(page) {
       orderValueMax: orderProgress?.getAttribute("aria-valuemax") || "",
       visibleProgressbars: Array.from(document.querySelectorAll('[role="progressbar"]')).filter(visible).length,
       rewardPromise: document.querySelector("#bouquetRewardPromise")?.textContent.trim() || "",
+      rewardPromiseAriaLabel: document.querySelector("#bouquetRewardPromise")?.getAttribute("aria-label") || "",
+      rewardPromiseClientWidth: document.querySelector("#bouquetRewardPromise")?.clientWidth || 0,
+      rewardPromiseScrollWidth: document.querySelector("#bouquetRewardPromise")?.scrollWidth || 0,
       bouquetBarWidth: document.querySelector("#bar")?.style.width || "",
       assemblyProgress: document.querySelector("#liveBouquetAssembly")?.dataset.progress || "",
       assemblyState: document.querySelector("#liveBouquetAssembly")?.dataset.assemblyState || "",
@@ -758,7 +794,31 @@ async function assertHudState(page, fixture, viewport, reload) {
 
   const report = await hudReport(page);
   const label = `${viewport.label} ${fixture.label} reload ${reload}`;
+  const state = savedState(fixture);
+  const ownedReplayActive = state.roundOneRestored
+    && state.roundTwoGreenhouseUpgraded
+    && state.roundThreeConservatoryRaised
+    && !state.freshConservatorySettlement
+    && !state.roundComplete;
+  const expectedRewardPromise = state.roundComplete
+    ? `Reward · ${ROUND_CONTRACTS[state.currentRound].reward} coins`
+    : ownedReplayActive
+      ? `Nourish ${ROUND_CONTRACTS[state.currentRound].reward} · Keep 50`
+      : `Complete for ${ROUND_CONTRACTS[state.currentRound].reward} coins`;
+  const expectedRewardSemantics = ownedReplayActive
+    ? `${ROUND_CONTRACTS[state.currentRound].reward} coins nourish the Conservatory; 50 coins kept`
+    : expectedRewardPromise;
+  const desktopViewport = viewport.width >= 761;
   expect(report.text, `${label} exact consequence`).toBe(fixture.expected);
+  expect(report.rewardPromise, `${label} truthful active reward consequence`).toBe(expectedRewardPromise);
+  expect(report.rewardPromiseAriaLabel, `${label} explicit reward semantics`).toBe(
+    ownedReplayActive ? expectedRewardSemantics : ""
+  );
+  if (!fixture.action) {
+    await expect(page.locator("#bouquetOrderProgress")).toHaveAccessibleName(
+      `${fixture.expected} ${expectedRewardSemantics}`
+    );
+  }
   expect(report.bouquetSurfaceText, `${label} bouquet surface never narrates greenhouse work`)
     .not.toMatch(/restore|upgrade|raise|greenhouse|conservatory/i);
   expect(report.orderAuthority, `${label} explicit order authority`).toBe("bouquet-order");
@@ -797,10 +857,9 @@ async function assertHudState(page, fixture, viewport, reload) {
     `${label} visible command centers retain their own hit authority`
   ).toEqual(report.commandHitTargets.map(({ id }) => ({ id, owner: id })));
 
-  const state = savedState(fixture);
   const expectedContract = ROUND_CONTRACTS[state.currentRound];
   const activeContract = !fixture.action && !fixture.retry;
-  if (viewport.label === "desktop" && activeContract) {
+  if (desktopViewport && activeContract) {
     const restorationAlreadyOwned = savedOwnedStage >= expectedContract.round;
     expect(report.contract.visible, `${label} one desktop current-order contract`).toBe(true);
     expect(report.contract.heading, `${label} singular contract heading`).toBe("Current Order");
@@ -847,7 +906,7 @@ async function assertHudState(page, fixture, viewport, reload) {
       new RegExp(`Round ${state.currentRound} · ${expectedContract.name}`, "i")
     );
     expect(report.objectiveText, `${label} exact moves remain visible`).toContain(`Moves ${state.moves}`);
-  } else if (viewport.label !== "desktop") {
+  } else if (!desktopViewport) {
     expect(report.contract.visible, `${label} desktop rail remains absent on mobile`).toBe(false);
     if (!fixture.action) {
       const compactTransaction = [
@@ -896,10 +955,15 @@ async function assertHudState(page, fixture, viewport, reload) {
       (report.visibleBouquetSurfaceText.match(new RegExp(`${earned}/${needed}`, "g")) || []).length,
       `${label} one visible total narration`
     ).toBe(1);
+    const visiblePromisePattern = ownedReplayActive
+      ? /Nourish \d+ · Keep 50/gi
+      : /Complete for \d+ coins/gi;
     expect(
-      (report.visibleBouquetSurfaceText.match(/Complete for \d+ coins/gi) || []).length,
+      (report.visibleBouquetSurfaceText.match(visiblePromisePattern) || []).length,
       `${label} one visible completion promise`
     ).toBe(1);
+    expect(report.rewardPromiseScrollWidth, `${label} reward promise horizontal fit`)
+      .toBeLessThanOrEqual(report.rewardPromiseClientWidth + 1);
     expect(report.receiverCopyScrollWidth, `${label} receiver copy horizontal fit`)
       .toBeLessThanOrEqual(report.receiverCopyWidth + 1);
     expect(report.receiverCopyScrollHeight, `${label} receiver copy vertical fit`)
@@ -921,7 +985,7 @@ async function assertHudState(page, fixture, viewport, reload) {
       expect(report.assemblySlotStates, `${label} partial order retains incomplete capacity`).toContain("empty");
       expect(report.assemblySlotStates, `${label} unit slots are only earned or unearned`).not.toContain("partial");
     }
-    if (viewport.label !== "desktop") {
+    if (!desktopViewport) {
       expect(report.boardVisible, `${label} active board visible`).toBe(true);
       expect(report.boardBottom, `${label} board remains in first viewport`).toBeLessThanOrEqual(844);
     }
@@ -1276,12 +1340,20 @@ for (const viewport of VIEWPORTS) {
         { waitUntil: "networkidle" }
       );
 
-      const reloadCount = fixture.action ? 2 : 1;
+      const reloadCount = fixture.action || fixture.label.includes("owned-replay") ? 2 : 1;
       for (let reload = 0; reload <= reloadCount; reload += 1) {
         await assertHudState(page, fixture, viewport, reload);
         if (
           reload === 0
-          && ["r1-active", "r1-pending", "r2-pending", "r3-active", "r3-pending"].includes(fixture.label)
+          && [
+            "r1-active",
+            "r1-pending",
+            "r2-owned-replay-partial",
+            "r2-pending",
+            "r3-active",
+            "r3-owned-replay-partial",
+            "r3-pending"
+          ].includes(fixture.label)
         ) {
           await page.screenshot({
             path: `work/hud-consequence-${viewport.label}-${fixture.label}.png`,
@@ -1295,6 +1367,38 @@ for (const viewport of VIEWPORTS) {
 
       expect(runtimeErrors, `${viewport.label} ${fixture.label} runtime errors`).toEqual([]);
       expect(requestFailures, `${viewport.label} ${fixture.label} request failures`).toEqual([]);
+      await context.close();
+    }
+  });
+}
+
+for (const viewport of REDUCED_OWNED_PROMISE_VIEWPORTS) {
+  test(`owned replay nourishment promise survives reduced-motion reloads on ${viewport.label}`, async ({ browser }) => {
+    for (const fixture of HUD_CASES.filter((candidate) => candidate.label.includes("owned-replay"))) {
+      const context = await browser.newContext({
+        viewport: { width: viewport.width, height: viewport.height },
+        reducedMotion: viewport.reducedMotion
+      });
+      const page = await context.newPage();
+      const runtimeErrors = [];
+      page.on("console", (message) => {
+        if (message.type() === "error" || message.type() === "warning") runtimeErrors.push(message.text());
+      });
+      page.on("pageerror", (error) => runtimeErrors.push(error.message));
+      await page.addInitScript(({ key, state }) => {
+        localStorage.setItem(key, JSON.stringify(state));
+      }, { key: SAVE_KEY, state: savedState(fixture) });
+      await page.goto(
+        `${BASE_URL}?owned-promise=${viewport.label}-${fixture.label}`,
+        { waitUntil: "networkidle" }
+      );
+
+      for (let reload = 0; reload <= 2; reload += 1) {
+        await assertHudState(page, fixture, viewport, reload);
+        if (reload < 2) await page.reload({ waitUntil: "networkidle" });
+      }
+
+      expect(runtimeErrors, `${viewport.label} ${fixture.label} runtime errors`).toEqual([]);
       await context.close();
     }
   });

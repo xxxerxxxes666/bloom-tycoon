@@ -1074,6 +1074,8 @@ def verify_source_hooks():
         "assembly.dataset.visibleBlooms",
         "function updateBouquetProgress",
         "Complete for ${plan.reward.coins} coins",
+        "Nourish ${plan.reward.coins} · Keep ${ownedReplaySeedBalance()}",
+        "${plan.reward.coins} coins nourish the Conservatory; ${ownedReplaySeedBalance()} coins kept",
         "function compactBouquetOrderLabel",
         "Large desktop authority",
         "--desktop-altar-size: min(650px, calc(100vh - 120px), calc(100vw - 630px))",

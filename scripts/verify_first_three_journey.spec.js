@@ -1899,7 +1899,7 @@ async function reloadAndExpectActiveReplayBalance(page, config, expectedCoins, e
       : /Find 3 Thorn Roses/;
     expect(state.cue, `replay reload ${reload + 1} has one clear instruction`).toMatch(expectedCue);
     expect(state.cue).not.toMatch(/coins kept|Conservatory owned|New order ready/);
-    expect(state.rewardPromise).toBe("Complete for 120 coins");
+    expect(state.rewardPromise).toBe("Nourish 120 · Keep 50");
     await expectVisibleCoinBalance(page, expectedCoins, { pulsing: false });
     await expectPermanentRaisedGreenhouse(page, `replay reload ${reload + 1}`);
     await assertActiveBoard(page, config.mobile);
@@ -1937,7 +1937,7 @@ async function failAndRetryOwnedReplayRoundOne(page, config, expectedCoins, runL
     expect(failed.replayEntryActive, "failure does not resurrect replay entry").toBe(false);
     expect(failed.handoffCueVisible, "failure has no detached replay receipt").toBe(false);
     expect(failed.cue).not.toMatch(/coins kept|Conservatory owned|New order ready/);
-    expect(failed.rewardPromise).toBe("Complete for 120 coins");
+    expect(failed.rewardPromise).toBe("Nourish 120 · Keep 50");
     expect(failed.ownedRenewalHidden, "failure has no owned-renewal overlay").toBe(true);
     expect(failed.ownedRenewalTransientNodes, "failure has no owned-renewal debris").toBe(0);
     await expectPermanentRaisedGreenhouse(page, `${runLabel} failed replay reload ${reload + 1}`);
@@ -1965,7 +1965,7 @@ async function failAndRetryOwnedReplayRoundOne(page, config, expectedCoins, runL
   expect(retried.replayEntryActive, "Retry does not resurrect replay entry").toBe(false);
   expect(retried.handoffCueVisible, "Retry has no detached replay receipt").toBe(false);
   expect(retried.cue).not.toMatch(/coins kept|Conservatory owned|New order ready/);
-  expect(retried.rewardPromise).toBe("Complete for 120 coins");
+  expect(retried.rewardPromise).toBe("Nourish 120 · Keep 50");
   expect(retried.ownedRenewalHidden, "Retry clears owned-renewal overlay").toBe(true);
   expect(retried.ownedRenewalTransientNodes, "Retry clears owned-renewal debris").toBe(0);
   await expectPermanentRaisedGreenhouse(page, `${runLabel} retried replay`);
@@ -2950,7 +2950,7 @@ for (const config of [
       expect(settledReplayEntry.replayEntryActive).toBe(false);
       expect(settledReplayEntry.handoffCueVisible).toBe(false);
       expect(settledReplayEntry.cue).toMatch(/Thorn Rose next|Swap the glowing pair/);
-      expect(settledReplayEntry.rewardPromise).toBe("Complete for 120 coins");
+      expect(settledReplayEntry.rewardPromise).toBe("Nourish 120 · Keep 50");
       expect(settledReplayEntry.replayEntryGeometry.detachedReceipt).toBeNull();
       expect(settledReplayEntry.replayEntryGeometry.board.top)
         .toBeCloseTo(replayHandoff.replayEntryGeometry.board.top, 0);
@@ -3003,7 +3003,7 @@ for (const config of [
       const afterImmediateReplayMove = await journeyState(page);
       expect(afterImmediateReplayMove.replayEntryActive, "first replay move retires the receipt").toBe(false);
       expect(afterImmediateReplayMove.handoffCueVisible, "first replay move cannot restore the detached receipt").toBe(false);
-      expect(afterImmediateReplayMove.rewardPromise).toBe("Complete for 120 coins");
+      expect(afterImmediateReplayMove.rewardPromise).toBe("Nourish 120 · Keep 50");
       expect(afterImmediateReplayMove.coins).toBe(50);
       await page.screenshot({ path: `work/replay-second-entry-${config.label}-first-move.png`, fullPage: true });
       await reloadAndExpectActiveReplayBalance(page, config, 50, 0);
@@ -3191,7 +3191,7 @@ test("reduced-motion exact-mobile replay boundary preserves the owned wallet", a
     const reducedSettledEntry = await journeyState(page);
     expect(reducedSettledEntry.cue).toMatch(/Thorn Rose next|Swap the glowing pair/);
     expect(reducedSettledEntry.handoffCueVisible).toBe(false);
-    expect(reducedSettledEntry.rewardPromise).toBe("Complete for 120 coins");
+    expect(reducedSettledEntry.rewardPromise).toBe("Nourish 120 · Keep 50");
     expect(reducedSettledEntry.replayEntryGeometry.board.top)
       .toBeCloseTo(handoff.replayEntryGeometry.board.top, 0);
     await page.screenshot({ path: "work/replay-entry-mobile390-reduced-settled.png", fullPage: true });

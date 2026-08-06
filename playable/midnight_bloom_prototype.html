@@ -15609,11 +15609,24 @@
         label.textContent = compactBouquetOrderLabel(plan, progress);
       }
       if (reward) {
+        const ownedReplayPromise = isOwnedRestorationReplay()
+          && !ownedReplayEntryActive
+          && !roundComplete;
         reward.textContent = ownedReplayEntryActive && window.matchMedia("(min-width: 761px)").matches
           ? `${coins} coins kept · Conservatory owned · New order ready.`
           : roundComplete
             ? `Reward · ${plan.reward.coins} coins`
-            : `Complete for ${plan.reward.coins} coins`;
+            : ownedReplayPromise
+              ? `Nourish ${plan.reward.coins} · Keep ${ownedReplaySeedBalance()}`
+              : `Complete for ${plan.reward.coins} coins`;
+        if (ownedReplayPromise) {
+          reward.setAttribute(
+            "aria-label",
+            `${plan.reward.coins} coins nourish the Conservatory; ${ownedReplaySeedBalance()} coins kept`
+          );
+        } else {
+          reward.removeAttribute("aria-label");
+        }
       }
       if (orderProgress) {
         orderProgress.setAttribute("aria-valuemax", String(progress.needed));
