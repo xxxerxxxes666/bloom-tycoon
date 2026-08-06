@@ -15834,7 +15834,11 @@
       }
     }
 
-    function startTutorial({ replay = false, returnFocusToHelp = false } = {}) {
+    function startTutorial({
+      replay = false,
+      returnFocusToHelp = false,
+      retireOrdinaryRefusal = false
+    } = {}) {
       if (blackCandleActivationPresentation) {
         clearBlackCandleActivationPresentation();
       }
@@ -15848,13 +15852,7 @@
       if (tutorialSkipped && !replay) {
         return;
       }
-      const ordinaryRefusalReplay = replay
-        && (currentRound === 2 || currentRound === 3)
-        && (
-          invalidSwapCells.size > 0
-          || Boolean($("firstSwapCue")?.classList.contains("swap-refused"))
-          || Boolean(document.querySelector("#board .tile.invalid-swap"))
-        );
+      const ordinaryRefusalReplay = replay && retireOrdinaryRefusal;
       if (ordinaryRefusalReplay) {
         retireInvalidSwapFeedback();
         clearIdleHint();
@@ -19919,10 +19917,19 @@
     $("restoreGreenhouseBtn").addEventListener("click", advanceGreenhouseUpgrade);
     $("nextOrderBtn").addEventListener("click", advanceGreenhousePayoffAction);
     $("tutorialSkipBtn").addEventListener("click", skipTutorial);
-    $("tutorialHelpBtn").addEventListener("click", (event) => startTutorial({
-      replay: true,
-      returnFocusToHelp: event.detail === 0
-    }));
+    $("tutorialHelpBtn").addEventListener("click", (event) => {
+      const retireOrdinaryRefusal = (currentRound === 2 || currentRound === 3)
+        && (
+          invalidSwapCells.size > 0
+          || Boolean($("firstSwapCue")?.classList.contains("swap-refused"))
+          || Boolean(document.querySelector("#board .tile.invalid-swap"))
+        );
+      startTutorial({
+        replay: true,
+        returnFocusToHelp: event.detail === 0,
+        retireOrdinaryRefusal
+      });
+    });
     $("board").addEventListener("pointerdown", handleBoardPointerDown);
     $("board").addEventListener("pointermove", handleBoardPointerMove);
     $("board").addEventListener("pointerup", handleBoardPointerUp);
