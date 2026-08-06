@@ -425,7 +425,10 @@ for (const config of VIEWPORTS) {
         const before = await stateReport(page);
         await activatePair(page, pair, config.input);
         await expect(page.locator("#board .tile.invalid-swap")).toHaveCount(2);
-        await page.waitForTimeout(160);
+        const refused = await stateReport(page);
+        expect(refused.cueRefused).toBe(true);
+        expect(refused.invalidIds).toHaveLength(2);
+        expect(refused.invalidSuffixIds).toHaveLength(2);
         await activateControl(page, "#tutorialHelpBtn", config.input);
         await expect(page.locator("#tutorialPanel")).toBeVisible();
         await expect(page.locator("#tutorialSkipBtn")).toBeFocused();
