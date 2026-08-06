@@ -222,6 +222,29 @@ async function hintUsefulness(page) {
   }, SAVE_KEY);
 }
 
+async function selectedHelpHighlightReport(page, counterpart) {
+  return page.evaluate(({ x, y }) => {
+    const counterpartId = `tile-${x}-${y}`;
+    const metrics = (tile) => ({
+      id: tile.id,
+      classes: tile.className,
+      afterOpacity: Number.parseFloat(getComputedStyle(tile, "::after").opacity || "0"),
+      outlineWidth: Number.parseFloat(getComputedStyle(tile).outlineWidth || "0")
+    });
+    const counterpartTile = document.querySelector(`#${counterpartId}`);
+    return {
+      bodyOwnsGuidance: document.body.classList.contains("selected-guided-help"),
+      counterpart: counterpartTile ? metrics(counterpartTile) : null,
+      alternativeLegal: Array.from(document.querySelectorAll(".tile.legal-target"))
+        .filter((tile) => tile.id !== counterpartId)
+        .map(metrics),
+      forecast: Array.from(document.querySelectorAll(".tile.match-preview"))
+        .filter((tile) => tile.id !== counterpartId)
+        .map(metrics)
+    };
+  }, counterpart);
+}
+
 async function waitForAutonomyHint(page, label, expectedFocus = null) {
   await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: HINT_TIMEOUT });
   const report = await autonomyReport(page);
@@ -396,6 +419,11 @@ for (const round of [2, 3]) {
               path: `work/help-counterpart-r${round}-${testCase.label}.png`
             });
           }
+          if (round === 3 && selectedEndpoint === "source" && testCase.label === "desktop-pointer") {
+            await page.screenshot({
+              path: "work/help-counterpart-r3-desktop-pointer-source.png"
+            });
+          }
           report = await autonomyReport(page);
           expect(report.tutorialVisible).toBe(true);
           expect(report.liveOwners).toEqual(["tutorialPanel"]);
@@ -405,6 +433,16 @@ for (const round of [2, 3]) {
           expect(report.state.moves).toBe(before.moves);
           expect(report.state.counts).toEqual(before.counts);
           expect(report.state.board).toEqual(before.board);
+          const highlight = await selectedHelpHighlightReport(page, counterpart);
+          expect(highlight.bodyOwnsGuidance).toBe(true);
+          expect(highlight.counterpart?.classes).toContain("guided-counterpart");
+          expect(highlight.counterpart?.afterOpacity, JSON.stringify(highlight)).toBeGreaterThanOrEqual(.85);
+          expect(highlight.counterpart?.outlineWidth).toBeGreaterThanOrEqual(2);
+          expect(highlight.alternativeLegal.every((tile) => tile.afterOpacity <= .25)).toBe(true);
+          expect(highlight.forecast.every((tile) => tile.afterOpacity <= .3), JSON.stringify(highlight)).toBe(true);
+          if (round === 3 && selectedEndpoint === "source" && testCase.label === "desktop-pointer") {
+            expect(highlight.alternativeLegal.length).toBeGreaterThan(0);
+          }
 
           await activateControl(page, "#tutorialSkipBtn", testCase.input, testCase.dismissKey);
           await expect(page.locator("#tutorialPanel")).toBeHidden();

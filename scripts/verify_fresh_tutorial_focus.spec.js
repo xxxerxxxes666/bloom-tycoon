@@ -445,6 +445,11 @@ test("Help preserves a selected flower that already belongs to its guided pair",
     await page.locator("#tutorialHelpBtn").tap();
     await expect(page.locator("#tutorialPanel")).toBeVisible();
     await expect(page.locator("#tutorialCopy")).toHaveText("Choose the other glowing flower.");
+    await expect(page.locator("body")).toHaveClass(/selected-guided-help/);
+    await expect(page.locator(`#${pair.destination.id}`)).toHaveClass(/guided-counterpart/);
+    expect(await page.locator(".tile.legal-target:not(.guided-counterpart)").evaluateAll((tiles) => (
+      tiles.every((tile) => Number.parseFloat(getComputedStyle(tile, "::after").opacity || "0") <= .25)
+    ))).toBe(true);
     await expect(page.locator("#board .tile.idle-hint")).toHaveCount(2);
     const duringHelp = await stateReport(page);
     expect(duringHelp.selectedIds).toEqual([pair.source.id]);
