@@ -590,7 +590,7 @@ def verify_source_hooks():
         "idleHintCells = new Set(returnHintCells)",
         "function retireInvalidSwapFeedback()",
         "const continuingRefusal = invalidSwapTimer !== null;",
-        "&& invalidSwapCells.size > 0\n        && Boolean($(\"tutorialPanel\")?.hidden);",
+        "const ordinaryRefusalReplay = replay\n        && (currentRound === 2 || currentRound === 3)\n        && invalidSwapCells.size > 0;",
         "retireInvalidSwapFeedback();\n      commitFinalHarvestForPair",
         "const ordinaryRefusalReplay = replay",
         "if (ordinaryRefusalReplay) {\n        retireInvalidSwapFeedback();",
