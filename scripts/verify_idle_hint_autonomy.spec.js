@@ -387,7 +387,7 @@ for (const round of [2, 3]) {
 
           await activateControl(page, "#tutorialHelpBtn", testCase.input);
           await expect(page.locator("#tutorialSkipBtn")).toBeFocused();
-          await expect(page.locator("#tutorialCopy")).toHaveText("Tap the other glowing flower.");
+          await expect(page.locator("#tutorialCopy")).toHaveText("Choose the other glowing flower.");
           if (
             (round === 2 && selectedEndpoint === "source" && testCase.label === "desktop-pointer")
             || (round === 3 && selectedEndpoint === "destination" && testCase.label === "mobile390-touch")

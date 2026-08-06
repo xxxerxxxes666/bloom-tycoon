@@ -15785,7 +15785,7 @@
         return finalHarvestCue(visibleFinalHarvest);
       }
       if ([2, 3].includes(plan.round) && selectedGuidedHintPair().length === 2) {
-        return "Tap the other glowing flower.";
+        return "Choose the other glowing flower.";
       }
       if (plan.round === 2 && hasMadeValidMove) {
         return "Finish the Moonlit Wreath.";
@@ -15823,7 +15823,7 @@
         return "Match the order flowers.";
       }
       if (plan.round === 1 && selectedMatchesHintedPair(hintedPairCells())) {
-        return "Tap the other glowing flower.";
+        return "Choose the other glowing flower.";
       }
       return "Swap the glowing flowers.";
     }

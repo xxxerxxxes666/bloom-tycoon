@@ -1141,7 +1141,7 @@ function assertSelectedFirstActionGuide(report, pair, selectedCell, label, optio
   if (options.focusDestination !== false) {
     expect(report.focusedCell, `${label} keyboard focus continues at destination`).toEqual(destination);
   }
-  expect(report.tutorialCopy, `${label} visible action copy`).toBe("Tap the other glowing flower.");
+  expect(report.tutorialCopy, `${label} visible action copy`).toBe("Choose the other glowing flower.");
   expect(report.instructionSurfaces, `${label} one instruction surface`).toBe(1);
   expect(report.visibleNonTileButtons, `${label} Skip remains sole action`).toEqual(["Skip"]);
   expect(report.sourceDisplay, `${label} source choreography retires`).toBe("none");

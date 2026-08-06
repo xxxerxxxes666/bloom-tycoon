@@ -444,6 +444,7 @@ test("Help preserves a selected flower that already belongs to its guided pair",
 
     await page.locator("#tutorialHelpBtn").tap();
     await expect(page.locator("#tutorialPanel")).toBeVisible();
+    await expect(page.locator("#tutorialCopy")).toHaveText("Choose the other glowing flower.");
     await expect(page.locator("#board .tile.idle-hint")).toHaveCount(2);
     const duringHelp = await stateReport(page);
     expect(duringHelp.selectedIds).toEqual([pair.source.id]);
