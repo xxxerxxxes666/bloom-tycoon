@@ -1,5 +1,12 @@
 # Codex Build Notes
 
+## 2026-08-06 - Valid swaps retire stale refusal authority
+
+- Player-visible correction: when a valid adjacent pair is committed during the bounded ordinary refusal response, the accepted move now atomically retires the old refusal timer, both red-X sockets, their accessible-name suffixes, and the saved refusal cue/hints before valid resolution begins. The valid harvest, Thorn result, Black Candle guide, final-harvest instruction, or settled receipt remains authoritative through the former refusal callback boundary.
+- Scope: repeated invalid attempts retain their existing free extension and return behavior. The correction changes no move cost, objective credit, board RNG, tutorial refusal, timer duration, focus model, save, economy, geometry, control, mechanic, round, or progression surface.
+- Permanent contract: `scripts/verify_ordinary_refusal_outcome.spec.js` now drives invalid-to-valid input after `160ms` in R2/R3 at desktop `1280x720` and exact mobile `390x844`, full/reduced motion, using keyboard/pointer/touch. It requires immediate retirement of old visual and semantic refusal state, one valid move spend, one roving/focus owner, no stale callback mutation after `1.3s`, stable reload, 64 tiles/eight rows, exact `600px`/`378px` altars, loaded settled imagery, no overflow, and clean console/page/request gates.
+- Local evidence: the strengthened rapid matrix passes `8/8`; the neighboring rapid-owner tests pass `3/3`; guided invalid/cancel/touch/reduced drag passes `1/1`; and idle-autonomy passes `8/8`. Static project/HTML, inline JavaScript and spec syntax, diff, and changed-line security gates are required before release.
+
 ## 2026-08-05 - Ordinary refused swaps state the result
 
 - Player-visible result: an ordinary post-onboarding invalid swap in active Round 2 or Round 3 now keeps the existing two-socket red-X response and adds the concise board cue `No bloom — no match.` The existing `firstSwapCue` is the sole polite narrator for that bounded refusal, then retires back into whichever ordinary objective guide is authoritative.

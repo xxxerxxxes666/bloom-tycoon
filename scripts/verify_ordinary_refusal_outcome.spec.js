@@ -92,6 +92,47 @@ async function findInvalidAdjacentPair(page) {
   });
 }
 
+async function findLegalAdjacentPair(page, excluded = []) {
+  return page.evaluate((excludedPairs) => {
+    const excludedKeys = new Set(excludedPairs.map((pair) => pair
+      .map((cell) => `${cell.x},${cell.y}`)
+      .sort()
+      .join("|")));
+    const board = Array.from({ length: 8 }, () => Array(8).fill(-1));
+    document.querySelectorAll("#board .tile").forEach((tile) => {
+      board[Number(tile.dataset.y)][Number(tile.dataset.x)] = Number(tile.dataset.flowerId);
+    });
+    const endpointMatches = (next, x, y) => {
+      const value = next[y][x];
+      let horizontal = 1;
+      let vertical = 1;
+      for (let step = x - 1; step >= 0 && next[y][step] === value; step -= 1) horizontal += 1;
+      for (let step = x + 1; step < 8 && next[y][step] === value; step += 1) horizontal += 1;
+      for (let step = y - 1; step >= 0 && next[step][x] === value; step -= 1) vertical += 1;
+      for (let step = y + 1; step < 8 && next[step][x] === value; step += 1) vertical += 1;
+      return horizontal >= 3 || vertical >= 3;
+    };
+    for (let y = 0; y < 8; y += 1) {
+      for (let x = 0; x < 8; x += 1) {
+        for (const [dx, dy] of [[1, 0], [0, 1]]) {
+          const nx = x + dx;
+          const ny = y + dy;
+          if (nx >= 8 || ny >= 8 || board[y][x] === board[ny][nx]) continue;
+          const pair = [{ x, y }, { x: nx, y: ny }];
+          const pairKey = pair.map((cell) => `${cell.x},${cell.y}`).sort().join("|");
+          if (excludedKeys.has(pairKey)) continue;
+          const next = board.map((row) => row.slice());
+          [next[y][x], next[ny][nx]] = [next[ny][nx], next[y][x]];
+          if (endpointMatches(next, x, y) || endpointMatches(next, nx, ny)) {
+            return pair;
+          }
+        }
+      }
+    }
+    return null;
+  }, excluded);
+}
+
 async function establishOrdinaryAgency(page) {
   await page.waitForTimeout(800);
   if (await page.locator("#tutorialPanel").isVisible()) {
@@ -206,7 +247,11 @@ for (const config of VIEWPORTS) {
         if (["warning", "error"].includes(message.type())) errors.push(message.text());
       });
       page.on("pageerror", (error) => errors.push(error.message));
-      page.on("requestfailed", (request) => errors.push(`${request.url()} ${request.failure()?.errorText || ""}`));
+      page.on("requestfailed", (request) => {
+        const errorText = request.failure()?.errorText || "";
+        // Board renders replace tile image nodes; only failures that survive that expected cancellation are defects.
+        if (errorText !== "net::ERR_ABORTED") errors.push(`${request.url()} ${errorText}`);
+      });
 
       try {
         await openOrdinaryRound(page, round, `${config.label}-r${round}`);
@@ -267,14 +312,56 @@ for (const config of VIEWPORTS) {
         expect(recovered.focusedId).toBe(sourceId);
         expect(recovered.rovingIds).toEqual([sourceId]);
 
+        const legalPair = await findLegalAdjacentPair(page, [pair]);
+        expect(legalPair, `${config.label} R${round} has a valid recovery pair`).toBeTruthy();
         await activatePair(page, pair, config.input);
         await expect(page.locator("#board .tile.invalid-swap")).toHaveCount(2);
+        await page.waitForTimeout(160);
+        await activatePair(page, legalPair, config.input);
+        await expect(page.locator("#board .tile.invalid-swap")).toHaveCount(0);
+        await expect(page.locator("#board .tile[aria-label*='invalid swap refused']")).toHaveCount(0);
+        await expect(page.locator("#firstSwapCue")).not.toHaveClass(/swap-refused/);
+        await expect.poll(async () => (await stateReport(page)).moves).toBe(before.moves - 1);
+        const accepted = await stateReport(page);
+        expect(accepted.cue).not.toBe(REFUSAL_COPY);
+        expect(accepted.focusedId).toBe(accepted.rovingIds[0]);
+        expect(accepted.rovingIds).toHaveLength(1);
+        expect(accepted.tileCount).toBe(64);
+        expect(accepted.rows).toBe(8);
+        await page.waitForTimeout(1300);
+        const pastRefusalBoundary = await stateReport(page);
+        expect(pastRefusalBoundary.moves).toBe(before.moves - 1);
+        expect(pastRefusalBoundary.invalidIds).toEqual([]);
+        expect(pastRefusalBoundary.invalidLabels).toEqual([]);
+        expect(pastRefusalBoundary.cue).not.toBe(REFUSAL_COPY);
+        expect(pastRefusalBoundary.focusedId).toBe(pastRefusalBoundary.rovingIds[0]);
+        expect(pastRefusalBoundary.rovingIds).toHaveLength(1);
+        expect(pastRefusalBoundary.tileCount).toBe(64);
+        expect(pastRefusalBoundary.rows).toBe(8);
+        expect(pastRefusalBoundary.overflowX).toBe(false);
+        expect(pastRefusalBoundary.brokenImages).toEqual([]);
+        if (config.label === "mobile390" && round === 2) {
+          await page.screenshot({ path: "work/rapid-invalid-valid-mobile390-r2.png", fullPage: true });
+        }
+        if (config.label === "desktop" && round === 3) {
+          await page.screenshot({ path: "work/rapid-invalid-valid-desktop-r3.png", fullPage: true });
+        }
+        await page.waitForFunction(() => Array.from(document.images).every((image) => {
+          const rect = image.getBoundingClientRect();
+          const style = getComputedStyle(image);
+          const visible = style.display !== "none"
+            && style.visibility !== "hidden"
+            && rect.width > 0
+            && rect.height > 0;
+          return !visible || (image.complete && image.naturalWidth > 0);
+        }));
+
         await page.reload({ waitUntil: "networkidle" });
         await expect(page.locator("#board .tile")).toHaveCount(64);
         const reloaded = await stateReport(page);
-        expect(reloaded.moves).toBe(before.moves);
-        expect(reloaded.counts).toEqual(before.counts);
-        expect(reloaded.board).toBe(before.board);
+        expect(reloaded.moves).toBe(before.moves - 1);
+        expect(reloaded.counts).toEqual(pastRefusalBoundary.counts);
+        expect(reloaded.board).toBe(pastRefusalBoundary.board);
         expect(reloaded.invalidIds).toEqual([]);
         expect(reloaded.liveOwners.some((owner) => owner.text === REFUSAL_COPY)).toBe(false);
         expect(reloaded.tileCount).toBe(64);

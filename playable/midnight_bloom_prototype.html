@@ -13467,6 +13467,25 @@
       }, INVALID_SWAP_FEEDBACK_MS);
     }
 
+    function retireInvalidSwapForAcceptedMove() {
+      if (!invalidSwapTimer && invalidSwapCells.size === 0) {
+        return;
+      }
+      if (invalidSwapTimer && window.clearTimeout) {
+        window.clearTimeout(invalidSwapTimer);
+      }
+      invalidSwapTimer = null;
+      invalidSwapCells.clear();
+      const cue = $("firstSwapCue");
+      if (cue) {
+        cue.classList.remove("swap-refused");
+        cue.textContent = invalidSwapReturnCue;
+      }
+      invalidSwapReturnCue = "";
+      invalidSwapReturnHintCells.clear();
+      invalidSwapReturnSelection = null;
+    }
+
     function tileForCell(x, y) {
       return document.querySelector(`#board .tile[data-x="${x}"][data-y="${y}"]`);
     }
@@ -16395,6 +16414,7 @@
         );
         return;
       }
+      retireInvalidSwapForAcceptedMove();
       commitFinalHarvestForPair([selected, target]);
       const roundOnePlanBeforeSwap = activeRoundPlan();
       const roundOneFirstTargetBeforeSwap = roundOnePlanBeforeSwap.targets[0];
