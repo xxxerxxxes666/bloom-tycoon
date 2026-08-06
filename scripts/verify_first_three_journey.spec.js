@@ -3474,6 +3474,7 @@ test("current-v2 and legacy owned profiles preserve every valid wallet without r
 test("owned replay receipt remains fully readable at the active-board handoff", async ({ browser }) => {
   for (const config of [
     { label: "desktop", viewport: { width: 1280, height: 720 }, mobile: false },
+    { label: "desktop-reduced", viewport: { width: 1280, height: 720 }, mobile: false, reducedMotion: true },
     { label: "mobile390", viewport: { width: 390, height: 844 }, mobile: true },
     { label: "mobile390-reduced", viewport: { width: 390, height: 844 }, mobile: true, reducedMotion: true }
   ]) {
@@ -3521,7 +3522,12 @@ test("owned replay receipt remains fully readable at the active-board handoff", 
         }, { key: SAVE_KEY, retainedBalance });
         await page.reload({ waitUntil: "load" });
         await expect(page.locator("#roundOneRestoration button:not([hidden])")).toBeVisible();
-        await spendPrimaryCeremonyAction(page, config.mobile ? "touch" : "pointer");
+        const playAgain = page.getByRole("button", { name: "Play Again → First Bouquet", exact: true });
+        if (config.mobile) {
+          await playAgain.tap();
+        } else {
+          await playAgain.click();
+        }
         await page.waitForFunction(() => document.body.classList.contains("owned-replay-entry"));
 
         const handoff = await journeyState(page);
@@ -3540,12 +3546,49 @@ test("owned replay receipt remains fully readable at the active-board handoff", 
         expect(handoff.overflowX, `${config.label} no horizontal overflow`).toBe(false);
         expect(handoff.boardBottom, `${config.label} board stays in viewport`).toBeLessThanOrEqual(config.viewport.height);
         expect(handoff.brokenImages, `${config.label} no broken visible images`).toEqual([]);
+
+        await page.waitForTimeout(1700);
+        const sustainedHandoff = await journeyState(page);
+        expect(sustainedHandoff.replayEntryActive, `${config.label} ${retainedBalance} receipt lasts through 1.7s`).toBe(true);
+        expect(sustainedHandoff.replayEntryReceipt, `${config.label} ${retainedBalance} sustained receipt`)
+          .toBe(`${retainedBalance} coins kept · Conservatory owned · New order ready.`);
+        expect(sustainedHandoff.activeElementId, `${config.label} ${retainedBalance} sustained board focus`).toBe("tile-1-0");
+        expect(sustainedHandoff.rovingTileIds, `${config.label} ${retainedBalance} sustained roving owner`)
+          .toEqual(["tile-1-0"]);
+        expect(sustainedHandoff.selectedTileCount, `${config.label} ${retainedBalance} sustained selection`).toBe(0);
         await page.screenshot({
           path: `work/replay-receipt-${config.label}-${retainedBalance}.png`,
           fullPage: true
         });
 
-        await reloadAndExpectActiveReplayBalance(page, config, retainedBalance);
+        if (retainedBalance === 50) {
+          const pair = await page.locator("#board .tile.idle-hint").evaluateAll((tiles) => (
+            tiles.map((tile) => tile.id)
+          ));
+          expect(pair, `${config.label} opening guide remains available during receipt`).toEqual(["tile-1-0", "tile-1-1"]);
+          if (config.mobile) {
+            await page.locator("#tile-1-0").tap();
+            await page.locator("#tile-1-1").tap();
+          } else {
+            await page.locator("#tile-1-0").press("Enter");
+            await page.locator("#tile-1-1").press("Space");
+          }
+          await expect.poll(async () => (await journeyState(page)).moves).toBe(5);
+          const retired = await journeyState(page);
+          expect(retired.replayEntryActive, `${config.label} opening swap retires receipt`).toBe(false);
+          expect(retired.selectedTileCount, `${config.label} opening swap commits once`).toBe(0);
+          expect(retired.activeElementId, `${config.label} committed destination keeps focus`).toBe("tile-1-1");
+          expect(retired.rovingTileIds, `${config.label} committed destination owns roving focus`).toEqual(["tile-1-1"]);
+          expect(retired.tiles, `${config.label} committed tile count`).toBe(64);
+          expect(retired.tileRows, `${config.label} committed row count`).toBe(8);
+        }
+
+        await reloadAndExpectActiveReplayBalance(
+          page,
+          config,
+          retainedBalance,
+          retainedBalance === 50 ? 0 : 2
+        );
       }
 
       expect(consoleMessages).toEqual([]);

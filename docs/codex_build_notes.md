@@ -1,5 +1,11 @@
 # Codex Build Notes
 
+## 2026-08-05 - Owned replay entry is an atomic Play Again handoff
+
+- Player-visible result: the existing `Play Again -> First Bouquet` action now establishes and renders its bounded `coins kept · Conservatory owned · New order ready` acknowledgment inside one transition. The board still opens immediately with the authored pair and source focus; the existing 2.2-second timeout then yields to the steady owned-order HUD.
+- Interruption authority: a real opening swap retires the acknowledgment and commits exactly once. Reload during the acknowledgment and reload after retirement remain quiet because the transient is not saved; wallet, board, objectives, ownership, and focus remain authoritative.
+- Permanent contract: desktop `1280x720` and exact mobile `390x844`, full and reduced motion, cover retained wallets of `50` and `7820`, immediate and 1.7-second receipt samples, opening Enter/Space or touch continuation, two reloads, 64 tiles/eight rows, 600px/378px altars, focus/roving agreement, overflow, images, and browser logs.
+
 ## 2026-08-06 preserved owned wallets during Conservatory nourishment
 
 - Player-visible correction: a fully owned Bloodroot Conservatory still diverts each `120`/`150`/`180` replay reward into nourishment, but the authoritative pre-completion wallet is now retained exactly. Receipts are dynamic (`Reward reinvested · 120 coins nourished the Conservatory · 7820 coins kept.`), and load, ceremony settlement, Next Order/Play Again, Retry, and interrupted presentation no longer confiscate valid current-v2 or legacy balances. The first ownership trace remains `0 -> 120 -> 20 -> 170 -> 50 -> 230 -> 50`; owned cycles begun at 50 remain 50.

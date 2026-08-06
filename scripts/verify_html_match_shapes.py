@@ -493,6 +493,7 @@ def verify_source_hooks():
         "Begin a new growing cycle with your balance intact.",
         "function startOwnedReplayEntryAcknowledgment",
         "${balance} coins kept · Conservatory owned · New order ready.",
+        "ownedReplayEntryActive = true;\n      render();\n      restoredGreenhouseHandoffTimer",
         "body.owned-replay-entry .next-order-cue",
         "body.owned-replay-entry .bouquet-reward-promise",
         "body.owned-replay-entry.round-one-active:not(.round-one-complete):not(.first-move-made) .tutorial-command-region > .first-swap-cue",

@@ -18790,6 +18790,7 @@
         $("bouquetRewardPromise").textContent = `${balance} coins kept · Conservatory owned · New order ready.`;
       }
       ownedReplayEntryActive = true;
+      render();
       restoredGreenhouseHandoffTimer = window.setTimeout(() => {
         finishRestoredGreenhouseHandoff();
         render();
@@ -19385,7 +19386,6 @@
         $("firstSwapCue").textContent = roundStartCueText(plan, firstMove);
       }
       startOwnedReplayEntryAcknowledgment(coins);
-      render();
       focusRestoredNextOrderViewport();
       playBloomSound("handoff");
     }
