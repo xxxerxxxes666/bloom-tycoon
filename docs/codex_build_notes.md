@@ -1,5 +1,12 @@
 # Codex Build Notes
 
+## 2026-08-06 - Ordinary idle guidance survives Help
+
+- Player-visible correction: selecting either endpoint of the existing objective-useful quiet-window pair in ordinary post-onboarding Round 2 or Round 3 now keeps that exact legal pair authoritative through Help and Skip. One activation of the counterpart then commits the intended match once, spends one move, and earns real order progress instead of abandoning the continuation.
+- Authority boundary: preservation requires the selected cell to belong to the exact two-cell pair returned by the current objective-useful move calculation. Help replay may retain that pair while it owns narration; unrelated selections still retire under the previously accepted cleanup. Authored Round 1, Cursed Thorn, Black Candle, refusal, recovery, and timer-generation priorities are unchanged. Keyboard-invoked Help returns DOM focus to Help while the selected endpoint remains the sole roving board entry; pointer/touch return directly to that endpoint.
+- Permanent contract: `scripts/verify_idle_hint_autonomy.spec.js` adds source-first and destination-first R2/R3 cases across desktop `1280x720`, exact mobile `390x844`, full/reduced motion, and pointer/keyboard/touch. It requires exact pair/selection/board stability through Help, `tutorialPanel` as sole live owner, one real `8 -> 7` commit with objective credit, focus/roving continuity, 64 tiles/eight rows, exact `600px`/`378px` altars, loaded imagery, no overflow, and clean browser logs. The static HTML verifier locks the objective-useful replay predicate and selected-endpoint return priority.
+- Local evidence: the new matrix passes `16/16` across R2/R3 and both endpoints. The accepted unrelated-selection matrix remains `8/8`, and the neighboring authored post-opening continuation matrix remains `12/12`. Project/HTML verification, changed JavaScript/spec syntax, diff check, and changed-line credential/tracker/network scan are required before release.
+
 ## 2026-08-06 - Unguided Help retires stale board selection
 
 - Player-visible correction: opening Help during ordinary post-move Round 2 or Round 3 now retires an unrelated selected flower when the replay has no authoritative pair. Help opens with focused Skip and zero selected state; after Skip, the first board activation selects a fresh source without spending a move or accidentally attempting the second half of the pre-Help swap.

@@ -14,12 +14,12 @@ const CASES = [
 
 test.setTimeout(180000);
 
-async function openRoundThreeAutonomy(page, label) {
-  await page.goto(`${BASE_URL}?idle-hint-autonomy=${label}`, { waitUntil: "networkidle" });
+async function openOrdinaryRoundAutonomy(page, label, round = 3) {
+  await page.goto(`${BASE_URL}?idle-hint-autonomy=${label}-r${round}`, { waitUntil: "networkidle" });
   await page.evaluate((key) => localStorage.removeItem(key), SAVE_KEY);
   await page.reload({ waitUntil: "networkidle" });
   await expect(page.locator(".tile")).toHaveCount(64);
-  await page.evaluate((key) => {
+  await page.evaluate(({ key, round }) => {
     const state = JSON.parse(localStorage.getItem(key) || "{}");
     const board = Array.from({ length: 8 }, (_, y) => (
       Array.from({ length: 8 }, (_, x) => (x + y * 2) % 6)
@@ -38,10 +38,10 @@ async function openRoundThreeAutonomy(page, label) {
       armedLineRelic: null,
       moves: 8,
       coins: 50,
-      counts: [0, 0, 0, 0, 0, 0],
+      counts: round === 2 ? [0, 0, 3, 0, 0, 0] : [0, 0, 0, 0, 0, 0],
       cursedThorns: [],
-      clearedCursedThorns: 0,
-      currentRound: 3,
+      clearedCursedThorns: round === 2 ? 3 : 0,
+      currentRound: round,
       roundComplete: false,
       roundOneRestored: true,
       roundTwoGreenhouseUpgraded: true,
@@ -53,9 +53,13 @@ async function openRoundThreeAutonomy(page, label) {
       blackCandleLessonComplete: true
     });
     localStorage.setItem(key, JSON.stringify(state));
-  }, SAVE_KEY);
+  }, { key: SAVE_KEY, round });
   await page.reload({ waitUntil: "networkidle" });
   await expect(page.locator(".tile")).toHaveCount(64);
+}
+
+async function openRoundThreeAutonomy(page, label) {
+  await openOrdinaryRoundAutonomy(page, label, 3);
 }
 
 async function openUntouchedRoundThree(page, label) {
@@ -124,11 +128,15 @@ async function autonomyReport(page) {
       })),
       invalidTiles: tiles.filter((tile) => tile.classList.contains("invalid-swap")).length,
       selectedTiles: tiles.filter((tile) => tile.classList.contains("sel")).length,
+      selectedIds: tiles.filter((tile) => tile.classList.contains("sel")).map((tile) => tile.id),
       disabledTiles: tiles.filter((tile) => tile.disabled).length,
       activeElementId: document.activeElement?.id || "",
       rovingTileIds: tiles.filter((tile) => tile.tabIndex === 0).map((tile) => tile.id),
       tutorialVisible: visible(document.querySelector("#tutorialPanel")),
       helpVisible: visible(document.querySelector("#tutorialHelpBtn")),
+      liveOwners: Array.from(document.querySelectorAll("[aria-live]"))
+        .filter((node) => visible(node) && node.getAttribute("aria-live") !== "off")
+        .map((node) => node.id),
       tiles: tiles.length,
       rows: new Set(tiles.map((tile) => tile.dataset.y)).size,
       completeRows: new Set(tiles
@@ -145,6 +153,8 @@ async function autonomyReport(page) {
       thornTeaching: document.querySelectorAll(".tile.thorn-teach, .tile.thorn-teach-blocker").length,
       relicGuidance: document.querySelectorAll(".tile.line-relic-lane-preview, .tile.line-relic-destination").length,
       overflowX: document.documentElement.scrollWidth > innerWidth + 1,
+      overflowY: document.documentElement.scrollHeight > innerHeight + 1,
+      boardWidth: document.querySelector("#board")?.getBoundingClientRect().width || 0,
       brokenImages: Array.from(document.images)
         .filter((image) => visible(image) && image.complete && image.naturalWidth === 0)
         .map((image) => image.getAttribute("src"))
@@ -243,6 +253,30 @@ async function activatePair(page, pair, input) {
   await tileAt(pair[1]).click();
 }
 
+async function activateTile(page, cell, input, key = "Enter") {
+  const tile = page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`);
+  if (input === "touch") {
+    await tile.tap();
+  } else if (input === "keyboard") {
+    await tile.focus();
+    await page.keyboard.press(key);
+  } else {
+    await tile.click();
+  }
+}
+
+async function activateControl(page, selector, input, key = "Enter") {
+  const control = page.locator(selector);
+  if (input === "touch") {
+    await control.tap();
+  } else if (input === "keyboard") {
+    await control.focus();
+    await page.keyboard.press(key);
+  } else {
+    await control.click();
+  }
+}
+
 async function cancelBoardInput(page, pair, testCase) {
   const tile = page.locator(`.tile[data-x="${pair[0].x}"][data-y="${pair[0].y}"]`);
   if (testCase.input === "keyboard") {
@@ -294,6 +328,113 @@ async function cancelBoardInput(page, pair, testCase) {
   await page.mouse.move(point.x + 30, point.y, { steps: 3 });
   await page.dispatchEvent("#board", "pointercancel", { pointerId: 1 });
   await page.mouse.up();
+}
+
+for (const round of [2, 3]) {
+  for (const testCase of CASES) {
+    for (const selectedEndpoint of ["source", "destination"]) {
+      test(`ordinary R${round} idle Help preserves ${selectedEndpoint} on ${testCase.label}`, async ({ browser }) => {
+        const context = await browser.newContext({
+          viewport: testCase.viewport,
+          hasTouch: Boolean(testCase.mobile),
+          isMobile: Boolean(testCase.mobile),
+          reducedMotion: testCase.reduced ? "reduce" : "no-preference"
+        });
+        const page = await context.newPage();
+        const browserErrors = [];
+        page.on("console", (message) => {
+          if (["warning", "error"].includes(message.type())) browserErrors.push(message.text());
+        });
+        page.on("pageerror", (error) => browserErrors.push(error.message));
+
+        try {
+          await openOrdinaryRoundAutonomy(
+            page,
+            `${testCase.label}-${selectedEndpoint}`,
+            round
+          );
+          const initialFocus = (await autonomyReport(page)).activeElementId;
+          const hint = await waitForAutonomyHint(
+            page,
+            `${testCase.label} R${round} ${selectedEndpoint}`,
+            initialFocus
+          );
+          const pair = hint.usefulness.pair;
+          const selectedCell = selectedEndpoint === "source" ? pair[0] : pair[1];
+          const counterpart = selectedEndpoint === "source" ? pair[1] : pair[0];
+          const pairIds = pair.map((cell) => `tile-${cell.x}-${cell.y}`).sort();
+          const selectedId = `tile-${selectedCell.x}-${selectedCell.y}`;
+          const before = hint.report.state;
+
+          await activateTile(page, selectedCell, testCase.input);
+          await expect(page.locator(`#${selectedId}`)).toHaveClass(/sel/);
+          await expect(page.locator(".tile.idle-hint")).toHaveCount(2);
+          let report = await autonomyReport(page);
+          expect(report.hints.map((cell) => `tile-${cell.x}-${cell.y}`).sort()).toEqual(pairIds);
+          expect(report.selectedIds).toEqual([selectedId]);
+          expect(report.activeElementId).toBe(selectedId);
+          expect(report.rovingTileIds).toEqual([selectedId]);
+          expect(report.state.moves).toBe(before.moves);
+          expect(report.state.counts).toEqual(before.counts);
+          expect(report.state.board).toEqual(before.board);
+
+          await activateControl(page, "#tutorialHelpBtn", testCase.input);
+          await expect(page.locator("#tutorialSkipBtn")).toBeFocused();
+          report = await autonomyReport(page);
+          expect(report.tutorialVisible).toBe(true);
+          expect(report.liveOwners).toEqual(["tutorialPanel"]);
+          expect(report.hints.map((cell) => `tile-${cell.x}-${cell.y}`).sort()).toEqual(pairIds);
+          expect(report.selectedIds).toEqual([selectedId]);
+          expect(report.rovingTileIds).toEqual([selectedId]);
+          expect(report.state.moves).toBe(before.moves);
+          expect(report.state.counts).toEqual(before.counts);
+          expect(report.state.board).toEqual(before.board);
+
+          await activateControl(page, "#tutorialSkipBtn", testCase.input, testCase.dismissKey);
+          await expect(page.locator("#tutorialPanel")).toBeHidden();
+          const expectedDismissFocus = testCase.input === "keyboard"
+            ? "tutorialHelpBtn"
+            : selectedId;
+          await expect(page.locator(`#${expectedDismissFocus}`)).toBeFocused();
+          report = await autonomyReport(page);
+          expect(report.hints.map((cell) => `tile-${cell.x}-${cell.y}`).sort()).toEqual(pairIds);
+          expect(report.selectedIds).toEqual([selectedId]);
+          expect(report.activeElementId).toBe(expectedDismissFocus);
+          expect(report.rovingTileIds).toEqual([selectedId]);
+          expect(report.state.moves).toBe(before.moves);
+          expect(report.state.counts).toEqual(before.counts);
+          expect(report.state.board).toEqual(before.board);
+
+          await activateTile(page, counterpart, testCase.input, "Space");
+          await page.waitForFunction(({ key, moves }) => {
+            const state = JSON.parse(localStorage.getItem(key) || "{}");
+            return state.moves === moves - 1
+              && document.querySelector("#board")?.getAttribute("aria-busy") === "false";
+          }, { key: SAVE_KEY, moves: before.moves }, { timeout: 12000 });
+          const settled = await autonomyReport(page);
+          expect(settled.state.moves).toBe(before.moves - 1);
+          expect(settled.state.counts.reduce((sum, count) => sum + count, 0))
+            .toBeGreaterThan(before.counts.reduce((sum, count) => sum + count, 0));
+          expect(settled.selectedIds).toEqual([]);
+          expect(settled.activeElementId).toMatch(/^tile-/);
+          expect(settled.rovingTileIds).toEqual([settled.activeElementId]);
+          expect(settled.tiles).toBe(64);
+          expect(settled.rows).toBe(8);
+          expect(settled.completeRows).toBe(8);
+          expect(settled.disabledTiles).toBe(0);
+          expect(settled.boardWidth).toBeCloseTo(testCase.mobile ? 378 : 600, 1);
+          expect(settled.overflowX).toBe(false);
+          expect(settled.overflowY).toBe(false);
+          expect(settled.brokenImages).toEqual([]);
+          await page.waitForTimeout(350);
+          expect((await autonomyReport(page)).state.moves).toBe(before.moves - 1);
+          expect(browserErrors).toEqual([]);
+        } finally {
+          await context.close();
+        }
+      });
+    }
+  }
 }
 
 for (const testCase of CASES) {

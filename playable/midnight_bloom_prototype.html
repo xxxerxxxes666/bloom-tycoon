@@ -12930,6 +12930,37 @@
       }, hintDelay);
     }
 
+    function isObjectiveUsefulIdleHintPair(hintCells, cell, plan = activeRoundPlan()) {
+      const ordinaryReplayAuthority = tutorialActive && tutorialReplayOwnsNarration;
+      if (
+        !hintCells
+        || typeof hintCells.has !== "function"
+        || hintCells.size !== 2
+        || !cell
+        || !hintCells.has(`${cell.x},${cell.y}`)
+        || plan.round < 2
+        || plan.round > 3
+        || !hasMadeValidMove
+        || roundComplete
+        || isBouquetFailed(plan)
+        || (!isPostOnboardingIdleHintActive(plan) && !ordinaryReplayAuthority)
+        || restoredGreenhouseHandoff
+        || isAuthoritativeRoundTwoThornLesson(plan)
+        || isArmedLineRelicGuidanceActive()
+        || postRecoveryGuideActive
+        || altarReweaveActive
+      ) {
+        return false;
+      }
+      const hintedPair = [...hintCells].map((key) => cellFromKey(key)).filter(Boolean);
+      const usefulPair = objectiveUsefulIdleMove(plan)?.pair || [];
+      return hintedPair.length === 2
+        && usefulPair.length === 2
+        && isAdjacentPair(hintedPair[0], hintedPair[1])
+        && isLegalSwap(hintedPair[0], hintedPair[1])
+        && usefulPair.every((hinted) => hintCells.has(`${hinted.x},${hinted.y}`));
+    }
+
     function shouldPreserveSelectedHintPair(hintCells, cell) {
       return hintCells && typeof hintCells.has === "function"
         && hintCells.size === 2
@@ -12952,6 +12983,7 @@
               || isRestoredNextOrderFocus()
               || isArmedLineRelicGuidanceActive()
               || postRecoveryGuideActive
+              || isObjectiveUsefulIdleHintPair(hintCells, cell)
             )
           )
         );
@@ -15939,8 +15971,12 @@
         clearBlackCandleActivationPresentation();
       }
       const selectedReplayHintPair = selectedGuidedHintPair();
+      const selectedReplayFocus = selected && selectedReplayHintPair.find((cell) => (
+        cell.x === selected.x && cell.y === selected.y
+      ));
       const guidedFocusCell = lineRelicGuidance()?.source
         || currentTutorialBoardGuidePair()?.source
+        || selectedReplayFocus
         || firstHintFocusCell()
         || null;
       const skippingThornLesson = isAuthoritativeRoundTwoThornLesson();
