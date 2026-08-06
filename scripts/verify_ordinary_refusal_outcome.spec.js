@@ -4,6 +4,17 @@ const BASE_URL = process.env.BLOOM_TEST_URL
   || "http://127.0.0.1:4173/playable/midnight_bloom_prototype.html";
 const SAVE_KEY = "bloomTycoonPlayableStateV1";
 const REFUSAL_COPY = "No bloom \u2014 no match.";
+const INVALID_SWAP_FEEDBACK_MS = 1120;
+const ORDINARY_REFUSAL_BOARD = [
+  [3, 0, 4, 4, 0, 3, 3, 0],
+  [2, 0, 0, 2, 3, 4, 0, 2],
+  [4, 2, 0, 0, 2, 3, 4, 0],
+  [1, 2, 1, 1, 3, 5, 4, 1],
+  [0, 4, 2, 4, 0, 2, 3, 3],
+  [2, 3, 4, 3, 3, 4, 0, 4],
+  [3, 4, 2, 2, 0, 2, 4, 3],
+  [4, 2, 2, 4, 3, 3, 0, 3]
+];
 
 const VIEWPORTS = [
   { label: "desktop", viewport: { width: 1280, height: 720 }, input: "keyboard" },
@@ -22,6 +33,16 @@ function intersects(first, second) {
 }
 
 async function openOrdinaryRound(page, round, label) {
+  await page.addInitScript((seedLabel) => {
+    let seed = 0;
+    for (let index = 0; index < seedLabel.length; index += 1) {
+      seed = (seed * 31 + seedLabel.charCodeAt(index)) >>> 0;
+    }
+    Math.random = () => {
+      seed = (1664525 * seed + 1013904223) >>> 0;
+      return seed / 4294967296;
+    };
+  }, label);
   await page.addInitScript(({ key, marker }) => {
     if (!sessionStorage.getItem(marker)) {
       localStorage.removeItem(key);
@@ -32,6 +53,7 @@ async function openOrdinaryRound(page, round, label) {
   await expect(page.locator("#board .tile")).toHaveCount(64);
   const state = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}"), SAVE_KEY);
   Object.assign(state, {
+    board: ORDINARY_REFUSAL_BOARD,
     currentRound: round,
     roundComplete: false,
     moves: round === 2 ? 8 : 7,
@@ -160,18 +182,24 @@ async function activatePair(page, pair, input) {
   if (input === "keyboard") {
     await source.focus();
     await page.keyboard.press("Enter");
+    await expect(source).toHaveClass(/\b(sel|selected)\b/);
     await destination.focus();
     await page.keyboard.press("Space");
     return;
   }
   if (input === "touch") {
-    for (const tile of [source, destination]) {
-      const box = await tile.boundingBox();
-      await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
-    }
+    const sourceBox = await source.boundingBox();
+    await page.touchscreen.tap(sourceBox.x + sourceBox.width / 2, sourceBox.y + sourceBox.height / 2);
+    await expect(source).toHaveClass(/\b(sel|selected)\b/);
+    const destinationBox = await destination.boundingBox();
+    await page.touchscreen.tap(
+      destinationBox.x + destinationBox.width / 2,
+      destinationBox.y + destinationBox.height / 2
+    );
     return;
   }
   await source.click();
+  await expect(source).toHaveClass(/\b(sel|selected)\b/);
   await destination.click();
 }
 
@@ -188,6 +216,52 @@ async function activateControl(page, selector, input) {
     return;
   }
   await control.click();
+}
+
+async function gateInvalidSwapCallbackAtBoundary(page) {
+  await page.addInitScript(({ refusalDuration }) => {
+    const nativeSetTimeout = window.setTimeout.bind(window);
+    window.__ordinaryRefusalBoundary = {
+      callback: null,
+      callbackCompleted: false,
+      deliveredAt: 0,
+      reached: false,
+      releasedAt: 0,
+      scheduledAt: 0
+    };
+    window.setTimeout = (callback, delay, ...args) => {
+      const boundary = window.__ordinaryRefusalBoundary;
+      if (delay !== refusalDuration || boundary.scheduledAt) {
+        return nativeSetTimeout(callback, delay, ...args);
+      }
+      boundary.scheduledAt = performance.now();
+      return nativeSetTimeout(() => {
+        boundary.deliveredAt = performance.now();
+        boundary.reached = true;
+        boundary.callback = () => {
+          try {
+            callback(...args);
+          } finally {
+            boundary.callbackCompleted = true;
+          }
+        };
+      }, delay);
+    };
+  }, { refusalDuration: INVALID_SWAP_FEEDBACK_MS });
+}
+
+async function releaseInvalidSwapCallback(page) {
+  return page.evaluate(() => {
+    const boundary = window.__ordinaryRefusalBoundary;
+    if (!boundary?.callback) {
+      return false;
+    }
+    const callback = boundary.callback;
+    boundary.callback = null;
+    boundary.releasedAt = performance.now();
+    callback();
+    return boundary.callbackCompleted;
+  });
 }
 
 async function stateReport(page) {
@@ -404,146 +478,168 @@ for (const config of VIEWPORTS) {
   }
 }
 
-for (const config of VIEWPORTS) {
-  for (const round of [2, 3]) {
-    test(`Help retires ordinary R${round} refusal on ${config.label}`, async ({ browser }) => {
-      const context = await browser.newContext({
-        viewport: config.viewport,
-        hasTouch: Boolean(config.mobile),
-        isMobile: Boolean(config.mobile),
-        reducedMotion: config.reduced ? "reduce" : "no-preference"
-      });
-      const page = await context.newPage();
-      const errors = [];
-      page.on("console", (message) => {
-        if (["warning", "error"].includes(message.type())) errors.push(message.text());
-      });
-      page.on("pageerror", (error) => errors.push(error.message));
-      page.on("requestfailed", (request) => {
-        const errorText = request.failure()?.errorText || "";
-        if (errorText !== "net::ERR_ABORTED") errors.push(`${request.url()} ${errorText}`);
-      });
-
-      try {
-        await openOrdinaryRound(page, round, `help-${config.label}-r${round}`);
-        await establishOrdinaryAgency(page);
-        const pair = await findInvalidAdjacentPair(page);
-        expect(pair, `${config.label} R${round} has an invalid adjacent pair for Help`).toBeTruthy();
-        const before = await stateReport(page);
-        await activatePair(page, pair, config.input);
-        await expect(page.locator("#board .tile.invalid-swap")).toHaveCount(2);
-        const refusalAtHelpActivation = await page.evaluate(() => {
-          const invalidTiles = Array.from(document.querySelectorAll("#board .tile.invalid-swap"));
-          const snapshot = {
-            cueRefused: document.querySelector("#firstSwapCue")?.classList.contains("swap-refused") || false,
-            invalidCount: invalidTiles.length,
-            invalidSuffixCount: invalidTiles.filter((tile) => (tile.getAttribute("aria-label") || "")
-              .includes("invalid swap refused")).length
-          };
-          document.querySelector("#tutorialHelpBtn").click();
-          return snapshot;
+for (const timing of [
+  { label: "", boundary: false },
+  { label: " at timer boundary", boundary: true }
+]) {
+  for (const config of VIEWPORTS) {
+    for (const round of [2, 3]) {
+      test(`Help retires ordinary R${round} refusal on ${config.label}${timing.label}`, async ({ browser }) => {
+        const context = await browser.newContext({
+          viewport: config.viewport,
+          hasTouch: Boolean(config.mobile),
+          isMobile: Boolean(config.mobile),
+          reducedMotion: config.reduced ? "reduce" : "no-preference"
         });
-        expect(refusalAtHelpActivation).toEqual({
-          cueRefused: true,
-          invalidCount: 2,
-          invalidSuffixCount: 2
+        const page = await context.newPage();
+        const errors = [];
+        page.on("console", (message) => {
+          if (["warning", "error"].includes(message.type())) errors.push(message.text());
         });
-        await expect(page.locator("#tutorialPanel")).toBeVisible();
-        await expect(page.locator("#tutorialSkipBtn")).toBeFocused();
-
-        const sourceId = `tile-${pair[0].x}-${pair[0].y}`;
-        const expectedCopy = round === 2
-          ? "Finish the Moonlit Wreath."
-          : "Complete Bloodroot Compact.";
-        const opened = await stateReport(page);
-        expect(opened.moves).toBe(before.moves);
-        expect(opened.counts).toEqual(before.counts);
-        expect(opened.board).toBe(before.board);
-        expect(opened.selected).toBe(0);
-        expect(opened.cueRefused).toBe(false);
-        expect(opened.invalidIds).toEqual([]);
-        expect(opened.invalidSuffixIds).toEqual([]);
-        expect(opened.tutorialCopy).toBe(expectedCopy);
-        expect(opened.tutorialIcon).toBe("✦");
-        expect(opened.tutorialClasses).not.toContain("refused-tutorial");
-        expect(opened.focusedId).toBe("tutorialSkipBtn");
-        expect(opened.rovingIds).toEqual([sourceId]);
-        expect(opened.liveOwners).toHaveLength(1);
-        expect(opened.liveOwners[0].id).toBe("tutorialPanel");
-        expect(opened.liveOwners[0].text).toContain(expectedCopy);
-        expect(opened.liveOwners[0].text).not.toContain("NO BLOOM");
-        expect(opened.tileCount).toBe(64);
-        expect(opened.rows).toBe(8);
-        expect(opened.boardRect.width).toBe(config.mobile ? 378 : 600);
-        expect(opened.boardRect.height).toBe(config.mobile ? 378 : 600);
-        expect(opened.scrollY).toBe(0);
-        expect(opened.overflowX).toBe(false);
-        expect(opened.overflowY).toBe(false);
-        expect(opened.brokenImages).toEqual([]);
-
-        await page.waitForTimeout(1300);
-        const pastBoundary = await stateReport(page);
-        expect({
-          moves: pastBoundary.moves,
-          counts: pastBoundary.counts,
-          board: pastBoundary.board,
-          selected: pastBoundary.selected,
-          tutorialCopy: pastBoundary.tutorialCopy,
-          tutorialIcon: pastBoundary.tutorialIcon,
-          tutorialClasses: pastBoundary.tutorialClasses,
-          cue: pastBoundary.cue,
-          cueRefused: pastBoundary.cueRefused,
-          hints: pastBoundary.hints,
-          invalidIds: pastBoundary.invalidIds,
-          invalidSuffixIds: pastBoundary.invalidSuffixIds,
-          focusedId: pastBoundary.focusedId,
-          rovingIds: pastBoundary.rovingIds
-        }).toEqual({
-          moves: opened.moves,
-          counts: opened.counts,
-          board: opened.board,
-          selected: opened.selected,
-          tutorialCopy: opened.tutorialCopy,
-          tutorialIcon: opened.tutorialIcon,
-          tutorialClasses: opened.tutorialClasses,
-          cue: opened.cue,
-          cueRefused: opened.cueRefused,
-          hints: opened.hints,
-          invalidIds: opened.invalidIds,
-          invalidSuffixIds: opened.invalidSuffixIds,
-          focusedId: opened.focusedId,
-          rovingIds: opened.rovingIds
+        page.on("pageerror", (error) => errors.push(error.message));
+        page.on("requestfailed", (request) => {
+          const errorText = request.failure()?.errorText || "";
+          if (errorText !== "net::ERR_ABORTED") errors.push(`${request.url()} ${errorText}`);
         });
 
-        if (config.label === "mobile390" && round === 2) {
-          await page.screenshot({ path: "work/help-retires-refusal-mobile390-r2.png", fullPage: true });
+        try {
+          if (timing.boundary) {
+            await gateInvalidSwapCallbackAtBoundary(page);
+          }
+          await openOrdinaryRound(page, round, `help-${config.label}-r${round}`);
+          await establishOrdinaryAgency(page);
+          const pair = await findInvalidAdjacentPair(page);
+          expect(pair, `${config.label} R${round} has an invalid adjacent pair for Help`).toBeTruthy();
+          const before = await stateReport(page);
+          await activatePair(page, pair, config.input);
+          await expect(page.locator("#board .tile.invalid-swap")).toHaveCount(2);
+          const refused = await stateReport(page);
+          expect(refused.cueRefused).toBe(true);
+          expect(refused.invalidIds).toHaveLength(2);
+          expect(refused.invalidSuffixIds).toHaveLength(2);
+          if (timing.boundary) {
+            await page.waitForFunction(() => window.__ordinaryRefusalBoundary?.reached, null, { timeout: 3000 });
+            const boundary = await page.evaluate(() => ({
+              callbackReady: typeof window.__ordinaryRefusalBoundary?.callback === "function",
+              deliveredAt: window.__ordinaryRefusalBoundary?.deliveredAt || 0,
+              scheduledAt: window.__ordinaryRefusalBoundary?.scheduledAt || 0
+            }));
+            expect(boundary.callbackReady).toBe(true);
+            expect(boundary.deliveredAt - boundary.scheduledAt).toBeGreaterThanOrEqual(
+              INVALID_SWAP_FEEDBACK_MS - 20
+            );
+            const atBoundary = await stateReport(page);
+            expect(atBoundary.cueRefused).toBe(true);
+            expect(atBoundary.invalidIds).toHaveLength(2);
+            expect(atBoundary.invalidSuffixIds).toHaveLength(2);
+          }
+          await activateControl(page, "#tutorialHelpBtn", config.input);
+          await expect(page.locator("#tutorialPanel")).toBeVisible();
+          await expect(page.locator("#tutorialSkipBtn")).toBeFocused();
+
+          const sourceId = `tile-${pair[0].x}-${pair[0].y}`;
+          const expectedCopy = round === 2
+            ? "Finish the Moonlit Wreath."
+            : "Complete Bloodroot Compact.";
+          const opened = await stateReport(page);
+          expect(opened.moves).toBe(before.moves);
+          expect(opened.counts).toEqual(before.counts);
+          expect(opened.board).toBe(before.board);
+          expect(opened.selected).toBe(0);
+          expect(opened.tutorialCopy).toBe(expectedCopy);
+          expect(opened.tutorialIcon).toBe("✦");
+          expect(opened.tutorialClasses).not.toContain("refused-tutorial");
+          expect(opened.tutorialVisible).toBe(true);
+          expect(opened.cueVisible).toBe(false);
+          expect(opened.cueRefused).toBe(false);
+          expect(opened.hints).toEqual([]);
+          expect(opened.invalidIds).toEqual([]);
+          expect(opened.invalidSuffixIds).toEqual([]);
+          expect(opened.focusedId).toBe("tutorialSkipBtn");
+          expect(opened.rovingIds).toEqual([sourceId]);
+          expect(opened.liveOwners).toHaveLength(1);
+          expect(opened.liveOwners[0].id).toBe("tutorialPanel");
+          expect(opened.liveOwners[0].live).toBe("polite");
+          expect(opened.liveOwners[0].text).toContain(expectedCopy);
+          expect(opened.liveOwners[0].text).not.toContain("NO BLOOM");
+          expect(opened.liveOwners[0].text).not.toContain("Use the glowing pair");
+          expect(opened.tileCount).toBe(64);
+          expect(opened.rows).toBe(8);
+          expect(opened.boardRect.width).toBe(config.mobile ? 378 : 600);
+          expect(opened.boardRect.height).toBe(config.mobile ? 378 : 600);
+          expect(opened.scrollY).toBe(0);
+          expect(opened.overflowX).toBe(false);
+          expect(opened.overflowY).toBe(false);
+          expect(opened.brokenImages).toEqual([]);
+
+          if (timing.boundary) {
+            expect(await releaseInvalidSwapCallback(page)).toBe(true);
+          }
+
+          await page.waitForTimeout(1300);
+          const pastBoundary = await stateReport(page);
+          expect({
+            moves: pastBoundary.moves,
+            counts: pastBoundary.counts,
+            board: pastBoundary.board,
+            selected: pastBoundary.selected,
+            tutorialCopy: pastBoundary.tutorialCopy,
+            tutorialIcon: pastBoundary.tutorialIcon,
+            tutorialClasses: pastBoundary.tutorialClasses,
+            cue: pastBoundary.cue,
+            cueRefused: pastBoundary.cueRefused,
+            hints: pastBoundary.hints,
+            invalidIds: pastBoundary.invalidIds,
+            invalidSuffixIds: pastBoundary.invalidSuffixIds,
+            focusedId: pastBoundary.focusedId,
+            rovingIds: pastBoundary.rovingIds
+          }).toEqual({
+            moves: opened.moves,
+            counts: opened.counts,
+            board: opened.board,
+            selected: opened.selected,
+            tutorialCopy: opened.tutorialCopy,
+            tutorialIcon: opened.tutorialIcon,
+            tutorialClasses: opened.tutorialClasses,
+            cue: opened.cue,
+            cueRefused: opened.cueRefused,
+            hints: opened.hints,
+            invalidIds: opened.invalidIds,
+            invalidSuffixIds: opened.invalidSuffixIds,
+            focusedId: opened.focusedId,
+            rovingIds: opened.rovingIds
+          });
+
+          if (timing.boundary && config.label === "mobile390" && round === 2) {
+            await page.screenshot({ path: "work/help-authority-boundary-mobile390-r2.png", fullPage: true });
+          }
+          if (timing.boundary && config.label === "desktop" && round === 3) {
+            await page.screenshot({ path: "work/help-authority-boundary-desktop-r3.png", fullPage: true });
+          }
+
+          await activateControl(page, "#tutorialSkipBtn", config.input);
+          await expect(page.locator("#tutorialPanel")).not.toBeVisible();
+          const skipped = await stateReport(page);
+          expect(skipped.moves).toBe(before.moves);
+          expect(skipped.counts).toEqual(before.counts);
+          expect(skipped.board).toBe(before.board);
+          expect(skipped.selected).toBe(0);
+          expect(skipped.invalidIds).toEqual([]);
+          expect(skipped.invalidSuffixIds).toEqual([]);
+          expect(skipped.cueRefused).toBe(false);
+          expect(skipped.rovingIds).toEqual([sourceId]);
+          expect(skipped.focusedId).toBe("tutorialHelpBtn");
+          expect(skipped.tileCount).toBe(64);
+          expect(skipped.rows).toBe(8);
+          expect(skipped.scrollY).toBe(0);
+          expect(skipped.overflowX).toBe(false);
+          expect(skipped.overflowY).toBe(false);
+          expect(skipped.brokenImages).toEqual([]);
+          expect(errors).toEqual([]);
+        } finally {
+          await context.close();
         }
-        if (config.label === "desktop" && round === 3) {
-          await page.screenshot({ path: "work/help-retires-refusal-desktop-r3.png", fullPage: true });
-        }
-
-        await activateControl(page, "#tutorialSkipBtn", config.input);
-        await expect(page.locator("#tutorialPanel")).not.toBeVisible();
-        const skipped = await stateReport(page);
-        expect(skipped.moves).toBe(before.moves);
-        expect(skipped.counts).toEqual(before.counts);
-        expect(skipped.board).toBe(before.board);
-        expect(skipped.selected).toBe(0);
-        expect(skipped.invalidIds).toEqual([]);
-        expect(skipped.invalidSuffixIds).toEqual([]);
-        expect(skipped.cueRefused).toBe(false);
-        expect(skipped.rovingIds).toEqual([sourceId]);
-        expect(skipped.focusedId).toBe("tutorialHelpBtn");
-        expect(skipped.tileCount).toBe(64);
-        expect(skipped.rows).toBe(8);
-        expect(skipped.scrollY).toBe(0);
-        expect(skipped.overflowX).toBe(false);
-        expect(skipped.overflowY).toBe(false);
-        expect(skipped.brokenImages).toEqual([]);
-        expect(errors).toEqual([]);
-      } finally {
-        await context.close();
-      }
-    });
+      });
+    }
   }
 }

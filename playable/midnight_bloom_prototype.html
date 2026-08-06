@@ -10234,6 +10234,7 @@
     let idleHintTimer = null;
     let targetLiteracyTimer = null;
     let invalidSwapTimer = null;
+    let invalidSwapGeneration = 0;
     let invalidSwapReturnCue = "";
     let invalidSwapReturnHintCells = new Set();
     let invalidSwapReturnSelection = null;
@@ -13394,6 +13395,7 @@
       if (invalidSwapTimer !== null && window.clearTimeout) {
         window.clearTimeout(invalidSwapTimer);
       }
+      const invalidSwapGenerationAtSchedule = ++invalidSwapGeneration;
       const cue = $("firstSwapCue");
       const roundOneAgencyHandoff = isRoundOneAgencyHandoffActive();
       const focusedCueActive = focusedSliceRound()
@@ -13430,6 +13432,9 @@
       ]);
       render();
       invalidSwapTimer = window.setTimeout(() => {
+        if (invalidSwapGenerationAtSchedule !== invalidSwapGeneration) {
+          return;
+        }
         invalidSwapCells.clear();
         invalidSwapTimer = null;
         const restartPostOnboardingHint = isPostOnboardingIdleHintActive();
@@ -13468,13 +13473,23 @@
       }, INVALID_SWAP_FEEDBACK_MS);
     }
 
+    function invalidSwapFeedbackActive() {
+      const cue = $("firstSwapCue");
+      return invalidSwapTimer !== null
+        || invalidSwapCells.size > 0
+        || Boolean(invalidSwapReturnCue)
+        || invalidSwapReturnHintCells.size > 0
+        || Boolean(invalidSwapReturnSelection)
+        || Boolean(cue?.classList.contains("swap-refused"))
+        || Boolean(document.querySelector("#board .tile.invalid-swap"));
+    }
+
     function retireInvalidSwapFeedback() {
       const cue = $("firstSwapCue");
-      const visibleRefusal = Boolean(cue?.classList.contains("swap-refused"))
-        || Boolean(document.querySelector("#board .tile.invalid-swap"));
-      if (invalidSwapTimer === null && invalidSwapCells.size === 0 && !visibleRefusal) {
+      if (!invalidSwapFeedbackActive()) {
         return;
       }
+      invalidSwapGeneration += 1;
       if (invalidSwapTimer !== null && window.clearTimeout) {
         window.clearTimeout(invalidSwapTimer);
       }
@@ -19919,9 +19934,7 @@
     $("nextOrderBtn").addEventListener("click", advanceGreenhousePayoffAction);
     $("tutorialSkipBtn").addEventListener("click", skipTutorial);
     $("tutorialHelpBtn").addEventListener("click", (event) => {
-      const retireRefusal = invalidSwapCells.size > 0
-        || Boolean($("firstSwapCue")?.classList.contains("swap-refused"))
-        || Boolean(document.querySelector("#board .tile.invalid-swap"));
+      const retireRefusal = invalidSwapFeedbackActive();
       ordinaryRefusalHelpReplayActive = [2, 3].includes(Number(currentRound)) && retireRefusal;
       if (retireRefusal) {
         retireInvalidSwapFeedback();
