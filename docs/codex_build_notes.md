@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-08-06 - Guided Help uses input-neutral continuation copy
+
+- Player-visible correction: selected guided-pair Help now says `Choose the other glowing flower.` instead of the touch-specific `Tap` instruction. The same concise sentence is truthful for pointer, touch, Enter, and Space in authored Round 1 and ordinary objective-useful Round 2/3 continuations.
+- Authority boundary: only the two existing selected-guided-pair copy branches changed. Exact pair preservation, selection, generic unselected order copy, sole tutorial narration, focus/roving behavior, one-move objective credit, board generation, saves, economy, geometry, timers, mechanics, rounds, and progression are unchanged.
+- Permanent contract: the existing desktop `1280x720` and exact-mobile `390x844`, full/reduced, source/destination pointer/keyboard/touch matrices now require the modality-neutral sentence. The authored Round 1 continuation contract requires the same copy while preserving its destination-only guide and sole Skip action.
+- Verification: local R2/R3 selected continuation passes `16/16`; focused authored-R1 selection and neighboring mobile-touch/drag checks pass `3/3`. Original-scale desktop R2 and exact-mobile R3 frames confirm the sentence, panel, and 44px Skip remain contained with exact `600px`/`378px` altars. Project/HTML verifiers, changed-spec syntax, diff check, and changed-line credential/tracker/network scan pass.
+- Public delivery: gameplay commit `4103721` is live through Ready Vercel deployment `dpl_6Ceoo66Eq841GBMvLFu2rkhSyKXr`, explicitly assigned to canonical `bloom-tycoon.vercel.app`, and successful Pages workflow `31090573949`. Vercel and Pages each pass selected continuation `16/16` plus generic/unrelated Help `8/8`; local and both public hosts match playable SHA-256 `db90888a32205fa8ae0b37bced90318057cf8edb66a150cb939415f2027d89c4`. All public cases retain one tutorial live owner, one objective-credit commit, focus/roving continuity, 64/eight, loaded imagery, no overflow, and empty warning/error logs. No known player-visible issue remains in this slice.
+
 ## 2026-08-06 - Help names the preserved counterpart action
 
 - Player-visible correction: when ordinary post-onboarding Round 2 or Round 3 Help opens with one endpoint of its validated objective-useful pair already selected, the sole tutorial narrator now says `Tap the other glowing flower.` instead of falling back to the broad order objective. The exact selected endpoint and counterpart are already visible, so Help now names the one action that continues play.
