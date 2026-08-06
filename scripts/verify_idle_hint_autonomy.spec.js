@@ -228,6 +228,7 @@ async function selectedHelpHighlightReport(page, counterpart) {
     const metrics = (tile) => ({
       id: tile.id,
       classes: tile.className,
+      ariaLabel: tile.getAttribute("aria-label") || "",
       afterOpacity: Number.parseFloat(getComputedStyle(tile, "::after").opacity || "0"),
       outlineWidth: Number.parseFloat(getComputedStyle(tile).outlineWidth || "0")
     });
@@ -241,9 +242,23 @@ async function selectedHelpHighlightReport(page, counterpart) {
         .map(metrics),
       forecast: Array.from(document.querySelectorAll(".tile.match-preview"))
         .filter((tile) => tile.id !== counterpartId)
-        .map(metrics)
+        .map(metrics),
+      labels: Array.from(document.querySelectorAll(".tile[aria-label]")).map(metrics)
     };
   }, counterpart);
+}
+
+function expectSelectedGuidedSemantics(report, counterpartId) {
+  expect(report.counterpart?.ariaLabel).toContain("legal match swap target");
+  expect(report.counterpart?.ariaLabel).toContain("guided exchange destination");
+  expect(report.labels.filter((tile) => tile.ariaLabel.includes("guided exchange destination"))
+    .map((tile) => tile.id)).toEqual([counterpartId]);
+  expect(report.labels.filter((tile) => tile.ariaLabel.includes("legal match swap target"))
+    .map((tile) => tile.id)).toEqual([counterpartId]);
+  expect(report.alternativeLegal.every((tile) => (
+    !tile.ariaLabel.includes("legal match swap target")
+    && !tile.ariaLabel.includes("guided exchange destination")
+  ))).toBe(true);
 }
 
 async function waitForAutonomyHint(page, label, expectedFocus = null) {
@@ -412,6 +427,7 @@ for (const round of [2, 3]) {
           expect(highlight.bodyOwnsPlayGuidance).toBe(true);
           expect(highlight.bodyOwnsGuidance).toBe(false);
           expect(highlight.counterpart?.classes).toContain("guided-counterpart");
+          expectSelectedGuidedSemantics(highlight, `tile-${counterpart.x}-${counterpart.y}`);
           expect(highlight.counterpart?.afterOpacity, JSON.stringify(highlight)).toBeGreaterThanOrEqual(.85);
           expect(highlight.alternativeLegal.every((tile) => tile.afterOpacity <= .25)).toBe(true);
           expect(highlight.forecast.every((tile) => tile.afterOpacity <= .3), JSON.stringify(highlight)).toBe(true);
@@ -445,6 +461,7 @@ for (const round of [2, 3]) {
           expect(highlight.bodyOwnsGuidance).toBe(true);
           expect(highlight.bodyOwnsPlayGuidance).toBe(false);
           expect(highlight.counterpart?.classes).toContain("guided-counterpart");
+          expectSelectedGuidedSemantics(highlight, `tile-${counterpart.x}-${counterpart.y}`);
           expect(highlight.counterpart?.afterOpacity, JSON.stringify(highlight)).toBeGreaterThanOrEqual(.85);
           expect(highlight.counterpart?.outlineWidth).toBeGreaterThanOrEqual(2);
           expect(highlight.alternativeLegal.every((tile) => tile.afterOpacity <= .25)).toBe(true);
@@ -471,6 +488,7 @@ for (const round of [2, 3]) {
           expect(highlight.bodyOwnsPlayGuidance).toBe(true);
           expect(highlight.bodyOwnsGuidance).toBe(false);
           expect(highlight.counterpart?.classes).toContain("guided-counterpart");
+          expectSelectedGuidedSemantics(highlight, `tile-${counterpart.x}-${counterpart.y}`);
           expect(highlight.counterpart?.afterOpacity).toBeGreaterThanOrEqual(.85);
           expect(highlight.forecast.every((tile) => tile.afterOpacity <= .3)).toBe(true);
 
@@ -550,6 +568,14 @@ for (const testCase of [CASES[0], CASES[3]]) {
       expect(restored.completeRows).toBe(8);
       expect(restored.overflowX).toBe(false);
       expect(restored.brokenImages).toEqual([]);
+      await activateTile(page, selectedCell, testCase.input);
+      await expect(page.locator("body")).not.toHaveClass(/selected-guided-play/);
+      const ordinaryLegalLabels = await page.locator(".tile.legal-target").evaluateAll((tiles) => (
+        tiles.map((tile) => tile.getAttribute("aria-label") || "")
+      ));
+      expect(ordinaryLegalLabels.length).toBeGreaterThan(0);
+      expect(ordinaryLegalLabels.every((label) => label.includes("legal match swap target"))).toBe(true);
+      expect((await autonomyReport(page)).state).toEqual(before);
       expect(browserErrors).toEqual([]);
     } finally {
       await context.close();

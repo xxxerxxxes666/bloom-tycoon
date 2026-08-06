@@ -15121,6 +15121,8 @@
       const selectedPlayCounterpartKey = selectedPlayCounterpart
         ? `${selectedPlayCounterpart.x},${selectedPlayCounterpart.y}`
         : "";
+      const selectedGuidedCounterpartKey = selectedHelpCounterpartKey || selectedPlayCounterpartKey;
+      const selectedGuidedAuthority = Boolean(selectedGuidedCounterpartKey);
       const failedFocusedRestoredOrder = roundOneRestored
         && activePlan.round >= 2
         && activePlan.round <= 3
@@ -15418,9 +15420,9 @@
           const previewClass = harvestPreview.cells.has(fallKey) ? "match-preview" : "";
           const previewAnchorClass = harvestPreview.anchors.has(fallKey) ? "match-preview-anchor" : "";
           const relicPreviewClass = harvestPreview.relicCells.has(fallKey) ? "relic-preview" : "";
-          const guidedCounterpartClass = (
-            selectedHelpCounterpartKey === fallKey || selectedPlayCounterpartKey === fallKey
-          ) ? "guided-counterpart" : "";
+          const guidedCounterpartClass = selectedGuidedCounterpartKey === fallKey
+            ? "guided-counterpart"
+            : "";
           const armedRelic = lineRelicAt({ x, y }) ? armedLineRelic : null;
           const armedRelicClass = armedRelic ? "black-candle-vine" : "";
           tile.className = `tile ${selectedClass} ${legalClass} ${lineRelicLaneClass} ${lineRelicDestinationClass} ${blackCandleBurnCellClass} ${blackCandleBurnSourceClass} ${blackCandleBurnExtinguishedClass} ${blackCandleBurnRefillClass} ${previewClass} ${previewAnchorClass} ${relicPreviewClass} ${guidedCounterpartClass} ${armedRelicClass} ${harvestClass} ${superClass} ${invalidClass} ${validSwapClass} ${swapClass} ${swapGlideClass} ${idleHintClass} ${finalHarvestEndpointClass} ${finalHarvestMatchClass} ${targetLiteracyClass} ${targetMatchEndpointClass} ${targetMatchResultClass} ${thornTeachClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass} ${refillBornClass} ${settleClass}`;
@@ -15486,7 +15488,9 @@
             tile.style.setProperty("--fall-y", `${-fallRows * 112}%`);
             tile.style.setProperty("--fall-delay", `${Math.min(130, y * 12)}ms`);
           }
-          const legalLabel = legalClass ? " legal match swap target" : "";
+          const legalLabel = legalClass && (!selectedGuidedAuthority || guidedCounterpartClass)
+            ? " legal match swap target"
+            : "";
           const destinationLabel = lineRelicDestinationClass ? " Black Candle activation destination" : "";
           const laneLabel = lineRelicLaneClass ? ` in Black Candle ${activeRelicGuidance.lane} burn lane` : "";
           const thornTeachLabel = thornTeachingActive
@@ -15498,10 +15502,15 @@
             : "";
           const thornLabel = thorn ? " with Cursed Thorn blocker" : thornClearedClass ? " where a Cursed Thorn cracked" : "";
           const previewLabel = previewClass ? " in harvest preview" : relicPreviewClass ? " in Black Candle Vine lane preview" : "";
-          const targetMatchEndpointLabel = targetMatchEndpointIndex >= 0
+          const selectedGuidedRoleLabel = !selectedGuidedAuthority
+            ? ""
+            : selectedClass
+              ? " guided exchange source"
+              : guidedCounterpartClass ? " guided exchange destination" : "";
+          const targetMatchEndpointLabel = !selectedGuidedAuthority && targetMatchEndpointIndex >= 0
             ? ` guided exchange ${targetMatchEndpointIndex === 0 ? "source" : "destination"}`
             : "";
-          const hintedPairLabel = targetMatchEndpointIndex < 0 && hintedPairIndex >= 0
+          const hintedPairLabel = !selectedGuidedAuthority && targetMatchEndpointIndex < 0 && hintedPairIndex >= 0
             ? ` guided exchange ${hintedPairIndex === 0 ? "source" : "destination"}`
             : "";
           const targetMatchResultLabel = targetMatchResult
@@ -15525,6 +15534,7 @@
             destinationLabel,
             laneLabel,
             previewLabel,
+            selectedGuidedRoleLabel,
             targetMatchEndpointLabel,
             hintedPairLabel,
             targetMatchResultLabel,
