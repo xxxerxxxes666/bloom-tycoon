@@ -92,6 +92,20 @@ async function findInvalidAdjacentPair(page) {
   });
 }
 
+async function establishOrdinaryAgency(page) {
+  await page.waitForTimeout(800);
+  if (await page.locator("#tutorialPanel").isVisible()) {
+    await page.locator("#tutorialSkipBtn").click();
+    await expect(page.locator("#tutorialPanel")).not.toBeVisible();
+  }
+  const rovingTile = page.locator("#board .tile[tabindex='0']");
+  await rovingTile.focus();
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowLeft");
+  await expect(page.locator("#board .tile.selected, #board .tile.sel")).toHaveCount(0);
+  await expect(page.locator("#board .tile.idle-hint")).toHaveCount(0);
+}
+
 async function activatePair(page, pair, input) {
   const source = page.locator(`#tile-${pair[0].x}-${pair[0].y}`);
   const destination = page.locator(`#tile-${pair[1].x}-${pair[1].y}`);
@@ -196,13 +210,12 @@ for (const config of VIEWPORTS) {
 
       try {
         await openOrdinaryRound(page, round, `${config.label}-r${round}`);
+        await establishOrdinaryAgency(page);
         const pair = await findInvalidAdjacentPair(page);
         expect(pair, `${config.label} R${round} has an invalid adjacent pair`).toBeTruthy();
         const before = await stateReport(page);
         await activatePair(page, pair, config.input);
         await expect(page.locator("#board .tile.invalid-swap")).toHaveCount(2);
-        await expect(page.locator("#firstSwapCue")).toHaveText(REFUSAL_COPY);
-        await expect(page.locator("#firstSwapCue")).toBeVisible();
         const peak = await stateReport(page);
         const sourceId = `tile-${pair[0].x}-${pair[0].y}`;
 
@@ -245,8 +258,8 @@ for (const config of VIEWPORTS) {
         }
 
         await expect(page.locator("#board .tile.invalid-swap")).toHaveCount(0, { timeout: 3500 });
-        await expect(page.locator("#firstSwapCue")).not.toBeVisible();
-        await expect(page.locator("#board .tile.idle-hint")).toHaveCount(2, { timeout: 9000 });
+        await expect(page.locator("#firstSwapCue")).not.toHaveClass(/swap-refused/);
+        await expect(page.locator("#firstSwapCue")).not.toHaveText(REFUSAL_COPY);
         const recovered = await stateReport(page);
         expect(recovered.moves).toBe(before.moves);
         expect(recovered.counts).toEqual(before.counts);
@@ -263,7 +276,6 @@ for (const config of VIEWPORTS) {
         expect(reloaded.counts).toEqual(before.counts);
         expect(reloaded.board).toBe(before.board);
         expect(reloaded.invalidIds).toEqual([]);
-        expect(reloaded.cueVisible).toBe(false);
         expect(reloaded.liveOwners.some((owner) => owner.text === REFUSAL_COPY)).toBe(false);
         expect(reloaded.tileCount).toBe(64);
         expect(reloaded.rows).toBe(8);

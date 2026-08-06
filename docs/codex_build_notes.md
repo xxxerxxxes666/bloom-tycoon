@@ -1,5 +1,12 @@
 # Codex Build Notes
 
+## 2026-08-05 - Ordinary refused swaps state the result
+
+- Player-visible result: an ordinary post-onboarding invalid swap in active Round 2 or Round 3 now keeps the existing two-socket red-X response and adds the concise board cue `No bloom — no match.` The existing `firstSwapCue` is the sole polite narrator for that bounded refusal, then retires back into whichever ordinary objective guide is authoritative.
+- Mobile hierarchy: at exact `390x844`, the refusal cue and existing `44px` Help command share the command row without intersecting each other, greenhouse progress, or the exact `378x378` altar. Desktop retains its existing command lane and exact `600x600` altar. Focus returns to the attempted source and agrees with the sole roving tile; moves, counts, board, selection, saves, objectives, economy, timers, and progression are unchanged.
+- Permanent contract: `scripts/verify_ordinary_refusal_outcome.spec.js` covers R2/R3 at desktop `1280x720` and exact mobile `390x844`, full/reduced motion, keyboard/pointer/touch, refusal peak and retirement, ordinary-guide recovery, reload silence, 64 tiles/eight rows, geometry, images, and console/page/request errors. Its remote setup now explicitly retires any delayed startup tutorial and quiet hint through real harmless input so a slow public load cannot turn the ordinary probe into the intentional guided-refusal branch.
+- Delivery evidence: gameplay commit `21feb44a653dbd92d5620bea78cfaaffd58b14d4` is live in READY Vercel deployment `dpl_FvtwumF8yrGNT9fa7RYeuysUeTeA`, with canonical `bloom-tycoon.vercel.app` resolving to it; Pages workflow `31072832164` completed successfully. Local, canonical Vercel, and canonical Pages serve byte-identical playable SHA-256 `214a6252640d7729b7e899fb11704c49b821ec56e79be26a58d728a58ae2bd56`. The public matrix passes `8/8` on each host; local focused refusal `8/8`, invalid/drag `1/1`, idle-autonomy `8/8`, project/HTML, syntax, diff, and changed-line security gates are green.
+
 ## 2026-08-05 - Mobile replay entry keeps one truthful reward contract
 
 - Player-visible correction: during the existing 2.2-second exact-mobile Play Again acknowledgment, the bouquet strip now remains `Nourish 120 · Keep {wallet}` instead of contradicting the adjacent `coins kept` receipt with fresh-cycle `Complete for 120 coins` wording. The compact promise's accessible label names the same Conservatory nourishment and authoritative retained wallet.
