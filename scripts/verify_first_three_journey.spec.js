@@ -60,6 +60,21 @@ function ownedReplayTransaction(reward, retainedBalance) {
 test.setTimeout(180000);
 
 async function openFresh(page, seedLabel, label) {
+  await page.addInitScript(({ key, seedToken, stagedToken }) => {
+    if (!sessionStorage.getItem(seedToken)) {
+      localStorage.removeItem(key);
+      sessionStorage.setItem(seedToken, "1");
+    }
+    const stagedSave = sessionStorage.getItem(stagedToken);
+    if (stagedSave) {
+      localStorage.setItem(key, stagedSave);
+      sessionStorage.removeItem(stagedToken);
+    }
+  }, {
+    key: SAVE_KEY,
+    seedToken: `first-three-fresh-${seedLabel}`,
+    stagedToken: "first-three-staged-save"
+  });
   await page.addInitScript((seedLabel) => {
     let seed = 0;
     for (let index = 0; index < seedLabel.length; index += 1) {
@@ -71,8 +86,6 @@ async function openFresh(page, seedLabel, label) {
     };
   }, seedLabel);
   await page.goto(`${BASE_URL}?first-three-journey=${label}&seed=${seedLabel}`, { waitUntil: "networkidle" });
-  await page.evaluate((key) => localStorage.removeItem(key), SAVE_KEY);
-  await page.reload({ waitUntil: "networkidle" });
   await expect(page.locator(".tile")).toHaveCount(64);
 }
 
@@ -3501,7 +3514,7 @@ test("owned replay receipt remains fully readable at the active-board handoff", 
     try {
       for (const retainedBalance of [50, 7820]) {
         await openFresh(page, `replay-receipt-${config.label}-${retainedBalance}`, `${config.label}-${retainedBalance}`);
-        await page.evaluate(({ key, retainedBalance }) => {
+        await page.evaluate(({ key, retainedBalance, stagedToken }) => {
           const state = JSON.parse(localStorage.getItem(key) || "{}");
           Object.assign(state, {
             currentRound: 3,
@@ -3518,8 +3531,12 @@ test("owned replay receipt remains fully readable at the active-board handoff", 
             tutorialActive: false,
             blackCandleLessonComplete: true
           });
-          localStorage.setItem(key, JSON.stringify(state));
-        }, { key: SAVE_KEY, retainedBalance });
+          sessionStorage.setItem(stagedToken, JSON.stringify(state));
+        }, {
+          key: SAVE_KEY,
+          retainedBalance,
+          stagedToken: "first-three-staged-save"
+        });
         await page.reload({ waitUntil: "load" });
         await expect(page.locator("#roundOneRestoration button:not([hidden])")).toBeVisible();
         const playAgain = page.getByRole("button", { name: "Play Again → First Bouquet", exact: true });
