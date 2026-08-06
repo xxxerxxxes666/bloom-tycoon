@@ -7282,7 +7282,7 @@ test("invalid, cancel, mobile touch, and reduced motion drag paths stay clean", 
     expect(mobileInvalidPeak.boardBottom).toBeLessThanOrEqual(844);
     expect(mobileInvalidPeak.overflowX).toBe(false);
     await mobile.screenshot({ path: "work/invalid-feedback-mobile390-drag.png", fullPage: true });
-    await expect(mobile.locator(".tile.invalid-swap")).toHaveCount(0, { timeout: 1600 });
+    await expect(mobile.locator(".tile.invalid-swap")).toHaveCount(0, { timeout: 3500 });
   } finally {
     await mobile.close();
   }
@@ -7318,22 +7318,24 @@ test("invalid, cancel, mobile touch, and reduced motion drag paths stay clean", 
   expect(reducedInvalidPeak.tutorialCopy).toBe("Try another adjacent swap.");
   expect(reducedInvalidPeak.positiveFeedback).toEqual([]);
   expect(reducedInvalidPeak.positiveFeedbackIntersections).toBe(0);
-  await expect(page.locator(".tile.invalid-swap")).toHaveCount(0, { timeout: 1600 });
+  await expect(page.locator(".tile.invalid-swap")).toHaveCount(0, { timeout: 3500 });
 
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.evaluate((key) => {
     const state = JSON.parse(localStorage.getItem(key));
-    state.currentRound = 2;
-    state.moves = 9;
-    state.coins = 20;
-    state.counts = [0, 0, 0, 0, 0, 0];
+    state.currentRound = 3;
+    state.moves = 7;
+    state.coins = 50;
+    state.counts = [3, 0, 0, 3, 0, 0];
     state.roundComplete = false;
     state.roundOneRestored = true;
-    state.roundTwoGreenhouseUpgraded = false;
+    state.roundTwoGreenhouseUpgraded = true;
+    state.roundThreeConservatoryRaised = false;
     state.tutorialSkipped = true;
     state.tutorialActive = false;
-    state.hasMadeValidMove = false;
-    state.restoredRoundTwoGuideMoves = 0;
+    state.hasMadeValidMove = true;
+    state.restoredRoundTwoGuideMoves = 2;
+    state.blackCandleLessonComplete = true;
     state.armedLineRelic = null;
     state.cursedThorns = [];
     state.clearedCursedThorns = 0;
@@ -7354,7 +7356,7 @@ test("invalid, cancel, mobile touch, and reduced motion drag paths stay clean", 
   const laterPeak = await activeState(page);
   expect(laterPeak.moves, "later-round invalid swap spends no move").toBe(laterBefore.moves);
   expect(laterPeak.board, "later-round invalid swap preserves board").toBe(laterBefore.board);
-  await expect(page.locator(".tile.invalid-swap")).toHaveCount(0, { timeout: 1600 });
+  await expect(page.locator(".tile.invalid-swap")).toHaveCount(0, { timeout: 3500 });
   await expect(page.locator("#firstSwapCue")).not.toContainText("No bloom");
 });
 

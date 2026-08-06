@@ -1835,7 +1835,7 @@
       .tutorial-panel.failed-tutorial .tutorial-skip {
         padding-right: 6px;
         padding-left: 6px;
-        font-size: 9px;
+        font-size: 11px;
       }
     }
 
@@ -6552,6 +6552,7 @@
     body.round-one-active.round-one-black-candle-cue:not(.round-one-complete) .first-swap-cue,
     body.round-one-active.round-one-followup-cue:not(.round-one-complete) .first-swap-cue,
     body.round-one-active.round-one-refused:not(.round-one-complete) .first-swap-cue,
+    body.focused-active-play:not(.tutorial-active):not(.round-one-complete) .first-swap-cue.swap-refused,
     body.focused-active-play.armed-line-relic-cue:not(.round-one-complete) .first-swap-cue,
     body.focused-active-play.settled-board-outcome-cue .first-swap-cue { display:flex; width:max-content; max-width:calc(100% - 20px); min-height:30px; margin:7px auto 0; padding:5px 10px; align-items:center; gap:8px; border:1px solid #8e6b35; border-radius:999px; color:#fff0b4; background:linear-gradient(90deg,#17100c,#2b1d0d,#17100c); box-shadow:0 0 12px #c58a3326,inset 0 0 9px #000; font:800 14px Georgia,serif; letter-spacing:.035em; text-align:center; }
     .first-swap-cue::before { content:"GLYPH GUIDE"; flex:none; padding-right:8px; border-right:1px solid #76582e; color:#b9965f; font:700 9px/1.1 system-ui,sans-serif; letter-spacing:.12em; }
@@ -7507,6 +7508,7 @@
       text-shadow:0 0 12px #9b1d22;
       animation:cue-refused 420ms ease-out both;
     }
+    .first-swap-cue.swap-refused::before { content:"NO BLOOM"; }
     body.altar-reweave-active .first-swap-cue,
     body.post-recovery-guide .first-swap-cue {
       display:flex;
@@ -9687,6 +9689,18 @@
       .tutorial-command-region > .first-swap-cue,
       .tutorial-command-region > .next-order-cue {
         max-width: calc(100% - 49px);
+      }
+
+      body.focused-active-play:not(.tutorial-active) .tutorial-command-region > .first-swap-cue.swap-refused {
+        flex: 1 1 0;
+        width: auto;
+        max-width: none;
+        min-height: 44px;
+        margin: 0 0 0 8px;
+        padding: 5px 6px;
+        font-size: 9px;
+        line-height: 1.05;
+        white-space: normal;
       }
 
       body.focused-active-play.settled-board-outcome-cue .tutorial-command-region > .first-swap-cue {
@@ -13380,15 +13394,11 @@
         window.clearTimeout(invalidSwapTimer);
       }
       const cue = $("firstSwapCue");
-      const authoritativeThornLesson = isAuthoritativeRoundTwoThornLesson();
       const roundOneAgencyHandoff = isRoundOneAgencyHandoffActive();
-      const focusedCueActive = (
-        currentRound === 1
-        || isRestoredNextOrderFocus()
-        || authoritativeThornLesson
-        || postRecoveryGuideActive
-        || visibleFinalHarvest?.phase === "eligible"
-      ) && !roundComplete && cue;
+      const focusedCueActive = focusedSliceRound()
+        && !roundComplete
+        && !isBouquetFailed()
+        && cue;
       const returnCue = continuingRefusal
         ? invalidSwapReturnCue
         : focusedCueActive ? cue.textContent : "";
@@ -13407,7 +13417,9 @@
       if (focusedCueActive) {
         cue.textContent = roundOneAgencyHandoff
           ? "No bloom — try another adjacent swap."
-          : "No bloom — follow the glowing pair.";
+          : returnHintCells.size === 2
+            ? "No bloom — follow the glowing pair."
+            : "No bloom — no match.";
         cue.classList.add("swap-refused");
         idleHintCells = new Set(returnHintCells);
       }
