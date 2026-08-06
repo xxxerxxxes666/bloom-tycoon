@@ -3382,11 +3382,14 @@
     }
 
     body.selected-guided-help .tile::before,
-    body.selected-guided-help .tile::after {
+    body.selected-guided-help .tile::after,
+    body.selected-guided-play .tile::before,
+    body.selected-guided-play .tile::after {
       transition: none;
     }
 
-    body.selected-guided-help .tile.legal-target:not(.guided-counterpart) {
+    body.selected-guided-help .tile.legal-target:not(.guided-counterpart),
+    body.selected-guided-play .tile.legal-target:not(.guided-counterpart) {
       outline: 1px solid #3f5233 !important;
       box-shadow:
         inset 0 0 14px #000,
@@ -3394,11 +3397,13 @@
         0 0 5px #5f83384d;
     }
 
-    body.selected-guided-help .tile.legal-target:not(.guided-counterpart)::after {
+    body.selected-guided-help .tile.legal-target:not(.guided-counterpart)::after,
+    body.selected-guided-play .tile.legal-target:not(.guided-counterpart)::after {
       opacity: .16;
     }
 
-    body.selected-guided-help .tile.match-preview:not(.guided-counterpart) {
+    body.selected-guided-help .tile.match-preview:not(.guided-counterpart),
+    body.selected-guided-play .tile.match-preview:not(.guided-counterpart) {
       z-index: 2;
       outline: 1px solid color-mix(in srgb, var(--tile-color) 26%, #75613f) !important;
       box-shadow:
@@ -3407,18 +3412,21 @@
         0 0 6px color-mix(in srgb, var(--tile-color) 22%, #75613f);
     }
 
-    body.selected-guided-help .tile.match-preview:not(.guided-counterpart)::before {
+    body.selected-guided-help .tile.match-preview:not(.guided-counterpart)::before,
+    body.selected-guided-play .tile.match-preview:not(.guided-counterpart)::before {
       opacity: .52;
       border-color: color-mix(in srgb, var(--tile-color) 28%, #75613f);
       box-shadow: inset 0 0 12px #000;
     }
 
-    body.selected-guided-help .tile.match-preview:not(.guided-counterpart)::after {
+    body.selected-guided-help .tile.match-preview:not(.guided-counterpart)::after,
+    body.selected-guided-play .tile.match-preview:not(.guided-counterpart)::after {
       opacity: .22;
       animation: none;
     }
 
-    body.selected-guided-help .tile.guided-counterpart {
+    body.selected-guided-help .tile.guided-counterpart,
+    body.selected-guided-play .tile.guided-counterpart {
       z-index: 8;
       outline: 2px solid #f0c477;
       outline-offset: -3px;
@@ -3431,13 +3439,17 @@
 
     body.selected-guided-help .tile.legal-target.guided-counterpart::after,
     body.selected-guided-help .tile.match-preview.guided-counterpart::after,
-    body.selected-guided-help .tile.guided-counterpart::after {
+    body.selected-guided-help .tile.guided-counterpart::after,
+    body.selected-guided-play .tile.legal-target.guided-counterpart::after,
+    body.selected-guided-play .tile.match-preview.guided-counterpart::after,
+    body.selected-guided-play .tile.guided-counterpart::after {
       opacity: 1;
       background: radial-gradient(circle, #fff0b452 0 20%, #d7b16d24 42%, #0000 70%);
       animation: none;
     }
 
-    body.selected-guided-help .tile.sel {
+    body.selected-guided-help .tile.sel,
+    body.selected-guided-play .tile.sel {
       z-index: 8;
       outline: 2px solid #d4a05c;
       outline-offset: -2px;
@@ -15098,6 +15110,17 @@
       const targetMatchForecast = !blackCandleActivation && !activeRelicGuidance
         ? targetMatchForecastDetails(activePlan)
         : null;
+      const selectedPlayPair = !tutorialActive
+        && !activeRelicGuidance
+        && visibleFinalHarvest?.phase !== "eligible"
+        ? selectedGuidedHintPair()
+        : [];
+      const selectedPlayCounterpart = selected && selectedPlayPair.find((cell) => (
+        cell.x !== selected.x || cell.y !== selected.y
+      ));
+      const selectedPlayCounterpartKey = selectedPlayCounterpart
+        ? `${selectedPlayCounterpart.x},${selectedPlayCounterpart.y}`
+        : "";
       const failedFocusedRestoredOrder = roundOneRestored
         && activePlan.round >= 2
         && activePlan.round <= 3
@@ -15147,6 +15170,7 @@
       document.body.classList.toggle("round-one-refused", roundOneActive && !roundComplete && $("firstSwapCue").classList.contains("swap-refused"));
       document.body.classList.toggle("tutorial-active", tutorialActive);
       document.body.classList.toggle("selected-guided-help", Boolean(selectedHelpCounterpartKey));
+      document.body.classList.toggle("selected-guided-play", Boolean(selectedPlayCounterpartKey));
       document.body.classList.toggle(
         "settled-board-outcome-cue",
         Boolean(settledBoardOutcome)
@@ -15394,7 +15418,9 @@
           const previewClass = harvestPreview.cells.has(fallKey) ? "match-preview" : "";
           const previewAnchorClass = harvestPreview.anchors.has(fallKey) ? "match-preview-anchor" : "";
           const relicPreviewClass = harvestPreview.relicCells.has(fallKey) ? "relic-preview" : "";
-          const guidedCounterpartClass = selectedHelpCounterpartKey === fallKey ? "guided-counterpart" : "";
+          const guidedCounterpartClass = (
+            selectedHelpCounterpartKey === fallKey || selectedPlayCounterpartKey === fallKey
+          ) ? "guided-counterpart" : "";
           const armedRelic = lineRelicAt({ x, y }) ? armedLineRelic : null;
           const armedRelicClass = armedRelic ? "black-candle-vine" : "";
           tile.className = `tile ${selectedClass} ${legalClass} ${lineRelicLaneClass} ${lineRelicDestinationClass} ${blackCandleBurnCellClass} ${blackCandleBurnSourceClass} ${blackCandleBurnExtinguishedClass} ${blackCandleBurnRefillClass} ${previewClass} ${previewAnchorClass} ${relicPreviewClass} ${guidedCounterpartClass} ${armedRelicClass} ${harvestClass} ${superClass} ${invalidClass} ${validSwapClass} ${swapClass} ${swapGlideClass} ${idleHintClass} ${finalHarvestEndpointClass} ${finalHarvestMatchClass} ${targetLiteracyClass} ${targetMatchEndpointClass} ${targetMatchResultClass} ${thornTeachClass} ${transmuteClass} ${thornClass} ${thornHitClass} ${thornClearedClass} ${fallClass} ${refillBornClass} ${settleClass}`;

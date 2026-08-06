@@ -234,6 +234,7 @@ async function selectedHelpHighlightReport(page, counterpart) {
     const counterpartTile = document.querySelector(`#${counterpartId}`);
     return {
       bodyOwnsGuidance: document.body.classList.contains("selected-guided-help"),
+      bodyOwnsPlayGuidance: document.body.classList.contains("selected-guided-play"),
       counterpart: counterpartTile ? metrics(counterpartTile) : null,
       alternativeLegal: Array.from(document.querySelectorAll(".tile.legal-target"))
         .filter((tile) => tile.id !== counterpartId)
@@ -407,6 +408,13 @@ for (const round of [2, 3]) {
           expect(report.state.moves).toBe(before.moves);
           expect(report.state.counts).toEqual(before.counts);
           expect(report.state.board).toEqual(before.board);
+          let highlight = await selectedHelpHighlightReport(page, counterpart);
+          expect(highlight.bodyOwnsPlayGuidance).toBe(true);
+          expect(highlight.bodyOwnsGuidance).toBe(false);
+          expect(highlight.counterpart?.classes).toContain("guided-counterpart");
+          expect(highlight.counterpart?.afterOpacity, JSON.stringify(highlight)).toBeGreaterThanOrEqual(.85);
+          expect(highlight.alternativeLegal.every((tile) => tile.afterOpacity <= .25)).toBe(true);
+          expect(highlight.forecast.every((tile) => tile.afterOpacity <= .3), JSON.stringify(highlight)).toBe(true);
 
           await activateControl(page, "#tutorialHelpBtn", testCase.input);
           await expect(page.locator("#tutorialSkipBtn")).toBeFocused();
@@ -433,8 +441,9 @@ for (const round of [2, 3]) {
           expect(report.state.moves).toBe(before.moves);
           expect(report.state.counts).toEqual(before.counts);
           expect(report.state.board).toEqual(before.board);
-          const highlight = await selectedHelpHighlightReport(page, counterpart);
+          highlight = await selectedHelpHighlightReport(page, counterpart);
           expect(highlight.bodyOwnsGuidance).toBe(true);
+          expect(highlight.bodyOwnsPlayGuidance).toBe(false);
           expect(highlight.counterpart?.classes).toContain("guided-counterpart");
           expect(highlight.counterpart?.afterOpacity, JSON.stringify(highlight)).toBeGreaterThanOrEqual(.85);
           expect(highlight.counterpart?.outlineWidth).toBeGreaterThanOrEqual(2);
@@ -458,6 +467,12 @@ for (const round of [2, 3]) {
           expect(report.state.moves).toBe(before.moves);
           expect(report.state.counts).toEqual(before.counts);
           expect(report.state.board).toEqual(before.board);
+          highlight = await selectedHelpHighlightReport(page, counterpart);
+          expect(highlight.bodyOwnsPlayGuidance).toBe(true);
+          expect(highlight.bodyOwnsGuidance).toBe(false);
+          expect(highlight.counterpart?.classes).toContain("guided-counterpart");
+          expect(highlight.counterpart?.afterOpacity).toBeGreaterThanOrEqual(.85);
+          expect(highlight.forecast.every((tile) => tile.afterOpacity <= .3)).toBe(true);
 
           await activateTile(page, counterpart, testCase.input, "Space");
           await page.waitForFunction(({ key, moves }) => {
@@ -466,6 +481,8 @@ for (const round of [2, 3]) {
               && document.querySelector("#board")?.getAttribute("aria-busy") === "false";
           }, { key: SAVE_KEY, moves: before.moves }, { timeout: 12000 });
           const settled = await autonomyReport(page);
+          await expect(page.locator("body")).not.toHaveClass(/selected-guided-play/);
+          await expect(page.locator(".tile.guided-counterpart")).toHaveCount(0);
           expect(settled.state.moves).toBe(before.moves - 1);
           expect(settled.state.counts.reduce((sum, count) => sum + count, 0))
             .toBeGreaterThan(before.counts.reduce((sum, count) => sum + count, 0));
@@ -489,6 +506,55 @@ for (const round of [2, 3]) {
       });
     }
   }
+}
+
+for (const testCase of [CASES[0], CASES[3]]) {
+  test(`selected active guide reload stays quiet on ${testCase.label}`, async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: testCase.viewport,
+      hasTouch: Boolean(testCase.mobile),
+      isMobile: Boolean(testCase.mobile),
+      reducedMotion: testCase.reduced ? "reduce" : "no-preference"
+    });
+    const page = await context.newPage();
+    const browserErrors = [];
+    page.on("console", (message) => {
+      if (["warning", "error"].includes(message.type())) browserErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => browserErrors.push(error.message));
+
+    try {
+      await openOrdinaryRoundAutonomy(page, `reload-${testCase.label}`, 2);
+      const hint = await waitForAutonomyHint(page, `${testCase.label} reload setup`);
+      const selectedCell = hint.usefulness.pair[0];
+      const counterpart = hint.usefulness.pair[1];
+      const before = hint.report.state;
+
+      await activateTile(page, selectedCell, testCase.input);
+      await expect(page.locator("body")).toHaveClass(/selected-guided-play/);
+      await expect(page.locator(`#tile-${counterpart.x}-${counterpart.y}`))
+        .toHaveClass(/guided-counterpart/);
+
+      await page.reload({ waitUntil: "domcontentloaded" });
+      await page.waitForTimeout(250);
+      await expect(page.locator("body")).not.toHaveClass(/selected-guided-play/);
+      await expect(page.locator(".tile.guided-counterpart")).toHaveCount(0);
+      const restored = await autonomyReport(page);
+      expect(restored.selectedIds).toEqual([]);
+      expect(restored.tutorialVisible).toBe(false);
+      expect(restored.state.moves).toBe(before.moves);
+      expect(restored.state.counts).toEqual(before.counts);
+      expect(restored.state.board).toEqual(before.board);
+      expect(restored.tiles).toBe(64);
+      expect(restored.rows).toBe(8);
+      expect(restored.completeRows).toBe(8);
+      expect(restored.overflowX).toBe(false);
+      expect(restored.brokenImages).toEqual([]);
+      expect(browserErrors).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
 }
 
 for (const testCase of CASES) {

@@ -1,5 +1,12 @@
 # Codex Build Notes
 
+## 2026-08-06 - Guided counterpart stays singular when play resumes
+
+- Player-visible correction: selecting an endpoint of the current authored or objective-useful glowing pair now keeps the exact counterpart as the only destination-strength glow during ordinary play and in the first actionable frame after Skip. The flowers that would be harvested remain visible at subdued forecast strength instead of becoming brighter than the tile the player must activate.
+- Authority boundary: the transient `selected-guided-play` state is derived only from the existing exact two-cell legal `selectedGuidedHintPair()` while Help, Black Candle activation guidance, and final-harvest authority are absent. It reuses the accepted `guided-counterpart` rendering, changes no pair, legal move, preview calculation, copy, focus, timer, RNG, save, objective, economy, geometry, mechanic, round, or progression, and retires on commit, cancellation, unrelated selection, invalidation, or reload.
+- Permanent contract: the existing R2/R3 source/destination matrix now measures the first selected frame, active Help, first post-Skip actionable frame, and settled commit across desktop `1280x720`, exact mobile `390x844`, full/reduced motion, and pointer/keyboard/touch. It requires counterpart opacity at least `.85`, every alternative legal/forecast overlay at most `.30`, one real objective-credit commit, and immediate transient retirement. Dedicated desktop/mobile reload cases require quiet state restoration; authored R1 and unrelated-selection coverage lock the same authority and cancellation boundary.
+- Local evidence: changed-flow guidance/reload passes `18/18`, authored/conflicting R1 cases pass `5/5`, generic unrelated Help passes `8/8`, and runtime budgets pass `4/4` with `456-515ms` mobile control return. Original-scale exact-mobile inspection measured the counterpart at `1.0` and four forecast cells at `0.22`, with the unchanged `378x378` altar, 64 tiles/eight rows, `scrollY=0`, loaded imagery, and no overflow. Project/HTML, syntax, diff, and changed-line security gates remain required before release.
+
 ## 2026-08-06 - Selected Help makes the counterpart visually singular
 
 - Player-visible correction: while selected-pair Help says `Choose the other glowing flower.`, the exact preserved counterpart now receives the only destination-strength gold glow. Other legal neighbors and harvest-preview cells remain visible as subdued forecast information instead of presenting multiple equally bright answers.

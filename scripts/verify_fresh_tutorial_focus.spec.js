@@ -362,6 +362,8 @@ for (const testCase of CASES) {
       expect(beforeHelp.selectedIds).toEqual(["tile-0-0"]);
       expect(beforeHelp.activeId).toBe("tile-0-0");
       expect(beforeHelp.rovingIds).toEqual(["tile-0-0"]);
+      await expect(page.locator("body")).not.toHaveClass(/selected-guided-play/);
+      await expect(page.locator(".tile.guided-counterpart")).toHaveCount(0);
 
       const beforeState = beforeHelp.state;
       if (testCase.input === "touch") {
@@ -441,6 +443,11 @@ test("Help preserves a selected flower that already belongs to its guided pair",
     await page.waitForTimeout(150);
     await page.locator(`#${pair.source.id}`).tap();
     await expect(page.locator(`#${pair.source.id}`)).toHaveClass(/sel|selected/);
+    await expect(page.locator("body")).toHaveClass(/selected-guided-play/);
+    await expect(page.locator(`#${pair.destination.id}`)).toHaveClass(/guided-counterpart/);
+    expect(await page.locator(".tile.match-preview:not(.guided-counterpart)").evaluateAll((tiles) => (
+      tiles.every((tile) => Number.parseFloat(getComputedStyle(tile, "::after").opacity || "0") <= .3)
+    ))).toBe(true);
 
     await page.locator("#tutorialHelpBtn").tap();
     await expect(page.locator("#tutorialPanel")).toBeVisible();
@@ -459,6 +466,8 @@ test("Help preserves a selected flower that already belongs to its guided pair",
 
     await page.locator("#tutorialSkipBtn").tap();
     await expect(page.locator(`#${pair.source.id}`)).toBeFocused();
+    await expect(page.locator("body")).toHaveClass(/selected-guided-play/);
+    await expect(page.locator(`#${pair.destination.id}`)).toHaveClass(/guided-counterpart/);
     await page.locator(`#${pair.destination.id}`).tap();
     await page.waitForFunction((key) => {
       const state = JSON.parse(localStorage.getItem(key) || "{}");
@@ -466,6 +475,8 @@ test("Help preserves a selected flower that already belongs to its guided pair",
         && document.querySelector("#board")?.getAttribute("aria-busy") === "false";
     }, SAVE_KEY, { timeout: 12000 });
     const settled = await stateReport(page);
+    await expect(page.locator("body")).not.toHaveClass(/selected-guided-play/);
+    await expect(page.locator(".tile.guided-counterpart")).toHaveCount(0);
     expect(settled.state.moves).toBe(5);
     expect(settled.state.counts[5]).toBeGreaterThan(0);
     expect(settled.selectedIds).toEqual([]);
