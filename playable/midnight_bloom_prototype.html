@@ -15853,6 +15853,7 @@
         && Boolean(invalidSwapTimer);
       if (ordinaryRefusalReplay) {
         retireInvalidSwapFeedback();
+        clearIdleHint();
       }
       const selectedReplayHintPair = replay
         ? selectedGuidedHintPair()
