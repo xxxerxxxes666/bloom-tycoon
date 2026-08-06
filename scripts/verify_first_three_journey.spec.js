@@ -2,6 +2,7 @@ const { test, expect } = require("@playwright/test");
 
 const BASE_URL = process.env.BLOOM_TEST_URL || "http://127.0.0.1:4173/playable/midnight_bloom_prototype.html";
 const SAVE_KEY = "bloomTycoonPlayableStateV1";
+const OWNED_REPLAY_SEED_BALANCE = 50;
 const ROUND_TARGETS = {
   1: [5, 1],
   2: [2, 4, 5],
@@ -52,6 +53,10 @@ const GOAL_FOLLOWING_SEEDS = [
   "crypt-iris",
   "relic-garden"
 ];
+
+function ownedReplayTransaction(reward) {
+  return `Reward reinvested · ${reward} coins nourished the Conservatory · ${OWNED_REPLAY_SEED_BALANCE} coins kept.`;
+}
 
 test.setTimeout(180000);
 
@@ -1969,12 +1974,7 @@ async function failAndRetryOwnedReplayRoundOne(page, config, expectedCoins, runL
 
 async function playOwnedReplayCycle(page, config, runLabel, strategy) {
   const expectedRewards = [120, 150, 180];
-  const cycleStart = (await journeyState(page)).coins;
-  const expectedStarts = [
-    cycleStart,
-    cycleStart + expectedRewards[0],
-    cycleStart + expectedRewards[0] + expectedRewards[1]
-  ];
+  const expectedStarts = [50, 50, 50];
   const expectedActions = [
     "Next Order → Moonlit Wreath",
     "Next Order → Bloodroot Compact",
@@ -2123,15 +2123,15 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
     expect(settledSample.topCue, `${runLabel} round ${round} settled action has no duplicate cue`).toBe("");
     expect(settledSample.transientNodes, "settled ceremony removes all transient descendants").toBe(0);
     expect(settledSample.renewalHidden, "settled ceremony hides transient host").toBe(true);
-    const rewardBalance = startCoins + expectedRewards[round - 1];
+    const rewardBalance = OWNED_REPLAY_SEED_BALANCE;
     const ceremony = await journeyState(page);
     expectFocusedPayoffNarration(
       ceremony,
       `${runLabel} round ${round} owned settled ceremony`
     );
     expect(ceremony.activeElementId, `${runLabel} round ${round} sole action owns focus`).toBe("nextOrderBtn");
-    expect(ceremony.coins, `${runLabel} round ${round} reward credited once`).toBe(rewardBalance);
-    expect(ceremony.payoffTransaction).toBe(`Reward added · +${expectedRewards[round - 1]} coins · ${rewardBalance} coins balance.`);
+    expect(ceremony.coins, `${runLabel} round ${round} reward reinvested once`).toBe(rewardBalance);
+    expect(ceremony.payoffTransaction).toBe(ownedReplayTransaction(expectedRewards[round - 1]));
     expect(ceremony.payoffCopy).toBe(expectedCopies[round - 1]);
     expect(ceremony.payoffMode).toBe("owned-replay");
     expect(ceremony.tutorial).toBe("");
@@ -2172,7 +2172,7 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
         `${runLabel} round ${round} owned ceremony reload ${reload + 1}`
       );
       expect(reloaded.coins, `${runLabel} round ${round} reward reload ${reload + 1}`).toBe(rewardBalance);
-      expect(reloaded.payoffTransaction).toBe(`Reward added · +${expectedRewards[round - 1]} coins · ${rewardBalance} coins balance.`);
+      expect(reloaded.payoffTransaction).toBe(ownedReplayTransaction(expectedRewards[round - 1]));
       expect(reloaded.payoffCopy).toBe(expectedCopies[round - 1]);
       expect(reloaded.payoffMode).toBe("owned-replay");
       expect(reloaded.tutorial).toBe("");
@@ -2245,7 +2245,7 @@ async function completeOwnedRoundAndReloadDuringPhase(page, config, runLabel, ro
   expect(interrupted.roundComplete).toBe(true);
   expect(interrupted.ownedRenewalPhase).toBe(phase);
   expect(interrupted.visibleButtons, `${runLabel} round ${round} ${phase} withholds action`).toEqual([]);
-  expect(interrupted.payoffTransaction).toBe(`Reward added · +${[120, 150, 180][round - 1]} coins · ${interrupted.coins} coins balance.`);
+  expect(interrupted.payoffTransaction).toBe(ownedReplayTransaction([120, 150, 180][round - 1]));
   await page.screenshot({
     path: `work/replay-renewal-${config.label}-round${round}-${phase}-interrupted.png`,
     fullPage: true
@@ -2978,13 +2978,13 @@ for (const config of [
 
       const secondCycle = await playOwnedReplayCycle(page, config, `${runLabel}-cycle2`, "goal-following");
       expect(secondCycle.map((round) => round.balances)).toEqual([
-        [50, 170, 170],
-        [170, 320, 320],
-        [320, 500, 500]
+        [50, 50, 50],
+        [50, 50, 50],
+        [50, 50, 50]
       ]);
       const finalState = await journeyState(page);
-      expect(finalState.coins).toBe(500);
-      expect(finalState.payoffTransaction).toBe("Reward added · +180 coins · 500 coins balance.");
+      expect(finalState.coins).toBe(50);
+      expect(finalState.payoffTransaction).toBe(ownedReplayTransaction(180));
       expect(finalState.payoffCopy).toBe("Bouquet complete. The raised conservatory remains yours.");
       expect(finalState.visibleButtons).toEqual(["Play Again → First Bouquet"]);
       await expectPermanentRaisedGreenhouse(page, `${runLabel} second-cycle final ceremony`);
@@ -2994,8 +2994,8 @@ for (const config of [
       const secondReplayAction = await spendPrimaryCeremonyAction(page, config.mobile ? "touch" : "pointer");
       expect(secondReplayAction).toBe("Play Again → First Bouquet");
       const secondReplayHandoff = await journeyState(page);
-      expect(secondReplayHandoff.coins).toBe(500);
-      expect(secondReplayHandoff.replayEntryReceipt).toBe("500 coins kept · Conservatory owned · New order ready.");
+      expect(secondReplayHandoff.coins).toBe(50);
+      expect(secondReplayHandoff.replayEntryReceipt).toBe("50 coins kept · Conservatory owned · New order ready.");
       expectOwnedReplayEntryGeometry(secondReplayHandoff, config, `${runLabel} second replay handoff`);
       await expectPermanentRaisedGreenhouse(page, `${runLabel} second replay handoff`);
       await page.screenshot({ path: `work/replay-second-entry-${config.label}-transient.png`, fullPage: true });
@@ -3004,22 +3004,22 @@ for (const config of [
       expect(afterImmediateReplayMove.replayEntryActive, "first replay move retires the receipt").toBe(false);
       expect(afterImmediateReplayMove.handoffCueVisible, "first replay move cannot restore the detached receipt").toBe(false);
       expect(afterImmediateReplayMove.rewardPromise).toBe("Complete for 120 coins");
-      expect(afterImmediateReplayMove.coins).toBe(500);
+      expect(afterImmediateReplayMove.coins).toBe(50);
       await page.screenshot({ path: `work/replay-second-entry-${config.label}-first-move.png`, fullPage: true });
-      await reloadAndExpectActiveReplayBalance(page, config, 500, 0);
+      await reloadAndExpectActiveReplayBalance(page, config, 50, 0);
       const secondReplayReady = await journeyState(page);
-      expect(secondReplayReady.coins).toBe(500);
+      expect(secondReplayReady.coins).toBe(50);
       await page.screenshot({ path: `work/replay-second-active-reload-${config.label}.png`, fullPage: true });
-      await failAndRetryOwnedReplayRoundOne(page, config, 500, `${runLabel}-accumulated`);
+      await failAndRetryOwnedReplayRoundOne(page, config, 50, `${runLabel}-bounded`);
       const thirdCycle = await playOwnedReplayCycle(page, config, `${runLabel}-cycle3`, "goal-following");
       expect(thirdCycle.map((round) => round.balances)).toEqual([
-        [500, 620, 620],
-        [620, 770, 770],
-        [770, 950, 950]
+        [50, 50, 50],
+        [50, 50, 50],
+        [50, 50, 50]
       ]);
       const thirdFinalState = await journeyState(page);
-      expect(thirdFinalState.coins).toBe(950);
-      expect(thirdFinalState.payoffTransaction).toBe("Reward added · +180 coins · 950 coins balance.");
+      expect(thirdFinalState.coins).toBe(50);
+      expect(thirdFinalState.payoffTransaction).toBe(ownedReplayTransaction(180));
       expect(thirdFinalState.visibleButtons).toEqual(["Play Again → First Bouquet"]);
       console.log(`${runLabel} balance and renewal traces: ${JSON.stringify({
         firstCycle: firstCycle.map((round) => round.balances),
@@ -3064,7 +3064,7 @@ for (const config of [
       ]);
 
       const phases = ["binding", "transfer", "renewal"];
-      const expectedBalances = [170, 320, 500];
+      const expectedBalances = [50, 50, 50];
       const interruptions = [];
       for (let round = 1; round <= 3; round += 1) {
         const interrupted = await completeOwnedRoundAndReloadDuringPhase(
@@ -3206,14 +3206,14 @@ test("reduced-motion exact-mobile replay boundary preserves the owned wallet", a
       "goal-following"
     );
     expect(reducedReplay.map((round) => round.balances)).toEqual([
-      [50, 170, 170],
-      [170, 320, 320],
-      [320, 500, 500]
+      [50, 50, 50],
+      [50, 50, 50],
+      [50, 50, 50]
     ]);
     console.log(`mobile390-reduced renewal timing: ${JSON.stringify(reducedReplay.map((round) => round.ownedRenewalTiming))}`);
     const secondFinal = await journeyState(page);
-    expect(secondFinal.coins).toBe(500);
-    expect(secondFinal.payoffTransaction).toBe("Reward added · +180 coins · 500 coins balance.");
+    expect(secondFinal.coins).toBe(50);
+    expect(secondFinal.payoffTransaction).toBe(ownedReplayTransaction(180));
     expect(secondFinal.payoffMode).toBe("owned-replay");
     expect(secondFinal.restorationTitle).toBe("Bloodroot Compact Complete");
     expect(secondFinal.trophyKicker).toBe("Bouquet Complete");
@@ -3234,12 +3234,12 @@ test("reduced-motion exact-mobile replay boundary preserves the owned wallet", a
 
     await spendPrimaryCeremonyAction(page, "touch");
     const secondHandoff = await journeyState(page);
-    expect(secondHandoff.coins).toBe(500);
-    expect(secondHandoff.replayEntryReceipt).toBe("500 coins kept · Conservatory owned · New order ready.");
+    expect(secondHandoff.coins).toBe(50);
+    expect(secondHandoff.replayEntryReceipt).toBe("50 coins kept · Conservatory owned · New order ready.");
     expectOwnedReplayEntryGeometry(secondHandoff, config, "reduced-motion second replay handoff");
     await expectPermanentRaisedGreenhouse(page, "reduced-motion second replay handoff");
     await page.screenshot({ path: "work/replay-second-entry-mobile390-reduced-transient.png", fullPage: true });
-    await reloadAndExpectActiveReplayBalance(page, config, 500);
+    await reloadAndExpectActiveReplayBalance(page, config, 50);
     const thirdReducedReplay = await playOwnedReplayCycle(
       page,
       config,
@@ -3247,13 +3247,13 @@ test("reduced-motion exact-mobile replay boundary preserves the owned wallet", a
       "goal-following"
     );
     expect(thirdReducedReplay.map((round) => round.balances)).toEqual([
-      [500, 620, 620],
-      [620, 770, 770],
-      [770, 950, 950]
+      [50, 50, 50],
+      [50, 50, 50],
+      [50, 50, 50]
     ]);
     const thirdReducedFinal = await journeyState(page);
-    expect(thirdReducedFinal.coins).toBe(950);
-    expect(thirdReducedFinal.payoffTransaction).toBe("Reward added · +180 coins · 950 coins balance.");
+    expect(thirdReducedFinal.coins).toBe(50);
+    expect(thirdReducedFinal.payoffTransaction).toBe(ownedReplayTransaction(180));
     expect(thirdReducedFinal.visibleButtons).toEqual(["Play Again → First Bouquet"]);
     expect(consoleMessages).toEqual([]);
     expect(pageErrors).toEqual([]);
@@ -3263,7 +3263,7 @@ test("reduced-motion exact-mobile replay boundary preserves the owned wallet", a
   }
 });
 
-test("inflated owned profiles retain their spendable wallet and accrue normally", async ({ browser }) => {
+test("current and legacy owned profiles converge to the carried seed without replaying a payout", async ({ browser }) => {
   for (const config of [
     { label: "desktop", viewport: { width: 1280, height: 720 }, mobile: false, reducedMotion: false },
     { label: "mobile390-reduced", viewport: { width: 390, height: 844 }, mobile: true, reducedMotion: true }
@@ -3276,64 +3276,103 @@ test("inflated owned profiles retain their spendable wallet and accrue normally"
     });
     const page = await context.newPage();
     try {
-      await openFresh(page, `inflated-${config.label}`, `inflated-${config.label}`);
-      const authoritativeBoard = await page.evaluate((key) => {
-        const state = JSON.parse(localStorage.getItem(key) || "{}");
-        Object.assign(state, {
-          currentRound: 1,
-          roundComplete: false,
-          roundOneRestored: true,
-          roundTwoGreenhouseUpgraded: true,
-          roundThreeConservatoryRaised: true,
-          coins: 7820,
-          moves: 6,
-          counts: [0, 0, 0, 0, 0, 0],
-          tutorialSkipped: true,
-          tutorialActive: false,
-          blackCandleLessonComplete: true
-        });
-        localStorage.setItem(key, JSON.stringify(state));
-        return JSON.stringify(state.board);
-      }, SAVE_KEY);
+      const profiles = [170, 320, 380, 500, 7820].flatMap((coins) => [
+        { coins, economyVersion: 2, label: `current-${coins}` },
+        { coins, economyVersion: 0, label: `legacy-${coins}` }
+      ]);
+      for (const profile of profiles) {
+        await openFresh(
+          page,
+          `owned-normalization-${config.label}-${profile.label}`,
+          `owned-normalization-${config.label}-${profile.label}`
+        );
+        const authoritative = await page.evaluate(({ key, profile }) => {
+          const state = JSON.parse(localStorage.getItem(key) || "{}");
+          Object.assign(state, {
+            focusedEconomyVersion: profile.economyVersion,
+            currentRound: 1,
+            roundComplete: false,
+            roundOneRestored: true,
+            roundTwoGreenhouseUpgraded: true,
+            roundThreeConservatoryRaised: true,
+            freshConservatorySettlement: false,
+            coins: profile.coins,
+            moves: 6,
+            counts: [0, 0, 0, 0, 0, 0],
+            armedLineRelic: null,
+            tutorialSkipped: true,
+            tutorialActive: false,
+            blackCandleLessonComplete: true
+          });
+          localStorage.setItem(key, JSON.stringify(state));
+          return {
+            board: JSON.stringify(state.board),
+            counts: JSON.stringify(state.counts),
+            moves: state.moves,
+            ownership: [
+              state.roundOneRestored,
+              state.roundTwoGreenhouseUpgraded,
+              state.roundThreeConservatoryRaised
+            ],
+            tutorial: [state.tutorialSkipped, state.tutorialActive, state.blackCandleLessonComplete],
+            relic: state.armedLineRelic
+          };
+        }, { key: SAVE_KEY, profile });
 
-      for (let reload = 0; reload < 2; reload += 1) {
-        await page.reload({ waitUntil: "networkidle" });
-        const state = await journeyState(page);
-        expect(state.coins, `${config.label} reload ${reload + 1} preserves the spendable wallet`).toBe(7820);
-        expect(state.round).toBe(1);
-        expect(state.roundComplete).toBe(false);
-        expect(state.freshConservatorySettlement).toBe(false);
-        expect(state.moves).toBe(6);
-        expect(state.counts).toEqual([0, 0, 0, 0, 0, 0]);
-        expect(state.tiles).toBe(64);
-        expect(state.tileRows).toBe(8);
-        expect(state.visibleButtons).toEqual(["Help"]);
-        expect(state.replayEntryActive).toBe(false);
-        expect(state.overflowX).toBe(false);
-        expect(state.brokenImages).toEqual([]);
-        expect(await page.evaluate((key) => {
-          const saved = JSON.parse(localStorage.getItem(key) || "{}");
-          return JSON.stringify(saved.board);
-        }, SAVE_KEY)).toBe(authoritativeBoard);
-        await expectPermanentRaisedGreenhouse(page, `${config.label} inflated reload ${reload + 1}`);
-        await expectVisibleCoinBalance(page, 7820, { pulsing: false });
-        await assertActiveBoard(page, config.mobile);
+        for (let reload = 0; reload < 2; reload += 1) {
+          await page.reload({ waitUntil: "networkidle" });
+          const state = await journeyState(page);
+          expect(state.coins, `${config.label} ${profile.label} reload ${reload + 1} normalizes the spendless wallet`).toBe(50);
+          expect(state.round).toBe(1);
+          expect(state.roundComplete).toBe(false);
+          expect(state.freshConservatorySettlement).toBe(false);
+          expect(state.moves).toBe(authoritative.moves);
+          expect(JSON.stringify(state.counts)).toBe(authoritative.counts);
+          expect(state.tiles).toBe(64);
+          expect(state.tileRows).toBe(8);
+          expect(state.visibleButtons).toEqual(["Help"]);
+          expect(state.replayEntryActive).toBe(false);
+          expect(state.overflowX).toBe(false);
+          expect(state.brokenImages).toEqual([]);
+          const savedAuthority = await page.evaluate((key) => {
+            const saved = JSON.parse(localStorage.getItem(key) || "{}");
+            return {
+              board: JSON.stringify(saved.board),
+              ownership: [
+                saved.roundOneRestored,
+                saved.roundTwoGreenhouseUpgraded,
+                saved.roundThreeConservatoryRaised
+              ],
+              tutorial: [saved.tutorialSkipped, saved.tutorialActive, saved.blackCandleLessonComplete],
+              relic: saved.armedLineRelic
+            };
+          }, SAVE_KEY);
+          expect(savedAuthority).toEqual({
+            board: authoritative.board,
+            ownership: authoritative.ownership,
+            tutorial: authoritative.tutorial,
+            relic: authoritative.relic
+          });
+          await expectPermanentRaisedGreenhouse(page, `${config.label} ${profile.label} reload ${reload + 1}`);
+          await expectVisibleCoinBalance(page, 50, { pulsing: false });
+          await assertActiveBoard(page, config.mobile);
+        }
       }
 
-      await playCurrentRound(page, `${config.label}-inflated-accrual`, 1, "goal-following", 3);
+      await playCurrentRound(page, `${config.label}-normalized-reinvestment`, 1, "goal-following", 3);
       await page.waitForSelector("#nextOrderBtn:not([hidden])", { timeout: 3000 });
       const completed = await journeyState(page);
-      expect(completed.coins, `${config.label} advertised reward credits exactly once`).toBe(7940);
-      expect(completed.payoffTransaction).toBe("Reward added · +120 coins · 7940 coins balance.");
+      expect(completed.coins, `${config.label} advertised reward reinvests exactly once`).toBe(50);
+      expect(completed.payoffTransaction).toBe(ownedReplayTransaction(120));
       expect(completed.visibleButtons).toEqual(["Next Order → Moonlit Wreath"]);
-      await expectPermanentRaisedGreenhouse(page, `${config.label} inflated completion`);
+      await expectPermanentRaisedGreenhouse(page, `${config.label} normalized completion`);
       for (let reload = 0; reload < 2; reload += 1) {
         await page.reload({ waitUntil: "networkidle" });
         const reloaded = await journeyState(page);
-        expect(reloaded.coins, `${config.label} completed reload ${reload + 1} does not duplicate reward`).toBe(7940);
-        expect(reloaded.payoffTransaction).toBe("Reward added · +120 coins · 7940 coins balance.");
+        expect(reloaded.coins, `${config.label} completed reload ${reload + 1} does not duplicate reward`).toBe(50);
+        expect(reloaded.payoffTransaction).toBe(ownedReplayTransaction(120));
         expect(reloaded.visibleButtons).toEqual(["Next Order → Moonlit Wreath"]);
-        await expectPermanentRaisedGreenhouse(page, `${config.label} inflated completion reload ${reload + 1}`);
+        await expectPermanentRaisedGreenhouse(page, `${config.label} normalized completion reload ${reload + 1}`);
       }
     } finally {
       await context.close();
