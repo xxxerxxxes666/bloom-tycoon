@@ -16,10 +16,8 @@ test.setTimeout(180000);
 
 async function openOrdinaryRoundAutonomy(page, label, round = 3) {
   await page.goto(`${BASE_URL}?idle-hint-autonomy=${label}-r${round}`, { waitUntil: "networkidle" });
-  await page.evaluate((key) => localStorage.removeItem(key), SAVE_KEY);
-  await page.reload({ waitUntil: "networkidle" });
   await expect(page.locator(".tile")).toHaveCount(64);
-  await page.evaluate(({ key, round }) => {
+  const seededState = await page.evaluate(({ key, round }) => {
     const state = JSON.parse(localStorage.getItem(key) || "{}");
     const board = Array.from({ length: 8 }, (_, y) => (
       Array.from({ length: 8 }, (_, x) => (x + y * 2) % 6)
@@ -52,8 +50,17 @@ async function openOrdinaryRoundAutonomy(page, label, round = 3) {
       tutorialActive: false,
       blackCandleLessonComplete: true
     });
-    localStorage.setItem(key, JSON.stringify(state));
+    return JSON.stringify(state);
   }, { key: SAVE_KEY, round });
+  await page.addInitScript(({ key, marker, state }) => {
+    if (sessionStorage.getItem(marker)) return;
+    localStorage.setItem(key, state);
+    sessionStorage.setItem(marker, "1");
+  }, {
+    key: SAVE_KEY,
+    marker: `idle-hint-autonomy-${label}-r${round}`,
+    state: seededState
+  });
   await page.reload({ waitUntil: "networkidle" });
   await expect(page.locator(".tile")).toHaveCount(64);
 }
