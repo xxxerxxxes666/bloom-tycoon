@@ -13467,7 +13467,7 @@
       }, INVALID_SWAP_FEEDBACK_MS);
     }
 
-    function retireInvalidSwapForAcceptedMove() {
+    function retireInvalidSwapFeedback() {
       if (!invalidSwapTimer && invalidSwapCells.size === 0) {
         return;
       }
@@ -15846,6 +15846,14 @@
       if (tutorialSkipped && !replay) {
         return;
       }
+      const ordinaryRefusalReplay = replay
+        && !tutorialActive
+        && hasMadeValidMove
+        && (currentRound === 2 || currentRound === 3)
+        && Boolean(invalidSwapTimer);
+      if (ordinaryRefusalReplay) {
+        retireInvalidSwapFeedback();
+      }
       const selectedReplayHintPair = replay
         ? selectedGuidedHintPair()
         : [];
@@ -16414,7 +16422,7 @@
         );
         return;
       }
-      retireInvalidSwapForAcceptedMove();
+      retireInvalidSwapFeedback();
       commitFinalHarvestForPair([selected, target]);
       const roundOnePlanBeforeSwap = activeRoundPlan();
       const roundOneFirstTargetBeforeSwap = roundOnePlanBeforeSwap.targets[0];

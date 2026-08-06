@@ -168,6 +168,21 @@ async function activatePair(page, pair, input) {
   await destination.click();
 }
 
+async function activateControl(page, selector, input) {
+  const control = page.locator(selector);
+  if (input === "keyboard") {
+    await control.focus();
+    await page.keyboard.press("Enter");
+    return;
+  }
+  if (input === "touch") {
+    const box = await control.boundingBox();
+    await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+    return;
+  }
+  await control.click();
+}
+
 async function stateReport(page) {
   return page.evaluate((key) => {
     const visible = (node) => {
@@ -205,6 +220,10 @@ async function stateReport(page) {
       greenhouseRect: rect(document.querySelector("#mobileGreenhouseProgress")),
       boardRect: rect(document.querySelector("#board")),
       tutorialVisible: visible(document.querySelector("#tutorialPanel")),
+      tutorialCopy: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
+      tutorialIcon: document.querySelector("#tutorialPanel .tutorial-icon")?.textContent.trim() || "",
+      tutorialClasses: Array.from(document.querySelector("#tutorialPanel")?.classList || []),
+      cueRefused: document.querySelector("#firstSwapCue")?.classList.contains("swap-refused") || false,
       liveOwners: Array.from(document.querySelectorAll("[aria-live]"))
         .filter((node) => visible(node) && ["polite", "assertive"].includes(node.getAttribute("aria-live")))
         .map((node) => ({
@@ -215,6 +234,8 @@ async function stateReport(page) {
       invalidIds: tiles.filter((tile) => tile.classList.contains("invalid-swap")).map((tile) => tile.id),
       invalidLabels: tiles.filter((tile) => tile.classList.contains("invalid-swap"))
         .map((tile) => tile.getAttribute("aria-label") || ""),
+      invalidSuffixIds: tiles.filter((tile) => (tile.getAttribute("aria-label") || "").includes("invalid swap refused"))
+        .map((tile) => tile.id),
       selected: tiles.filter((tile) => tile.classList.contains("sel") || tile.classList.contains("selected")).length,
       rovingIds: tiles.filter((tile) => tile.tabIndex === 0).map((tile) => tile.id),
       focusedId: document.activeElement?.id || "",
@@ -368,6 +389,136 @@ for (const config of VIEWPORTS) {
         expect(reloaded.rows).toBe(8);
         expect(reloaded.overflowX).toBe(false);
         expect(reloaded.brokenImages).toEqual([]);
+        expect(errors).toEqual([]);
+      } finally {
+        await context.close();
+      }
+    });
+  }
+}
+
+for (const config of VIEWPORTS) {
+  for (const round of [2, 3]) {
+    test(`Help retires ordinary R${round} refusal on ${config.label}`, async ({ browser }) => {
+      const context = await browser.newContext({
+        viewport: config.viewport,
+        hasTouch: Boolean(config.mobile),
+        isMobile: Boolean(config.mobile),
+        reducedMotion: config.reduced ? "reduce" : "no-preference"
+      });
+      const page = await context.newPage();
+      const errors = [];
+      page.on("console", (message) => {
+        if (["warning", "error"].includes(message.type())) errors.push(message.text());
+      });
+      page.on("pageerror", (error) => errors.push(error.message));
+      page.on("requestfailed", (request) => {
+        const errorText = request.failure()?.errorText || "";
+        if (errorText !== "net::ERR_ABORTED") errors.push(`${request.url()} ${errorText}`);
+      });
+
+      try {
+        await openOrdinaryRound(page, round, `help-${config.label}-r${round}`);
+        await establishOrdinaryAgency(page);
+        const pair = await findInvalidAdjacentPair(page);
+        expect(pair, `${config.label} R${round} has an invalid adjacent pair for Help`).toBeTruthy();
+        const before = await stateReport(page);
+        await activatePair(page, pair, config.input);
+        await expect(page.locator("#board .tile.invalid-swap")).toHaveCount(2);
+        await page.waitForTimeout(160);
+        await activateControl(page, "#tutorialHelpBtn", config.input);
+        await expect(page.locator("#tutorialPanel")).toBeVisible();
+        await expect(page.locator("#tutorialSkipBtn")).toBeFocused();
+
+        const sourceId = `tile-${pair[0].x}-${pair[0].y}`;
+        const expectedCopy = round === 2
+          ? "Finish the Moonlit Wreath."
+          : "Complete Bloodroot Compact.";
+        const opened = await stateReport(page);
+        expect(opened.moves).toBe(before.moves);
+        expect(opened.counts).toEqual(before.counts);
+        expect(opened.board).toBe(before.board);
+        expect(opened.selected).toBe(0);
+        expect(opened.tutorialCopy).toBe(expectedCopy);
+        expect(opened.tutorialIcon).toBe("✦");
+        expect(opened.tutorialClasses).not.toContain("refused-tutorial");
+        expect(opened.cueRefused).toBe(false);
+        expect(opened.invalidIds).toEqual([]);
+        expect(opened.invalidSuffixIds).toEqual([]);
+        expect(opened.focusedId).toBe("tutorialSkipBtn");
+        expect(opened.rovingIds).toEqual([sourceId]);
+        expect(opened.liveOwners).toHaveLength(1);
+        expect(opened.liveOwners[0].id).toBe("tutorialPanel");
+        expect(opened.liveOwners[0].text).toContain(expectedCopy);
+        expect(opened.liveOwners[0].text).not.toContain("NO BLOOM");
+        expect(opened.tileCount).toBe(64);
+        expect(opened.rows).toBe(8);
+        expect(opened.boardRect.width).toBe(config.mobile ? 378 : 600);
+        expect(opened.boardRect.height).toBe(config.mobile ? 378 : 600);
+        expect(opened.scrollY).toBe(0);
+        expect(opened.overflowX).toBe(false);
+        expect(opened.overflowY).toBe(false);
+        expect(opened.brokenImages).toEqual([]);
+
+        await page.waitForTimeout(1300);
+        const pastBoundary = await stateReport(page);
+        expect({
+          moves: pastBoundary.moves,
+          counts: pastBoundary.counts,
+          board: pastBoundary.board,
+          selected: pastBoundary.selected,
+          tutorialCopy: pastBoundary.tutorialCopy,
+          tutorialIcon: pastBoundary.tutorialIcon,
+          tutorialClasses: pastBoundary.tutorialClasses,
+          cue: pastBoundary.cue,
+          cueRefused: pastBoundary.cueRefused,
+          hints: pastBoundary.hints,
+          invalidIds: pastBoundary.invalidIds,
+          invalidSuffixIds: pastBoundary.invalidSuffixIds,
+          focusedId: pastBoundary.focusedId,
+          rovingIds: pastBoundary.rovingIds
+        }).toEqual({
+          moves: opened.moves,
+          counts: opened.counts,
+          board: opened.board,
+          selected: opened.selected,
+          tutorialCopy: opened.tutorialCopy,
+          tutorialIcon: opened.tutorialIcon,
+          tutorialClasses: opened.tutorialClasses,
+          cue: opened.cue,
+          cueRefused: opened.cueRefused,
+          hints: opened.hints,
+          invalidIds: opened.invalidIds,
+          invalidSuffixIds: opened.invalidSuffixIds,
+          focusedId: opened.focusedId,
+          rovingIds: opened.rovingIds
+        });
+
+        if (config.label === "mobile390" && round === 2) {
+          await page.screenshot({ path: "work/help-retires-refusal-mobile390-r2.png", fullPage: true });
+        }
+        if (config.label === "desktop" && round === 3) {
+          await page.screenshot({ path: "work/help-retires-refusal-desktop-r3.png", fullPage: true });
+        }
+
+        await activateControl(page, "#tutorialSkipBtn", config.input);
+        await expect(page.locator("#tutorialPanel")).not.toBeVisible();
+        const skipped = await stateReport(page);
+        expect(skipped.moves).toBe(before.moves);
+        expect(skipped.counts).toEqual(before.counts);
+        expect(skipped.board).toBe(before.board);
+        expect(skipped.selected).toBe(0);
+        expect(skipped.invalidIds).toEqual([]);
+        expect(skipped.invalidSuffixIds).toEqual([]);
+        expect(skipped.cueRefused).toBe(false);
+        expect(skipped.rovingIds).toEqual([sourceId]);
+        expect(skipped.focusedId).toBe("tutorialHelpBtn");
+        expect(skipped.tileCount).toBe(64);
+        expect(skipped.rows).toBe(8);
+        expect(skipped.scrollY).toBe(0);
+        expect(skipped.overflowX).toBe(false);
+        expect(skipped.overflowY).toBe(false);
+        expect(skipped.brokenImages).toEqual([]);
         expect(errors).toEqual([]);
       } finally {
         await context.close();

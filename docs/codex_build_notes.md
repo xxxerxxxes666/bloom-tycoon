@@ -1,5 +1,12 @@
 # Codex Build Notes
 
+## 2026-08-06 - Help starts after ordinary refusal retires
+
+- Player-visible correction: invoking Help during an ordinary post-move R2/R3 refusal now cancels that transient refusal generation before the tutorial renders. The first Help frame immediately shows the authoritative round instruction with focused Skip and no inherited `NO BLOOM`, red-X cells, refusal class, or accessible-name suffix; crossing the former timer boundary cannot mutate the panel or board afterward.
+- Authority boundary: the branch is limited to replay Help in active R2/R3 after a valid move while an ordinary refusal timer exists. Ordinary refusal still runs unchanged when Help is not invoked, accepted valid swaps retain their cancellation path, and untouched teaching plus already-active guided/tutorial refusal authority remain unchanged. No timer duration, copy, node, control, save field, move, objective, RNG, economy, round, mechanic, or progression changed.
+- Permanent contract: `scripts/verify_ordinary_refusal_outcome.spec.js` adds a separate R2/R3 desktop `1280x720` and exact-mobile `390x844`, full/reduced, keyboard/pointer/touch matrix. It requires authoritative first-frame tutorial copy, sole polite tutorial ownership, zero refusal residue, exact state stability past `1.3s`, Help/Skip focus and roving continuity, unchanged board/moves/objectives, 64 tiles/eight rows, exact `600px`/`378px` altars, loaded imagery, no overflow, and clean browser-error gates.
+- Local evidence: the complete ordinary refusal + rapid valid + Help-entry matrix passes `16/16`; the authored Help replay/selection/continuation matrix passes `18/18`. Inspected exact-mobile R2 and desktop R3 Help frames show the correct round instruction, contained Skip action, complete altar, and no refusal residue. Project/HTML verification, every spec and inline playable syntax, diff check, and changed-line credential/tracker scan pass.
+
 ## 2026-08-06 - Valid swaps retire stale refusal authority
 
 - Player-visible correction: when a valid adjacent pair is committed during the bounded ordinary refusal response, the accepted move now atomically retires the old refusal timer, both red-X sockets, their accessible-name suffixes, and the saved refusal cue/hints before valid resolution begins. The valid harvest, Thorn result, Black Candle guide, final-harvest instruction, or settled receipt remains authoritative through the former refusal callback boundary.
