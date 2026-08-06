@@ -15847,10 +15847,9 @@
         return;
       }
       const ordinaryRefusalReplay = replay
-        && !tutorialActive
-        && hasMadeValidMove
         && (currentRound === 2 || currentRound === 3)
-        && (invalidSwapTimer !== null || invalidSwapCells.size > 0);
+        && invalidSwapCells.size > 0
+        && Boolean($("tutorialPanel")?.hidden);
       if (ordinaryRefusalReplay) {
         retireInvalidSwapFeedback();
         clearIdleHint();
