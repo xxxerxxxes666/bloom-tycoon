@@ -30,29 +30,36 @@ async function openOrdinaryRound(page, round, label) {
   }, { key: SAVE_KEY, marker: `ordinary-refusal-${label}-fresh` });
   await page.goto(`${BASE_URL}?ordinary-refusal=${label}-r${round}`, { waitUntil: "networkidle" });
   await expect(page.locator("#board .tile")).toHaveCount(64);
-  await page.evaluate(({ key, round }) => {
-    const state = JSON.parse(localStorage.getItem(key) || "{}");
-    Object.assign(state, {
-      currentRound: round,
-      roundComplete: false,
-      moves: round === 2 ? 8 : 7,
-      counts: round === 2 ? [0, 0, 3, 0, 0, 0] : [3, 0, 0, 3, 0, 0],
-      coins: round === 2 ? 20 : 50,
-      roundOneRestored: true,
-      roundTwoGreenhouseUpgraded: round === 3,
-      roundThreeConservatoryRaised: false,
-      hasMadeValidMove: true,
-      tutorialSkipped: true,
-      tutorialActive: false,
-      blackCandleLessonComplete: true,
-      cursedThorns: [],
-      clearedCursedThorns: round === 2 ? 3 : 0,
-      restoredRoundTwoGuideMoves: 2,
-      armedLineRelic: null,
-      freshConservatorySettlement: false
-    });
-    localStorage.setItem(key, JSON.stringify(state));
-  }, { key: SAVE_KEY, round });
+  const state = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}"), SAVE_KEY);
+  Object.assign(state, {
+    currentRound: round,
+    roundComplete: false,
+    moves: round === 2 ? 8 : 7,
+    counts: round === 2 ? [0, 0, 3, 0, 0, 0] : [3, 0, 0, 3, 0, 0],
+    coins: round === 2 ? 20 : 50,
+    roundOneRestored: true,
+    roundTwoGreenhouseUpgraded: round === 3,
+    roundThreeConservatoryRaised: false,
+    hasMadeValidMove: true,
+    tutorialSkipped: true,
+    tutorialActive: false,
+    blackCandleLessonComplete: true,
+    cursedThorns: [],
+    clearedCursedThorns: round === 2 ? 3 : 0,
+    restoredRoundTwoGuideMoves: 2,
+    armedLineRelic: null,
+    freshConservatorySettlement: false
+  });
+  await page.addInitScript(({ key, marker, state: seededState }) => {
+    if (!sessionStorage.getItem(marker)) {
+      localStorage.setItem(key, JSON.stringify(seededState));
+      sessionStorage.setItem(marker, "1");
+    }
+  }, {
+    key: SAVE_KEY,
+    marker: `ordinary-refusal-${label}-seeded`,
+    state
+  });
   await page.reload({ waitUntil: "networkidle" });
   await expect(page.locator("#board .tile")).toHaveCount(64);
   await expect(page.locator("#board .tile[tabindex='0']")).toHaveCount(1);
