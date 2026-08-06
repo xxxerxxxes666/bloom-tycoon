@@ -264,6 +264,24 @@ async function releaseInvalidSwapCallback(page) {
   });
 }
 
+async function activateTileInput(page, tile, input) {
+  if (input === "keyboard") {
+    await tile.focus();
+    await page.keyboard.press("Enter");
+    return;
+  }
+  if (input === "touch") {
+    const box = await tile.boundingBox();
+    await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+    return;
+  }
+  await tile.click();
+}
+
+async function activateControlOnce(page, selector, input) {
+  await activateTileInput(page, page.locator(selector), input);
+}
+
 async function stateReport(page) {
   return page.evaluate((key) => {
     const visible = (node) => {
@@ -317,6 +335,10 @@ async function stateReport(page) {
         .map((tile) => tile.getAttribute("aria-label") || ""),
       invalidSuffixIds: tiles.filter((tile) => (tile.getAttribute("aria-label") || "").includes("invalid swap refused"))
         .map((tile) => tile.id),
+      selectedIds: tiles.filter((tile) => tile.classList.contains("sel") || tile.classList.contains("selected"))
+        .map((tile) => tile.id),
+      selectedSuffixIds: tiles.filter((tile) => (tile.getAttribute("aria-label") || "").includes("selected"))
+        .map((tile) => tile.id),
       selected: tiles.filter((tile) => tile.classList.contains("sel") || tile.classList.contains("selected")).length,
       rovingIds: tiles.filter((tile) => tile.tabIndex === 0).map((tile) => tile.id),
       focusedId: document.activeElement?.id || "",
@@ -332,6 +354,94 @@ async function stateReport(page) {
         .map((image) => image.currentSrc || image.src)
     };
   }, SAVE_KEY);
+}
+
+for (const config of VIEWPORTS) {
+  for (const round of [2, 3]) {
+    test(`unguided R${round} Help retires an unrelated selection on ${config.label}`, async ({ browser }) => {
+      const context = await browser.newContext({
+        viewport: config.viewport,
+        hasTouch: Boolean(config.mobile),
+        isMobile: Boolean(config.mobile),
+        reducedMotion: config.reduced ? "reduce" : "no-preference"
+      });
+      const page = await context.newPage();
+      const errors = [];
+      page.on("console", (message) => {
+        if (["warning", "error"].includes(message.type())) errors.push(message.text());
+      });
+      page.on("pageerror", (error) => errors.push(error.message));
+      page.on("requestfailed", (request) => {
+        const errorText = request.failure()?.errorText || "";
+        if (errorText !== "net::ERR_ABORTED") errors.push(`${request.url()} ${errorText}`);
+      });
+
+      try {
+        await openOrdinaryRound(page, round, `${config.label}-unguided-help-r${round}`);
+        await establishOrdinaryAgency(page);
+        const before = await stateReport(page);
+        const oldSource = page.locator("#tile-0-0");
+        await activateTileInput(page, oldSource, config.input);
+        const selectedBeforeHelp = await stateReport(page);
+        expect(selectedBeforeHelp.selectedIds).toEqual(["tile-0-0"]);
+        expect(selectedBeforeHelp.selectedSuffixIds).toEqual(["tile-0-0"]);
+        expect(selectedBeforeHelp.moves).toBe(before.moves);
+        expect(selectedBeforeHelp.counts).toEqual(before.counts);
+        expect(selectedBeforeHelp.board).toBe(before.board);
+
+        await activateControlOnce(page, "#tutorialHelpBtn", config.input);
+        await expect(page.locator("#tutorialPanel")).toBeVisible();
+        await expect(page.locator("#tutorialSkipBtn")).toBeFocused();
+        const duringHelp = await stateReport(page);
+        expect(duringHelp.selectedIds).toEqual([]);
+        expect(duringHelp.selectedSuffixIds).toEqual([]);
+        expect(duringHelp.hints).toEqual([]);
+        expect(duringHelp.liveOwners).toHaveLength(1);
+        expect(duringHelp.liveOwners[0].id).toBe("tutorialPanel");
+        expect(duringHelp.liveOwners[0].live).toBe("polite");
+        expect(duringHelp.liveOwners[0].text).toContain(
+          round === 2 ? "Finish the Moonlit Wreath." : "Complete Bloodroot Compact."
+        );
+        expect(duringHelp.moves).toBe(before.moves);
+        expect(duringHelp.counts).toEqual(before.counts);
+        expect(duringHelp.board).toBe(before.board);
+
+        await activateControlOnce(page, "#tutorialSkipBtn", config.input);
+        await expect(page.locator("#tutorialPanel")).not.toBeVisible();
+        const afterSkip = await stateReport(page);
+        expect(afterSkip.selectedIds).toEqual([]);
+        expect(afterSkip.selectedSuffixIds).toEqual([]);
+        expect(afterSkip.focusedId).toBe("tutorialHelpBtn");
+        expect(afterSkip.moves).toBe(before.moves);
+        expect(afterSkip.counts).toEqual(before.counts);
+        expect(afterSkip.board).toBe(before.board);
+
+        const freshSource = page.locator("#tile-0-1");
+        await activateTileInput(page, freshSource, config.input);
+        const freshSelection = await stateReport(page);
+        expect(freshSelection.selectedIds).toEqual(["tile-0-1"]);
+        expect(freshSelection.selectedSuffixIds).toEqual(["tile-0-1"]);
+        expect(freshSelection.invalidIds).toEqual([]);
+        expect(freshSelection.cue).not.toBe(REFUSAL_COPY);
+        expect(freshSelection.moves).toBe(before.moves);
+        expect(freshSelection.counts).toEqual(before.counts);
+        expect(freshSelection.board).toBe(before.board);
+        expect(freshSelection.focusedId).toBe("tile-0-1");
+        expect(freshSelection.rovingIds).toEqual(["tile-0-1"]);
+        expect(freshSelection.tileCount).toBe(64);
+        expect(freshSelection.rows).toBe(8);
+        expect(freshSelection.boardRect.width).toBe(config.mobile ? 378 : 600);
+        expect(freshSelection.boardRect.height).toBe(config.mobile ? 378 : 600);
+        expect(freshSelection.scrollY).toBe(0);
+        expect(freshSelection.overflowX).toBe(false);
+        expect(freshSelection.overflowY).toBe(false);
+        expect(freshSelection.brokenImages).toEqual([]);
+        expect(errors).toEqual([]);
+      } finally {
+        await context.close();
+      }
+    });
+  }
 }
 
 for (const config of VIEWPORTS) {

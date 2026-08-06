@@ -1,5 +1,12 @@
 # Codex Build Notes
 
+## 2026-08-06 - Unguided Help retires stale board selection
+
+- Player-visible correction: opening Help during ordinary post-move Round 2 or Round 3 now retires an unrelated selected flower when the replay has no authoritative pair. Help opens with focused Skip and zero selected state; after Skip, the first board activation selects a fresh source without spending a move or accidentally attempting the second half of the pre-Help swap.
+- Authority boundary: `startTutorial({ replay: true })` still preserves selection when it belongs to the exact derived legal replay pair, including the accepted Round 1 opening/follow-up, Cursed Thorn lesson, and armed Black Candle continuation. Only a selection outside that pair, including the ordinary no-pair case, is cleared before the first tutorial render. No copy, node, control, save field, timer, move, objective, RNG, economy, round, mechanic, or progression changed.
+- Permanent contract: `scripts/verify_ordinary_refusal_outcome.spec.js` adds R2/R3 desktop `1280x720` and exact-mobile `390x844`, full/reduced, keyboard/pointer/touch coverage. It requires selection and its accessible suffix before Help, zero selected state during Help and after Skip, tutorialPanel as sole narrator, a fresh one-tap selection with no refusal or move spend, exact board/objective stability, focus/roving agreement, 64 tiles/eight rows, exact `600px`/`378px` altars, loaded imagery, no overflow, and clean browser-error gates. The static HTML verifier locks the no-pair retirement branch.
+- Local evidence: the new unguided matrix passes `8/8`; the complete integrated ordinary refusal/rapid-valid/refusal-to-Help/timer-boundary matrix passes `32/32`; and the neighboring guided Help selection/continuation suite passes `18/18`. Project/HTML verification, changed JavaScript and extracted inline syntax, diff check, and changed-line credential/tracker/network scan are required before release.
+
 ## 2026-08-06 - Help owns the ordinary-refusal timer boundary
 
 - Player-visible correction: ordinary post-onboarding R2/R3 refusal authority is now detected from its complete semantic state instead of only a truthy timer handle. Help invalidates that refusal generation before rendering, so its first frame contains only the authoritative round instruction and focused Skip; a refusal callback already delivered at the `1120ms` boundary is inert and cannot restore selection, cue, hints, red-X cells, refusal styling, or accessible-name suffixes.

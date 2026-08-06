@@ -15903,9 +15903,11 @@
         const replayGuideSource = selectedIsGuided
           ? { ...selected }
           : replayPair?.[0] || null;
-        if (selected && replayGuideSource && !selectedIsGuided) {
+        if (selected && !selectedIsGuided) {
           selected = null;
-          boardFocusCell = clampBoardFocusCell(replayGuideSource);
+          if (replayGuideSource) {
+            boardFocusCell = clampBoardFocusCell(replayGuideSource);
+          }
         }
         if (replayPair?.length === 2) {
           idleHintCells = new Set(replayPair.map((cell) => `${cell.x},${cell.y}`));
