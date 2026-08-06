@@ -13389,8 +13389,8 @@
     }
 
     function markInvalidSwap(a, b, hintSnapshot = idleHintCells, selectionSnapshot = null) {
-      const continuingRefusal = Boolean(invalidSwapTimer);
-      if (invalidSwapTimer && window.clearTimeout) {
+      const continuingRefusal = invalidSwapTimer !== null;
+      if (invalidSwapTimer !== null && window.clearTimeout) {
         window.clearTimeout(invalidSwapTimer);
       }
       const cue = $("firstSwapCue");
@@ -13468,10 +13468,10 @@
     }
 
     function retireInvalidSwapFeedback() {
-      if (!invalidSwapTimer && invalidSwapCells.size === 0) {
+      if (invalidSwapTimer === null && invalidSwapCells.size === 0) {
         return;
       }
-      if (invalidSwapTimer && window.clearTimeout) {
+      if (invalidSwapTimer !== null && window.clearTimeout) {
         window.clearTimeout(invalidSwapTimer);
       }
       invalidSwapTimer = null;
@@ -15850,7 +15850,7 @@
         && !tutorialActive
         && hasMadeValidMove
         && (currentRound === 2 || currentRound === 3)
-        && Boolean(invalidSwapTimer);
+        && (invalidSwapTimer !== null || invalidSwapCells.size > 0);
       if (ordinaryRefusalReplay) {
         retireInvalidSwapFeedback();
         clearIdleHint();
