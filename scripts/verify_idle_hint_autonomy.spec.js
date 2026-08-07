@@ -526,6 +526,115 @@ for (const round of [2, 3]) {
   }
 }
 
+for (const testCase of CASES) {
+  for (const selectedEndpoint of ["source", "destination"]) {
+    test(`untouched Round 3 idle Help preserves ${selectedEndpoint} on ${testCase.label}`, async ({ browser }) => {
+      const context = await browser.newContext({
+        viewport: testCase.viewport,
+        hasTouch: Boolean(testCase.mobile),
+        isMobile: Boolean(testCase.mobile),
+        reducedMotion: testCase.reduced ? "reduce" : "no-preference"
+      });
+      const page = await context.newPage();
+      const browserErrors = [];
+      page.on("console", (message) => {
+        if (["warning", "error"].includes(message.type())) browserErrors.push(message.text());
+      });
+      page.on("pageerror", (error) => browserErrors.push(error.message));
+
+      try {
+        await openUntouchedRoundThree(
+          page,
+          `selected-${testCase.label}-${selectedEndpoint}`
+        );
+        const initialFocus = (await autonomyReport(page)).activeElementId;
+        const hint = await waitForAutonomyHint(
+          page,
+          `${testCase.label} untouched Round 3 ${selectedEndpoint}`,
+          initialFocus
+        );
+        const pair = hint.usefulness.pair;
+        const selectedCell = selectedEndpoint === "source" ? pair[0] : pair[1];
+        const counterpart = selectedEndpoint === "source" ? pair[1] : pair[0];
+        const selectedId = `tile-${selectedCell.x}-${selectedCell.y}`;
+        const counterpartId = `tile-${counterpart.x}-${counterpart.y}`;
+        const pairIds = pair.map((cell) => `tile-${cell.x}-${cell.y}`).sort();
+        const before = hint.report.state;
+
+        await activateTile(page, selectedCell, testCase.input);
+        await expect(page.locator("body")).toHaveClass(/selected-guided-play/);
+        await expect(page.locator(`#${selectedId}`)).toHaveClass(/sel/);
+        await expect(page.locator(`#${counterpartId}`)).toHaveClass(/guided-counterpart/);
+        let report = await autonomyReport(page);
+        expect(report.hints.map((cell) => `tile-${cell.x}-${cell.y}`).sort()).toEqual(pairIds);
+        expect(report.selectedIds).toEqual([selectedId]);
+        expect(report.activeElementId).toBe(selectedId);
+        expect(report.rovingTileIds).toEqual([selectedId]);
+        expect(report.state.moves).toBe(8);
+        expect(report.state.counts).toEqual([0, 0, 0, 0, 0, 0]);
+        expect(report.state.board).toEqual(before.board);
+        let highlight = await selectedHelpHighlightReport(page, counterpart);
+        expect(highlight.bodyOwnsPlayGuidance).toBe(true);
+        expectSelectedGuidedSemantics(highlight, counterpartId);
+
+        await activateControl(page, "#tutorialHelpBtn", testCase.input);
+        await expect(page.locator("#tutorialSkipBtn")).toBeFocused();
+        await expect(page.locator("#tutorialCopy")).toHaveText("Choose the other glowing flower.");
+        report = await autonomyReport(page);
+        expect(report.liveOwners).toEqual(["tutorialPanel"]);
+        expect(report.hints.map((cell) => `tile-${cell.x}-${cell.y}`).sort()).toEqual(pairIds);
+        expect(report.selectedIds).toEqual([selectedId]);
+        expect(report.rovingTileIds).toEqual([selectedId]);
+        expect(report.state.moves).toBe(8);
+        expect(report.state.counts).toEqual([0, 0, 0, 0, 0, 0]);
+        expect(report.state.board).toEqual(before.board);
+        highlight = await selectedHelpHighlightReport(page, counterpart);
+        expect(highlight.bodyOwnsGuidance).toBe(true);
+        expect(highlight.counterpart?.classes).toContain("guided-counterpart");
+        expectSelectedGuidedSemantics(highlight, counterpartId);
+        expect(highlight.alternativeLegal.every((tile) => tile.afterOpacity <= .25)).toBe(true);
+
+        await activateControl(page, "#tutorialSkipBtn", testCase.input, testCase.dismissKey);
+        await expect(page.locator("#tutorialPanel")).toBeHidden();
+        report = await autonomyReport(page);
+        expect(report.hints.map((cell) => `tile-${cell.x}-${cell.y}`).sort()).toEqual(pairIds);
+        expect(report.selectedIds).toEqual([selectedId]);
+        expect(report.rovingTileIds).toEqual([selectedId]);
+        expect(report.state.moves).toBe(8);
+        expect(report.state.counts).toEqual([0, 0, 0, 0, 0, 0]);
+        expect(report.state.board).toEqual(before.board);
+        highlight = await selectedHelpHighlightReport(page, counterpart);
+        expect(highlight.bodyOwnsPlayGuidance).toBe(true);
+        expectSelectedGuidedSemantics(highlight, counterpartId);
+
+        await activateTile(page, counterpart, testCase.input, "Space");
+        await page.waitForFunction((key) => {
+          const state = JSON.parse(localStorage.getItem(key) || "{}");
+          return state.moves === 7
+            && document.querySelector("#board")?.getAttribute("aria-busy") === "false";
+        }, SAVE_KEY, { timeout: 12000 });
+        const settled = await autonomyReport(page);
+        expect(settled.state.moves).toBe(7);
+        expect(settled.state.counts.reduce((sum, count) => sum + count, 0)).toBeGreaterThan(0);
+        expect(settled.selectedIds).toEqual([]);
+        expect(settled.activeElementId).toMatch(/^tile-/);
+        expect(settled.rovingTileIds).toEqual([settled.activeElementId]);
+        expect(settled.tiles).toBe(64);
+        expect(settled.rows).toBe(8);
+        expect(settled.completeRows).toBe(8);
+        expect(settled.disabledTiles).toBe(0);
+        expect(settled.boardWidth).toBeCloseTo(testCase.mobile ? 378 : 600, 1);
+        expect(settled.overflowX).toBe(false);
+        expect(settled.overflowY).toBe(false);
+        expect(settled.brokenImages).toEqual([]);
+        expect(browserErrors).toEqual([]);
+      } finally {
+        await context.close();
+      }
+    });
+  }
+}
+
 for (const testCase of [CASES[0], CASES[3]]) {
   test(`selected active guide reload stays quiet on ${testCase.label}`, async ({ browser }) => {
     const context = await browser.newContext({

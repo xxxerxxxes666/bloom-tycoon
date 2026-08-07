@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-08-07 - Untouched Round 3 Help preserves its glowing pair
+
+- Player-visible correction: the first objective-useful glowing pair in untouched Round 3 now remains authoritative after either endpoint is selected. Help preserves that endpoint and the exact pair, says `Choose the other glowing flower.`, and Skip returns to the same one-action continuation instead of falling back to the generic order instruction.
+- Authority boundary: the exception requires active untouched Round 3, the full eight-move budget, zero earned progress, no valid move, no relic/failure/handoff/recovery authority, and an exact two-cell adjacent legal pair that produces real target progress. Existing post-move R2/R3 guidance, authored R1 conflict retirement, Thorn teaching, Black Candle, final harvest, selection cancellation, timers, saves, RNG, objectives, economy, geometry, rounds, and progression are unchanged.
+- Permanent contract: `scripts/verify_idle_hint_autonomy.spec.js` adds source-first and destination-first cases across desktop `1280x720`, exact mobile `390x844`, full/reduced motion, and pointer/keyboard/touch. Each case requires one selected source, one guided/legal counterpart, exact pair/board stability through Help and Skip, `tutorialPanel` as sole live owner, one real `8 -> 7` objective-credit commit, focus/roving agreement, 64 tiles/eight rows, exact `600px`/`378px` altars, loaded imagery, no overflow, and clean browser logs.
+- Local evidence: the focused untouched-R3 matrix passes `8/8` in `1.3m`; the complete integrated idle-guidance suite passes `34/34` in `8.6m`, including ordinary R2/R3 continuation, selected-guide reload silence, quiet recovery, and untouched-R3 reload focus. `python3 scripts/verify_project.py`, HTML shape verification, changed spec and inline JavaScript syntax, `git diff --check`, and the scoped credential/tracker/network scan pass.
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_idle_hint_autonomy.spec.js`, and `docs/codex_build_notes.md`. No copy string, visible UI, node, control, timer duration, save field, move, economy, mechanic, round, or progression surface was added.
+
 ## 2026-08-06 - Final harvest owns its source focus
 
 - Player-visible accessibility correction: when a plain final-harvest opportunity becomes the authoritative board command, its exact first endpoint now receives DOM focus and becomes the sole roving board entry. The two endpoint names distinguish `final harvest swap source` from `final harvest swap destination`, so keyboard and screen-reader players enter the same finishing exchange named by the visible cue instead of an unrelated socket.

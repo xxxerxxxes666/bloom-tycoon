@@ -13031,8 +13031,26 @@
       }, hintDelay);
     }
 
+    function isUntouchedRoundThreeIdleHintActive(plan = activeRoundPlan()) {
+      return focusedSliceRound(plan)
+        && plan.round === 3
+        && !hasMadeValidMove
+        && moves === plan.moves
+        && roundProgress(plan).earned === 0
+        && (!tutorialActive || tutorialReplayOwnsNarration)
+        && !roundComplete
+        && !isBouquetFailed(plan)
+        && !restoredGreenhouseHandoff
+        && !ownedReplayEntryActive
+        && !isAuthoritativeRoundTwoThornLesson(plan)
+        && !isArmedLineRelicGuidanceActive()
+        && !postRecoveryGuideActive
+        && !altarReweaveActive;
+    }
+
     function isObjectiveUsefulIdleHintPair(hintCells, cell, plan = activeRoundPlan()) {
       const ordinaryReplayAuthority = tutorialActive && tutorialReplayOwnsNarration;
+      const untouchedRoundThreeAuthority = isUntouchedRoundThreeIdleHintActive(plan);
       if (
         !hintCells
         || typeof hintCells.has !== "function"
@@ -13041,10 +13059,10 @@
         || !hintCells.has(`${cell.x},${cell.y}`)
         || plan.round < 2
         || plan.round > 3
-        || !hasMadeValidMove
+        || (!hasMadeValidMove && !untouchedRoundThreeAuthority)
         || roundComplete
         || isBouquetFailed(plan)
-        || (!isPostOnboardingIdleHintActive(plan) && !ordinaryReplayAuthority)
+        || (!isPostOnboardingIdleHintActive(plan) && !ordinaryReplayAuthority && !untouchedRoundThreeAuthority)
         || restoredGreenhouseHandoff
         || isAuthoritativeRoundTwoThornLesson(plan)
         || isArmedLineRelicGuidanceActive()
@@ -13056,10 +13074,18 @@
       const hintedPair = [...hintCells].map((key) => cellFromKey(key)).filter(Boolean);
       const usefulPair = objectiveUsefulIdleMove(plan)?.pair || [];
       return hintedPair.length === 2
-        && usefulPair.length === 2
         && isAdjacentPair(hintedPair[0], hintedPair[1])
         && isLegalSwap(hintedPair[0], hintedPair[1])
-        && usefulPair.every((hinted) => hintCells.has(`${hinted.x},${hinted.y}`));
+        && (
+          (
+            usefulPair.length === 2
+            && usefulPair.every((hinted) => hintCells.has(`${hinted.x},${hinted.y}`))
+          )
+          || (
+            untouchedRoundThreeAuthority
+            && Boolean(directObjectiveMoveDetail(hintedPair, plan))
+          )
+        );
     }
 
     function shouldPreserveSelectedHintPair(hintCells, cell) {
