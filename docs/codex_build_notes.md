@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-08-08 - Ambient sound follows page visibility
+
+- Player-visible stability correction: after a real move starts the greenhouse soundscape, backgrounding the page now suspends that running audio context. Returning to the page resumes the same soundscape once; a move accepted while the document is already hidden cannot create audio or replay its sound later on foreground.
+- Authority boundary: the page records suspension ownership only when it actively suspends a running context. It therefore does not resume an audio context that the browser, operating system, or player had already suspended. Hidden resolution callbacks cannot restart audio, and a rapid hide/show transition waits for the pending suspension before considering resume. No active-play sound, volume, cue, timing, move, RNG, objective, focus, save, economy, geometry, round, or progression behavior changed.
+- Permanent contract: `scripts/verify_audio_visibility.spec.js` commits the authored opening pair across desktop `1280x720` pointer and keyboard-reduced profiles plus exact-mobile `390x844` touch full/reduced profiles. Each case requires running audio after the gesture, suspended audio throughout the hidden resolution window, one clean resume, exact `6 -> 5` move and Thorn Rose credit, focus/sole-roving agreement, 64 tiles/eight rows, exact `600px`/`378px` altars, loaded imagery, no overflow, quiet reload, and empty browser warning/error logs. A separate hidden-first-move case requires accepted board state with an uninitialized soundscape before and after foreground.
+- Local evidence: the focused lifecycle matrix passes `5/5` in `17.4s`, including a frozen hidden voice count; the adjacent runtime and settled-outcome regression suites pass `20/20` in `2.5m`, with exact-mobile guided control returning in `407-473ms`. Project/HTML verification, inline JavaScript and all spec syntax, `git diff --check`, and the scoped credential/tracker/network scan pass.
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_audio_visibility.spec.js`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`. No node, visible UI, control, copy, asset, dependency, save field, timer duration, mechanic, economy, round, or progression surface was added.
+
 ## 2026-08-08 - Keyboard cursor is distinct from quiet guidance
 
 - Player-visible accessibility correction: Arrow-key board focus now uses a static cool `3px` inset ring and pale outer keyline, while the existing objective-useful pair keeps its warm gold treatment. When focus reaches either hinted endpoint, the cool cursor remains singular and the focused endpoint retains the pair's warm outer glow.

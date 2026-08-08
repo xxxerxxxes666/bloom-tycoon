@@ -10405,6 +10405,8 @@
     let ownedReplayRenewalTimer = null;
     let ownedReplayRenewalPhase = "";
     let bloomAudioContext = null;
+    let bloomAudioSuspendedForVisibility = false;
+    let bloomAudioVisibilityTransition = Promise.resolve();
     let bloomAudioMaster = null;
     let bloomAudioCompressor = null;
     let bloomSoundscape = null;
@@ -13235,15 +13237,51 @@
       if (!window.AudioContext && !window.webkitAudioContext) {
         return null;
       }
+      if (document.hidden) {
+        return null;
+      }
       if (!bloomAudioContext) {
         const AudioCtor = window.AudioContext || window.webkitAudioContext;
         bloomAudioContext = new AudioCtor();
         setupBloomAudioGraph(bloomAudioContext);
       }
-      if (bloomAudioContext.state === "suspended") {
+      if (
+        bloomAudioContext.state === "suspended"
+        && !document.hidden
+        && !bloomAudioSuspendedForVisibility
+      ) {
         bloomAudioContext.resume().catch(() => {});
       }
       return bloomAudioContext;
+    }
+
+    function syncBloomAudioVisibility() {
+      const context = bloomAudioContext;
+      if (!context) {
+        return;
+      }
+      if (document.hidden) {
+        if (context.state === "running" && typeof context.suspend === "function") {
+          bloomAudioSuspendedForVisibility = true;
+          bloomAudioVisibilityTransition = Promise.resolve(context.suspend()).catch(() => {});
+        }
+        return;
+      }
+      if (!bloomAudioSuspendedForVisibility) {
+        return;
+      }
+      bloomAudioSuspendedForVisibility = false;
+      bloomAudioVisibilityTransition.finally(() => {
+        if (
+          document.hidden
+          || context !== bloomAudioContext
+          || context.state !== "suspended"
+          || typeof context.resume !== "function"
+        ) {
+          return;
+        }
+        context.resume().catch(() => {});
+      });
     }
 
     function setupBloomAudioGraph(ctx) {
@@ -20209,12 +20247,15 @@
       if (document.hidden && (pendingSettledBoardOutcome || settledBoardOutcome)) {
         clearSettledBoardOutcome({ renderAfter: true, restoreCue: true });
       }
+      syncBloomAudioVisibility();
     });
     window.__bloomAudioProbe = () => ({
       eventCount: bloomAudioEventCount,
       voiceCount: bloomAudioVoiceCount,
       stage: bloomAudioStageKey,
       soundscapeActive: Boolean(bloomSoundscape?.started),
+      contextState: bloomAudioContext?.state || "uninitialized",
+      visibilitySuspended: bloomAudioSuspendedForVisibility,
       events: bloomAudioEvents.slice()
     });
     window.__bloomReviewHooksEnabled = QA_REVIEW_HOOKS_ENABLED;
