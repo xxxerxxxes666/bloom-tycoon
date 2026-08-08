@@ -48,16 +48,6 @@
       outline-offset: 3px;
     }
 
-    .tile:focus-visible {
-      outline: 2px solid #f0c477;
-      outline-offset: -3px;
-      box-shadow:
-        inset 0 0 18px #000,
-        inset 0 0 0 2px #2b180d,
-        0 0 0 1px #160f0c,
-        0 0 20px #d7b16d99;
-    }
-
     .game {
       width: min(1024px, calc(100vw - 16px));
       min-height: 1510px;
@@ -3457,6 +3447,33 @@
         inset 0 0 14px #000,
         0 0 0 1px #160f0c,
         0 0 9px #d4a05c99;
+    }
+
+    .tile:focus-visible,
+    body.keyboard-board-navigation .tile:focus {
+      outline: 3px solid #bce8eb !important;
+      outline-offset: -5px !important;
+      transition: none !important;
+      box-shadow:
+        inset 0 0 18px #000,
+        inset 0 0 0 2px #132729,
+        0 0 0 1px #efffff,
+        0 0 15px #4f9da7cc !important;
+    }
+
+    .tile.idle-hint:focus-visible,
+    body.keyboard-board-navigation .tile.idle-hint:focus {
+      animation: none !important;
+      box-shadow:
+        inset 0 0 18px #000,
+        inset 0 0 0 2px #132729,
+        0 0 0 1px #efffff,
+        0 0 15px #4f9da7cc,
+        0 0 22px #d7b16daa !important;
+    }
+
+    body.keyboard-board-navigation .tile.idle-hint {
+      transition: none !important;
     }
 
     .tile.relic-preview:not(.match-preview) {
@@ -13974,6 +13991,7 @@
       const cell = boardTileFromEvent(event) || { ...clampBoardFocusCell(), tile: null };
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
+        document.body.classList.add("keyboard-board-navigation");
         boardFocusCell = clampBoardFocusCell(cell);
         tap(boardFocusCell.x, boardFocusCell.y);
         return;
@@ -13983,6 +14001,7 @@
         return;
       }
       event.preventDefault();
+      document.body.classList.add("keyboard-board-navigation");
       const target = clampBoardFocusCell({ x: cell.x + delta.x, y: cell.y + delta.y });
       if (selected && selected.x === cell.x && selected.y === cell.y) {
         boardFocusCell = target;
@@ -13997,6 +14016,7 @@
     }
 
     function handleBoardPointerDown(event) {
+      document.body.classList.remove("keyboard-board-navigation");
       if (!event.isPrimary) {
         return;
       }
@@ -14068,6 +14088,7 @@
     }
 
     function handleBoardTouchStart(event) {
+      document.body.classList.remove("keyboard-board-navigation");
       if (event.touches.length !== 1) {
         touchSwipeStart = null;
         clearDragPreview();

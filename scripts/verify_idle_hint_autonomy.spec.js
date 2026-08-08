@@ -323,6 +323,47 @@ async function activateControl(page, selector, input, key = "Enter") {
   }
 }
 
+async function expectDistinctKeyboardCursor(page, pairIds, label) {
+  const visual = await page.evaluate(() => {
+    const describe = (tile) => {
+      const style = getComputedStyle(tile);
+      return {
+        id: tile.id,
+        hinted: tile.classList.contains("idle-hint"),
+        outlineColor: style.outlineColor,
+        outlineStyle: style.outlineStyle,
+        outlineWidth: style.outlineWidth,
+        outlineOffset: style.outlineOffset,
+        animationName: style.animationName,
+        boxShadow: style.boxShadow
+      };
+    };
+    const active = document.activeElement?.closest?.(".tile");
+    return {
+      active: active ? describe(active) : null,
+      hints: Array.from(document.querySelectorAll(".tile.idle-hint")).map(describe),
+      keyboardMode: document.body.classList.contains("keyboard-board-navigation")
+    };
+  });
+  expect(visual.active, `${label} has a focused board cursor`).toBeTruthy();
+  expect(visual.keyboardMode, `${label} retains keyboard modality: ${JSON.stringify(visual)}`).toBe(true);
+  expect(visual.active.outlineColor, `${label} uses the cool cursor ring`).toBe("rgb(188, 232, 235)");
+  expect(visual.active.outlineStyle, `${label} cursor ring is static and solid`).toBe("solid");
+  expect(visual.active.outlineWidth, `${label} cursor ring is stronger than a hint`).toBe("3px");
+  expect(visual.active.outlineOffset, `${label} cursor ring is inset independently`).toBe("-5px");
+  expect(visual.hints.map((hint) => hint.id).sort(), `${label} keeps the exact hint pair`)
+    .toEqual(pairIds);
+  visual.hints.filter((hint) => hint.id !== visual.active.id).forEach((hint) => {
+    expect(hint.outlineColor, `${label} leaves the other hint warm`).toBe("rgb(240, 196, 119)");
+    expect(hint.outlineWidth, `${label} leaves the other hint at two pixels`).toBe("2px");
+  });
+  if (visual.active.hinted) {
+    expect(visual.active.animationName, `${label} focused hint cursor does not pulse`).toBe("none");
+    expect(visual.active.boxShadow, `${label} focused hint retains the warm pair glow`)
+      .toContain("215, 177, 109");
+  }
+}
+
 async function moveKeyboardFocusTo(page, target, pairIds, expectedState, label) {
   const active = await page.evaluate(() => {
     const tile = document.activeElement?.closest?.(".tile");
@@ -344,6 +385,7 @@ async function moveKeyboardFocusTo(page, target, pairIds, expectedState, label) 
       .toEqual([report.activeElementId]);
     expect(report.selectedTiles, `${label} ${key} selects nothing`).toBe(0);
     expect(report.state, `${label} ${key} changes no game state`).toEqual(expectedState);
+    await expectDistinctKeyboardCursor(page, pairIds, `${label} ${key}`);
   }
 }
 
@@ -707,6 +749,29 @@ for (const round of [2, 3]) {
           before,
           `${testCase.label} Round ${round}`
         );
+        const counterpartKey = counterpart.x > selectedCell.x
+          ? "ArrowRight"
+          : counterpart.x < selectedCell.x
+            ? "ArrowLeft"
+            : counterpart.y > selectedCell.y ? "ArrowDown" : "ArrowUp";
+        const returnKey = counterpartKey === "ArrowRight"
+          ? "ArrowLeft"
+          : counterpartKey === "ArrowLeft"
+            ? "ArrowRight"
+            : counterpartKey === "ArrowDown" ? "ArrowUp" : "ArrowDown";
+        await page.keyboard.press(counterpartKey);
+        await expectDistinctKeyboardCursor(
+          page,
+          pairIds,
+          `${testCase.label} Round ${round} counterpart focus`
+        );
+        expect((await autonomyReport(page)).state).toEqual(before);
+        await page.keyboard.press(returnKey);
+        await expectDistinctKeyboardCursor(
+          page,
+          pairIds,
+          `${testCase.label} Round ${round} source focus`
+        );
         if (
           (round === 2 && testCase.label === "desktop-pointer")
           || (round === 3 && testCase.label === "mobile390-touch")
@@ -723,12 +788,7 @@ for (const round of [2, 3]) {
         expect(selected.rovingTileIds).toEqual([selected.activeElementId]);
         expect(selected.state).toEqual(before);
 
-        const commitKey = counterpart.x > selectedCell.x
-          ? "ArrowRight"
-          : counterpart.x < selectedCell.x
-            ? "ArrowLeft"
-            : counterpart.y > selectedCell.y ? "ArrowDown" : "ArrowUp";
-        await page.keyboard.press(commitKey);
+        await page.keyboard.press(counterpartKey);
         await page.waitForFunction(({ key, moves }) => {
           const state = JSON.parse(localStorage.getItem(key) || "{}");
           return state.moves === moves - 1

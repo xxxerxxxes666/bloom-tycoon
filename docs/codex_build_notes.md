@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-08-08 - Keyboard cursor is distinct from quiet guidance
+
+- Player-visible accessibility correction: Arrow-key board focus now uses a static cool `3px` inset ring and pale outer keyline, while the existing objective-useful pair keeps its warm gold treatment. When focus reaches either hinted endpoint, the cool cursor remains singular and the focused endpoint retains the pair's warm outer glow.
+- Modality boundary: a transient `keyboard-board-navigation` class survives the board's programmatic refocus after real Arrow, Enter, or Space input and retires on pointer or touch input. It is not saved and changes no focus target, roving tabindex, selection, hint pair, move, objective, timer, RNG, narration, geometry, economy, round, or progression state. Focus and hint transitions are disabled only while keyboard modality needs an immediate static distinction, including reduced motion.
+- Permanent contract: the existing quiet Round 2/Round 3 matrix now measures the cool cursor on every Arrow step across ordinary tiles and explicitly visits both warm hinted endpoints before one real Enter-plus-Arrow commit. Desktop `1280x720` and exact mobile `390x844`, full/reduced motion, retain the exact pair and board state, focus/sole-roving agreement, one objective-credit move, 64 tiles/eight rows, exact `600px`/`378px` altars, loaded imagery, no overflow, and clean browser logs.
+- Local evidence: the strengthened focused matrix passes `8/8` in `1.2m`, and the complete integrated autonomy suite passes `42/42` in `9.7m`, including accepted Help/Skip continuation, pointer/touch cancellation, reload silence, quiet recovery, and untouched-R3 focus. Original-scale desktop R2 and exact-mobile R3 captures show one cyan cursor against the two warm guide sockets without moving or resizing the altar. Project/HTML verification, inline JavaScript and all spec syntax, `git diff --check`, and the scoped credential/tracker/network scan pass.
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_idle_hint_autonomy.spec.js`, and `docs/codex_build_notes.md`. No node, copy, control, visible panel, save field, timer duration, mechanic, economy, round, or progression surface was added.
+
 ## 2026-08-08 - Arrow navigation keeps quiet board guidance
 
 - Player-visible accessibility correction: after an objective-useful quiet pair appears in active Round 2 or Round 3, keyboard players can now move focus across the board with Arrow keys without erasing the two glowing flowers or restarting the seven-second wait. Reaching either endpoint, pressing Enter, and pressing the Arrow toward its adjacent counterpart commits the guided match exactly once with real bouquet progress.
