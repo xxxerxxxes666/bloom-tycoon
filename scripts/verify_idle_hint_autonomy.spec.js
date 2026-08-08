@@ -364,6 +364,54 @@ async function expectDistinctKeyboardCursor(page, pairIds, label) {
   }
 }
 
+async function activateHintWithPointerAndExpectCursorRetirement(
+  page,
+  cell,
+  pairIds,
+  expectedState,
+  testCase,
+  label
+) {
+  const tile = page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`);
+  if (testCase.mobile) {
+    await tile.tap();
+  } else {
+    await tile.click();
+  }
+  const retired = await page.evaluate((key) => {
+    const active = document.activeElement?.closest?.(".tile");
+    const style = active ? getComputedStyle(active) : null;
+    return {
+      state: JSON.parse(localStorage.getItem(key) || "{}"),
+      activeId: active?.id || "",
+      rovingIds: Array.from(document.querySelectorAll(".tile[tabindex='0']")).map((tile) => tile.id),
+      selectedIds: Array.from(document.querySelectorAll(".tile.sel")).map((tile) => tile.id),
+      hintIds: Array.from(document.querySelectorAll(".tile.idle-hint")).map((tile) => tile.id),
+      keyboardMode: document.body.classList.contains("keyboard-board-navigation"),
+      pointerMode: document.body.classList.contains("pointer-board-input"),
+      outlineColor: style?.outlineColor || "",
+      outlineWidth: style?.outlineWidth || "",
+      boxShadow: style?.boxShadow || ""
+    };
+  }, SAVE_KEY);
+  const selectedId = `tile-${cell.x}-${cell.y}`;
+  expect(retired.keyboardMode, `${label} retires keyboard modality`).toBe(false);
+  expect(retired.pointerMode, `${label} records pointer/touch modality`).toBe(true);
+  expect(retired.outlineColor, `${label} removes the cool cursor color`).not.toBe("rgb(188, 232, 235)");
+  expect(retired.outlineWidth, `${label} removes the three-pixel cursor ring`).not.toBe("3px");
+  expect(retired.boxShadow, `${label} removes the cyan cursor shadow`).not.toContain("79, 157, 167");
+  expect(retired.activeId, `${label} keeps focus on the activated tile`).toBe(selectedId);
+  expect(retired.rovingIds, `${label} keeps focus and roving agreement`).toEqual([selectedId]);
+  expect(retired.selectedIds, `${label} keeps the pointer/touch selection`).toEqual([selectedId]);
+  expect(retired.hintIds.sort(), `${label} keeps the exact warm pair`).toEqual(pairIds);
+  expect(retired.state, `${label} changes no game state`).toEqual(expectedState);
+  if (label === "desktop-pointer Round 3" || label === "mobile390-touch-reduced Round 3") {
+    await page.screenshot({
+      path: `work/keyboard-cursor-retired-${testCase.label}.png`
+    });
+  }
+}
+
 async function moveKeyboardFocusTo(page, target, pairIds, expectedState, label) {
   const active = await page.evaluate(() => {
     const tile = document.activeElement?.closest?.(".tile");
@@ -781,8 +829,25 @@ for (const round of [2, 3]) {
           });
         }
         expect((await autonomyReport(page)).activeElementId).toBe(selectedId);
-        await page.keyboard.press("Enter");
-        let selected = await autonomyReport(page);
+        if (round === 3) {
+          await activateHintWithPointerAndExpectCursorRetirement(
+            page,
+            selectedCell,
+            pairIds,
+            before,
+            testCase,
+            `${testCase.label} Round ${round}`
+          );
+          await page.keyboard.press("Enter");
+          await expectDistinctKeyboardCursor(
+            page,
+            pairIds,
+            `${testCase.label} Round ${round} keyboard restoration`
+          );
+        } else {
+          await page.keyboard.press("Enter");
+        }
+        const selected = await autonomyReport(page);
         expect(selected.selectedIds).toEqual([selectedId]);
         expect(selected.hints.map((cell) => `tile-${cell.x}-${cell.y}`).sort()).toEqual(pairIds);
         expect(selected.rovingTileIds).toEqual([selected.activeElementId]);

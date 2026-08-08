@@ -3449,7 +3449,6 @@
         0 0 9px #d4a05c99;
     }
 
-    .tile:focus-visible,
     body.keyboard-board-navigation .tile:focus {
       outline: 3px solid #bce8eb !important;
       outline-offset: -5px !important;
@@ -3461,7 +3460,6 @@
         0 0 15px #4f9da7cc !important;
     }
 
-    .tile.idle-hint:focus-visible,
     body.keyboard-board-navigation .tile.idle-hint:focus {
       animation: none !important;
       box-shadow:
@@ -3473,6 +3471,10 @@
     }
 
     body.keyboard-board-navigation .tile.idle-hint {
+      transition: none !important;
+    }
+
+    body.pointer-board-input .tile:focus {
       transition: none !important;
     }
 
@@ -13991,6 +13993,7 @@
       const cell = boardTileFromEvent(event) || { ...clampBoardFocusCell(), tile: null };
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
+        document.body.classList.remove("pointer-board-input");
         document.body.classList.add("keyboard-board-navigation");
         boardFocusCell = clampBoardFocusCell(cell);
         tap(boardFocusCell.x, boardFocusCell.y);
@@ -14001,6 +14004,7 @@
         return;
       }
       event.preventDefault();
+      document.body.classList.remove("pointer-board-input");
       document.body.classList.add("keyboard-board-navigation");
       const target = clampBoardFocusCell({ x: cell.x + delta.x, y: cell.y + delta.y });
       if (selected && selected.x === cell.x && selected.y === cell.y) {
@@ -14017,6 +14021,7 @@
 
     function handleBoardPointerDown(event) {
       document.body.classList.remove("keyboard-board-navigation");
+      document.body.classList.add("pointer-board-input");
       if (!event.isPrimary) {
         return;
       }
@@ -14089,6 +14094,7 @@
 
     function handleBoardTouchStart(event) {
       document.body.classList.remove("keyboard-board-navigation");
+      document.body.classList.add("pointer-board-input");
       if (event.touches.length !== 1) {
         touchSwipeStart = null;
         clearDragPreview();
@@ -20193,6 +20199,12 @@
     $("board").addEventListener("dragstart", (event) => event.preventDefault());
     $("board").addEventListener("click", handleBoardClick);
     $("board").addEventListener("keydown", handleBoardKeyDown);
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Tab") {
+        document.body.classList.remove("pointer-board-input");
+        document.body.classList.add("keyboard-board-navigation");
+      }
+    }, true);
     document.addEventListener("visibilitychange", () => {
       if (document.hidden && (pendingSettledBoardOutcome || settledBoardOutcome)) {
         clearSettledBoardOutcome({ renderAfter: true, restoreCue: true });
