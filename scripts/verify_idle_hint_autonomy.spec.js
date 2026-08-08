@@ -323,6 +323,30 @@ async function activateControl(page, selector, input, key = "Enter") {
   }
 }
 
+async function moveKeyboardFocusTo(page, target, pairIds, expectedState, label) {
+  const active = await page.evaluate(() => {
+    const tile = document.activeElement?.closest?.(".tile");
+    return tile ? { x: Number(tile.dataset.x), y: Number(tile.dataset.y) } : null;
+  });
+  expect(active, `${label} starts from a board tile`).toBeTruthy();
+  const steps = [];
+  const horizontalKey = target.x > active.x ? "ArrowRight" : "ArrowLeft";
+  const verticalKey = target.y > active.y ? "ArrowDown" : "ArrowUp";
+  for (let x = active.x; x !== target.x; x += target.x > x ? 1 : -1) steps.push(horizontalKey);
+  for (let y = active.y; y !== target.y; y += target.y > y ? 1 : -1) steps.push(verticalKey);
+  expect(steps.length, `${label} exercises real Arrow navigation`).toBeGreaterThan(0);
+  for (const key of steps) {
+    await page.keyboard.press(key);
+    const report = await autonomyReport(page);
+    expect(report.hints.map((cell) => `tile-${cell.x}-${cell.y}`).sort(), `${label} ${key} keeps pair`)
+      .toEqual(pairIds);
+    expect(report.rovingTileIds, `${label} ${key} focus and roving agree`)
+      .toEqual([report.activeElementId]);
+    expect(report.selectedTiles, `${label} ${key} selects nothing`).toBe(0);
+    expect(report.state, `${label} ${key} changes no game state`).toEqual(expectedState);
+  }
+}
+
 async function cancelBoardInput(page, pair, testCase) {
   const tile = page.locator(`.tile[data-x="${pair[0].x}"][data-y="${pair[0].y}"]`);
   if (testCase.input === "keyboard") {
@@ -635,6 +659,104 @@ for (const testCase of CASES) {
   }
 }
 
+for (const round of [2, 3]) {
+  for (const testCase of CASES) {
+    test(`quiet Round ${round} hint survives keyboard travel on ${testCase.label}`, async ({ browser }) => {
+      const context = await browser.newContext({
+        viewport: testCase.viewport,
+        hasTouch: Boolean(testCase.mobile),
+        isMobile: Boolean(testCase.mobile),
+        reducedMotion: testCase.reduced ? "reduce" : "no-preference"
+      });
+      const page = await context.newPage();
+      const browserErrors = [];
+      page.on("console", (message) => {
+        if (["warning", "error"].includes(message.type())) browserErrors.push(message.text());
+      });
+      page.on("pageerror", (error) => browserErrors.push(error.message));
+
+      try {
+        if (round === 2) {
+          await openOrdinaryRoundAutonomy(page, `keyboard-travel-${testCase.label}`, 2);
+        } else {
+          await openUntouchedRoundThree(page, `keyboard-travel-${testCase.label}`);
+        }
+        const initial = await autonomyReport(page);
+        const hint = await waitForAutonomyHint(
+          page,
+          `${testCase.label} Round ${round} keyboard travel`,
+          initial.activeElementId
+        );
+        const pair = hint.usefulness.pair;
+        const initialCell = await page.evaluate(() => {
+          const tile = document.activeElement?.closest?.(".tile");
+          return tile ? { x: Number(tile.dataset.x), y: Number(tile.dataset.y) } : null;
+        });
+        const distance = (cell) => Math.abs(cell.x - initialCell.x) + Math.abs(cell.y - initialCell.y);
+        const selectedCell = distance(pair[0]) >= distance(pair[1]) ? pair[0] : pair[1];
+        const counterpart = selectedCell === pair[0] ? pair[1] : pair[0];
+        const selectedId = `tile-${selectedCell.x}-${selectedCell.y}`;
+        const counterpartId = `tile-${counterpart.x}-${counterpart.y}`;
+        const pairIds = [selectedId, counterpartId].sort();
+        const before = hint.report.state;
+
+        await moveKeyboardFocusTo(
+          page,
+          selectedCell,
+          pairIds,
+          before,
+          `${testCase.label} Round ${round}`
+        );
+        if (
+          (round === 2 && testCase.label === "desktop-pointer")
+          || (round === 3 && testCase.label === "mobile390-touch")
+        ) {
+          await page.screenshot({
+            path: `work/keyboard-idle-hint-r${round}-${testCase.label}.png`
+          });
+        }
+        expect((await autonomyReport(page)).activeElementId).toBe(selectedId);
+        await page.keyboard.press("Enter");
+        let selected = await autonomyReport(page);
+        expect(selected.selectedIds).toEqual([selectedId]);
+        expect(selected.hints.map((cell) => `tile-${cell.x}-${cell.y}`).sort()).toEqual(pairIds);
+        expect(selected.rovingTileIds).toEqual([selected.activeElementId]);
+        expect(selected.state).toEqual(before);
+
+        const commitKey = counterpart.x > selectedCell.x
+          ? "ArrowRight"
+          : counterpart.x < selectedCell.x
+            ? "ArrowLeft"
+            : counterpart.y > selectedCell.y ? "ArrowDown" : "ArrowUp";
+        await page.keyboard.press(commitKey);
+        await page.waitForFunction(({ key, moves }) => {
+          const state = JSON.parse(localStorage.getItem(key) || "{}");
+          return state.moves === moves - 1
+            && document.querySelector("#board")?.getAttribute("aria-busy") === "false";
+        }, { key: SAVE_KEY, moves: before.moves }, { timeout: 12000 });
+        const settled = await autonomyReport(page);
+        expect(settled.state.moves).toBe(before.moves - 1);
+        expect(settled.state.counts.reduce((sum, count) => sum + count, 0))
+          .toBeGreaterThan(before.counts.reduce((sum, count) => sum + count, 0));
+        expect(settled.selectedIds).toEqual([]);
+        expect(settled.activeElementId).toMatch(/^tile-/);
+        expect(settled.rovingTileIds).toEqual([settled.activeElementId]);
+        expect(settled.tiles).toBe(64);
+        expect(settled.rows).toBe(8);
+        expect(settled.completeRows).toBe(8);
+        expect(settled.disabledTiles).toBe(0);
+        expect(settled.boardWidth).toBeCloseTo(testCase.mobile ? 378 : 600, 1);
+        expect(settled.overflowX).toBe(false);
+        expect(settled.overflowY).toBe(false);
+        expect(settled.brokenImages).toEqual([]);
+        expect(browserErrors).toEqual([]);
+      } finally {
+        await context.close();
+      }
+    });
+  }
+}
+
 for (const testCase of [CASES[0], CASES[3]]) {
   test(`selected active guide reload stays quiet on ${testCase.label}`, async ({ browser }) => {
     const context = await browser.newContext({
@@ -725,8 +847,15 @@ for (const testCase of CASES) {
       await page.screenshot({ path: `work/idle-hint-${testCase.label}.png` });
 
       await cancelBoardInput(page, hint.usefulness.pair, testCase);
-      await expect(page.locator(".tile.idle-hint")).toHaveCount(0);
-      hint = await waitForAutonomyHint(page, `${testCase.label} after canceled input`);
+      if (testCase.input === "keyboard") {
+        const preservedAfterNavigation = await autonomyReport(page);
+        expect(preservedAfterNavigation.hints).toHaveLength(2);
+        expect(preservedAfterNavigation.selectedTiles).toBe(0);
+        expect(preservedAfterNavigation.rovingTileIds).toEqual([preservedAfterNavigation.activeElementId]);
+      } else {
+        await expect(page.locator(".tile.idle-hint")).toHaveCount(0);
+        hint = await waitForAutonomyHint(page, `${testCase.label} after canceled input`);
+      }
 
       await activatePair(page, [{ x: 6, y: 7 }, { x: 7, y: 7 }], testCase.input);
       await expect(page.locator(".tile.invalid-swap")).toHaveCount(2, { timeout: 1500 });

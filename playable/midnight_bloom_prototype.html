@@ -13116,6 +13116,14 @@
         );
     }
 
+    function shouldPreserveIdleHintDuringKeyboardNavigation() {
+      if (selected || idleHintCells.size !== 2 || tutorialActive || roundComplete || isBouquetFailed()) {
+        return false;
+      }
+      const hintedCell = firstHintFocusCell();
+      return Boolean(hintedCell && isObjectiveUsefulIdleHintPair(idleHintCells, hintedCell));
+    }
+
     function notePlayerInteraction() {
       const preserveThornLesson = isAuthoritativeRoundTwoThornLesson();
       const restartPostOnboardingHint = isPostOnboardingIdleHintActive();
@@ -13981,7 +13989,9 @@
         tap(target.x, target.y);
         return;
       }
-      notePlayerInteraction();
+      if (!shouldPreserveIdleHintDuringKeyboardNavigation()) {
+        notePlayerInteraction();
+      }
       boardFocusCell = target;
       focusBoardCell(target.x, target.y);
     }
