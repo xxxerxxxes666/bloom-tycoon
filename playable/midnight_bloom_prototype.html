@@ -13240,13 +13240,16 @@
       if (document.hidden) {
         return null;
       }
+      let contextCreated = false;
       if (!bloomAudioContext) {
         const AudioCtor = window.AudioContext || window.webkitAudioContext;
         bloomAudioContext = new AudioCtor();
         setupBloomAudioGraph(bloomAudioContext);
+        contextCreated = true;
       }
       if (
-        bloomAudioContext.state === "suspended"
+        contextCreated
+        && bloomAudioContext.state === "suspended"
         && !document.hidden
         && !bloomAudioSuspendedForVisibility
       ) {
@@ -13260,28 +13263,39 @@
       if (!context) {
         return;
       }
-      if (document.hidden) {
-        if (context.state === "running" && typeof context.suspend === "function") {
-          bloomAudioSuspendedForVisibility = true;
-          bloomAudioVisibilityTransition = Promise.resolve(context.suspend()).catch(() => {});
-        }
-        return;
-      }
-      if (!bloomAudioSuspendedForVisibility) {
-        return;
-      }
-      bloomAudioSuspendedForVisibility = false;
-      bloomAudioVisibilityTransition.finally(() => {
-        if (
-          document.hidden
-          || context !== bloomAudioContext
-          || context.state !== "suspended"
-          || typeof context.resume !== "function"
-        ) {
-          return;
-        }
-        context.resume().catch(() => {});
-      });
+      bloomAudioVisibilityTransition = bloomAudioVisibilityTransition
+        .catch(() => {})
+        .then(async () => {
+          if (context !== bloomAudioContext) {
+            return;
+          }
+          if (document.hidden) {
+            if (context.state === "running" && typeof context.suspend === "function") {
+              bloomAudioSuspendedForVisibility = true;
+              await context.suspend();
+            }
+            return;
+          }
+          if (
+            !bloomAudioSuspendedForVisibility
+            || context.state !== "suspended"
+            || typeof context.resume !== "function"
+          ) {
+            return;
+          }
+          await context.resume();
+          if (context !== bloomAudioContext) {
+            return;
+          }
+          if (document.hidden) {
+            if (context.state === "running" && typeof context.suspend === "function") {
+              await context.suspend();
+            }
+            return;
+          }
+          bloomAudioSuspendedForVisibility = false;
+        })
+        .catch(() => {});
     }
 
     function setupBloomAudioGraph(ctx) {

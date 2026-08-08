@@ -35,6 +35,22 @@ async function openFresh(page, testCase) {
   });
 }
 
+async function openFreshWithCapturedAudioContext(context, page, testCase) {
+  await context.addInitScript(() => {
+    const NativeAudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!NativeAudioContext) return;
+    class CapturedAudioContext extends NativeAudioContext {
+      constructor(...args) {
+        super(...args);
+        window.__capturedAudioContext = this;
+      }
+    }
+    window.AudioContext = CapturedAudioContext;
+    window.webkitAudioContext = CapturedAudioContext;
+  });
+  await openFresh(page, testCase);
+}
+
 async function activateOpeningPair(page, testCase) {
   const source = page.locator("#tile-1-0");
   const destination = page.locator("#tile-1-1");
@@ -168,6 +184,103 @@ test("a hidden first move cannot create or foreground-replay audio", async ({ br
     expect(restored.overflowX).toBe(false);
     expect(restored.overflowY).toBe(false);
     expect(restored.brokenImages).toEqual([]);
+  } finally {
+    await context.close();
+  }
+});
+
+test("a pending foreground resume is re-suspended when the page hides again", async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+  const page = await context.newPage();
+  const browserErrors = [];
+  page.on("console", (message) => {
+    if (["warning", "error"].includes(message.type())) browserErrors.push(message.text());
+  });
+  page.on("pageerror", (error) => browserErrors.push(error.message));
+  try {
+    const testCase = CASES[0];
+    await openFreshWithCapturedAudioContext(context, page, testCase);
+    await activateOpeningPair(page, testCase);
+    await expect.poll(async () => (await report(page)).audio.contextState).toBe("running");
+    await expect.poll(async () => (await report(page)).moves).toBe(5);
+    await page.waitForTimeout(900);
+
+    await page.evaluate(() => window.__setAudioVisibilityHidden(true));
+    await expect.poll(async () => (await report(page)).audio.contextState).toBe("suspended");
+    const frozenVoiceCount = (await report(page)).audio.voiceCount;
+    await page.evaluate(() => {
+      const context = window.__capturedAudioContext;
+      const nativeResume = context.resume.bind(context);
+      let releaseResume;
+      context.resume = () => {
+        window.__audioResumePending = true;
+        return new Promise((resolve, reject) => {
+          releaseResume = () => {
+            context.resume = nativeResume;
+            return nativeResume().then(resolve, reject);
+          };
+        });
+      };
+      window.__releaseAudioResume = () => releaseResume?.();
+    });
+
+    await page.evaluate(() => window.__setAudioVisibilityHidden(false));
+    await expect.poll(() => page.evaluate(() => Boolean(window.__audioResumePending))).toBe(true);
+    await page.evaluate(() => window.__setAudioVisibilityHidden(true));
+    await page.evaluate(() => window.__releaseAudioResume());
+    await expect.poll(async () => (await report(page)).audio.contextState).toBe("suspended");
+    const rehidden = await report(page);
+    expect(rehidden.audio.visibilitySuspended).toBe(true);
+    expect(rehidden.audio.voiceCount).toBe(frozenVoiceCount);
+
+    await page.evaluate(() => window.__setAudioVisibilityHidden(false));
+    await expect.poll(async () => (await report(page)).audio.contextState).toBe("running");
+    const restored = await report(page);
+    expect(restored.audio.visibilitySuspended).toBe(false);
+    expect(restored.audio.voiceCount).toBe(frozenVoiceCount);
+    expect(restored.moves).toBe(5);
+    expect(restored.counts[5]).toBe(3);
+    expect(restored.tiles).toBe(64);
+    expect(restored.rows).toBe(8);
+    expect(restored.roving).toEqual([restored.active]);
+    expect(browserErrors).toEqual([]);
+  } finally {
+    await context.close();
+  }
+});
+
+test("visibility changes do not resume an externally suspended context", async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  const page = await context.newPage();
+  const browserErrors = [];
+  page.on("console", (message) => {
+    if (["warning", "error"].includes(message.type())) browserErrors.push(message.text());
+  });
+  page.on("pageerror", (error) => browserErrors.push(error.message));
+  try {
+    const testCase = CASES[2];
+    await openFreshWithCapturedAudioContext(context, page, testCase);
+    await activateOpeningPair(page, testCase);
+    await expect.poll(async () => (await report(page)).audio.contextState).toBe("running");
+    await expect.poll(async () => (await report(page)).moves).toBe(5);
+    await page.waitForTimeout(900);
+    await page.evaluate(() => window.__capturedAudioContext.suspend());
+    await expect.poll(async () => (await report(page)).audio.contextState).toBe("suspended");
+
+    await page.evaluate(() => window.__setAudioVisibilityHidden(true));
+    await page.evaluate(() => window.__setAudioVisibilityHidden(false));
+    await page.waitForTimeout(200);
+    const externallySuspended = await report(page);
+    expect(externallySuspended.audio.contextState).toBe("suspended");
+    expect(externallySuspended.audio.visibilitySuspended).toBe(false);
+    expect(externallySuspended.moves).toBe(5);
+    expect(externallySuspended.counts[5]).toBe(3);
+    expect(externallySuspended.tiles).toBe(64);
+    expect(externallySuspended.rows).toBe(8);
+    expect(externallySuspended.overflowX).toBe(false);
+    expect(externallySuspended.overflowY).toBe(false);
+    expect(externallySuspended.brokenImages).toEqual([]);
+    expect(browserErrors).toEqual([]);
   } finally {
     await context.close();
   }
