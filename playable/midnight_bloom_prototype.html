@@ -14035,6 +14035,19 @@
       target.focus({ preventScroll: true });
     }
 
+    function cancelBoardSelectionFromKeyboard() {
+      if (!selected || isResolving || thornOutcomeFeedbackActive() || roundComplete || isBouquetFailed()) {
+        return false;
+      }
+      const canceledSource = clampBoardFocusCell(selected);
+      selected = null;
+      boardFocusCell = canceledSource;
+      clearDragPreview();
+      queuePostRenderFocus(`tile-${canceledSource.x}-${canceledSource.y}`);
+      render();
+      return true;
+    }
+
     function handleBoardKeyDown(event) {
       if (thornOutcomeFeedbackActive()) {
         event.preventDefault();
@@ -14047,6 +14060,13 @@
         ArrowDown: { x: 0, y: 1 }
       };
       const cell = boardTileFromEvent(event) || { ...clampBoardFocusCell(), tile: null };
+      if (event.key === "Escape" && selected) {
+        event.preventDefault();
+        document.body.classList.remove("pointer-board-input");
+        document.body.classList.add("keyboard-board-navigation");
+        cancelBoardSelectionFromKeyboard();
+        return;
+      }
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
         document.body.classList.remove("pointer-board-input");

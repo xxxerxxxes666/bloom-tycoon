@@ -608,6 +608,8 @@ def verify_source_hooks():
         'cue.classList.remove("swap-refused");',
         "invalidSwapReturnHintCells.clear()",
         "function shouldPreserveSelectedHintPair",
+        "function cancelBoardSelectionFromKeyboard",
+        'if (event.key === "Escape" && selected)',
         'const move = roundOneBlackCandleLessonSwap();\n      if (',
         '$("firstSwapCue").textContent = "Make 4 Bone Stars - arm Black Candle Vine.";',
         "restoredRoundOneClosingReserveGuide",
