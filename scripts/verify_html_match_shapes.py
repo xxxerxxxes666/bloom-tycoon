@@ -1254,6 +1254,7 @@ def verify_source_hooks():
         "function cancelInterruptedBoardDrag()",
         "function restoreInterruptedBoardDragFocus()",
         "if (start.pointerId !== event.pointerId)",
+        "function handleBoardPointerCancel(event)",
         "clearDragPreview({ resetInputs: true });",
         "cancelInterruptedBoardDrag();",
         "restoreInterruptedBoardDragFocus();",
@@ -1274,6 +1275,13 @@ def verify_source_hooks():
     pointer_up_handler = html[pointer_up_start:pointer_up_end]
     if pointer_up_handler.index("start.pointerId !== event.pointerId") > pointer_up_handler.index("tileSwipeStart = null;"):
         raise SystemExit("Secondary pointer release must be rejected before primary drag retirement")
+    pointer_cancel_start = html.index("function handleBoardPointerCancel(event)")
+    pointer_cancel_end = html.index("function handleBoardTouchStart", pointer_cancel_start)
+    pointer_cancel_handler = html[pointer_cancel_start:pointer_cancel_end]
+    if "start.pointerId !== event.pointerId" not in pointer_cancel_handler:
+        raise SystemExit("Pointer cancellation must validate the active primary pointer")
+    if pointer_cancel_handler.index("start.pointerId !== event.pointerId") > pointer_cancel_handler.index("tileSwipeStart = null;"):
+        raise SystemExit("Secondary pointer cancellation must be rejected before primary drag retirement")
     moving_match_preview = re.search(
         r"\.tile\.match-preview-anchor\s*\{[^}]*\banimation\s*:",
         html,

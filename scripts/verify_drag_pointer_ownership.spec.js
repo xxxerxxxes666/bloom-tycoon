@@ -53,6 +53,8 @@ async function snapshot(page) {
       moves: state.moves,
       counts: state.counts,
       boardState: tiles.map((tile) => tile.dataset.flowerId).join(","),
+      hints: tiles.filter((tile) => tile.classList.contains("idle-hint")).map((tile) => tile.id),
+      guideVisible: visible(document.querySelector(".first-action-swap-guide")),
       preview: tiles.filter((tile) => (
         tile.classList.contains("drag-preview-source")
         || tile.classList.contains("drag-preview-neighbor")
@@ -83,7 +85,8 @@ async function snapshot(page) {
 }
 
 for (const profile of PROFILES) {
-  test(`${profile.label}: secondary release cannot steal the primary drag`, async ({ browser }) => {
+  for (const secondaryTermination of ["pointerup", "pointercancel"]) {
+  test(`${profile.label}: secondary ${secondaryTermination} cannot steal the primary drag`, async ({ browser }) => {
     const context = await browser.newContext({
       viewport: profile.viewport,
       hasTouch: Boolean(profile.mobile),
@@ -102,7 +105,7 @@ for (const profile of PROFILES) {
       await page.emulateMedia({ reducedMotion: "reduce" });
     }
     try {
-      await page.goto(`${BASE_URL}?drag-pointer-ownership=${profile.label}`, {
+      await page.goto(`${BASE_URL}?drag-pointer-ownership=${profile.label}-${secondaryTermination}`, {
         waitUntil: "networkidle"
       });
       await page.evaluate((key) => localStorage.removeItem(key), SAVE_KEY);
@@ -152,19 +155,19 @@ for (const profile of PROFILES) {
         buttons: 1
       };
       await page.dispatchEvent(`#${SOURCE_ID}`, "pointerdown", secondaryInit);
-      await page.dispatchEvent(`#${SOURCE_ID}`, "pointerup", {
+      await page.dispatchEvent(`#${SOURCE_ID}`, secondaryTermination, {
         ...secondaryInit,
         button: 0,
         buttons: 0
       });
 
       const afterSecondary = await snapshot(page);
-      expect(afterSecondary.moves, "secondary release spends no move").toBe(before.moves);
+      expect(afterSecondary.moves, "secondary termination spends no move").toBe(before.moves);
       expect(afterSecondary.counts).toEqual(before.counts);
       expect(afterSecondary.boardState).toBe(before.boardState);
       expect(afterSecondary.preview, "primary preview remains authoritative").toEqual([SOURCE_ID, TARGET_ID]);
       expect(afterSecondary.ready).toEqual([SOURCE_ID, TARGET_ID]);
-      expect(afterSecondary.sourceHasCapture, "secondary release preserves primary capture").toBe(true);
+      expect(afterSecondary.sourceHasCapture, "secondary termination preserves primary capture").toBe(true);
       expect(afterSecondary.primaryPointerId).toBe(held.primaryPointerId);
 
       await page.mouse.move(start.x, start.y + 26);
@@ -210,6 +213,107 @@ for (const profile of PROFILES) {
           path: "work/drag-pointer-ownership-mobile390-settled.png",
           fullPage: true
         });
+      }
+      expect(problems).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+  }
+
+  test(`${profile.label}: genuine primary cancellation retires cleanly`, async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: profile.viewport,
+      hasTouch: Boolean(profile.mobile),
+      isMobile: Boolean(profile.mobile)
+    });
+    const page = await context.newPage();
+    const problems = [];
+    page.on("console", (message) => {
+      if (["warning", "error"].includes(message.type())) problems.push(message.text());
+    });
+    page.on("pageerror", (error) => problems.push(error.message));
+    page.on("requestfailed", (request) => {
+      problems.push(`${request.url()} ${request.failure()?.errorText || ""}`);
+    });
+    if (profile.reduced) {
+      await page.emulateMedia({ reducedMotion: "reduce" });
+    }
+    try {
+      await page.goto(`${BASE_URL}?drag-pointer-ownership=${profile.label}-primary-cancel`, {
+        waitUntil: "networkidle"
+      });
+      await page.evaluate((key) => localStorage.removeItem(key), SAVE_KEY);
+      await page.reload({ waitUntil: "networkidle" });
+      await expect(page.locator("#tutorialPanel")).toBeVisible({ timeout: 3000 });
+      await expect(page.locator(`#${SOURCE_ID}`)).toBeFocused();
+      await page.evaluate(() => {
+        window.__primaryBoardPointerId = null;
+        window.__primaryBoardMoves = 0;
+        const board = document.querySelector("#board");
+        board.addEventListener("pointerdown", (event) => {
+          if (event.isPrimary) window.__primaryBoardPointerId = event.pointerId;
+        }, true);
+      });
+
+      const before = await snapshot(page);
+      const box = await page.locator(`#${SOURCE_ID}`).boundingBox();
+      expect(box, "opening source has geometry").toBeTruthy();
+      const start = {
+        x: Math.round(box.x + box.width / 2),
+        y: Math.round(box.y + box.height / 2)
+      };
+      await page.mouse.move(start.x, start.y);
+      await page.mouse.down();
+      await page.mouse.move(start.x, start.y + 18);
+      await expect(page.locator(".tile.drag-preview-ready")).toHaveCount(2);
+      const held = await snapshot(page);
+      expect(held.sourceHasCapture).toBe(true);
+
+      await page.dispatchEvent(`#${SOURCE_ID}`, "pointercancel", {
+        pointerId: held.primaryPointerId,
+        pointerType: "mouse",
+        isPrimary: true,
+        clientX: start.x,
+        clientY: start.y + 18,
+        button: 0,
+        buttons: 0
+      });
+      const canceled = await snapshot(page);
+      expect(canceled.moves, "primary cancellation spends no move").toBe(before.moves);
+      expect(canceled.counts).toEqual(before.counts);
+      expect(canceled.boardState).toBe(before.boardState);
+      expect(canceled.preview).toEqual([]);
+      expect(canceled.ready).toEqual([]);
+      expect(canceled.transformed).toEqual([]);
+      expect(canceled.selected).toEqual([]);
+      expect(canceled.hints).toEqual([SOURCE_ID, TARGET_ID]);
+      expect(canceled.guideVisible).toBe(true);
+      expect(canceled.roving).toEqual([SOURCE_ID]);
+
+      await page.mouse.up();
+      await page.waitForTimeout(500);
+      const settled = await snapshot(page);
+      expect(settled.moves).toBe(before.moves);
+      expect(settled.counts).toEqual(before.counts);
+      expect(settled.boardState).toBe(before.boardState);
+      expect(settled.preview).toEqual([]);
+      expect(settled.ready).toEqual([]);
+      expect(settled.hints).toEqual([SOURCE_ID, TARGET_ID]);
+      expect(settled.guideVisible).toBe(true);
+      expect(settled.sourceHasCapture).toBe(false);
+      expect(settled.active).toBe(SOURCE_ID);
+      expect(settled.roving).toEqual([SOURCE_ID]);
+      expect(settled.tiles).toBe(64);
+      expect(settled.rows).toBe(8);
+      expect(settled.enabled).toBe(64);
+      expect(settled.board.width).toBeCloseTo(profile.mobile ? 378 : 600, 3);
+      expect(settled.board.height).toBeCloseTo(profile.mobile ? 378 : 600, 3);
+      expect(settled.overflowX).toBe(false);
+      expect(settled.brokenImages).toEqual([]);
+      if (profile.mobile) {
+        expect(settled.board.bottom).toBeLessThanOrEqual(844);
+        expect(settled.scrollY).toBe(0);
       }
       expect(problems).toEqual([]);
     } finally {

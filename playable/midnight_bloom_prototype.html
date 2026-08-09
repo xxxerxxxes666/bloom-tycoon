@@ -14437,8 +14437,11 @@
       }
     }
 
-    function handleBoardPointerCancel() {
+    function handleBoardPointerCancel(event) {
       const start = tileSwipeStart;
+      if (!start || start.pointerId !== event.pointerId) {
+        return;
+      }
       tileSwipeStart = null;
       clearDragPreview();
       restoreGuideAfterCanceledBoardInput(start);
