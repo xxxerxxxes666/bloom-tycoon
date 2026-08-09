@@ -9964,6 +9964,45 @@
       body.focused-active-play:not(.focused-slice-failed) .tutorial-command-region > .tutorial-help {
         margin: 0 0 2px;
       }
+
+      /* The Round 2 purchase receipt belongs to the existing command lane.
+         Keep its complete wording beside Help, below the masthead, while the
+         newly authored Round 3 altar keeps the full desktop play geometry. */
+      body.restored-greenhouse-handoff.round-three-focus-active .tutorial-command-region > .next-order-cue {
+        flex: 1 1 0;
+        width: auto;
+        max-width: none;
+        min-height: 30px;
+        margin: 0 0 1px;
+        padding: 2px 5px;
+        font: 900 9px/1 system-ui, sans-serif;
+        letter-spacing: .01em;
+        white-space: normal;
+      }
+
+      /* Reduced motion removes the visual interpolation out of the payoff.
+         Snap that same receipt frame to the established large-desktop grid
+         instead of retaining the narrower ceremony measurements. */
+      body.reduced-motion.restored-greenhouse-handoff.round-three-focus-active .game {
+        width: calc(100vw - 10px) !important;
+        min-width: calc(100vw - 10px) !important;
+        max-width: none !important;
+        transition: none !important;
+      }
+
+      body.reduced-motion.restored-greenhouse-handoff.round-three-focus-active .title,
+      body.reduced-motion.restored-greenhouse-handoff.round-three-focus-active .objective,
+      body.reduced-motion.restored-greenhouse-handoff.round-three-focus-active .progress,
+      body.reduced-motion.restored-greenhouse-handoff.round-three-focus-active .tutorial-command-region,
+      body.reduced-motion.restored-greenhouse-handoff.round-three-focus-active .next-order-cue {
+        transition: none !important;
+      }
+
+      body.reduced-motion.restored-greenhouse-handoff.round-three-focus-active .title {
+        margin: 12px 0 0 !important;
+        font-size: 32px !important;
+        line-height: 1 !important;
+      }
     }
   </style>
 </head>

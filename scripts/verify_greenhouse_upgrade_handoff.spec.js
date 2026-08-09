@@ -58,6 +58,22 @@ async function report(page) {
       const style = getComputedStyle(node);
       return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0;
     };
+    const visibleRect = (node) => {
+      if (!visible(node)) return null;
+      const rect = node.getBoundingClientRect();
+      return {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height
+      };
+    };
+    const receipt = document.querySelector("#nextOrderCue");
+    const steadyCue = document.querySelector("#firstSwapCue");
+    const command = visible(receipt) ? receipt : visible(steadyCue) ? steadyCue : null;
+    const region = document.querySelector("#tutorialCommandRegion");
     return {
       save: localStorage.getItem(key),
       round: saved.currentRound,
@@ -77,6 +93,28 @@ async function report(page) {
       tiles: tiles.length,
       rows: new Set(tiles.map((tile) => tile.dataset.y)).size,
       board: board ? { width: board.width, height: board.height, bottom: board.bottom } : null,
+      handoffActive: document.body.classList.contains("restored-greenhouse-handoff"),
+      geometry: {
+        viewport: { left: 0, top: 0, right: innerWidth, bottom: innerHeight },
+        region: visibleRect(region),
+        command: visibleRect(command),
+        commandId: command?.id || "",
+        commandText: command?.textContent.replace(/\s+/g, " ").trim() || "",
+        commandClientWidth: command?.clientWidth || 0,
+        commandScrollWidth: command?.scrollWidth || 0,
+        commandClientHeight: command?.clientHeight || 0,
+        commandScrollHeight: command?.scrollHeight || 0,
+        regionClientWidth: region?.clientWidth || 0,
+        regionScrollWidth: region?.scrollWidth || 0,
+        title: visibleRect(document.querySelector(".title")),
+        help: visibleRect(document.querySelector("#tutorialHelpBtn")),
+        objective: visibleRect(document.querySelector("#objective")),
+        hud: visibleRect(document.querySelector("#bouquetProgress")),
+        greenhouse: visibleRect(innerWidth <= 760
+          ? document.querySelector("#mobileGreenhouseProgress")
+          : document.querySelector(".hero")),
+        board: visibleRect(document.querySelector("#board"))
+      },
       scrollY,
       overflowX: document.documentElement.scrollWidth > innerWidth + 1,
       overflowY: document.documentElement.scrollHeight > innerHeight + 1,
@@ -85,6 +123,73 @@ async function report(page) {
         .map((image) => image.getAttribute("src"))
     };
   }, SAVE_KEY);
+}
+
+function contains(outer, inner, tolerance = 0.5) {
+  return Boolean(
+    outer
+    && inner
+    && inner.left >= outer.left - tolerance
+    && inner.right <= outer.right + tolerance
+    && inner.top >= outer.top - tolerance
+    && inner.bottom <= outer.bottom + tolerance
+  );
+}
+
+function intersects(first, second, tolerance = 0.5) {
+  return Boolean(
+    first
+    && second
+    && Math.min(first.right, second.right) - Math.max(first.left, second.left) > tolerance
+    && Math.min(first.bottom, second.bottom) - Math.max(first.top, second.top) > tolerance
+  );
+}
+
+function expectCommandLaneGeometry(state, label, expectedCommandId) {
+  const geometry = state.geometry;
+  expect(geometry.commandId, `${label} command owner`).toBe(expectedCommandId);
+  const visibleRects = {
+    region: geometry.region,
+    title: geometry.title,
+    help: geometry.help,
+    objective: geometry.objective,
+    hud: geometry.hud,
+    greenhouse: geometry.greenhouse,
+    board: geometry.board
+  };
+  if (expectedCommandId) visibleRects.command = geometry.command;
+  for (const [name, rect] of Object.entries(visibleRects)) {
+    expect(contains(geometry.viewport, rect), `${label} ${name} is contained in the viewport`).toBe(true);
+  }
+  expect(contains(geometry.region, geometry.help), `${label} Help belongs to the command region`).toBe(true);
+  expect(geometry.regionScrollWidth, `${label} command region has no horizontal overflow`)
+    .toBeLessThanOrEqual(geometry.regionClientWidth + 1);
+  if (expectedCommandId) {
+    expect(geometry.commandText, `${label} complete command copy`).not.toBe("");
+    expect(contains(geometry.region, geometry.command), `${label} command belongs to the command region`).toBe(true);
+    expect(geometry.commandScrollWidth, `${label} command has no internal horizontal overflow`)
+      .toBeLessThanOrEqual(geometry.commandClientWidth + 1);
+    expect(geometry.commandScrollHeight, `${label} command has no internal vertical overflow`)
+      .toBeLessThanOrEqual(geometry.commandClientHeight + 1);
+    expect(intersects(geometry.command, geometry.help), `${label} command clears Help`).toBe(false);
+  }
+
+  const externalSurfaces = ["title", "objective", "hud", "greenhouse", "board"];
+  for (const surface of externalSurfaces) {
+    expect(intersects(geometry.region, geometry[surface]), `${label} command region clears ${surface}`)
+      .toBe(false);
+  }
+  const independentSurfaces = ["title", "help", "objective", "hud", "greenhouse", "board"];
+  for (let first = 0; first < independentSurfaces.length; first += 1) {
+    for (let second = first + 1; second < independentSurfaces.length; second += 1) {
+      const firstName = independentSurfaces[first];
+      const secondName = independentSurfaces[second];
+      expect(
+        intersects(geometry[firstName], geometry[secondName]),
+        `${label} ${firstName} clears ${secondName}`
+      ).toBe(false);
+    }
+  }
 }
 
 function expectGeometry(state, config, label, boardVisible = false) {
@@ -112,6 +217,7 @@ for (const config of CONFIGS) {
     const page = await context.newPage();
     const errors = [];
     const failedRequests = [];
+    const httpErrors = [];
     page.on("console", (message) => {
       if (["warning", "error"].includes(message.type())) errors.push(message.text());
     });
@@ -119,6 +225,9 @@ for (const config of CONFIGS) {
     page.on("requestfailed", (request) => {
       const failure = request.failure()?.errorText || "";
       if (failure !== "net::ERR_ABORTED") failedRequests.push(`${request.url()} ${failure}`);
+    });
+    page.on("response", (response) => {
+      if (response.status() >= 400) httpErrors.push(`${response.status()} ${response.url()}`);
     });
 
     try {
@@ -196,12 +305,56 @@ for (const config of CONFIGS) {
       expect(entered.rovingIds).toHaveLength(1);
       expect(entered.activeId).toBe(entered.rovingIds[0]);
       expectGeometry(entered, config, `${config.label} entered`, true);
+      expect(entered.handoffActive, `${config.label} bounded receipt is active`).toBe(true);
+      expectCommandLaneGeometry(entered, `${config.label} receipt`, "nextOrderCue");
       expect(errors, `${config.label} console`).toEqual([]);
       expect(failedRequests, `${config.label} requests`).toEqual([]);
+      expect(httpErrors, `${config.label} HTTP responses`).toEqual([]);
 
-      if (["desktop-enter", "mobile-enter"].includes(config.label)) {
+      const evidenceLabels = {
+        "desktop-enter": "desktop-full",
+        "desktop-space-reduced": "desktop-reduced",
+        "mobile-enter": "mobile-full",
+        "mobile-space-reduced": "mobile-reduced"
+      };
+      if (evidenceLabels[config.label]) {
         await page.screenshot({
-          path: `work/greenhouse-upgrade-handoff-${config.label}.png`,
+          path: `work/greenhouse-upgrade-handoff-${evidenceLabels[config.label]}-receipt.png`,
+          fullPage: false
+        });
+      }
+
+      await page.waitForFunction(() => !document.body.classList.contains("restored-greenhouse-handoff"), null, {
+        timeout: 3000
+      });
+      await page.waitForTimeout(80);
+      const retired = await report(page);
+      expect(retired.handoffActive, `${config.label} receipt retires on its existing lifecycle`).toBe(false);
+      expect(retired.save, `${config.label} retirement is presentation-only`).toBe(entered.save);
+      expect(retired).toMatchObject({
+        round: 3,
+        moves: 8,
+        counts: [0, 0, 0, 0, 0, 0],
+        coins: 50,
+        complete: false,
+        restored: true,
+        upgraded: true,
+        raised: false,
+        selected: [],
+        tiles: 64,
+        rows: 8
+      });
+      expect(retired.rovingIds).toHaveLength(1);
+      expect(retired.activeId).toBe(retired.rovingIds[0]);
+      expectGeometry(retired, config, `${config.label} retired`, true);
+      expectCommandLaneGeometry(retired, `${config.label} retired`, "");
+      expect(errors, `${config.label} retired console`).toEqual([]);
+      expect(failedRequests, `${config.label} retired requests`).toEqual([]);
+      expect(httpErrors, `${config.label} retired HTTP responses`).toEqual([]);
+
+      if (evidenceLabels[config.label]) {
+        await page.screenshot({
+          path: `work/greenhouse-upgrade-handoff-${evidenceLabels[config.label]}-retired.png`,
           fullPage: false
         });
       }
