@@ -1244,10 +1244,13 @@ def verify_source_hooks():
         "document.body.dataset.tutorialPrompt = tutorialActive ? tutorialCopy() : \"\"",
         "const MAX_BOARD_PARTICLES = 16",
         "@media (prefers-reduced-motion: reduce)",
+        "function horizontalDragIntent(dx, dy)",
     ])
     missing = [needle for needle in required if needle not in html]
     if missing:
         raise SystemExit(f"Missing HTML match-shape hooks: {missing}")
+    if html.count("const horizontal = horizontalDragIntent(dx, dy);") != 2:
+        raise SystemExit("Drag preview and release must share one dominant-axis rule")
     moving_match_preview = re.search(
         r"\.tile\.match-preview-anchor\s*\{[^}]*\banimation\s*:",
         html,
