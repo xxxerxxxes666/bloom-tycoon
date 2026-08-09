@@ -1,5 +1,12 @@
 # Codex Build Notes
 
+## 2026-08-09 - Same-slice mobile reward promise fit correction
+
+- Player-visible correction: the exact-mobile bouquet receiver now uses a `3px` internal copy gap instead of `5px`, giving the unchanged 8.5px zero-tracking reward promise its full width while preserving the 9px bouquet total, 8px wallet, 76px wallet reserve, 108px strip, and desktop typography. Before correction, failed Round 1 measured `125px` client / `127px` scroll width for `Complete for 120 coins`; afterward it measures `127px` / `127px` with no total/promise/wallet intersections.
+- Matrix evidence: the unchanged isolated mobile390 failure passes `1/1`; the required serial grep `focused bouquet HUD consequences|owned replay nourishment promise` passes `4/4` across desktop, exact mobile, and both reduced-motion owned-replay cases. The same matrix covers the 120/150/180 promises, reloads, partial/failure/payoff states, and `Nourish ... · Keep ...` variants.
+- Exact-mobile visual evidence: original-scale `work/hud-correction-mobile390-r1-failed.png` and `work/hud-correction-mobile390-r2-owned-replay-7820.png` were inspected. The latter measures `125px` client / `125px` scroll width for `Nourish 150 · Keep 7820`; both captures retain the full 108px receiver, `378x378` altar, 64 tiles/eight complete rows, no clipping/overlap or horizontal overflow, no broken visible images, and empty console/page/request-failure ledgers.
+- Files changed: `playable/midnight_bloom_prototype.html` and this note. No spec, assertion, UI node, copy, control, board/RNG/gameplay/save/economy/objective/round behavior, asset, dependency, service, tracker, or backend changed. No commit, push, deployment, or public-host verification was performed; Hermes owns delivery.
+
 ## 2026-08-09 - Mobile bouquet economy remains legible
 
 - Hermes correction: the first delivery accidentally attached the new 8.5px/zero-tracking declarations to the preceding mobile bouquet-total selector, leaving the reward promise at 9px with inherited `0.08em` tracking. The declarations now target `.bouquet-reward-promise` itself, while the bouquet total returns to its original 9px styling. The permanent matrix includes an active/reloaded `7820`-coin owned profile and requires computed `0px` promise tracking, horizontal fit, and zero total/promise/wallet intersection; desktop tracking remains unchanged.
