@@ -673,6 +673,8 @@ def verify_source_hooks():
         "function armPayoffHandoffInputGuard(",
         "duration = PAYOFF_HANDOFF_INPUT_GUARD_MS",
         "function retirePayoffHandoffInputGuard()",
+        "payoffHandoffInputGuardGeneration += 1",
+        "guardedGeneration !== payoffHandoffInputGuardGeneration",
         "retirePayoffHandoffInputGuard();",
         'if (replay && returnFocusToHelp)',
         'armPayoffHandoffInputGuard("tutorialSkipBtn", TUTORIAL_COMMAND_INPUT_GUARD_MS)',

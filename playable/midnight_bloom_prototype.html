@@ -10314,6 +10314,7 @@
     let payoffHandoffInputGuardUntil = 0;
     let payoffHandoffClickGuardUntil = 0;
     let payoffHandoffFocusTargetId = "";
+    let payoffHandoffInputGuardGeneration = 0;
     let moves = roundTemplates[0].moves;
     let coins = 0;
     let counts = [0, 0, 0, 0, 0, 0];
@@ -14025,6 +14026,7 @@
       payoffHandoffInputGuardUntil = performance.now() + duration;
       payoffHandoffClickGuardUntil = 0;
       payoffHandoffFocusTargetId = focusTargetId;
+      payoffHandoffInputGuardGeneration += 1;
     }
 
     function payoffHandoffInputGuardActive(event) {
@@ -14037,6 +14039,7 @@
       payoffHandoffInputGuardUntil = 0;
       payoffHandoffClickGuardUntil = 0;
       payoffHandoffFocusTargetId = "";
+      payoffHandoffInputGuardGeneration += 1;
     }
 
     function rejectPayoffHandoffBoardInput(event) {
@@ -14060,7 +14063,14 @@
       clearDragPreview({ resetInputs: true });
       const guardedFocus = firstHintFocusCell() || clampBoardFocusCell();
       const guardedTargetId = payoffHandoffFocusTargetId;
+      const guardedGeneration = payoffHandoffInputGuardGeneration;
       window.requestAnimationFrame(() => {
+        if (
+          guardedGeneration !== payoffHandoffInputGuardGeneration
+          || !payoffHandoffInputGuardActive()
+        ) {
+          return;
+        }
         const guardedTarget = guardedTargetId ? $(guardedTargetId) : null;
         if (guardedTarget && !guardedTarget.hidden && !guardedTarget.disabled) {
           guardedTarget.focus({ preventScroll: true });
