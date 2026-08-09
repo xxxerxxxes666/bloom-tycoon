@@ -1246,6 +1246,8 @@ def verify_source_hooks():
         "@media (prefers-reduced-motion: reduce)",
         "function horizontalDragIntent(dx, dy)",
         "if (dominant < SWIPE_THRESHOLD)",
+        "dominant >= DRAG_INTENT_THRESHOLD",
+        "event.pointerType === \"touch\"",
         "start.dragTraveled = start.dragTraveled || dominant >= DRAG_INTENT_THRESHOLD;",
         "sourceTile.classList.remove(\"drag-preview-source\", \"drag-preview-ready\");",
         "$(\"board\")?.classList.add(\"drag-preview-active\");",
@@ -1262,6 +1264,10 @@ def verify_source_hooks():
         raise SystemExit("Drag preview and release must share one dominant-axis rule")
     if "if (dominant < DRAG_INTENT_THRESHOLD)" in html:
         raise SystemExit("Sub-commit travel must not activate the two-flower preview")
+    drag_preview_start = html.index("function applyDragPreview(start, event)")
+    drag_preview_end = html.index("function suppressBoardClickBriefly()", drag_preview_start)
+    if "notePlayerInteraction();" in html[drag_preview_start:drag_preview_end]:
+        raise SystemExit("Temporary drag preview must not retire persistent guide authority")
     moving_match_preview = re.search(
         r"\.tile\.match-preview-anchor\s*\{[^}]*\banimation\s*:",
         html,

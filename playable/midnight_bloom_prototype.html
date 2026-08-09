@@ -13970,6 +13970,14 @@
       const absY = Math.abs(dy);
       const dominant = Math.max(absX, absY);
       const sourceTile = dragPreview.sourceTile;
+      if (
+        dominant >= DRAG_INTENT_THRESHOLD
+        && event.pointerType === "touch"
+        && event.cancelable !== false
+        && event.preventDefault
+      ) {
+        event.preventDefault();
+      }
       if (dominant < SWIPE_THRESHOLD) {
         start.dragTraveled = start.dragTraveled || dominant >= DRAG_INTENT_THRESHOLD;
         resetDragTile(dragPreview.neighborTile);
@@ -13981,15 +13989,8 @@
         return;
       }
 
-      if (!start.dragEstablished) {
-        notePlayerInteraction();
-      }
       start.dragTraveled = true;
       start.dragEstablished = true;
-      if (event.pointerType === "touch" && event.cancelable !== false && event.preventDefault) {
-        event.preventDefault();
-      }
-
       const horizontal = horizontalDragIntent(dx, dy);
       const direction = horizontal ? Math.sign(dx) : Math.sign(dy);
       if (!direction) {
