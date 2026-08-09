@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-08-09 - Moonlit upgrade input stays with the greenhouse
+
+- Player-visible correction: a repeated Enter, Space, click, or tap on `Upgrade Greenhouse` can no longer activate the newly focused `Next Order` and jump into Bloodroot Compact while the Moonlit awakening is still responding. The 120-coin spend applies once, the settled Round 2 payoff and 50-coin balance remain authoritative, and Next Order keeps focus until a later deliberate command.
+- Authority boundary: the Moonlit upgrade now arms the existing unsaved `480ms` payoff handoff guard after rendering its Next Order owner. This reuses the accepted capture-phase keyboard/pointer/touch/click boundary; no timer duration, state field, UI, copy, save data, spend, economy, greenhouse animation, round, RNG, objective, sound, or progression behavior changed.
+- Permanent contract: `scripts/verify_greenhouse_upgrade_handoff.spec.js` starts from the exact first-cycle completed Moonlit Wreath payoff at Coins 170, activates the real upgrade, then repeats the same command at `+60ms` across desktop `1280x720`, exact mobile `390x844`, full/reduced motion, Enter, Space, pointer, and touch. It requires exact `170 -> 50`, one ownership spend, byte-stable Round 2 payoff through repeat, sole focused Next Order, zero selection and zero roving stops on the hidden board, then one later deliberate Round 3 entry at Moves 8 with one roving tile, 64/eight, and exact `600px`/`378px` active altars. The pre-fix desktop Enter case reaches Round 3 during the repeated command.
+- Local evidence: the new matrix passes `6/6`; the shared payoff input guard remains `6/6`; and the complete desktop/mobile payoff ceremony journeys pass `2/2`, including the real first-cycle Moonlit spend and Round 3 continuation. Original-scale captures retain the exact 50-coin post-upgrade state, Moonlit greenhouse, one eventual Bloodroot source focus/roving owner, 64/eight, exact `600px`/`378px` active altars, `scrollY=0`, loaded imagery, no overflow, and empty browser warning/error/request ledgers.
+- Files changed: `playable/midnight_bloom_prototype.html`, new `scripts/verify_greenhouse_upgrade_handoff.spec.js`, `scripts/verify_html_match_shapes.py`, and this note. Delivery evidence follows after public verification.
+
 ## 2026-08-09 - A paid Shuffle owns its rebuild before another command
 
 - Player-visible correction: a rapid repeated Enter, Space, click, or tap on active Round 1 Shuffle can no longer spend a second move while the first paid reweave is still settling. The first command rebuilds the board once, keeps Shuffle focused, and publishes its existing exact receipt once; another deliberate Shuffle remains available after that receipt owns the cue.

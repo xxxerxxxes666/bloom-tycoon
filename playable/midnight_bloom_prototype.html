@@ -19274,6 +19274,7 @@
       pulseNextOrderReady();
       queuePostRenderFocus("nextOrderBtn");
       render();
+      armPayoffHandoffInputGuard("nextOrderBtn");
       pulseActiveGreenhouseIntake();
       playBloomSound("restore");
       const panel = $("roundOneRestoration");

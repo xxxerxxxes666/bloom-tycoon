@@ -979,6 +979,7 @@ def verify_source_hooks():
         "let roundTwoGreenhouseUpgraded = false",
         "round-two-upgrade-pending",
         "function upgradeRoundTwoGreenhouse()",
+        'armPayoffHandoffInputGuard("nextOrderBtn")',
         "function advanceGreenhouseUpgrade()",
         "Upgrade Greenhouse · ${MOONLIT_GREENHOUSE_UPGRADE_COST} coins",
         "Upgrade the greenhouse.",
