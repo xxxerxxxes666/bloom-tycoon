@@ -99,11 +99,17 @@ function baseState(fixture) {
 
 async function openFailedState(page, round, label) {
   const fixture = ROUND_FIXTURES[round];
+  await page.addInitScript(({ key, state, marker }) => {
+    if (!sessionStorage.getItem(marker)) {
+      localStorage.setItem(key, JSON.stringify(state));
+      sessionStorage.setItem(marker, "1");
+    }
+  }, {
+    key: SAVE_KEY,
+    state: baseState(fixture),
+    marker: `failure-retry-seed-${label}-r${round}`
+  });
   await page.goto(`${BASE_URL}?failure-retry=${label}-r${round}`, { waitUntil: "networkidle" });
-  await page.evaluate(({ key, state }) => {
-    localStorage.setItem(key, JSON.stringify(state));
-  }, { key: SAVE_KEY, state: baseState(fixture) });
-  await page.reload({ waitUntil: "networkidle" });
 }
 
 async function uiState(page) {
