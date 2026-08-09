@@ -505,6 +505,8 @@ def verify_source_hooks():
         "body.owned-replay-entry .bouquet-reward-promise",
         "body.owned-replay-entry.round-one-active:not(.round-one-complete):not(.first-move-made) .tutorial-command-region > .first-swap-cue",
         "body.restored-greenhouse-handoff.round-three-focus-active .tutorial-command-region > .next-order-cue",
+        "body.restored-greenhouse-handoff.round-three-focus-active .tutorial-command-region {",
+        "top: 31px;",
         "font: 900 9px/1 system-ui, sans-serif;",
         "body.reduced-motion.restored-greenhouse-handoff.round-three-focus-active .game",
         "min-width: calc(100vw - 10px) !important;",
