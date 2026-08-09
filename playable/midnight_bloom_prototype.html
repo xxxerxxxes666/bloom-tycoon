@@ -12998,6 +12998,27 @@
       return true;
     }
 
+    function restoreUntouchedRoundOneOpeningGuideAfterRefusal() {
+      const plan = activeRoundPlan();
+      const restored = plan.round === 1
+        && !hasMadeValidMove
+        && moves === plan.moves
+        && roundProgress(plan).earned === 0
+        && roundOneGuidedStage(plan) === "thorn-opening"
+        && !armedLineRelic
+        && !roundComplete
+        && !isBouquetFailed(plan)
+        && restoreFirstSwapCueAfterRefusal({ preserveCue: true });
+      if (restored) {
+        const guideSource = firstHintFocusCell();
+        if (guideSource) {
+          boardFocusCell = clampBoardFocusCell(guideSource);
+          queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
+        }
+      }
+      return restored;
+    }
+
     function scheduleIdleHint() {
       clearIdleHint();
       const finalHarvest = finalHarvestEligibility();
@@ -13756,12 +13777,16 @@
         invalidSwapCells.clear();
         invalidSwapTimer = null;
         const restartPostOnboardingHint = isPostOnboardingIdleHintActive();
+        let restoredUntouchedRoundOneGuide = false;
         if (focusedCueActive) {
           cue.classList.remove("swap-refused");
           cue.textContent = returnCue;
           idleHintCells = new Set(returnHintCells);
+          restoredUntouchedRoundOneGuide = !idleHintCells.size
+            && restoreUntouchedRoundOneOpeningGuideAfterRefusal();
           if (
             !idleHintCells.size
+            && !restoredUntouchedRoundOneGuide
             && currentRound === 1
             && tutorialActive
             && !isRoundOneAgencyHandoffActive()
@@ -13770,7 +13795,9 @@
           }
         }
         const restoredThornLesson = restoreAuthoritativeRoundTwoThornLesson({ resetSelection: true });
-        selected = restoredThornLesson ? null : returnSelection ? { ...returnSelection } : null;
+        selected = restoredThornLesson || restoredUntouchedRoundOneGuide
+          ? null
+          : returnSelection ? { ...returnSelection } : null;
         if (selected) {
           const selectedGuide = firstActionBoardGuidePair();
           boardFocusCell = clampBoardFocusCell(
