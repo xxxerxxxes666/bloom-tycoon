@@ -13929,7 +13929,6 @@
 
     function beginDragPreview(start, sourceTile) {
       clearDragPreview();
-      const boardEl = $("board");
       dragPreview = {
         start,
         sourceTile,
@@ -13937,10 +13936,6 @@
         neighbor: null,
         ready: false
       };
-      if (boardEl) {
-        boardEl.classList.add("drag-preview-active");
-      }
-      sourceTile.classList.add("drag-preview-source");
     }
 
     function dragTravelDistance(sourceTile, neighborTile, horizontal) {
@@ -13975,19 +13970,21 @@
       const absY = Math.abs(dy);
       const dominant = Math.max(absX, absY);
       const sourceTile = dragPreview.sourceTile;
-      if (dominant < DRAG_INTENT_THRESHOLD) {
+      if (dominant < SWIPE_THRESHOLD) {
+        start.dragTraveled = start.dragTraveled || dominant >= DRAG_INTENT_THRESHOLD;
         resetDragTile(dragPreview.neighborTile);
         dragPreview.neighborTile = null;
         dragPreview.neighbor = null;
         sourceTile.style.transform = "";
-        sourceTile.classList.remove("drag-preview-ready");
-        $("board")?.classList.remove("drag-preview-ready");
+        sourceTile.classList.remove("drag-preview-source", "drag-preview-ready");
+        $("board")?.classList.remove("drag-preview-active", "drag-preview-ready");
         return;
       }
 
       if (!start.dragEstablished) {
         notePlayerInteraction();
       }
+      start.dragTraveled = true;
       start.dragEstablished = true;
       if (event.pointerType === "touch" && event.cancelable !== false && event.preventDefault) {
         event.preventDefault();
@@ -14016,6 +14013,7 @@
       if (!neighborTile || neighborTile.disabled) {
         return;
       }
+      $("board")?.classList.add("drag-preview-active");
       if (dragPreview.neighborTile && dragPreview.neighborTile !== neighborTile) {
         resetDragTile(dragPreview.neighborTile);
       }
@@ -14063,13 +14061,17 @@
       const dx = event.clientX - start.clientX;
       const dy = event.clientY - start.clientY;
       if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE_THRESHOLD) {
-        if (start.dragEstablished) {
+        const traveled = Math.max(Math.abs(dx), Math.abs(dy)) >= DRAG_INTENT_THRESHOLD;
+        if (start.dragEstablished || start.dragTraveled || traveled) {
           if (event.preventDefault) {
             event.preventDefault();
           }
           suppressBoardClickBriefly();
         }
         clearDragPreview();
+        if (start.dragTraveled || traveled) {
+          focusBoardCell(start.x, start.y);
+        }
         return;
       }
       const horizontal = horizontalDragIntent(dx, dy);
@@ -14413,7 +14415,7 @@
     }
 
     function restoreGuideAfterCanceledBoardInput(start) {
-      if (start?.dragEstablished) {
+      if (start?.dragEstablished || start?.dragTraveled) {
         suppressBoardClickBriefly();
       }
       if (currentRound === 1 && !hasMadeValidMove && !tutorialSkipped && !roundComplete && !isBouquetFailed()) {

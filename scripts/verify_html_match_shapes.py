@@ -1245,6 +1245,10 @@ def verify_source_hooks():
         "const MAX_BOARD_PARTICLES = 16",
         "@media (prefers-reduced-motion: reduce)",
         "function horizontalDragIntent(dx, dy)",
+        "if (dominant < SWIPE_THRESHOLD)",
+        "start.dragTraveled = start.dragTraveled || dominant >= DRAG_INTENT_THRESHOLD;",
+        "sourceTile.classList.remove(\"drag-preview-source\", \"drag-preview-ready\");",
+        "$(\"board\")?.classList.add(\"drag-preview-active\");",
         "function cancelInterruptedBoardDrag()",
         "function restoreInterruptedBoardDragFocus()",
         "clearDragPreview({ resetInputs: true });",
@@ -1256,6 +1260,8 @@ def verify_source_hooks():
         raise SystemExit(f"Missing HTML match-shape hooks: {missing}")
     if html.count("const horizontal = horizontalDragIntent(dx, dy);") != 2:
         raise SystemExit("Drag preview and release must share one dominant-axis rule")
+    if "if (dominant < DRAG_INTENT_THRESHOLD)" in html:
+        raise SystemExit("Sub-commit travel must not activate the two-flower preview")
     moving_match_preview = re.search(
         r"\.tile\.match-preview-anchor\s*\{[^}]*\banimation\s*:",
         html,
