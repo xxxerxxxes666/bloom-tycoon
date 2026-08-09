@@ -14371,7 +14371,7 @@
       }
       document.body.classList.remove("keyboard-board-navigation");
       document.body.classList.add("pointer-board-input");
-      if (!event.isPrimary) {
+      if (!event.isPrimary || tileSwipeStart) {
         return;
       }
       const cell = boardTileFromEvent(event);
@@ -14399,7 +14399,11 @@
     }
 
     function handleBoardPointerMove(event) {
-      if (!event.isPrimary || !tileSwipeStart) {
+      if (
+        !event.isPrimary
+        || !tileSwipeStart
+        || tileSwipeStart.pointerId !== event.pointerId
+      ) {
         return;
       }
       applyDragPreview(tileSwipeStart, event);

@@ -221,6 +221,140 @@ for (const profile of PROFILES) {
   });
   }
 
+  test(`${profile.label}: another device primary cannot replace the active drag`, async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: profile.viewport,
+      hasTouch: Boolean(profile.mobile),
+      isMobile: Boolean(profile.mobile)
+    });
+    const page = await context.newPage();
+    const problems = [];
+    page.on("console", (message) => {
+      if (["warning", "error"].includes(message.type())) problems.push(message.text());
+    });
+    page.on("pageerror", (error) => problems.push(error.message));
+    page.on("requestfailed", (request) => {
+      problems.push(`${request.url()} ${request.failure()?.errorText || ""}`);
+    });
+    if (profile.reduced) {
+      await page.emulateMedia({ reducedMotion: "reduce" });
+    }
+    try {
+      await page.goto(`${BASE_URL}?drag-pointer-ownership=${profile.label}-cross-device-primary`, {
+        waitUntil: "networkidle"
+      });
+      await page.evaluate((key) => localStorage.removeItem(key), SAVE_KEY);
+      await page.reload({ waitUntil: "networkidle" });
+      await expect(page.locator("#tutorialPanel")).toBeVisible({ timeout: 3000 });
+      await expect(page.locator(`#${SOURCE_ID}`)).toBeFocused();
+      await page.evaluate(() => {
+        window.__primaryBoardPointerId = null;
+        window.__primaryBoardMoves = 0;
+        const board = document.querySelector("#board");
+        board.addEventListener("pointerdown", (event) => {
+          if (event.isPrimary && window.__primaryBoardPointerId === null) {
+            window.__primaryBoardPointerId = event.pointerId;
+          }
+        }, true);
+        board.addEventListener("pointermove", (event) => {
+          if (event.pointerId === window.__primaryBoardPointerId) window.__primaryBoardMoves += 1;
+        }, true);
+      });
+
+      const before = await snapshot(page);
+      const sourceBox = await page.locator(`#${SOURCE_ID}`).boundingBox();
+      const competingBox = await page.locator("#tile-0-0").boundingBox();
+      expect(sourceBox, "opening source has geometry").toBeTruthy();
+      expect(competingBox, "competing source has geometry").toBeTruthy();
+      const start = {
+        x: Math.round(sourceBox.x + sourceBox.width / 2),
+        y: Math.round(sourceBox.y + sourceBox.height / 2)
+      };
+      const competingStart = {
+        x: Math.round(competingBox.x + competingBox.width / 2),
+        y: Math.round(competingBox.y + competingBox.height / 2)
+      };
+
+      await page.mouse.move(start.x, start.y);
+      await page.mouse.down();
+      await page.mouse.move(start.x, start.y + 18);
+      await expect(page.locator(".tile.drag-preview-ready")).toHaveCount(2);
+      const held = await snapshot(page);
+      expect(held.preview).toEqual([SOURCE_ID, TARGET_ID]);
+      expect(held.sourceHasCapture).toBe(true);
+
+      const competingPointerId = held.primaryPointerId + 900;
+      const competingPointer = {
+        pointerId: competingPointerId,
+        pointerType: profile.secondaryPointerType,
+        isPrimary: true,
+        clientX: competingStart.x,
+        clientY: competingStart.y,
+        button: 0,
+        buttons: 1
+      };
+      await page.dispatchEvent("#tile-0-0", "pointerdown", competingPointer);
+      await page.dispatchEvent("#tile-0-0", "pointermove", {
+        ...competingPointer,
+        clientX: competingStart.x + 22
+      });
+      await page.dispatchEvent("#tile-0-0", "pointerup", {
+        ...competingPointer,
+        clientX: competingStart.x + 22,
+        buttons: 0
+      });
+
+      const afterCompeting = await snapshot(page);
+      expect(afterCompeting.moves, "competing device spends no move").toBe(before.moves);
+      expect(afterCompeting.counts).toEqual(before.counts);
+      expect(afterCompeting.boardState).toBe(before.boardState);
+      expect(afterCompeting.preview, "held drag keeps its exact pair").toEqual([SOURCE_ID, TARGET_ID]);
+      expect(afterCompeting.ready).toEqual([SOURCE_ID, TARGET_ID]);
+      expect(afterCompeting.sourceHasCapture, "held source retains pointer capture").toBe(true);
+      expect(afterCompeting.primaryPointerId).toBe(held.primaryPointerId);
+
+      await page.mouse.move(start.x, start.y + 26);
+      const continued = await snapshot(page);
+      expect(continued.preview, "owned pointer still updates after competing motion").toEqual([SOURCE_ID, TARGET_ID]);
+      expect(continued.ready).toEqual([SOURCE_ID, TARGET_ID]);
+      expect(continued.primaryMoveCount).toBeGreaterThan(afterCompeting.primaryMoveCount);
+      expect(continued.sourceHasCapture).toBe(true);
+
+      await page.mouse.up();
+      await expect.poll(async () => (await snapshot(page)).moves, { timeout: 12000 }).toBe(5);
+      await expect(page.locator("#board .tile:disabled")).toHaveCount(0, { timeout: 12000 });
+      const settled = await snapshot(page);
+      expect(settled.counts[5], "owned release earns exactly one Thorn Rose match").toBe(3);
+      expect(settled.boardState).not.toBe(before.boardState);
+      expect(settled.preview).toEqual([]);
+      expect(settled.ready).toEqual([]);
+      expect(settled.transformed).toEqual([]);
+      expect(settled.selected).toEqual([]);
+      expect(settled.roving).toHaveLength(1);
+      if (settled.active) expect(settled.active).toBe(settled.roving[0]);
+      expect(settled.tiles).toBe(64);
+      expect(settled.rows).toBe(8);
+      expect(settled.enabled).toBe(64);
+      expect(settled.board.width).toBeCloseTo(profile.mobile ? 378 : 600, 3);
+      expect(settled.board.height).toBeCloseTo(profile.mobile ? 378 : 600, 3);
+      expect(settled.overflowX).toBe(false);
+      expect(settled.brokenImages).toEqual([]);
+      if (profile.mobile) {
+        expect(settled.board.bottom).toBeLessThanOrEqual(844);
+        expect(settled.scrollY).toBe(0);
+      }
+      if (profile.label === "mobile390-full-secondary-touch") {
+        await page.screenshot({
+          path: "work/drag-cross-device-primary-mobile390-settled.png",
+          fullPage: true
+        });
+      }
+      expect(problems).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+
   test(`${profile.label}: genuine primary cancellation retires cleanly`, async ({ browser }) => {
     const context = await browser.newContext({
       viewport: profile.viewport,

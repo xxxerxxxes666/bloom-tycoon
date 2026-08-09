@@ -1253,6 +1253,8 @@ def verify_source_hooks():
         "$(\"board\")?.classList.add(\"drag-preview-active\");",
         "function cancelInterruptedBoardDrag()",
         "function restoreInterruptedBoardDragFocus()",
+        "if (!event.isPrimary || tileSwipeStart)",
+        "|| tileSwipeStart.pointerId !== event.pointerId",
         "if (start.pointerId !== event.pointerId)",
         "function handleBoardPointerCancel(event)",
         "clearDragPreview({ resetInputs: true });",
@@ -1270,6 +1272,16 @@ def verify_source_hooks():
     drag_preview_end = html.index("function suppressBoardClickBriefly()", drag_preview_start)
     if "notePlayerInteraction();" in html[drag_preview_start:drag_preview_end]:
         raise SystemExit("Temporary drag preview must not retire persistent guide authority")
+    pointer_down_start = html.index("function handleBoardPointerDown(event)")
+    pointer_down_end = html.index("function handleBoardPointerMove(event)", pointer_down_start)
+    pointer_down_handler = html[pointer_down_start:pointer_down_end]
+    if pointer_down_handler.index("tileSwipeStart") > pointer_down_handler.index("tileSwipeStart = {"):
+        raise SystemExit("Competing primary-class pointerdown must be rejected before replacing the active drag")
+    pointer_move_start = html.index("function handleBoardPointerMove(event)")
+    pointer_move_end = html.index("function handleBoardPointerUp(event)", pointer_move_start)
+    pointer_move_handler = html[pointer_move_start:pointer_move_end]
+    if "tileSwipeStart.pointerId !== event.pointerId" not in pointer_move_handler:
+        raise SystemExit("Pointer movement must validate the active gesture owner")
     pointer_up_start = html.index("function handleBoardPointerUp(event)")
     pointer_up_end = html.index("function restoreGuideAfterCanceledBoardInput", pointer_up_start)
     pointer_up_handler = html[pointer_up_start:pointer_up_end]
