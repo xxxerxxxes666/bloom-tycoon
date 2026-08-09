@@ -940,6 +940,7 @@ def verify_source_hooks():
         'kind: "shuffle",',
         'text: `Board shuffled. ${moves} move${moves === 1 ? "" : "s"} left.`',
         '"shuffle-board-outcome-cue",',
+        'if (pendingSettledBoardOutcome?.kind === "shuffle") {',
         'pendingSettledBoardOutcome?.kind === "shuffle"',
         "Establish the empty cue as the sole live owner before its one result mutation.",
         "settled-board-outcome-cue",

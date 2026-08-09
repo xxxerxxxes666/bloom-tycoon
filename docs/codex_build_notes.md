@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-08-09 - A paid Shuffle owns its rebuild before another command
+
+- Player-visible correction: a rapid repeated Enter, Space, click, or tap on active Round 1 Shuffle can no longer spend a second move while the first paid reweave is still settling. The first command rebuilds the board once, keeps Shuffle focused, and publishes its existing exact receipt once; another deliberate Shuffle remains available after that receipt owns the cue.
+- Authority boundary: `shuffleBoard()` now treats the existing unsaved pending Shuffle outcome as the command owner. This adds no timer, state field, UI, copy, save data, economy, RNG, move budget, objective, sound, round, or progression behavior. Ordinary board input still retires the receipt immediately, background/reload remains quiet, and the accepted Moves-2 Black Candle reserve and final-move Shuffle retirement are unchanged.
+- Permanent contract: `scripts/verify_shuffle_command_authority.spec.js` begins from a natural fresh Round 1, skips Help, commits the authored opening pair to Moves 5, then repeats paid Shuffle before the result owner is exposed across desktop `1280x720`, exact mobile `390x844`, full/reduced motion, Enter, Space, pointer, and touch. It requires one `5 -> 4` spend, byte-stable rebuilt board through the repeat, one exact receipt mutation/live owner, retained Shuffle focus plus sole board roving stop, and a later deliberate `4 -> 3` command with its own single receipt. The pre-fix desktop Enter case fails at exact Moves 3 instead of 4.
+- Local evidence: the new matrix passes `6/6`; Shuffle receipt reload/background interruption passes `2/2`; and final-move reserve plus exact-mobile 44px touch coverage passes `2/2`. Original-scale desktop/mobile captures retain the exact `600px`/`378px` altar, 64 enabled tiles/eight complete rows, `scrollY=0`, contained hierarchy, loaded imagery, and empty browser warning/error/request ledgers. Project/HTML verification, all spec syntax, diff, and scoped credential/tracker/network checks pass.
+- Files changed: `playable/midnight_bloom_prototype.html`, new `scripts/verify_shuffle_command_authority.spec.js`, `scripts/verify_html_match_shapes.py`, and this note. Delivery evidence follows after public verification.
+
 ## 2026-08-09 - Tutorial command input stays with its current owner
 
 - Player-visible correction: keyboard repeat can no longer jump from `Help` into the newly focused `Skip`, dismiss the tutorial, then jump back into Help or start a flower exchange. The tutorial remains open with Skip focused through a rapid repeated Enter/Space; after a deliberate Skip, the accepted Help or guided-source focus owner remains stable with zero selected flowers.

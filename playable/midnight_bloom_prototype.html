@@ -19697,6 +19697,9 @@
       if (isResolving) {
         return;
       }
+      if (pendingSettledBoardOutcome?.kind === "shuffle") {
+        return;
+      }
       if (
         currentRound === 1
         && moves === 2
