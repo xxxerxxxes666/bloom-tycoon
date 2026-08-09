@@ -5574,6 +5574,7 @@ test.describe("reactivating the selected flower cancels the pending exchange", (
         await seedDeterministicMath(page, `reactivate-cancel-${testCase.label}`);
         await openFreshNoReview(page, `reactivate-cancel-${testCase.label}`);
         await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 2500 });
+        await expect(page.locator("#tutorialPanel")).toBeVisible({ timeout: 2500 });
 
         const opening = await cancelAndCommit(page, testCase, "opening pair");
         expect(opening.moves, `${testCase.label} opening commits once`).toBe(5);
@@ -5607,6 +5608,232 @@ test.describe("reactivating the selected flower cancels the pending exchange", (
         expect(ordinaryCanceled.overflowX, `${testCase.label} ordinary reactivation has no overflow`).toBe(0);
         expect(ordinaryCanceled.brokenImages, `${testCase.label} ordinary imagery loads`).toEqual([]);
         expect(consoleErrors, `${testCase.label} console errors`).toEqual([]);
+        expect(pageErrors, `${testCase.label} page errors`).toEqual([]);
+        expect(failedRequests, `${testCase.label} failed requests`).toEqual([]);
+      } finally {
+        await context.close();
+      }
+    });
+  }
+});
+
+test.describe("untouched opening refuses cells outside the authored pair", () => {
+  test.describe.configure({ mode: "parallel" });
+  const cases = [
+    {
+      label: "desktop-pointer-direct-full",
+      viewport: { width: 1280, height: 720 },
+      input: "pointer",
+      endpointIndex: null,
+      reducedMotion: "no-preference"
+    },
+    {
+      label: "desktop-keyboard-source-reduced",
+      viewport: { width: 1280, height: 720 },
+      input: "keyboard",
+      endpointIndex: 0,
+      activationKey: "Enter",
+      reducedMotion: "reduce"
+    },
+    {
+      label: "desktop-pointer-destination-reduced",
+      viewport: { width: 1280, height: 720 },
+      input: "pointer",
+      endpointIndex: 1,
+      reducedMotion: "reduce"
+    },
+    {
+      label: "mobile-touch-direct-full",
+      viewport: { width: 390, height: 844 },
+      input: "touch",
+      endpointIndex: null,
+      reducedMotion: "no-preference"
+    },
+    {
+      label: "mobile-touch-destination-reduced",
+      viewport: { width: 390, height: 844 },
+      input: "touch",
+      endpointIndex: 1,
+      reducedMotion: "reduce"
+    },
+    {
+      label: "mobile-keyboard-source-full",
+      viewport: { width: 390, height: 844 },
+      input: "keyboard",
+      endpointIndex: 0,
+      activationKey: "Space",
+      reducedMotion: "no-preference"
+    }
+  ];
+
+  const snapshot = (page) => page.evaluate((key) => {
+    const saved = JSON.parse(localStorage.getItem(key) || "{}");
+    const tiles = Array.from(document.querySelectorAll("#board .tile"));
+    const board = document.querySelector("#board")?.getBoundingClientRect();
+    const visible = (node) => {
+      if (!node) return false;
+      const rect = node.getBoundingClientRect();
+      const style = getComputedStyle(node);
+      return style.display !== "none"
+        && style.visibility !== "hidden"
+        && Number(style.opacity || 1) !== 0
+        && rect.width > 0
+        && rect.height > 0;
+    };
+    return {
+      save: localStorage.getItem(key),
+      moves: saved.moves,
+      counts: saved.counts || [],
+      boardState: (saved.board || []).map((row) => row.join(",")).join("|"),
+      selected: tiles.filter((tile) => tile.classList.contains("sel")).map((tile) => tile.id),
+      hints: tiles.filter((tile) => tile.classList.contains("idle-hint")).map((tile) => tile.id).sort(),
+      invalid: tiles.filter((tile) => tile.classList.contains("invalid-swap")).map((tile) => tile.id),
+      active: document.activeElement?.id || "",
+      roving: tiles.filter((tile) => tile.tabIndex === 0).map((tile) => tile.id),
+      cue: document.querySelector("#firstSwapCue")?.textContent.trim() || "",
+      tutorial: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
+      politeOwners: Array.from(document.querySelectorAll('[aria-live="polite"]'))
+        .filter(visible)
+        .map((node) => node.id || node.className),
+      tiles: tiles.length,
+      rows: new Set(tiles.map((tile) => tile.dataset.y)).size,
+      disabled: tiles.filter((tile) => tile.disabled).length,
+      board: board ? { x: board.x, width: board.width, height: board.height, bottom: board.bottom } : null,
+      scrollY,
+      overflowX: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      overflowY: document.documentElement.scrollHeight - document.documentElement.clientHeight,
+      brokenImages: Array.from(document.images)
+        .filter((image) => visible(image) && image.complete && image.naturalWidth === 0)
+        .map((image) => image.getAttribute("src"))
+    };
+  }, SAVE_KEY);
+
+  const activate = async (page, tile, testCase, key = testCase.activationKey || "Enter") => {
+    if (testCase.input === "touch") {
+      await tile.tap();
+    } else if (testCase.input === "keyboard") {
+      await tile.focus();
+      await page.keyboard.press(key);
+    } else {
+      await tile.click();
+    }
+  };
+
+  for (const testCase of cases) {
+    test(testCase.label, async ({ browser }) => {
+      const context = await browser.newContext({
+        viewport: testCase.viewport,
+        reducedMotion: testCase.reducedMotion,
+        hasTouch: testCase.input === "touch"
+      });
+      const page = await context.newPage();
+      const consoleErrors = [];
+      const pageErrors = [];
+      const failedRequests = [];
+      page.on("console", (message) => {
+        if (["warning", "error"].includes(message.type())) consoleErrors.push(message.text());
+      });
+      page.on("pageerror", (error) => pageErrors.push(error.message));
+      page.on("requestfailed", (request) => failedRequests.push(
+        `${request.url()} ${request.failure()?.errorText || ""}`
+      ));
+
+      try {
+        await seedDeterministicMath(page, `opening-refusal-${testCase.label}`);
+        await openFreshNoReview(page, `opening-refusal-${testCase.label}`);
+        await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 2500 });
+        await expect(page.locator("#tutorialPanel")).toBeVisible({ timeout: 2500 });
+        await expect(page.locator("#tutorialCopy")).toHaveText("Swap the glowing flowers.");
+        const pair = await hintedPair(page);
+        const pairIds = pair.map(({ x, y }) => `tile-${x}-${y}`).sort();
+        const sourceId = `tile-${pair[0].x}-${pair[0].y}`;
+        const destinationId = `tile-${pair[1].x}-${pair[1].y}`;
+        const sourceTile = page.locator(`#${sourceId}`);
+        const destinationTile = page.locator(`#${destinationId}`);
+        const wrongTile = page.locator("#tile-0-7");
+        const before = await snapshot(page);
+        expect(pairIds).toEqual(["tile-1-0", "tile-1-1"]);
+        expect(before.moves).toBe(6);
+        expect(before.selected).toEqual([]);
+        expect(before.politeOwners).toEqual(["tutorialPanel"]);
+
+        if (testCase.endpointIndex !== null) {
+          const endpoint = testCase.endpointIndex === 0 ? sourceTile : destinationTile;
+          await activate(page, endpoint, testCase);
+          await expect(endpoint).toHaveClass(/\bsel\b/);
+        }
+        if (testCase.input === "keyboard" && testCase.endpointIndex !== null) {
+          await page.keyboard.press("ArrowRight");
+        } else {
+          await activate(page, wrongTile, testCase);
+        }
+
+        await expect(page.locator("#board .tile.invalid-swap")).toHaveCount(1);
+        const refused = await snapshot(page);
+        expect(refused.save, `${testCase.label} refusal has no save drift`).toBe(before.save);
+        expect(refused.moves, `${testCase.label} refusal spends no move`).toBe(6);
+        expect(refused.counts, `${testCase.label} refusal preserves counts`).toEqual(before.counts);
+        expect(refused.boardState, `${testCase.label} refusal preserves board`).toBe(before.boardState);
+        expect(refused.selected, `${testCase.label} refusal clears conflict`).toEqual([]);
+        expect(refused.hints, `${testCase.label} refusal keeps exact pair`).toEqual(pairIds);
+        expect(refused.invalid, `${testCase.label} marks only the wrong socket`).toHaveLength(1);
+        expect(refused.active, `${testCase.label} refusal restores authored source`).toBe(sourceId);
+        expect(refused.roving, `${testCase.label} refusal restores sole roving source`).toEqual([sourceId]);
+        expect(refused.tutorial, `${testCase.label} uses existing refusal copy`).toBe("Use the glowing pair.");
+        expect(refused.politeOwners, `${testCase.label} keeps one narrator`).toEqual(["tutorialPanel"]);
+
+        await expect(page.locator("#board .tile.invalid-swap")).toHaveCount(0, { timeout: 2200 });
+        const settled = await snapshot(page);
+        expect(settled.save, `${testCase.label} cleanup has no save drift`).toBe(before.save);
+        expect(settled.selected, `${testCase.label} cleanup remains unselected`).toEqual([]);
+        expect(settled.hints, `${testCase.label} cleanup restores exact pair`).toEqual(pairIds);
+        expect(settled.cue, `${testCase.label} cleanup restores cue`).toBe(before.cue);
+        expect(settled.tutorial, `${testCase.label} cleanup restores tutorial`).toBe(before.tutorial);
+        expect(settled.active, `${testCase.label} cleanup keeps authored source focus`).toBe(sourceId);
+        expect(settled.roving, `${testCase.label} cleanup keeps sole roving source`).toEqual([sourceId]);
+        expect(settled.tiles).toBe(64);
+        expect(settled.rows).toBe(8);
+        expect(settled.disabled).toBe(0);
+        expect(settled.board.width).toBe(testCase.viewport.width === 390 ? 378 : 600);
+        expect(settled.board.height).toBe(testCase.viewport.width === 390 ? 378 : 600);
+        expect(settled.board.x).toBe(testCase.viewport.width === 390 ? 8 : 340);
+        expect(settled.scrollY).toBe(0);
+        expect(settled.overflowX).toBe(0);
+        expect(settled.brokenImages).toEqual([]);
+
+        await page.reload({ waitUntil: "networkidle" });
+        await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 2500 });
+        const reloaded = await snapshot(page);
+        expect(reloaded.save, `${testCase.label} reload remains byte-stable`).toBe(before.save);
+        expect(reloaded.hints, `${testCase.label} reload keeps exact pair`).toEqual(pairIds);
+        expect(reloaded.invalid, `${testCase.label} reload is quiet`).toEqual([]);
+        expect(reloaded.selected, `${testCase.label} reload is unselected`).toEqual([]);
+        expect(reloaded.active, `${testCase.label} reload restores authored source`).toBe(sourceId);
+        expect(reloaded.roving, `${testCase.label} reload keeps sole roving source`).toEqual([sourceId]);
+
+        if (testCase.input === "keyboard") {
+          await sourceTile.focus();
+          await page.keyboard.press(testCase.activationKey);
+          await expect(destinationTile).toBeFocused();
+          await page.keyboard.press(testCase.activationKey);
+        } else {
+          await activate(page, sourceTile, testCase);
+          await activate(page, destinationTile, testCase);
+        }
+        await page.waitForFunction((key) => {
+          const saved = JSON.parse(localStorage.getItem(key) || "{}");
+          return saved.moves === 5
+            && Array.from(document.querySelectorAll("#board .tile")).every((tile) => !tile.disabled);
+        }, SAVE_KEY, { timeout: 12000 });
+        const committed = await snapshot(page);
+        expect(committed.moves, `${testCase.label} pair commits exactly once`).toBe(5);
+        expect(committed.counts[5], `${testCase.label} earns real Thorn Rose credit`).toBeGreaterThanOrEqual(3);
+        expect(committed.selected).toEqual([]);
+        expect(committed.tiles).toBe(64);
+        expect(committed.rows).toBe(8);
+        expect(committed.overflowX).toBe(0);
+        expect(committed.brokenImages).toEqual([]);
+        expect(consoleErrors, `${testCase.label} browser warnings/errors`).toEqual([]);
         expect(pageErrors, `${testCase.label} page errors`).toEqual([]);
         expect(failedRequests, `${testCase.label} failed requests`).toEqual([]);
       } finally {

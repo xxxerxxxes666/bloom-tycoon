@@ -14083,6 +14083,16 @@
       document.body.classList.remove("pointer-board-input");
       document.body.classList.add("keyboard-board-navigation");
       const target = clampBoardFocusCell({ x: cell.x + delta.x, y: cell.y + delta.y });
+      const untouchedOpeningPair = untouchedRoundOneOpeningGuidePair();
+      if (
+        selected
+        && untouchedOpeningPair.some((pairCell) => pairCell.x === selected.x && pairCell.y === selected.y)
+        && !untouchedOpeningPair.some((pairCell) => pairCell.x === target.x && pairCell.y === target.y)
+      ) {
+        boardFocusCell = target;
+        tap(target.x, target.y);
+        return;
+      }
       if (selected && selected.x === cell.x && selected.y === cell.y) {
         boardFocusCell = target;
         tap(target.x, target.y);
@@ -16431,6 +16441,28 @@
         && !boardGuideTransientStateActive();
     }
 
+    function untouchedRoundOneOpeningGuidePair(plan = activeRoundPlan()) {
+      if (
+        plan.round !== 1
+        || !tutorialActive
+        || tutorialSkipped
+        || hasMadeValidMove
+        || moves !== plan.moves
+        || roundProgress(plan).earned !== 0
+        || roundOneGuidedStage(plan) !== "thorn-opening"
+        || armedLineRelic
+        || roundComplete
+        || isBouquetFailed(plan)
+        || boardGuideTransientStateActive()
+      ) {
+        return [];
+      }
+      const pair = hintedPairCells();
+      return pair.length === 2 && isAdjacentPair(pair[0], pair[1]) && isLegalSwap(pair[0], pair[1])
+        ? pair
+        : [];
+    }
+
     function currentTutorialBoardGuidePair() {
       if (
         currentRound !== 1
@@ -16692,6 +16724,20 @@
       if (isBouquetFailed()) {
         markBouquetFailed();
         render();
+        return;
+      }
+      const untouchedOpeningPair = untouchedRoundOneOpeningGuidePair();
+      if (
+        untouchedOpeningPair.length === 2
+        && !untouchedOpeningPair.some((cell) => cell.x === x && cell.y === y)
+      ) {
+        const [authoredSource] = untouchedOpeningPair;
+        selected = null;
+        boardFocusCell = clampBoardFocusCell(authoredSource);
+        clearDragPreview();
+        ritualMessage = "The garden refuses that graft.";
+        queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
+        markInvalidSwap({ x, y }, { x, y }, new Set(idleHintCells), null);
         return;
       }
       if (selected && selected.x === x && selected.y === y) {
