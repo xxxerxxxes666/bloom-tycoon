@@ -14407,11 +14407,14 @@
 
     function handleBoardPointerUp(event) {
       const start = tileSwipeStart;
-      tileSwipeStart = null;
       if (!start) {
         clearDragPreview();
         return;
       }
+      if (start.pointerId !== event.pointerId) {
+        return;
+      }
+      tileSwipeStart = null;
       finishTileSwipe(start, event, start.x, start.y);
     }
 

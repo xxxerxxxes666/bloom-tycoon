@@ -1253,6 +1253,7 @@ def verify_source_hooks():
         "$(\"board\")?.classList.add(\"drag-preview-active\");",
         "function cancelInterruptedBoardDrag()",
         "function restoreInterruptedBoardDragFocus()",
+        "if (start.pointerId !== event.pointerId)",
         "clearDragPreview({ resetInputs: true });",
         "cancelInterruptedBoardDrag();",
         "restoreInterruptedBoardDragFocus();",
@@ -1268,6 +1269,11 @@ def verify_source_hooks():
     drag_preview_end = html.index("function suppressBoardClickBriefly()", drag_preview_start)
     if "notePlayerInteraction();" in html[drag_preview_start:drag_preview_end]:
         raise SystemExit("Temporary drag preview must not retire persistent guide authority")
+    pointer_up_start = html.index("function handleBoardPointerUp(event)")
+    pointer_up_end = html.index("function restoreGuideAfterCanceledBoardInput", pointer_up_start)
+    pointer_up_handler = html[pointer_up_start:pointer_up_end]
+    if pointer_up_handler.index("start.pointerId !== event.pointerId") > pointer_up_handler.index("tileSwipeStart = null;"):
+        raise SystemExit("Secondary pointer release must be rejected before primary drag retirement")
     moving_match_preview = re.search(
         r"\.tile\.match-preview-anchor\s*\{[^}]*\banimation\s*:",
         html,
