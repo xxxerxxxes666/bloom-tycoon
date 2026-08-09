@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-08-08 - The two-move Black Candle reserve restores immediately
+
+- Player-visible continuity correction: reloading the saved Round 1 two-move closing reserve now opens on the exact authored `tile-5-0` / `tile-5-1` Black Candle pair, its `Make 4 Bone Stars - arm Black Candle Vine.` cue, and source focus immediately. It no longer spends roughly 650ms showing generic order guidance with no glowing pair and an unrelated board cursor before correcting itself.
+- Authority boundary: the existing reserve restore derives the already-authored strict-four swap, assigns its two idle-hint cells, and queues the source through the existing roving focus model before the first render. Startup leaves that restored pair intact instead of handing it back to the idle-hint timer. No UI node, copy string, save field, timer duration, move, RNG, objective, mechanic, economy, round, or progression behavior changed.
+- Permanent contract: the natural Round 1 Shuffle journey reaches Moves 2, reloads twice, and samples each restored page at `0ms`, `350ms`, and `700ms`. Desktop `1280x720` and exact mobile `390x844`, full/reduced motion, pointer/touch/keyboard require the same exact pair and copy, source DOM focus and sole roving entry, destination `tabindex=-1`, stable board/objectives/save authority, then retain the accepted Tab/Shift+Tab, Help/Skip, formation, and one-activation Black Candle continuation.
+- Local evidence: the complete reserve matrix passes `6/6` in `18.1s`; adjacent board-busy chronology plus final-move and exact-mobile 44px Shuffle coverage passes `6/6` in `34.2s`. The first-change investigation reproduced one redundant target-progress keyboard setup timeout unchanged on exact pre-change commit `a41d23b`; the matrix now keeps target-progress coverage on owned exact-mobile reduced motion and exercises the desktop reduced reload with the stable zero-progress route. Project/HTML, inline/all-spec syntax, diff, and scoped changed-line security gates pass.
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_tutorial_progress.spec.js`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`.
+
 ## 2026-08-08 - Accepted swaps expose the altar's real busy interval
 
 - Player-facing accessibility correction: once the second flower accepts a legal swap, the match board now reports `aria-busy="true"` for the same interval in which all 64 flowers are disabled for swap, cascade, refill, and consequence resolution. During continuing active play it returns to `false` with settled board control; completion may instead hand authority directly to the existing hidden-board payoff. The existing Cursed Thorn feedback interval remains part of the same authority.

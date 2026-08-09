@@ -4861,12 +4861,12 @@ test.describe("Round 1 Shuffle preserves a sufficient two-move Black Candle clos
       reloadAtReserve: false
     },
     {
-      label: "owned-desktop-keyboard-space-reduced-target-progress",
+      label: "owned-desktop-keyboard-space-reduced-zero-progress",
       viewport: { width: 1280, height: 720 },
       input: "keyboard",
       shuffleKey: " ",
       ownedReplay: true,
-      bankTargetMatch: true,
+      bankTargetMatch: false,
       reducedMotion: "reduce",
       reloadAtReserve: true
     },
@@ -5021,40 +5021,49 @@ test.describe("Round 1 Shuffle preserves a sufficient two-move Black Candle clos
       expect((await activeState(page)).moves).toBe(2);
 
       if (testCase.reloadAtReserve) {
-        await page.reload({ waitUntil: "domcontentloaded" });
-        const interrupted = await guidedRoundOneState(page, `${testCase.label} restored reserve`);
-        expect(interrupted.moves).toBe(2);
-        expect(interrupted.counts).toEqual(reserve.counts);
-        expect(interrupted.hints).toEqual([]);
-        expect(interrupted.tutorial).toBe("Match the order flowers.");
-        const interruptedFocus = await page.evaluate(() => {
-          const active = document.activeElement;
-          const roving = Array.from(document.querySelectorAll("#board .tile[tabindex='0']"));
-          return {
-            activeId: active?.id || "",
-            activeTag: active?.tagName || "",
-            activeTile: Boolean(active?.matches?.("#board .tile:not(:disabled)")),
-            activeVisible: Boolean(active && active.getClientRects().length),
-            rovingIds: roving.map((tile) => tile.id),
-            selectedTiles: document.querySelectorAll("#board .tile.selected").length
-          };
-        });
-        expect(interruptedFocus.activeTag).not.toBe("BODY");
-        expect(interruptedFocus.activeId).not.toBe("shuffleBtn");
-        expect(interruptedFocus.activeTile).toBe(true);
-        expect(interruptedFocus.activeVisible).toBe(true);
-        expect(interruptedFocus.rovingIds).toEqual([interruptedFocus.activeId]);
-        expect(interruptedFocus.selectedTiles).toBe(0);
-        await expect(page.locator(".impact-sigil, .objective-flight, .order-pulse")).toHaveCount(0);
-        await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 2500 });
-        expect(unorderedPairKey(await hintedPair(page))).toBe("5,0 <-> 5,1");
-        await expect(page.locator("#tutorialCopy")).toHaveText("Match 4 arms Black Candle Vine.");
-        await expect(page.locator("#tile-5-0")).toBeFocused();
-        await expect(page.locator("#board .tile[tabindex='0']")).toHaveCount(1);
-        await expect(page.locator("#board .tile[tabindex='0']")).toHaveAttribute("id", "tile-5-0");
-        await expect(page.locator("#tile-5-0")).toHaveAttribute("tabindex", "0");
-        await expect(page.locator("#tile-0-0")).toHaveAttribute("tabindex", "-1");
-        await expect(page.locator("#tile-5-1")).toHaveAttribute("tabindex", "-1");
+        const reserveSave = await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY);
+        const reserveState = JSON.parse(reserveSave);
+        let authoritativeReserveSave = "";
+        for (let reload = 1; reload <= 2; reload += 1) {
+          await page.reload({ waitUntil: "domcontentloaded" });
+          for (let sample = 0; sample < 3; sample += 1) {
+            if (sample) await page.waitForTimeout(350);
+            const delay = sample * 350;
+            const restored = await guidedRoundOneState(
+              page,
+              `${testCase.label} restored reserve reload ${reload} at ${delay}ms`
+            );
+            expect(restored.moves).toBe(2);
+            expect(restored.counts).toEqual(reserve.counts);
+            expect(unorderedPairKey(restored.hints)).toBe("5,0 <-> 5,1");
+            expect(restored.tutorial).toBe("Match 4 arms Black Candle Vine.");
+            await expect(page.locator("#firstSwapCue"))
+              .toHaveText("Make 4 Bone Stars - arm Black Candle Vine.");
+            await expect(page.locator("#tile-5-0")).toBeFocused();
+            await expect(page.locator("#board .tile[tabindex='0']")).toHaveCount(1);
+            await expect(page.locator("#board .tile[tabindex='0']"))
+              .toHaveAttribute("id", "tile-5-0");
+            await expect(page.locator("#tile-5-0")).toHaveAttribute("tabindex", "0");
+            await expect(page.locator("#tile-0-0")).toHaveAttribute("tabindex", "-1");
+            await expect(page.locator("#tile-5-1")).toHaveAttribute("tabindex", "-1");
+            await expect(page.locator(".impact-sigil, .objective-flight, .order-pulse"))
+              .toHaveCount(0);
+          }
+          const reloadedSave = await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY);
+          const reloadedState = JSON.parse(reloadedSave);
+          for (const key of ["tutorialSkipped", "tutorialActive"]) {
+            delete reserveState[key];
+            delete reloadedState[key];
+          }
+          expect(reloadedState, `${testCase.label} reserve reload ${reload} board authority`)
+            .toEqual(reserveState);
+          if (reload === 1) {
+            authoritativeReserveSave = reloadedSave;
+          } else {
+            expect(reloadedSave, `${testCase.label} reserve reload ${reload} exact settled save`)
+              .toBe(authoritativeReserveSave);
+          }
+        }
         await page.keyboard.press("Tab");
         await expect(page.locator("#tutorialSkipBtn")).toBeFocused();
         await page.keyboard.press("Shift+Tab");

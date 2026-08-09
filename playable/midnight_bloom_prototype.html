@@ -12706,6 +12706,7 @@
     }
 
     function restoreRoundOneClosingReserveAuthority(plan = activeRoundPlan()) {
+      const move = roundOneBlackCandleLessonSwap();
       if (
         plan.round !== 1
         || moves !== 2
@@ -12713,6 +12714,7 @@
         || isBouquetFailed(plan)
         || roundObjectivesComplete(plan)
         || roundOneGuidedStage(plan) !== "black-candle"
+        || move.length !== 2
       ) {
         return false;
       }
@@ -12721,8 +12723,10 @@
       tutorialSkipped = false;
       tutorialActive = true;
       tutorialReplayOwnsNarration = false;
-      beginRoundOneAgencyDiscovery({ showLiteracy: false });
-      boardFocusCell = clampBoardFocusCell();
+      clearTargetLiteracy(false);
+      idleHintCells = new Set(move.map((cell) => `${cell.x},${cell.y}`));
+      $("firstSwapCue").textContent = "Make 4 Bone Stars - arm Black Candle Vine.";
+      boardFocusCell = clampBoardFocusCell(move[0]);
       queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
       return true;
     }
@@ -20364,7 +20368,15 @@
       && hasMadeValidMove
       && roundOneHasExploratoryHarvest()
       && idleHintCells.size === 2;
-    if ((!isRestoredRoundTwoGuideActive() || idleHintCells.size !== 2) && !restoredRoundOneExplorationGuide) {
+    const restoredRoundOneClosingReserveGuide = currentRound === 1
+      && moves === 2
+      && roundOneShuffleReserveFocusActive
+      && idleHintCells.size === 2;
+    if (
+      (!isRestoredRoundTwoGuideActive() || idleHintCells.size !== 2)
+      && !restoredRoundOneExplorationGuide
+      && !restoredRoundOneClosingReserveGuide
+    ) {
       scheduleIdleHint();
     }
     scheduleFreshTutorial();
