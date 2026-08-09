@@ -152,6 +152,20 @@ const HUD_CASES = [
     }
   },
   {
+    label: "r2-owned-replay-large-wallet",
+    expected: "Bouquet · 6/29",
+    state: {
+      currentRound: 2,
+      moves: 8,
+      counts: [0, 0, 3, 0, 0, 0],
+      coins: 7820,
+      clearedCursedThorns: 3,
+      roundOneRestored: true,
+      roundTwoGreenhouseUpgraded: true,
+      roundThreeConservatoryRaised: true
+    }
+  },
+  {
     label: "r2-failed",
     expected: "Bouquet Paused · 0/29",
     retry: true,
@@ -569,6 +583,10 @@ async function hudReport(page) {
       rewardPromiseClientWidth: rewardPromise?.clientWidth || 0,
       rewardPromiseScrollWidth: rewardPromise?.scrollWidth || 0,
       rewardPromiseFontSize: Number.parseFloat(rewardPromiseStyle.fontSize),
+      rewardPromiseLetterSpacing: rewardPromiseStyle.letterSpacing,
+      rewardPromiseLetterSpacingPx: rewardPromiseStyle.letterSpacing === "normal"
+        ? 0
+        : Number.parseFloat(rewardPromiseStyle.letterSpacing),
       coinBalanceFontSize: Number.parseFloat(coinBalanceStyle.fontSize),
       rewardPromiseOverlapsCoinBalance: overlaps(rect(rewardPromise), rect(coinBalance)),
       progressLabelOverlapsCoinBalance: overlaps(rect(label), rect(coinBalance)),
@@ -1016,11 +1034,20 @@ async function assertHudState(page, fixture, viewport, reload) {
     }
     if (!desktopViewport) {
       expect(report.rewardPromiseFontSize, `${label} readable mobile consequence`).toBeGreaterThanOrEqual(8.5);
+      expect(report.rewardPromiseLetterSpacingPx, `${label} compact consequence tracking`).toBe(0);
+      expect(["normal", "0px"], `${label} zero-tracking CSSOM form`).toContain(
+        report.rewardPromiseLetterSpacing
+      );
       expect(report.coinBalanceFontSize, `${label} readable mobile wallet`).toBeGreaterThanOrEqual(8);
       expect(report.rewardPromiseOverlapsCoinBalance, `${label} consequence clears wallet`).toBe(false);
       expect(report.progressLabelOverlapsCoinBalance, `${label} bouquet total clears wallet`).toBe(false);
       expect(report.boardVisible, `${label} active board visible`).toBe(true);
       expect(report.boardBottom, `${label} board remains in first viewport`).toBeLessThanOrEqual(844);
+    } else {
+      expect(
+        Number.parseFloat(report.rewardPromiseLetterSpacing),
+        `${label} desktop typography remains unchanged`
+      ).toBeGreaterThan(0);
     }
   }
 
@@ -1382,6 +1409,7 @@ for (const viewport of VIEWPORTS) {
             "r1-active",
             "r1-pending",
             "r2-owned-replay-partial",
+            "r2-owned-replay-large-wallet",
             "r2-pending",
             "r3-active",
             "r3-owned-replay-partial",
