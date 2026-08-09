@@ -484,6 +484,8 @@ def verify_source_hooks():
         "Earned ${roundOnePlan.reward.coins} coins. Restore costs ${FIRST_GREENHOUSE_RESTORE_COST}.",
         "Restored for ${FIRST_GREENHOUSE_RESTORE_COST}. ${coins} coins remain.",
         "const FOCUSED_ECONOMY_SAVE_VERSION = 2;",
+        "moves > focusedPlan.moves",
+        "moves = focusedPlan.moves",
         "function focusedEconomyBalanceForProgress()",
         "focusedEconomyVersion: FOCUSED_ECONOMY_SAVE_VERSION",
         "savedFocusedEconomyVersion < FOCUSED_ECONOMY_SAVE_VERSION",

@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-08-08 - Returning focused orders keep their authored move budgets
+
+- Player-visible save correction: unfinished current-version Round 1/2/3 saves with surplus legacy moves now reopen at the focused order's authored `6`/`9`/`8` move budget instead of reviving old 13+ move counts that bypass the current board-first challenge. The exact saved board, earned flowers, coins, greenhouse ownership, tutorial state, Black Candle state, and round remain authoritative.
+- Migration boundary: only an unfinished focused order whose saved moves exceed its current plan is capped. Valid in-budget active saves, zero-move Retry states, completed payoff states, and the existing Round 4+ completion migration are unchanged. The normalized state is persisted once using the existing save shape and economy version; no save field or schema version was added.
+- Permanent contract: `scripts/verify_focused_move_budget_migration.spec.js` covers current-version surplus R1/R2/R3 saves at desktop `1280x720` and exact mobile `390x844`, full/reduced motion. It requires exact `6`/`9`/`8` normalization through two reloads, byte-equivalent saved board/progress/ownership/tutorial/relic state, valid in-budget preservation, 64 enabled tiles/eight rows, one roving board stop with focused-tile agreement when board focus is active, exact `600px`/`378px` altars, loaded imagery, no overflow, mobile `scrollY=0`, and empty browser warning/error logs.
+- Local evidence: the migration matrix passes `4/4` in `29.4s`; adjacent final-move Shuffle/Black Candle, runtime, mobile control-return, and accepted-swap atomic reload coverage passes `7/7`. Direct browser inspection measured desktop `600x600` and exact-mobile `378x378` at `x=8`, with 64 tiles/eight rows, focus equal to the sole roving tile, `scrollY=0`, loaded imagery, and no overflow. Project/HTML verification, extracted inline JavaScript and every spec syntax check, `git diff --check`, and the changed-line credential/tracker/network scan pass.
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_focused_move_budget_migration.spec.js`, `scripts/verify_html_match_shapes.py`, and `docs/codex_build_notes.md`. No node, visible UI, copy, control, save field/version, timer, mechanic, economy, round, or progression surface was added.
+
 ## 2026-08-08 - Ambient sound follows page visibility
 
 - Player-visible stability correction: after a real move starts the greenhouse soundscape, backgrounding the page now suspends that running audio context. Returning to the page resumes the same soundscape once; a move accepted while the document is already hidden cannot create audio or replay its sound later on foreground.
