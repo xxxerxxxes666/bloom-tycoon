@@ -10299,6 +10299,7 @@
     const BLACK_CANDLE_REDUCED_HOLD_MS = 190;
     const BLACK_CANDLE_REDUCED_REFILL_MS = 70;
     const SETTLED_BOARD_OUTCOME_MS = 2400;
+    const PAYOFF_HANDOFF_INPUT_GUARD_MS = 280;
 
     let board = [];
     let selected = null;
@@ -10309,6 +10310,8 @@
     let blackCandleActivationGeneration = 0;
     let boardFocusCell = { x: 0, y: 0 };
     let postRenderFocusTarget = "";
+    let payoffHandoffInputGuardUntil = 0;
+    let payoffHandoffClickGuardUntil = 0;
     let moves = roundTemplates[0].moves;
     let coins = 0;
     let counts = [0, 0, 0, 0, 0, 0];
@@ -14013,6 +14016,39 @@
       }
     }
 
+    function armPayoffHandoffInputGuard() {
+      payoffHandoffInputGuardUntil = performance.now() + PAYOFF_HANDOFF_INPUT_GUARD_MS;
+      payoffHandoffClickGuardUntil = 0;
+    }
+
+    function payoffHandoffInputGuardActive(event) {
+      const now = performance.now();
+      return now < payoffHandoffInputGuardUntil
+        || (event?.type === "click" && now < payoffHandoffClickGuardUntil);
+    }
+
+    function rejectPayoffHandoffBoardInput(event) {
+      if (event?.type === "keydown" && event.key !== "Enter" && event.key !== " ") {
+        return false;
+      }
+      if (!payoffHandoffInputGuardActive(event)) {
+        return false;
+      }
+      if (event?.type === "pointerdown" || event?.type === "touchstart") {
+        payoffHandoffClickGuardUntil = performance.now() + 350;
+      }
+      if (event?.cancelable) {
+        event.preventDefault();
+      }
+      if (event?.stopPropagation) {
+        event.stopPropagation();
+      }
+      clearDragPreview({ resetInputs: true });
+      const guardedFocus = clampBoardFocusCell();
+      window.requestAnimationFrame(() => focusBoardCell(guardedFocus.x, guardedFocus.y));
+      return true;
+    }
+
     function queuePostRenderFocus(id) {
       postRenderFocusTarget = id;
     }
@@ -14049,6 +14085,9 @@
     }
 
     function handleBoardKeyDown(event) {
+      if (rejectPayoffHandoffBoardInput(event)) {
+        return;
+      }
       if (thornOutcomeFeedbackActive()) {
         event.preventDefault();
         return;
@@ -14106,6 +14145,9 @@
     }
 
     function handleBoardPointerDown(event) {
+      if (rejectPayoffHandoffBoardInput(event)) {
+        return;
+      }
       document.body.classList.remove("keyboard-board-navigation");
       document.body.classList.add("pointer-board-input");
       if (!event.isPrimary) {
@@ -14179,6 +14221,9 @@
     }
 
     function handleBoardTouchStart(event) {
+      if (rejectPayoffHandoffBoardInput(event)) {
+        return;
+      }
       document.body.classList.remove("keyboard-board-navigation");
       document.body.classList.add("pointer-board-input");
       if (event.touches.length !== 1) {
@@ -14256,6 +14301,9 @@
     }
 
     function handleBoardClick(event) {
+      if (rejectPayoffHandoffBoardInput(event)) {
+        return;
+      }
       if (suppressNextBoardClick) {
         event.preventDefault();
         suppressNextBoardClick = false;
@@ -19766,6 +19814,9 @@
         $("firstSwapCue").textContent = roundStartCueText(plan, openingMove || []);
       }
       queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
+      if (restoredGreenhouseNextOrder || secondUpgradeNextOrder) {
+        armPayoffHandoffInputGuard();
+      }
       if (secondUpgradeNextOrder) {
         startRestoredGreenhouseHandoff(
           "Moonlit Upgrade · Bloodroot Compact · Match Bloodroot + Sol Rot"
@@ -19828,6 +19879,7 @@
         queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
         $("firstSwapCue").textContent = roundStartCueText(plan, firstMove);
       }
+      armPayoffHandoffInputGuard();
       startOwnedReplayEntryAcknowledgment(coins);
       focusRestoredNextOrderViewport();
       playBloomSound("handoff");
@@ -20342,13 +20394,19 @@
     $("board").addEventListener("pointermove", handleBoardPointerMove);
     $("board").addEventListener("pointerup", handleBoardPointerUp);
     $("board").addEventListener("pointercancel", handleBoardPointerCancel);
-    $("board").addEventListener("touchstart", handleBoardTouchStart, { passive: true });
+    $("board").addEventListener("touchstart", handleBoardTouchStart, { passive: false });
     $("board").addEventListener("touchmove", handleBoardTouchMove, { passive: false });
     $("board").addEventListener("touchend", handleBoardTouchEnd, { passive: false });
     $("board").addEventListener("touchcancel", handleBoardTouchCancel);
     $("board").addEventListener("dragstart", (event) => event.preventDefault());
     $("board").addEventListener("click", handleBoardClick);
     $("board").addEventListener("keydown", handleBoardKeyDown);
+    ["pointerdown", "touchstart", "click", "keydown"].forEach((eventName) => {
+      document.addEventListener(eventName, rejectPayoffHandoffBoardInput, {
+        capture: true,
+        passive: false
+      });
+    });
     document.addEventListener("keydown", (event) => {
       if (event.key === "Tab") {
         document.body.classList.remove("pointer-board-input");
