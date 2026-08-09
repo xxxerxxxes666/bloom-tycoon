@@ -13079,6 +13079,7 @@
         ) {
           const move = roundOneBlackCandleLessonSwap();
           idleHintCells = new Set(move.map((cell) => `${cell.x},${cell.y}`));
+          alignPassiveRoundOneRovingEntry(move[0], plan);
           if (moves === 2 && roundOneShuffleReserveFocusActive) {
             boardFocusCell = clampBoardFocusCell(move[0]);
             queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
@@ -13093,6 +13094,7 @@
           const move = findTargetLegalMove(plan.targets[1]?.flowerId, 1);
           if (move) {
             idleHintCells = new Set(move.map((cell) => `${cell.x},${cell.y}`));
+            alignPassiveRoundOneRovingEntry(move[0], plan);
             $("firstSwapCue").textContent = "Bone Star next - swap the glowing pair.";
             render();
             return;
@@ -13112,6 +13114,9 @@
         }
         clearTargetLiteracy(false);
         idleHintCells = new Set([`${a.x},${a.y}`, `${b.x},${b.y}`]);
+        if (roundOneAgencyHintAfterDelay) {
+          alignPassiveRoundOneRovingEntry(a, plan);
+        }
         const hintedTarget = usefulMove?.target || target;
         $("firstSwapCue").textContent = roundOneAgencyHintAfterDelay && hintedTarget
           ? `Match ${flowers[hintedTarget.flowerId][0]} with the glowing pair.`
@@ -14059,6 +14064,18 @@
     function firstHintFocusCell() {
       const firstHint = idleHintCells.values().next().value;
       return cellFromKey(firstHint);
+    }
+
+    function alignPassiveRoundOneRovingEntry(source, plan = activeRoundPlan()) {
+      const active = document.activeElement;
+      const documentOwnsFocus = !active
+        || active === document.body
+        || active === document.documentElement;
+      if (!documentOwnsFocus || !source || !isRoundOneAgencyHandoffActive(plan)) {
+        return false;
+      }
+      boardFocusCell = clampBoardFocusCell(source);
+      return true;
     }
 
     function updateBoardRovingTabIndex() {

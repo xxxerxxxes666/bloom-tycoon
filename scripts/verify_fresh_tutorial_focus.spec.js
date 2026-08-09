@@ -46,6 +46,13 @@ const POST_OPENING_CASES = [
   { label: "mobile-touch-reduced", viewport: { width: 390, height: 844 }, input: "touch", mobile: true, reduced: true }
 ];
 
+const POST_OPENING_RESUME_CASES = [
+  { label: "desktop-full", viewport: { width: 1280, height: 720 }, input: "pointer" },
+  { label: "desktop-reduced", viewport: { width: 1280, height: 720 }, input: "pointer", reduced: true },
+  { label: "mobile-full", viewport: { width: 390, height: 844 }, input: "touch", mobile: true },
+  { label: "mobile-reduced", viewport: { width: 390, height: 844 }, input: "touch", mobile: true, reduced: true }
+];
+
 async function openFresh(page, label) {
   await page.addInitScript(({ key, seedToken }) => {
     if (!sessionStorage.getItem(seedToken)) {
@@ -509,6 +516,108 @@ test("Help preserves a selected flower that already belongs to its guided pair",
     await context.close();
   }
 });
+
+for (const testCase of POST_OPENING_RESUME_CASES) {
+  test(`partial Round 1 reload aligns keyboard entry with the delayed guide on ${testCase.label}`, async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: testCase.viewport,
+      hasTouch: Boolean(testCase.mobile),
+      isMobile: Boolean(testCase.mobile),
+      reducedMotion: testCase.reduced ? "reduce" : "no-preference"
+    });
+    const page = await context.newPage();
+    const browserErrors = [];
+    page.on("console", (message) => {
+      if (["warning", "error"].includes(message.type())) browserErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => browserErrors.push(error.message));
+
+    try {
+      await openFresh(page, `partial-r1-resume-${testCase.label}`);
+      const opening = await openingPair(page);
+      await page.locator("#tutorialSkipBtn").click();
+      await activateTile(page, opening.source.id, testCase.input);
+      await activateTile(page, opening.destination.id, testCase.input);
+      await page.waitForFunction((key) => {
+        const state = JSON.parse(localStorage.getItem(key) || "{}");
+        return state.moves === 5
+          && document.querySelector("#board")?.getAttribute("aria-busy") === "false";
+      }, SAVE_KEY, { timeout: 12000 });
+      const settledOpening = await stateReport(page);
+      const settledSave = await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY);
+      expect(settledOpening.state.moves).toBe(5);
+      expect(settledOpening.state.counts[5]).toBeGreaterThan(0);
+
+      let guideSourceId = "";
+      let guideDestinationId = "";
+      for (let reload = 1; reload <= 2; reload += 1) {
+        await page.reload({ waitUntil: "networkidle" });
+        await expect(page.locator("#board .tile.idle-hint")).toHaveCount(2, { timeout: 10000 });
+        const guide = await page.locator("#board .tile.idle-hint").evaluateAll((tiles) => (
+          tiles.map((tile) => ({
+            id: tile.id,
+            x: Number(tile.dataset.x),
+            y: Number(tile.dataset.y),
+            label: tile.getAttribute("aria-label") || ""
+          }))
+        ));
+        const source = guide.find((cell) => cell.label.includes("guided exchange source")) || guide[0];
+        const destination = guide.find((cell) => cell.id !== source.id);
+        guideSourceId = source.id;
+        guideDestinationId = destination.id;
+        const resumed = await stateReport(page);
+        const activeTag = await page.evaluate(() => document.activeElement?.tagName || "");
+        expect(["BODY", "HTML"], `${testCase.label} reload ${reload} keeps passive document focus`)
+          .toContain(activeTag);
+        expect(resumed.activeId, `${testCase.label} reload ${reload} does not steal DOM focus`).toBe("");
+        expect(resumed.rovingIds, `${testCase.label} reload ${reload} guide source owns keyboard entry`)
+          .toEqual([guideSourceId]);
+        await expect(page.locator(`#${guideDestinationId}`)).toHaveAttribute("tabindex", "-1");
+        expect(resumed.selectedIds).toEqual([]);
+        expect(resumed.state.moves).toBe(5);
+        expect(resumed.state.counts).toEqual(settledOpening.state.counts);
+        expect(resumed.state.board).toEqual(settledOpening.state.board);
+        expect(await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY)).toBe(settledSave);
+      }
+
+      await page.keyboard.press("Tab");
+      await expect(page.locator(`#${guideSourceId}`)).toBeFocused();
+      if (!testCase.reduced) {
+        await page.screenshot({
+          path: `work/partial-r1-resume-${testCase.label}.png`,
+          fullPage: true
+        });
+      }
+      await page.keyboard.press("Enter");
+      await expect(page.locator(`#${guideDestinationId}`)).toBeFocused();
+      await page.keyboard.press("Space");
+      await page.waitForFunction((key) => {
+        const state = JSON.parse(localStorage.getItem(key) || "{}");
+        return state.moves === 4
+          && document.querySelector("#board")?.getAttribute("aria-busy") === "false";
+      }, SAVE_KEY, { timeout: 12000 });
+      const committed = await stateReport(page);
+      expect(committed.state.moves).toBe(4);
+      expect(committed.state.counts.reduce((sum, count) => sum + count, 0))
+        .toBeGreaterThan(settledOpening.state.counts.reduce((sum, count) => sum + count, 0));
+      expect(committed.selectedIds).toEqual([]);
+      expect(committed.activeId).toMatch(/^tile-/);
+      expect(committed.rovingIds).toEqual([committed.activeId]);
+      expect(committed.tiles).toBe(64);
+      expect(committed.rows).toBe(8);
+      expect(committed.disabled).toBe(0);
+      expect(committed.boardWidth).toBeCloseTo(testCase.mobile ? 378 : 600, 1);
+      expect(committed.boardBottom).toBeLessThanOrEqual(testCase.viewport.height);
+      expect(committed.scrollY).toBe(0);
+      expect(committed.overflowX).toBe(false);
+      if (testCase.mobile) expect(committed.overflowY).toBe(false);
+      expect(committed.brokenImages).toEqual([]);
+      expect(browserErrors).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+}
 
 for (const testCase of POST_OPENING_CASES) {
   for (const selectedEndpoint of ["source", "destination"]) {
