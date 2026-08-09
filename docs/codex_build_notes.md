@@ -1,5 +1,12 @@
 # Codex Build Notes
 
+## 2026-08-09 - Off-order matches report their settled consequence
+
+- Player-visible correction: a legal Round 2 or Round 3 match that clears flowers without advancing the active bouquet now publishes `Bloom cleared. No bouquet progress. 3 moves left.` through the existing settled board cue. The spent move is no longer silent, and the receipt appears only after the rebuilt altar is authoritative.
+- Surgical boundary: the new branch applies only to a matched, non-Black-Candle result with zero credited order flowers and zero Thorn progress. Existing objective, Thorn, Black Candle, Shuffle, recovery, final-harvest, tutorial, and armed-relic owners retain precedence; interaction, reload, and background interruption keep the accepted cancellation behavior. No node, panel, save field, timer, move, board/RNG, objective, economy, mechanic, round, or progression surface was added.
+- Permanent contract: `scripts/verify_settled_board_outcome.spec.js` now covers exact R2/R3 off-order matches across desktop `1280x720` and exact mobile `390x844`, pointer/touch/keyboard, and full/reduced motion. It requires one exact receipt mutation with `firstSwapCue` as the sole polite owner, unchanged active targets, one move spend, cleared selection, focus/roving agreement, reload silence, 64 tiles/eight rows, exact `600px`/`378px` altars, loaded imagery, no overflow, and empty browser warning/error ledgers.
+- Local evidence: the focused matrix passes `4/4`; the complete settled-outcome aggregate passes `19/20`, including every new case and all Shuffle/interruption contracts. The unchanged R1 Black Candle mobile fixture passed once and timed out once on its existing owner-exposure poll when repeated in isolation, while the corresponding R3 Black Candle case passed; no assertion was weakened. Normal-scale desktop/mobile captures show the new receipt contained above the complete altar with the board, bouquet HUD, greenhouse, and hierarchy intact.
+
 ## 2026-08-09 - Reduced-motion replay nourishment holds its gold state
 
 - Player-visible correction: an objective-credit match during an owned Conservatory replay now keeps the visible restoration dial in its intended aged-gold response for the complete bounded intake beat when reduced motion is enabled. The browser can no longer interpolate from the prior dial color and sample an ambiguous dark or transparent frame while the authoritative objective already advanced.

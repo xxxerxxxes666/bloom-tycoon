@@ -42,6 +42,50 @@ const CASES = [
     input: "keyboard",
     reduced: true,
     viewport: { width: 1280, height: 720 }
+  },
+  {
+    label: "r2-off-objective-desktop-pointer",
+    round: 2,
+    matchFlower: 0,
+    targetIds: [2, 4, 5],
+    refillRandom: [0.01, 0.12, 0.46],
+    mode: "off-objective",
+    input: "pointer",
+    viewport: { width: 1280, height: 720 }
+  },
+  {
+    label: "r3-off-objective-desktop-keyboard-reduced",
+    round: 3,
+    matchFlower: 1,
+    targetIds: [3, 0],
+    refillRandom: [0.26, 0.38, 0.76],
+    mode: "off-objective",
+    input: "keyboard",
+    reduced: true,
+    viewport: { width: 1280, height: 720 }
+  },
+  {
+    label: "r2-off-objective-mobile-touch",
+    round: 2,
+    matchFlower: 0,
+    targetIds: [2, 4, 5],
+    refillRandom: [0.01, 0.12, 0.46],
+    mode: "off-objective",
+    input: "touch",
+    mobile: true,
+    viewport: { width: 390, height: 844 }
+  },
+  {
+    label: "r3-off-objective-mobile-touch-reduced",
+    round: 3,
+    matchFlower: 1,
+    targetIds: [3, 0],
+    refillRandom: [0.26, 0.38, 0.76],
+    mode: "off-objective",
+    input: "touch",
+    reduced: true,
+    mobile: true,
+    viewport: { width: 390, height: 844 }
   }
 ];
 
@@ -73,14 +117,28 @@ async function seedCase(page, testCase) {
     const board = Array.from({ length: 8 }, (_, y) => (
       Array.from({ length: 8 }, (_, x) => (x + 2 * y) % 6)
     ));
-    if (testCase.mode === "ordinary") {
-      const filler = (testCase.target + 1) % 6;
-      board[0][0] = testCase.target;
+    if (testCase.mode !== "black-candle") {
+      const matchedFlower = testCase.mode === "off-objective"
+        ? testCase.matchFlower
+        : testCase.target;
+      const filler = (matchedFlower + 1) % 6;
+      board[0][0] = matchedFlower;
       board[0][1] = filler;
-      board[0][2] = testCase.target;
+      board[0][2] = matchedFlower;
       board[0][3] = filler;
-      board[1][1] = testCase.target;
+      board[1][1] = matchedFlower;
       state.armedLineRelic = null;
+      if (testCase.mode === "off-objective") {
+        const reserveTarget = testCase.targetIds[0];
+        const reserveFiller = (reserveTarget + 1) % 6;
+        board[7][4] = reserveTarget;
+        board[7][5] = reserveFiller;
+        board[7][6] = reserveTarget;
+        board[6][5] = reserveTarget;
+        const refill = testCase.refillRandom.slice();
+        let refillIndex = 0;
+        Math.random = () => refill[refillIndex++ % refill.length];
+      }
     } else {
       board[0] = Array.from({ length: 8 }, (_, x) => (
         x % 2 ? testCase.secondary : testCase.target
@@ -122,7 +180,9 @@ async function activatePair(page, testCase) {
         x: Number(tile.dataset.x),
         y: Number(tile.dataset.y)
       })))
-    : [{ x: 3, y: 0 }, { x: 4, y: 0 }];
+    : testCase.mode === "off-objective"
+      ? [{ x: 1, y: 0 }, { x: 1, y: 1 }]
+      : [{ x: 3, y: 0 }, { x: 4, y: 0 }];
   expect(pair, `${testCase.label} exact legal pair`).toHaveLength(2);
   const [source, destination] = pair.map(({ x, y }) => page.locator(`#tile-${x}-${y}`));
   if (testCase.input === "keyboard") {
@@ -326,9 +386,14 @@ for (const testCase of CASES) {
         .toEqual([{ id: "firstSwapCue", live: "polite" }]);
       expect(chronology[0].competingOwners, `${testCase.label} competing owners are off at mutation time`)
         .toEqual([]);
-      expect(settled.cue, `${testCase.label} names the actual target gain`).toContain("+");
-      expect(settled.cue, `${testCase.label} gives the settled objective count`)
-        .toMatch(/\d+ of \d+/);
+      if (testCase.mode === "off-objective") {
+        expect(settled.cue, `${testCase.label} distinguishes a legal but unproductive match`)
+          .toBe("Bloom cleared. No bouquet progress. 3 moves left.");
+      } else {
+        expect(settled.cue, `${testCase.label} names the actual target gain`).toContain("+");
+        expect(settled.cue, `${testCase.label} gives the settled objective count`)
+          .toMatch(/\d+ of \d+/);
+      }
       expect(settled.cue, `${testCase.label} gives remaining moves`).toContain("3 moves left.");
       if (testCase.mode === "black-candle") {
         expect(settled.cue, `${testCase.label} names the physical lane result`)
@@ -340,8 +405,18 @@ for (const testCase of CASES) {
         .toContain("settled-board-outcome-cue");
       expect(settled.liveOwners, `${testCase.label} one polite result owner`)
         .toEqual([{ id: "firstSwapCue", live: "polite" }]);
-      expect(settled.state.counts[testCase.target], `${testCase.label} target gained after cascades`)
-        .toBeGreaterThan(before.state.counts[testCase.target]);
+      if (testCase.mode === "off-objective") {
+        expect(settled.state.counts[testCase.matchFlower], `${testCase.label} clears the matched flower`)
+          .toBeGreaterThan(before.state.counts[testCase.matchFlower]);
+        testCase.targetIds.forEach((targetId) => {
+          expect(settled.state.counts[targetId], `${testCase.label} leaves order flower ${targetId} unchanged`)
+            .toBe(before.state.counts[targetId]);
+        });
+        await page.screenshot({ path: `work/off-objective-settled-${testCase.label}.png` });
+      } else {
+        expect(settled.state.counts[testCase.target], `${testCase.label} target gained after cascades`)
+          .toBeGreaterThan(before.state.counts[testCase.target]);
+      }
       expect(settled.state.moves, `${testCase.label} spends once`).toBe(3);
       expect(settled.selected, `${testCase.label} clears selection`).toBe(0);
       expect(settled.focused, `${testCase.label} keeps visible board focus`).toMatch(/^tile-/);

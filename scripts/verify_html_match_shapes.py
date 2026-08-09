@@ -961,6 +961,7 @@ def verify_source_hooks():
         "settledBoardOutcomeOwnsNarration",
         "settledBoardOutcomeRevealFrame",
         "function settledBoardOutcomeForResult",
+        "Bloom cleared. No bouquet progress.",
         "function presentSettledBoardOutcome",
         "document.hidden || !settledBoardOutcomeCanOwnNarration()",
         "pendingSettledBoardOutcome || settledBoardOutcome",

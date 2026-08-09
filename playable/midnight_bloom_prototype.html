@@ -18858,10 +18858,17 @@
       const thornResult = plan.thornGoal && result.thornsDamaged
         ? `Cursed Thorn ${thornGoalProgress(plan)} of ${thornGoalNeeded(plan)}${thornGoalComplete(plan) ? " sealed" : " cleared"}.`
         : "";
+      const blackCandle = Boolean(result.blackCandleActivation);
+      const moveResult = `${moves} move${moves === 1 ? "" : "s"} left.`;
+      if (!blackCandle && !targetResults.length && !thornResult) {
+        return {
+          kind: "harvest",
+          text: `Bloom cleared. No bouquet progress. ${moveResult}`
+        };
+      }
       if (!targetResults.length && !thornResult) {
         return null;
       }
-      const blackCandle = Boolean(result.blackCandleActivation);
       if (blackCandle && thornResult) {
         const progress = thornGoalProgress(plan);
         const needed = thornGoalNeeded(plan);
@@ -18877,7 +18884,6 @@
       const laneResult = blackCandle
         ? `Black Candle burned the ${result.blackCandleActivation.direction === "vertical" ? "column" : "row"}.`
         : "";
-      const moveResult = `${moves} move${moves === 1 ? "" : "s"} left.`;
       return {
         kind: blackCandle ? "black-candle" : "harvest",
         text: [laneResult, ...targetResults, thornResult, moveResult].filter(Boolean).join(" ")
