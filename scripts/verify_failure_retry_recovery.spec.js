@@ -140,6 +140,9 @@ async function uiState(page) {
       thornTeachTiles: document.querySelectorAll(".tile.thorn-teach").length,
       cursedThornTiles: document.querySelectorAll(".tile.cursed-thorn").length,
       relicTiles: document.querySelectorAll(".tile.black-candle-vine").length,
+      selectedTiles: document.querySelectorAll(".tile.sel").length,
+      rovingTiles: document.querySelectorAll(".tile[tabindex='0']").length,
+      focusedTile: Boolean(document.activeElement?.classList.contains("tile")),
       failureMarked: document.querySelector("#roundCeremony")?.classList.contains("failed") || false,
       retryVisible: visible(document.querySelector("#renewBtn.visible")),
       payoffVisible: visible(document.querySelector("#roundOneRestoration")),
@@ -253,6 +256,9 @@ for (const config of VIEWPORTS) {
           Boolean(retried.state.roundThreeConservatoryRaised)
         ]).toEqual(fixture.owned);
         expect(retried.relicTiles).toBe(0);
+        expect(retried.selectedTiles, "Retry opens without a selected flower").toBe(0);
+        expect(retried.rovingTiles, "Retry keeps one roving board source").toBe(1);
+        expect(retried.focusedTile, "Retry keeps focus on the authored source").toBe(true);
         expect(retried.failureMarked).toBe(false);
         expect(retried.retryVisible).toBe(false);
         expect(retried.cue).toMatch(fixture.retryCue);
@@ -268,6 +274,7 @@ for (const config of VIEWPORTS) {
         }
         await activePage.screenshot({ path: `work/failure-retry-${config.label}-r${round}-retried.png`, fullPage: true });
 
+        await activePage.waitForTimeout(300);
         const progress = await exerciseGuidedPair(activePage, config.mobile);
         expect(progress.after.moves).toBe(progress.before.moves - 1);
         expect(fixture.progressCheck(progress.before, progress.after)).toBe(true);

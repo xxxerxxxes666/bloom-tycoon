@@ -670,6 +670,7 @@ def verify_source_hooks():
         "$(\"board\").addEventListener(\"click\", handleBoardClick)",
         "const PAYOFF_HANDOFF_INPUT_GUARD_MS = 280",
         "function armPayoffHandoffInputGuard()",
+        "if (retryingFailedBouquet || restoredGreenhouseNextOrder || secondUpgradeNextOrder)",
         "function rejectPayoffHandoffBoardInput(event)",
         '["pointerdown", "touchstart", "click", "keydown"].forEach((eventName) => {',
         "document.addEventListener(eventName, rejectPayoffHandoffBoardInput",

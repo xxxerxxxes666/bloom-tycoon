@@ -1657,7 +1657,12 @@ for (const viewport of FAILURE_VIEWPORTS) {
       });
       page.on("pageerror", (error) => runtimeErrors.push(error.message));
       page.on("requestfailed", (request) => {
-        requestFailures.push(`${request.url()} ${request.failure()?.errorText || ""}`);
+        const errorText = request.failure()?.errorText || "";
+        const canceledTileImage = errorText === "net::ERR_ABORTED"
+          && /\/assets\/tiles\/(?:48|96|altar)\//.test(request.url());
+        if (!canceledTileImage) {
+          requestFailures.push(`${request.url()} ${errorText}`);
+        }
       });
 
       const naturalFailureState = savedState(failedFixture);
@@ -1970,6 +1975,7 @@ for (const viewport of FAILURE_VIEWPORTS) {
             rows: new Set(Array.from(document.querySelectorAll(".tile"), (tile) => tile.dataset.y)).size,
             tabStops: tabStops.length,
             focusedTile: Boolean(document.activeElement?.classList.contains("tile")),
+            selectedTiles: document.querySelectorAll(".tile.sel").length,
             overflowX: document.documentElement.scrollWidth > innerWidth + 1,
             brokenImages: Array.from(document.images)
               .filter((image) => {
@@ -2015,11 +2021,17 @@ for (const viewport of FAILURE_VIEWPORTS) {
         expect(recovered.rows, `${viewport.label} Round ${round} ${key} rows`).toBe(8);
         expect(recovered.tabStops, `${viewport.label} Round ${round} ${key} tab stop`).toBe(1);
         expect(recovered.focusedTile, `${viewport.label} Round ${round} ${key} focus`).toBe(true);
+        expect(recovered.selectedTiles, `${viewport.label} Round ${round} ${key} no carried selection`).toBe(0);
         expect(recovered.overflowX, `${viewport.label} Round ${round} ${key} overflow`).toBe(false);
         expect(recovered.brokenImages, `${viewport.label} Round ${round} ${key} images`).toEqual([]);
       };
 
       await page.keyboard.press("Enter");
+      await page.waitForTimeout(20);
+      const enteredState = await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY);
+      await page.waitForTimeout(40);
+      await page.keyboard.press("Enter");
+      expect(await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY)).toBe(enteredState);
       await assertRecoveredRound("Enter");
 
       await page.evaluate((key) => {
@@ -2048,7 +2060,29 @@ for (const viewport of FAILURE_VIEWPORTS) {
         ))
       });
       await page.keyboard.press("Space");
+      await page.waitForTimeout(20);
+      const spacedState = await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY);
+      await page.waitForTimeout(40);
+      await page.keyboard.press("Space");
+      expect(await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY)).toBe(spacedState);
       await assertRecoveredRound("Space");
+
+      await page.waitForTimeout(300);
+      const hintedPair = await page.locator(".tile.idle-hint").evaluateAll((tiles) => (
+        tiles.map((tile) => ({ x: Number(tile.dataset.x), y: Number(tile.dataset.y) }))
+      ));
+      expect(hintedPair, `${viewport.label} Round ${round} deliberate guide`).toHaveLength(2);
+      const deliberateMoves = await page.evaluate((key) => (
+        JSON.parse(localStorage.getItem(key) || "{}").moves
+      ), SAVE_KEY);
+      for (const cell of hintedPair) {
+        await page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`).focus();
+        await page.keyboard.press("Enter");
+      }
+      await page.waitForFunction(({ key, moves }) => (
+        JSON.parse(localStorage.getItem(key) || "{}").moves === moves - 1
+      ), { key: SAVE_KEY, moves: deliberateMoves }, { timeout: 10000 });
+      await expect(page.locator(".tile.sel")).toHaveCount(0);
 
       expect(runtimeErrors, `${viewport.label} Round ${round} runtime errors`).toEqual([]);
       expect(requestFailures, `${viewport.label} Round ${round} request failures`).toEqual([]);

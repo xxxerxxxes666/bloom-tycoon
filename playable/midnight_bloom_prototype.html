@@ -19814,7 +19814,7 @@
         $("firstSwapCue").textContent = roundStartCueText(plan, openingMove || []);
       }
       queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
-      if (restoredGreenhouseNextOrder || secondUpgradeNextOrder) {
+      if (retryingFailedBouquet || restoredGreenhouseNextOrder || secondUpgradeNextOrder) {
         armPayoffHandoffInputGuard();
       }
       if (secondUpgradeNextOrder) {
