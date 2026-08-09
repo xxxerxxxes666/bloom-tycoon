@@ -10426,6 +10426,7 @@
     let tileSwipeStart = null;
     let touchSwipeStart = null;
     let dragPreview = null;
+    let interruptedDragFocusCell = null;
     let suppressNextBoardClick = false;
     let superBloomCells = new Set();
     let invalidSwapCells = new Map();
@@ -13897,6 +13898,33 @@
 
     function boardDragInputActive() {
       return Boolean(dragPreview || tileSwipeStart || touchSwipeStart);
+    }
+
+    function cancelInterruptedBoardDrag() {
+      const start = tileSwipeStart || touchSwipeStart || dragPreview?.start;
+      if (!start) {
+        return false;
+      }
+      interruptedDragFocusCell = clampBoardFocusCell(start);
+      boardFocusCell = { ...interruptedDragFocusCell };
+      queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
+      clearDragPreview({ resetInputs: true });
+      restoreGuideAfterCanceledBoardInput(start);
+      updateBoardRovingTabIndex();
+      return true;
+    }
+
+    function restoreInterruptedBoardDragFocus() {
+      if (!interruptedDragFocusCell) {
+        return;
+      }
+      const source = clampBoardFocusCell(interruptedDragFocusCell);
+      const sourceId = `tile-${source.x}-${source.y}`;
+      interruptedDragFocusCell = null;
+      if (postRenderFocusTarget === sourceId) {
+        postRenderFocusTarget = "";
+      }
+      focusBoardCell(source.x, source.y);
     }
 
     function beginDragPreview(start, sourceTile) {
@@ -20667,6 +20695,11 @@
       }
     }, true);
     document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        cancelInterruptedBoardDrag();
+      } else {
+        restoreInterruptedBoardDragFocus();
+      }
       if (document.hidden && (pendingSettledBoardOutcome || settledBoardOutcome)) {
         clearSettledBoardOutcome({ renderAfter: true, restoreCue: true });
       }

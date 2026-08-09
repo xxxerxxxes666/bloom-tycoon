@@ -1245,6 +1245,11 @@ def verify_source_hooks():
         "const MAX_BOARD_PARTICLES = 16",
         "@media (prefers-reduced-motion: reduce)",
         "function horizontalDragIntent(dx, dy)",
+        "function cancelInterruptedBoardDrag()",
+        "function restoreInterruptedBoardDragFocus()",
+        "clearDragPreview({ resetInputs: true });",
+        "cancelInterruptedBoardDrag();",
+        "restoreInterruptedBoardDragFocus();",
     ])
     missing = [needle for needle in required if needle not in html]
     if missing:
