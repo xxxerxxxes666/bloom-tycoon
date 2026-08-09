@@ -14035,7 +14035,7 @@
       target.focus({ preventScroll: true });
     }
 
-    function cancelBoardSelectionFromKeyboard() {
+    function cancelBoardSelection() {
       if (!selected || isResolving || thornOutcomeFeedbackActive() || roundComplete || isBouquetFailed()) {
         return false;
       }
@@ -14064,7 +14064,7 @@
         event.preventDefault();
         document.body.classList.remove("pointer-board-input");
         document.body.classList.add("keyboard-board-navigation");
-        cancelBoardSelectionFromKeyboard();
+        cancelBoardSelection();
         return;
       }
       if (event.key === "Enter" || event.key === " ") {
@@ -16692,6 +16692,10 @@
       if (isBouquetFailed()) {
         markBouquetFailed();
         render();
+        return;
+      }
+      if (selected && selected.x === x && selected.y === y) {
+        cancelBoardSelection();
         return;
       }
       const selectedHintPair = new Set(idleHintCells);

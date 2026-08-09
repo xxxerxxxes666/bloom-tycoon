@@ -5367,6 +5367,244 @@ test.describe("Escape cancels a keyboard flower selection without losing board g
   }
 });
 
+test.describe("reactivating the selected flower cancels the pending exchange", () => {
+  test.describe.configure({ mode: "parallel" });
+  const cases = [
+    {
+      label: "desktop-pointer-source-full",
+      viewport: { width: 1280, height: 720 },
+      input: "pointer",
+      endpointIndex: 0,
+      reducedMotion: "no-preference"
+    },
+    {
+      label: "desktop-keyboard-destination-reduced",
+      viewport: { width: 1280, height: 720 },
+      input: "keyboard",
+      activationKey: "Space",
+      endpointIndex: 1,
+      reducedMotion: "reduce"
+    },
+    {
+      label: "mobile-touch-destination-full",
+      viewport: { width: 390, height: 844 },
+      input: "touch",
+      endpointIndex: 1,
+      reducedMotion: "no-preference"
+    },
+    {
+      label: "mobile-touch-source-reduced",
+      viewport: { width: 390, height: 844 },
+      input: "touch",
+      endpointIndex: 0,
+      reducedMotion: "reduce"
+    },
+    {
+      label: "mobile-keyboard-source-full",
+      viewport: { width: 390, height: 844 },
+      input: "keyboard",
+      activationKey: "Enter",
+      endpointIndex: 0,
+      reducedMotion: "no-preference"
+    },
+    {
+      label: "mobile-pointer-destination-reduced",
+      viewport: { width: 390, height: 844 },
+      input: "pointer",
+      endpointIndex: 1,
+      reducedMotion: "reduce"
+    }
+  ];
+
+  const snapshot = (page) => page.evaluate((key) => {
+    const saved = JSON.parse(localStorage.getItem(key) || "{}");
+    const tiles = Array.from(document.querySelectorAll("#board .tile"));
+    const board = document.querySelector("#board")?.getBoundingClientRect();
+    const visible = (node) => {
+      if (!node) return false;
+      const rect = node.getBoundingClientRect();
+      const style = getComputedStyle(node);
+      return style.display !== "none"
+        && style.visibility !== "hidden"
+        && Number(style.opacity || 1) !== 0
+        && rect.width > 0
+        && rect.height > 0;
+    };
+    return {
+      save: localStorage.getItem(key),
+      moves: saved.moves,
+      counts: saved.counts || [],
+      boardState: (saved.board || []).map((row) => row.join(",")).join("|"),
+      armedLineRelic: saved.armedLineRelic || null,
+      selected: tiles.filter((tile) => tile.classList.contains("sel")).map((tile) => tile.id),
+      hints: tiles.filter((tile) => tile.classList.contains("idle-hint")).map((tile) => tile.id).sort(),
+      active: document.activeElement?.id || "",
+      roving: tiles.filter((tile) => tile.tabIndex === 0).map((tile) => tile.id),
+      cue: document.querySelector("#firstSwapCue")?.textContent.trim() || "",
+      tutorial: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
+      politeOwners: Array.from(document.querySelectorAll('[aria-live="polite"]'))
+        .filter(visible)
+        .map((node) => node.id || node.className),
+      tiles: tiles.length,
+      rows: new Set(tiles.map((tile) => tile.dataset.y)).size,
+      disabled: tiles.filter((tile) => tile.disabled).length,
+      board: board ? {
+        x: board.x,
+        width: board.width,
+        height: board.height,
+        bottom: board.bottom
+      } : null,
+      scrollY,
+      overflowX: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      overflowY: document.documentElement.scrollHeight - document.documentElement.clientHeight,
+      brokenImages: Array.from(document.images)
+        .filter((image) => visible(image) && image.complete && image.naturalWidth === 0)
+        .map((image) => image.getAttribute("src"))
+    };
+  }, SAVE_KEY);
+
+  const pairIds = (pair) => pair.map(({ x, y }) => `tile-${x}-${y}`).sort();
+
+  const activate = async (page, locator, testCase) => {
+    if (testCase.input === "touch") {
+      await locator.tap();
+      return;
+    }
+    if (testCase.input === "keyboard") {
+      await locator.focus();
+      await page.keyboard.press(testCase.activationKey);
+      return;
+    }
+    await locator.click();
+  };
+
+  const cancelAndCommit = async (page, testCase, stage) => {
+    const pair = await hintedPair(page);
+    const selectedCell = pair[testCase.endpointIndex];
+    const counterpart = pair[1 - testCase.endpointIndex];
+    const selectedId = `tile-${selectedCell.x}-${selectedCell.y}`;
+    const selectedTile = page.locator(`#${selectedId}`);
+    const counterpartTile = page.locator(`#tile-${counterpart.x}-${counterpart.y}`);
+    const before = await snapshot(page);
+    expect(before.hints, `${testCase.label} ${stage} starts with exact pair`).toEqual(pairIds(pair));
+    expect(before.selected, `${testCase.label} ${stage} starts unselected`).toEqual([]);
+    expect(before.politeOwners, `${testCase.label} ${stage} starts with one narrator`).toHaveLength(1);
+
+    await activate(page, selectedTile, testCase);
+    await expect(selectedTile).toHaveClass(/\bsel\b/);
+    await expect(counterpartTile).toBeFocused();
+    const selected = await snapshot(page);
+    expect(selected.moves, `${testCase.label} ${stage} selection spends no move`).toBe(before.moves);
+    expect(selected.boardState, `${testCase.label} ${stage} selection preserves board`).toBe(before.boardState);
+    expect(selected.hints, `${testCase.label} ${stage} selection preserves pair`).toEqual(before.hints);
+    expect(selected.selected, `${testCase.label} ${stage} owns one source`).toEqual([selectedId]);
+
+    await activate(page, selectedTile, testCase);
+    const canceled = await snapshot(page);
+    expect(canceled.save, `${testCase.label} ${stage} reactivation has no save drift`).toBe(before.save);
+    expect(canceled.moves, `${testCase.label} ${stage} reactivation spends no move`).toBe(before.moves);
+    expect(canceled.counts, `${testCase.label} ${stage} reactivation preserves counts`).toEqual(before.counts);
+    expect(canceled.boardState, `${testCase.label} ${stage} reactivation preserves board`).toBe(before.boardState);
+    expect(canceled.armedLineRelic, `${testCase.label} ${stage} reactivation preserves relic`)
+      .toEqual(before.armedLineRelic);
+    expect(canceled.selected, `${testCase.label} ${stage} reactivation clears selection`).toEqual([]);
+    expect(canceled.hints, `${testCase.label} ${stage} reactivation restores exact pair`).toEqual(before.hints);
+    expect(canceled.cue, `${testCase.label} ${stage} reactivation restores cue`).toBe(before.cue);
+    expect(canceled.tutorial, `${testCase.label} ${stage} reactivation restores tutorial`).toBe(before.tutorial);
+    expect(canceled.active, `${testCase.label} ${stage} reactivation returns source focus`).toBe(selectedId);
+    expect(canceled.roving, `${testCase.label} ${stage} reactivation returns sole roving source`)
+      .toEqual([selectedId]);
+    expect(canceled.politeOwners, `${testCase.label} ${stage} reactivation keeps one narrator`).toHaveLength(1);
+    expect(canceled.tiles, `${testCase.label} ${stage} keeps 64 flowers`).toBe(64);
+    expect(canceled.rows, `${testCase.label} ${stage} keeps eight rows`).toBe(8);
+    expect(canceled.disabled, `${testCase.label} ${stage} returns enabled board`).toBe(0);
+    expect(canceled.board.width, `${testCase.label} ${stage} board width`)
+      .toBe(testCase.viewport.width === 390 ? 378 : 600);
+    expect(canceled.board.height, `${testCase.label} ${stage} board height`)
+      .toBe(testCase.viewport.width === 390 ? 378 : 600);
+    expect(canceled.board.x, `${testCase.label} ${stage} board inset`)
+      .toBe(testCase.viewport.width === 390 ? 8 : 340);
+    expect(canceled.scrollY, `${testCase.label} ${stage} keeps scroll origin`).toBe(0);
+    expect(canceled.overflowX, `${testCase.label} ${stage} has no horizontal overflow`).toBe(0);
+    expect(canceled.brokenImages, `${testCase.label} ${stage} has loaded imagery`).toEqual([]);
+
+    await activate(page, selectedTile, testCase);
+    await activate(page, counterpartTile, testCase);
+    await page.waitForFunction(({ key, movesBefore }) => {
+      const saved = JSON.parse(localStorage.getItem(key) || "{}");
+      return Boolean(saved.roundComplete)
+        || (Number(saved.moves) === Number(movesBefore) - 1
+          && Array.from(document.querySelectorAll("#board .tile")).every((tile) => !tile.disabled));
+    }, { key: SAVE_KEY, movesBefore: before.moves }, { timeout: 12000 });
+    return snapshot(page);
+  };
+
+  for (const testCase of cases) {
+    test(testCase.label, async ({ browser }) => {
+      test.setTimeout(180000);
+      const context = await browser.newContext({
+        viewport: testCase.viewport,
+        reducedMotion: testCase.reducedMotion,
+        hasTouch: testCase.input === "touch"
+      });
+      const page = await context.newPage();
+      const consoleErrors = [];
+      const pageErrors = [];
+      const failedRequests = [];
+      page.on("console", (message) => {
+        if (message.type() === "error") consoleErrors.push(message.text());
+      });
+      page.on("pageerror", (error) => pageErrors.push(error.message));
+      page.on("requestfailed", (request) => failedRequests.push(
+        `${request.url()} ${request.failure()?.errorText || ""}`
+      ));
+
+      try {
+        await seedDeterministicMath(page, `reactivate-cancel-${testCase.label}`);
+        await openFreshNoReview(page, `reactivate-cancel-${testCase.label}`);
+        await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 2500 });
+
+        const opening = await cancelAndCommit(page, testCase, "opening pair");
+        expect(opening.moves, `${testCase.label} opening commits once`).toBe(5);
+
+        await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 9000 });
+        const followup = await cancelAndCommit(page, {
+          ...testCase,
+          endpointIndex: 1 - testCase.endpointIndex
+        }, "objective follow-up");
+        expect(followup.moves, `${testCase.label} follow-up commits once`).toBe(4);
+
+        if (await page.locator("#tutorialSkipBtn").isVisible()) {
+          await page.locator("#tutorialSkipBtn").click();
+        }
+        const ordinaryTile = page.locator("#tile-0-0");
+        const ordinaryBefore = await snapshot(page);
+        await activate(page, ordinaryTile, testCase);
+        await expect(ordinaryTile).toHaveClass(/\bsel\b/);
+        await activate(page, ordinaryTile, testCase);
+        const ordinaryCanceled = await snapshot(page);
+        expect(ordinaryCanceled.save, `${testCase.label} ordinary reactivation has no save drift`)
+          .toBe(ordinaryBefore.save);
+        expect(ordinaryCanceled.moves, `${testCase.label} ordinary reactivation spends no move`).toBe(4);
+        expect(ordinaryCanceled.selected, `${testCase.label} ordinary reactivation clears selection`).toEqual([]);
+        expect(ordinaryCanceled.active, `${testCase.label} ordinary reactivation returns focus`).toBe("tile-0-0");
+        expect(ordinaryCanceled.roving, `${testCase.label} ordinary reactivation returns sole roving focus`)
+          .toEqual(["tile-0-0"]);
+        expect(ordinaryCanceled.tiles, `${testCase.label} ordinary reactivation retains 64 tiles`).toBe(64);
+        expect(ordinaryCanceled.rows, `${testCase.label} ordinary reactivation retains eight rows`).toBe(8);
+        expect(ordinaryCanceled.disabled, `${testCase.label} ordinary reactivation leaves board enabled`).toBe(0);
+        expect(ordinaryCanceled.overflowX, `${testCase.label} ordinary reactivation has no overflow`).toBe(0);
+        expect(ordinaryCanceled.brokenImages, `${testCase.label} ordinary imagery loads`).toEqual([]);
+        expect(consoleErrors, `${testCase.label} console errors`).toEqual([]);
+        expect(pageErrors, `${testCase.label} page errors`).toEqual([]);
+        expect(failedRequests, `${testCase.label} failed requests`).toEqual([]);
+      } finally {
+        await context.close();
+      }
+    });
+  }
+});
+
 test("later off-order primary match stays truthful when its cascade advances the order", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
   await seedDeterministicMath(page, "later-off-order-seed-0");
