@@ -13,6 +13,13 @@ const CONFIGS = [
   { label: "mobile-touch", viewport: { width: 390, height: 844 }, input: "touch", mobile: true }
 ];
 
+const OWNED_REPLAY_CONFIGS = [
+  { label: "desktop-full", viewport: { width: 1280, height: 720 } },
+  { label: "desktop-reduced", viewport: { width: 1280, height: 720 }, reduced: true },
+  { label: "mobile-full", viewport: { width: 390, height: 844 }, mobile: true },
+  { label: "mobile-reduced", viewport: { width: 390, height: 844 }, mobile: true, reduced: true }
+];
+
 test.setTimeout(180000);
 
 function completedRoundTwoState() {
@@ -33,6 +40,16 @@ function completedRoundTwoState() {
     tutorialSkipped: true,
     tutorialActive: false,
     blackCandleLessonComplete: true
+  };
+}
+
+function completedOwnedReplayRoundTwoState() {
+  return {
+    ...completedRoundTwoState(),
+    coins: 50,
+    roundTwoGreenhouseUpgraded: true,
+    roundThreeConservatoryRaised: true,
+    freshConservatorySettlement: false
   };
 }
 
@@ -148,6 +165,10 @@ function intersects(first, second, tolerance = 0.5) {
 function expectCommandLaneGeometry(state, label, expectedCommandId) {
   const geometry = state.geometry;
   expect(geometry.commandId, `${label} command owner`).toBe(expectedCommandId);
+  if (geometry.board?.width >= 599 && expectedCommandId) {
+    expect(geometry.region.top, `${label} command region begins below the masthead`)
+      .toBeGreaterThanOrEqual(geometry.title.bottom + 1);
+  }
   const visibleRects = {
     region: geometry.region,
     title: geometry.title,
@@ -186,7 +207,10 @@ function expectCommandLaneGeometry(state, label, expectedCommandId) {
       const secondName = independentSurfaces[second];
       expect(
         intersects(geometry[firstName], geometry[secondName]),
-        `${label} ${firstName} clears ${secondName}`
+        `${label} ${firstName} clears ${secondName}: ${JSON.stringify({
+          [firstName]: geometry[firstName],
+          [secondName]: geometry[secondName]
+        })}`
       ).toBe(false);
     }
   }
@@ -358,6 +382,106 @@ for (const config of CONFIGS) {
           fullPage: false
         });
       }
+    } finally {
+      await context.close();
+    }
+  });
+}
+
+for (const config of OWNED_REPLAY_CONFIGS) {
+  test(`owned replay Next Order keeps its receipt below the masthead on ${config.label}`, async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: config.viewport,
+      hasTouch: Boolean(config.mobile),
+      isMobile: Boolean(config.mobile),
+      reducedMotion: config.reduced ? "reduce" : "no-preference"
+    });
+    const page = await context.newPage();
+    const errors = [];
+    const failedRequests = [];
+    const httpErrors = [];
+    page.on("console", (message) => {
+      if (["warning", "error"].includes(message.type())) errors.push(message.text());
+    });
+    page.on("pageerror", (error) => errors.push(error.message));
+    page.on("requestfailed", (request) => {
+      const failure = request.failure()?.errorText || "";
+      if (failure !== "net::ERR_ABORTED") failedRequests.push(`${request.url()} ${failure}`);
+    });
+    page.on("response", (response) => {
+      if (response.status() >= 400) httpErrors.push(`${response.status()} ${response.url()}`);
+    });
+
+    try {
+      const marker = `owned-replay-handoff:${config.label}`;
+      await page.addInitScript(({ key, fixtureMarker, state }) => {
+        if (!sessionStorage.getItem(fixtureMarker)) {
+          localStorage.setItem(key, JSON.stringify(state));
+          sessionStorage.setItem(fixtureMarker, "seeded");
+        }
+      }, { key: SAVE_KEY, fixtureMarker: marker, state: completedOwnedReplayRoundTwoState() });
+      await page.goto(`${BASE_URL}?owned-replay-handoff=${config.label}`, { waitUntil: "networkidle" });
+
+      const nextOrder = page.locator("#nextOrderBtn");
+      await expect(nextOrder).toBeVisible();
+      await expect(nextOrder).toBeEnabled();
+      await expect(nextOrder).toBeFocused();
+      await nextOrder.click();
+      await page.waitForFunction((key) => {
+        const saved = JSON.parse(localStorage.getItem(key) || "{}");
+        return saved.currentRound === 3 && saved.roundComplete === false && saved.moves === 8;
+      }, SAVE_KEY);
+
+      await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(resolve)));
+      const firstFrame = await report(page);
+      expect(firstFrame.geometry.commandText).toBe(
+        "Moonlit Upgrade · Bloodroot Compact · Match Bloodroot + Sol Rot"
+      );
+      expect(firstFrame.handoffActive, `${config.label} first-frame receipt`).toBe(true);
+      expectCommandLaneGeometry(firstFrame, `${config.label} first frame`, "nextOrderCue");
+      expectGeometry(firstFrame, config, `${config.label} first frame`, true);
+
+      await page.waitForTimeout(120);
+      const at120ms = await report(page);
+      expect(at120ms.handoffActive, `${config.label} 120ms receipt`).toBe(true);
+      expectCommandLaneGeometry(at120ms, `${config.label} 120ms`, "nextOrderCue");
+      expectGeometry(at120ms, config, `${config.label} 120ms`, true);
+
+      await page.waitForTimeout(1580);
+      const at1700ms = await report(page);
+      expect(at1700ms.handoffActive, `${config.label} 1700ms receipt`).toBe(true);
+      expectCommandLaneGeometry(at1700ms, `${config.label} 1700ms`, "nextOrderCue");
+      expectGeometry(at1700ms, config, `${config.label} 1700ms`, true);
+      expect(at1700ms).toMatchObject({
+        round: 3,
+        moves: 8,
+        counts: [0, 0, 0, 0, 0, 0],
+        coins: 50,
+        complete: false,
+        restored: true,
+        upgraded: true,
+        raised: true,
+        selected: [],
+        tiles: 64,
+        rows: 8
+      });
+      expect(at1700ms.rovingIds).toHaveLength(1);
+      expect(at1700ms.activeId).toBe(at1700ms.rovingIds[0]);
+      expect(errors, `${config.label} console`).toEqual([]);
+      expect(failedRequests, `${config.label} requests`).toEqual([]);
+      expect(httpErrors, `${config.label} HTTP responses`).toEqual([]);
+
+      await page.waitForFunction(() => !document.body.classList.contains("restored-greenhouse-handoff"), null, {
+        timeout: 3000
+      });
+      const retired = await report(page);
+      expect(retired.save, `${config.label} retirement remains presentation-only`).toBe(at1700ms.save);
+      expect(retired.handoffActive).toBe(false);
+      expectCommandLaneGeometry(retired, `${config.label} retired`, "");
+      expectGeometry(retired, config, `${config.label} retired`, true);
+      expect(errors, `${config.label} retired console`).toEqual([]);
+      expect(failedRequests, `${config.label} retired requests`).toEqual([]);
+      expect(httpErrors, `${config.label} retired HTTP responses`).toEqual([]);
     } finally {
       await context.close();
     }
