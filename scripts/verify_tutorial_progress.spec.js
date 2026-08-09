@@ -2644,7 +2644,7 @@ for (const viewport of [
     const blackCandleCue = reloaded;
     assertActiveGuidedState(blackCandleCue, viewport.mobile, `${viewport.label} before Black Candle`);
     assertOrganicAuthoredBoard(blackCandleCue, `${viewport.label} authored Black Candle formation board`);
-    expect(blackCandleCue.tutorial).toBe("Match 4 arms Black Candle Vine.");
+    expect(blackCandleCue.tutorial).toBe("Match 4 Bone Stars to arm Black Candle Vine.");
     expect(blackCandleCue.cue).toBe("Make 4 Bone Stars - arm Black Candle Vine.");
     expect(blackCandleCue.hints).toHaveLength(2);
     expect(Math.abs(blackCandleCue.hints[0].x - blackCandleCue.hints[1].x) + Math.abs(blackCandleCue.hints[0].y - blackCandleCue.hints[1].y)).toBe(1);
@@ -4351,7 +4351,7 @@ test("off-order opening success redirects the player to real bouquet progress", 
       expect(targetProgress.liveBouquetProgress).not.toBe("0/14");
       expect(targetProgress.greenhouseAuthority).toEqual(correction.greenhouseAuthority);
       expect(
-        ["Find 3 Thorn Roses.", "Find Bone Stars.", "Match 3 fills the bouquet.", "Match 4 arms Black Candle Vine."],
+        ["Find 3 Thorn Roses.", "Find Bone Stars.", "Match 3 fills the bouquet.", "Match 4 Bone Stars to arm Black Candle Vine."],
         `${testCase.label} truthful target-progressing lesson resumes`
       ).toContain(targetProgress.tutorial);
 
@@ -4735,7 +4735,7 @@ test("repeated Round 1 exploration still closes through the displayed six-move c
 
       const closingGuide = await guidedRoundOneState(page, `${testCase.label} two-move closing guide`);
       expect(closingGuide.moves).toBe(2);
-      expect(closingGuide.tutorial).toBe("Match 4 arms Black Candle Vine.");
+      expect(closingGuide.tutorial).toBe("Match 4 Bone Stars to arm Black Candle Vine.");
       expect(unorderedPairKey(closingGuide.hints)).toBe("5,0 <-> 5,1");
       expect(await legalFourBoneStarPreview(page)).toMatchObject({ ok: true });
       const guideReport = await firstActionGuideReport(page);
@@ -5036,7 +5036,7 @@ test.describe("Round 1 Shuffle preserves a sufficient two-move Black Candle clos
             expect(restored.moves).toBe(2);
             expect(restored.counts).toEqual(reserve.counts);
             expect(unorderedPairKey(restored.hints)).toBe("5,0 <-> 5,1");
-            expect(restored.tutorial).toBe("Match 4 arms Black Candle Vine.");
+            expect(restored.tutorial).toBe("Match 4 Bone Stars to arm Black Candle Vine.");
             await expect(page.locator("#firstSwapCue"))
               .toHaveText("Make 4 Bone Stars - arm Black Candle Vine.");
             await expect(page.locator("#tile-5-0")).toBeFocused();
@@ -5075,7 +5075,7 @@ test.describe("Round 1 Shuffle preserves a sufficient two-move Black Candle clos
         await expect(page.locator("#tutorialCopy")).toHaveText("Match the order flowers.");
         await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 2500 });
         expect(unorderedPairKey(await hintedPair(page))).toBe("5,0 <-> 5,1");
-        await expect(page.locator("#tutorialCopy")).toHaveText("Match 4 arms Black Candle Vine.");
+        await expect(page.locator("#tutorialCopy")).toHaveText("Match 4 Bone Stars to arm Black Candle Vine.");
         await expect(page.locator("#tile-5-0")).toBeFocused();
         await expect(page.locator("#board .tile[tabindex='0']")).toHaveAttribute("id", "tile-5-0");
         await expect(page.locator("#tile-5-0")).toHaveAttribute("tabindex", "0");
@@ -5092,7 +5092,7 @@ test.describe("Round 1 Shuffle preserves a sufficient two-move Black Candle clos
       }
 
       const closingGuide = await guidedRoundOneState(page, `${testCase.label} strict-four guide`);
-      expect(closingGuide.tutorial).toBe("Match 4 arms Black Candle Vine.");
+      expect(closingGuide.tutorial).toBe("Match 4 Bone Stars to arm Black Candle Vine.");
       expect(unorderedPairKey(closingGuide.hints)).toBe("5,0 <-> 5,1");
       await expect(page.locator("#tile-5-0")).toBeFocused();
       await expect(page.locator("#board .tile[tabindex='0']")).toHaveCount(1);
@@ -7094,7 +7094,7 @@ test("Round 1 tutorial protects moves until Skip restores Shuffle", async ({ pag
   await clickGuidedSwap(page);
 
   const movesDuringLesson = Number((await page.locator(".moves-counter").textContent()).match(/\d+/)?.[0]);
-  await expect(page.locator("#tutorialCopy")).toContainText(/Match 3 fills|Match Thorn Rose|Match 4 arms/);
+  await expect(page.locator("#tutorialCopy")).toContainText(/Match 3 fills|Match Thorn Rose|Match 4 Bone Stars/);
   await expect(page.locator("#shuffleBtn")).toBeHidden();
   await expect(page.locator("#shuffleBtn")).toBeDisabled();
   await expect(page.locator("#tutorialSkipBtn")).toBeVisible();

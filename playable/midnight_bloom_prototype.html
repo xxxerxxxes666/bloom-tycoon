@@ -16287,7 +16287,7 @@
         return "Complete Bloodroot Compact.";
       }
       if (plan.round === 1 && hasMadeValidMove && $("firstSwapCue").textContent.includes("Black Candle Vine")) {
-        return "Match 4 arms Black Candle Vine.";
+        return "Match 4 Bone Stars to arm Black Candle Vine.";
       }
       if (isRoundOneAgencyHandoffActive(plan) && idleHintCells.size === 2) {
         const target = roundOneAgencyTarget(plan);
@@ -16399,6 +16399,7 @@
       const selectedReplayHintPair = replay
         ? selectedGuidedHintPair()
         : [];
+      let restoredAuthoredBlackCandleReplayPair = false;
       const restartRoundOneAgencyHint = isRoundOneAgencyHandoffActive();
       if (isPostOnboardingIdleHintActive()) {
         clearIdleHint();
@@ -16420,9 +16421,15 @@
         restoreAuthoritativeRoundTwoThornLesson();
         const replayGuide = lineRelicGuidance();
         const hintedReplayPair = hintedPairCells();
+        const authoredBlackCandleReplayPair = currentRound === 1
+          && roundOneGuidedStage(activeRoundPlan()) === "black-candle"
+          && hasRoundOneBlackCandleLessonMove()
+          ? roundOneBlackCandleLessonSwap()
+          : null;
         const replayPair = replayGuide?.pair
           || (selectedReplayHintPair.length === 2 ? selectedReplayHintPair : null)
           || (hintedReplayPair.length === 2 ? hintedReplayPair : null)
+          || authoredBlackCandleReplayPair
           || (currentRound === 1 && !hasMadeValidMove ? focusedOpeningGuideMove() : null);
         const selectedKey = selected ? `${selected.x},${selected.y}` : "";
         const selectedIsGuided = Boolean(selectedKey) && Boolean(replayPair?.some((cell) => (
@@ -16439,6 +16446,7 @@
         }
         if (replayPair?.length === 2) {
           idleHintCells = new Set(replayPair.map((cell) => `${cell.x},${cell.y}`));
+          restoredAuthoredBlackCandleReplayPair = replayPair === authoredBlackCandleReplayPair;
         }
         queuePostRenderFocus("tutorialSkipBtn");
       } else if (untouchedOpeningFocus) {
@@ -16460,7 +16468,11 @@
         }
       }
       saveProgress();
-      if (restartRoundOneAgencyHint && !selectedReplayHintPair.length) {
+      if (
+        restartRoundOneAgencyHint
+        && !selectedReplayHintPair.length
+        && !restoredAuthoredBlackCandleReplayPair
+      ) {
         scheduleIdleHint();
       }
     }

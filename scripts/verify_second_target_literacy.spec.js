@@ -319,7 +319,7 @@ test("authoritative Thorn completion hands the unfinished Bone Star family to th
   await expect(page.locator(".tile.target-literacy, .objective-target.target-literacy")).toHaveCount(0);
   await expect(page.locator("body")).not.toHaveAttribute("data-target-literacy", /.+/);
   await expect(page.locator("#firstSwapCue")).toContainText("Black Candle Vine");
-  await expect(page.locator("#tutorialCopy")).toHaveText("Match 4 arms Black Candle Vine.");
+  await expect(page.locator("#tutorialCopy")).toHaveText("Match 4 Bone Stars to arm Black Candle Vine.");
   await expect(page.locator(".tile.idle-hint")).toHaveCount(2);
 });
 
@@ -405,7 +405,7 @@ for (const config of [
       await expect(page.locator(".tile.target-literacy, .objective-target.target-literacy")).toHaveCount(0);
       await expect(page.locator("body")).not.toHaveAttribute("data-target-literacy", /.+/);
       await expect(page.locator("#firstSwapCue")).toContainText("Black Candle Vine");
-      await expect(page.locator("#tutorialCopy")).toHaveText("Match 4 arms Black Candle Vine.");
+      await expect(page.locator("#tutorialCopy")).toHaveText("Match 4 Bone Stars to arm Black Candle Vine.");
       await expect(page.locator(".tile.idle-hint")).toHaveCount(2);
 
       const settledLayout = await layoutReport(page);
