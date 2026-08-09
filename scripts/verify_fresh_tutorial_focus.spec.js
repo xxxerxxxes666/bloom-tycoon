@@ -59,7 +59,9 @@ async function openFresh(page, label) {
 }
 
 async function openingPair(page) {
-  const cells = await page.locator("#board .tile.idle-hint").evaluateAll((tiles) => (
+  const hintedTiles = page.locator("#board .tile.idle-hint");
+  await expect(hintedTiles).toHaveCount(2, { timeout: 3000 });
+  const cells = await hintedTiles.evaluateAll((tiles) => (
     tiles.map((tile) => ({ id: tile.id, x: Number(tile.dataset.x), y: Number(tile.dataset.y) }))
   ));
   expect(cells, "fresh tutorial exposes one pair").toHaveLength(2);
@@ -542,6 +544,7 @@ for (const testCase of POST_OPENING_CASES) {
         };
         const selectedId = followup[selectedEndpoint];
         const counterpartId = selectedEndpoint === "source" ? followup.destination : followup.source;
+        const selectedRovingId = testCase.input === "keyboard" ? counterpartId : selectedId;
         const beforeSelection = await stateReport(page);
 
         await activateTile(page, selectedId, testCase.input);
@@ -549,7 +552,8 @@ for (const testCase of POST_OPENING_CASES) {
         await expect(page.locator("#board .tile.idle-hint")).toHaveCount(2);
         const selectedState = await stateReport(page);
         expect(selectedState.selectedIds).toEqual([selectedId]);
-        expect(selectedState.rovingIds).toEqual([selectedId]);
+        expect(selectedState.activeId).toBe(selectedRovingId);
+        expect(selectedState.rovingIds).toEqual([selectedRovingId]);
         expect(selectedState.state.moves).toBe(5);
         expect(selectedState.state.counts).toEqual(beforeSelection.state.counts);
         expect(selectedState.state.board).toEqual(beforeSelection.state.board);
@@ -565,7 +569,7 @@ for (const testCase of POST_OPENING_CASES) {
         expect(duringHelpIds).toEqual(followupIds);
         const duringHelp = await stateReport(page);
         expect(duringHelp.selectedIds).toEqual([selectedId]);
-        expect(duringHelp.rovingIds).toEqual([selectedId]);
+        expect(duringHelp.rovingIds).toEqual([selectedRovingId]);
         expect(duringHelp.liveOwners).toEqual(["tutorialPanel"]);
         expect(duringHelp.state.moves).toBe(5);
         expect(duringHelp.state.counts).toEqual(beforeSelection.state.counts);
@@ -580,7 +584,7 @@ for (const testCase of POST_OPENING_CASES) {
         expect(afterSkipIds).toEqual(followupIds);
         const afterSkip = await stateReport(page);
         expect(afterSkip.selectedIds).toEqual([selectedId]);
-        expect(afterSkip.rovingIds).toEqual([selectedId]);
+        expect(afterSkip.rovingIds).toEqual([selectedRovingId]);
         expect(afterSkip.state.moves).toBe(5);
         expect(afterSkip.state.counts).toEqual(beforeSelection.state.counts);
         expect(afterSkip.state.board).toEqual(beforeSelection.state.board);

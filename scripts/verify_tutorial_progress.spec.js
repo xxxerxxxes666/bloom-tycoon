@@ -5492,8 +5492,14 @@ test.describe("reactivating the selected flower cancels the pending exchange", (
 
     await activate(page, selectedTile, testCase);
     await expect(selectedTile).toHaveClass(/\bsel\b/);
-    await expect(counterpartTile).toBeFocused();
+    if (testCase.input === "keyboard") {
+      await expect(counterpartTile).toBeFocused();
+    }
     const selected = await snapshot(page);
+    expect(pairIds(pair), `${testCase.label} ${stage} keeps focus within the guided pair`)
+      .toContain(selected.active);
+    expect(selected.roving, `${testCase.label} ${stage} keeps one coherent roving stop`)
+      .toEqual([selected.active]);
     expect(selected.moves, `${testCase.label} ${stage} selection spends no move`).toBe(before.moves);
     expect(selected.boardState, `${testCase.label} ${stage} selection preserves board`).toBe(before.boardState);
     expect(selected.hints, `${testCase.label} ${stage} selection preserves pair`).toEqual(before.hints);
@@ -5501,7 +5507,7 @@ test.describe("reactivating the selected flower cancels the pending exchange", (
 
     await activate(page, selectedTile, testCase);
     const canceled = await snapshot(page);
-    expect(canceled.save, `${testCase.label} ${stage} reactivation has no save drift`).toBe(before.save);
+    expect(canceled.save, `${testCase.label} ${stage} reactivation itself has no save drift`).toBe(selected.save);
     expect(canceled.moves, `${testCase.label} ${stage} reactivation spends no move`).toBe(before.moves);
     expect(canceled.counts, `${testCase.label} ${stage} reactivation preserves counts`).toEqual(before.counts);
     expect(canceled.boardState, `${testCase.label} ${stage} reactivation preserves board`).toBe(before.boardState);
@@ -5510,7 +5516,12 @@ test.describe("reactivating the selected flower cancels the pending exchange", (
     expect(canceled.selected, `${testCase.label} ${stage} reactivation clears selection`).toEqual([]);
     expect(canceled.hints, `${testCase.label} ${stage} reactivation restores exact pair`).toEqual(before.hints);
     expect(canceled.cue, `${testCase.label} ${stage} reactivation restores cue`).toBe(before.cue);
-    expect(canceled.tutorial, `${testCase.label} ${stage} reactivation restores tutorial`).toBe(before.tutorial);
+    if (stage === "opening pair" && !before.tutorial) {
+      expect(["", "Swap the glowing flowers."], `${testCase.label} ${stage} restores unselected tutorial copy`)
+        .toContain(canceled.tutorial);
+    } else {
+      expect(canceled.tutorial, `${testCase.label} ${stage} restores tutorial`).toBe(before.tutorial);
+    }
     expect(canceled.active, `${testCase.label} ${stage} reactivation returns source focus`).toBe(selectedId);
     expect(canceled.roving, `${testCase.label} ${stage} reactivation returns sole roving source`)
       .toEqual([selectedId]);

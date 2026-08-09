@@ -14072,7 +14072,7 @@
         document.body.classList.remove("pointer-board-input");
         document.body.classList.add("keyboard-board-navigation");
         boardFocusCell = clampBoardFocusCell(cell);
-        tap(boardFocusCell.x, boardFocusCell.y);
+        tap(boardFocusCell.x, boardFocusCell.y, { keyboardSelection: true });
         return;
       }
       const delta = keyToDelta[event.key];
@@ -16708,6 +16708,10 @@
       }
 
       if (!selected) {
+        if (options.keyboardSelection && tutorialStartTimer && window.clearTimeout) {
+          window.clearTimeout(tutorialStartTimer);
+          tutorialStartTimer = null;
+        }
         selected = { x, y };
         if (shouldPreserveSelectedHintPair(selectedHintPair, selected)) {
           idleHintCells = selectedHintPair;
@@ -16715,6 +16719,14 @@
         const selectedGuide = firstActionBoardGuidePair();
         if (selectedGuide?.selectedContinuation) {
           boardFocusCell = clampBoardFocusCell(selectedGuide.destination);
+        } else if (options.keyboardSelection) {
+          const selectedKeyboardPair = selectedGuidedHintPair();
+          const selectedKeyboardCounterpart = selectedKeyboardPair.find((cell) => (
+            cell.x !== selected.x || cell.y !== selected.y
+          ));
+          if (selectedKeyboardCounterpart) {
+            boardFocusCell = clampBoardFocusCell(selectedKeyboardCounterpart);
+          }
         }
         const preservedOrderPulse = preserveVisibleOrderPulseTargets();
         ritualMessage = "<strong>Selected.</strong> Tap a glowing adjacent flower to swap.";
