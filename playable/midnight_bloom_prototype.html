@@ -15398,7 +15398,7 @@
       }
       boardFocusCell = clampBoardFocusCell();
       boardEl.setAttribute("aria-label", `${activePlan.name} match board, Round ${activePlan.round}`);
-      boardEl.setAttribute("aria-busy", thornOutcomeFeedbackActive() ? "true" : "false");
+      boardEl.setAttribute("aria-busy", isResolving || thornOutcomeFeedbackActive() ? "true" : "false");
       boardEl.setAttribute("aria-rowcount", String(BOARD_SIZE));
       boardEl.setAttribute("aria-colcount", String(BOARD_SIZE));
       const reusableTiles = new Map(

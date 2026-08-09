@@ -585,6 +585,7 @@ def verify_source_hooks():
         "const visibleBoardCue = Boolean(firstSwapCue)",
         "settledBoardOutcomeOwnsNarration || boardCueOwnsNarration || finalHarvestNarration",
         "if (visibleFinalHarvest && (pendingSettledBoardOutcome || settledBoardOutcome))",
+        'boardEl.setAttribute("aria-busy", isResolving || thornOutcomeFeedbackActive() ? "true" : "false");',
         "function restoreAuthoritativeRoundTwoThornLesson",
         "if (isRoundTwoThornLessonEligible({ allowPartialProgress: true }))",
         "allowPartialProgress: true",
