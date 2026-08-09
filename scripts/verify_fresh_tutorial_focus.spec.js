@@ -388,7 +388,10 @@ for (const testCase of CASES) {
 
       if (testCase.input === "touch") await page.locator("#tutorialSkipBtn").tap();
       else {
-        await page.waitForTimeout(140);
+        await page.keyboard.press("Shift+Tab");
+        await expect(page.locator(`#${pair.source.id}`)).toBeFocused();
+        await page.keyboard.press("Tab");
+        await expect(page.locator("#tutorialSkipBtn")).toBeFocused();
         await page.keyboard.press("Enter");
       }
       await expect(page.locator("#tutorialPanel")).toBeHidden();
@@ -579,7 +582,10 @@ for (const testCase of POST_OPENING_CASES) {
         expect(duringHelp.state.board).toEqual(beforeSelection.state.board);
 
         if (testCase.input === "keyboard") {
-          await page.waitForTimeout(140);
+          await page.keyboard.press("Shift+Tab");
+          await expect(page.locator(`#${selectedRovingId}`)).toBeFocused();
+          await page.keyboard.press("Tab");
+          await expect(page.locator("#tutorialSkipBtn")).toBeFocused();
         }
         await dismissHelp(page, testCase.input);
         await expect(page.locator("#tutorialPanel")).toBeHidden();
@@ -596,7 +602,8 @@ for (const testCase of POST_OPENING_CASES) {
         expect(afterSkip.state.board).toEqual(beforeSelection.state.board);
 
         if (testCase.input === "keyboard") {
-          await page.waitForTimeout(140);
+          await page.keyboard.press("Shift+Tab");
+          await expect(page.locator(`#${counterpartId}`)).toBeFocused();
         }
         await activateTile(page, counterpartId, testCase.input, "Space");
         await page.waitForFunction((key) => {

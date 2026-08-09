@@ -10300,7 +10300,9 @@
     const BLACK_CANDLE_REDUCED_REFILL_MS = 70;
     const SETTLED_BOARD_OUTCOME_MS = 2400;
     const PAYOFF_HANDOFF_INPUT_GUARD_MS = 480;
-    const TUTORIAL_COMMAND_INPUT_GUARD_MS = 120;
+    const TUTORIAL_COMMAND_INPUT_GUARD_MS = 280;
+    const TUTORIAL_COMMAND_SETTLED_GUARD_MS = 120;
+    const TUTORIAL_COMMAND_SETTLED_GUARD_FRAMES = 8;
 
     let board = [];
     let selected = null;
@@ -10314,6 +10316,7 @@
     let payoffHandoffInputGuardUntil = 0;
     let payoffHandoffClickGuardUntil = 0;
     let payoffHandoffFocusTargetId = "";
+    let payoffHandoffInputGuardKeyboardOnly = false;
     let payoffHandoffInputGuardGeneration = 0;
     let moves = roundTemplates[0].moves;
     let coins = 0;
@@ -14021,12 +14024,40 @@
 
     function armPayoffHandoffInputGuard(
       focusTargetId = "",
-      duration = PAYOFF_HANDOFF_INPUT_GUARD_MS
+      duration = PAYOFF_HANDOFF_INPUT_GUARD_MS,
+      keyboardOnly = false
     ) {
       payoffHandoffInputGuardUntil = performance.now() + duration;
       payoffHandoffClickGuardUntil = 0;
       payoffHandoffFocusTargetId = focusTargetId;
+      payoffHandoffInputGuardKeyboardOnly = keyboardOnly;
       payoffHandoffInputGuardGeneration += 1;
+      if (keyboardOnly && window.requestAnimationFrame) {
+        const guardGeneration = payoffHandoffInputGuardGeneration;
+        const settledAt = performance.now() + Math.min(duration, TUTORIAL_COMMAND_SETTLED_GUARD_MS);
+        let settledFrames = 0;
+        const observeSettledGuard = () => {
+          if (
+            guardGeneration !== payoffHandoffInputGuardGeneration
+            || !payoffHandoffInputGuardKeyboardOnly
+          ) {
+            return;
+          }
+          settledFrames += 1;
+          const now = performance.now();
+          if (
+            settledFrames >= TUTORIAL_COMMAND_SETTLED_GUARD_FRAMES
+            && now >= settledAt
+          ) {
+            retirePayoffHandoffInputGuard();
+            return;
+          }
+          if (now < payoffHandoffInputGuardUntil) {
+            window.requestAnimationFrame(observeSettledGuard);
+          }
+        };
+        window.requestAnimationFrame(observeSettledGuard);
+      }
     }
 
     function payoffHandoffInputGuardActive(event) {
@@ -14039,10 +14070,20 @@
       payoffHandoffInputGuardUntil = 0;
       payoffHandoffClickGuardUntil = 0;
       payoffHandoffFocusTargetId = "";
+      payoffHandoffInputGuardKeyboardOnly = false;
       payoffHandoffInputGuardGeneration += 1;
     }
 
     function rejectPayoffHandoffBoardInput(event) {
+      const keyboardOwnedClick = event?.type === "click" && event.detail === 0;
+      if (
+        payoffHandoffInputGuardKeyboardOnly
+        && event?.type !== "keydown"
+        && !keyboardOwnedClick
+      ) {
+        retirePayoffHandoffInputGuard();
+        return false;
+      }
       if (event?.type === "keydown" && event.key !== "Enter" && event.key !== " ") {
         retirePayoffHandoffInputGuard();
         return false;
@@ -16325,7 +16366,7 @@
       }
       render();
       if (replay && returnFocusToHelp) {
-        armPayoffHandoffInputGuard("tutorialSkipBtn", TUTORIAL_COMMAND_INPUT_GUARD_MS);
+        armPayoffHandoffInputGuard("tutorialSkipBtn", TUTORIAL_COMMAND_INPUT_GUARD_MS, true);
       }
       if (replay) {
         if (window.requestAnimationFrame) {
@@ -16388,14 +16429,23 @@
       if (event?.detail === 0) {
         armPayoffHandoffInputGuard(
           closingKeyboardReplay ? "tutorialHelpBtn" : "",
-          TUTORIAL_COMMAND_INPUT_GUARD_MS
+          TUTORIAL_COMMAND_INPUT_GUARD_MS,
+          true
         );
       }
       if (!closingKeyboardReplay && guidedFocusCell && window.requestAnimationFrame) {
         const focusCell = { ...boardFocusCell };
+        const focusTargetId = `tile-${focusCell.x}-${focusCell.y}`;
         window.requestAnimationFrame(() => {
           window.requestAnimationFrame(() => {
-            if (tutorialSkipped && !tutorialActive && !roundComplete && !isBouquetFailed()) {
+            const activeFocusId = document.activeElement?.id || "";
+            if (
+              tutorialSkipped
+              && !tutorialActive
+              && !roundComplete
+              && !isBouquetFailed()
+              && (!activeFocusId || activeFocusId === focusTargetId)
+            ) {
               focusBoardCell(focusCell.x, focusCell.y);
             }
           });
