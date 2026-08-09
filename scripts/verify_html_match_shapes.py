@@ -668,7 +668,7 @@ def verify_source_hooks():
         "$(\"board\").addEventListener(\"touchstart\", handleBoardTouchStart, { passive: false })",
         "$(\"board\").addEventListener(\"touchend\", handleBoardTouchEnd, { passive: false })",
         "$(\"board\").addEventListener(\"click\", handleBoardClick)",
-        "const PAYOFF_HANDOFF_INPUT_GUARD_MS = 280",
+        "const PAYOFF_HANDOFF_INPUT_GUARD_MS = 480",
         "function armPayoffHandoffInputGuard()",
         "if (retryingFailedBouquet || restoredGreenhouseNextOrder || secondUpgradeNextOrder)",
         "function rejectPayoffHandoffBoardInput(event)",

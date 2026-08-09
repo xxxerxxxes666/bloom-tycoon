@@ -2067,7 +2067,7 @@ for (const viewport of FAILURE_VIEWPORTS) {
       expect(await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY)).toBe(spacedState);
       await assertRecoveredRound("Space");
 
-      await page.waitForTimeout(300);
+      await page.waitForTimeout(520);
       const hintedPair = await page.locator(".tile.idle-hint").evaluateAll((tiles) => (
         tiles.map((tile) => ({ x: Number(tile.dataset.x), y: Number(tile.dataset.y) }))
       ));

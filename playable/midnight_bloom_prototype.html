@@ -10299,7 +10299,7 @@
     const BLACK_CANDLE_REDUCED_HOLD_MS = 190;
     const BLACK_CANDLE_REDUCED_REFILL_MS = 70;
     const SETTLED_BOARD_OUTCOME_MS = 2400;
-    const PAYOFF_HANDOFF_INPUT_GUARD_MS = 280;
+    const PAYOFF_HANDOFF_INPUT_GUARD_MS = 480;
 
     let board = [];
     let selected = null;
@@ -14044,7 +14044,7 @@
         event.stopPropagation();
       }
       clearDragPreview({ resetInputs: true });
-      const guardedFocus = clampBoardFocusCell();
+      const guardedFocus = firstHintFocusCell() || clampBoardFocusCell();
       window.requestAnimationFrame(() => focusBoardCell(guardedFocus.x, guardedFocus.y));
       return true;
     }
@@ -19814,9 +19814,6 @@
         $("firstSwapCue").textContent = roundStartCueText(plan, openingMove || []);
       }
       queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
-      if (retryingFailedBouquet || restoredGreenhouseNextOrder || secondUpgradeNextOrder) {
-        armPayoffHandoffInputGuard();
-      }
       if (secondUpgradeNextOrder) {
         startRestoredGreenhouseHandoff(
           "Moonlit Upgrade · Bloodroot Compact · Match Bloodroot + Sol Rot"
@@ -19830,6 +19827,9 @@
       render();
       if (restoredGreenhouseNextOrder || secondUpgradeNextOrder) {
         focusRestoredNextOrderViewport();
+      }
+      if (retryingFailedBouquet || restoredGreenhouseNextOrder || secondUpgradeNextOrder) {
+        armPayoffHandoffInputGuard();
       }
       if (!retryingFailedBouquet && !(restoredGreenhouseNextOrder && idleHintCells.size === 2)) {
         scheduleIdleHint();
@@ -19879,8 +19879,8 @@
         queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
         $("firstSwapCue").textContent = roundStartCueText(plan, firstMove);
       }
-      armPayoffHandoffInputGuard();
       startOwnedReplayEntryAcknowledgment(coins);
+      armPayoffHandoffInputGuard();
       focusRestoredNextOrderViewport();
       playBloomSound("handoff");
     }

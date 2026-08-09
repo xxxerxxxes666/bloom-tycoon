@@ -142,13 +142,18 @@ async function boardAuthority(page) {
       moves: saved.moves,
       counts: saved.counts,
       boardSave: JSON.stringify(saved.board),
-      selected: tiles.filter((tile) => tile.classList.contains("selected")).map((tile) => tile.id),
+      selected: tiles.filter((tile) => (
+        tile.classList.contains("sel") || tile.classList.contains("selected")
+      )).map((tile) => tile.id),
       activeId: document.activeElement?.id || "",
       rovingIds: roving.map((tile) => tile.id),
       hints: tiles.filter((tile) => tile.classList.contains("idle-hint")).map((tile) => ({
         id: tile.id,
         x: Number(tile.dataset.x),
-        y: Number(tile.dataset.y)
+        y: Number(tile.dataset.y),
+        role: tile.getAttribute("aria-label")?.includes("guided exchange source")
+          ? "source"
+          : "destination"
       })),
       tiles: tiles.length,
       rows: new Set(tiles.map((tile) => Math.round(tile.getBoundingClientRect().top))).size,
@@ -178,12 +183,22 @@ for (const config of [
     const page = await context.newPage();
     const browserMessages = [];
     const pageErrors = [];
+    const failedRequests = [];
+    const failedResponses = [];
     page.on("console", (message) => {
       if (["warning", "error"].includes(message.type())) {
         browserMessages.push(`${message.type()}: ${message.text()}`);
       }
     });
     page.on("pageerror", (error) => pageErrors.push(error.message));
+    page.on("requestfailed", (request) => {
+      failedRequests.push(`${request.url()} ${request.failure()?.errorText || "request failed"}`);
+    });
+    page.on("response", (response) => {
+      if (response.status() >= 400) {
+        failedResponses.push(`${response.status()} ${response.url()}`);
+      }
+    });
 
     try {
       await openFreshRoundOne(page, config.label);
@@ -225,8 +240,10 @@ for (const config of [
       });
       expect(guarded.hints).toHaveLength(2);
       expect(guarded.boardSave).toBe(entered.boardSave);
-      expect(guarded.rovingIds).toEqual([guarded.hints[0].id]);
-      expect(guarded.activeId).toBe(guarded.hints[0].id);
+      const guardedHintSource = guarded.hints.find((hint) => hint.role === "source");
+      expect(guardedHintSource).toBeTruthy();
+      expect(guarded.rovingIds).toEqual([guardedHintSource.id]);
+      expect(guarded.activeId).toBe(guardedHintSource.id);
       expect(guarded.boardWidth).toBeCloseTo(config.mobile ? 378 : 600, 0);
       expect(guarded.boardHeight).toBeCloseTo(config.mobile ? 378 : 600, 0);
       if (config.mobile) {
@@ -260,6 +277,8 @@ for (const config of [
       expect(committed.brokenImages).toEqual([]);
       expect(browserMessages).toEqual([]);
       expect(pageErrors).toEqual([]);
+      expect(failedRequests).toEqual([]);
+      expect(failedResponses).toEqual([]);
       await page.screenshot({
         path: `work/payoff-handoff-${config.label}.png`,
         fullPage: false
@@ -300,6 +319,24 @@ for (const config of [
       reducedMotion: config.motion
     });
     const page = await context.newPage();
+    const browserMessages = [];
+    const pageErrors = [];
+    const failedRequests = [];
+    const failedResponses = [];
+    page.on("console", (message) => {
+      if (["warning", "error"].includes(message.type())) {
+        browserMessages.push(`${message.type()}: ${message.text()}`);
+      }
+    });
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    page.on("requestfailed", (request) => {
+      failedRequests.push(`${request.url()} ${request.failure()?.errorText || "request failed"}`);
+    });
+    page.on("response", (response) => {
+      if (response.status() >= 400) {
+        failedResponses.push(`${response.status()} ${response.url()}`);
+      }
+    });
     try {
       await openSettledPayoffFixture(page, config.label, config.startingRound);
       const actionBox = await page.locator("#nextOrderBtn").boundingBox();
@@ -332,6 +369,10 @@ for (const config of [
       expect(guarded.activeId).toBe(guarded.rovingIds[0]);
       expect(guarded.boardWidth).toBeCloseTo(config.mobile ? 378 : 600, 0);
       expect(guarded.boardHeight).toBeCloseTo(config.mobile ? 378 : 600, 0);
+      expect(browserMessages).toEqual([]);
+      expect(pageErrors).toEqual([]);
+      expect(failedRequests).toEqual([]);
+      expect(failedResponses).toEqual([]);
     } finally {
       await context.close();
     }
