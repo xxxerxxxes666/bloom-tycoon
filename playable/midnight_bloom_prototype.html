@@ -8040,6 +8040,15 @@
         animation:greenhouse-intake-pulse 780ms ease-out both;
       }
     }
+    body.owned-replay-match-intake .greenhouse-restoration-dial,
+    body.owned-replay-match-intake #heroRestorationDial,
+    body.owned-replay-match-intake #mobileRestorationDial {
+      border-color:#d7b16d!important;
+      box-shadow:inset 0 0 12px #000,0 0 15px #d7b16d52!important;
+    }
+    body.owned-replay-match-intake .mobile-greenhouse-plinth {
+      filter:brightness(1.14) saturate(1.08);
+    }
     @media (prefers-reduced-motion: reduce) {
       *,
       *::before,
@@ -15066,13 +15075,18 @@
       }
     }
 
-    function pulseActiveGreenhouseIntake() {
+    function pulseActiveGreenhouseIntake(options = {}) {
       if (greenhouseRevivalPulseTimer && window.clearTimeout) {
         window.clearTimeout(greenhouseRevivalPulseTimer);
       }
+      document.body.classList.toggle(
+        "owned-replay-match-intake",
+        Boolean(options.ownedReplayMatch)
+      );
       document.body.classList.add("greenhouse-intake");
       greenhouseRevivalPulseTimer = window.setTimeout(() => {
         document.body.classList.remove("greenhouse-intake");
+        document.body.classList.remove("owned-replay-match-intake");
         greenhouseRevivalPulseTimer = null;
       }, 820);
     }
@@ -19628,6 +19642,12 @@
             || visibleLiveBouquetTargetRect(target.flowerId)
             || destinationRects.at(-1);
           queueBouquetBindingSeal(target, gained[target.flowerId], currentTargetRect);
+          if (isOwnedRestorationReplay() && !roundComplete) {
+            queueGreenhouseIntakeFlights(
+              origins.map(([x, y]) => [x, y, target.flowerId])
+            );
+            pulseActiveGreenhouseIntake({ ownedReplayMatch: true });
+          }
         }, reducedMotion ? 70 : 220);
       });
     }
@@ -19690,8 +19710,10 @@
         .slice()
         .sort((a, b) => (a[1] - b[1]) || (a[0] - b[0]))
         .slice(0, 1);
-      sample.forEach(([x, y], index) => {
-        const flowerId = board[y]?.[x];
+      sample.forEach(([x, y, creditedFlowerId], index) => {
+        const flowerId = Number.isInteger(creditedFlowerId)
+          ? creditedFlowerId
+          : board[y]?.[x];
         const flower = flowers[flowerId] || flowers[0];
         const originX = boardRect.left + ((x + 0.5) / BOARD_SIZE) * boardRect.width;
         const originY = boardRect.top + ((y + 0.5) / BOARD_SIZE) * boardRect.height;

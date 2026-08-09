@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-08-09 - Owned-replay matches visibly nourish the Conservatory
+
+- Player-visible correction: objective-credit matches during a fully owned replay now carry the earned flower color from the altar into the existing visible Conservatory receiver and pulse its restoration dial. The active bouquet promise `NOURISH 120/150/180 · KEEP 50` now has an immediate matching consequence before the unchanged completion ceremony; reduced motion uses the same existing receiver response without a traveling mote.
+- Surgical authority: `launchObjectiveFlights()` queues the established greenhouse-intake visual only after a real target gain, only while `isOwnedRestorationReplay()` is true, and only before round completion. The credited flower id travels with the settled objective cells so cascade refill cannot change the mote color. The first ownership cycle remains reserved for its existing reward-and-spend ceremony.
+- Permanent contract: new `scripts/verify_owned_replay_match_intake.spec.js` commits the natural objective-useful pair in active Round 3 across desktop `1280x720` and exact mobile `390x844`, full/reduced motion. It requires one move spend, real objective progress, the visible gold receiver response, full-motion intake motes or reduced-motion static confirmation, clean retirement and reload, one focused/roving tile, 64/eight, exact `600px`/`378px` altars, loaded imagery, no overflow, and empty browser warning/error ledgers. Separate desktop/mobile first-cycle negatives prove no premature Conservatory intake.
+- Local evidence: the complete owned-replay plus first-cycle matrix passes `6/6`; normal-scale response and settled captures retain the complete board/HUD/greenhouse hierarchy on desktop and exact mobile. Verification and public delivery evidence follow in the delivery commit.
+- Files changed: `playable/midnight_bloom_prototype.html`, new `scripts/verify_owned_replay_match_intake.spec.js`, `scripts/verify_html_match_shapes.py`, and this note. No node, copy, command, save field, timer duration, economy, objective, board, RNG, move budget, mechanic, round, or progression surface was added.
+
 ## 2026-08-09 - Owned-replay Moonlit handoff keeps the masthead singular
 
 - Player-visible correction: the natural fully owned Round 2 `Next Order` handoff no longer wraps `Bloom Tycoon` into the existing Moonlit receipt. During the unchanged `2200ms` desktop receipt lifecycle, the masthead stays on one contained line above `MOONLIT UPGRADE · BLOODROOT COMPACT · MATCH BLOODROOT + SOL ROT`; normal active-play title sizing returns when the receipt retires. Exact mobile remains unchanged.
