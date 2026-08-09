@@ -876,6 +876,7 @@ def verify_source_hooks():
         "Raise Conservatory · ${BLOODROOT_CONSERVATORY_COST} coins",
         "function raiseRoundThreeConservatory()",
         "roundThreeConservatoryRaised = true;",
+        'if (reducedMotion) {\n        armPayoffHandoffInputGuard("nextOrderBtn");',
         "Spend the Bloodroot payout to raise the conservatory.",
         "active-greenhouse-stage",
         "id=\"activeGreenhouseStage\"",

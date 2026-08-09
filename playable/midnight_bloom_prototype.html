@@ -19313,6 +19313,9 @@
       }
       saveProgress();
       render();
+      if (reducedMotion) {
+        armPayoffHandoffInputGuard("nextOrderBtn");
+      }
       pulseActiveGreenhouseIntake();
       playBloomSound("restore");
       if (reducedMotion) {

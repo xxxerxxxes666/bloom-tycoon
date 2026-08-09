@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-08-09 - Reduced-motion Conservatory raise retains its payoff
+
+- Player-visible correction: under reduced motion, repeated Enter, Space, click, or tap on `Raise Conservatory` can no longer activate the newly focused `Play Again` and erase the just-earned final settlement. The first-cycle `230 -> 50` spend applies once, the truthful `Raised for 180. 50 coins remain.` payoff survives, and replay remains a separate deliberate command.
+- Authority boundary: reduced-motion Round 3 now arms the existing unsaved `480ms` payoff handoff guard with `nextOrderBtn` after its authoritative save/render. Full motion keeps the existing 1780ms bouquet-to-conservatory transfer as its owner. No duration, state field, UI, copy, save schema, spend, economy, animation, round, RNG, objective, sound, or progression behavior changed.
+- Permanent contract: `scripts/verify_conservatory_raise_handoff.spec.js` starts from the exact first-cycle completed Bloodroot Compact payoff at Coins 230, activates the real raise, and repeats the same command at `+60ms` across desktop `1280x720`, exact mobile `390x844`, full/reduced motion, Enter, Space, pointer, and touch. It requires exact `230 -> 50`, fresh-settlement authority and receipt through repeat, sole focused Play Again, zero selection/hidden-board roving stops, reload-stable first-raise truth, then one deliberate replay at R1 Moves 6 with one focus/roving source and 64/eight. The pre-fix reduced desktop Space case reaches R1 during repeated input.
+- Local evidence: the new Conservatory handoff matrix passes `6/6`; the shared payoff input guard remains `6/6`; and all payoff ceremony contracts pass `18/18`, including the exact Round 3 full/reduced desktop/mobile spend-and-reload paths. Original-scale captures retain the exact 50-coin replay seed, Bloodroot conservatory, one eventual R1 source focus/roving owner, 64/eight, exact `600px`/`378px` active altars, `scrollY=0`, loaded imagery, no overflow, and empty browser warning/error/request ledgers.
+- Files changed: `playable/midnight_bloom_prototype.html`, new `scripts/verify_conservatory_raise_handoff.spec.js`, `scripts/verify_html_match_shapes.py`, and this note. Delivery evidence follows after focused and public verification.
+
 ## 2026-08-09 - Moonlit upgrade input stays with the greenhouse
 
 - Player-visible correction: a repeated Enter, Space, click, or tap on `Upgrade Greenhouse` can no longer activate the newly focused `Next Order` and jump into Bloodroot Compact while the Moonlit awakening is still responding. The 120-coin spend applies once, the settled Round 2 payoff and 50-coin balance remain authoritative, and Next Order keeps focus until a later deliberate command.
