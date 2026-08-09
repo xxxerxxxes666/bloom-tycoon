@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-08-09 - Reduced-motion replay nourishment holds its gold state
+
+- Player-visible correction: an objective-credit match during an owned Conservatory replay now keeps the visible restoration dial in its intended aged-gold response for the complete bounded intake beat when reduced motion is enabled. The browser can no longer interpolate from the prior dial color and sample an ambiguous dark or transparent frame while the authoritative objective already advanced.
+- Surgical boundary: transitions are disabled only for the three existing restoration-dial renderers while `owned-replay-match-intake` owns presentation. Full-motion flower flights and pulse timing, first-ownership spend reservation, the 820 ms retirement, gameplay authority, saves, economy, board, objectives, and geometry remain unchanged.
+- Permanent contract: `scripts/verify_owned_replay_match_intake.spec.js` now requires a computed `0s` dial transition in reduced motion and clean warning/error ledgers in the first-ownership negative cases.
+- Integrated local evidence after fast-forwarding `d8b5751`: owned-replay desktop/mobile full/reduced plus first-ownership negatives pass `6/6`; the descendant partial-Round-1 reload matrix passes `4/4`; project/static verification, inline and spec JavaScript syntax, `git diff --check`, and separate production/test added-line scans pass. Normal-scale reduced-motion response captures show the gold receiver state on desktop and exact `390x844` mobile; settled captures show clean retirement, 64 tiles/eight rows, and no clipping or overflow.
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_owned_replay_match_intake.spec.js`, and this note. No copy, control, node, save field, timer, currency, objective, board/RNG, move budget, mechanic, round, asset, dependency, or progression surface was added.
+
 ## 2026-08-09 - Partial Round 1 reload resumes at the glowing pair
 
 - Player-visible correction: after the taught opening match, reloading a still-active First Bouquet no longer leaves keyboard entry on an unrelated altar socket while a different pair glows. When the delayed objective guide appears with passive BODY/HTML focus, its exact source becomes the sole roving board entry; DOM focus remains untouched until Tab, then the accepted Enter-then-Space continuation commits the guided match once.

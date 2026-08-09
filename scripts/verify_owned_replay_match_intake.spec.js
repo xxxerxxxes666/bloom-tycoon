@@ -84,6 +84,7 @@ async function boardReport(page) {
       classes: document.body.className,
       flights: document.querySelectorAll(".greenhouse-intake-flight").length,
       dialBorder: dial ? getComputedStyle(dial).borderColor : "",
+      dialTransitionDuration: dial ? getComputedStyle(dial).transitionDuration : "",
       tiles: document.querySelectorAll(".tile").length,
       rows: new Set(Array.from(document.querySelectorAll(".tile"), (tile) => tile.dataset.y)).size,
       roving: document.querySelectorAll('.tile[tabindex="0"]').length,
@@ -126,6 +127,7 @@ for (const config of CASES) {
     expect(response.dialBorder).toBe("rgb(215, 177, 109)");
     if (config.reducedMotion === "reduce") {
       expect(response.flights).toBe(0);
+      expect(response.dialTransitionDuration).toBe("0s");
     } else {
       expect(response.flights).toBeGreaterThan(0);
     }
@@ -168,6 +170,11 @@ for (const config of CASES.filter((candidate) => !candidate.reducedMotion.includ
       isMobile: Boolean(config.mobile)
     });
     const page = await context.newPage();
+    const runtimeErrors = [];
+    page.on("console", (message) => {
+      if (["warning", "error"].includes(message.type())) runtimeErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => runtimeErrors.push(error.message));
     await openState(page, `${config.label}-first-cycle`, false);
     const before = await boardReport(page);
     await commitHintedPair(page, config.mobile);
@@ -177,6 +184,7 @@ for (const config of CASES.filter((candidate) => !candidate.reducedMotion.includ
     expect(after.moves).toBe(before.moves - 1);
     expect(after.classes).not.toContain("owned-replay-match-intake");
     expect(after.flights).toBe(0);
+    expect(runtimeErrors).toEqual([]);
     await context.close();
   });
 }
