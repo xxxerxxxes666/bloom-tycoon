@@ -962,6 +962,7 @@ def verify_source_hooks():
         "settledBoardOutcomeRevealFrame",
         "function settledBoardOutcomeForResult",
         "Bloom cleared. No bouquet progress.",
+        "const tutorialOpeningOutcome = outcome?.kind === \"harvest\" && outcome?.tutorialOpening",
         "function presentSettledBoardOutcome",
         "document.hidden || !settledBoardOutcomeCanOwnNarration()",
         "pendingSettledBoardOutcome || settledBoardOutcome",

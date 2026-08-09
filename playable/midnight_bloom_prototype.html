@@ -18635,10 +18635,11 @@
       outcome = pendingSettledBoardOutcome
     ) {
       const blackCandleOutcome = outcome?.kind === "black-candle";
+      const tutorialOpeningOutcome = outcome?.kind === "harvest" && outcome?.tutorialOpening;
       return focusedSliceRound(plan)
         && !roundComplete
         && !isBouquetFailed(plan)
-        && (!tutorialActive || blackCandleOutcome)
+        && (!tutorialActive || blackCandleOutcome || tutorialOpeningOutcome)
         && (!postRecoveryGuideActive || blackCandleOutcome)
         && !visibleFinalHarvest
         && !isArmedLineRelicGuidanceActive();
@@ -18884,8 +18885,14 @@
       const laneResult = blackCandle
         ? `Black Candle burned the ${result.blackCandleActivation.direction === "vertical" ? "column" : "row"}.`
         : "";
+      const tutorialOpening = plan.round === 1
+        && tutorialActive
+        && hasMadeValidMove
+        && moves === plan.moves - 1
+        && roundProgress(plan).earned > 0;
       return {
         kind: blackCandle ? "black-candle" : "harvest",
+        tutorialOpening,
         text: [laneResult, ...targetResults, thornResult, moveResult].filter(Boolean).join(" ")
       };
     }

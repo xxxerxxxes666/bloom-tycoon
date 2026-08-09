@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-08-09 - The first match confirms what it earned
+
+- Player-visible correction: the fresh taught opening swap now settles into one exact result receipt, `Thorn Rose +3, 3 of 8. 5 moves left.`, before the existing next-match lesson resumes. The first successful action no longer jumps straight from the swap prompt to another instruction while the bouquet and move HUD change without spoken confirmation.
+- Surgical authority: the existing settled board owner accepts only a tagged active Round 1 tutorial-opening harvest after the first valid move has earned bouquet progress. The cue remains the sole polite owner during the receipt; the prepared tutorial copy is silent until the unchanged result lifecycle retires. Ordinary later matches, Black Candle, off-order receipts, Shuffle, final harvest, Help, failure, payoff, saves, moves, board/RNG, economy, objectives, and progression remain unchanged.
+- Permanent contract: new `scripts/verify_opening_match_receipt.spec.js` begins from an untouched natural game and commits the authored pair across desktop `1280x720` and exact mobile `390x844`, full/reduced motion, pointer/touch/keyboard. It requires one post-settle text mutation, exact `6 -> 5` and `0 -> 3 Thorn Rose` authority, one live owner, cleared selection, focus/sole-roving agreement, reload silence, 64 tiles/eight rows, exact `600px`/`378px` altars, loaded imagery, no overflow, and empty warning/error ledgers.
+- Local evidence: the opening receipt matrix passes `4/4`; neighboring fresh tutorial/Help authority passes `11/11`; and ordinary, Black Candle, and off-order settled outcomes pass `8/8`. Normal-scale desktop/mobile captures show the receipt contained in the existing command lane while the bouquet bloom, complete board, objective HUD, and greenhouse remain visible.
+- Files changed: `playable/midnight_bloom_prototype.html`, new `scripts/verify_opening_match_receipt.spec.js`, `scripts/verify_html_match_shapes.py`, and this note. No node, panel, command, save field, timer, move, board/RNG, objective, economy, mechanic, round, asset, dependency, or progression surface was added.
+
 ## 2026-08-09 - Off-order matches report their settled consequence
 
 - Player-visible correction: a legal Round 2 or Round 3 match that clears flowers without advancing the active bouquet now publishes `Bloom cleared. No bouquet progress. 3 moves left.` through the existing settled board cue. The spent move is no longer silent, and the receipt appears only after the rebuilt altar is authoritative.
