@@ -387,7 +387,10 @@ for (const testCase of CASES) {
       expect(duringHelp.liveOwners, `${testCase.label} Help remains sole narrator`).toEqual(["tutorialPanel"]);
 
       if (testCase.input === "touch") await page.locator("#tutorialSkipBtn").tap();
-      else await page.keyboard.press("Enter");
+      else {
+        await page.waitForTimeout(140);
+        await page.keyboard.press("Enter");
+      }
       await expect(page.locator("#tutorialPanel")).toBeHidden();
       await expect(page.locator("#board .tile[tabindex='0']")).toHaveAttribute("id", pair.source.id);
       await expect(page.locator(`#${pair.destination.id}`)).toHaveAttribute("tabindex", "-1");
@@ -575,6 +578,9 @@ for (const testCase of POST_OPENING_CASES) {
         expect(duringHelp.state.counts).toEqual(beforeSelection.state.counts);
         expect(duringHelp.state.board).toEqual(beforeSelection.state.board);
 
+        if (testCase.input === "keyboard") {
+          await page.waitForTimeout(140);
+        }
         await dismissHelp(page, testCase.input);
         await expect(page.locator("#tutorialPanel")).toBeHidden();
         await expect(page.locator("#board .tile.idle-hint")).toHaveCount(2);
@@ -589,6 +595,9 @@ for (const testCase of POST_OPENING_CASES) {
         expect(afterSkip.state.counts).toEqual(beforeSelection.state.counts);
         expect(afterSkip.state.board).toEqual(beforeSelection.state.board);
 
+        if (testCase.input === "keyboard") {
+          await page.waitForTimeout(140);
+        }
         await activateTile(page, counterpartId, testCase.input, "Space");
         await page.waitForFunction((key) => {
           const state = JSON.parse(localStorage.getItem(key) || "{}");

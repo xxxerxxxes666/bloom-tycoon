@@ -10300,6 +10300,7 @@
     const BLACK_CANDLE_REDUCED_REFILL_MS = 70;
     const SETTLED_BOARD_OUTCOME_MS = 2400;
     const PAYOFF_HANDOFF_INPUT_GUARD_MS = 480;
+    const TUTORIAL_COMMAND_INPUT_GUARD_MS = 120;
 
     let board = [];
     let selected = null;
@@ -10312,6 +10313,7 @@
     let postRenderFocusTarget = "";
     let payoffHandoffInputGuardUntil = 0;
     let payoffHandoffClickGuardUntil = 0;
+    let payoffHandoffFocusTargetId = "";
     let moves = roundTemplates[0].moves;
     let coins = 0;
     let counts = [0, 0, 0, 0, 0, 0];
@@ -14016,9 +14018,13 @@
       }
     }
 
-    function armPayoffHandoffInputGuard() {
-      payoffHandoffInputGuardUntil = performance.now() + PAYOFF_HANDOFF_INPUT_GUARD_MS;
+    function armPayoffHandoffInputGuard(
+      focusTargetId = "",
+      duration = PAYOFF_HANDOFF_INPUT_GUARD_MS
+    ) {
+      payoffHandoffInputGuardUntil = performance.now() + duration;
       payoffHandoffClickGuardUntil = 0;
+      payoffHandoffFocusTargetId = focusTargetId;
     }
 
     function payoffHandoffInputGuardActive(event) {
@@ -14027,11 +14033,19 @@
         || (event?.type === "click" && now < payoffHandoffClickGuardUntil);
     }
 
+    function retirePayoffHandoffInputGuard() {
+      payoffHandoffInputGuardUntil = 0;
+      payoffHandoffClickGuardUntil = 0;
+      payoffHandoffFocusTargetId = "";
+    }
+
     function rejectPayoffHandoffBoardInput(event) {
       if (event?.type === "keydown" && event.key !== "Enter" && event.key !== " ") {
+        retirePayoffHandoffInputGuard();
         return false;
       }
       if (!payoffHandoffInputGuardActive(event)) {
+        retirePayoffHandoffInputGuard();
         return false;
       }
       if (event?.type === "pointerdown" || event?.type === "touchstart") {
@@ -14045,7 +14059,15 @@
       }
       clearDragPreview({ resetInputs: true });
       const guardedFocus = firstHintFocusCell() || clampBoardFocusCell();
-      window.requestAnimationFrame(() => focusBoardCell(guardedFocus.x, guardedFocus.y));
+      const guardedTargetId = payoffHandoffFocusTargetId;
+      window.requestAnimationFrame(() => {
+        const guardedTarget = guardedTargetId ? $(guardedTargetId) : null;
+        if (guardedTarget && !guardedTarget.hidden && !guardedTarget.disabled) {
+          guardedTarget.focus({ preventScroll: true });
+          return;
+        }
+        focusBoardCell(guardedFocus.x, guardedFocus.y);
+      });
       return true;
     }
 
@@ -16292,6 +16314,9 @@
         }
       }
       render();
+      if (replay && returnFocusToHelp) {
+        armPayoffHandoffInputGuard("tutorialSkipBtn", TUTORIAL_COMMAND_INPUT_GUARD_MS);
+      }
       if (replay) {
         if (window.requestAnimationFrame) {
           window.requestAnimationFrame(keepTutorialPanelInViewport);
@@ -16305,7 +16330,7 @@
       }
     }
 
-    function skipTutorial() {
+    function skipTutorial(event = null) {
       if (blackCandleActivationPresentation) {
         clearBlackCandleActivationPresentation();
       }
@@ -16350,6 +16375,12 @@
         queuePostRenderFocus("tutorialHelpBtn");
       }
       render();
+      if (event?.detail === 0) {
+        armPayoffHandoffInputGuard(
+          closingKeyboardReplay ? "tutorialHelpBtn" : "",
+          TUTORIAL_COMMAND_INPUT_GUARD_MS
+        );
+      }
       if (!closingKeyboardReplay && guidedFocusCell && window.requestAnimationFrame) {
         const focusCell = { ...boardFocusCell };
         window.requestAnimationFrame(() => {
@@ -20377,7 +20408,7 @@
     $("renewBtn").addEventListener("click", renewBouquet);
     $("restoreGreenhouseBtn").addEventListener("click", advanceGreenhouseUpgrade);
     $("nextOrderBtn").addEventListener("click", advanceGreenhousePayoffAction);
-    $("tutorialSkipBtn").addEventListener("click", skipTutorial);
+    $("tutorialSkipBtn").addEventListener("click", (event) => skipTutorial(event));
     $("tutorialHelpBtn").addEventListener("click", (event) => {
       const retireRefusal = invalidSwapFeedbackActive();
       ordinaryRefusalHelpReplayActive = [2, 3].includes(Number(currentRound)) && retireRefusal;

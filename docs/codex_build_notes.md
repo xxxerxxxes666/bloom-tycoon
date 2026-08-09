@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-08-09 - Tutorial command input stays with its current owner
+
+- Player-visible correction: keyboard repeat can no longer jump from `Help` into the newly focused `Skip`, dismiss the tutorial, then jump back into Help or start a flower exchange. The tutorial remains open with Skip focused through a rapid repeated Enter/Space; after a deliberate Skip, the accepted Help or guided-source focus owner remains stable with zero selected flowers.
+- Authority boundary: tutorial-origin keyboard transfers reuse the existing unsaved handoff guard with a scoped `120ms` window. The existing payoff/Retry window remains `280ms`; pointer/touch tutorial commands remain immediate. Any Tab, Shift+Tab, arrow, or other non-activation key retires the tutorial guard immediately, so deliberate keyboard navigation does not wait. No copy, UI, save field, board, objective, RNG, move, economy, sound, round, progression, or gameplay timing changed.
+- Permanent contract: the new natural six-case matrix covers Enter/Space, desktop `1280x720`, exact mobile `390x844`, full/reduced motion, pointer, and touch. It proves the pre-fix Help repeat failure, exact +60ms owner retention, byte-identical saves, one tutorial narrator, zero selection, sole roving source, deliberate navigation release, and one real `Moves 6 -> 5` Thorn Rose commit. The neighboring untouched/selected/post-opening Help matrix passes `18/18`; accepted payoff handoff passes `6/6`, Retry recovery passes `12/12`, and the complete Skip focus journey passes `1/1` across its six internal desktop/mobile input cases.
+- Visual evidence: original-scale `work/tutorial-command-handoff-desktop-enter.png` and `work/tutorial-command-handoff-mobile-enter.png` show the retained tutorial owner without a blank or duplicate command. Desktop keeps the exact `600px` altar; exact mobile keeps the `378px` altar, 64 enabled tiles/eight complete rows, `scrollY=0`, contained hierarchy, loaded imagery, and no horizontal or vertical overflow. Browser warning/error/request ledgers are empty.
+- Files changed: `playable/midnight_bloom_prototype.html`, new `scripts/verify_tutorial_command_handoff.spec.js`, `scripts/verify_fresh_tutorial_focus.spec.js`, `scripts/verify_html_match_shapes.py`, and this note. Public delivery evidence follows after deployment verification.
+
 ## 2026-08-09 - Retry input cannot carry into the restored altar
 
 - Player-visible correction: a rapid repeated Enter or Space after the sole `Retry Bouquet` action can no longer select the newly focused guided flower. Retry still restores the authored order immediately, but its existing source focus and sole roving tile now remain untouched through the same bounded input handoff used by completed-order transitions.
