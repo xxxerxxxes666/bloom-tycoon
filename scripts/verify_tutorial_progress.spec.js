@@ -5782,6 +5782,27 @@ test.describe("untouched opening refuses cells outside the authored pair", () =>
         expect(refused.tutorial, `${testCase.label} uses existing refusal copy`).toBe("Use the glowing pair.");
         expect(refused.politeOwners, `${testCase.label} keeps one narrator`).toEqual(["tutorialPanel"]);
 
+        await page.waitForTimeout(150);
+        const repeatedWrongTile = page.locator("#tile-0-6");
+        await activate(page, repeatedWrongTile, testCase);
+        await expect(page.locator("#board .tile.invalid-swap")).toHaveCount(1);
+        await expect(repeatedWrongTile).toHaveClass(/\binvalid-swap\b/);
+        const repeatedRefusal = await snapshot(page);
+        expect(repeatedRefusal.save, `${testCase.label} repeated refusal has no save drift`).toBe(before.save);
+        expect(repeatedRefusal.moves, `${testCase.label} repeated refusal spends no move`).toBe(6);
+        expect(repeatedRefusal.counts, `${testCase.label} repeated refusal preserves counts`).toEqual(before.counts);
+        expect(repeatedRefusal.boardState, `${testCase.label} repeated refusal preserves board`).toBe(before.boardState);
+        expect(repeatedRefusal.selected, `${testCase.label} repeated refusal stays unselected`).toEqual([]);
+        expect(repeatedRefusal.hints, `${testCase.label} repeated refusal keeps exact pair`).toEqual(pairIds);
+        expect(repeatedRefusal.invalid, `${testCase.label} repeated refusal owns one wrong socket`)
+          .toEqual(["tile-0-6"]);
+        expect(repeatedRefusal.active, `${testCase.label} repeated refusal restores authored source`).toBe(sourceId);
+        expect(repeatedRefusal.roving, `${testCase.label} repeated refusal keeps sole roving source`).toEqual([sourceId]);
+        expect(repeatedRefusal.tutorial, `${testCase.label} repeated refusal keeps existing copy`)
+          .toBe("Use the glowing pair.");
+        expect(repeatedRefusal.politeOwners, `${testCase.label} repeated refusal keeps one narrator`)
+          .toEqual(["tutorialPanel"]);
+
         await expect(page.locator("#board .tile.invalid-swap")).toHaveCount(0, { timeout: 2200 });
         const settled = await snapshot(page);
         expect(settled.save, `${testCase.label} cleanup has no save drift`).toBe(before.save);

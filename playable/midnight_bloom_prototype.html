@@ -16380,9 +16380,9 @@
       return Boolean(selected && pair.some((cell) => cell.x === selected.x && cell.y === selected.y));
     }
 
-    function boardGuideTransientStateActive() {
+    function boardGuideTransientStateActive({ ignoreInvalidSwap = false } = {}) {
       return isResolving
-        || invalidSwapCells.size > 0
+        || (!ignoreInvalidSwap && invalidSwapCells.size > 0)
         || validSwapCells.size > 0
         || activeSwapCells.size > 0
         || swapGlideCells.size > 0
@@ -16442,6 +16442,9 @@
     }
 
     function untouchedRoundOneOpeningGuidePair(plan = activeRoundPlan()) {
+      const authoredOpeningRefusalActive = invalidSwapTimer !== null
+        && invalidSwapCells.size > 0
+        && invalidSwapReturnHintCells.size === 2;
       if (
         plan.round !== 1
         || !tutorialActive
@@ -16453,7 +16456,7 @@
         || armedLineRelic
         || roundComplete
         || isBouquetFailed(plan)
-        || boardGuideTransientStateActive()
+        || boardGuideTransientStateActive({ ignoreInvalidSwap: authoredOpeningRefusalActive })
       ) {
         return [];
       }
