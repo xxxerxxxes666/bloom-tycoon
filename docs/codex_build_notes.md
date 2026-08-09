@@ -1,5 +1,14 @@
 # Codex Build Notes
 
+## 2026-08-09 - Mobile bouquet economy remains legible
+
+- Player-visible correction: the exact-mobile bouquet strip no longer compresses its active reward consequence and current wallet label to 7px. The existing promise now renders at 8.5px with zero tracking and the wallet label at 8px, so `Complete for 120/150/180 coins` and owned-replay `Nourish 120/150/180 · Keep {wallet}` remain readable beside the board.
+- Surgical layout boundary: the same 108px strip, one bouquet progressbar, coin token, live bouquet, and first-viewport hierarchy remain in place. The receiver reserves 76px for the existing wallet token so four-digit retained balances do not overlap the bouquet total or consequence; desktop typography, copy, semantics, state, board geometry, moves, objectives, economy, saves, and progression are unchanged.
+- Permanent contract: `scripts/verify_bouquet_hud_consequence.spec.js` now measures computed consequence/wallet type and proves both text runs clear the wallet across the existing desktop `1280x720` and exact mobile `390x844` active/partial/completed/reload matrix, including full/reduced owned replay. Existing 64-tile/eight-row, `600px`/`378px` altar, imagery, overflow, action-focus, and browser-error checks remain authoritative.
+- Local evidence: the complete exact-mobile active/partial/payoff HUD matrix passes `1/1`, the desktop/mobile reduced-motion owned-replay reload matrix passes `2/2`, runtime/layout passes `4/4`, and the natural desktop/mobile final-harvest three-order journey passes `2/2`. Original-scale `work/hud-consequence-mobile390-r2-owned-replay-partial.png` shows the enlarged promise and wallet separated above the complete 378px altar with no clipping or overflow.
+- Verification: `python3 scripts/verify_project.py`, HTML match-shape verification, changed spec and extracted inline JavaScript syntax, `git diff --check`, and the scoped added-line credential/tracker/network scan pass.
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_bouquet_hud_consequence.spec.js`, and this note. No node, copy, panel, control, save field, timer, move, board/RNG rule, objective, economy, mechanic, round, asset, dependency, or progression surface was added.
+
 ## 2026-08-09 - Black Candle refill keeps every altar row painted
 
 - Player-visible correction: the strict-four Bone Star formation no longer moves the complete tile socket during delayed refill animation. The occult socket grid remains continuously painted in all eight altar rows while only each arriving flower layer falls into place, preventing the transient blank lower-row frame observed on exact mobile.

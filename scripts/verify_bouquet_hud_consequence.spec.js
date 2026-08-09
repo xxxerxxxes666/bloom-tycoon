@@ -500,6 +500,10 @@ async function hudReport(page) {
     const activeAction = document.activeElement;
     const saved = JSON.parse(localStorage.getItem("bloomTycoonPlayableStateV1") || "{}");
     const orderProgress = document.querySelector("#bouquetOrderProgress");
+    const rewardPromise = document.querySelector("#bouquetRewardPromise");
+    const coinBalance = document.querySelector("#coinBalance");
+    const rewardPromiseStyle = getComputedStyle(rewardPromise);
+    const coinBalanceStyle = getComputedStyle(coinBalance);
     const dial = document.querySelector("#heroRestorationDial");
     const mobileGreenhouse = document.querySelector("#mobileGreenhouseProgress");
     const mobileGreenhouseArt = document.querySelector("#mobileGreenhouseIdentityArt");
@@ -560,10 +564,14 @@ async function hudReport(page) {
       orderValueNow: orderProgress?.getAttribute("aria-valuenow") || "",
       orderValueMax: orderProgress?.getAttribute("aria-valuemax") || "",
       visibleProgressbars: Array.from(document.querySelectorAll('[role="progressbar"]')).filter(visible).length,
-      rewardPromise: document.querySelector("#bouquetRewardPromise")?.textContent.trim() || "",
-      rewardPromiseAriaLabel: document.querySelector("#bouquetRewardPromise")?.getAttribute("aria-label") || "",
-      rewardPromiseClientWidth: document.querySelector("#bouquetRewardPromise")?.clientWidth || 0,
-      rewardPromiseScrollWidth: document.querySelector("#bouquetRewardPromise")?.scrollWidth || 0,
+      rewardPromise: rewardPromise?.textContent.trim() || "",
+      rewardPromiseAriaLabel: rewardPromise?.getAttribute("aria-label") || "",
+      rewardPromiseClientWidth: rewardPromise?.clientWidth || 0,
+      rewardPromiseScrollWidth: rewardPromise?.scrollWidth || 0,
+      rewardPromiseFontSize: Number.parseFloat(rewardPromiseStyle.fontSize),
+      coinBalanceFontSize: Number.parseFloat(coinBalanceStyle.fontSize),
+      rewardPromiseOverlapsCoinBalance: overlaps(rect(rewardPromise), rect(coinBalance)),
+      progressLabelOverlapsCoinBalance: overlaps(rect(label), rect(coinBalance)),
       bouquetBarWidth: document.querySelector("#bar")?.style.width || "",
       assemblyProgress: document.querySelector("#liveBouquetAssembly")?.dataset.progress || "",
       assemblyState: document.querySelector("#liveBouquetAssembly")?.dataset.assemblyState || "",
@@ -1007,6 +1015,10 @@ async function assertHudState(page, fixture, viewport, reload) {
       expect(report.assemblySlotStates, `${label} unit slots are only earned or unearned`).not.toContain("partial");
     }
     if (!desktopViewport) {
+      expect(report.rewardPromiseFontSize, `${label} readable mobile consequence`).toBeGreaterThanOrEqual(8.5);
+      expect(report.coinBalanceFontSize, `${label} readable mobile wallet`).toBeGreaterThanOrEqual(8);
+      expect(report.rewardPromiseOverlapsCoinBalance, `${label} consequence clears wallet`).toBe(false);
+      expect(report.progressLabelOverlapsCoinBalance, `${label} bouquet total clears wallet`).toBe(false);
       expect(report.boardVisible, `${label} active board visible`).toBe(true);
       expect(report.boardBottom, `${label} board remains in first viewport`).toBeLessThanOrEqual(844);
     }
