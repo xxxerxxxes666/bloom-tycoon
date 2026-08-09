@@ -3604,13 +3604,20 @@
     }
 
     .tile.fall-in {
+      will-change: auto;
+    }
+
+    .tile.refill-born {
+      z-index: 2;
+    }
+
+    .tile.fall-in:not(.settle-pop) .tile-icon-wrap {
       animation: tile-fall 360ms cubic-bezier(0.12, 0.78, 0.18, 1) both;
       animation-delay: var(--fall-delay, 0ms);
       will-change: transform, opacity;
     }
 
-    .tile.refill-born {
-      z-index: 2;
+    .tile.refill-born .tile-icon-wrap {
       animation: tile-fall 390ms cubic-bezier(0.12, 0.78, 0.18, 1) both;
       animation-delay: var(--fall-delay, 0ms);
       will-change: transform, opacity;
@@ -3633,8 +3640,7 @@
     }
 
     .tile.refill-born.settle-pop {
-      animation: tile-fall 390ms cubic-bezier(0.12, 0.78, 0.18, 1) both;
-      animation-delay: var(--fall-delay, 0ms);
+      animation: none;
     }
 
     .refill-channel {

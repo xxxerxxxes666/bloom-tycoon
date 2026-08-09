@@ -1,4 +1,5 @@
 const { test, expect } = require("@playwright/test");
+const { inflateSync } = require("node:zlib");
 
 const BASE_URL = process.env.BLOOM_TEST_URL
   || "http://127.0.0.1:4173/playable/midnight_bloom_prototype.html";
@@ -7,6 +8,89 @@ const PROMPT = "Match 4 Bone Stars to arm Black Candle Vine.";
 const CUE = "Make 4 Bone Stars - arm Black Candle Vine.";
 
 test.setTimeout(90000);
+
+function decodePng(png) {
+  const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+  expect(png.subarray(0, 8).equals(signature), "Chromium screenshot is a PNG").toBe(true);
+  let offset = 8;
+  let width = 0;
+  let height = 0;
+  let colorType = 0;
+  const idat = [];
+  while (offset < png.length) {
+    const length = png.readUInt32BE(offset);
+    const type = png.toString("ascii", offset + 4, offset + 8);
+    const data = png.subarray(offset + 8, offset + 8 + length);
+    if (type === "IHDR") {
+      width = data.readUInt32BE(0);
+      height = data.readUInt32BE(4);
+      expect(data[8], "8-bit screenshot channels").toBe(8);
+      colorType = data[9];
+      expect(data[12], "non-interlaced screenshot").toBe(0);
+    } else if (type === "IDAT") {
+      idat.push(data);
+    } else if (type === "IEND") {
+      break;
+    }
+    offset += length + 12;
+  }
+  const channels = colorType === 6 ? 4 : colorType === 2 ? 3 : 0;
+  expect(channels, `supported Chromium PNG color type ${colorType}`).toBeGreaterThan(0);
+  const packed = inflateSync(Buffer.concat(idat));
+  const stride = width * channels;
+  const pixels = Buffer.alloc(stride * height);
+  const paeth = (left, above, upperLeft) => {
+    const estimate = left + above - upperLeft;
+    const leftDistance = Math.abs(estimate - left);
+    const aboveDistance = Math.abs(estimate - above);
+    const upperLeftDistance = Math.abs(estimate - upperLeft);
+    return leftDistance <= aboveDistance && leftDistance <= upperLeftDistance
+      ? left : aboveDistance <= upperLeftDistance ? above : upperLeft;
+  };
+  let source = 0;
+  for (let y = 0; y < height; y += 1) {
+    const filter = packed[source];
+    source += 1;
+    for (let x = 0; x < stride; x += 1) {
+      const raw = packed[source + x];
+      const left = x >= channels ? pixels[y * stride + x - channels] : 0;
+      const above = y > 0 ? pixels[(y - 1) * stride + x] : 0;
+      const upperLeft = y > 0 && x >= channels
+        ? pixels[(y - 1) * stride + x - channels] : 0;
+      const value = filter === 0 ? raw
+        : filter === 1 ? raw + left
+          : filter === 2 ? raw + above
+            : filter === 3 ? raw + Math.floor((left + above) / 2)
+              : filter === 4 ? raw + paeth(left, above, upperLeft)
+                : NaN;
+      if (Number.isNaN(value)) throw new Error(`Unsupported PNG row filter ${filter}`);
+      pixels[y * stride + x] = value & 255;
+    }
+    source += stride;
+  }
+  return { width, height, channels, pixels };
+}
+
+function paintedRowRatios(png) {
+  const { width, height, channels, pixels } = decodePng(png);
+  return Array.from({ length: 8 }, (_, row) => {
+    let painted = 0;
+    let sampled = 0;
+    const rowTop = Math.floor((row * height) / 8);
+    const rowBottom = Math.floor(((row + 1) * height) / 8);
+    for (let y = rowTop + 4; y < rowBottom - 4; y += 2) {
+      for (let x = 4; x < width - 4; x += 2) {
+        const pixel = (y * width + x) * channels;
+        const red = pixels[pixel];
+        const green = pixels[pixel + 1];
+        const blue = pixels[pixel + 2];
+        painted += red + green + blue >= 54 ? 1 : 0;
+        sampled += 1;
+      }
+    }
+    return painted / sampled;
+  });
+}
 
 async function seedDeterministicMath(page, seedLabel) {
   await page.addInitScript((label) => {
@@ -61,6 +145,48 @@ async function commitPair(page, pair, input) {
       && Array.from(document.querySelectorAll("#board .tile")).every((tile) => !tile.disabled);
   }, { key: SAVE_KEY, moves: before.moves }, { timeout: 12000 });
   return before;
+}
+
+async function commitPairWithPaintSampling(page, pair, input) {
+  const before = await savedState(page);
+  const source = page.locator(`#tile-${pair[0].x}-${pair[0].y}`);
+  const destination = page.locator(`#tile-${pair[1].x}-${pair[1].y}`);
+  const boardBox = await page.locator("#board").boundingBox();
+  expect(boardBox).not.toBeNull();
+  if (input === "keyboard") {
+    await source.focus();
+    await page.keyboard.press("Enter");
+    await expect(destination).toBeFocused();
+    await page.keyboard.press("Space");
+  } else {
+    await source.click();
+    await destination.click();
+  }
+
+  const frames = [];
+  const deadline = Date.now() + 1700;
+  while (Date.now() < deadline) {
+    const png = await page.screenshot({
+      type: "png",
+      clip: boardBox,
+      animations: "allow"
+    });
+    const state = await page.evaluate(() => ({
+      resolving: document.body.classList.contains("board-resolving"),
+      relics: document.querySelectorAll('.tile[data-line-relic="black-candle-vine"]').length,
+      tiles: document.querySelectorAll("#board .tile").length
+    }));
+    frames.push({ ratios: paintedRowRatios(png), ...state });
+    if (!state.resolving && state.relics === 1 && frames.length >= 8) break;
+    await page.waitForTimeout(16);
+  }
+  await page.waitForFunction(({ key, moves }) => {
+    const saved = JSON.parse(localStorage.getItem(key) || "{}");
+    return saved.moves === moves - 1
+      && document.querySelectorAll("#board .tile").length === 64
+      && Array.from(document.querySelectorAll("#board .tile")).every((tile) => !tile.disabled);
+  }, { key: SAVE_KEY, moves: before.moves }, { timeout: 12000 });
+  return frames;
 }
 
 async function lessonReport(page) {
@@ -189,13 +315,27 @@ for (const config of [
     await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 3000 });
     expect(await hintedPair(page)).toEqual(expectedPair);
 
-    await commitPair(page, expectedPair, config.input);
+    const paintFrames = config.viewport.width === 390
+      ? await commitPairWithPaintSampling(page, expectedPair, config.input)
+      : (await commitPair(page, expectedPair, config.input), []);
+    if (config.viewport.width === 390) {
+      expect(paintFrames.length, `${config.label} captures several animation frames`).toBeGreaterThanOrEqual(8);
+      expect(
+        paintFrames.every((frame) => frame.tiles === 64),
+        `${config.label} retains all controls in every sampled frame`
+      ).toBe(true);
+      const blankFrames = paintFrames.flatMap((frame, frameIndex) => frame.ratios
+        .map((ratio, row) => ({ frame: frameIndex, row, ratio }))
+        .filter(({ ratio }) => ratio < 0.08));
+      expect(blankFrames, `${config.label} keeps visible socket pixels in every row band`).toEqual([]);
+    }
     await expect(page.locator('.tile[data-line-relic="black-candle-vine"]')).toHaveCount(1);
     const formed = await savedState(page);
     expect(formed.moves).toBe(3);
     expect(formed.counts[1] - beforeFormation.counts[1]).toBe(4);
     await expect(page.locator("#tutorialCopy")).toHaveText("Swap right to burn this row.");
     await expect(page.locator("#board .tile")).toHaveCount(64);
+    await page.screenshot({ path: `work/black-candle-row-paint-${config.label}.png` });
     expect(warnings).toEqual([]);
     expect(pageErrors).toEqual([]);
     expect(failedRequests).toEqual([]);
