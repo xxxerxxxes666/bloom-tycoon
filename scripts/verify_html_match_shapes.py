@@ -1259,6 +1259,7 @@ def verify_source_hooks():
         "|| tileSwipeStart.pointerId !== event.pointerId",
         "if (start.pointerId !== event.pointerId)",
         "function handleBoardPointerCancel(event)",
+        '$("board").addEventListener("lostpointercapture", handleBoardPointerCancel)',
         "clearDragPreview({ resetInputs: true });",
         "cancelInterruptedBoardDrag();",
         "restoreInterruptedBoardDragFocus();",

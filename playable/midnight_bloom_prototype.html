@@ -20695,6 +20695,7 @@
     $("board").addEventListener("pointermove", handleBoardPointerMove);
     $("board").addEventListener("pointerup", handleBoardPointerUp);
     $("board").addEventListener("pointercancel", handleBoardPointerCancel);
+    $("board").addEventListener("lostpointercapture", handleBoardPointerCancel);
     $("board").addEventListener("touchstart", handleBoardTouchStart, { passive: false });
     $("board").addEventListener("touchmove", handleBoardTouchMove, { passive: false });
     $("board").addEventListener("touchend", handleBoardTouchEnd, { passive: false });
