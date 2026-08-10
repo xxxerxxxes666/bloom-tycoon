@@ -1253,6 +1253,8 @@ def verify_source_hooks():
         "$(\"board\")?.classList.add(\"drag-preview-active\");",
         "function cancelInterruptedBoardDrag()",
         "function restoreInterruptedBoardDragFocus()",
+        "function isContextBoardPointerCommand(event)",
+        "Boolean(event?.ctrlKey) && event.button === 0",
         "if (!event.isPrimary || event.button !== 0 || tileSwipeStart)",
         "|| tileSwipeStart.pointerId !== event.pointerId",
         "if (start.pointerId !== event.pointerId)",
@@ -1275,6 +1277,8 @@ def verify_source_hooks():
     pointer_down_start = html.index("function handleBoardPointerDown(event)")
     pointer_down_end = html.index("function handleBoardPointerMove(event)", pointer_down_start)
     pointer_down_handler = html[pointer_down_start:pointer_down_end]
+    if pointer_down_handler.index("isContextBoardPointerCommand(event)") > pointer_down_handler.index('document.body.classList.add("pointer-board-input")'):
+        raise SystemExit("Control-primary context input must be rejected before pointer modality changes")
     if pointer_down_handler.index("event.button !== 0") > pointer_down_handler.index("tileSwipeStart = {"):
         raise SystemExit("Non-primary pointer buttons must be rejected before drag creation")
     if pointer_down_handler.index("tileSwipeStart") > pointer_down_handler.index("tileSwipeStart = {"):
@@ -1296,6 +1300,11 @@ def verify_source_hooks():
         raise SystemExit("Pointer cancellation must validate the active primary pointer")
     if pointer_cancel_handler.index("start.pointerId !== event.pointerId") > pointer_cancel_handler.index("tileSwipeStart = null;"):
         raise SystemExit("Secondary pointer cancellation must be rejected before primary drag retirement")
+    pointer_click_start = html.index("function handleBoardClick(event)")
+    pointer_click_end = html.index("function ensurePlayableBoardAfterCascade()", pointer_click_start)
+    pointer_click_handler = html[pointer_click_start:pointer_click_end]
+    if pointer_click_handler.index("isContextBoardPointerCommand(event)") > pointer_click_handler.index("tap(cell.x, cell.y)"):
+        raise SystemExit("Control-primary context click must be rejected before flower selection")
     moving_match_preview = re.search(
         r"\.tile\.match-preview-anchor\s*\{[^}]*\banimation\s*:",
         html,

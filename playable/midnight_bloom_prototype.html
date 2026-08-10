@@ -14365,8 +14365,15 @@
       focusBoardCell(target.x, target.y);
     }
 
+    function isContextBoardPointerCommand(event) {
+      return Boolean(event?.ctrlKey) && event.button === 0;
+    }
+
     function handleBoardPointerDown(event) {
       if (rejectPayoffHandoffBoardInput(event)) {
+        return;
+      }
+      if (isContextBoardPointerCommand(event)) {
         return;
       }
       document.body.classList.remove("keyboard-board-navigation");
@@ -14532,7 +14539,7 @@
     }
 
     function handleBoardClick(event) {
-      if (rejectPayoffHandoffBoardInput(event)) {
+      if (rejectPayoffHandoffBoardInput(event) || isContextBoardPointerCommand(event)) {
         return;
       }
       if (suppressNextBoardClick) {
