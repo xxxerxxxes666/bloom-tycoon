@@ -14320,6 +14320,14 @@
         ArrowDown: { x: 0, y: 1 }
       };
       const cell = boardTileFromEvent(event) || { ...clampBoardFocusCell(), tile: null };
+      if (event.key === "Escape" && boardDragInputActive()) {
+        event.preventDefault();
+        document.body.classList.remove("pointer-board-input");
+        document.body.classList.add("keyboard-board-navigation");
+        cancelInterruptedBoardDrag();
+        restoreInterruptedBoardDragFocus();
+        return;
+      }
       if (event.key === "Escape" && selected) {
         event.preventDefault();
         document.body.classList.remove("pointer-board-input");

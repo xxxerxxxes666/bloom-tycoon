@@ -1253,6 +1253,9 @@ def verify_source_hooks():
         "$(\"board\")?.classList.add(\"drag-preview-active\");",
         "function cancelInterruptedBoardDrag()",
         "function restoreInterruptedBoardDragFocus()",
+        'if (event.key === "Escape" && boardDragInputActive())',
+        "cancelInterruptedBoardDrag();",
+        "restoreInterruptedBoardDragFocus();",
         "function isContextBoardPointerCommand(event)",
         "Boolean(event?.ctrlKey) && event.button === 0",
         "if (!event.isPrimary || event.button !== 0 || tileSwipeStart)",
@@ -1263,8 +1266,6 @@ def verify_source_hooks():
         'window.addEventListener("blur", cancelInterruptedBoardDrag)',
         'window.addEventListener("focus", restoreInterruptedBoardDragFocus)',
         "clearDragPreview({ resetInputs: true });",
-        "cancelInterruptedBoardDrag();",
-        "restoreInterruptedBoardDragFocus();",
     ])
     missing = [needle for needle in required if needle not in html]
     if missing:
