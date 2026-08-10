@@ -1253,7 +1253,7 @@ def verify_source_hooks():
         "$(\"board\")?.classList.add(\"drag-preview-active\");",
         "function cancelInterruptedBoardDrag()",
         "function restoreInterruptedBoardDragFocus()",
-        "if (!event.isPrimary || tileSwipeStart)",
+        "if (!event.isPrimary || event.button !== 0 || tileSwipeStart)",
         "|| tileSwipeStart.pointerId !== event.pointerId",
         "if (start.pointerId !== event.pointerId)",
         "function handleBoardPointerCancel(event)",
@@ -1275,6 +1275,8 @@ def verify_source_hooks():
     pointer_down_start = html.index("function handleBoardPointerDown(event)")
     pointer_down_end = html.index("function handleBoardPointerMove(event)", pointer_down_start)
     pointer_down_handler = html[pointer_down_start:pointer_down_end]
+    if pointer_down_handler.index("event.button !== 0") > pointer_down_handler.index("tileSwipeStart = {"):
+        raise SystemExit("Non-primary pointer buttons must be rejected before drag creation")
     if pointer_down_handler.index("tileSwipeStart") > pointer_down_handler.index("tileSwipeStart = {"):
         raise SystemExit("Competing primary-class pointerdown must be rejected before replacing the active drag")
     pointer_move_start = html.index("function handleBoardPointerMove(event)")

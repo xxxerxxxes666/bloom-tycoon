@@ -14371,7 +14371,7 @@
       }
       document.body.classList.remove("keyboard-board-navigation");
       document.body.classList.add("pointer-board-input");
-      if (!event.isPrimary || tileSwipeStart) {
+      if (!event.isPrimary || event.button !== 0 || tileSwipeStart) {
         return;
       }
       const cell = boardTileFromEvent(event);
