@@ -20726,6 +20726,8 @@
       }
       syncBloomAudioVisibility();
     });
+    window.addEventListener("blur", cancelInterruptedBoardDrag);
+    window.addEventListener("focus", restoreInterruptedBoardDragFocus);
     window.__bloomAudioProbe = () => ({
       eventCount: bloomAudioEventCount,
       voiceCount: bloomAudioVoiceCount,

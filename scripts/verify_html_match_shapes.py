@@ -1260,6 +1260,8 @@ def verify_source_hooks():
         "if (start.pointerId !== event.pointerId)",
         "function handleBoardPointerCancel(event)",
         '$("board").addEventListener("lostpointercapture", handleBoardPointerCancel)',
+        'window.addEventListener("blur", cancelInterruptedBoardDrag)',
+        'window.addEventListener("focus", restoreInterruptedBoardDragFocus)',
         "clearDragPreview({ resetInputs: true });",
         "cancelInterruptedBoardDrag();",
         "restoreInterruptedBoardDragFocus();",
