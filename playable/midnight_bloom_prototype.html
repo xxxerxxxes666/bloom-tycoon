@@ -14441,6 +14441,11 @@
       event.preventDefault();
       document.body.classList.remove("pointer-board-input");
       document.body.classList.add("keyboard-board-navigation");
+      const keyboardTookOverDrag = boardDragInputActive();
+      if (keyboardTookOverDrag) {
+        cancelInterruptedBoardDrag();
+        restoreInterruptedBoardDragFocus();
+      }
       const target = clampBoardFocusCell({ x: cell.x + delta.x, y: cell.y + delta.y });
       const boundaryArrowNoop = target.x === cell.x && target.y === cell.y;
       if (boundaryArrowNoop) {
@@ -14463,7 +14468,7 @@
         tap(target.x, target.y);
         return;
       }
-      if (!shouldPreserveIdleHintDuringKeyboardNavigation()) {
+      if (!keyboardTookOverDrag && !shouldPreserveIdleHintDuringKeyboardNavigation()) {
         notePlayerInteraction();
       }
       boardFocusCell = target;
