@@ -6647,6 +6647,7 @@
     body.round-one-active:not(.first-move-made) #shuffleBtn,
     body.round-one-active.tutorial-active #shuffleBtn,
     body.round-one-active.round-one-agency-handoff #shuffleBtn,
+    body.round-one-active.round-one-black-candle-protected #shuffleBtn,
     body.round-one-active.round-one-closing-reserve #shuffleBtn,
     body.round-one-active #roundCeremony {
       display: none !important;
@@ -11716,6 +11717,17 @@
       return "";
     }
 
+    function isRoundOneBlackCandleLessonProtected(plan = activeRoundPlan()) {
+      return plan.round === 1
+        && !roundComplete
+        && !isBouquetFailed(plan)
+        && (
+          roundOneGuidedStage(plan) === "black-candle"
+          || isArmedLineRelicGuidanceActive()
+          || Boolean(blackCandleActivationPresentation)
+        );
+    }
+
     function roundOneBlackCandleLessonSwap() {
       return [{ x: 5, y: 0 }, { x: 5, y: 1 }];
     }
@@ -15724,6 +15736,10 @@
       document.body.classList.toggle("round-one-active", roundOneActive);
       document.body.classList.toggle("round-one-complete", roundOneActive && roundComplete && !finalHarvestLanding);
       document.body.classList.toggle("round-one-agency-handoff", isRoundOneAgencyHandoffActive(activePlan));
+      document.body.classList.toggle(
+        "round-one-black-candle-protected",
+        isRoundOneBlackCandleLessonProtected(activePlan)
+      );
       document.body.classList.toggle("restored-greenhouse-handoff", restoredGreenhouseHandoff && !roundComplete);
       document.body.classList.toggle("owned-replay-entry", ownedReplayEntryActive && !roundComplete);
       document.body.classList.toggle(
@@ -16333,6 +16349,7 @@
         || shouldRetireShuffleForFinalMove(activePlan)
         || (currentRound === 1 && moves === 2 && !roundObjectivesComplete(activePlan))
         || isRoundOneAgencyHandoffActive(activePlan)
+        || isRoundOneBlackCandleLessonProtected(activePlan)
         || (currentRound === 1 && tutorialActive);
       $("ritualLog").innerHTML = ritualMessage;
       $("renewBtn").textContent = roundComplete ? "Next Bouquet" : failed ? "Retry Bouquet" : "Renew Bouquet";
@@ -20188,6 +20205,9 @@
         return;
       }
       if (isRoundOneAgencyHandoffActive()) {
+        return;
+      }
+      if (isRoundOneBlackCandleLessonProtected()) {
         return;
       }
       if (shouldRetireShuffleForFinalMove()) {

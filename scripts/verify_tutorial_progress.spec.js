@@ -2651,7 +2651,17 @@ for (const viewport of [
     expect(blackCandleCue.tutorial).toBe("");
     expect(blackCandleCue.cue).toBe("Make 4 Bone Stars - arm Black Candle Vine.");
     expect(blackCandleCue.firstSwapCueVisible).toBe(true);
-    expect(blackCandleCue.visibleButtons).toEqual(["Help", "Shuffle (-1 move)"]);
+    expect(blackCandleCue.visibleButtons).toEqual(["Help"]);
+    await expect(page.locator("body")).toHaveClass(/round-one-black-candle-protected/);
+    await expect(page.locator("#shuffleBtn")).toBeHidden();
+    await page.evaluate(() => document.querySelector("#shuffleBtn")?.click());
+    const guardedFormation = await guidedRoundOneState(page, "Black Candle formation after hidden Shuffle");
+    expect(guardedFormation.moves, `${viewport.label} hidden Shuffle preserves formation moves`)
+      .toBe(blackCandleCue.moves);
+    expect(guardedFormation.counts, `${viewport.label} hidden Shuffle preserves formation progress`)
+      .toEqual(blackCandleCue.counts);
+    expect(guardedFormation.boardSerialization, `${viewport.label} hidden Shuffle preserves formation board`)
+      .toBe(blackCandleCue.boardSerialization);
     expect(blackCandleCue.hints).toHaveLength(2);
     expect(Math.abs(blackCandleCue.hints[0].x - blackCandleCue.hints[1].x) + Math.abs(blackCandleCue.hints[0].y - blackCandleCue.hints[1].y)).toBe(1);
     const preview = await legalFourBoneStarPreview(page);
@@ -2690,6 +2700,16 @@ for (const viewport of [
     expect(formed.counts[1] - blackCandleCue.counts[1]).toBe(4);
     expect(formed.cue).toContain("Swap Black Candle Vine");
     expect(formed.hints).toHaveLength(2);
+    await expect(page.locator("body")).toHaveClass(/round-one-black-candle-protected/);
+    await expect(page.locator("#shuffleBtn")).toBeHidden();
+    await page.evaluate(() => document.querySelector("#shuffleBtn")?.click());
+    const guardedActivation = await guidedRoundOneState(page, "Black Candle activation after hidden Shuffle");
+    expect(guardedActivation.moves, `${viewport.label} hidden Shuffle preserves activation moves`)
+      .toBe(formed.moves);
+    expect(guardedActivation.counts, `${viewport.label} hidden Shuffle preserves activation progress`)
+      .toEqual(formed.counts);
+    expect(guardedActivation.boardSerialization, `${viewport.label} hidden Shuffle preserves armed board`)
+      .toBe(formed.boardSerialization);
     assertFirstActionGuide(
       await firstActionGuideReport(page),
       await hintedPair(page),
