@@ -14,7 +14,7 @@ const CASES = [
   { label: "mobile390-touch-reduced", viewport: { width: 390, height: 844 }, mobile: true, reduced: true }
 ];
 
-test.setTimeout(60000);
+test.setTimeout(90000);
 
 async function report(page) {
   return page.evaluate((key) => {
@@ -36,13 +36,16 @@ async function report(page) {
       state,
       cue: document.querySelector("#firstSwapCue")?.textContent.trim() || "",
       tutorialCopy: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
+      tutorialIcon: document.querySelector(".tutorial-icon")?.textContent.trim() || "",
       tutorialVisible: visible(document.querySelector("#tutorialPanel")),
       tutorialActive: document.body.classList.contains("tutorial-active"),
+      namedBlackCandle: document.querySelector("#tutorialPanel")?.classList.contains("black-candle-tutorial") || false,
       receiptActive: document.body.classList.contains("settled-board-outcome-cue"),
       boardBusy: document.querySelector("#board")?.getAttribute("aria-busy") || "",
       active: document.activeElement?.id || "",
       roving: tiles.filter((tile) => tile.tabIndex === 0).map((tile) => tile.id),
       selected: tiles.filter((tile) => tile.classList.contains("sel")).map((tile) => tile.id),
+      hints: tiles.filter((tile) => tile.classList.contains("idle-hint")).map((tile) => tile.id),
       disabled: tiles.filter((tile) => tile.disabled).length,
       tiles: tiles.length,
       rows: new Set(tiles.map((tile) => tile.dataset.y)).size,
@@ -57,6 +60,9 @@ async function report(page) {
       brokenImages: [...document.images]
         .filter((image) => visible(image) && (!image.complete || image.naturalWidth === 0))
         .map((image) => image.getAttribute("src")),
+      commands: [...document.querySelectorAll("button:not(.tile)")]
+        .filter(visible)
+        .map((button) => button.textContent.trim()),
       liveOwners: [...document.querySelectorAll("[aria-live]")]
         .filter(visible)
         .filter((node) => ["polite", "assertive"].includes(node.getAttribute("aria-live")))
@@ -112,6 +118,68 @@ async function activateFastPair(page, context, { mobile, interpose }) {
   const target = await tilePoint(TARGET_ID);
   expect(target, "the taught target keeps input geometry").toBeTruthy();
   await dispatch(target);
+}
+
+async function openDeterministicFastPath(page, context, testCase, suffix) {
+  const marker = `fast-opening-black-candle:${testCase.label}:${suffix}`;
+  await page.addInitScript(({ key, sessionMarker, seedLabel }) => {
+    if (!sessionStorage.getItem(sessionMarker)) {
+      localStorage.removeItem(key);
+      sessionStorage.setItem(sessionMarker, "1");
+    }
+    let seed = 0;
+    for (let index = 0; index < seedLabel.length; index += 1) {
+      seed = (seed * 31 + seedLabel.charCodeAt(index)) >>> 0;
+    }
+    Math.random = () => {
+      seed = (1664525 * seed + 1013904223) >>> 0;
+      return seed / 4294967296;
+    };
+  }, {
+    key: SAVE_KEY,
+    sessionMarker: marker,
+    seedLabel: "fast-amber"
+  });
+  await page.goto(`${BASE_URL}?fast-black-candle-warm=${testCase.label}`, { waitUntil: "networkidle" });
+  await page.evaluate(({ key, sessionMarker }) => {
+    localStorage.removeItem(key);
+    sessionStorage.removeItem(sessionMarker);
+  }, { key: SAVE_KEY, sessionMarker: marker });
+  await page.goto(`${BASE_URL}?fast-black-candle=${testCase.label}`, { waitUntil: "domcontentloaded" });
+  await page.locator(`#${SOURCE_ID}`).waitFor({ state: "visible" });
+  await expect(page.locator("#tutorialPanel")).toBeHidden();
+  await activateFastPair(page, context, testCase);
+  await page.waitForFunction((key) => {
+    const state = JSON.parse(localStorage.getItem(key) || "{}");
+    return state.moves === 5 && document.querySelector("#board")?.getAttribute("aria-busy") === "false";
+  }, SAVE_KEY, { timeout: 12000 });
+  await page.reload({ waitUntil: "networkidle" });
+  await expect(page.locator("#tutorialPanel")).toBeHidden();
+}
+
+async function activateHintedPair(page, mobile) {
+  await page.waitForFunction(() => document.querySelectorAll("#board .tile.idle-hint").length === 2, null, {
+    timeout: 13000
+  });
+  const ids = await page.locator("#board .tile.idle-hint").evaluateAll((tiles) => tiles.map((tile) => tile.id));
+  const movesBefore = await page.evaluate((key) => (
+    JSON.parse(localStorage.getItem(key) || "{}").moves
+  ), SAVE_KEY);
+  for (const id of ids) {
+    if (mobile) {
+      const box = await page.locator(`#${id}`).boundingBox();
+      expect(box, `${id} keeps touch geometry`).toBeTruthy();
+      await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+    } else {
+      await page.locator(`#${id}`).click();
+    }
+  }
+  await page.waitForFunction(({ key, moves }) => {
+    const state = JSON.parse(localStorage.getItem(key) || "{}");
+    return state.moves === moves - 1
+      && document.querySelector("#board")?.getAttribute("aria-busy") === "false";
+  }, { key: SAVE_KEY, moves: movesBefore }, { timeout: 13000 });
+  await page.waitForTimeout(900);
 }
 
 for (const testCase of CASES) {
@@ -227,3 +295,127 @@ for (const testCase of CASES) {
     }
   });
 }
+
+const FAST_BLACK_CANDLE_CASES = [
+  { label: "desktop-pointer-full", viewport: { width: 1280, height: 720 } },
+  { label: "desktop-pointer-reduced", viewport: { width: 1280, height: 720 }, reduced: true },
+  { label: "mobile390-touch-full", viewport: { width: 390, height: 844 }, mobile: true },
+  { label: "mobile390-touch-reduced", viewport: { width: 390, height: 844 }, mobile: true, reduced: true }
+];
+
+for (const testCase of FAST_BLACK_CANDLE_CASES) {
+  test(`fast opening still teaches deliberate Black Candle activation on ${testCase.label}`, async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: testCase.viewport,
+      hasTouch: Boolean(testCase.mobile),
+      isMobile: Boolean(testCase.mobile),
+      reducedMotion: testCase.reduced ? "reduce" : "no-preference"
+    });
+    const page = await context.newPage();
+    const problems = [];
+    page.on("console", (message) => {
+      if (["warning", "error"].includes(message.type())) problems.push(message.text());
+    });
+    page.on("pageerror", (error) => problems.push(error.message));
+    page.on("requestfailed", (request) => {
+      const failure = request.failure()?.errorText || "";
+      if (failure !== "net::ERR_ABORTED") problems.push(`${request.url()} ${failure}`);
+    });
+
+    try {
+      await openDeterministicFastPath(page, context, testCase, "activate");
+      await activateHintedPair(page, testCase.mobile);
+      await activateHintedPair(page, testCase.mobile);
+
+      const formed = await report(page);
+      expect(formed.state.moves).toBe(3);
+      expect(formed.state.counts[5], "fast route has already filled Thorn Rose").toBeGreaterThanOrEqual(8);
+      expect(formed.state.counts[1], "fast route has already filled Bone Star").toBeGreaterThanOrEqual(6);
+      expect(formed.state.roundComplete, "objectives wait for the taught activation").toBe(false);
+      expect(formed.state.coins, "no reward arrives before the lane burns").toBe(0);
+      expect(formed.state.armedLineRelic).toMatchObject({ direction: "horizontal", flowerId: 1 });
+      expect(formed.state.blackCandleLessonComplete).toBe(false);
+      expect(formed.state.tutorialActive).toBe(true);
+      expect(formed.tutorialVisible).toBe(true);
+      expect(formed.namedBlackCandle).toBe(true);
+      expect(formed.tutorialIcon).toBe("BLACK CANDLE");
+      expect(formed.tutorialCopy).toBe("Swap right to burn this row.");
+      expect(formed.cue).toBe("Swap Black Candle Vine right - burn this row.");
+      expect(formed.commands).toEqual(["Skip"]);
+      expect(formed.hints).toHaveLength(2);
+      expect(formed.tiles).toBe(64);
+      expect(formed.rows).toBe(8);
+      expect(formed.disabled).toBe(0);
+      expect(formed.board.width).toBeCloseTo(testCase.mobile ? 378 : 600, 2);
+      expect(formed.board.height).toBeCloseTo(testCase.mobile ? 378 : 600, 2);
+      expect(formed.board.bottom).toBeLessThanOrEqual(testCase.viewport.height);
+      expect(formed.scrollY).toBe(0);
+      expect(formed.overflowX).toBe(false);
+      if (testCase.mobile) expect(formed.overflowY).toBe(false);
+      expect(formed.brokenImages).toEqual([]);
+
+      if (["desktop-pointer-full", "mobile390-touch-full"].includes(testCase.label)) {
+        await page.screenshot({
+          path: `work/fast-opening-black-candle-${testCase.mobile ? "mobile390" : "desktop"}-formed.png`,
+          fullPage: false
+        });
+      }
+
+      await activateHintedPair(page, testCase.mobile);
+      await expect(page.getByRole("button", { name: "Restore Greenhouse · 100 coins", exact: true }))
+        .toBeVisible({ timeout: 12000 });
+      const completed = await report(page);
+      expect(completed.state.moves, "activation spends one deliberate move").toBe(2);
+      expect(completed.state.roundComplete).toBe(true);
+      expect(completed.state.coins).toBe(120);
+      expect(completed.state.armedLineRelic).toBeNull();
+      expect(completed.state.blackCandleLessonComplete).toBe(true);
+      expect(completed.commands).toEqual(["Restore Greenhouse · 100 coins"]);
+      expect(completed.brokenImages).toEqual([]);
+
+      if (["desktop-pointer-full", "mobile390-touch-full"].includes(testCase.label)) {
+        await page.screenshot({
+          path: `work/fast-opening-black-candle-${testCase.mobile ? "mobile390" : "desktop"}-completed.png`,
+          fullPage: false
+        });
+      }
+
+      const completedSave = completed.save;
+      await page.reload({ waitUntil: "networkidle" });
+      const restored = await report(page);
+      expect(restored.save, "completed fast route reloads byte-identically").toBe(completedSave);
+      expect(restored.state.roundComplete).toBe(true);
+      expect(restored.state.coins).toBe(120);
+      expect(restored.state.armedLineRelic).toBeNull();
+      expect(restored.commands).toEqual(["Restore Greenhouse · 100 coins"]);
+      expect(restored.brokenImages).toEqual([]);
+      expect(problems).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+}
+
+test("Skip waives a fast completed Black Candle lesson without another move", async ({ browser }) => {
+  const testCase = FAST_BLACK_CANDLE_CASES[0];
+  const context = await browser.newContext({ viewport: testCase.viewport });
+  const page = await context.newPage();
+  try {
+    await openDeterministicFastPath(page, context, testCase, "skip");
+    await activateHintedPair(page, false);
+    await activateHintedPair(page, false);
+    await page.locator("#tutorialSkipBtn").click();
+    await expect(page.getByRole("button", { name: "Restore Greenhouse · 100 coins", exact: true }))
+      .toBeVisible({ timeout: 12000 });
+    const skipped = await report(page);
+    expect(skipped.state.moves, "Skip does not charge a lane-burn move").toBe(3);
+    expect(skipped.state.roundComplete).toBe(true);
+    expect(skipped.state.coins).toBe(120);
+    expect(skipped.state.tutorialSkipped).toBe(true);
+    expect(skipped.state.blackCandleLessonComplete).toBe(true);
+    expect(skipped.state.armedLineRelic).toBeNull();
+    expect(skipped.commands).toEqual(["Restore Greenhouse · 100 coins"]);
+  } finally {
+    await context.close();
+  }
+});

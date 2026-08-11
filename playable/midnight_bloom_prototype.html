@@ -11376,7 +11376,7 @@
         || !thornGoalComplete(plan)
         || Boolean(blackCandleActivationPresentation)
         || tutorialReplayOwnsNarration
-        || (tutorialActive && plan.round === 1 && !blackCandleLessonComplete && !armedLineRelic)
+        || (plan.round === 1 && !tutorialSkipped && !blackCandleLessonComplete && !armedLineRelic)
         || (tutorialActive && plan.round >= 2)
         || restoredGreenhouseHandoff
         || altarReweaveActive
@@ -16670,6 +16670,11 @@
       tutorialReplayReturnsFocusToHelp = false;
       ordinaryRefusalHelpReplayActive = false;
       blackCandleLessonComplete = true;
+      const completedBySkip = maybeCompleteRound();
+      if (completedBySkip) {
+        armedLineRelic = null;
+        clearIdleHint();
+      }
       if (skippingRoundOneAgency) {
         clearTargetLiteracy(false);
         clearIdleHint();
@@ -16683,7 +16688,9 @@
       }
       const restartPostOnboardingHint = !skippingThornLesson
         && isPostOnboardingIdleHintActive();
-      if (closingKeyboardReplay) {
+      if (completedBySkip) {
+        queuePostRenderFocus(focusedPayoffPrimaryButtonId());
+      } else if (closingKeyboardReplay) {
         queuePostRenderFocus("tutorialHelpBtn");
       } else if (guidedFocusCell) {
         boardFocusCell = clampBoardFocusCell(guidedFocusCell);
@@ -16694,7 +16701,9 @@
       render();
       if (event?.detail === 0) {
         armPayoffHandoffInputGuard(
-          closingKeyboardReplay ? "tutorialHelpBtn" : "",
+          completedBySkip
+            ? focusedPayoffPrimaryButtonId()
+            : closingKeyboardReplay ? "tutorialHelpBtn" : "",
           TUTORIAL_COMMAND_INPUT_GUARD_MS,
           true
         );
@@ -16718,7 +16727,7 @@
         });
       }
       saveProgress();
-      if (!selectedReplayHintPair.length && (skippingRoundOneAgency || restartPostOnboardingHint)) {
+      if (!completedBySkip && !selectedReplayHintPair.length && (skippingRoundOneAgency || restartPostOnboardingHint)) {
         scheduleIdleHint();
       }
     }
@@ -17874,6 +17883,9 @@
           queueLineRelicBurst(wave.lineRelics, cascadeIndex);
         } else if (wave.createdLineRelic) {
           armedLineRelic = normalizeArmedLineRelic(wave.createdLineRelic);
+          if (currentRound === 1 && !tutorialSkipped && !blackCandleLessonComplete) {
+            tutorialActive = true;
+          }
           queueLineRelicArming(armedLineRelic, cascadeIndex);
           const guidance = lineRelicGuidance();
           $("firstSwapCue").textContent = guidance?.cue || "Swap Black Candle Vine - burn its lane.";
@@ -19265,7 +19277,7 @@
       const plan = activeRoundPlan();
       const targetsComplete = plan.targets.every((target) => counts[target.flowerId] >= target.needed);
       const authoredLessonPending = plan.round === 1
-        && tutorialActive
+        && !tutorialSkipped
         && !blackCandleLessonComplete;
       if (roundComplete || !targetsComplete || !thornGoalComplete(plan) || authoredLessonPending) {
         return false;
