@@ -10512,6 +10512,7 @@
     let bloomAudioWindowFocused = document.hasFocus();
     let bloomAudioSuspendedForInterruption = false;
     let bloomAudioVisibilityTransition = Promise.resolve();
+    let bloomAudioGestureResume = null;
     let bloomAudioMaster = null;
     let bloomAudioCompressor = null;
     let bloomSoundscape = null;
@@ -13396,6 +13397,13 @@
         contextCreated = true;
       }
       if (
+        !contextCreated
+        && bloomAudioContext.state === "suspended"
+        && bloomAudioSuspendedForInterruption
+      ) {
+        resumeBloomAudioFromOwnedInterruption(bloomAudioContext);
+      }
+      if (
         contextCreated
         && bloomAudioContext.state === "suspended"
         && !bloomAudioInterrupted()
@@ -13408,6 +13416,39 @@
 
     function bloomAudioInterrupted() {
       return document.hidden || !bloomAudioWindowFocused;
+    }
+
+    function resumeBloomAudioFromOwnedInterruption(context) {
+      if (
+        bloomAudioGestureResume
+        || context !== bloomAudioContext
+        || bloomAudioInterrupted()
+        || !bloomAudioSuspendedForInterruption
+        || context.state !== "suspended"
+        || typeof context.resume !== "function"
+      ) {
+        return;
+      }
+      const resumeAttempt = context.resume();
+      bloomAudioGestureResume = Promise.resolve(resumeAttempt)
+        .then(async () => {
+          if (context !== bloomAudioContext) {
+            return;
+          }
+          if (bloomAudioInterrupted()) {
+            if (context.state === "running" && typeof context.suspend === "function") {
+              await context.suspend();
+            }
+            return;
+          }
+          if (context.state === "running") {
+            bloomAudioSuspendedForInterruption = false;
+          }
+        })
+        .catch(() => {})
+        .finally(() => {
+          bloomAudioGestureResume = null;
+        });
     }
 
     function syncBloomAudioVisibility() {

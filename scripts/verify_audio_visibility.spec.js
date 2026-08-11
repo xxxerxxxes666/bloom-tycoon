@@ -74,6 +74,20 @@ async function activateOpeningPair(page, testCase) {
   await destination.click();
 }
 
+async function activateCurrentHintPair(page, testCase) {
+  const hints = page.locator(".tile.idle-hint");
+  await expect(hints).toHaveCount(2, { timeout: 15000 });
+  const ids = await hints.evaluateAll((tiles) => tiles.map((tile) => tile.id));
+  for (const id of ids) {
+    const tile = page.locator(`#${id}`);
+    if (testCase.input === "touch") {
+      await tile.tap();
+    } else {
+      await tile.click();
+    }
+  }
+}
+
 async function report(page) {
   return page.evaluate((key) => {
     const tiles = [...document.querySelectorAll(".tile")];
@@ -317,6 +331,75 @@ test("visibility return waits for window focus before resuming audio", async ({ 
     await context.close();
   }
 });
+
+for (const testCase of [CASES[0], CASES[2]]) {
+  test(`the next deliberate match retries a denied focus resume on ${testCase.label}`, async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: testCase.viewport,
+      hasTouch: Boolean(testCase.mobile),
+      isMobile: Boolean(testCase.mobile)
+    });
+    const page = await context.newPage();
+    const browserErrors = [];
+    page.on("console", (message) => {
+      if (["warning", "error"].includes(message.type())) browserErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => browserErrors.push(error.message));
+    try {
+      await openFreshWithCapturedAudioContext(context, page, testCase);
+      await activateOpeningPair(page, testCase);
+      await expect.poll(async () => (await report(page)).audio.contextState).toBe("running");
+      await expect.poll(async () => (await report(page)).moves).toBe(5);
+      await page.waitForTimeout(900);
+      await page.evaluate(() => {
+        const context = window.__capturedAudioContext;
+        const nativeResume = context.resume.bind(context);
+        let rejectNextResume = true;
+        context.resume = () => {
+          if (rejectNextResume) {
+            rejectNextResume = false;
+            window.__focusResumeRejected = true;
+            return Promise.reject(new DOMException("User activation required", "NotAllowedError"));
+          }
+          return nativeResume();
+        };
+      });
+
+      await page.evaluate(() => window.__setAudioWindowFocused(false));
+      await expect.poll(async () => (await report(page)).audio.contextState).toBe("suspended");
+      await page.evaluate(() => window.__setAudioWindowFocused(true));
+      await expect.poll(() => page.evaluate(() => Boolean(window.__focusResumeRejected))).toBe(true);
+      await page.waitForTimeout(100);
+      const denied = await report(page);
+      expect(denied.audio.contextState).toBe("suspended");
+      expect(denied.audio.interruptionSuspended).toBe(true);
+      expect(denied.audio.windowFocused).toBe(true);
+
+      await activateCurrentHintPair(page, testCase);
+      await expect.poll(async () => (await report(page)).moves, { timeout: 12000 }).toBe(4);
+      await expect.poll(async () => (await report(page)).audio.contextState).toBe("running");
+      const recovered = await report(page);
+      expect(recovered.audio.interruptionSuspended).toBe(false);
+      expect(recovered.audio.windowFocused).toBe(true);
+      expect(recovered.counts[5]).toBeGreaterThanOrEqual(3);
+      expect(recovered.tiles).toBe(64);
+      expect(recovered.rows).toBe(8);
+      expect(recovered.roving).toEqual([recovered.active]);
+      expect(recovered.selected).toBe(0);
+      expect(recovered.boardWidth).toBeCloseTo(testCase.mobile ? 378 : 600, 1);
+      expect(recovered.boardHeight).toBeCloseTo(testCase.mobile ? 378 : 600, 1);
+      expect(recovered.overflowX).toBe(false);
+      expect(recovered.overflowY).toBe(false);
+      expect(recovered.brokenImages).toEqual([]);
+      expect(browserErrors).toEqual([]);
+      if (testCase.mobile) {
+        await page.screenshot({ path: "work/audio-denied-resume-recovered-mobile390.png", fullPage: true });
+      }
+    } finally {
+      await context.close();
+    }
+  });
+}
 
 test("a pending foreground resume is re-suspended when the page hides again", async ({ browser }) => {
   const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
