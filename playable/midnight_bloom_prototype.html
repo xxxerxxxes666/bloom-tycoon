@@ -16731,8 +16731,17 @@
       clearTargetLiteracy(false);
     }
 
+    function freshTutorialEligible() {
+      return !tutorialSkipped
+        && !tutorialActive
+        && currentRound === 1
+        && !roundComplete
+        && !hasMadeValidMove
+        && !isBouquetFailed();
+    }
+
     function scheduleFreshTutorial() {
-      if (tutorialSkipped || tutorialActive || currentRound !== 1 || roundComplete || hasMadeValidMove) {
+      if (!freshTutorialEligible()) {
         return;
       }
       if (tutorialStartTimer && window.clearTimeout) {
@@ -16740,6 +16749,9 @@
       }
       tutorialStartTimer = window.setTimeout(() => {
         tutorialStartTimer = null;
+        if (!freshTutorialEligible()) {
+          return;
+        }
         if (boardDragInputActive()) {
           scheduleFreshTutorial();
           return;
