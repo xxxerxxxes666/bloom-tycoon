@@ -670,6 +670,8 @@ def verify_source_hooks():
         "body.selected-guided-play .tile.legal-target:not(.guided-counterpart)",
         "body.selected-guided-play .tile.match-preview:not(.guided-counterpart)",
         "body.selected-guided-play .tile.guided-counterpart",
+        "button:not(.tile):focus-visible",
+        ".tile:focus {\n      outline: none;",
         "(currentRound === 1 && tutorialActive)",
         "const selectedHintPair = new Set(idleHintCells);",
         "idleHintCells = selectedHintPair;",
