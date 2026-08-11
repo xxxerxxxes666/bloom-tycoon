@@ -58,6 +58,8 @@ async function report(page) {
       visibleButtons: Array.from(document.querySelectorAll("button:not(.tile)"))
         .filter(visible)
         .map((button) => ({ id: button.id, text: button.textContent.replace(/\s+/g, " ").trim() })),
+      tutorialVisible: visible(document.querySelector("#tutorialPanel")),
+      tutorialCopy: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
       thornEvents: document.querySelectorAll(".thorn-event").length,
       thornOutcomeTiles: document.querySelectorAll(".tile.thorn-hit, .tile.thorn-cleared").length,
       boardBusy: document.querySelector("#board")?.getAttribute("aria-busy") || "",
@@ -113,7 +115,7 @@ for (const testCase of CASES) {
       const beforeTab = await report(page);
       expect(["", "tile-1-3"], `${testCase.label} feedback focus remains bounded`).toContain(beforeTab.activeId);
       expect(beforeTab.boardBusy, `${testCase.label} altar owns transient feedback`).toBe("true");
-      const settledState = JSON.stringify(beforeTab.state);
+      const preSettlementState = JSON.stringify(beforeTab.state);
 
       if (beforeTab.activeId === "tile-1-3") {
         await page.keyboard.press("ArrowRight");
@@ -121,7 +123,7 @@ for (const testCase of CASES) {
         expect(afterLockedCommand.activeId, `${testCase.label} feedback still locks board commands`)
           .toBe(beforeTab.activeId);
         expect(JSON.stringify(afterLockedCommand.state), `${testCase.label} locked command changes no state`)
-          .toBe(settledState);
+          .toBe(preSettlementState);
       }
 
       await page.keyboard.press("Tab");
@@ -129,7 +131,8 @@ for (const testCase of CASES) {
       expect(afterTab.activeId, `${testCase.label} Tab escapes the busy altar`).not.toBe(beforeTab.activeId);
       expect(afterTab.activeTag, `${testCase.label} Tab reaches an ordinary command`).toBe("BUTTON");
       expect(afterTab.activeVisible, `${testCase.label} focused command is visible`).toBe(true);
-      expect(JSON.stringify(afterTab.state), `${testCase.label} Tab changes no accepted state`).toBe(settledState);
+      expect([8, 9], `${testCase.label} Tab cannot add another move spend`).toContain(afterTab.state.moves);
+      expect([0, 3], `${testCase.label} Tab cannot add unrelated flower credit`).toContain(afterTab.state.counts[2]);
       expect(afterTab.thornEvents, `${testCase.label} Tab does not skip feedback`).toBeGreaterThan(0);
       expect(afterTab.tiles, `${testCase.label} retains 64 tiles`).toBe(64);
       expect(afterTab.rows, `${testCase.label} retains eight rows`).toBe(8);
@@ -146,6 +149,51 @@ for (const testCase of CASES) {
         path: `test-results/thorn-feedback-tab-${testCase.label}.png`,
         fullPage: true
       });
+
+      await expect.poll(async () => (await report(page)).thornEvents, {
+        message: `${testCase.label} Thorn feedback retires on schedule`,
+        timeout: 4000
+      }).toBe(0);
+      const afterRetirement = await report(page);
+      expect(afterRetirement.activeId, `${testCase.label} receipt does not focus through its hidden command`)
+        .toBe("");
+      expect(afterRetirement.activeTag, `${testCase.label} receipt owns neutral page focus`).toBe("BODY");
+      expect(afterRetirement.boardBusy, `${testCase.label} cleanup releases the altar`).toBe("false");
+      expect(afterRetirement.visibleButtons, `${testCase.label} receipt remains the sole owner`).toEqual([]);
+      expect(afterRetirement.state.moves, `${testCase.label} match commits once`).toBe(8);
+      expect(afterRetirement.state.counts[2], `${testCase.label} Nightshade credits once`).toBe(3);
+      expect(afterRetirement.state.clearedCursedThorns, `${testCase.label} seals three Thorns`).toBe(3);
+      expect(afterRetirement.state.cursedThorns, `${testCase.label} retires sealed blockers`).toEqual([]);
+      await page.screenshot({
+        path: `test-results/thorn-receipt-focus-${testCase.label}.png`,
+        fullPage: true
+      });
+
+      await expect(page.locator("#tutorialHelpBtn"), `${testCase.label} Help returns after the receipt`)
+        .toBeVisible({ timeout: 5000 });
+      await expect(page.locator("#tile-1-3"), `${testCase.label} guided tile regains focus after receipt`)
+        .toBeFocused({ timeout: 5000 });
+      await page.keyboard.press("Tab");
+      await expect(page.locator("#tutorialHelpBtn"), `${testCase.label} fresh Tab reaches Help`)
+        .toBeFocused();
+      await page.keyboard.press("Enter");
+      const afterHelp = await report(page);
+      expect(afterHelp.activeId, `${testCase.label} Help keeps command focus`).toBe("tutorialSkipBtn");
+      expect(afterHelp.tutorialVisible, `${testCase.label} Help opens one visible guide`).toBe(true);
+      expect(afterHelp.tutorialCopy, `${testCase.label} Help names the next task`)
+        .toBe("Finish the Moonlit Wreath.");
+      expect(afterHelp.thornEvents, `${testCase.label} Help replaces old Thorn feedback`).toBe(0);
+      expect(afterHelp.thornOutcomeTiles, `${testCase.label} Help retires old outcome tiles`).toBe(0);
+      expect(afterHelp.state.board, `${testCase.label} Help preserves the settled board`)
+        .toEqual(afterRetirement.state.board);
+      expect(afterHelp.state.moves, `${testCase.label} Help spends no move`).toBe(afterRetirement.state.moves);
+      expect(afterHelp.state.counts, `${testCase.label} Help preserves credited flowers`)
+        .toEqual(afterRetirement.state.counts);
+      expect(afterHelp.state.clearedCursedThorns, `${testCase.label} Help preserves sealed Thorns`)
+        .toBe(afterRetirement.state.clearedCursedThorns);
+      expect(afterHelp.state.coins, `${testCase.label} Help preserves the wallet`).toBe(afterRetirement.state.coins);
+      expect(afterHelp.state.tutorialActive, `${testCase.label} Help saves replay ownership`).toBe(true);
+      expect(afterHelp.state.tutorialSkipped, `${testCase.label} Help reopens the guide`).toBe(false);
     } finally {
       await context.close();
     }

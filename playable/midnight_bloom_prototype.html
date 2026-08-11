@@ -17629,9 +17629,13 @@
         if (hintedFocus && !settledOutcomeOwnsGuidance && !roundComplete && !isBouquetFailed()) {
           boardFocusCell = hintedFocus;
         }
+        const activeAfterResolve = document.activeElement;
+        const resolvedBoardMayRestoreFocus = Boolean(boardTileFromElement(activeAfterResolve))
+          || !activeAfterResolve
+          || ["BODY", "HTML"].includes(activeAfterResolve.tagName);
         if (isBouquetFailed()) {
           queuePostRenderFocus("renewBtn");
-        } else if (!roundComplete) {
+        } else if (!roundComplete && resolvedBoardMayRestoreFocus) {
           queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
         }
         render();
@@ -19079,6 +19083,7 @@
           const guideBoardFocus = finishedOutcome?.guideBoardFocus || null;
           const focusYieldedToPage = !document.activeElement
             || ["BODY", "HTML"].includes(document.activeElement.tagName);
+          const settledOutcomeMayRestoreBoardFocus = focusYieldedToPage || Boolean(activeBoardFocus);
           const receiptStillOwnsFocus = Boolean(
             heldBoardFocus
             && guideBoardFocus
@@ -19115,7 +19120,12 @@
           if (receiptStillOwnsFocus) {
             boardFocusCell = clampBoardFocusCell(guideBoardFocus);
           }
-          if (!roundComplete && !isBouquetFailed() && outcomeKind !== "shuffle") {
+          if (
+            settledOutcomeMayRestoreBoardFocus
+            && !roundComplete
+            && !isBouquetFailed()
+            && outcomeKind !== "shuffle"
+          ) {
             queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
           }
           render();
@@ -19139,6 +19149,10 @@
           return;
         }
         const releasingThornOutcome = thornOutcomeFeedbackActive();
+        const activeBeforeThornRelease = document.activeElement;
+        const thornOutcomeStillOwnsFocus = Boolean(boardTileFromElement(activeBeforeThornRelease))
+          || !activeBeforeThornRelease
+          || ["BODY", "HTML"].includes(activeBeforeThornRelease.tagName);
         boardParticles = [];
         fallAnimations.clear();
         settledCells.clear();
@@ -19152,7 +19166,12 @@
         if (pendingSettledBoardOutcome) {
           presentSettledBoardOutcome();
         }
-        if (releasingThornOutcome && !roundComplete && !isBouquetFailed()) {
+        if (
+          releasingThornOutcome
+          && thornOutcomeStillOwnsFocus
+          && !roundComplete
+          && !isBouquetFailed()
+        ) {
           queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
         }
         render();
@@ -21082,6 +21101,9 @@
       if (event.key === "Tab") {
         document.body.classList.remove("pointer-board-input");
         document.body.classList.add("keyboard-board-navigation");
+        if (/^tile-\d+-\d+$/.test(postRenderFocusTarget)) {
+          postRenderFocusTarget = "";
+        }
         if (boardDragInputActive()) {
           cancelInterruptedBoardDrag();
           restoreInterruptedBoardDragFocus();
