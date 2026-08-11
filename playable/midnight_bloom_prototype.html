@@ -10469,6 +10469,7 @@
     let restoredRoundTwoGuideMoves = 0;
     let tutorialSkipped = false;
     let tutorialActive = false;
+    let tutorialOpenedOverSelection = false;
     let blackCandleLessonComplete = false;
     let tutorialStartTimer = null;
     let currentRound = 1;
@@ -16567,6 +16568,12 @@
       }
       clearTargetLiteracy(false);
       tutorialSkipped = false;
+      tutorialOpenedOverSelection = Boolean(
+        !replay
+        && currentRound === 1
+        && !hasMadeValidMove
+        && selected
+      );
       tutorialActive = true;
       tutorialReplayOwnsNarration = Boolean(replay);
       tutorialReplayReturnsFocusToHelp = Boolean(replay && returnFocusToHelp);
@@ -16657,6 +16664,7 @@
         && tutorialReplayReturnsFocusToHelp;
       tutorialSkipped = true;
       tutorialActive = false;
+      tutorialOpenedOverSelection = false;
       tutorialReplayOwnsNarration = false;
       tutorialReplayReturnsFocusToHelp = false;
       ordinaryRefusalHelpReplayActive = false;
@@ -16724,6 +16732,7 @@
       }
       tutorialSkipped = true;
       tutorialActive = false;
+      tutorialOpenedOverSelection = false;
       tutorialReplayOwnsNarration = false;
       tutorialReplayReturnsFocusToHelp = false;
       ordinaryRefusalHelpReplayActive = false;
@@ -17263,12 +17272,17 @@
         ? lineRelicGuidance(activatingRelic)
         : null;
       const isFirstValidMove = !hasMadeValidMove;
+      const retiringInterposedTutorial = isFirstValidMove
+        && tutorialOpenedOverSelection;
       const roundTwoOpeningBudgetActive = isRestoredRoundTwoOpeningBudgetActive();
       const guidedRoundTwoLesson = isAuthoritativeRoundTwoThornLesson()
         && previewSwapMatches(source, target).some((match) => cellsTouchCursedThorn(match.cells));
       roundOneLastSwapMissedOrder = false;
       roundOneShuffleReserveFocusActive = false;
       hasMadeValidMove = true;
+      if (retiringInterposedTutorial) {
+        concludeTutorial();
+      }
       if (roundTwoOpeningBudgetActive) {
         restoredRoundTwoGuideMoves = Math.min(
           RESTORED_ROUND_TWO_GUIDE_LIMIT,

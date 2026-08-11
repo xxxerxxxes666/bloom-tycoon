@@ -9,6 +9,7 @@ const TARGET_ID = "tile-1-1";
 const CASES = [
   { label: "desktop-pointer-full", viewport: { width: 1280, height: 720 } },
   { label: "desktop-pointer-reduced", viewport: { width: 1280, height: 720 }, reduced: true },
+  { label: "desktop-pointer-interposed", viewport: { width: 1280, height: 720 }, interpose: true },
   { label: "mobile390-touch-full", viewport: { width: 390, height: 844 }, mobile: true },
   { label: "mobile390-touch-reduced", viewport: { width: 390, height: 844 }, mobile: true, reduced: true }
 ];
@@ -64,22 +65,28 @@ async function report(page) {
   }, SAVE_KEY);
 }
 
-async function activateFastPair(page, context, mobile) {
-  const points = [];
-  for (const id of [SOURCE_ID, TARGET_ID]) {
-    const box = await page.locator(`#${id}`).boundingBox();
-    expect(box, `${id} has input geometry`).toBeTruthy();
-    points.push({
-      x: box.x + box.width / 2,
-      y: box.y + box.height / 2
-    });
-  }
+async function activateFastPair(page, context, { mobile, interpose }) {
+  const opening = await page.evaluate(({ sourceId, targetId }) => {
+    const point = (id) => {
+      const box = document.getElementById(id)?.getBoundingClientRect();
+      return box && box.width > 0 && box.height > 0
+        ? { x: box.x + box.width / 2, y: box.y + box.height / 2 }
+        : null;
+    };
+    return {
+      points: [point(sourceId), point(targetId)],
+      tutorialHidden: document.getElementById("tutorialPanel")?.hidden === true,
+      hints: document.querySelectorAll("#board .tile.idle-hint").length
+    };
+  }, { sourceId: SOURCE_ID, targetId: TARGET_ID });
+  expect(opening.points, "the taught pair has input geometry").not.toContain(null);
+  expect(opening.tutorialHidden, "input begins before the delayed tutorial").toBe(true);
+  expect(opening.hints, "the taught pair is already glowing").toBe(2);
 
-  const startedAt = Date.now();
   if (mobile) {
     const client = await context.newCDPSession(page);
     let identifier = 201;
-    for (const point of points) {
+    for (const [index, point] of opening.points.entries()) {
       await client.send("Input.dispatchTouchEvent", {
         type: "touchStart",
         touchPoints: [{ ...point, id: identifier, radiusX: 2, radiusY: 2, force: 1 }]
@@ -89,13 +96,18 @@ async function activateFastPair(page, context, mobile) {
         touchPoints: []
       });
       identifier += 1;
+      if (interpose && index === 0) {
+        await page.locator("#tutorialPanel").waitFor({ state: "visible" });
+      }
     }
   } else {
-    for (const point of points) {
+    for (const [index, point] of opening.points.entries()) {
       await page.mouse.click(point.x, point.y, { delay: 8 });
+      if (interpose && index === 0) {
+        await page.locator("#tutorialPanel").waitFor({ state: "visible" });
+      }
     }
   }
-  return Date.now() - startedAt;
 }
 
 for (const testCase of CASES) {
@@ -134,10 +146,8 @@ for (const testCase of CASES) {
       });
       await page.locator(`#${SOURCE_ID}`).waitFor({ state: "visible" });
       await expect(page.locator("#tutorialPanel")).toBeHidden();
-      await expect(page.locator("#board .tile.idle-hint")).toHaveCount(2, { timeout: 500 });
 
-      const inputDuration = await activateFastPair(page, context, testCase.mobile);
-      expect(inputDuration, "the pair is issued inside the delayed tutorial window").toBeLessThan(600);
+      await activateFastPair(page, context, testCase);
 
       await page.waitForFunction((key) => {
         const state = JSON.parse(localStorage.getItem(key) || "{}");
