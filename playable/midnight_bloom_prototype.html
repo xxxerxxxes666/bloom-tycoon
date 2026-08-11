@@ -15292,16 +15292,17 @@
       if (greenhouseRevivalPulseTimer && window.clearTimeout) {
         window.clearTimeout(greenhouseRevivalPulseTimer);
       }
+      const ownedReplayMatch = Boolean(options.ownedReplayMatch);
       document.body.classList.toggle(
         "owned-replay-match-intake",
-        Boolean(options.ownedReplayMatch)
+        ownedReplayMatch
       );
       document.body.classList.add("greenhouse-intake");
       greenhouseRevivalPulseTimer = window.setTimeout(() => {
         document.body.classList.remove("greenhouse-intake");
         document.body.classList.remove("owned-replay-match-intake");
         greenhouseRevivalPulseTimer = null;
-      }, 820);
+      }, ownedReplayMatch ? 1200 : 820);
     }
 
     function focusedPayoffCeremony() {
@@ -19882,12 +19883,20 @@
       const reducedMotion = prefersReducedMotion();
       activeRoundPlan().targets.forEach((target, index) => {
         if (!(gained[target.flowerId] > 0)) return;
-        const destination = document.querySelector(`.objective-target[data-flower-id="${target.flowerId}"]`);
-        if (!destination) return;
-        const targetRect = destination.getBoundingClientRect();
-        const growthRects = visibleBouquetGrowthRects(target.flowerId);
-        const destinationRects = growthRects.length ? growthRects : [targetRect];
         const origins = gainedCells[target.flowerId] || [];
+        const destination = document.querySelector(`.objective-target[data-flower-id="${target.flowerId}"]`);
+        const targetRect = destination?.getBoundingClientRect();
+        const targetStyle = destination ? window.getComputedStyle(destination) : null;
+        const visibleTargetRect = targetRect?.width > 0
+          && targetRect?.height > 0
+          && targetStyle?.display !== "none"
+          && targetStyle?.visibility !== "hidden"
+          ? targetRect
+          : null;
+        const growthRects = visibleBouquetGrowthRects(target.flowerId);
+        const destinationRects = growthRects.length
+          ? growthRects
+          : visibleTargetRect ? [visibleTargetRect] : [];
         const flightOrigins = destinationRects.map((_, destinationIndex) => (
           origins[destinationIndex % Math.max(1, origins.length)]
             || [BOARD_SIZE / 2 - 0.5, BOARD_SIZE / 2 - 0.5]
@@ -19940,7 +19949,8 @@
           const currentGrowthRects = visibleBouquetGrowthRects(target.flowerId);
           const currentTargetRect = currentGrowthRects.at(-1)
             || visibleLiveBouquetTargetRect(target.flowerId)
-            || destinationRects.at(-1);
+            || destinationRects.at(-1)
+            || null;
           queueBouquetBindingSeal(target, gained[target.flowerId], currentTargetRect);
           if (isOwnedRestorationReplay() && !roundComplete) {
             queueGreenhouseIntakeFlights(

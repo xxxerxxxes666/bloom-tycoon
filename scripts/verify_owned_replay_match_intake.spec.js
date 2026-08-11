@@ -15,6 +15,16 @@ test.setTimeout(120000);
 function activeRoundThreeState(ownedReplay) {
   return {
     focusedEconomyVersion: 2,
+    board: [
+      [3, 4, 3, 3, 0, 1, 0, 2],
+      [5, 3, 0, 5, 2, 0, 3, 1],
+      [4, 0, 1, 0, 4, 4, 0, 5],
+      [3, 3, 1, 0, 1, 0, 3, 2],
+      [2, 5, 5, 3, 3, 2, 0, 3],
+      [1, 4, 3, 3, 0, 1, 0, 1],
+      [3, 2, 4, 4, 1, 3, 5, 1],
+      [3, 0, 5, 0, 5, 1, 0, 2]
+    ],
     currentRound: 3,
     moves: 7,
     counts: [0, 0, 0, 0, 0, 0],
@@ -117,6 +127,15 @@ for (const config of CASES) {
 
     await openState(page, config.label, true);
     const before = await boardReport(page);
+    await page.evaluate(() => {
+      window.__ownedReplayIntakeAudit = { startedAt: 0, endedAt: 0 };
+      new MutationObserver(() => {
+        const audit = window.__ownedReplayIntakeAudit;
+        const active = document.body.classList.contains("owned-replay-match-intake");
+        if (active && !audit.startedAt) audit.startedAt = performance.now();
+        if (!active && audit.startedAt && !audit.endedAt) audit.endedAt = performance.now();
+      }).observe(document.body, { attributes: true, attributeFilter: ["class"] });
+    });
     await commitHintedPair(page, config.mobile);
     await expect(page.locator("body")).toHaveClass(/owned-replay-match-intake/, { timeout: 10000 });
     const response = await boardReport(page);
@@ -137,6 +156,10 @@ for (const config of CASES) {
     });
 
     await expect(page.locator("body")).not.toHaveClass(/owned-replay-match-intake/, { timeout: 3000 });
+    const intakeDuration = await page.evaluate(() => (
+      window.__ownedReplayIntakeAudit.endedAt - window.__ownedReplayIntakeAudit.startedAt
+    ));
+    expect(intakeDuration).toBeGreaterThanOrEqual(1100);
     await expect(page.locator(".greenhouse-intake-flight")).toHaveCount(0);
     const settled = await boardReport(page);
     expect(settled.tiles).toBe(64);
