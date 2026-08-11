@@ -12,12 +12,24 @@ const CASES = [
 ];
 
 async function openFresh(page, label) {
-  await page.addInitScript(({ key, seedToken }) => {
+  await page.addInitScript(({ key, seedToken, rngLabel }) => {
     if (!sessionStorage.getItem(seedToken)) {
       localStorage.removeItem(key);
       sessionStorage.setItem(seedToken, "1");
     }
-  }, { key: SAVE_KEY, seedToken: `opening-match-receipt-${label}` });
+    let seed = 0;
+    for (let index = 0; index < rngLabel.length; index += 1) {
+      seed = (seed * 31 + rngLabel.charCodeAt(index)) >>> 0;
+    }
+    Math.random = () => {
+      seed = (1664525 * seed + 1013904223) >>> 0;
+      return seed / 4294967296;
+    };
+  }, {
+    key: SAVE_KEY,
+    seedToken: `opening-match-receipt-${label}`,
+    rngLabel: label.includes("mobile") ? "fresh-black-candle-mobile390" : "fresh-black-candle-desktop"
+  });
   await page.goto(`${BASE_URL}?opening-match-receipt=${label}`, { waitUntil: "networkidle" });
   await expect(page.locator("#board .tile")).toHaveCount(64);
   await expect(page.locator("#tutorialPanel")).toBeVisible({ timeout: 3000 });
@@ -29,6 +41,10 @@ async function report(page) {
     const state = JSON.parse(localStorage.getItem(key) || "{}");
     const tiles = Array.from(document.querySelectorAll("#board .tile"));
     const board = document.querySelector("#board")?.getBoundingClientRect();
+    const exactGuide = document.querySelector("#board .first-action-swap-guide");
+    const guidedSource = tiles.find((tile) => (
+      tile.getAttribute("aria-label") || ""
+    ).includes("guided exchange source"));
     const visible = (node) => Boolean(node)
       && !node.hidden
       && getComputedStyle(node).display !== "none"
@@ -45,6 +61,9 @@ async function report(page) {
       guideOverlayCount: document.querySelectorAll(
         "#board .first-action-swap-guide, #board .target-match-forecast-guide, #board .swap-path-arrow"
       ).length,
+      guideSourceId: exactGuide
+        ? `tile-${exactGuide.dataset.sourceX}-${exactGuide.dataset.sourceY}`
+        : guidedSource?.id || "",
       guidedTileLabels: tiles
         .map((tile) => tile.getAttribute("aria-label") || "")
         .filter((label) => label.includes("guided exchange")),
@@ -97,6 +116,7 @@ async function activateOpeningPair(page, input) {
 async function activateHintedPair(page, input) {
   const pair = page.locator("#board .tile.idle-hint");
   await expect(pair).toHaveCount(2, { timeout: 9000 });
+  const [sourceId, destinationId] = await pair.evaluateAll((tiles) => tiles.map((tile) => tile.id));
   if (input === "touch") {
     await pair.nth(0).tap();
     await pair.nth(1).tap();
@@ -110,6 +130,7 @@ async function activateHintedPair(page, input) {
     await page.keyboard.press("Enter");
     await page.keyboard.press("Space");
   }
+  return { sourceId, destinationId };
 }
 
 for (const testCase of CASES) {
@@ -237,17 +258,19 @@ for (const testCase of CASES) {
       expect(restored.tiles, `${testCase.label} reload retains 64 tiles`).toBe(64);
       expect(restored.rows, `${testCase.label} reload retains eight rows`).toBe(8);
 
-      await activateHintedPair(page, testCase.input);
+      const secondSwap = await activateHintedPair(page, testCase.input);
       await expect.poll(async () => (await report(page)).bodyClasses.includes("settled-board-outcome-cue"), {
         message: `${testCase.label} exposes the second earned receipt`,
         timeout: 12000
       }).toBe(true);
       const secondReceipt = await report(page);
       const secondThornRoseCount = secondReceipt.state.counts[5];
-      const secondThornRoseDelta = secondThornRoseCount - restored.state.counts[5];
-      const secondThornRoseProgress = secondThornRoseCount >= 8
-        ? `${secondThornRoseCount} of 8 sealed.`
-        : `${secondThornRoseCount} of 8.`;
+      const secondThornRoseCredited = Math.min(8, secondThornRoseCount);
+      const restoredThornRoseCredited = Math.min(8, restored.state.counts[5]);
+      const secondThornRoseDelta = secondThornRoseCredited - restoredThornRoseCredited;
+      const secondThornRoseProgress = secondThornRoseCredited >= 8
+        ? `${secondThornRoseCredited} of 8 sealed.`
+        : `${secondThornRoseCredited} of 8.`;
       expect(secondReceipt.cue, `${testCase.label} second receipt names only the earned result`).toBe(
         `Thorn Rose +${secondThornRoseDelta}, ${secondThornRoseProgress} 4 moves left.`
       );
@@ -258,6 +281,12 @@ for (const testCase of CASES) {
       expect(secondReceipt.guidedTileLabels, `${testCase.label} receipt withholds guided endpoint labels`).toEqual([]);
       expect(secondReceipt.liveOwners, `${testCase.label} second receipt remains the sole narrator`)
         .toEqual([{ id: "firstSwapCue", live: "polite" }]);
+      if (testCase.input === "keyboard") {
+        expect(secondReceipt.activeId, `${testCase.label} receipt keeps focus on the settled destination`)
+          .toBe(secondSwap.destinationId);
+        expect(secondReceipt.rovingIds, `${testCase.label} receipt keeps one settled keyboard entry`)
+          .toEqual([secondSwap.destinationId]);
+      }
       expect(secondReceipt.state.moves, `${testCase.label} second receipt spends once`).toBe(4);
       expect(secondThornRoseCount, `${testCase.label} second receipt credits Thorn Rose`).toBeGreaterThanOrEqual(6);
       expect(secondReceipt.tiles, `${testCase.label} second receipt retains 64 tiles`).toBe(64);
@@ -281,6 +310,13 @@ for (const testCase of CASES) {
       expect(blackCandleHandoff.hintCount, `${testCase.label} reveals one exact pair after the receipt`).toBe(2);
       expect(blackCandleHandoff.guideOverlayCount, `${testCase.label} reveals one directional guide`).toBe(1);
       expect(blackCandleHandoff.guidedTileLabels, `${testCase.label} restores both guided endpoint labels`).toHaveLength(2);
+      if (testCase.input === "keyboard") {
+        expect(blackCandleHandoff.guideSourceId, `${testCase.label} exposes the exact guide source`).not.toBe("");
+        expect(blackCandleHandoff.activeId, `${testCase.label} moves focus only when the guide appears`)
+          .toBe(blackCandleHandoff.guideSourceId);
+        expect(blackCandleHandoff.rovingIds, `${testCase.label} gives the visible guide sole keyboard entry`)
+          .toEqual([blackCandleHandoff.guideSourceId]);
+      }
       expect(blackCandleHandoff.visibleButtons, `${testCase.label} keeps Help as the sole command`).toEqual(["Help"]);
       expect(blackCandleHandoff.state.moves, `${testCase.label} handoff spends no extra move`).toBe(4);
       expect(blackCandleHandoff.state.counts, `${testCase.label} handoff changes no objective credit`)

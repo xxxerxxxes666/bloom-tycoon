@@ -17618,8 +17618,9 @@
         if (schedulePostResolveIdleHint && isPostOnboardingIdleHintActive()) {
           seedFocusedClosingPacingMove();
         }
+        const settledOutcomeOwnsGuidance = settledBoardOutcomeOwnsBoardGuidance();
         const hintedFocus = firstHintFocusCell();
-        if (hintedFocus && !roundComplete && !isBouquetFailed()) {
+        if (hintedFocus && !settledOutcomeOwnsGuidance && !roundComplete && !isBouquetFailed()) {
           boardFocusCell = hintedFocus;
         }
         if (isBouquetFailed()) {
@@ -19043,7 +19044,9 @@
         ...pendingSettledBoardOutcome,
         returnCue: pendingSettledBoardOutcome.kind === "shuffle"
           ? ""
-          : $("firstSwapCue").textContent
+          : $("firstSwapCue").textContent,
+        heldBoardFocus: { ...clampBoardFocusCell() },
+        guideBoardFocus: firstHintFocusCell()
       };
       const outcome = settledBoardOutcome;
       pendingSettledBoardOutcome = null;
@@ -19062,8 +19065,22 @@
         }
         $("firstSwapCue").textContent = outcome.text;
         settledBoardOutcomeTimer = window.setTimeout(() => {
-          const returnCue = settledBoardOutcome?.returnCue || "";
-          const outcomeKind = settledBoardOutcome?.kind || "";
+          const finishedOutcome = settledBoardOutcome;
+          const returnCue = finishedOutcome?.returnCue || "";
+          const outcomeKind = finishedOutcome?.kind || "";
+          const activeBoardFocus = boardTileFromElement(document.activeElement);
+          const heldBoardFocus = finishedOutcome?.heldBoardFocus || null;
+          const guideBoardFocus = finishedOutcome?.guideBoardFocus || null;
+          const receiptStillOwnsFocus = Boolean(
+            heldBoardFocus
+            && guideBoardFocus
+            && activeBoardFocus
+            && !selected
+            && activeBoardFocus.x === heldBoardFocus.x
+            && activeBoardFocus.y === heldBoardFocus.y
+            && boardFocusCell.x === heldBoardFocus.x
+            && boardFocusCell.y === heldBoardFocus.y
+          );
           const roundOneOpeningHandoff = outcomeKind === "harvest"
             && currentRound === 1
             && hasMadeValidMove
@@ -19081,6 +19098,9 @@
           }
           if (roundOneOpeningHandoff && isRoundOneAgencyHandoffActive()) {
             startRoundOneTargetLiteracy();
+          }
+          if (receiptStillOwnsFocus) {
+            boardFocusCell = clampBoardFocusCell(guideBoardFocus);
           }
           if (!roundComplete && !isBouquetFailed() && outcomeKind !== "shuffle") {
             queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
