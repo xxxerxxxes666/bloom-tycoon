@@ -14536,11 +14536,11 @@
       if (isContextBoardPointerCommand(event)) {
         return;
       }
-      document.body.classList.remove("keyboard-board-navigation");
-      document.body.classList.add("pointer-board-input");
       if (!event.isPrimary || event.button !== 0 || tileSwipeStart) {
         return;
       }
+      document.body.classList.remove("keyboard-board-navigation");
+      document.body.classList.add("pointer-board-input");
       if (interruptedDragPointerId !== null) {
         interruptedDragPointerId = null;
         suppressNextBoardClick = false;

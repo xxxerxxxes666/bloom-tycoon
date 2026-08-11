@@ -1336,6 +1336,8 @@ def verify_source_hooks():
     pointer_down_handler = html[pointer_down_start:pointer_down_end]
     if pointer_down_handler.index("isContextBoardPointerCommand(event)") > pointer_down_handler.index('document.body.classList.add("pointer-board-input")'):
         raise SystemExit("Control-primary context input must be rejected before pointer modality changes")
+    if pointer_down_handler.index("event.button !== 0") > pointer_down_handler.index('document.body.classList.add("pointer-board-input")'):
+        raise SystemExit("Context buttons must be rejected before pointer modality changes")
     if pointer_down_handler.index("event.button !== 0") > pointer_down_handler.index("tileSwipeStart = {"):
         raise SystemExit("Non-primary pointer buttons must be rejected before drag creation")
     if pointer_down_handler.index("tileSwipeStart") > pointer_down_handler.index("tileSwipeStart = {"):

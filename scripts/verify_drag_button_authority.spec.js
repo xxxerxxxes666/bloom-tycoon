@@ -52,6 +52,9 @@ async function report(page) {
     const board = document.querySelector("#board");
     const boardRect = board.getBoundingClientRect();
     const source = document.querySelector(`#${sourceId}`);
+    const activeStyle = document.activeElement?.classList.contains("tile")
+      ? getComputedStyle(document.activeElement)
+      : null;
     return {
       moves: state.moves,
       counts: state.counts,
@@ -67,6 +70,15 @@ async function report(page) {
       selected: tiles.filter((tile) => tile.classList.contains("sel")).map((tile) => tile.id),
       active: document.activeElement?.id || "",
       roving: tiles.filter((tile) => tile.tabIndex === 0).map((tile) => tile.id),
+      inputMode: {
+        keyboard: document.body.classList.contains("keyboard-board-navigation"),
+        pointer: document.body.classList.contains("pointer-board-input")
+      },
+      focusIndicator: activeStyle ? {
+        style: activeStyle.outlineStyle,
+        width: activeStyle.outlineWidth,
+        color: activeStyle.outlineColor
+      } : null,
       sourceCaptures: source?.hasPointerCapture(window.__ordinaryPointerId || -1) || false,
       enabled: tiles.filter((tile) => !tile.disabled).length,
       tiles: tiles.length,
@@ -135,6 +147,9 @@ for (const profile of PROFILES) {
       await page.reload({ waitUntil: "networkidle" });
       await expect(page.locator("#tutorialPanel")).toBeVisible({ timeout: 3000 });
       await expect(page.locator(`#${SOURCE_ID}`)).toBeFocused();
+      await page.keyboard.press("Tab");
+      await page.keyboard.press("Shift+Tab");
+      await expect(page.locator(`#${SOURCE_ID}`)).toBeFocused();
       await page.evaluate(() => {
         window.__ordinaryPointerId = null;
         document.querySelector("#board").addEventListener("pointerdown", (event) => {
@@ -147,6 +162,11 @@ for (const profile of PROFILES) {
       const before = await report(page);
       expect(before.moves).toBe(6);
       expect(before.counts).toEqual([0, 0, 0, 0, 0, 0]);
+      expect(before.active).toBe(SOURCE_ID);
+      expect(before.roving).toEqual([SOURCE_ID]);
+      expect(before.inputMode).toEqual({ keyboard: true, pointer: false });
+      expect(before.focusIndicator?.style).toBe("solid");
+      expect(before.focusIndicator?.width).toBe("3px");
       const box = await page.locator(`#${SOURCE_ID}`).boundingBox();
       expect(box, "opening source has geometry").toBeTruthy();
       const start = {
@@ -164,6 +184,10 @@ for (const profile of PROFILES) {
       expect(held.moves).toBe(before.moves);
       expect(held.counts).toEqual(before.counts);
       expect(held.boardState).toBe(before.boardState);
+      expect(held.active).toBe(SOURCE_ID);
+      expect(held.roving).toEqual([SOURCE_ID]);
+      expect(held.inputMode, "ignored context input preserves keyboard authority").toEqual(before.inputMode);
+      expect(held.focusIndicator, "ignored context input keeps the visible keyboard cursor").toEqual(before.focusIndicator);
 
       await releaseNonPrimary();
       await page.waitForTimeout(400);
@@ -177,7 +201,17 @@ for (const profile of PROFILES) {
       expect(rejected.selected).toEqual([]);
       expect(rejected.hints).toEqual([SOURCE_ID, TARGET_ID]);
       expect(rejected.guideVisible).toBe(true);
+      expect(rejected.active).toBe(SOURCE_ID);
       expect(rejected.roving).toEqual([SOURCE_ID]);
+      expect(rejected.inputMode).toEqual(before.inputMode);
+      expect(rejected.focusIndicator).toEqual(before.focusIndicator);
+
+      if (profile.label === "desktop-full-right-mouse") {
+        await page.screenshot({ path: "work/context-button-keyboard-cursor-desktop.png", fullPage: true });
+      }
+      if (profile.label === "mobile390-full-pen-barrel") {
+        await page.screenshot({ path: "work/context-button-keyboard-cursor-mobile390.png", fullPage: true });
+      }
 
       await page.mouse.move(start.x, start.y);
       await page.mouse.down();
