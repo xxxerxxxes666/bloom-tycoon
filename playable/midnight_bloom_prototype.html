@@ -19071,15 +19071,22 @@
           const activeBoardFocus = boardTileFromElement(document.activeElement);
           const heldBoardFocus = finishedOutcome?.heldBoardFocus || null;
           const guideBoardFocus = finishedOutcome?.guideBoardFocus || null;
+          const focusYieldedToPage = !document.activeElement
+            || ["BODY", "HTML"].includes(document.activeElement.tagName);
           const receiptStillOwnsFocus = Boolean(
             heldBoardFocus
             && guideBoardFocus
-            && activeBoardFocus
             && !selected
-            && activeBoardFocus.x === heldBoardFocus.x
-            && activeBoardFocus.y === heldBoardFocus.y
             && boardFocusCell.x === heldBoardFocus.x
             && boardFocusCell.y === heldBoardFocus.y
+            && (
+              focusYieldedToPage
+              || (
+                activeBoardFocus
+                && activeBoardFocus.x === heldBoardFocus.x
+                && activeBoardFocus.y === heldBoardFocus.y
+              )
+            )
           );
           const roundOneOpeningHandoff = outcomeKind === "harvest"
             && currentRound === 1

@@ -994,6 +994,7 @@ def verify_source_hooks():
         'if (pendingSettledBoardOutcome?.kind === "shuffle") {',
         'pendingSettledBoardOutcome?.kind === "shuffle"',
         "Establish the empty cue as the sole live owner before its one result mutation.",
+        "const focusYieldedToPage = !document.activeElement",
         "const receiptStillOwnsFocus = Boolean(",
         "settled-board-outcome-cue",
         'Black Candle burned the ${result.blackCandleActivation.direction',

@@ -11,6 +11,11 @@ const CASES = [
   { label: "mobile-touch-reduced", viewport: { width: 390, height: 844 }, input: "touch", mobile: true, reduced: true }
 ];
 
+const RECEIPT_TAB_CASES = [
+  { label: "desktop-keyboard", viewport: { width: 1280, height: 720 } },
+  { label: "mobile390-keyboard-reduced", viewport: { width: 390, height: 844 }, reduced: true }
+];
+
 async function openFresh(page, label) {
   await page.addInitScript(({ key, seedToken, rngLabel }) => {
     if (!sessionStorage.getItem(seedToken)) {
@@ -329,6 +334,88 @@ for (const testCase of CASES) {
       expect(browserErrors, `${testCase.label} browser warning/error ledger`).toEqual([]);
     } finally {
       await page.evaluate(() => window.__openingReceiptObserver?.disconnect()).catch(() => {});
+      await context.close();
+    }
+  });
+}
+
+for (const testCase of RECEIPT_TAB_CASES) {
+  test(`Tab during the second receipt yields to its next guide on ${testCase.label}`, async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: testCase.viewport,
+      reducedMotion: testCase.reduced ? "reduce" : "no-preference"
+    });
+    const page = await context.newPage();
+    const browserErrors = [];
+    page.on("console", (message) => {
+      if (["warning", "error"].includes(message.type())) browserErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => browserErrors.push(error.message));
+
+    try {
+      await openFresh(page, `receipt-tab-${testCase.label}`);
+      await activateOpeningPair(page, "keyboard");
+      await expect.poll(async () => (await report(page)).bodyClasses.includes("settled-board-outcome-cue"), {
+        message: `${testCase.label} reaches the first receipt`,
+        timeout: 12000
+      }).toBe(true);
+      await expect.poll(async () => (await report(page)).bodyClasses.includes("settled-board-outcome-cue"), {
+        message: `${testCase.label} retires the first receipt`,
+        timeout: 5000
+      }).toBe(false);
+
+      const secondPair = page.locator("#board .tile.idle-hint");
+      await expect(secondPair).toHaveCount(2, { timeout: 9000 });
+      const [sourceId, destinationId] = await secondPair.evaluateAll((tiles) => tiles.map((tile) => tile.id));
+      await page.locator(`#${sourceId}`).focus();
+      await page.keyboard.press("Enter");
+      await page.keyboard.press("Space");
+      const secondSwap = { sourceId, destinationId };
+      await expect.poll(async () => (await report(page)).bodyClasses.includes("settled-board-outcome-cue"), {
+        message: `${testCase.label} reaches the second receipt`,
+        timeout: 12000
+      }).toBe(true);
+      const beforeTab = await report(page);
+      expect(beforeTab.activeId, `${testCase.label} starts from the settled destination`)
+        .toBe(secondSwap.destinationId);
+      expect(beforeTab.rovingIds, `${testCase.label} has one settled board entry`)
+        .toEqual([secondSwap.destinationId]);
+
+      await page.keyboard.press("Tab");
+      const yielded = await report(page);
+      expect(yielded.activeId, `${testCase.label} can yield receipt focus to the page`).toBe("");
+      expect(yielded.rovingIds, `${testCase.label} keeps the held board entry while yielded`)
+        .toEqual([secondSwap.destinationId]);
+      expect(yielded.bodyClasses, `${testCase.label} Tab does not retire the receipt early`)
+        .toContain("settled-board-outcome-cue");
+
+      await expect.poll(async () => (await report(page)).bodyClasses.includes("settled-board-outcome-cue"), {
+        message: `${testCase.label} retires the second receipt into its guide`,
+        timeout: 5000
+      }).toBe(false);
+      const handoff = await report(page);
+      expect(handoff.guideSourceId, `${testCase.label} exposes the next exact guide source`).not.toBe("");
+      expect(handoff.activeId, `${testCase.label} gives focus to the newly visible guide`)
+        .toBe(handoff.guideSourceId);
+      expect(handoff.rovingIds, `${testCase.label} gives the guide sole keyboard entry`)
+        .toEqual([handoff.guideSourceId]);
+      expect(handoff.cue, `${testCase.label} keeps one literal next command`).toBe(
+        "Make 4 Bone Stars - arm Black Candle Vine."
+      );
+      expect(handoff.visibleButtons, `${testCase.label} keeps Help as the sole command`).toEqual(["Help"]);
+      expect(handoff.state.moves, `${testCase.label} Tab spends no move`).toBe(4);
+      expect(handoff.tiles, `${testCase.label} retains 64 tiles`).toBe(64);
+      expect(handoff.rows, `${testCase.label} retains eight rows`).toBe(8);
+      expect(handoff.boardWidth, `${testCase.label} keeps the exact altar width`)
+        .toBe(testCase.viewport.width === 390 ? 378 : 600);
+      expect(handoff.boardBottom, `${testCase.label} keeps all eight rows in the viewport`)
+        .toBeLessThanOrEqual(testCase.viewport.height);
+      expect(handoff.overflowX, `${testCase.label} has no horizontal overflow`).toBe(false);
+      expect(handoff.overflowY, `${testCase.label} has no vertical overflow`).toBe(false);
+      expect(handoff.brokenImages, `${testCase.label} has no broken visible images`).toEqual([]);
+      expect(browserErrors, `${testCase.label} browser warning/error ledger`).toEqual([]);
+      await page.screenshot({ path: `work/receipt-tab-guide-${testCase.label}.png` });
+    } finally {
       await context.close();
     }
   });
