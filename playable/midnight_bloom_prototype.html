@@ -14443,7 +14443,13 @@
         return;
       }
       if (thornOutcomeFeedbackActive()) {
-        event.preventDefault();
+        const feedbackLockedKeys = [
+          "Enter", " ", "Escape",
+          "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"
+        ];
+        if (feedbackLockedKeys.includes(event.key)) {
+          event.preventDefault();
+        }
         return;
       }
       if ((event.key === "Enter" || event.key === " ") && event.repeat) {

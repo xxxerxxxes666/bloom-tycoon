@@ -603,6 +603,7 @@ def verify_source_hooks():
         "settledBoardOutcomeOwnsNarration || boardCueOwnsNarration || finalHarvestNarration",
         "if (visibleFinalHarvest && (pendingSettledBoardOutcome || settledBoardOutcome))",
         'boardEl.setAttribute("aria-busy", isResolving || thornOutcomeFeedbackActive() ? "true" : "false");',
+        'if (feedbackLockedKeys.includes(event.key))',
         "function restoreAuthoritativeRoundTwoThornLesson",
         "if (isRoundTwoThornLessonEligible({ allowPartialProgress: true }))",
         "allowPartialProgress: true",
