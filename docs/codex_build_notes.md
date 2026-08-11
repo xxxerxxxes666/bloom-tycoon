@@ -1,5 +1,15 @@
 # Codex Build Notes
 
+## 2026-08-11 - Retry accepts the first fresh flower pair
+
+- Player-visible correction: pressing `Retry Bouquet` now returns direct pointer and touch control to the rebuilt altar immediately. The first fresh guided pair spends exactly one move and earns its flowers instead of disappearing into the prior 480ms all-input handoff window.
+- Exact reproduction before the fix: the synthetic two-cycle economy journey failed on exact mobile when it tapped the valid highlighted pair as soon as the retried board enabled. `renewBouquet()` armed the same full input guard used for a ceremony-to-board screen handoff even though the Retry button's terminal click cannot retarget the rebuilt altar.
+- Surgical authority: failed-order Retry now uses the existing 280ms keyboard-only command guard. Fresh pointer or touch input retires that guard and proceeds, while a held Enter/Space tail remains bounded. Restored greenhouse and second-upgrade screen handoffs keep the existing 480ms all-input guard. Board generation, move budgets, objectives, rewards, economy, save schema, ceremonies, and UI are unchanged.
+- Permanent contract: `scripts/verify_failure_retry_recovery.spec.js` no longer waits 300ms before acting. Its first post-Retry operation is the real guided pair across all three rounds, desktop `1280x720`, exact mobile `390x844`, and full/reduced motion (`12/12`). The previously failing complete two-cycle economy/save journey now passes desktop and exact mobile (`2/2`) with exact first-cycle balances `[0,120,20,20]`, `[20,170,50,50]`, `[50,230,50,50]` and retained second-cycle balances `[50,50,50]` per round.
+- Adjacent evidence: the payoff-handoff matrix passes `6/6`, including reduced-motion keyboard repeat protection and genuine Round 2-to-3 / Round 3-to-1 screen handoffs. Original-scale resumed screenshots preserve the `600px`/`378px` altar, 64 tiles/eight rows, legible bouquet gain, loaded imagery, clean browser ledgers, and contained desktop/mobile hierarchy with no overflow.
+- Verification and security: focused move-budget migration passes `4/4`; `python3 scripts/verify_project.py`, HTML match-shape guards, changed Python/spec syntax, `git diff --check`, changed-file high-confidence secret scanning, and changed-line network/tracker scanning pass. No node, copy, save field/version, timer value, board/RNG rule, move budget, objective, reward, economy value, asset, round, dependency, backend, tracker, service, account, or permission was added.
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_failure_retry_recovery.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.
+
 ## 2026-08-10 - Bloodroot Compact keeps one earned strict four
 
 - Player-visible correction: the final focused order no longer opens with two authored strict-four target matches. The strongest `nightshade-glass` route previously completed all 27 Bloodroot Compact flowers in two swaps with six of eight moves unused; it now needs four real swaps while keeping the order comfortably winnable.

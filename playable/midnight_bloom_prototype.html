@@ -20231,7 +20231,9 @@
       if (restoredGreenhouseNextOrder || secondUpgradeNextOrder) {
         focusRestoredNextOrderViewport();
       }
-      if (retryingFailedBouquet || restoredGreenhouseNextOrder || secondUpgradeNextOrder) {
+      if (retryingFailedBouquet) {
+        armPayoffHandoffInputGuard("", TUTORIAL_COMMAND_INPUT_GUARD_MS, true);
+      } else if (restoredGreenhouseNextOrder || secondUpgradeNextOrder) {
         armPayoffHandoffInputGuard();
       }
       if (!retryingFailedBouquet && !(restoredGreenhouseNextOrder && idleHintCells.size === 2)) {

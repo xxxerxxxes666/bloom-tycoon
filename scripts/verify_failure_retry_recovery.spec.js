@@ -252,6 +252,7 @@ for (const config of VIEWPORTS) {
         await clickOrTap(activePage.locator("#renewBtn.visible"), config.mobile);
         await activePage.waitForFunction(() => Array.from(document.querySelectorAll(".tile")).every((tile) => !tile.disabled), null, { timeout: 5000 });
         const retried = await uiState(activePage);
+        const progress = await exerciseGuidedPair(activePage, config.mobile);
         const fixture = ROUND_FIXTURES[round];
         expect(retried.state.moves).toBe(fixture.moves);
         expect(retried.state.counts).toEqual([0, 0, 0, 0, 0, 0]);
@@ -278,11 +279,8 @@ for (const config of VIEWPORTS) {
           expect(retried.cursedThornTiles).toBe(3);
           expect(retried.thornTeachTiles, "Retry does not replay a completed Thorn lesson").toBe(0);
         }
-        await activePage.screenshot({ path: `work/failure-retry-${config.label}-r${round}-retried.png`, fullPage: true });
-
-        await activePage.waitForTimeout(300);
-        const progress = await exerciseGuidedPair(activePage, config.mobile);
-        expect(progress.after.moves).toBe(progress.before.moves - 1);
+        await activePage.screenshot({ path: `work/failure-retry-${config.label}-r${round}-resumed.png`, fullPage: true });
+        expect(progress.after.moves, "Retry accepts the first fresh guided pair immediately").toBe(progress.before.moves - 1);
         expect(fixture.progressCheck(progress.before, progress.after)).toBe(true);
         expect(consoleMessages).toEqual([]);
         expect(pageErrors).toEqual([]);
