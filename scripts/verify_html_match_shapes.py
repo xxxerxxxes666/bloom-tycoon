@@ -1258,6 +1258,7 @@ def verify_source_hooks():
         "function cancelMultiTouchBoardDrag(event)",
         "function handleBoardMultiTouchInterruption(event)",
         'querySelectorAll(".tile.sel")',
+        '(event.key === "Enter" || event.key === " ") && event.repeat',
         'if (event.key === "Escape" && boardDragInputActive())',
         "cancelInterruptedBoardDrag();",
         "restoreInterruptedBoardDragFocus();",
