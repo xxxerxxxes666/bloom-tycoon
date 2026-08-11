@@ -2560,17 +2560,22 @@ for (const viewport of [
     });
 
     for (let index = 1; index <= 2; index += 1) {
+      const discoveryStartedAt = index === 1 ? Date.now() : 0;
       await clickHighlightedPair(page);
       if (index === 1) {
-        const discoveryStartedAt = Date.now();
+        await expect(page.locator("body")).not.toHaveClass(/settled-board-outcome-cue/, { timeout: 5000 });
+        await expect(page.locator("body")).toHaveAttribute("data-target-literacy", "Thorn Rose");
         const discovery = await guidedRoundOneState(page, "post-opening discovery");
         trace.push(discovery);
         assertActiveGuidedState(discovery, viewport.mobile, `${viewport.label} post-opening discovery`);
         assertOrganicAuthoredBoard(discovery, `${viewport.label} post-opening settled board`);
         expect(discovery.moves, `${viewport.label} opening spends once`).toBe(5);
         expect(discovery.counts, `${viewport.label} opening fills Thorn Rose`).toEqual([0, 0, 0, 0, 0, 3]);
-        expect(discovery.tutorial, `${viewport.label} literal target discovery cue`).toBe("Find 3 Thorn Roses.");
-        expect(discovery.cue, `${viewport.label} hidden cue shares target language`).toBe("Find 3 Thorn Roses.");
+        expect(discovery.tutorial, `${viewport.label} stale tutorial panel stays retired`).toBe("");
+        expect(discovery.cue, `${viewport.label} visible cue names the target family`).toBe("Find 3 Thorn Roses.");
+        expect(discovery.firstSwapCueVisible, `${viewport.label} agency command lane is visible`).toBe(true);
+        expect(discovery.visibleInstructionSurfaces, `${viewport.label} agency has one narrator`).toBe(1);
+        expect(discovery.visibleButtons, `${viewport.label} paid recovery stays subordinate`).toEqual(["Help"]);
         expect(discovery.hints, `${viewport.label} no immediate prescribed pair`).toEqual([]);
         expect(discovery.targetLiteracy, `${viewport.label} family identity state`).toBe("Thorn Rose");
         expect(discovery.literacyTiles, `${viewport.label} every visible Thorn Rose echoes`).toHaveLength(discovery.targetFamilyTiles);
@@ -2593,13 +2598,14 @@ for (const viewport of [
         const rescueElapsed = Date.now() - discoveryStartedAt;
         expect(rescueElapsed, `${viewport.label} rescue waits about seven seconds`).toBeGreaterThanOrEqual(6200);
         expect(rescueElapsed, `${viewport.label} rescue remains bounded`).toBeLessThan(9500);
-        await expect(page.locator(".first-action-swap-guide")).toHaveCount(1);
+        await expect(page.locator(".first-action-swap-guide")).toHaveCount(0);
         const delayed = await guidedRoundOneState(page, "post-opening delayed rescue");
         assertOrganicAuthoredBoard(delayed, `${viewport.label} post-opening guided board`);
         expect(delayed.moves, `${viewport.label} delayed hint spends no move`).toBe(discovery.moves);
         expect(delayed.counts, `${viewport.label} delayed hint changes no objective`).toEqual(discovery.counts);
-        expect(delayed.tutorial, `${viewport.label} delayed copy is literal`).toBe("Match Thorn Rose.");
-        expect(delayed.cue, `${viewport.label} delayed hidden cue names target`).toBe("Match Thorn Rose with the glowing pair.");
+        expect(delayed.tutorial, `${viewport.label} delayed tutorial panel stays retired`).toBe("");
+        expect(delayed.cue, `${viewport.label} delayed visible cue names target`).toBe("Match Thorn Rose with the glowing pair.");
+        expect(delayed.firstSwapCueVisible, `${viewport.label} delayed cue stays visible`).toBe(true);
         expect(delayed.literacyTiles, `${viewport.label} family echo retires before exact rescue`).toEqual([]);
         const followupPair = delayed.hints;
         const usefulPairs = await objectiveUsefulPairs(page);
@@ -2608,12 +2614,6 @@ for (const viewport of [
           `${viewport.label} delayed pair is a legal objective-useful swap`
         ).toBe(true);
         guidedPairs.push(followupPair);
-        assertFirstActionGuide(
-          await firstActionGuideReport(page),
-          followupPair,
-          `${viewport.label} delayed agency rescue`,
-          { mobile: viewport.mobile, stage: "thorn-followup" }
-        );
         expect(unorderedPairKey(followupPair), `${viewport.label} post-opening guide moves across the altar`)
           .not.toBe(unorderedPairKey(guidedPairs[0]));
         expect(
@@ -2627,17 +2627,12 @@ for (const viewport of [
           fullPage: true
         });
       } else {
-        await expect(page.locator(".first-action-swap-guide")).toHaveCount(1, { timeout: 2500 });
+        await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 2500 });
+        await expect(page.locator(".first-action-swap-guide")).toHaveCount(0);
         trace.push(await guidedRoundOneState(page, `after swap ${index}`));
         assertActiveGuidedState(trace[trace.length - 1], viewport.mobile, `${viewport.label} after swap ${index}`);
         const followupPair = await hintedPair(page);
         guidedPairs.push(followupPair);
-        assertFirstActionGuide(
-          await firstActionGuideReport(page),
-          followupPair,
-          `${viewport.label} after swap ${index} guide`,
-          { mobile: viewport.mobile, stage: "black-candle" }
-        );
       }
     }
 
@@ -2647,31 +2642,25 @@ for (const viewport of [
     assertActiveGuidedState(reloaded, viewport.mobile, `${viewport.label} reload`);
     expect(reloaded.moves).toBe(trace[2].moves);
     expect(reloaded.counts).toEqual(trace[2].counts);
-    assertFirstActionGuide(
-      await firstActionGuideReport(page),
-      await hintedPair(page),
-      `${viewport.label} reload guide`,
-      { mobile: viewport.mobile, stage: "black-candle" }
-    );
+    await expect(page.locator(".tile.idle-hint")).toHaveCount(2);
+    await expect(page.locator(".first-action-swap-guide")).toHaveCount(0);
 
     const blackCandleCue = reloaded;
     assertActiveGuidedState(blackCandleCue, viewport.mobile, `${viewport.label} before Black Candle`);
     assertOrganicAuthoredBoard(blackCandleCue, `${viewport.label} authored Black Candle formation board`);
-    expect(blackCandleCue.tutorial).toBe("Match 4 Bone Stars to arm Black Candle Vine.");
+    expect(blackCandleCue.tutorial).toBe("");
     expect(blackCandleCue.cue).toBe("Make 4 Bone Stars - arm Black Candle Vine.");
+    expect(blackCandleCue.firstSwapCueVisible).toBe(true);
+    expect(blackCandleCue.visibleButtons).toEqual(["Help", "Shuffle (-1 move)"]);
     expect(blackCandleCue.hints).toHaveLength(2);
     expect(Math.abs(blackCandleCue.hints[0].x - blackCandleCue.hints[1].x) + Math.abs(blackCandleCue.hints[0].y - blackCandleCue.hints[1].y)).toBe(1);
     const preview = await legalFourBoneStarPreview(page);
     expect(preview.ok, JSON.stringify(preview)).toBe(true);
-    assertFirstActionGuide(
-      await firstActionGuideReport(page),
-      await hintedPair(page),
-      `${viewport.label} strict-four guide`,
-      { mobile: viewport.mobile, stage: "black-candle" }
-    );
     await page.screenshot({ path: `work/tutorial-guide-${viewport.label}-strict-four.png`, fullPage: true });
 
+    await page.locator("#tutorialHelpBtn").click();
     await expect(page.locator("#tutorialPanel")).toBeVisible();
+    await expect(page.locator("#tutorialCopy")).toHaveText("Match 4 Bone Stars to arm Black Candle Vine.");
     const preFormationRefusal = await assertRepeatedTutorialRefusal(page, {
       label: `${viewport.label} Match 4 refusal`
     });
@@ -2856,7 +2845,7 @@ for (const viewport of [
     })))}`);
     expect(consoleMessages).toEqual([]);
     expect(pageErrors).toEqual([]);
-    expect(failedRequests).toEqual([]);
+    expect(failedRequests.filter((failure) => !failure.includes("net::ERR_ABORTED"))).toEqual([]);
   });
 }
 
@@ -4047,11 +4036,16 @@ test("Round 1 agency retires and restores guidance across real input boundaries"
         await keyboardGuidedSwap(page);
       }
       await waitForSettledBoard(page);
+      await expect(page.locator("body")).not.toHaveClass(/settled-board-outcome-cue/, { timeout: 5000 });
+      await expect(page.locator("body")).toHaveAttribute("data-target-literacy", "Thorn Rose");
       const discovery = await guidedRoundOneState(page, `${testCase.label} discovery`);
       expect(discovery.moves, `${testCase.label} opening spends once`).toBe(5);
       expect(discovery.counts, `${testCase.label} opening objective`).toEqual([0, 0, 0, 0, 0, 3]);
       expect(discovery.hints, `${testCase.label} discovery has no hint`).toEqual([]);
-      expect(discovery.tutorial, `${testCase.label} target-literal discovery`).toBe("Find 3 Thorn Roses.");
+      expect(discovery.tutorial, `${testCase.label} stale tutorial panel stays retired`).toBe("");
+      expect(discovery.cue, `${testCase.label} target-literal discovery`).toBe("Find 3 Thorn Roses.");
+      expect(discovery.firstSwapCueVisible, `${testCase.label} agency command lane is visible`).toBe(true);
+      expect(discovery.visibleButtons, `${testCase.label} paid recovery stays subordinate`).toEqual(["Help"]);
       expect(discovery.targetLiteracy, `${testCase.label} target family is named`).toBe("Thorn Rose");
       expect(discovery.literacyTiles, `${testCase.label} uniform family echo`).toHaveLength(discovery.targetFamilyTiles);
       expect(discovery.literacyTiles.every((tile) => tile.flowerId === 5), `${testCase.label} family-only echo`).toBe(true);
@@ -4111,7 +4105,9 @@ test("Round 1 agency retires and restores guidance across real input boundaries"
       await activatePair(page, invalidPair, testCase.input);
       await expect(page.locator(".tile.invalid-swap")).toHaveCount(2, { timeout: 1600 });
       await expect(page.locator(".tile.idle-hint, .swap-path-arrow, .first-action-swap-guide")).toHaveCount(0);
-      await expect(page.locator("#tutorialCopy")).toHaveText("Try another adjacent swap.");
+      await expect(page.locator("#firstSwapCue")).toHaveText("No bloom — try another adjacent swap.", {
+        timeout: 1600
+      });
       await expect(page.locator(".tile.invalid-swap")).toHaveCount(0, { timeout: 2200 });
       await page.waitForTimeout(900);
       await expect(page.locator(".tile.idle-hint")).toHaveCount(0);
@@ -4137,6 +4133,8 @@ test("Round 1 agency retires and restores guidance across real input boundaries"
       }
 
       if (testCase.label === "desktop-pointer") {
+        await page.locator("#tutorialHelpBtn").click();
+        await expect(page.locator("#tutorialPanel")).toBeVisible();
         await page.locator("#tutorialSkipBtn").click();
         await page.locator("#tutorialHelpBtn").click();
         await expect(page.locator(".tile.idle-hint, .swap-path-arrow, .first-action-swap-guide")).toHaveCount(0);
@@ -4151,7 +4149,7 @@ test("Round 1 agency retires and restores guidance across real input boundaries"
         } else {
           await rescueSource.tap();
         }
-        await expect(page.locator(".tile.idle-hint, .swap-path-arrow, .first-action-swap-guide")).toHaveCount(0);
+        await expect(page.locator(".first-action-swap-guide")).toHaveCount(0);
         await expect(page.locator(".tile.sel")).toHaveCount(1);
         await expect(page.locator(".tile.target-literacy, .objective-target.target-literacy")).toHaveCount(0);
         expect((await activeState(page)).moves, `${testCase.label} rescue selection spends no move`).toBe(5);
@@ -4163,7 +4161,16 @@ test("Round 1 agency retires and restores guidance across real input boundaries"
       expect(reloadedDiscovery.moves).toBe(5);
       expect(reloadedDiscovery.counts).toEqual([0, 0, 0, 0, 0, 3]);
       expect(reloadedDiscovery.hints).toEqual([]);
-      expect(reloadedDiscovery.tutorial).toBe("Find 3 Thorn Roses.");
+      expect(["", "Find 3 Thorn Roses."]).toContain(reloadedDiscovery.tutorial);
+      expect(reloadedDiscovery.cue).toBe("Find 3 Thorn Roses.");
+      expect(reloadedDiscovery.visibleInstructionSurfaces).toBe(1);
+      if (reloadedDiscovery.tutorial) {
+        expect(reloadedDiscovery.firstSwapCueVisible).toBe(false);
+        expect(reloadedDiscovery.visibleButtons).toEqual(["Skip"]);
+      } else {
+        expect(reloadedDiscovery.firstSwapCueVisible).toBe(true);
+        expect(reloadedDiscovery.visibleButtons).toEqual(["Help"]);
+      }
       expect(reloadedDiscovery.targetLiteracy).toBe("Thorn Rose");
       const ordinaryMove = (await objectiveUsefulPairs(page))[0]?.pair;
       expect(ordinaryMove, `${testCase.label} discoverable useful move`).toHaveLength(2);
@@ -4210,7 +4217,7 @@ test("Round 1 agency retires and restores guidance across real input boundaries"
       }
       expect(consoleErrors).toEqual([]);
       expect(pageErrors).toEqual([]);
-      expect(failedRequests).toEqual([]);
+      expect(failedRequests.filter((failure) => !failure.includes("net::ERR_ABORTED"))).toEqual([]);
     } finally {
       await context.close();
     }

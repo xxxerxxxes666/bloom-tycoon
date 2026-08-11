@@ -38,8 +38,15 @@ async function report(page) {
     return {
       state,
       cue: document.querySelector("#firstSwapCue")?.textContent.trim() || "",
+      cueVisible: visible(document.querySelector("#firstSwapCue")),
       tutorial: document.querySelector("#tutorialPanel")?.textContent.replace(/\s+/g, " ").trim() || "",
       tutorialVisible: visible(document.querySelector("#tutorialPanel")),
+      hintCount: document.querySelectorAll("#board .tile.idle-hint").length,
+      targetLiteracy: document.body.dataset.targetLiteracy || "",
+      targetLiteracyTiles: document.querySelectorAll("#board .tile.target-literacy[data-flower-id='5']").length,
+      visibleButtons: Array.from(document.querySelectorAll("button:not(.tile)"))
+        .filter(visible)
+        .map((button) => button.textContent.replace(/\s+/g, " ").trim()),
       bodyClasses: document.body.className,
       boardBusy: document.querySelector("#board")?.getAttribute("aria-busy") || "",
       activeId: document.activeElement?.id || "",
@@ -169,6 +176,28 @@ for (const testCase of CASES) {
       expect(settled.overflowY, `${testCase.label} has no vertical overflow`).toBe(false);
       expect(settled.brokenImages, `${testCase.label} has no broken visible images`).toEqual([]);
       await page.screenshot({ path: `work/opening-match-receipt-${testCase.label}.png` });
+
+      await expect.poll(async () => (await report(page)).bodyClasses.includes("settled-board-outcome-cue"), {
+        message: `${testCase.label} receipt retires into the authored agency handoff`,
+        timeout: 5000
+      }).toBe(false);
+      const handoff = await report(page);
+      expect(handoff.cue, `${testCase.label} immediately restores the next literal target`).toBe(
+        "Find 3 Thorn Roses."
+      );
+      expect(handoff.cueVisible, `${testCase.label} keeps the agency command lane visible`).toBe(true);
+      expect(handoff.hintCount, `${testCase.label} preserves the find-it-yourself window`).toBe(0);
+      expect(handoff.targetLiteracy, `${testCase.label} reintroduces the target family`).toBe("Thorn Rose");
+      expect(handoff.targetLiteracyTiles, `${testCase.label} highlights every visible target-family tile`)
+        .toBeGreaterThan(0);
+      expect(handoff.visibleButtons, `${testCase.label} keeps paid recovery subordinate`).toEqual(["Help"]);
+      const preGuardState = handoff.state;
+      await page.evaluate(() => document.querySelector("#shuffleBtn")?.click());
+      const guarded = await report(page);
+      expect(guarded.state.moves, `${testCase.label} hidden Shuffle cannot spend a move`).toBe(preGuardState.moves);
+      expect(guarded.state.board, `${testCase.label} hidden Shuffle cannot rebuild the authored board`)
+        .toEqual(preGuardState.board);
+      await page.screenshot({ path: `work/opening-agency-handoff-${testCase.label}.png` });
 
       await page.reload({ waitUntil: "networkidle" });
       await page.waitForTimeout(300);
