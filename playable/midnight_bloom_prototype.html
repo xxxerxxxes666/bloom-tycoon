@@ -10427,6 +10427,7 @@
     let touchSwipeStart = null;
     let dragPreview = null;
     let interruptedDragFocusCell = null;
+    let interruptedDragPointerId = null;
     let suppressNextBoardClick = false;
     let superBloomCells = new Set();
     let invalidSwapCells = new Map();
@@ -13905,6 +13906,7 @@
       if (!start) {
         return false;
       }
+      interruptedDragPointerId = tileSwipeStart?.pointerId ?? null;
       interruptedDragFocusCell = clampBoardFocusCell(start);
       boardFocusCell = { ...interruptedDragFocusCell };
       queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
@@ -14389,6 +14391,10 @@
       if (!event.isPrimary || event.button !== 0 || tileSwipeStart) {
         return;
       }
+      if (interruptedDragPointerId !== null) {
+        interruptedDragPointerId = null;
+        suppressNextBoardClick = false;
+      }
       const cell = boardTileFromEvent(event);
       if (!cell || !canBeginBoardDrag(cell)) {
         return;
@@ -14427,6 +14433,10 @@
     function handleBoardPointerUp(event) {
       const start = tileSwipeStart;
       if (!start) {
+        if (interruptedDragPointerId === event.pointerId) {
+          event.preventDefault();
+          suppressBoardClickBriefly();
+        }
         clearDragPreview();
         return;
       }
@@ -14551,9 +14561,15 @@
         return;
       }
       if (suppressNextBoardClick) {
-        event.preventDefault();
-        suppressNextBoardClick = false;
-        return;
+        if (interruptedDragPointerId !== null && interruptedDragPointerId !== event.pointerId) {
+          interruptedDragPointerId = null;
+          suppressNextBoardClick = false;
+        } else {
+          interruptedDragPointerId = null;
+          event.preventDefault();
+          suppressNextBoardClick = false;
+          return;
+        }
       }
       const cell = boardTileFromEvent(event);
       if (!cell) {

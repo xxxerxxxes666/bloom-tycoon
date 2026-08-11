@@ -1256,6 +1256,8 @@ def verify_source_hooks():
         'if (event.key === "Escape" && boardDragInputActive())',
         "cancelInterruptedBoardDrag();",
         "restoreInterruptedBoardDragFocus();",
+        "interruptedDragPointerId = tileSwipeStart?.pointerId ?? null;",
+        "if (interruptedDragPointerId === event.pointerId)",
         "function isContextBoardPointerCommand(event)",
         "Boolean(event?.ctrlKey) && event.button === 0",
         "if (!event.isPrimary || event.button !== 0 || tileSwipeStart)",
