@@ -1494,14 +1494,14 @@ async function expectCeremony(
   expect(contract.transactionText, "no raw ledger-arrow accounting").not.toContain("->");
   if (expectedButton.includes("Restore Greenhouse")) {
     expect(contract.transactionText).toBe("Earned 120 coins. Restore costs 100.");
-    expect(contract.trophyKicker).toBe("Bouquet Bound");
+    expect(contract.trophyKicker).toMatch(/^Bouquet Bound · \d+ moves? held$/);
     expect(contract.coins).toBe(120);
   }
   if (expectedButton.includes("Next Order")) {
     expect(contract.transactionText).toMatch(/coins remain\.|spent$/);
     if (contract.text.includes("Greenhouse Restored")) {
       expect(contract.transactionText).toBe("Restored for 100. 20 coins remain.");
-      expect(contract.trophyKicker).toBe("Greenhouse Relit");
+      expect(contract.trophyKicker).toMatch(/^Greenhouse Relit · \d+ moves? held$/);
       expect(contract.coins).toBe(20);
     }
   }

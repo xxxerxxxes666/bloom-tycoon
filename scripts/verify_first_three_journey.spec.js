@@ -203,6 +203,10 @@ async function journeyState(page) {
       restorationTitle: document.querySelector("#restorationTitle")?.textContent.trim() || "",
       restorationState: document.querySelector("#restorationState")?.textContent.trim() || "",
       trophyKicker: document.querySelector(".bouquet-trophy-kicker")?.textContent.trim() || "",
+      trophyMovesHeld: Number(document.querySelector("#bouquetTrophy")?.dataset.movesHeld || -1),
+      trophyAriaLabel: document.querySelector("#bouquetTrophy")?.getAttribute("aria-label") || "",
+      moveReserveEmbers: document.querySelectorAll(".bouquet-move-ember").length,
+      moveReserveLabel: document.querySelector(".bouquet-move-reserve-label")?.textContent.trim() || "",
       trophyName: document.querySelector(".bouquet-trophy-name")?.textContent.trim() || "",
       trophyCopy: document.querySelector(".bouquet-trophy-copy")?.textContent.trim() || "",
       craftedComposition: Array.from(document.querySelectorAll(".crafted-flower-bloom"))
@@ -1693,6 +1697,9 @@ async function playCurrentRound(page, label, round, strategy = "optimized", expe
   while (true) {
     const state = await journeyState(page);
     if (state.roundComplete) {
+      expect(state.moveReserveEmbers, `${label} round ${round} visibly binds the finishing margin`)
+        .toBe(Math.min(state.moves, 5));
+      expect(state.moveReserveLabel).toBe(`${state.moves} ${state.moves === 1 ? "move" : "moves"} held`);
       if (options.captureOwnedRenewal) {
         const firstPhase = options.reducedMotion ? "acknowledgment" : "transfer";
         try {
@@ -1747,6 +1754,13 @@ async function playCurrentRound(page, label, round, strategy = "optimized", expe
         { timeout: 4000 }
       );
       const settledState = await journeyState(page);
+      const movesHeldLabel = `${settledState.moves} ${settledState.moves === 1 ? "move" : "moves"} held`;
+      expect(settledState.trophyMovesHeld, `${label} round ${round} trophy keeps the finishing margin`)
+        .toBe(settledState.moves);
+      expect(settledState.trophyKicker, `${label} round ${round} names the finishing margin`)
+        .toContain(movesHeldLabel);
+      expect(settledState.trophyAriaLabel, `${label} round ${round} announces the finishing margin`)
+        .toContain(movesHeldLabel);
       const summary = {
         round,
         startMoves,
@@ -1825,6 +1839,11 @@ async function playFocusedCycle(page, config, runLabel, strategy, options = {}) 
       await page.waitForSelector("#nextOrderBtn:not([hidden])", { timeout: 3000 });
     }
     const spentState = await journeyState(page);
+    const movesHeldLabel = `${result.movesLeft} ${result.movesLeft === 1 ? "move" : "moves"} held`;
+    expect(spentState.trophyMovesHeld, `${runLabel} round ${round} spend preserves the finishing margin`)
+      .toBe(result.movesLeft);
+    expect(spentState.trophyAriaLabel, `${runLabel} round ${round} spent trophy announces the finishing margin`)
+      .toContain(movesHeldLabel);
     expectFocusedPayoffNarration(spentState, `${runLabel} round ${round} spent ceremony`);
     await expectGreenhouseOwned(page, round, `${runLabel} round ${round} immediately after spend`);
     await expectVisibleCoinBalance(page, spentState.coins, { pulsing: round === 3 ? false : true });
@@ -1851,6 +1870,9 @@ async function playFocusedCycle(page, config, runLabel, strategy, options = {}) 
         expect(reloaded.payoffCopy).toBe("Begin a new growing cycle with your balance intact.");
         expect(reloaded.payoffMode).toBe("restoration");
         expect(reloaded.visibleButtons).toEqual(["Play Again → First Bouquet"]);
+        expect(reloaded.trophyMovesHeld).toBe(result.movesLeft);
+        expect(reloaded.trophyKicker).toContain(movesHeldLabel);
+        expect(reloaded.trophyAriaLabel).toContain(movesHeldLabel);
         expect(reloaded.craftedTargetCounts).toBe("3:14,0:13");
         expect(reloaded.craftedComposition).toHaveLength(27);
         expect(reloaded.tiles).toBe(64);
@@ -1873,6 +1895,9 @@ async function playFocusedCycle(page, config, runLabel, strategy, options = {}) 
         expect(reloaded.focusedEconomyVersion).toBe(2);
         expect(reloaded.payoffTransaction).toBe(`Restored for 100. ${expectedRestoredCoins} coins remain.`);
         expect(reloaded.visibleButtons).toEqual(["Next Order → Moonlit Wreath"]);
+        expect(reloaded.trophyMovesHeld).toBe(result.movesLeft);
+        expect(reloaded.trophyKicker).toContain(movesHeldLabel);
+        expect(reloaded.trophyAriaLabel).toContain(movesHeldLabel);
         await expectGreenhouseOwned(page, 1, `${runLabel} round 1 restored reload ${reload + 1}`);
       }
     }
@@ -2168,7 +2193,7 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
     expect(ceremony.ownedRenewalHidden).toBe(true);
     expect(ceremony.ownedRenewalTransientNodes).toBe(0);
     expect(ceremony.restorationTitle).toBe(expectedTitles[round - 1]);
-    expect(ceremony.trophyKicker).toBe("Bouquet Complete");
+    expect(ceremony.trophyKicker).toBe(`Bouquet Complete · ${ceremony.moves} ${ceremony.moves === 1 ? "move" : "moves"} held`);
     expect(ceremony.trophyName).toBe(expectedNames[round - 1]);
     expect(ceremony.trophyCopy).toBe("Order complete. The Bloodroot Conservatory remains fully raised.");
     expect(ceremony.craftedComposition).toEqual(expectedCompositions[round - 1]);
@@ -2209,7 +2234,7 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
       expect(reloaded.ownedRenewalHidden).toBe(true);
       expect(reloaded.ownedRenewalTransientNodes).toBe(0);
       expect(reloaded.restorationTitle).toBe(expectedTitles[round - 1]);
-      expect(reloaded.trophyKicker).toBe("Bouquet Complete");
+      expect(reloaded.trophyKicker).toBe(`Bouquet Complete · ${reloaded.moves} ${reloaded.moves === 1 ? "move" : "moves"} held`);
       expect(reloaded.trophyName).toBe(expectedNames[round - 1]);
       expect(reloaded.trophyCopy).toBe("Order complete. The Bloodroot Conservatory remains fully raised.");
       expect(reloaded.craftedComposition).toEqual(expectedCompositions[round - 1]);
@@ -3253,7 +3278,7 @@ test("reduced-motion exact-mobile replay boundary preserves the owned wallet", a
     expect(secondFinal.payoffTransaction).toBe(ownedReplayTransaction(180, 50));
     expect(secondFinal.payoffMode).toBe("owned-replay");
     expect(secondFinal.restorationTitle).toBe("Bloodroot Compact Complete");
-    expect(secondFinal.trophyKicker).toBe("Bouquet Complete");
+    expect(secondFinal.trophyKicker).toBe(`Bouquet Complete · ${secondFinal.moves} ${secondFinal.moves === 1 ? "move" : "moves"} held`);
     expect(secondFinal.trophyCopy).toBe("Order complete. The Bloodroot Conservatory remains fully raised.");
     expect(secondFinal.restorationState).toBe("BLOODROOT CONSERVATORY · OWNED · 100% RAISED");
     expect(secondFinal.restorationSceneArt).toBe("bloodroot");

@@ -7039,6 +7039,10 @@
     .bouquet-trophy[data-bouquet-payoff-state="bloodroot"] { border-color:#b51d2f; background:radial-gradient(circle at 50% 18%,#3b0d12 0,#0c0506 54%,#030202 100%); }
     .bouquet-trophy-kicker,.bouquet-trophy-name,.bouquet-trophy-copy,.bouquet-trophy-bonus,.bouquet-assembly,.bouquet-stems { position:relative; z-index:1; }
     .bouquet-trophy-kicker { color:#d7b16d; font:900 10px/1 system-ui,sans-serif; letter-spacing:.14em; text-transform:uppercase; }
+    .bouquet-move-reserve { position:absolute; inset:0; z-index:14; overflow:hidden; pointer-events:none; }
+    .bouquet-move-ember { position:absolute; left:50%; top:9%; width:16px; height:16px; display:grid; place-items:center; border:1px solid #f5d78d; background:radial-gradient(circle,#fff3b8 0 16%,#d7b16d 19% 38%,#4a1b13 70%); box-shadow:0 0 10px #d7b16d,0 0 18px #b51d2f66; color:#190707; font:900 9px/1 system-ui,sans-serif; opacity:.9; transform:translate(calc(-50% + (var(--reserve-index) - var(--reserve-mid)) * 13px),145px) scale(.58) rotate(405deg); animation:bouquet-move-reserve-bind 780ms cubic-bezier(.16,.82,.2,1) calc(var(--reserve-index) * 45ms) both; }
+    .bouquet-move-ember > span { transform:rotate(-45deg); }
+    .bouquet-move-reserve-label { position:absolute; left:50%; top:28%; padding:4px 9px; border:1px solid #d7b16d; background:#080403e8; color:#fff0bd; box-shadow:0 0 14px #000,0 0 12px #d7b16d55; font:900 9px/1 system-ui,sans-serif; letter-spacing:.1em; text-transform:uppercase; white-space:nowrap; animation:bouquet-move-reserve-label 780ms ease-out both; }
     .bouquet-trophy-name { display:block; color:#fff2bf; font:900 21px/1.05 Georgia,serif; text-shadow:0 2px 4px #000,0 0 14px var(--bouquet-aura,#d7b16d55); }
     .bouquet-trophy-copy { display:none; color:#c9b48f; font:700 12px/1.25 system-ui,sans-serif; max-width:25ch; margin:2px auto 0; }
     .bouquet-assembly { min-height:156px; width:min(270px,100%); display:grid; place-items:center; margin:0 auto; }
@@ -7202,6 +7206,17 @@
     .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .bouquet-ingredient { animation:bouquet-ingredient-bind 920ms cubic-bezier(.12,.82,.18,1) both; animation-delay:var(--ingredient-delay,0ms); }
     .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .bouquet-assembly-ring { animation:bouquet-ring-bind 1120ms ease-out both; }
     .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .bouquet-binding-vine { animation:bouquet-vine-bind 980ms ease-out 180ms both; }
+    @keyframes bouquet-move-reserve-bind {
+      0% { opacity:0; transform:translate(calc(-50% + (var(--reserve-index) - var(--reserve-mid)) * 33px),-12px) scale(.62) rotate(45deg); }
+      24% { opacity:1; }
+      66% { opacity:1; transform:translate(calc(-50% + (var(--reserve-index) - var(--reserve-mid)) * 13px),96px) scale(1.08) rotate(135deg); }
+      100% { opacity:.9; transform:translate(calc(-50% + (var(--reserve-index) - var(--reserve-mid)) * 13px),145px) scale(.58) rotate(405deg); }
+    }
+    @keyframes bouquet-move-reserve-label {
+      0% { opacity:0; transform:translate(-50%,-8px) scale(.94); }
+      24%,66% { opacity:1; transform:translate(-50%,0) scale(1); }
+      100% { opacity:0; transform:translate(-50%,16px) scale(.96); }
+    }
     .restoration-scene { height:clamp(184px,21vw,270px); border:1px solid #56432f; position:relative; overflow:hidden; background:#030302; isolation:isolate; box-shadow:inset 0 0 34px #000,0 0 18px #000; transition:border-color 700ms ease,box-shadow 700ms ease; }
     .restoration-scene::before { content:""; position:absolute; inset:0; z-index:3; pointer-events:none; background:radial-gradient(circle at 50% 42%,#0000 0 48%,#0008 88%),linear-gradient(180deg,#0007,#0000 28%,#0003 76%,#000a); box-shadow:inset 0 0 34px #000; }
     .restoration-scene::after { content:""; position:absolute; inset:-35% -20%; pointer-events:none; opacity:0; transform:translateX(-65%) rotate(-12deg); background:linear-gradient(90deg,transparent 30%,#fff4b8dd 50%,transparent 70%); z-index:9; }
@@ -8056,6 +8071,7 @@
       filter:brightness(1.14) saturate(1.08);
     }
     @media (prefers-reduced-motion: reduce) {
+      .bouquet-move-ember,.bouquet-move-reserve-label { animation:none!important; }
       *,
       *::before,
       *::after {
@@ -19411,13 +19427,16 @@
       );
       const preserveSettledBouquet = settledBouquet?.dataset.compositionKey === compositionKey;
       const composition = bouquetComposition(plan);
+      const movesHeld = roundComplete ? Math.max(0, Math.floor(Number(moves) || 0)) : 0;
+      const movesHeldLabel = `${movesHeld} ${movesHeld === 1 ? "move" : "moves"} held`;
       const rewardFlower = flowers[plan.reward.flowerId] || flowers[0];
       const accent = rewardFlower[4] || "#d7b16d";
       trophy.dataset.bouquetPayoffState = payoffState;
       trophy.dataset.assemblyState = bouquetSealPulseActive ? "forming" : "assembled";
       trophy.dataset.highCount = String(composition.length >= 24);
       trophy.dataset.compositionKey = compositionKey;
-      trophy.setAttribute("aria-label", `${plan.name} crafted bouquet trophy`);
+      trophy.dataset.movesHeld = String(movesHeld);
+      trophy.setAttribute("aria-label", `${plan.name} crafted bouquet trophy. ${movesHeldLabel}.`);
       trophy.style.setProperty("--bouquet-aura", `${accent}55`);
       trophy.style.setProperty("--bouquet-ray", `${accent}2c`);
       const assemblyMarkup = transferOwnsBouquet || preserveSettledBouquet
@@ -19433,7 +19452,17 @@
           : plan.round === 2
             ? "Nightshade, amber, rose, and broken thorns raise the night house."
             : "Bloodroot and Sol Rot seal the conservatory run.";
-      const kicker = ownedReplay ? "Bouquet Complete" : payoffState === "restored" ? "Greenhouse Relit" : "Bouquet Bound";
+      const kicker = `${ownedReplay ? "Bouquet Complete" : payoffState === "restored" ? "Greenhouse Relit" : "Bouquet Bound"} · ${movesHeldLabel}`;
+      const moveReserveMarkup = movesHeld > 0 && !transferOwnsBouquet
+        ? `
+          <span class="bouquet-move-reserve" data-moves-held="${movesHeld}" aria-hidden="true">
+            ${Array.from({ length: Math.min(movesHeld, 5) }, (_, index) => `
+              <span class="bouquet-move-ember" style="--reserve-index:${index};--reserve-mid:${(Math.min(movesHeld, 5) - 1) / 2};"><span>${index + 1}</span></span>
+            `).join("")}
+            <span class="bouquet-move-reserve-label">${movesHeldLabel}</span>
+          </span>
+        `
+        : "";
       trophy.innerHTML = `
         <span class="bouquet-trophy-kicker">${kicker}</span>
         <span>
@@ -19445,6 +19474,7 @@
           ${assemblyMarkup}
         </span>
         <span class="bouquet-trophy-bonus" aria-label="Bouquet ingredients">${ingredientSummary}</span>
+        ${moveReserveMarkup}
       `;
       if (preserveSettledBouquet) {
         trophy.querySelector(".bouquet-assembly")?.append(settledBouquet);
