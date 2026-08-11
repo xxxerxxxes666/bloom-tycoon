@@ -1255,6 +1255,8 @@ def verify_source_hooks():
         "function restoreInterruptedBoardDragFocus()",
         "function retireBoardSelectionForDrag()",
         "function claimBoardDragOwnership(start, sourceTile)",
+        "function cancelMultiTouchBoardDrag(event)",
+        "function handleBoardMultiTouchInterruption(event)",
         'querySelectorAll(".tile.sel")',
         'if (event.key === "Escape" && boardDragInputActive())',
         "cancelInterruptedBoardDrag();",

@@ -14502,15 +14502,34 @@
       restoreGuideAfterCanceledBoardInput(start);
     }
 
+    function cancelMultiTouchBoardDrag(event) {
+      if (event.touches.length === 1) {
+        return false;
+      }
+      const canceled = cancelInterruptedBoardDrag();
+      if (!canceled) {
+        clearDragPreview({ resetInputs: true });
+      }
+      if (event.cancelable) {
+        event.preventDefault();
+      }
+      restoreInterruptedBoardDragFocus();
+      return true;
+    }
+
+    function handleBoardMultiTouchInterruption(event) {
+      if (event.touches.length !== 1 && boardDragInputActive()) {
+        cancelMultiTouchBoardDrag(event);
+      }
+    }
+
     function handleBoardTouchStart(event) {
       if (rejectPayoffHandoffBoardInput(event)) {
         return;
       }
       document.body.classList.remove("keyboard-board-navigation");
       document.body.classList.add("pointer-board-input");
-      if (event.touches.length !== 1) {
-        touchSwipeStart = null;
-        clearDragPreview();
+      if (cancelMultiTouchBoardDrag(event)) {
         return;
       }
       const touch = event.touches[0];
@@ -14536,8 +14555,11 @@
     }
 
     function handleBoardTouchMove(event) {
+      if (cancelMultiTouchBoardDrag(event)) {
+        return;
+      }
       const start = touchSwipeStart;
-      if (!start || event.touches.length !== 1) {
+      if (!start) {
         return;
       }
       const touch = Array.from(event.touches).find((candidate) => candidate.identifier === start.pointerId);
@@ -20757,6 +20779,14 @@
         capture: true,
         passive: false
       });
+    });
+    document.addEventListener("touchstart", handleBoardMultiTouchInterruption, {
+      capture: true,
+      passive: false
+    });
+    document.addEventListener("touchmove", handleBoardMultiTouchInterruption, {
+      capture: true,
+      passive: false
     });
     document.addEventListener("keydown", (event) => {
       if (event.key === "Tab") {
