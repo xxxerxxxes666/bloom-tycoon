@@ -1276,6 +1276,8 @@ def verify_source_hooks():
         "function handleBoardMultiTouchInterruption(event)",
         'querySelectorAll(".tile.sel")',
         '(event.key === "Enter" || event.key === " ") && event.repeat',
+        "const boundaryArrowNoop = target.x === cell.x && target.y === cell.y",
+        "if (boundaryArrowNoop)",
         "function freshTutorialEligible()",
         'if (event.key === "Escape" && boardDragInputActive())',
         "cancelInterruptedBoardDrag();",
