@@ -13742,6 +13742,15 @@
 
     function markInvalidSwap(a, b, hintSnapshot = idleHintCells, selectionSnapshot = null) {
       const continuingRefusal = invalidSwapTimer !== null;
+      const repeatedSingleCellRefusal = a.x === b.x && a.y === b.y;
+      const priorSingleCell = continuingRefusal && repeatedSingleCellRefusal && invalidSwapCells.size === 1
+        ? [...invalidSwapCells.keys()][0].split(",").map(Number)
+        : null;
+      const priorCell = priorSingleCell
+        ? { x: priorSingleCell[0], y: priorSingleCell[1] }
+        : null;
+      const pairedRefusal = priorCell
+        && Math.abs(priorCell.x - a.x) + Math.abs(priorCell.y - a.y) === 1;
       if (invalidSwapTimer !== null && window.clearTimeout) {
         window.clearTimeout(invalidSwapTimer);
       }
@@ -13776,9 +13785,17 @@
         cue.classList.add("swap-refused");
         idleHintCells = new Set(returnHintCells);
       }
+      const refusalSource = pairedRefusal ? priorCell : a;
+      const refusalTarget = pairedRefusal ? a : b;
       invalidSwapCells = new Map([
-        [`${a.x},${a.y}`, { dx: b.x - a.x, dy: b.y - a.y }],
-        [`${b.x},${b.y}`, { dx: a.x - b.x, dy: a.y - b.y }]
+        [`${refusalSource.x},${refusalSource.y}`, {
+          dx: refusalTarget.x - refusalSource.x,
+          dy: refusalTarget.y - refusalSource.y
+        }],
+        [`${refusalTarget.x},${refusalTarget.y}`, {
+          dx: refusalSource.x - refusalTarget.x,
+          dy: refusalSource.y - refusalTarget.y
+        }]
       ]);
       render();
       invalidSwapTimer = window.setTimeout(() => {

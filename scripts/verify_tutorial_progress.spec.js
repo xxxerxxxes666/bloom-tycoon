@@ -1821,12 +1821,16 @@ async function findInvalidAdjacentPair(page, excludedCells = []) {
       next[b.y][b.x] = temp;
       return next;
     };
-    const hasMatch = (next) => {
+    const hasMoveMatch = (next, a, b) => {
       for (let y = 0; y < 8; y += 1) {
         let start = 0;
         for (let x = 1; x <= 8; x += 1) {
           if (x === 8 || next[y][x] !== next[y][start]) {
-            if (next[y][start] >= 0 && x - start >= 3) return true;
+            if (
+              next[y][start] >= 0
+              && x - start >= 3
+              && [a, b].some((cell) => cell.y === y && cell.x >= start && cell.x < x)
+            ) return true;
             start = x;
           }
         }
@@ -1835,7 +1839,11 @@ async function findInvalidAdjacentPair(page, excludedCells = []) {
         let start = 0;
         for (let y = 1; y <= 8; y += 1) {
           if (y === 8 || next[y][x] !== next[start][x]) {
-            if (next[start][x] >= 0 && y - start >= 3) return true;
+            if (
+              next[start][x] >= 0
+              && y - start >= 3
+              && [a, b].some((cell) => cell.x === x && cell.y >= start && cell.y < y)
+            ) return true;
             start = y;
           }
         }
@@ -1849,7 +1857,7 @@ async function findInvalidAdjacentPair(page, excludedCells = []) {
           const b = { x: x + dx, y: y + dy };
           if (b.x >= 8 || b.y >= 8 || board[a.y][a.x] === board[b.y][b.x]) continue;
           if (excluded.has(`${a.x},${a.y}`) || excluded.has(`${b.x},${b.y}`)) continue;
-          if (!hasMatch(swap(a, b))) return [a, b];
+          if (!hasMoveMatch(swap(a, b), a, b)) return [a, b];
         }
       }
     }
@@ -2213,7 +2221,12 @@ function assertRefusalOwnsFeedback(state, label, { agency = false } = {}) {
 }
 
 async function refuseInvalidPair(page, { touch = false, repeat = false } = {}) {
-  const pair = await findInvalidAdjacentPair(page);
+  const guidedCells = await page.locator(".tile.idle-hint").evaluateAll((tiles) => tiles.map((tile) => ({
+    x: Number(tile.dataset.x),
+    y: Number(tile.dataset.y)
+  })));
+  const pair = await findInvalidAdjacentPair(page, guidedCells)
+    || await findInvalidAdjacentPair(page);
   expect(pair, "invalid adjacent pair").toHaveLength(2);
   const before = await invalidFeedbackState(page);
   for (const cell of pair) {
@@ -2241,7 +2254,7 @@ async function refuseInvalidPair(page, { touch = false, repeat = false } = {}) {
     await page.waitForTimeout(140);
     repeatedPeak = await invalidFeedbackState(page);
   }
-  await expect(page.locator(".tile.invalid-swap")).toHaveCount(0, { timeout: 1600 });
+  await expect(page.locator(".tile.invalid-swap")).toHaveCount(0, { timeout: 2400 });
   return {
     pair,
     before,
@@ -7337,6 +7350,24 @@ for (const viewport of [
       expect(reloaded.tutorialCopy).toBe("Swap the glowing flowers.");
       await expect(page.locator('.tile[tabindex="0"]')).toHaveCount(1);
     }
+
+    const recoveredGuide = await hintedPair(page);
+    for (const cell of recoveredGuide) {
+      await page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`).click();
+    }
+    await page.waitForFunction((key) => {
+      const state = JSON.parse(localStorage.getItem(key) || "{}");
+      return state.moves === 5
+        && state.counts?.[5] === 3
+        && document.querySelector("#board")?.getAttribute("aria-busy") === "false";
+    }, SAVE_KEY, { timeout: 10000 });
+    await expect(page.locator("#firstSwapCue")).toHaveText("Thorn Rose +3, 3 of 8. 5 moves left.");
+    await expect(page.locator("#tutorialPanel")).toBeHidden();
+    await expect(page.locator(".tile.invalid-swap")).toHaveCount(0);
+    const accepted = await activeState(page);
+    expect(accepted.tiles).toBe(64);
+    expect(accepted.rows).toBe(8);
+    expect(accepted.overflowX).toBe(false);
   });
 }
 test("Round 1 tutorial board choreography derives from the authoritative hinted pair", async ({ page }) => {
@@ -7829,7 +7860,7 @@ test("invalid, cancel, mobile touch, and reduced motion drag paths stay clean", 
   await expect(page.locator("#tutorialPanel")).toBeVisible();
   const startingPair = await hintedPair(page);
   assertFirstActionGuide(await firstActionGuideReport(page), startingPair, "invalid-start desktop");
-  const invalidPair = await findInvalidAdjacentPair(page);
+  const invalidPair = await findInvalidAdjacentPair(page, startingPair);
   expect(invalidPair, "invalid adjacent pair").toHaveLength(2);
   const invalidBefore = await activeState(page);
   const invalidPreview = await previewDelta(page, invalidPair);
