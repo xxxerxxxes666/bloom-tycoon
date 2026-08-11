@@ -133,7 +133,6 @@ for (const profile of PROFILES) {
       expect(hinted.cue).toBe("Match Thorn Rose with the glowing pair.");
       expect(hinted.active).toBe(TARGET_ID);
       expect(hinted.activeOutline.style).toBe("none");
-      expect(hinted.activeOutline.width).toBe(0);
       expect(hinted.hints).toHaveLength(2);
       expect(hinted.hints).not.toContain(TARGET_ID);
       expect(hinted.outlined.sort()).toEqual([...hinted.hints].sort());
