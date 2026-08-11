@@ -39,6 +39,7 @@ async function report(page) {
       state,
       cue: document.querySelector("#firstSwapCue")?.textContent.trim() || "",
       tutorial: document.querySelector("#tutorialPanel")?.textContent.replace(/\s+/g, " ").trim() || "",
+      tutorialVisible: visible(document.querySelector("#tutorialPanel")),
       bodyClasses: document.body.className,
       boardBusy: document.querySelector("#board")?.getAttribute("aria-busy") || "",
       activeId: document.activeElement?.id || "",
@@ -142,7 +143,9 @@ for (const testCase of CASES) {
         .toEqual([0, 0, 0, 0, 0, 3]);
       expect(settled.liveOwners, `${testCase.label} receipt is the sole narrator`)
         .toEqual([{ id: "firstSwapCue", live: "polite" }]);
-      expect(settled.tutorial, `${testCase.label} keeps the next lesson ready`).toContain("Find 3 Thorn Roses.");
+      expect(settled.state.tutorialActive, `${testCase.label} retires stale tutorial authority`).toBe(false);
+      expect(settled.tutorialVisible, `${testCase.label} keeps the stale panel absent`).toBe(false);
+      expect(settled.tutorial, `${testCase.label} removes stale tutorial copy`).not.toContain("Find 3 Thorn Roses.");
       expect(settled.selectedIds, `${testCase.label} clears selection`).toEqual([]);
       expect(settled.activeId, `${testCase.label} focus agrees with the sole roving tile`)
         .toBe(settled.rovingIds[0]);
@@ -176,6 +179,8 @@ for (const testCase of CASES) {
       expect(restored.bodyClasses, `${testCase.label} reload cannot replay the receipt`)
         .not.toContain("settled-board-outcome-cue");
       expect(restored.cue, `${testCase.label} reload cannot replay result copy`).not.toContain("moves left.");
+      expect(restored.state.tutorialActive, `${testCase.label} reload cannot revive stale tutorial authority`).toBe(false);
+      expect(restored.tutorialVisible, `${testCase.label} reload keeps the stale panel absent`).toBe(false);
       expect(restored.tiles, `${testCase.label} reload retains 64 tiles`).toBe(64);
       expect(restored.rows, `${testCase.label} reload retains eight rows`).toBe(8);
       expect(browserErrors, `${testCase.label} browser warning/error ledger`).toEqual([]);

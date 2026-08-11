@@ -10469,7 +10469,7 @@
     let restoredRoundTwoGuideMoves = 0;
     let tutorialSkipped = false;
     let tutorialActive = false;
-    let tutorialOpenedOverSelection = false;
+    let delayedOpeningTutorialYielded = false;
     let blackCandleLessonComplete = false;
     let tutorialStartTimer = null;
     let currentRound = 1;
@@ -16569,12 +16569,6 @@
       }
       clearTargetLiteracy(false);
       tutorialSkipped = false;
-      tutorialOpenedOverSelection = Boolean(
-        !replay
-        && currentRound === 1
-        && !hasMadeValidMove
-        && selected
-      );
       tutorialActive = true;
       tutorialReplayOwnsNarration = Boolean(replay);
       tutorialReplayReturnsFocusToHelp = Boolean(replay && returnFocusToHelp);
@@ -16665,7 +16659,7 @@
         && tutorialReplayReturnsFocusToHelp;
       tutorialSkipped = true;
       tutorialActive = false;
-      tutorialOpenedOverSelection = false;
+      delayedOpeningTutorialYielded = false;
       tutorialReplayOwnsNarration = false;
       tutorialReplayReturnsFocusToHelp = false;
       ordinaryRefusalHelpReplayActive = false;
@@ -16742,7 +16736,7 @@
       }
       tutorialSkipped = true;
       tutorialActive = false;
-      tutorialOpenedOverSelection = false;
+      delayedOpeningTutorialYielded = false;
       tutorialReplayOwnsNarration = false;
       tutorialReplayReturnsFocusToHelp = false;
       ordinaryRefusalHelpReplayActive = false;
@@ -16757,6 +16751,13 @@
         && !roundComplete
         && !hasMadeValidMove
         && !isBouquetFailed();
+    }
+
+    function roundOneTutorialLessonAuthority() {
+      return currentRound === 1
+        && !tutorialSkipped
+        && !blackCandleLessonComplete
+        && (tutorialActive || delayedOpeningTutorialYielded);
     }
 
     function scheduleFreshTutorial() {
@@ -17282,16 +17283,23 @@
         ? lineRelicGuidance(activatingRelic)
         : null;
       const isFirstValidMove = !hasMadeValidMove;
-      const retiringInterposedTutorial = isFirstValidMove
-        && tutorialOpenedOverSelection;
+      const retiringDelayedOpeningTutorial = isFirstValidMove
+        && currentRound === 1
+        && tutorialActive
+        && !tutorialReplayOwnsNarration;
       const roundTwoOpeningBudgetActive = isRestoredRoundTwoOpeningBudgetActive();
       const guidedRoundTwoLesson = isAuthoritativeRoundTwoThornLesson()
         && previewSwapMatches(source, target).some((match) => cellsTouchCursedThorn(match.cells));
       roundOneLastSwapMissedOrder = false;
       roundOneShuffleReserveFocusActive = false;
       hasMadeValidMove = true;
-      if (retiringInterposedTutorial) {
-        concludeTutorial();
+      if (retiringDelayedOpeningTutorial) {
+        // The committed exchange owns the command lane, whether the delayed
+        // tutorial arrived before the source or between the two endpoints.
+        // Keep later lessons and Help replay eligible instead of skipping the
+        // tutorial sequence wholesale.
+        delayedOpeningTutorialYielded = true;
+        tutorialActive = false;
       }
       if (roundTwoOpeningBudgetActive) {
         restoredRoundTwoGuideMoves = Math.min(
@@ -17346,7 +17354,7 @@
                 forecastDestination: { x: armedLineRelic.x, y: armedLineRelic.y }
               },
               playerSwap: { a: source, b: target },
-              ...(currentRound === 1 && tutorialActive ? { maxCascades: 1, quietReseed: true } : {})
+              ...(roundOneTutorialLessonAuthority() ? { maxCascades: 1, quietReseed: true } : {})
             }
           : authoredRoundOneLesson
           ? { maxCascades: 1, quietReseed: true, playerSwap: { a: source, b: target } }
@@ -17407,7 +17415,7 @@
           return;
         }
         roundOneLastSwapMissedOrder = currentRound === 1
-          && tutorialActive
+          && roundOneTutorialLessonAuthority()
           && !roundOneSwapGainedOrderFlowers(result);
         const resolvingMoveFailed = resolvingMoveWillFail();
         ritualMessage = resolvingMoveFailed
@@ -17870,8 +17878,9 @@
       }
       if (wave.lineRelics.length) {
         if (wave.activatingLineRelic) {
-          if (currentRound === 1 && tutorialActive) {
+          if (roundOneTutorialLessonAuthority()) {
             blackCandleLessonComplete = true;
+            delayedOpeningTutorialYielded = false;
           }
           result.blackCandleActivation = wave.blackCandleActivation
             ? {
@@ -17887,6 +17896,12 @@
             tutorialActive = true;
           }
           queueLineRelicArming(armedLineRelic, cascadeIndex);
+          if (delayedOpeningTutorialYielded && !tutorialSkipped && !tutorialReplayOwnsNarration) {
+            // The opening receipt already had sole command authority. Resume
+            // the next untouched lesson only when its Black Candle exists.
+            tutorialActive = true;
+            delayedOpeningTutorialYielded = false;
+          }
           const guidance = lineRelicGuidance();
           $("firstSwapCue").textContent = guidance?.cue || "Swap Black Candle Vine - burn its lane.";
           ritualMessage = guidance
@@ -20191,6 +20206,7 @@
       roundOneLastSwapMissedOrder = false;
       roundOneShuffleReserveFocusActive = false;
       hasMadeValidMove = false;
+      delayedOpeningTutorialYielded = false;
       blackCandleLessonComplete = currentRound !== 1 || tutorialSkipped;
       roundComplete = false;
       const introCopy = retryingFailedBouquet
@@ -20865,6 +20881,12 @@
     installLocalReviewHooks();
 
     loadProgress();
+    delayedOpeningTutorialYielded = currentRound === 1
+      && hasMadeValidMove
+      && !tutorialSkipped
+      && !tutorialActive
+      && !blackCandleLessonComplete
+      && !roundComplete;
     if (!board.length || matches().length || !hasLegalMoves()) {
       build();
     }
