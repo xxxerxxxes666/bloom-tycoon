@@ -13087,6 +13087,8 @@
         ? (roundOneOrderCorrection ? 650 : ROUND_ONE_AGENCY_HINT_DELAY_MS)
         : currentRound === 1
         ? 350
+        : isRoundTwoThornHandoffActive()
+          ? 650
         : isRestoredRoundTwoGuideActive()
           ? 650
           : 7000;
@@ -13193,11 +13195,21 @@
         idleHintCells = new Set([`${a.x},${a.y}`, `${b.x},${b.y}`]);
         if (roundOneAgencyHintAfterDelay) {
           alignPassiveRoundOneRovingEntry(a, plan);
+        } else if (isRoundTwoThornHandoffActive(plan)) {
+          const activeElement = document.activeElement;
+          if (
+            !activeElement
+            || ["BODY", "HTML"].includes(activeElement.tagName)
+            || Boolean(boardTileFromElement(activeElement))
+          ) {
+            boardFocusCell = clampBoardFocusCell(a);
+            queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
+          }
         }
         const hintedTarget = usefulMove?.target || target;
         $("firstSwapCue").textContent = roundOneAgencyHintAfterDelay && hintedTarget
           ? `Match ${flowers[hintedTarget.flowerId][0]} with the glowing pair.`
-          : plan.round >= 3 && hintedTarget
+          : plan.round >= 2 && hintedTarget
             ? targetCueText(hintedTarget, a, b)
             : firstSwapCueText(a, b);
         render();
@@ -15093,6 +15105,21 @@
         && restoredRoundTwoGuideMoves < RESTORED_ROUND_TWO_GUIDE_LIMIT;
     }
 
+    function isRoundTwoThornHandoffActive(plan = activeRoundPlan()) {
+      return plan.round === 2
+        && isRestoredRoundTwoWindow()
+        && hasMadeValidMove
+        && restoredRoundTwoGuideMoves === 1
+        && thornGoalComplete(plan)
+        && !tutorialActive
+        && !roundComplete
+        && !isBouquetFailed(plan)
+        && !restoredGreenhouseHandoff
+        && !isArmedLineRelicGuidanceActive()
+        && !postRecoveryGuideActive
+        && !altarReweaveActive;
+    }
+
     function isRoundOneAgencyHandoffActive(plan = activeRoundPlan()) {
       return isRoundOneFirstTargetAgencyHandoffActive(plan)
         || isRoundOneSecondTargetDiscoveryActive(plan);
@@ -15844,7 +15871,7 @@
       document.body.classList.toggle(
         "round-two-followup-cue",
         !settledOutcomeOwnsBoardGuidance
-          && isRestoredRoundTwoGuideActive()
+          && isRoundTwoThornHandoffActive(activePlan)
           && hasMadeValidMove
           && idleHintCells.size === 2
           && !roundComplete
@@ -19162,6 +19189,9 @@
             queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
           }
           render();
+          if (isRoundTwoThornHandoffActive() && idleHintCells.size !== 2) {
+            scheduleIdleHint();
+          }
         }, SETTLED_BOARD_OUTCOME_MS);
       });
       return true;

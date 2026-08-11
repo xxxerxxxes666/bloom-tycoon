@@ -1,5 +1,15 @@
 # Codex Build Notes
 
+## 2026-08-11 - Cursed Thorn hands directly to the next bloom
+
+- Player-visible correction: completing the authored Cursed Thorn swap no longer leaves Round 2 with Help above an otherwise silent altar. After the localized BREAK feedback retires, the existing harvest receipt yields to one objective-useful glowing pair and a literal `Nightshade next` or `Amber Seed next` cue; keyboard focus moves to that pair's source. Help remains the sole non-tile command.
+- Surgical authority: the handoff is derived from existing Round 2 state (`restoredRoundTwoGuideMoves === 1`, sealed Thorns, active order) and reuses the established objective-useful idle-hint path. It adds no save field/version, board patch, move, objective, reward, currency, system, asset, or panel. The next ordinary move returns to the existing seven-second autonomy cadence.
+- Permanent browser contract: new `scripts/verify_round_two_thorn_handoff.spec.js` covers desktop `1280x720` and exact mobile `390x844`. It performs the real Thorn lesson, requires the named pair after receipt retirement, 64 tiles/eight rows, Help-only command hierarchy, loaded imagery, no overflow or browser errors, reload restoration, then commits the glowing pair and requires exactly one move spent plus real progress for the named ingredient. The neighboring Tab-during-feedback contract now requires focus to follow the new target source before ordinary Help traversal.
+- Local evidence: the handoff contract passes `2/2`; the neighboring desktop/mobile-reduced Thorn feedback and Tab contract passes `2/2`. Original-scale captures `work/round-two-thorn-handoff-desktop.png` and `work/round-two-thorn-handoff-mobile390.png` show the compact cue, sealed Thorn objective, complete altar, and unchanged hierarchy.
+- Verification and security: `python3 scripts/verify_project.py`, HTML source guards, changed-spec syntax, `git diff --check`, high-confidence changed-file secret scanning, and added-line tracker/network review pass. Browser profiles retain 64 enabled tiles, eight rows, loaded visible imagery, Help-only hierarchy, no horizontal overflow, and empty console-warning, console-error, page-error, hard-request-failure, and broken-image ledgers. The new spec's established loopback test URL is the only added network-like string.
+- Public delivery: pending gameplay commit and deployment identifiers.
+- Files changed: `playable/midnight_bloom_prototype.html`, new `scripts/verify_round_two_thorn_handoff.spec.js`, `scripts/verify_thorn_feedback_tab_escape.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.
+
 ## 2026-08-11 - Greenhouse transfer keeps one visible receipt
 
 - Player-visible correction: the first `Restore Greenhouse` spend compressed the bouquet trophy to its transfer receipt while leaving the decorative `2 MOVES HELD` badge and embers layered over `Bouquet Transferred` / `First Bouquet` for the opening transfer frames at exact `390x844`. The held-moves decoration now retires only while Round 1 owns `data-restoration-phase="transforming"`, leaving one readable transfer receipt; it returns unchanged when the ceremony settles.

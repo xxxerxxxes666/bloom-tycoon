@@ -155,11 +155,12 @@ for (const testCase of CASES) {
         timeout: 4000
       }).toBe(0);
       const afterRetirement = await report(page);
-      expect(afterRetirement.activeId, `${testCase.label} receipt does not focus through its hidden command`)
-        .toBe("");
-      expect(afterRetirement.activeTag, `${testCase.label} receipt owns neutral page focus`).toBe("BODY");
+      expect(afterRetirement.activeId, `${testCase.label} handoff focuses the next target source`)
+        .toMatch(/^tile-/);
+      expect(afterRetirement.activeTag, `${testCase.label} handoff returns focus to the altar`).toBe("BUTTON");
       expect(afterRetirement.boardBusy, `${testCase.label} cleanup releases the altar`).toBe("false");
-      expect(afterRetirement.visibleButtons, `${testCase.label} receipt remains the sole owner`).toEqual([]);
+      expect(afterRetirement.visibleButtons, `${testCase.label} cleanup exposes only the board Help command`)
+        .toEqual([{ id: "tutorialHelpBtn", text: "Help" }]);
       expect(afterRetirement.state.moves, `${testCase.label} match commits once`).toBe(8);
       expect(afterRetirement.state.counts[2], `${testCase.label} Nightshade credits once`).toBe(3);
       expect(afterRetirement.state.clearedCursedThorns, `${testCase.label} seals three Thorns`).toBe(3);
@@ -171,7 +172,7 @@ for (const testCase of CASES) {
 
       await expect(page.locator("#tutorialHelpBtn"), `${testCase.label} Help returns after the receipt`)
         .toBeVisible({ timeout: 5000 });
-      await expect(page.locator("#tile-1-3"), `${testCase.label} guided tile regains focus after receipt`)
+      await expect(page.locator(".tile.idle-hint[tabindex='0']"), `${testCase.label} next target source receives focus`)
         .toBeFocused({ timeout: 5000 });
       await page.keyboard.press("Tab");
       await expect(page.locator("#tutorialHelpBtn"), `${testCase.label} fresh Tab reaches Help`)
