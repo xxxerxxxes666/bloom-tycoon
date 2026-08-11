@@ -14341,6 +14341,10 @@
         event.preventDefault();
         document.body.classList.remove("pointer-board-input");
         document.body.classList.add("keyboard-board-navigation");
+        if (boardDragInputActive()) {
+          cancelInterruptedBoardDrag();
+          restoreInterruptedBoardDragFocus();
+        }
         boardFocusCell = clampBoardFocusCell(cell);
         tap(boardFocusCell.x, boardFocusCell.y, { keyboardSelection: true });
         return;
