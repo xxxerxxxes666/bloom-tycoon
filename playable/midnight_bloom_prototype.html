@@ -13972,6 +13972,9 @@
       const absY = Math.abs(dy);
       const dominant = Math.max(absX, absY);
       const sourceTile = dragPreview.sourceTile;
+      if (dominant >= DRAG_INTENT_THRESHOLD) {
+        claimBoardDragOwnership(start, sourceTile);
+      }
       if (
         dominant >= DRAG_INTENT_THRESHOLD
         && event.pointerType === "touch"
@@ -14307,6 +14310,26 @@
       return true;
     }
 
+    function retireBoardSelectionForDrag() {
+      if (!selected) {
+        return false;
+      }
+      selected = null;
+      $("board")?.querySelectorAll(".tile.sel").forEach((tile) => tile.classList.remove("sel"));
+      return true;
+    }
+
+    function claimBoardDragOwnership(start, sourceTile) {
+      if (!start || start.dragOwnershipClaimed) {
+        return;
+      }
+      start.dragOwnershipClaimed = true;
+      retireBoardSelectionForDrag();
+      boardFocusCell = { x: start.x, y: start.y };
+      updateBoardRovingTabIndex();
+      sourceTile.focus({ preventScroll: true });
+    }
+
     function handleBoardKeyDown(event) {
       if (rejectPayoffHandoffBoardInput(event)) {
         return;
@@ -14409,7 +14432,6 @@
       ) {
         notePlayerInteraction();
       }
-      boardFocusCell = { x: cell.x, y: cell.y };
       tileSwipeStart = {
         pointerId: event.pointerId,
         clientX: event.clientX,
@@ -14503,7 +14525,6 @@
       ) {
         notePlayerInteraction();
       }
-      boardFocusCell = { x: cell.x, y: cell.y };
       touchSwipeStart = {
         pointerId: touch.identifier,
         clientX: touch.clientX,
