@@ -1,5 +1,15 @@
 # Codex Build Notes
 
+## 2026-08-10 - Bloodroot Compact keeps one earned strict four
+
+- Player-visible correction: the final focused order no longer opens with two authored strict-four target matches. The strongest `nightshade-glass` route previously completed all 27 Bloodroot Compact flowers in two swaps with six of eight moves unused; it now needs four real swaps while keeping the order comfortably winnable.
+- Surgical authority: Bloodroot keeps the order's one opening strict four, while Sol Rot receives an ordinary guaranteed three-match in Round 3. Earlier orders retain their existing target patches. Objectives (`14` Bloodroot + `13` Sol Rot), eight-move budget, cascade/relic rules, RNG, rewards, economy, save schema, ceremonies, greenhouse transformation, controls, and UI are unchanged.
+- Permanent contract: the real first-three journey now requires Round 3 to take at least three swaps. The complete optimized eight-seed desktop/exact-mobile matrix passes `16/16`: Bloodroot Compact takes `4-6` swaps and retains `2-4` moves. The independent goal-following matrix passes `8/8` with the same `4-6`-swap range. Every run preserves exact balances `[50, 230, 50, 50]` and actions `Raise Conservatory · 180 coins` then `Play Again → First Bouquet`.
+- Payoff and resilience evidence: natural final-harvest journeys pass `2/2`; move-budget migration plus failure/Retry recovery pass `16/16` across desktop, exact mobile, all three rounds, and full/reduced motion. Fresh Round 3 eligible and ceremony captures preserve the complete `600px`/`378px` altar, 64 tiles/eight rows, final-harvest hierarchy, bouquet, greenhouse transformation, loaded imagery, and contained desktop/mobile layouts with clean browser ledgers.
+- Baseline note: the older two-cycle economy probe still fails after its synthetic owned-replay Retry when its helper clicks the valid highlighted opening pair. The same desktop/mobile failure reproduces against an untouched detached `d731a1d` worktree, while the dedicated failure/Retry matrix passes `12/12`; this pre-existing helper boundary was not bundled into the pacing slice.
+- Static and security verification: `python3 scripts/verify_project.py`, HTML source guards, changed-spec and extracted inline JavaScript syntax, `git diff --check`, changed-file high-confidence secret scanning, and changed-line tracker/network scanning pass. No node, copy, state field/version, timer, move budget, objective, reward, economy value, asset, round, dependency, backend, tracker, service, account, or permission was added.
+- Files changed: `playable/midnight_bloom_prototype.html`, `scripts/verify_first_three_journey.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.
+
 ## 2026-08-10 - A fast first bloom keeps its earned result
 
 - Player-visible correction: a player who completes the glowing opening Thorn Rose exchange before the delayed tutorial now keeps the earned `Thorn Rose +3, 3 of 8. 5 moves left.` receipt as the sole command-lane narrator. If the tutorial opens between the source and target taps, completing that already-started exchange retires the interposed panel and preserves the same result.

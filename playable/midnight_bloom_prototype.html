@@ -11223,11 +11223,12 @@
         seedRoundOneGuidedMove(plan);
         return;
       }
+      // Bloodroot Compact opens with one strict four, not two competing relics.
       if (targetIds[0] !== undefined) {
         writeTargetLegalMovePatch(0, 0, targetIds[0], plan.round === 3 ? 4 : 3);
       }
       if (targetIds[1] !== undefined) {
-        writeTargetLegalMovePatch(4, 0, targetIds[1], 4);
+        writeTargetLegalMovePatch(4, 0, targetIds[1], plan.round === 3 ? 3 : 4);
       }
     }
 

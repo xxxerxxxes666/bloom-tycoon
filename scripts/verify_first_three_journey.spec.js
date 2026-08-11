@@ -2880,7 +2880,7 @@ for (const config of [
       expect(results[0].swaps, "Round 1 tutorial does not drag").toBeLessThanOrEqual(5);
       expect(results[1].swaps, "Round 2 takes several real swaps").toBeGreaterThanOrEqual(4);
       expect(results[1].swaps, "Round 2 closes before the Moonlit Wreath path drags").toBeLessThanOrEqual(7);
-      expect(results[2].swaps, "Round 3 takes real swaps").toBeGreaterThanOrEqual(2);
+      expect(results[2].swaps, "Round 3 takes real swaps").toBeGreaterThanOrEqual(3);
       expect(results[2].swaps, "Round 3 stays inside the focused fairness envelope").toBeLessThanOrEqual(6);
       expect(results[0].actions).toEqual(["Restore Greenhouse · 100 coins", "Next Order → Moonlit Wreath"]);
       expect(results[1].actions).toEqual(["Upgrade Greenhouse · 120 coins", "Next Order → Bloodroot Compact"]);
