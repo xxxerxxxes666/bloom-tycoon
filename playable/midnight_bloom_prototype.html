@@ -10509,7 +10509,8 @@
     let ownedReplayRenewalTimer = null;
     let ownedReplayRenewalPhase = "";
     let bloomAudioContext = null;
-    let bloomAudioSuspendedForVisibility = false;
+    let bloomAudioWindowFocused = document.hasFocus();
+    let bloomAudioSuspendedForInterruption = false;
     let bloomAudioVisibilityTransition = Promise.resolve();
     let bloomAudioMaster = null;
     let bloomAudioCompressor = null;
@@ -13384,7 +13385,7 @@
       if (!window.AudioContext && !window.webkitAudioContext) {
         return null;
       }
-      if (document.hidden) {
+      if (bloomAudioInterrupted()) {
         return null;
       }
       let contextCreated = false;
@@ -13397,12 +13398,16 @@
       if (
         contextCreated
         && bloomAudioContext.state === "suspended"
-        && !document.hidden
-        && !bloomAudioSuspendedForVisibility
+        && !bloomAudioInterrupted()
+        && !bloomAudioSuspendedForInterruption
       ) {
         bloomAudioContext.resume().catch(() => {});
       }
       return bloomAudioContext;
+    }
+
+    function bloomAudioInterrupted() {
+      return document.hidden || !bloomAudioWindowFocused;
     }
 
     function syncBloomAudioVisibility() {
@@ -13416,15 +13421,15 @@
           if (context !== bloomAudioContext) {
             return;
           }
-          if (document.hidden) {
+          if (bloomAudioInterrupted()) {
             if (context.state === "running" && typeof context.suspend === "function") {
-              bloomAudioSuspendedForVisibility = true;
+              bloomAudioSuspendedForInterruption = true;
               await context.suspend();
             }
             return;
           }
           if (
-            !bloomAudioSuspendedForVisibility
+            !bloomAudioSuspendedForInterruption
             || context.state !== "suspended"
             || typeof context.resume !== "function"
           ) {
@@ -13434,13 +13439,13 @@
           if (context !== bloomAudioContext) {
             return;
           }
-          if (document.hidden) {
+          if (bloomAudioInterrupted()) {
             if (context.state === "running" && typeof context.suspend === "function") {
               await context.suspend();
             }
             return;
           }
-          bloomAudioSuspendedForVisibility = false;
+          bloomAudioSuspendedForInterruption = false;
         })
         .catch(() => {});
     }
@@ -20999,15 +21004,25 @@
       }
       syncBloomAudioVisibility();
     });
-    window.addEventListener("blur", cancelInterruptedBoardDrag);
-    window.addEventListener("focus", restoreInterruptedBoardDragFocus);
+    window.addEventListener("blur", () => {
+      bloomAudioWindowFocused = false;
+      cancelInterruptedBoardDrag();
+      syncBloomAudioVisibility();
+    });
+    window.addEventListener("focus", () => {
+      bloomAudioWindowFocused = true;
+      restoreInterruptedBoardDragFocus();
+      syncBloomAudioVisibility();
+    });
     window.__bloomAudioProbe = () => ({
       eventCount: bloomAudioEventCount,
       voiceCount: bloomAudioVoiceCount,
       stage: bloomAudioStageKey,
       soundscapeActive: Boolean(bloomSoundscape?.started),
       contextState: bloomAudioContext?.state || "uninitialized",
-      visibilitySuspended: bloomAudioSuspendedForVisibility,
+      windowFocused: bloomAudioWindowFocused,
+      interruptionSuspended: bloomAudioSuspendedForInterruption,
+      visibilitySuspended: bloomAudioSuspendedForInterruption,
       events: bloomAudioEvents.slice()
     });
     window.__bloomReviewHooksEnabled = QA_REVIEW_HOOKS_ENABLED;

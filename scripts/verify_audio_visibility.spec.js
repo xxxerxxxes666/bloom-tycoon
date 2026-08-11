@@ -32,6 +32,9 @@ async function openFresh(page, testCase) {
       forcedHidden = hidden;
       document.dispatchEvent(new Event("visibilitychange"));
     };
+    window.__setAudioWindowFocused = (focused) => {
+      window.dispatchEvent(new Event(focused ? "focus" : "blur"));
+    };
   });
 }
 
@@ -97,6 +100,62 @@ async function report(page) {
 }
 
 for (const testCase of CASES) {
+  test(`active soundscape follows window focus on ${testCase.label}`, async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: testCase.viewport,
+      hasTouch: Boolean(testCase.mobile),
+      isMobile: Boolean(testCase.mobile)
+    });
+    const page = await context.newPage();
+    const browserErrors = [];
+    page.on("console", (message) => {
+      if (["warning", "error"].includes(message.type())) browserErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => browserErrors.push(error.message));
+    try {
+      await openFresh(page, testCase);
+      await activateOpeningPair(page, testCase);
+      await expect.poll(async () => (await report(page)).audio.contextState).toBe("running");
+      await expect.poll(async () => (await report(page)).moves).toBe(5);
+      await page.waitForTimeout(900);
+      const settled = await report(page);
+
+      await page.evaluate(() => window.__setAudioWindowFocused(false));
+      await expect.poll(async () => (await report(page)).audio.contextState).toBe("suspended");
+      const blurred = await report(page);
+      expect(blurred.audio.interruptionSuspended, `${testCase.label} owns its focus-loss suspension`).toBe(true);
+      expect(blurred.audio.windowFocused, `${testCase.label} records the lost window focus`).toBe(false);
+      await page.waitForTimeout(900);
+      const blurredSettled = await report(page);
+      expect(blurredSettled.audio.contextState).toBe("suspended");
+      expect(blurredSettled.audio.voiceCount).toBe(blurred.audio.voiceCount);
+
+      await page.evaluate(() => window.__setAudioWindowFocused(true));
+      await expect.poll(async () => (await report(page)).audio.contextState).toBe("running");
+      const restored = await report(page);
+      expect(restored.audio.interruptionSuspended).toBe(false);
+      expect(restored.audio.windowFocused).toBe(true);
+      expect(restored.audio.voiceCount).toBe(blurred.audio.voiceCount);
+      expect(restored.moves).toBe(settled.moves);
+      expect(restored.counts).toEqual(settled.counts);
+      expect(restored.tiles).toBe(64);
+      expect(restored.rows).toBe(8);
+      expect(restored.roving).toEqual([restored.active]);
+      expect(restored.selected).toBe(0);
+      expect(restored.boardWidth).toBeCloseTo(testCase.mobile ? 378 : 600, 1);
+      expect(restored.boardHeight).toBeCloseTo(testCase.mobile ? 378 : 600, 1);
+      expect(restored.overflowX).toBe(false);
+      expect(restored.overflowY).toBe(false);
+      expect(restored.brokenImages).toEqual([]);
+      expect(browserErrors).toEqual([]);
+      if (testCase.label === "mobile390-touch") {
+        await page.screenshot({ path: "work/audio-window-focus-mobile390.png", fullPage: true });
+      }
+    } finally {
+      await context.close();
+    }
+  });
+
   test(`active soundscape follows page visibility on ${testCase.label}`, async ({ browser }) => {
     const context = await browser.newContext({
       viewport: testCase.viewport,
@@ -179,6 +238,76 @@ test("a hidden first move cannot create or foreground-replay audio", async ({ br
     const restored = await report(page);
     expect(restored.audio.contextState, "foreground does not replay a hidden move").toBe("uninitialized");
     expect(restored.audio.soundscapeActive).toBe(false);
+    expect(restored.tiles).toBe(64);
+    expect(restored.rows).toBe(8);
+    expect(restored.overflowX).toBe(false);
+    expect(restored.overflowY).toBe(false);
+    expect(restored.brokenImages).toEqual([]);
+  } finally {
+    await context.close();
+  }
+});
+
+test("a blurred first move cannot create or focus-replay audio", async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  const page = await context.newPage();
+  try {
+    const testCase = CASES[2];
+    await openFresh(page, testCase);
+    await page.evaluate(() => window.__setAudioWindowFocused(false));
+    await activateOpeningPair(page, testCase);
+    await page.waitForTimeout(900);
+    const blurred = await report(page);
+    expect(blurred.audio.contextState).toBe("uninitialized");
+    expect(blurred.audio.soundscapeActive).toBe(false);
+    expect(blurred.audio.voiceCount).toBe(0);
+    expect(blurred.audio.windowFocused).toBe(false);
+    expect(blurred.moves).toBe(5);
+    expect(blurred.counts[5]).toBe(3);
+
+    await page.evaluate(() => window.__setAudioWindowFocused(true));
+    await page.waitForTimeout(200);
+    const restored = await report(page);
+    expect(restored.audio.contextState, "focus does not replay a blurred move").toBe("uninitialized");
+    expect(restored.audio.soundscapeActive).toBe(false);
+    expect(restored.audio.windowFocused).toBe(true);
+    expect(restored.tiles).toBe(64);
+    expect(restored.rows).toBe(8);
+    expect(restored.overflowX).toBe(false);
+    expect(restored.overflowY).toBe(false);
+    expect(restored.brokenImages).toEqual([]);
+  } finally {
+    await context.close();
+  }
+});
+
+test("visibility return waits for window focus before resuming audio", async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+  const page = await context.newPage();
+  try {
+    const testCase = CASES[0];
+    await openFresh(page, testCase);
+    await activateOpeningPair(page, testCase);
+    await expect.poll(async () => (await report(page)).audio.contextState).toBe("running");
+    await expect.poll(async () => (await report(page)).moves).toBe(5);
+    await page.waitForTimeout(900);
+
+    await page.evaluate(() => window.__setAudioVisibilityHidden(true));
+    await expect.poll(async () => (await report(page)).audio.contextState).toBe("suspended");
+    await page.evaluate(() => window.__setAudioWindowFocused(false));
+    await page.evaluate(() => window.__setAudioVisibilityHidden(false));
+    await page.waitForTimeout(200);
+    const visibleBlurred = await report(page);
+    expect(visibleBlurred.audio.contextState).toBe("suspended");
+    expect(visibleBlurred.audio.interruptionSuspended).toBe(true);
+    expect(visibleBlurred.audio.windowFocused).toBe(false);
+
+    await page.evaluate(() => window.__setAudioWindowFocused(true));
+    await expect.poll(async () => (await report(page)).audio.contextState).toBe("running");
+    const restored = await report(page);
+    expect(restored.audio.interruptionSuspended).toBe(false);
+    expect(restored.moves).toBe(5);
+    expect(restored.counts[5]).toBe(3);
     expect(restored.tiles).toBe(64);
     expect(restored.rows).toBe(8);
     expect(restored.overflowX).toBe(false);
