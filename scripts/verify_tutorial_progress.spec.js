@@ -2627,6 +2627,8 @@ for (const viewport of [
           fullPage: true
         });
       } else {
+        await expect(page.locator("body")).toHaveClass(/settled-board-outcome-cue/, { timeout: 12000 });
+        await expect(page.locator("body")).not.toHaveClass(/settled-board-outcome-cue/, { timeout: 5000 });
         await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 2500 });
         await expect(page.locator(".first-action-swap-guide")).toHaveCount(0);
         trace.push(await guidedRoundOneState(page, `after swap ${index}`));

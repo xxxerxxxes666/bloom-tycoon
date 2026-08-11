@@ -42,6 +42,12 @@ async function report(page) {
       tutorial: document.querySelector("#tutorialPanel")?.textContent.replace(/\s+/g, " ").trim() || "",
       tutorialVisible: visible(document.querySelector("#tutorialPanel")),
       hintCount: document.querySelectorAll("#board .tile.idle-hint").length,
+      guideOverlayCount: document.querySelectorAll(
+        "#board .first-action-swap-guide, #board .target-match-forecast-guide, #board .swap-path-arrow"
+      ).length,
+      guidedTileLabels: tiles
+        .map((tile) => tile.getAttribute("aria-label") || "")
+        .filter((label) => label.includes("guided exchange")),
       targetLiteracy: document.body.dataset.targetLiteracy || "",
       targetLiteracyTiles: document.querySelectorAll("#board .tile.target-literacy[data-flower-id='5']").length,
       visibleButtons: Array.from(document.querySelectorAll("button:not(.tile)"))
@@ -85,6 +91,24 @@ async function activateOpeningPair(page, input) {
     await source.press("Enter");
     await expect(destination).toBeFocused();
     await destination.press("Space");
+  }
+}
+
+async function activateHintedPair(page, input) {
+  const pair = page.locator("#board .tile.idle-hint");
+  await expect(pair).toHaveCount(2, { timeout: 9000 });
+  if (input === "touch") {
+    await pair.nth(0).tap();
+    await pair.nth(1).tap();
+  } else if (input === "pointer") {
+    await pair.nth(0).click();
+    await pair.nth(1).click();
+  } else {
+    const sourceId = await pair.nth(0).getAttribute("id");
+    await page.keyboard.press("Tab");
+    await expect(page.locator(`#${sourceId}`)).toBeFocused();
+    await page.keyboard.press("Enter");
+    await page.keyboard.press("Space");
   }
 }
 
@@ -212,6 +236,60 @@ for (const testCase of CASES) {
       expect(restored.tutorialVisible, `${testCase.label} reload keeps the stale panel absent`).toBe(false);
       expect(restored.tiles, `${testCase.label} reload retains 64 tiles`).toBe(64);
       expect(restored.rows, `${testCase.label} reload retains eight rows`).toBe(8);
+
+      await activateHintedPair(page, testCase.input);
+      await expect.poll(async () => (await report(page)).bodyClasses.includes("settled-board-outcome-cue"), {
+        message: `${testCase.label} exposes the second earned receipt`,
+        timeout: 12000
+      }).toBe(true);
+      const secondReceipt = await report(page);
+      const secondThornRoseCount = secondReceipt.state.counts[5];
+      const secondThornRoseDelta = secondThornRoseCount - restored.state.counts[5];
+      const secondThornRoseProgress = secondThornRoseCount >= 8
+        ? `${secondThornRoseCount} of 8 sealed.`
+        : `${secondThornRoseCount} of 8.`;
+      expect(secondReceipt.cue, `${testCase.label} second receipt names only the earned result`).toBe(
+        `Thorn Rose +${secondThornRoseDelta}, ${secondThornRoseProgress} 4 moves left.`
+      );
+      expect(secondThornRoseDelta, `${testCase.label} second receipt credits at least the authored match`)
+        .toBeGreaterThanOrEqual(3);
+      expect(secondReceipt.hintCount, `${testCase.label} receipt withholds the next exact pair`).toBe(0);
+      expect(secondReceipt.guideOverlayCount, `${testCase.label} receipt withholds every board guide overlay`).toBe(0);
+      expect(secondReceipt.guidedTileLabels, `${testCase.label} receipt withholds guided endpoint labels`).toEqual([]);
+      expect(secondReceipt.liveOwners, `${testCase.label} second receipt remains the sole narrator`)
+        .toEqual([{ id: "firstSwapCue", live: "polite" }]);
+      expect(secondReceipt.state.moves, `${testCase.label} second receipt spends once`).toBe(4);
+      expect(secondThornRoseCount, `${testCase.label} second receipt credits Thorn Rose`).toBeGreaterThanOrEqual(6);
+      expect(secondReceipt.tiles, `${testCase.label} second receipt retains 64 tiles`).toBe(64);
+      expect(secondReceipt.rows, `${testCase.label} second receipt retains eight rows`).toBe(8);
+      expect(secondReceipt.boardWidth, `${testCase.label} second receipt exact altar width`)
+        .toBe(testCase.mobile ? 378 : 600);
+      expect(secondReceipt.boardBottom, `${testCase.label} second receipt altar remains in the viewport`)
+        .toBeLessThanOrEqual(testCase.viewport.height);
+      expect(secondReceipt.overflowX, `${testCase.label} second receipt has no horizontal overflow`).toBe(false);
+      expect(secondReceipt.brokenImages, `${testCase.label} second receipt has no broken visible images`).toEqual([]);
+      await page.screenshot({ path: `work/second-harvest-receipt-${testCase.label}.png` });
+
+      await expect.poll(async () => (await report(page)).bodyClasses.includes("settled-board-outcome-cue"), {
+        message: `${testCase.label} second receipt retires into Black Candle guidance`,
+        timeout: 5000
+      }).toBe(false);
+      const blackCandleHandoff = await report(page);
+      expect(blackCandleHandoff.cue, `${testCase.label} restores the authored Black Candle cue`).toBe(
+        "Make 4 Bone Stars - arm Black Candle Vine."
+      );
+      expect(blackCandleHandoff.hintCount, `${testCase.label} reveals one exact pair after the receipt`).toBe(2);
+      expect(blackCandleHandoff.guideOverlayCount, `${testCase.label} reveals one directional guide`).toBe(1);
+      expect(blackCandleHandoff.guidedTileLabels, `${testCase.label} restores both guided endpoint labels`).toHaveLength(2);
+      expect(blackCandleHandoff.visibleButtons, `${testCase.label} keeps Help as the sole command`).toEqual(["Help"]);
+      expect(blackCandleHandoff.state.moves, `${testCase.label} handoff spends no extra move`).toBe(4);
+      expect(blackCandleHandoff.state.counts, `${testCase.label} handoff changes no objective credit`)
+        .toEqual(secondReceipt.state.counts);
+      expect(blackCandleHandoff.tiles, `${testCase.label} handoff retains 64 tiles`).toBe(64);
+      expect(blackCandleHandoff.rows, `${testCase.label} handoff retains eight rows`).toBe(8);
+      expect(blackCandleHandoff.overflowX, `${testCase.label} handoff has no horizontal overflow`).toBe(false);
+      expect(blackCandleHandoff.brokenImages, `${testCase.label} handoff has no broken visible images`).toEqual([]);
+      await page.screenshot({ path: `work/second-harvest-black-candle-${testCase.label}.png` });
       expect(browserErrors, `${testCase.label} browser warning/error ledger`).toEqual([]);
     } finally {
       await page.evaluate(() => window.__openingReceiptObserver?.disconnect()).catch(() => {});

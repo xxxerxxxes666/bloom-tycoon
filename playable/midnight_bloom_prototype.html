@@ -15734,7 +15734,10 @@
       const payoffCeremony = focusedPayoffCeremony();
       const activePlan = activeRoundPlan();
       const blackCandleActivation = blackCandleActivationPresentation;
-      const selectedHelpPair = tutorialActive ? selectedGuidedHintPair() : [];
+      const settledOutcomeOwnsBoardGuidance = settledBoardOutcomeOwnsBoardGuidance(activePlan);
+      const selectedHelpPair = tutorialActive && !settledOutcomeOwnsBoardGuidance
+        ? selectedGuidedHintPair()
+        : [];
       const selectedHelpCounterpart = selected && selectedHelpPair.find((cell) => (
         cell.x !== selected.x || cell.y !== selected.y
       ));
@@ -15766,13 +15769,16 @@
         $("firstSwapCue").textContent = finalHarvestCue(visibleFinalHarvest);
       }
       const progress = roundProgress(activePlan);
-      const activeRelicGuidance = !blackCandleActivation && !roundComplete && !isBouquetFailed()
+      const activeRelicGuidance = !settledOutcomeOwnsBoardGuidance
+        && !blackCandleActivation && !roundComplete && !isBouquetFailed()
         ? lineRelicGuidance()
         : null;
-      const targetMatchForecast = !blackCandleActivation && !activeRelicGuidance
+      const targetMatchForecast = !settledOutcomeOwnsBoardGuidance
+        && !blackCandleActivation && !activeRelicGuidance
         ? targetMatchForecastDetails(activePlan)
         : null;
-      const selectedPlayPair = !tutorialActive
+      const selectedPlayPair = !settledOutcomeOwnsBoardGuidance
+        && !tutorialActive
         && !activeRelicGuidance
         && visibleFinalHarvest?.phase !== "eligible"
         ? selectedGuidedHintPair()
@@ -15826,7 +15832,14 @@
       document.body.classList.toggle("final-harvest-transfer-active", finalHarvestLanding);
       document.body.classList.toggle("final-harvest-handoff-active", finalHarvestCommit?.phase === "ceremony");
       document.body.classList.toggle("thorn-lesson-active", activePlan.round === 2 && Boolean(activePlan.thornGoal) && thornGoalProgress(activePlan) === 0 && !roundComplete);
-      document.body.classList.toggle("round-two-followup-cue", isRestoredRoundTwoGuideActive() && hasMadeValidMove && idleHintCells.size === 2 && !roundComplete);
+      document.body.classList.toggle(
+        "round-two-followup-cue",
+        !settledOutcomeOwnsBoardGuidance
+          && isRestoredRoundTwoGuideActive()
+          && hasMadeValidMove
+          && idleHintCells.size === 2
+          && !roundComplete
+      );
       document.body.classList.toggle("first-move-made", hasMadeValidMove);
       document.body.classList.toggle(
         "round-one-closing-reserve",
@@ -15993,7 +16006,7 @@
           ? visibleFinalHarvest.matchingCells.map((cell) => [`${cell.x},${cell.y}`, cell.flowerId])
           : []
       );
-      const hintedPair = hintedPairCells();
+      const hintedPair = settledOutcomeOwnsBoardGuidance ? [] : hintedPairCells();
 
       for (let y = 0; y < BOARD_SIZE; y += 1) {
         for (let x = 0; x < BOARD_SIZE; x += 1) {
@@ -16040,7 +16053,7 @@
           const swapGlideClass = swapGlide ? "swap-glide" : "";
           const idleHintClass = (
             !visibleFinalHarvest || visibleFinalHarvest.guidanceYielded
-          ) && idleHintCells.has(`${x},${y}`) ? "idle-hint" : "";
+          ) && !settledOutcomeOwnsBoardGuidance && idleHintCells.has(`${x},${y}`) ? "idle-hint" : "";
           const finalHarvestEndpointClass = finalHarvestEndpointKeys.has(`${x},${y}`)
             ? "final-harvest-endpoint"
             : "";
@@ -17214,6 +17227,9 @@
     }
 
     function renderFirstSwapArrow(boardEl) {
+      if (settledBoardOutcomeOwnsBoardGuidance()) {
+        return;
+      }
       const targetMatchForecast = targetMatchForecastDetails();
       const tutorialGuide = currentTutorialBoardGuidePair();
       const renderedTutorialGuide = renderFirstActionSwapGuide(boardEl, tutorialGuide);
@@ -19008,6 +19024,11 @@
         && (!postRecoveryGuideActive || blackCandleOutcome)
         && !visibleFinalHarvest
         && !isArmedLineRelicGuidanceActive();
+    }
+
+    function settledBoardOutcomeOwnsBoardGuidance(plan = activeRoundPlan()) {
+      const outcome = settledBoardOutcome || pendingSettledBoardOutcome;
+      return Boolean(outcome && settledBoardOutcomeCanOwnNarration(plan, outcome));
     }
 
     function presentSettledBoardOutcome() {
