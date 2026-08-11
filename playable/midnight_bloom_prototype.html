@@ -17191,12 +17191,22 @@
         && !untouchedOpeningPair.some((cell) => cell.x === x && cell.y === y)
       ) {
         const [authoredSource] = untouchedOpeningPair;
+        const selectedOpeningCell = selected
+          && untouchedOpeningPair.some((cell) => cell.x === selected.x && cell.y === selected.y)
+          && Math.abs(selected.x - x) + Math.abs(selected.y - y) === 1
+          ? { ...selected }
+          : null;
         selected = null;
-        boardFocusCell = clampBoardFocusCell(authoredSource);
+        boardFocusCell = clampBoardFocusCell(selectedOpeningCell || authoredSource);
         clearDragPreview();
         ritualMessage = "The garden refuses that graft.";
         queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
-        markInvalidSwap({ x, y }, { x, y }, new Set(idleHintCells), null);
+        markInvalidSwap(
+          selectedOpeningCell || { x, y },
+          { x, y },
+          new Set(idleHintCells),
+          selectedOpeningCell
+        );
         return;
       }
       if (selected && selected.x === x && selected.y === y) {
