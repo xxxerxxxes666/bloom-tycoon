@@ -12454,25 +12454,26 @@
       ), 0);
     }
 
-    function seedRoundTwoDualClosingTargetMove(plan = activeRoundPlan()) {
-      if (
-        plan.round !== 2
-        || roundComplete
-        || moves < 3
-        || moves > 5
-        || !thornGoalComplete(plan)
-      ) {
+    function seedFocusedDualClosingTargetMove(plan = activeRoundPlan()) {
+      const roundTwoWindow = plan.round === 2
+        && moves >= 3
+        && moves <= 5
+        && thornGoalComplete(plan);
+      const roundThreeWindow = plan.round === 3 && moves === 4;
+      if (roundComplete || (!roundTwoWindow && !roundThreeWindow)) {
         return null;
       }
+      const maximumTargetDeficit = roundThreeWindow ? 5 : 4;
+      const maximumTotalDeficit = roundThreeWindow ? 9 : 8;
       const remainingTargets = plan.targets
         .map((target, targetIndex) => ({
           target,
           targetIndex,
           deficit: target.needed - targetProgress(target)
         }))
-        .filter((entry) => entry.deficit > 0 && entry.deficit <= 4);
+        .filter((entry) => entry.deficit > 0 && entry.deficit <= maximumTargetDeficit);
       const totalDeficit = remainingTargets.reduce((total, entry) => total + entry.deficit, 0);
-      if (remainingTargets.length !== 2 || totalDeficit > 8) {
+      if (remainingTargets.length !== 2 || totalDeficit > maximumTotalDeficit) {
         return null;
       }
       const original = boardSnapshot();
@@ -12599,7 +12600,7 @@
             || (plan.round === 3 && moves >= 4 && moves <= 5 && entry.deficit <= 8)
           )
         );
-      return seedRoundTwoDualClosingTargetMove(plan)
+      return seedFocusedDualClosingTargetMove(plan)
         || closableTargets.reduce((move, entry) => (
           move || seedFocusedClosingTargetMove(entry.targetIndex, entry.target, plan)
         ), null);
