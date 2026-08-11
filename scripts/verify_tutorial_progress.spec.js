@@ -7281,12 +7281,28 @@ for (const viewport of [
   test(`invalid tutorial swaps visibly recoil without spending a move on ${viewport.label}`, async ({ page }) => {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await openFreshNoReview(page, `invalid-feedback-${viewport.label}`);
-    const pair = await findInvalidAdjacentPair(page);
+    await expect(page.locator("#tutorialPanel")).toBeVisible();
+    await expect(page.locator(".tile.idle-hint")).toHaveCount(2);
+    const guidedCells = await page.locator(".tile.idle-hint").evaluateAll((tiles) => tiles.map((tile) => ({
+      x: Number(tile.dataset.x),
+      y: Number(tile.dataset.y)
+    })));
+    const guidedFocusCell = await page.locator('.tile.idle-hint[tabindex="0"]').evaluate((tile) => ({
+      x: Number(tile.dataset.x),
+      y: Number(tile.dataset.y)
+    }));
+    const pair = await findInvalidAdjacentPair(page, guidedCells)
+      || await findInvalidAdjacentPair(page);
     expect(pair, `${viewport.label} invalid adjacent pair`).toHaveLength(2);
     const before = await activeState(page);
+    const tapPoints = [];
     for (const cell of pair) {
-      const tile = page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`);
-      await tile.click();
+      const box = await page.locator(`.tile[data-x="${cell.x}"][data-y="${cell.y}"]`).boundingBox();
+      expect(box, `${viewport.label} refusal tile is measurable`).not.toBeNull();
+      tapPoints.push({ x: box.x + box.width / 2, y: box.y + box.height / 2 });
+    }
+    for (const point of tapPoints) {
+      await page.mouse.click(point.x, point.y);
     }
     await expect(page.locator(".tile.invalid-swap")).toHaveCount(2);
     await page.waitForTimeout(140);
@@ -7310,7 +7326,7 @@ for (const viewport of [
       peak.invalidTiles.every((tile) => horizontal ? tile.invalidX !== "0%" && tile.invalidY === "0%" : tile.invalidY !== "0%" && tile.invalidX === "0%"),
       `${viewport.label} recoil follows attempted swap axis`
     ).toBe(true);
-    expect(peak.focusedCell, `${viewport.label} focus returns to attempted source`).toEqual(pair[0]);
+    expect(peak.focusedCell, `${viewport.label} focus returns to authored source`).toEqual(guidedFocusCell);
     expect(peak.tiles).toBe(64);
     expect(peak.dataRows).toBe(8);
     expect(peak.overflowX).toBe(false);
