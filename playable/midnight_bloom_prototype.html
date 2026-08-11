@@ -20978,6 +20978,10 @@
       if (event.key === "Tab") {
         document.body.classList.remove("pointer-board-input");
         document.body.classList.add("keyboard-board-navigation");
+        if (boardDragInputActive()) {
+          cancelInterruptedBoardDrag();
+          restoreInterruptedBoardDragFocus();
+        }
       }
     }, true);
     document.addEventListener("visibilitychange", () => {

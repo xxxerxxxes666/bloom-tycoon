@@ -1295,6 +1295,7 @@ def verify_source_hooks():
         "if (start.pointerId !== event.pointerId)",
         "function handleBoardPointerCancel(event)",
         '$("board").addEventListener("lostpointercapture", handleBoardPointerCancel)',
+        'if (event.key === "Tab") {\n        document.body.classList.remove("pointer-board-input");\n        document.body.classList.add("keyboard-board-navigation");\n        if (boardDragInputActive()) {\n          cancelInterruptedBoardDrag();\n          restoreInterruptedBoardDragFocus();\n        }',
         'window.addEventListener("blur", cancelInterruptedBoardDrag)',
         'window.addEventListener("focus", restoreInterruptedBoardDragFocus)',
         "clearDragPreview({ resetInputs: true });",
