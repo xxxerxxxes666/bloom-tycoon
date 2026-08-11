@@ -7870,6 +7870,125 @@ test("drag preview moves the hinted pair before one authoritative release", asyn
   expect(failedRequests).toEqual([]);
 });
 
+test("selected opening source survives canceled drag on desktop and exact mobile", async ({ page, browser }) => {
+  const profiles = [
+    { page, label: "desktop", mobile: false, viewport: { width: 1280, height: 720 } },
+    {
+      page: await browser.newPage({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true }),
+      label: "mobile390",
+      mobile: true,
+      viewport: { width: 390, height: 844 }
+    }
+  ];
+
+  try {
+    for (const profile of profiles) {
+      const consoleErrors = [];
+      const pageErrors = [];
+      const failedRequests = [];
+      profile.page.on("console", (message) => {
+        if (["warning", "error"].includes(message.type())) consoleErrors.push(message.text());
+      });
+      profile.page.on("pageerror", (error) => pageErrors.push(error.message));
+      profile.page.on("requestfailed", (request) => {
+        if (request.failure()?.errorText !== "net::ERR_ABORTED") failedRequests.push(request.url());
+      });
+      await profile.page.setViewportSize(profile.viewport);
+      await openFresh(profile.page, `selected-drag-cancel-${profile.label}`);
+      await expect(profile.page.locator("#tutorialPanel")).toBeVisible();
+      const pair = await hintedPair(profile.page);
+      const [source, destination] = pair;
+      const sourceTile = profile.page.locator(`.tile[data-x="${source.x}"][data-y="${source.y}"]`);
+      if (profile.mobile) {
+        await sourceTile.tap();
+      } else {
+        await sourceTile.click();
+      }
+      assertSelectedFirstActionGuide(
+        await firstActionGuideReport(profile.page),
+        pair,
+        source,
+        `selected pre-cancel ${profile.label}`,
+        { mobile: profile.mobile }
+      );
+      const before = await activeState(profile.page);
+      const saveBefore = await profile.page.evaluate((key) => localStorage.getItem(key), SAVE_KEY);
+      const geometry = await tileGeometry(profile.page, pair);
+      const vector = dragVector(pair, geometry);
+
+      if (profile.mobile) {
+        const client = await profile.page.context().newCDPSession(profile.page);
+        const touchId = cdpTouchSequence++;
+        await client.send("Input.dispatchTouchEvent", {
+          type: "touchStart",
+          touchPoints: [{ x: vector.startX, y: vector.startY, id: touchId }]
+        });
+        await client.send("Input.dispatchTouchEvent", {
+          type: "touchMove",
+          touchPoints: [{ x: vector.endX, y: vector.endY, id: touchId }]
+        });
+        await profile.page.waitForFunction(() => document.querySelectorAll(".tile.drag-preview-ready").length === 2);
+        await client.send("Input.dispatchTouchEvent", { type: "touchCancel", touchPoints: [] });
+        await client.detach();
+      } else {
+        await profile.page.mouse.move(vector.startX, vector.startY);
+        await profile.page.mouse.down();
+        await profile.page.mouse.move(vector.endX, vector.endY, { steps: 5 });
+        await profile.page.waitForFunction(() => document.querySelectorAll(".tile.drag-preview-ready").length === 2);
+        await profile.page.dispatchEvent("#board", "pointercancel", {
+          pointerId: 1,
+          bubbles: true,
+          cancelable: true,
+          isPrimary: true,
+          clientX: vector.endX,
+          clientY: vector.endY
+        });
+        await profile.page.mouse.up();
+      }
+
+      const canceled = await activeState(profile.page);
+      expect(canceled.moves, `${profile.label} cancel spends no move`).toBe(before.moves);
+      expect(canceled.counts, `${profile.label} cancel preserves counts`).toEqual(before.counts);
+      expect(canceled.board, `${profile.label} cancel preserves board`).toBe(before.board);
+      expect(await profile.page.evaluate((key) => localStorage.getItem(key), SAVE_KEY), `${profile.label} cancel preserves save`).toBe(saveBefore);
+      assertSelectedFirstActionGuide(
+        await firstActionGuideReport(profile.page),
+        pair,
+        source,
+        `selected post-cancel ${profile.label}`,
+        { mobile: profile.mobile, focusDestination: false }
+      );
+      await expect(profile.page.locator(".tile.drag-preview-source, .tile.drag-preview-neighbor, .tile.drag-preview-ready")).toHaveCount(0);
+      await profile.page.screenshot({ path: `work/selected-drag-cancel-${profile.label}.png`, fullPage: true });
+
+      await profile.page.waitForTimeout(375);
+      const destinationTile = profile.page.locator(`.tile[data-x="${destination.x}"][data-y="${destination.y}"]`);
+      if (profile.mobile) {
+        await destinationTile.tap();
+      } else {
+        await destinationTile.click();
+      }
+      await profile.page.waitForFunction(({ key, moves }) => {
+        const state = JSON.parse(localStorage.getItem(key) || "{}");
+        return state.moves === moves - 1 && document.querySelectorAll(".tile").length === 64;
+      }, { key: SAVE_KEY, moves: before.moves }, { timeout: 10000 });
+      await waitForSettledBoard(profile.page);
+      const resumed = await activeState(profile.page);
+      expect(resumed.moves, `${profile.label} resumed destination commits once`).toBe(before.moves - 1);
+      expect(resumed.counts.reduce((sum, count) => sum + count, 0), `${profile.label} resumed destination earns flowers`).toBeGreaterThan(before.counts.reduce((sum, count) => sum + count, 0));
+      expect(resumed.tiles).toBe(64);
+      expect(resumed.rows).toBe(8);
+      expect(resumed.overflowX).toBe(false);
+      expect(await profile.page.locator("img:visible").evaluateAll((images) => images.filter((image) => image.complete && image.naturalWidth === 0).map((image) => image.src))).toEqual([]);
+      expect(consoleErrors).toEqual([]);
+      expect(pageErrors).toEqual([]);
+      expect(failedRequests).toEqual([]);
+    }
+  } finally {
+    await profiles[1].page.close();
+  }
+});
+
 test("invalid, cancel, mobile touch, and reduced motion drag paths stay clean", async ({ page, browser }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
   await openFresh(page, "drag-invalid");

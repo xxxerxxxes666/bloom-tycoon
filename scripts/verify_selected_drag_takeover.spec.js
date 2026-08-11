@@ -34,6 +34,8 @@ async function report(page) {
       boardState: tiles.map((tile) => tile.dataset.flowerId).join(","),
       hints: tiles.filter((tile) => tile.classList.contains("idle-hint")).map((tile) => tile.id),
       guideVisible: visible(document.querySelector(".first-action-swap-guide")),
+      guideMode: document.querySelector(".first-action-swap-guide")?.dataset.mode || "",
+      tutorialCopy: document.querySelector("#tutorialCopy")?.textContent.trim() || "",
       preview: tiles.filter((tile) => (
         tile.classList.contains("drag-preview-source")
         || tile.classList.contains("drag-preview-neighbor")
@@ -98,7 +100,7 @@ async function releasePair(page, profile, drag) {
 }
 
 for (const profile of PROFILES) {
-  test(`${profile.label}: a drag takes sole ownership from keyboard selection`, async ({ browser }) => {
+  test(`${profile.label}: drag ownership restores interrupted selection only on cancel`, async ({ browser }) => {
     const context = await browser.newContext({
       viewport: profile.viewport,
       hasTouch: Boolean(profile.mobile),
@@ -153,10 +155,12 @@ for (const profile of PROFILES) {
         expect(canceled.moves).toBe(before.moves);
         expect(canceled.counts).toEqual(before.counts);
         expect(canceled.boardState).toBe(before.boardState);
-        expect(canceled.selected).toEqual([]);
+        expect(canceled.selected).toEqual([SOURCE_ID]);
         expect(canceled.transformed).toEqual([]);
         expect(canceled.hints).toEqual([SOURCE_ID, TARGET_ID]);
         expect(canceled.guideVisible).toBe(true);
+        expect(canceled.guideMode).toBe("destination");
+        expect(canceled.tutorialCopy).toBe("Choose the other glowing flower.");
         expect(canceled.active).toBe(profile.from);
         expect(canceled.roving).toEqual([profile.from]);
         if (!profile.mobile) await page.mouse.move(1, 1);
@@ -164,7 +168,8 @@ for (const profile of PROFILES) {
         await page.waitForTimeout(350);
         const staleLift = await report(page);
         expect(staleLift.save).toBe(before.save);
-        expect(staleLift.selected).toEqual([]);
+        expect(staleLift.selected).toEqual([SOURCE_ID]);
+        expect(staleLift.guideMode).toBe("destination");
         expect(staleLift.active).toBe(profile.from);
         expect(staleLift.roving).toEqual([profile.from]);
         drag = await holdPair(page, context, profile, 72);

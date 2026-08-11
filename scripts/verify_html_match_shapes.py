@@ -1269,6 +1269,8 @@ def verify_source_hooks():
         "function restoreInterruptedBoardDragFocus()",
         "function retireBoardSelectionForDrag()",
         "function claimBoardDragOwnership(start, sourceTile)",
+        "function restoreSelectionAfterCanceledBoardInput(start)",
+        "selectedBeforeDrag: selected ? { ...selected } : null",
         "function cancelMultiTouchBoardDrag(event)",
         "function handleBoardMultiTouchInterruption(event)",
         'querySelectorAll(".tile.sel")',
@@ -1295,6 +1297,8 @@ def verify_source_hooks():
     missing = [needle for needle in required if needle not in html]
     if missing:
         raise SystemExit(f"Missing HTML match-shape hooks: {missing}")
+    if html.count("selectedBeforeDrag: selected ? { ...selected } : null") != 2:
+        raise SystemExit("Pointer and touch drag starts must both snapshot an interrupted selection")
     if html.count("const horizontal = horizontalDragIntent(dx, dy);") != 2:
         raise SystemExit("Drag preview and release must share one dominant-axis rule")
     if "if (dominant < DRAG_INTENT_THRESHOLD)" in html:
@@ -1303,6 +1307,11 @@ def verify_source_hooks():
     drag_preview_end = html.index("function suppressBoardClickBriefly()", drag_preview_start)
     if "notePlayerInteraction();" in html[drag_preview_start:drag_preview_end]:
         raise SystemExit("Temporary drag preview must not retire persistent guide authority")
+    restore_cancel_start = html.index("function restoreGuideAfterCanceledBoardInput(start)")
+    restore_cancel_end = html.index("function handleBoardPointerCancel(event)", restore_cancel_start)
+    restore_cancel_handler = html[restore_cancel_start:restore_cancel_end]
+    if restore_cancel_handler.index("restoreSelectionAfterCanceledBoardInput(start);") > restore_cancel_handler.index("render();"):
+        raise SystemExit("Canceled drag selection must be restored before tutorial guidance renders")
     pointer_down_start = html.index("function handleBoardPointerDown(event)")
     pointer_down_end = html.index("function handleBoardPointerMove(event)", pointer_down_start)
     pointer_down_handler = html[pointer_down_start:pointer_down_end]

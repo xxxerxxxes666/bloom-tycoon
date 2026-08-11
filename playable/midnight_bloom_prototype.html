@@ -14349,6 +14349,14 @@
       sourceTile.focus({ preventScroll: true });
     }
 
+    function restoreSelectionAfterCanceledBoardInput(start) {
+      if (!start?.selectedBeforeDrag || selected || isResolving || thornOutcomeFeedbackActive() || roundComplete || isBouquetFailed()) {
+        return false;
+      }
+      selected = clampBoardFocusCell(start.selectedBeforeDrag);
+      return true;
+    }
+
     function handleBoardKeyDown(event) {
       if (rejectPayoffHandoffBoardInput(event)) {
         return;
@@ -14460,7 +14468,8 @@
         clientX: event.clientX,
         clientY: event.clientY,
         x: cell.x,
-        y: cell.y
+        y: cell.y,
+        selectedBeforeDrag: selected ? { ...selected } : null
       };
       beginDragPreview(tileSwipeStart, cell.tile);
       if (event.isTrusted && cell.tile.setPointerCapture) {
@@ -14497,6 +14506,7 @@
     }
 
     function restoreGuideAfterCanceledBoardInput(start) {
+      restoreSelectionAfterCanceledBoardInput(start);
       if (start?.dragEstablished || start?.dragTraveled) {
         suppressBoardClickBriefly();
       }
@@ -14572,7 +14582,8 @@
         clientX: touch.clientX,
         clientY: touch.clientY,
         x: cell.x,
-        y: cell.y
+        y: cell.y,
+        selectedBeforeDrag: selected ? { ...selected } : null
       };
       beginDragPreview(touchSwipeStart, cell.tile);
     }
