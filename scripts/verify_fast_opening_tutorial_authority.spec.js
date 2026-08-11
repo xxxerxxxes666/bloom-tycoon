@@ -66,27 +66,30 @@ async function report(page) {
 }
 
 async function activateFastPair(page, context, { mobile, interpose }) {
-  const opening = await page.evaluate(({ sourceId, targetId }) => {
-    const point = (id) => {
-      const box = document.getElementById(id)?.getBoundingClientRect();
-      return box && box.width > 0 && box.height > 0
-        ? { x: box.x + box.width / 2, y: box.y + box.height / 2 }
-        : null;
-    };
+  const client = mobile ? await context.newCDPSession(page) : null;
+  const tilePoint = (id) => page.evaluate((tileId) => {
+    const box = document.getElementById(tileId)?.getBoundingClientRect();
+    return box && box.width > 0 && box.height > 0
+      ? { x: box.x + box.width / 2, y: box.y + box.height / 2 }
+      : null;
+  }, id);
+  const opening = await page.evaluate((sourceId) => {
+    const box = document.getElementById(sourceId)?.getBoundingClientRect();
     return {
-      points: [point(sourceId), point(targetId)],
+      source: box && box.width > 0 && box.height > 0
+        ? { x: box.x + box.width / 2, y: box.y + box.height / 2 }
+        : null,
       tutorialHidden: document.getElementById("tutorialPanel")?.hidden === true,
       hints: document.querySelectorAll("#board .tile.idle-hint").length
     };
-  }, { sourceId: SOURCE_ID, targetId: TARGET_ID });
-  expect(opening.points, "the taught pair has input geometry").not.toContain(null);
+  }, SOURCE_ID);
+  expect(opening.source, "the taught source has input geometry").toBeTruthy();
   expect(opening.tutorialHidden, "input begins before the delayed tutorial").toBe(true);
   expect(opening.hints, "the taught pair is already glowing").toBe(2);
 
-  if (mobile) {
-    const client = await context.newCDPSession(page);
-    let identifier = 201;
-    for (const [index, point] of opening.points.entries()) {
+  let identifier = 201;
+  const dispatch = async (point) => {
+    if (client) {
       await client.send("Input.dispatchTouchEvent", {
         type: "touchStart",
         touchPoints: [{ ...point, id: identifier, radiusX: 2, radiusY: 2, force: 1 }]
@@ -96,18 +99,19 @@ async function activateFastPair(page, context, { mobile, interpose }) {
         touchPoints: []
       });
       identifier += 1;
-      if (interpose && index === 0) {
-        await page.locator("#tutorialPanel").waitFor({ state: "visible" });
-      }
-    }
-  } else {
-    for (const [index, point] of opening.points.entries()) {
+    } else {
       await page.mouse.click(point.x, point.y, { delay: 8 });
-      if (interpose && index === 0) {
-        await page.locator("#tutorialPanel").waitFor({ state: "visible" });
-      }
     }
+  };
+
+  await dispatch(opening.source);
+  await expect(page.locator(`#${SOURCE_ID}`)).toHaveClass(/\bsel\b/);
+  if (interpose) {
+    await page.locator("#tutorialPanel").waitFor({ state: "visible" });
   }
+  const target = await tilePoint(TARGET_ID);
+  expect(target, "the taught target keeps input geometry").toBeTruthy();
+  await dispatch(target);
 }
 
 for (const testCase of CASES) {
@@ -132,6 +136,7 @@ for (const testCase of CASES) {
     });
 
     try {
+      const sessionMarker = `fast-opening-tutorial:${testCase.label}`;
       await page.addInitScript(({ key, marker }) => {
         if (!sessionStorage.getItem(marker)) {
           localStorage.removeItem(key);
@@ -139,8 +144,15 @@ for (const testCase of CASES) {
         }
       }, {
         key: SAVE_KEY,
-        marker: `fast-opening-tutorial:${testCase.label}`
+        marker: sessionMarker
       });
+      await page.goto(`${BASE_URL}?fast-opening-warm=${testCase.label}`, {
+        waitUntil: "networkidle"
+      });
+      await page.evaluate(({ key, marker }) => {
+        localStorage.removeItem(key);
+        sessionStorage.removeItem(marker);
+      }, { key: SAVE_KEY, marker: sessionMarker });
       await page.goto(`${BASE_URL}?fast-opening-tutorial=${testCase.label}`, {
         waitUntil: "domcontentloaded"
       });
