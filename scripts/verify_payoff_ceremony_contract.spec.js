@@ -1287,6 +1287,47 @@ function rectanglesOverlap(first, second) {
     && first.bottom > second.top + 0.5;
 }
 
+async function bouquetTransferReceiptEvidence(page) {
+  return page.evaluate(() => {
+    const rectFor = (node) => {
+      if (!node) return null;
+      const rect = node.getBoundingClientRect();
+      return {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height
+      };
+    };
+    const panel = document.querySelector("#roundOneRestoration");
+    const kicker = panel?.querySelector(".bouquet-trophy-kicker");
+    const name = panel?.querySelector(".bouquet-trophy-name");
+    const reserve = panel?.querySelector(".bouquet-move-reserve");
+    const reserveLabel = reserve?.querySelector(".bouquet-move-reserve-label");
+    const reserveStyle = reserve ? getComputedStyle(reserve) : null;
+    return {
+      phase: panel?.dataset.restorationPhase || "",
+      kickerText: kicker?.textContent.trim() || "",
+      nameText: name?.textContent.trim() || "",
+      reserveText: reserveLabel?.textContent.trim() || "",
+      reserveMoves: Number(reserve?.dataset.movesHeld || 0),
+      reserveDisplay: reserveStyle?.display || "",
+      reserveVisible: Boolean(
+        reserve
+        && reserveStyle?.display !== "none"
+        && reserveStyle?.visibility !== "hidden"
+        && Number(reserveStyle?.opacity || 1) > 0
+        && reserve.getBoundingClientRect().width > 0
+      ),
+      kickerRect: rectFor(kicker),
+      nameRect: rectFor(name),
+      reserveRect: rectFor(reserveLabel)
+    };
+  });
+}
+
 function expectPayoffCommandAuthority(contract, label, expectedActions) {
   expect(contract.tutorialVisible, `${label} shared tutorial narrator is hidden`).toBe(false);
   expect(contract.tutorialCopy, `${label} hidden tutorial narrator has no stale command`).toBe("");
@@ -1808,6 +1849,8 @@ function expectRecognizableTransferredBouquet(evidence, label, minimumWidth) {
 
 async function restoreRoundOneAndCapturePeak(page, label, pendingEvidence) {
   await expect(page.locator("#restoreGreenhouseBtn")).toBeFocused();
+  const heldMoves = Number(await page.locator("#bouquetTrophy").getAttribute("data-moves-held"));
+  expect(heldMoves, `${label} has a finishing margin to preserve after transfer`).toBeGreaterThan(0);
   await page.evaluate(() => {
     window.__roundOneRestorationTransferSource = document.querySelector(
       "#bouquetTrophy .crafted-bouquet"
@@ -1817,6 +1860,20 @@ async function restoreRoundOneAndCapturePeak(page, label, pendingEvidence) {
   await page.waitForFunction(() => (
     document.querySelector("#roundOneRestoration")?.dataset.restorationPhase === "transforming"
   ), null, { timeout: 500 });
+  const transferReceipt = await bouquetTransferReceiptEvidence(page);
+  expect(transferReceipt).toMatchObject({
+    phase: "transforming",
+    kickerText: "Bouquet Transferred",
+    nameText: "First Bouquet",
+    reserveText: `${heldMoves} ${heldMoves === 1 ? "move" : "moves"} held`,
+    reserveMoves: heldMoves,
+    reserveDisplay: "none",
+    reserveVisible: false
+  });
+  expect(
+    rectanglesOverlap(transferReceipt.kickerRect, transferReceipt.nameRect),
+    `${label} transfer kicker and bouquet name retain separate lines`
+  ).toBe(false);
   expect(await page.evaluate(() => window.__bloomCeremonyRerenderFixture?.()))
     .toBe("active");
   await waitForBouquetTransferProgress(page, .06);
@@ -1934,6 +1991,7 @@ async function restoreRoundOneAndCapturePeak(page, label, pendingEvidence) {
   await expect(page.locator("#nextOrderBtn"), `${label} settlement hands focus to its sole action`)
     .toBeFocused();
   const settledTransfer = await restorationSceneEvidence(page);
+  const settledReceipt = await bouquetTransferReceiptEvidence(page);
   expect(settledTransfer.bouquetTransfer).toMatchObject({
     panelState: "settled",
     exactSourceNode: false,
@@ -1941,6 +1999,14 @@ async function restoreRoundOneAndCapturePeak(page, label, pendingEvidence) {
     trophyBouquets: 1,
     transferBouquets: 0
   });
+  expect(settledReceipt.phase).toBe("settled");
+  expect(settledReceipt.reserveMoves).toBe(heldMoves);
+  expect(settledReceipt.reserveText).toBe(`${heldMoves} ${heldMoves === 1 ? "move" : "moves"} held`);
+  expect(settledReceipt.reserveVisible, `${label} held moves return after the transfer receipt retires`).toBe(true);
+  expect(
+    rectanglesOverlap(settledReceipt.reserveRect, settledReceipt.nameRect),
+    `${label} settled held-moves badge clears the bouquet name`
+  ).toBe(false);
   expect(await page.evaluate(() => window.__bloomCeremonyRerenderFixture?.()))
     .toBe("settled");
   const rerenderedSettlement = await restorationSceneEvidence(page);

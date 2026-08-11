@@ -880,6 +880,7 @@ def verify_source_hooks():
         "restoration-awakening",
         "restoration-flare",
         "restoration-spark-field",
+        '.round-one-restoration[data-payoff-round="1"][data-restoration-phase="transforming"] .bouquet-move-reserve',
         "restored-glass-reveal",
         "withered-glass-fall",
         "panel.classList.add(\"restoration-awakening\")",
