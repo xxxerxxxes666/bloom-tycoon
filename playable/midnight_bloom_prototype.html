@@ -17079,6 +17079,35 @@
       };
     }
 
+    function skippedRoundOneOpeningBoardGuidePair(plan = activeRoundPlan()) {
+      if (
+        plan.round !== 1
+        || !tutorialSkipped
+        || tutorialActive
+        || hasMadeValidMove
+        || moves !== plan.moves
+        || roundProgress(plan).earned !== 0
+        || roundOneGuidedStage(plan) !== "thorn-opening"
+        || selected
+        || armedLineRelic
+        || roundComplete
+        || isBouquetFailed(plan)
+        || boardGuideTransientStateActive()
+      ) {
+        return null;
+      }
+      const [source, destination] = hintedPairCells();
+      if (!isAdjacentPair(source, destination) || !isLegalSwap(source, destination)) {
+        return null;
+      }
+      return {
+        source,
+        destination,
+        stage: "skipped-opening",
+        selectedContinuation: false
+      };
+    }
+
     function firstActionBoardGuidePair() {
       return currentTutorialBoardGuidePair();
     }
@@ -17237,7 +17266,8 @@
         return;
       }
       const targetMatchForecast = targetMatchForecastDetails();
-      const tutorialGuide = currentTutorialBoardGuidePair();
+      const tutorialGuide = currentTutorialBoardGuidePair()
+        || skippedRoundOneOpeningBoardGuidePair();
       const renderedTutorialGuide = renderFirstActionSwapGuide(boardEl, tutorialGuide);
       renderTargetMatchForecastGuide(boardEl, targetMatchForecast);
       if (renderedTutorialGuide) {

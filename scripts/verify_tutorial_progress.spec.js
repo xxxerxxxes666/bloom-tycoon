@@ -3320,6 +3320,13 @@ test("Skip returns focus to the authoritative Round 1 guide", async ({ browser }
         .toBe("tile-1-0");
       await expect(page.locator("#board .tile[tabindex='0']")).toHaveAttribute("id", "tile-1-0");
       await expect(page.locator("#board .tile.selected, #board .tile.sel")).toHaveCount(0);
+      const openingSkipPair = await hintedPair(page);
+      assertFirstActionGuide(
+        await firstActionGuideReport(page),
+        openingSkipPair,
+        `${testCase.label} opening Skip guide`,
+        { mobile: testCase.mobile, stage: "skipped-opening" }
+      );
       expectReplaySurface(
         await commandSurfaceReport(page),
         testCase,
@@ -3344,7 +3351,14 @@ test("Skip returns focus to the authoritative Round 1 guide", async ({ browser }
       await expect(page.locator("#tile-1-0")).toHaveAttribute("tabindex", "0");
       await expect(page.locator("#tile-1-1")).toHaveAttribute("tabindex", "-1");
       await expect(page.locator("#board .tile.selected, #board .tile.sel")).toHaveCount(0);
-      expect(unorderedPairKey(await hintedPair(page))).toBe("1,0 <-> 1,1");
+      const skippedReloadPair = await hintedPair(page);
+      expect(unorderedPairKey(skippedReloadPair)).toBe("1,0 <-> 1,1");
+      assertFirstActionGuide(
+        await firstActionGuideReport(page),
+        skippedReloadPair,
+        `${testCase.label} skipped reload guide`,
+        { mobile: testCase.mobile, stage: "skipped-opening" }
+      );
       expectReplaySurface(
         await commandSurfaceReport(page),
         testCase,
