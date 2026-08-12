@@ -1724,7 +1724,7 @@ async function playCurrentRound(page, label, round, strategy = "optimized", expe
             `${label} round ${round} never reached ${firstPhase}: ${JSON.stringify(diagnostic)}; ${error.message}`
           );
         }
-        await page.waitForTimeout(options.reducedMotion ? 80 : 460);
+        await page.waitForTimeout(options.reducedMotion ? 80 : 280);
         await page.evaluate(() => window.scrollTo({ top: 0, left: 0, behavior: "auto" }));
         if (!options.reducedMotion && [1, 3].includes(round)) {
           await page.locator("#roundOneRestoration").screenshot({
@@ -1736,7 +1736,7 @@ async function playCurrentRound(page, label, round, strategy = "optimized", expe
             document.querySelector("#roundOneRestoration")?.dataset.ownedRenewalPhase === "renewal"
             || window.__ownedRenewalRecorder?.samples?.some((sample) => sample.phase === "renewal")
           ), null, { timeout: 2200 });
-          await page.waitForTimeout(420);
+          await page.waitForTimeout(200);
           await page.evaluate(() => window.scrollTo({ top: 0, left: 0, behavior: "auto" }));
         }
         if ([1, 3].includes(round)) {

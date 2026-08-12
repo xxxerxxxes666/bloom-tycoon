@@ -151,6 +151,81 @@ async function report(page) {
   }, SAVE_KEY);
 }
 
+async function installHandoffRecorder(page) {
+  await page.evaluate(() => {
+    const previous = window.__greenhouseHandoffRecorder;
+    previous?.observer?.disconnect();
+    if (previous?.interval) clearInterval(previous.interval);
+    const samples = [];
+    const visible = (node) => {
+      if (!node) return false;
+      const rect = node.getBoundingClientRect();
+      const style = getComputedStyle(node);
+      return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0;
+    };
+    const visibleRect = (node) => {
+      if (!visible(node)) return null;
+      const rect = node.getBoundingClientRect();
+      return {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height
+      };
+    };
+    const sample = () => {
+      const receipt = document.querySelector("#nextOrderCue");
+      const steadyCue = document.querySelector("#firstSwapCue");
+      const command = visible(receipt) ? receipt : visible(steadyCue) ? steadyCue : null;
+      const region = document.querySelector("#tutorialCommandRegion");
+      samples.push({
+        at: performance.now(),
+        handoffActive: document.body.classList.contains("restored-greenhouse-handoff"),
+        geometry: {
+          viewport: { left: 0, top: 0, right: innerWidth, bottom: innerHeight },
+          region: visibleRect(region),
+          command: visibleRect(command),
+          commandId: command?.id || "",
+          commandText: command?.textContent.replace(/\s+/g, " ").trim() || "",
+          commandClientWidth: command?.clientWidth || 0,
+          commandScrollWidth: command?.scrollWidth || 0,
+          commandClientHeight: command?.clientHeight || 0,
+          commandScrollHeight: command?.scrollHeight || 0,
+          regionClientWidth: region?.clientWidth || 0,
+          regionScrollWidth: region?.scrollWidth || 0,
+          title: visibleRect(document.querySelector(".title")),
+          help: visibleRect(document.querySelector("#tutorialHelpBtn")),
+          objective: visibleRect(document.querySelector("#objective")),
+          hud: visibleRect(document.querySelector("#bouquetProgress")),
+          greenhouse: visibleRect(innerWidth <= 760
+            ? document.querySelector("#mobileGreenhouseProgress")
+            : document.querySelector(".hero")),
+          board: visibleRect(document.querySelector("#board"))
+        }
+      });
+    };
+    const observer = new MutationObserver(sample);
+    observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+    const interval = setInterval(sample, 16);
+    window.__greenhouseHandoffRecorder = { observer, interval, samples, sample };
+    sample();
+  });
+}
+
+async function collectHandoffRecorder(page) {
+  return page.evaluate(() => {
+    const recorder = window.__greenhouseHandoffRecorder;
+    if (!recorder) return [];
+    recorder.sample();
+    recorder.observer.disconnect();
+    clearInterval(recorder.interval);
+    delete window.__greenhouseHandoffRecorder;
+    return recorder.samples;
+  });
+}
+
 function contains(outer, inner, tolerance = 0.5) {
   return Boolean(
     outer
@@ -568,6 +643,7 @@ for (const config of OWNED_REPLAY_CONFIGS) {
       await expect(nextOrder).toBeVisible();
       await expect(nextOrder).toBeEnabled();
       await expect(nextOrder).toBeFocused();
+      await installHandoffRecorder(page);
       await nextOrder.click();
       await page.waitForFunction((key) => {
         const saved = JSON.parse(localStorage.getItem(key) || "{}");
@@ -588,13 +664,7 @@ for (const config of OWNED_REPLAY_CONFIGS) {
       expect(at120ms.handoffActive, `${config.label} 120ms receipt`).toBe(true);
       expectCommandLaneGeometry(at120ms, `${config.label} 120ms`, "nextOrderCue");
       expectGeometry(at120ms, config, `${config.label} 120ms`, true);
-
-      await page.waitForTimeout(1580);
-      const at1700ms = await report(page);
-      expect(at1700ms.handoffActive, `${config.label} 1700ms receipt`).toBe(true);
-      expectCommandLaneGeometry(at1700ms, `${config.label} 1700ms`, "nextOrderCue");
-      expectGeometry(at1700ms, config, `${config.label} 1700ms`, true);
-      expect(at1700ms).toMatchObject({
+      expect(at120ms).toMatchObject({
         round: 3,
         moves: 8,
         counts: [0, 0, 0, 0, 0, 0],
@@ -607,8 +677,8 @@ for (const config of OWNED_REPLAY_CONFIGS) {
         tiles: 64,
         rows: 8
       });
-      expect(at1700ms.rovingIds).toHaveLength(1);
-      expect(at1700ms.activeId).toBe(at1700ms.rovingIds[0]);
+      expect(at120ms.rovingIds).toHaveLength(1);
+      expect(at120ms.activeId).toBe(at120ms.rovingIds[0]);
       expect(errors, `${config.label} console`).toEqual([]);
       expect(failedRequests, `${config.label} requests`).toEqual([]);
       expect(httpErrors, `${config.label} HTTP responses`).toEqual([]);
@@ -616,9 +686,45 @@ for (const config of OWNED_REPLAY_CONFIGS) {
       await page.waitForFunction(() => !document.body.classList.contains("restored-greenhouse-handoff"), null, {
         timeout: 3000
       });
+      const handoffSamples = await collectHandoffRecorder(page);
+      const firstActive = handoffSamples.find((sample) => sample.handoffActive);
+      expect(firstActive, `${config.label} recorder observes receipt entry`).toBeTruthy();
+      const matureReceipt = handoffSamples.find((sample) => (
+        sample.handoffActive && sample.at - firstActive.at >= 1700
+      ));
+      expect(matureReceipt, `${config.label} receipt remains observable through 1700ms`).toBeTruthy();
+      expect(matureReceipt.geometry.commandText).toBe(
+        "Moonlit Upgrade · Bloodroot Compact · Match Bloodroot + Sol Rot"
+      );
+      expectCommandLaneGeometry(matureReceipt, `${config.label} recorded 1700ms`, "nextOrderCue");
+      const handoffPhases = handoffSamples.reduce((phases, sample) => {
+        const phase = sample.handoffActive ? "active" : "retired";
+        if (phases.at(-1) !== phase) phases.push(phase);
+        return phases;
+      }, []);
+      expect(handoffPhases, `${config.label} receipt has one bounded lifecycle`).toEqual([
+        "retired",
+        "active",
+        "retired"
+      ]);
       const retired = await report(page);
-      expect(retired.save, `${config.label} retirement remains presentation-only`).toBe(at1700ms.save);
+      expect(retired.save, `${config.label} retirement remains presentation-only`).toBe(at120ms.save);
       expect(retired.handoffActive).toBe(false);
+      expect(retired).toMatchObject({
+        round: 3,
+        moves: 8,
+        counts: [0, 0, 0, 0, 0, 0],
+        coins: 50,
+        complete: false,
+        restored: true,
+        upgraded: true,
+        raised: true,
+        selected: [],
+        tiles: 64,
+        rows: 8
+      });
+      expect(retired.rovingIds).toHaveLength(1);
+      expect(retired.activeId).toBe(retired.rovingIds[0]);
       expectCommandLaneGeometry(retired, `${config.label} retired`, "");
       expectGeometry(retired, config, `${config.label} retired`, true);
       expect(errors, `${config.label} retired console`).toEqual([]);

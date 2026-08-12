@@ -7207,6 +7207,15 @@
     .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .bouquet-ingredient { animation:bouquet-ingredient-bind 920ms cubic-bezier(.12,.82,.18,1) both; animation-delay:var(--ingredient-delay,0ms); }
     .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .bouquet-assembly-ring { animation:bouquet-ring-bind 1120ms ease-out both; }
     .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .bouquet-binding-vine { animation:bouquet-vine-bind 980ms ease-out 180ms both; }
+    .round-one-restoration.owned-replay.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .crafted-bloom { animation-duration:200ms; }
+    .round-one-restoration.owned-replay.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .crafted-stem { animation-duration:220ms; }
+    .round-one-restoration.owned-replay.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .crafted-binding,
+    .round-one-restoration.owned-replay.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .crafted-vine { animation-duration:210ms; animation-delay:20ms; }
+    .round-one-restoration.owned-replay.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .bouquet-ingredient { animation-duration:210ms; }
+    .round-one-restoration.owned-replay.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .bouquet-assembly-ring { animation-duration:230ms; }
+    .round-one-restoration.owned-replay.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .bouquet-binding-vine { animation-duration:210ms; animation-delay:20ms; }
+    .round-one-restoration.owned-replay .bouquet-move-ember { animation-duration:170ms; animation-delay:calc(var(--reserve-index) * 18ms); }
+    .round-one-restoration.owned-replay .bouquet-move-reserve-label { animation-duration:230ms; }
     @keyframes bouquet-move-reserve-bind {
       0% { opacity:0; transform:translate(calc(-50% + (var(--reserve-index) - var(--reserve-mid)) * 33px),-12px) scale(.62) rotate(45deg); }
       24% { opacity:1; }
@@ -7655,7 +7664,7 @@
     .owned-renewal-ingredient img { width:44px; height:44px; }
     .owned-renewal-ingredient img { object-fit:contain; filter:drop-shadow(0 3px 5px #000) drop-shadow(0 0 7px currentColor); }
     .owned-replay-renewal[data-renewal-phase="transfer"] .owned-renewal-ingredient {
-      animation:owned-ingredient-tend 500ms cubic-bezier(.18,.76,.22,1) var(--renew-delay,0ms) both;
+      animation:owned-ingredient-tend 430ms cubic-bezier(.18,.76,.22,1) var(--renew-delay,0ms) both;
     }
     .owned-replay-renewal[data-renewal-phase="renewal"] .owned-renewal-ingredient,
     .owned-replay-renewal[data-renewal-phase="acknowledgment"] .owned-renewal-ingredient {
@@ -7665,7 +7674,7 @@
       transform:translate(-50%,-50%) scale(.88);
     }
     .owned-replay-renewal[data-renewal-phase="renewal"] .owned-renewal-ingredient {
-      animation:owned-ingredient-land 360ms ease-out var(--renew-delay,0ms) both;
+      animation:owned-ingredient-land 320ms ease-out var(--renew-delay,0ms) both;
     }
     .owned-renewal-response { position:absolute; right:0; top:0; width:58%; height:100%; z-index:2; display:none; overflow:hidden; }
     .owned-replay-renewal[data-renewal-phase="renewal"] .owned-renewal-response,
@@ -7709,9 +7718,9 @@
       opacity:.82;
       transform:skewX(var(--renew-window-skew,0deg));
     }
-    .owned-replay-renewal[data-renewal-phase="renewal"] .owned-renewal-response::before { animation:owned-greenhouse-renew 500ms ease-out both; }
+    .owned-replay-renewal[data-renewal-phase="renewal"] .owned-renewal-response::before { animation:owned-greenhouse-renew 360ms ease-out both; }
     .owned-replay-renewal[data-renewal-phase="renewal"] .owned-renewal-response::after,
-    .owned-replay-renewal[data-renewal-phase="renewal"] .owned-renewal-window { animation:owned-greenhouse-live 480ms ease-out both; }
+    .owned-replay-renewal[data-renewal-phase="renewal"] .owned-renewal-window { animation:owned-greenhouse-live 360ms ease-out both; }
     .owned-renewal-reserve {
       position:absolute;
       left:var(--reserve-start-x);
@@ -7731,7 +7740,7 @@
       transform:translate(-50%,-50%) scale(.62) rotate(45deg);
     }
     .owned-replay-renewal[data-renewal-phase="transfer"] .owned-renewal-reserve {
-      animation:owned-reserve-tend 560ms cubic-bezier(.18,.76,.22,1) var(--reserve-delay,0ms) both;
+      animation:owned-reserve-tend 420ms cubic-bezier(.18,.76,.22,1) var(--reserve-delay,0ms) both;
     }
     .owned-replay-renewal[data-renewal-phase="renewal"] .owned-renewal-reserve,
     .owned-replay-renewal[data-renewal-phase="acknowledgment"] .owned-renewal-reserve {
@@ -7741,7 +7750,7 @@
       transform:translate(-50%,-50%) scale(.82) rotate(405deg);
     }
     .owned-replay-renewal[data-renewal-phase="renewal"] .owned-renewal-reserve {
-      animation:owned-reserve-land 420ms ease-out var(--reserve-delay,0ms) both;
+      animation:owned-reserve-land 310ms ease-out var(--reserve-delay,0ms) both;
     }
     @keyframes owned-reserve-tend {
       0% { opacity:0; transform:translate(-50%,-50%) scale(.62) rotate(45deg); }
@@ -10563,7 +10572,10 @@
     const BLACK_CANDLE_REDUCED_HOLD_MS = 190;
     const BLACK_CANDLE_REDUCED_REFILL_MS = 70;
     const BOUQUET_BINDING_HOLD_MS = 1720;
-    const OWNED_REPLAY_BINDING_HOLD_MS = 1180;
+    const OWNED_REPLAY_BINDING_HOLD_MS = 450;
+    const OWNED_REPLAY_VISIBLE_BINDING_MS = 250;
+    const OWNED_REPLAY_FINAL_TRANSFER_MS = 520;
+    const OWNED_REPLAY_FINAL_RENEWAL_MS = 400;
     const SETTLED_BOARD_OUTCOME_MS = 2400;
     const PAYOFF_HANDOFF_INPUT_GUARD_MS = 480;
     const TUTORIAL_COMMAND_INPUT_GUARD_MS = 280;
@@ -11849,10 +11861,13 @@
       const hold = prefersReducedMotion()
         ? 400
         : Math.min(920, 540 + (slotCount - 1) * 56);
-      finalHarvestCommit.transferHold = hold;
+      const coordinatedHold = !prefersReducedMotion() && isOwnedRestorationReplay()
+        ? Math.min(hold, OWNED_REPLAY_BINDING_HOLD_MS - OWNED_REPLAY_VISIBLE_BINDING_MS)
+        : hold;
+      finalHarvestCommit.transferHold = coordinatedHold;
       finalHarvestTransferTimer = window.setTimeout(() => {
         revealFinalHarvestCeremony(plan);
-      }, hold);
+      }, coordinatedHold);
       return true;
     }
 
@@ -15833,9 +15848,9 @@
         render();
         ownedReplayRenewalTimer = window.setTimeout(
           settleOwnedReplayRenewal,
-          finalHarvestRenewal ? 450 : 520
+          finalHarvestRenewal ? OWNED_REPLAY_FINAL_RENEWAL_MS : 520
         );
-      }, finalHarvestRenewal ? 560 : 660);
+      }, finalHarvestRenewal ? OWNED_REPLAY_FINAL_TRANSFER_MS : 660);
     }
 
     function renderFocusedPayoffCeremony(ceremony) {
