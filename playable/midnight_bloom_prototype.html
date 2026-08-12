@@ -7761,6 +7761,9 @@
       }
       .bouquet-trophy-name { font-size:19px; }
       .bouquet-trophy-copy { max-width:30ch; }
+      .round-one-restoration.bouquet-sealed .bouquet-trophy[data-assembly-state="forming"] .bouquet-trophy-kicker {
+        display:none;
+      }
     }
     @keyframes greenhouse-awakening {
       0% { opacity:0; transform:translateX(-65%) rotate(-12deg); }
@@ -10421,6 +10424,7 @@
     const BLACK_CANDLE_REFILL_MS = 100;
     const BLACK_CANDLE_REDUCED_HOLD_MS = 190;
     const BLACK_CANDLE_REDUCED_REFILL_MS = 70;
+    const BOUQUET_BINDING_HOLD_MS = 1720;
     const SETTLED_BOARD_OUTCOME_MS = 2400;
     const PAYOFF_HANDOFF_INPUT_GUARD_MS = 480;
     const TUTORIAL_COMMAND_INPUT_GUARD_MS = 280;
@@ -20080,7 +20084,7 @@
       if (bouquetSealPulseTimer && window.clearTimeout) {
         window.clearTimeout(bouquetSealPulseTimer);
       }
-      const sealDuration = prefersReducedMotion() ? 40 : 820;
+      const sealDuration = prefersReducedMotion() ? 40 : BOUQUET_BINDING_HOLD_MS;
       const boundedLead = Math.max(0, Number(completionLead || 0));
       finalHarvestCeremonyPacing = boundedLead > 0
         ? { remainingLead: Math.max(0, boundedLead - sealDuration) }

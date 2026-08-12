@@ -1219,6 +1219,8 @@ async function visibleContract(page) {
       transactionText: document.querySelector("#payoffTransaction")?.textContent.trim() || "",
       trophyKicker: document.querySelector(".bouquet-trophy-kicker")?.textContent.trim() || "",
       trophyName: document.querySelector(".bouquet-trophy-name")?.textContent.trim() || "",
+      trophyKickerRect: rectFor(document.querySelector(".bouquet-trophy-kicker")),
+      trophyNameRect: rectFor(document.querySelector(".bouquet-trophy-name")),
       coins: JSON.parse(localStorage.getItem("bloomTycoonPlayableStateV1") || "{}").coins ?? 0,
       board: visible(".board").length,
       controls: visible(".controls").length,
@@ -3693,6 +3695,17 @@ for (const config of [
     expect(binding.craftedCompositionKey, "binding preserves exact live species, order, and objective identity")
       .toBe(hiddenLiveCompositionKey);
     await page.screenshot({ path: `work/binding-${config.label}-bouquet-binding.png`, fullPage: true });
+    await page.waitForTimeout(260);
+    const retainedBinding = await visibleContract(page);
+    expect(retainedBinding.assemblyReady, "binding remains readable after its first visible frame").toBe("false");
+    expect(retainedBinding.trophyState, "the bouquet remains visibly forming through the readable hold").toBe("forming");
+    expect(retainedBinding.buttons, "restore remains withheld through the readable binding hold").toEqual([]);
+    expect(
+      retainedBinding.trophyKickerRect && retainedBinding.trophyNameRect
+        ? rectanglesOverlap(retainedBinding.trophyKickerRect, retainedBinding.trophyNameRect)
+        : false,
+      "the binding receipt and bouquet name never overlap"
+    ).toBe(false);
     await expectCeremony(page, "Restore Greenhouse", `work/binding-${config.label}-pending-restore.png`, "Coins restore the greenhouse.");
     expect(consoleMessages).toEqual([]);
     expect(pageErrors).toEqual([]);
