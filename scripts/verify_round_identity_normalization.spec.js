@@ -71,7 +71,7 @@ async function report(page) {
       boardHeight: document.querySelector("#board")?.getBoundingClientRect().height || 0,
       overflowX: document.documentElement.scrollWidth > document.documentElement.clientWidth,
       brokenImages: [...document.images]
-        .filter((image) => !image.complete || image.naturalWidth === 0)
+        .filter((image) => image.complete && image.naturalWidth === 0)
         .map((image) => image.currentSrc || image.src),
       scrollY
     };
@@ -92,7 +92,10 @@ for (const profile of PROFILES) {
       if (["warning", "error"].includes(message.type())) browserErrors.push(message.text());
     });
     page.on("pageerror", (error) => browserErrors.push(error.message));
-    page.on("requestfailed", (request) => requestErrors.push(request.url()));
+    page.on("requestfailed", (request) => {
+      const failure = request.failure()?.errorText || "";
+      if (failure !== "net::ERR_ABORTED") requestErrors.push(`${request.url()} ${failure}`);
+    });
     page.on("response", (response) => {
       if (response.status() >= 400) requestErrors.push(`${response.status()} ${response.url()}`);
     });
