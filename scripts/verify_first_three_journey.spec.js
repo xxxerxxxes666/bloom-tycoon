@@ -1623,6 +1623,7 @@ async function installOwnedRenewalRecorder(page) {
       const renewal = document.querySelector("#ownedReplayRenewal");
       const scene = document.querySelector(".restoration-scene");
       const ingredients = Array.from(renewal?.querySelectorAll(".owned-renewal-ingredient") || []);
+      const reserves = Array.from(renewal?.querySelectorAll(".owned-renewal-reserve") || []);
       const savedState = JSON.parse(localStorage.getItem("bloomTycoonPlayableStateV1") || "{}");
       const liveRegions = Array.from(document.querySelectorAll("[aria-live]"))
         .filter(visible)
@@ -1660,10 +1661,13 @@ async function installOwnedRenewalRecorder(page) {
           const image = node.querySelector("img");
           return Boolean(image?.complete && image.naturalWidth > 0 && image.naturalHeight > 0);
         }),
+        reserveIndexes: reserves.map((node) => Number(node.dataset.reserveIndex)),
+        reserveLabels: reserves.map((node) => node.textContent.trim()),
+        reserveVisibleCount: reserves.filter(visible).length,
         responseVisible: visible(renewal?.querySelector(".owned-renewal-response")),
         raisedArtVisible: visible(scene?.querySelector(".greenhouse-art-restored")),
         lowerArtVisible: visible(scene?.querySelector(".greenhouse-art-withered")),
-        transientNodes: renewal?.querySelectorAll(".owned-renewal-ingredient, .owned-renewal-response, .owned-renewal-window").length || 0,
+        transientNodes: renewal?.querySelectorAll(".owned-renewal-ingredient, .owned-renewal-reserve, .owned-renewal-response, .owned-renewal-window").length || 0,
         renewalHidden: renewal?.hidden ?? true
       });
     };
@@ -2116,10 +2120,23 @@ async function playOwnedReplayCycle(page, config, runLabel, strategy) {
     expect(ingredientSamples.length, `${runLabel} round ${round} sampled authoritative ingredient transfer`).toBeGreaterThan(0);
     expect(ingredientSamples.every((sample) => JSON.stringify(sample.ingredientIds) === JSON.stringify(expectedCompositions[round - 1])), "transfer follows trophy composition").toBe(true);
     expect(ingredientSamples.every((sample) => sample.ingredientImagesLoaded), "transfer images load local pixels").toBe(true);
-    const expectedTransientNodes = expectedCompositions[round - 1].length + 4;
+    const movesHeld = result.movesLeft;
+    const reserveCount = Math.min(movesHeld, 5);
+    expect(
+      ingredientSamples.every((sample) => (
+        JSON.stringify(sample.reserveIndexes) === JSON.stringify(Array.from({ length: reserveCount }, (_, index) => index))
+        && JSON.stringify(sample.reserveLabels) === JSON.stringify(Array.from({ length: reserveCount }, (_, index) => String(index + 1)))
+      )),
+      `${runLabel} round ${round} held-move embers visibly tend the owned Conservatory`
+    ).toBe(true);
+    expect(
+      ingredientSamples.some((sample) => sample.reserveVisibleCount === reserveCount),
+      `${runLabel} round ${round} paints every held-move ember during renewal`
+    ).toBe(true);
+    const expectedTransientNodes = expectedCompositions[round - 1].length + reserveCount + 4;
     expect(
       ingredientSamples.every((sample) => sample.transientNodes === expectedTransientNodes),
-      "renewal node count stays fixed at one ingredient per earned unit plus four response nodes"
+      "renewal node count stays fixed at one ingredient per earned unit, one held-move ember, and four response nodes"
     ).toBe(true);
     expect(ingredientSamples.some((sample) => sample.responseVisible), "owned greenhouse gives one visible renewal response").toBe(true);
     const firstTransientAt = transientSamples[0].at;

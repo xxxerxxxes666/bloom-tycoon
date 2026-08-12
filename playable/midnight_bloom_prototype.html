@@ -7672,6 +7672,52 @@
     .owned-replay-renewal[data-renewal-phase="renewal"] .owned-renewal-response::before { animation:owned-greenhouse-renew 500ms ease-out both; }
     .owned-replay-renewal[data-renewal-phase="renewal"] .owned-renewal-response::after,
     .owned-replay-renewal[data-renewal-phase="renewal"] .owned-renewal-window { animation:owned-greenhouse-live 480ms ease-out both; }
+    .owned-renewal-reserve {
+      position:absolute;
+      left:var(--reserve-start-x);
+      top:var(--reserve-start-y);
+      z-index:4;
+      width:18px;
+      height:18px;
+      display:grid;
+      place-items:center;
+      border:1px solid #f5d78d;
+      border-radius:50%;
+      background:radial-gradient(circle,#fff3b8 0 16%,#d7b16d 19% 38%,#4a1b13 70%);
+      box-shadow:0 0 10px #d7b16d,0 0 18px #b51d2f66;
+      color:#190707;
+      font:900 9px/1 system-ui,sans-serif;
+      opacity:0;
+      transform:translate(-50%,-50%) scale(.62) rotate(45deg);
+    }
+    .owned-replay-renewal[data-renewal-phase="transfer"] .owned-renewal-reserve {
+      animation:owned-reserve-tend 560ms cubic-bezier(.18,.76,.22,1) var(--reserve-delay,0ms) both;
+    }
+    .owned-replay-renewal[data-renewal-phase="renewal"] .owned-renewal-reserve,
+    .owned-replay-renewal[data-renewal-phase="acknowledgment"] .owned-renewal-reserve {
+      left:var(--reserve-end-x);
+      top:var(--reserve-end-y);
+      opacity:.9;
+      transform:translate(-50%,-50%) scale(.82) rotate(405deg);
+    }
+    .owned-replay-renewal[data-renewal-phase="renewal"] .owned-renewal-reserve {
+      animation:owned-reserve-land 420ms ease-out var(--reserve-delay,0ms) both;
+    }
+    @keyframes owned-reserve-tend {
+      0% { opacity:0; transform:translate(-50%,-50%) scale(.62) rotate(45deg); }
+      24% { opacity:1; }
+      100% { left:var(--reserve-end-x); top:var(--reserve-end-y); opacity:.9; transform:translate(-50%,-50%) scale(.82) rotate(405deg); }
+    }
+    @keyframes owned-reserve-land {
+      0% { opacity:.9; transform:translate(-50%,-50%) scale(.82) rotate(405deg); }
+      48% { opacity:1; transform:translate(-50%,-50%) scale(1.28) rotate(450deg); box-shadow:0 0 15px #fff3b8,0 0 25px #b51d2f99; }
+      100% { opacity:.9; transform:translate(-50%,-50%) scale(.82) rotate(495deg); }
+    }
+    @keyframes owned-reserve-tend-mobile {
+      0% { opacity:0; transform:translate(-50%,-50%) scale(.62) rotate(45deg); }
+      24% { opacity:1; }
+      100% { left:var(--reserve-mobile-end-x); top:var(--reserve-mobile-end-y); opacity:.9; transform:translate(-50%,-50%) scale(.82) rotate(405deg); }
+    }
     .first-swap-cue.swap-refused {
       color:#f0b0a5;
       text-shadow:0 0 12px #9b1d22;
@@ -7733,6 +7779,18 @@
       .owned-replay-renewal[data-renewal-phase="acknowledgment"] .owned-renewal-ingredient {
         left:var(--renew-mobile-end-x);
         top:var(--renew-mobile-end-y);
+      }
+      .owned-renewal-reserve {
+        left:var(--reserve-mobile-start-x);
+        top:var(--reserve-mobile-start-y);
+      }
+      .owned-replay-renewal[data-renewal-phase="renewal"] .owned-renewal-reserve,
+      .owned-replay-renewal[data-renewal-phase="acknowledgment"] .owned-renewal-reserve {
+        left:var(--reserve-mobile-end-x);
+        top:var(--reserve-mobile-end-y);
+      }
+      .owned-replay-renewal[data-renewal-phase="transfer"] .owned-renewal-reserve {
+        animation-name:owned-reserve-tend-mobile;
       }
       .owned-renewal-response { top:auto; bottom:0; width:100%; height:42%; }
       .greenhouse-upgrade-ladder { grid-template-columns:repeat(3,minmax(0,1fr)); gap:4px; }
@@ -10425,6 +10483,7 @@
     const BLACK_CANDLE_REDUCED_HOLD_MS = 190;
     const BLACK_CANDLE_REDUCED_REFILL_MS = 70;
     const BOUQUET_BINDING_HOLD_MS = 1720;
+    const OWNED_REPLAY_BINDING_HOLD_MS = 1180;
     const SETTLED_BOARD_OUTCOME_MS = 2400;
     const PAYOFF_HANDOFF_INPUT_GUARD_MS = 480;
     const TUTORIAL_COMMAND_INPUT_GUARD_MS = 280;
@@ -15605,8 +15664,23 @@
           </span>
         `;
       }).join("");
+      const movesHeld = Math.max(0, Math.floor(Number(moves) || 0));
+      const reservePositions = [
+        { sx: 42, sy: 42, ex: 67, ey: 28, msx: 42, msy: 42, mex: 30, mey: 69 },
+        { sx: 48, sy: 39, ex: 73, ey: 39, msx: 48, msy: 39, mex: 42, mey: 76 },
+        { sx: 53, sy: 43, ex: 79, ey: 50, msx: 54, msy: 43, mex: 54, mey: 69 },
+        { sx: 45, sy: 49, ex: 70, ey: 60, msx: 45, msy: 49, mex: 66, mey: 77 },
+        { sx: 51, sy: 52, ex: 84, ey: 63, msx: 51, msy: 52, mex: 78, mey: 71 }
+      ];
+      const reserve = Array.from({ length: Math.min(movesHeld, 5) }, (_, index) => {
+        const position = reservePositions[index];
+        return `
+          <span class="owned-renewal-reserve" data-reserve-index="${index}" style="--reserve-delay:${index * 38}ms;--reserve-start-x:${position.sx}%;--reserve-start-y:${position.sy}%;--reserve-end-x:${position.ex}%;--reserve-end-y:${position.ey}%;--reserve-mobile-start-x:${position.msx}%;--reserve-mobile-start-y:${position.msy}%;--reserve-mobile-end-x:${position.mex}%;--reserve-mobile-end-y:${position.mey}%;">${index + 1}</span>
+        `;
+      }).join("");
       return `
         ${ingredients}
+        ${reserve}
         <span class="owned-renewal-response" aria-hidden="true">
           <span class="owned-renewal-window" style="--renew-window-x:25%;--renew-window-skew:-7deg;"></span>
           <span class="owned-renewal-window" style="--renew-window-x:45%;--renew-window-skew:0deg;"></span>
@@ -20084,7 +20158,11 @@
       if (bouquetSealPulseTimer && window.clearTimeout) {
         window.clearTimeout(bouquetSealPulseTimer);
       }
-      const sealDuration = prefersReducedMotion() ? 40 : BOUQUET_BINDING_HOLD_MS;
+      const sealDuration = prefersReducedMotion()
+        ? 40
+        : isOwnedRestorationReplay()
+          ? OWNED_REPLAY_BINDING_HOLD_MS
+          : BOUQUET_BINDING_HOLD_MS;
       const boundedLead = Math.max(0, Number(completionLead || 0));
       finalHarvestCeremonyPacing = boundedLead > 0
         ? { remainingLead: Math.max(0, boundedLead - sealDuration) }
