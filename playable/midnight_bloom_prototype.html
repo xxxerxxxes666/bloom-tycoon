@@ -10809,7 +10809,10 @@
     }
 
     function buildRoundPlan(roundNumber) {
-      const safeRound = Math.min(FOCUSED_LEVEL_COUNT, Math.max(1, Number(roundNumber) || 1));
+      const safeRound = Math.min(
+        FOCUSED_LEVEL_COUNT,
+        Math.max(1, Math.floor(Number(roundNumber) || 1))
+      );
       const template = roundTemplates[safeRound - 1] || roundTemplates[0];
       return {
         round: safeRound,
@@ -21297,7 +21300,11 @@
         clearedCursedThorns = Math.max(0, Number(state.clearedCursedThorns) || 0);
         moves = Math.max(0, Number.isFinite(Number(state.moves)) ? Number(state.moves) : moves);
         coins = Math.max(0, Number(state.coins) || coins);
-        currentRound = Math.max(1, Number(state.currentRound) || 1);
+        const savedRoundNumber = Number(state.currentRound);
+        currentRound = Math.max(1, Math.floor(savedRoundNumber || 1));
+        if (currentRound !== savedRoundNumber) {
+          shouldSaveMigratedProgress = true;
+        }
         roundComplete = Boolean(state.roundComplete || state.firstBouquetComplete);
         // Older saves could already be inside Moonlit/Bloodroot without the
         // ownership flag introduced by the focused greenhouse economy.
