@@ -3,6 +3,7 @@ const { test, expect } = require("@playwright/test");
 const BASE_URL = process.env.BLOOM_TEST_URL
   || "http://127.0.0.1:4173/playable/midnight_bloom_prototype.html";
 const SAVE_KEY = "bloomTycoonPlayableStateV1";
+const pageUrl = (query) => `${BASE_URL}${BASE_URL.includes("?") ? "&" : "?"}${query}`;
 
 const CASES = [
   {
@@ -138,14 +139,19 @@ for (const viewportCase of VIEWPORTS) {
       });
       page.on("pageerror", (error) => problems.push(error.message));
       try {
-        await page.goto(`${BASE_URL}?receipt-warm=${receiptCase.label}-${viewportCase.label}`, {
+        await page.addInitScript(({ key, state, marker }) => {
+          if (!sessionStorage.getItem(marker)) {
+            localStorage.setItem(key, JSON.stringify(state));
+            sessionStorage.setItem(marker, "1");
+          }
+        }, {
+          key: SAVE_KEY,
+          state: receiptCase.state,
+          marker: `receipt-${receiptCase.label}-${viewportCase.label}`
+        });
+        await page.goto(pageUrl(`receipt=${receiptCase.label}-${viewportCase.label}`), {
           waitUntil: "networkidle"
         });
-        await page.evaluate(({ key, state }) => localStorage.setItem(key, JSON.stringify(state)), {
-          key: SAVE_KEY,
-          state: receiptCase.state
-        });
-        await page.reload({ waitUntil: "networkidle" });
 
         const repaired = await report(page);
         expect(repaired.state.roundComplete).toBe(false);
@@ -203,12 +209,11 @@ test("a current earned receipt remains complete", async ({ page }) => {
     counts: [0, 6, 0, 0, 0, 8],
     blackCandleLessonComplete: true
   };
-  await page.goto(`${BASE_URL}?receipt-valid-warm=1`, { waitUntil: "networkidle" });
-  await page.evaluate(({ key, value }) => localStorage.setItem(key, JSON.stringify(value)), {
+  await page.addInitScript(({ key, value }) => localStorage.setItem(key, JSON.stringify(value)), {
     key: SAVE_KEY,
     value: state
   });
-  await page.reload({ waitUntil: "networkidle" });
+  await page.goto(pageUrl("receipt-valid=1"), { waitUntil: "networkidle" });
   const valid = await report(page);
   expect(valid.state.roundComplete).toBe(true);
   expect(valid.state.coins).toBe(120);
