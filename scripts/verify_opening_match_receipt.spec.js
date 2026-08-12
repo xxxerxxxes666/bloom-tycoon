@@ -249,6 +249,13 @@ for (const testCase of CASES) {
       expect(handoff.targetLiteracyTiles, `${testCase.label} highlights every visible target-family tile`)
         .toBeGreaterThan(0);
       expect(handoff.visibleButtons, `${testCase.label} keeps paid recovery subordinate`).toEqual(["Help"]);
+      await page.waitForTimeout(2200);
+      const sustainedLiteracy = await report(page);
+      expect(sustainedLiteracy.targetLiteracy, `${testCase.label} keeps the species identity legible`)
+        .toBe("Thorn Rose");
+      expect(sustainedLiteracy.targetLiteracyTiles, `${testCase.label} sustains the family link before rescue`)
+        .toBe(handoff.targetLiteracyTiles);
+      expect(sustainedLiteracy.hintCount, `${testCase.label} still withholds the exact pair`).toBe(0);
       const preGuardState = handoff.state;
       await page.evaluate(() => document.querySelector("#shuffleBtn")?.click());
       const guarded = await report(page);

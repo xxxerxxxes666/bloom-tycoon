@@ -75,8 +75,12 @@ async function loadSettledThornBoundary(page) {
   }, SAVE_KEY);
   await page.reload({ waitUntil: "networkidle" });
   await expect(page.locator("#board .tile")).toHaveCount(64);
-  await expect(page.locator(".tile.target-literacy, .objective-target.target-literacy"))
-    .toHaveCount(0, { timeout: 3000 });
+  await expect(page.locator("body")).toHaveAttribute("data-target-literacy", "Thorn Rose");
+  const thornFamilySize = await page.locator('.tile[data-flower-id="5"]').count();
+  await expect(page.locator('.tile.target-literacy[data-flower-id="5"]'))
+    .toHaveCount(thornFamilySize);
+  await expect(page.locator('.objective-target.target-literacy[data-flower-id="5"]'))
+    .toHaveCount(1);
 }
 
 async function targetUsefulPairs(page, flowerId) {
@@ -522,12 +526,11 @@ test("invalid input, Help/Skip, failure, and Retry retire stale Bone literacy", 
 
   await page.evaluate((key) => {
     const state = JSON.parse(localStorage.getItem(key));
-    state.moves = 1;
+    state.moves = 0;
     localStorage.setItem(key, JSON.stringify(state));
   }, SAVE_KEY);
   await page.reload({ waitUntil: "networkidle" });
   await expect(page.locator("body")).not.toHaveAttribute("data-target-literacy", /.+/);
-  await page.locator("#shuffleBtn").click();
   await expect(page.locator("body")).toHaveClass(/focused-slice-failed/);
   await expect(page.locator("#renewBtn")).toBeVisible();
   await expect(page.locator(".tile.target-literacy, .objective-target.target-literacy")).toHaveCount(0);

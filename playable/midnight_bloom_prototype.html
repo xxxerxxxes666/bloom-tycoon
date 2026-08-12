@@ -12999,6 +12999,14 @@
       }
       targetLiteracyFlowerId = target.flowerId;
       document.body.dataset.targetLiteracy = flowers[target.flowerId][0];
+      const firstTargetDiscovery = !roundOneSecondTargetDiscoveryActive
+        && target.flowerId === plan.targets[0]?.flowerId;
+      if (firstTargetDiscovery) {
+        // Thorn Rose literacy bridges the whole find-it-yourself window. The
+        // initial echo settles into the existing restrained outline until
+        // player input or the exact-pair rescue takes ownership.
+        return true;
+      }
       targetLiteracyTimer = window.setTimeout(() => {
         targetLiteracyTimer = null;
         if (targetLiteracyFlowerId === target.flowerId) {

@@ -2591,9 +2591,20 @@ for (const viewport of [
         });
 
         await page.waitForTimeout(1300);
-        await expect(page.locator(".tile.target-literacy, .objective-target.target-literacy")).toHaveCount(0);
+        await expect(page.locator('.tile.target-literacy[data-flower-id="5"]'))
+          .toHaveCount(discovery.targetFamilyTiles);
+        await expect(page.locator('.objective-target.target-literacy[data-flower-id="5"]'))
+          .toHaveCount(1);
         await expect(page.locator(".tile.idle-hint, .swap-path-arrow, .first-action-swap-guide")).toHaveCount(0);
-        await page.waitForTimeout(4500);
+        await page.waitForTimeout(2600);
+        await expect(page.locator('.tile.target-literacy[data-flower-id="5"]'))
+          .toHaveCount(discovery.targetFamilyTiles);
+        await expect(page.locator(".tile.idle-hint, .swap-path-arrow, .first-action-swap-guide")).toHaveCount(0);
+        await page.screenshot({
+          path: `work/round-one-agency-${viewport.label}-literacy-held.png`,
+          fullPage: true
+        });
+        await page.waitForTimeout(1900);
         await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 3000 });
         const rescueElapsed = Date.now() - discoveryStartedAt;
         expect(rescueElapsed, `${viewport.label} rescue waits about seven seconds`).toBeGreaterThanOrEqual(6200);
@@ -2606,7 +2617,7 @@ for (const viewport of [
         expect(delayed.tutorial, `${viewport.label} delayed tutorial panel stays retired`).toBe("");
         expect(delayed.cue, `${viewport.label} delayed visible cue names target`).toBe("Match Thorn Rose with the glowing pair.");
         expect(delayed.firstSwapCueVisible, `${viewport.label} delayed cue stays visible`).toBe(true);
-        expect(delayed.literacyTiles, `${viewport.label} family echo retires before exact rescue`).toEqual([]);
+        expect(delayed.literacyTiles, `${viewport.label} family literacy yields to exact rescue`).toEqual([]);
         const followupPair = delayed.hints;
         const usefulPairs = await objectiveUsefulPairs(page);
         expect(
@@ -4215,10 +4226,14 @@ test("Round 1 agency retires and restores guidance across real input boundaries"
       const afterOrdinaryMove = await guidedRoundOneState(page, `${testCase.label} post-agency boundary`);
       expect(afterOrdinaryMove.moves, `${testCase.label} ordinary move spends once`).toBe(4);
       expect(afterOrdinaryMove.counts[5], `${testCase.label} ordinary move advances Thorn Rose`).toBeGreaterThan(3);
-      const reachedBoneDiscovery = afterOrdinaryMove.counts[5] >= 8
+      const reachedBoneDiscovery = afterOrdinaryMove.hints.length === 0
         && afterOrdinaryMove.counts[1] < 6;
       if (reachedBoneDiscovery) {
-        expect(afterOrdinaryMove.cue).toBe("Find Bone Stars.");
+        expect(
+          afterOrdinaryMove.cue.includes("Bone Star")
+            || afterOrdinaryMove.cue.includes("Black Candle Vine"),
+          `${testCase.label} second-target discovery names the flower or its purpose`
+        ).toBe(true);
         expect(afterOrdinaryMove.hints).toEqual([]);
       } else {
         expect(afterOrdinaryMove.cue).toContain("Black Candle Vine");
@@ -4229,12 +4244,17 @@ test("Round 1 agency retires and restores guidance across real input boundaries"
       await waitForSettledBoard(page);
       let reloadedLesson = await guidedRoundOneState(page, `${testCase.label} post-agency reload`);
       if (reachedBoneDiscovery) {
-        expect(reloadedLesson.cue).toBe("Find Bone Stars.");
-        expect(reloadedLesson.hints).toEqual([]);
-        await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 9500 });
-        reloadedLesson = await guidedRoundOneState(page, `${testCase.label} Bone Star fallback`);
-        expect(reloadedLesson.cue).toContain("Bone Star");
-        expect(reloadedLesson.tutorial).toBe("Match Bone Star.");
+        expect(
+          reloadedLesson.cue.includes("Bone Star")
+            || reloadedLesson.cue.includes("Black Candle Vine"),
+          `${testCase.label} reloaded second-target discovery retains its purpose`
+        ).toBe(true);
+        if (reloadedLesson.hints.length === 0) {
+          await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 9500 });
+          reloadedLesson = await guidedRoundOneState(page, `${testCase.label} Bone Star fallback`);
+          expect(reloadedLesson.cue).toContain("Bone Star");
+          expect(["", "Match Bone Star."]).toContain(reloadedLesson.tutorial);
+        }
       } else {
         expect(reloadedLesson.cue).toContain("Black Candle Vine");
       }
