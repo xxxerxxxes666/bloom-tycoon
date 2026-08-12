@@ -20,6 +20,11 @@ const OWNED_REPLAY_CONFIGS = [
   { label: "mobile-reduced", viewport: { width: 390, height: 844 }, mobile: true, reduced: true }
 ];
 
+const TRANSFER_RELOAD_CONFIGS = [
+  { label: "desktop", viewport: { width: 1280, height: 720 } },
+  { label: "mobile", viewport: { width: 390, height: 844 }, mobile: true }
+];
+
 test.setTimeout(180000);
 
 function completedRoundTwoState() {
@@ -105,6 +110,10 @@ async function report(page) {
       visibleActions: ["restoreGreenhouseBtn", "nextOrderBtn"]
         .filter((id) => visible(document.getElementById(id))),
       awakening: document.querySelector("#roundOneRestoration")?.classList.contains("restoration-awakening"),
+      transfer: document.querySelector("#roundOneRestoration")?.dataset.bouquetTransfer || "",
+      transferRound: document.querySelector("#roundOneRestoration")?.dataset.bouquetTransferRound || "",
+      restorationPhase: document.querySelector("#roundOneRestoration")?.dataset.restorationPhase || "",
+      transferBouquets: document.querySelectorAll("#restorationBouquetIntake .crafted-bouquet").length,
       selected: tiles.filter((tile) => tile.classList.contains("sel")).map((tile) => tile.id),
       rovingIds: tiles.filter((tile) => tile.tabIndex === 0).map((tile) => tile.id),
       tiles: tiles.length,
@@ -285,28 +294,89 @@ for (const config of CONFIGS) {
         restored: true,
         upgraded: true,
         raised: false,
-        activeId: "nextOrderBtn",
-        visibleActions: ["nextOrderBtn"]
+        visibleActions: [],
+        transfer: "active",
+        transferRound: "2",
+        restorationPhase: "transforming",
+        transferBouquets: 1
       });
       expect(upgraded.awakening, `${config.label} awakening starts`).toBe(true);
+      expectGeometry(upgraded, config, `${config.label} transfer`);
 
       await page.waitForTimeout(60);
-      await activate(page, config, page.locator("#nextOrderBtn"), point);
+      if (config.input === "pointer") {
+        await page.mouse.click(point.x, point.y);
+      } else if (config.input === "touch") {
+        await page.touchscreen.tap(point.x, point.y);
+      } else {
+        await page.keyboard.press(config.input);
+      }
+      await page.waitForTimeout(80);
+      const duringTransfer = await report(page);
+      expect(duringTransfer.round, `${config.label} repeat does not enter Round 3`).toBe(2);
+      expect(duringTransfer.save, `${config.label} repeat preserves saved spend`).toBe(upgraded.save);
+      expect(duringTransfer.coins, `${config.label} spends once`).toBe(50);
+      expect(duringTransfer.upgraded).toBe(true);
+      expect(duringTransfer.complete).toBe(true);
+      expect(duringTransfer.visibleActions).toEqual([]);
+      expect(duringTransfer.transfer).toBe("active");
+      expect(duringTransfer.transferRound).toBe("2");
+      expect(duringTransfer.transferBouquets).toBe(1);
+      expect(duringTransfer.selected).toEqual([]);
+      expect(duringTransfer.rovingIds, `${config.label} hidden board has no roving stop`).toEqual([]);
+      expectGeometry(duringTransfer, config, `${config.label} during transfer`);
+
+      const evidenceLabels = {
+        "desktop-enter": "desktop-full",
+        "desktop-space-reduced": "desktop-reduced",
+        "mobile-enter": "mobile-full",
+        "mobile-space-reduced": "mobile-reduced"
+      };
+      if (evidenceLabels[config.label]) {
+        if (!config.reduced) await page.waitForTimeout(600);
+        await page.screenshot({
+          path: `work/greenhouse-upgrade-${evidenceLabels[config.label]}-transfer.png`,
+          fullPage: false
+        });
+      }
+
+      await page.waitForFunction(() => (
+        document.querySelector("#roundOneRestoration")?.dataset.bouquetTransfer === "settled"
+      ), null, { timeout: 3000 });
+      const settled = await report(page);
+      expect(settled).toMatchObject({
+        round: 2,
+        moves: 1,
+        coins: 50,
+        complete: true,
+        upgraded: true,
+        raised: false,
+        activeId: "nextOrderBtn",
+        visibleActions: ["nextOrderBtn"],
+        transfer: "settled",
+        transferRound: "",
+        restorationPhase: "",
+        transferBouquets: 0
+      });
+      expect(settled.save, `${config.label} settlement is presentation-only`).toBe(upgraded.save);
+      expect(settled.selected).toEqual([]);
+      expect(settled.rovingIds).toEqual([]);
+      expectGeometry(settled, config, `${config.label} settled`);
+
+      const nextOrder = page.locator("#nextOrderBtn");
+      const nextBox = await nextOrder.boundingBox();
+      const nextPoint = { x: nextBox.x + nextBox.width / 2, y: nextBox.y + nextBox.height / 2 };
+      await page.waitForTimeout(60);
+      await activate(page, config, nextOrder, nextPoint);
       await page.waitForTimeout(380);
       const guarded = await report(page);
-      expect(guarded.round, `${config.label} repeat does not enter Round 3`).toBe(2);
-      expect(guarded.save, `${config.label} repeat preserves settled spend`).toBe(upgraded.save);
-      expect(guarded.coins, `${config.label} spends once`).toBe(50);
-      expect(guarded.upgraded).toBe(true);
-      expect(guarded.complete).toBe(true);
-      expect(guarded.activeId, `${config.label} Next Order retains focus`).toBe("nextOrderBtn");
+      expect(guarded.round, `${config.label} fresh settlement guard does not enter Round 3`).toBe(2);
+      expect(guarded.save, `${config.label} guard preserves settled spend`).toBe(settled.save);
+      expect(guarded.activeId).toBe("nextOrderBtn");
       expect(guarded.visibleActions).toEqual(["nextOrderBtn"]);
-      expect(guarded.selected).toEqual([]);
-      expect(guarded.rovingIds, `${config.label} hidden board has no roving stop`).toEqual([]);
-      expectGeometry(guarded, config, `${config.label} guarded`);
 
       await page.waitForTimeout(100);
-      await activate(page, config, page.locator("#nextOrderBtn"), point);
+      await activate(page, config, nextOrder, nextPoint);
       await page.waitForFunction((key) => {
         const saved = JSON.parse(localStorage.getItem(key) || "{}");
         return saved.currentRound === 3 && saved.roundComplete === false && saved.moves === 8;
@@ -335,12 +405,6 @@ for (const config of CONFIGS) {
       expect(failedRequests, `${config.label} requests`).toEqual([]);
       expect(httpErrors, `${config.label} HTTP responses`).toEqual([]);
 
-      const evidenceLabels = {
-        "desktop-enter": "desktop-full",
-        "desktop-space-reduced": "desktop-reduced",
-        "mobile-enter": "mobile-full",
-        "mobile-space-reduced": "mobile-reduced"
-      };
       if (evidenceLabels[config.label]) {
         await page.screenshot({
           path: `work/greenhouse-upgrade-handoff-${evidenceLabels[config.label]}-receipt.png`,
@@ -382,6 +446,84 @@ for (const config of CONFIGS) {
           fullPage: false
         });
       }
+    } finally {
+      await context.close();
+    }
+  });
+}
+
+for (const config of TRANSFER_RELOAD_CONFIGS) {
+  test(`Moonlit transfer reload resumes from the saved upgrade on ${config.label}`, async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: config.viewport,
+      hasTouch: Boolean(config.mobile),
+      isMobile: Boolean(config.mobile),
+      reducedMotion: "no-preference"
+    });
+    const page = await context.newPage();
+    const errors = [];
+    const failedRequests = [];
+    const httpErrors = [];
+    page.on("console", (message) => {
+      if (["warning", "error"].includes(message.type())) errors.push(message.text());
+    });
+    page.on("pageerror", (error) => errors.push(error.message));
+    page.on("requestfailed", (request) => {
+      const failure = request.failure()?.errorText || "";
+      if (failure !== "net::ERR_ABORTED") failedRequests.push(`${request.url()} ${failure}`);
+    });
+    page.on("response", (response) => {
+      if (response.status() >= 400) httpErrors.push(`${response.status()} ${response.url()}`);
+    });
+
+    try {
+      const marker = `greenhouse-transfer-reload:${config.label}`;
+      await page.addInitScript(({ key, fixtureMarker, state }) => {
+        if (!sessionStorage.getItem(fixtureMarker)) {
+          localStorage.setItem(key, JSON.stringify(state));
+          sessionStorage.setItem(fixtureMarker, "seeded");
+        }
+      }, { key: SAVE_KEY, fixtureMarker: marker, state: completedRoundTwoState() });
+      await page.goto(`${BASE_URL}?greenhouse-transfer-reload=${config.label}`, { waitUntil: "networkidle" });
+      await page.locator("#restoreGreenhouseBtn").click();
+      await page.waitForFunction(() => (
+        document.querySelector("#roundOneRestoration")?.dataset.bouquetTransfer === "active"
+      ));
+      const transferring = await report(page);
+      expect(transferring).toMatchObject({
+        round: 2,
+        coins: 50,
+        complete: true,
+        upgraded: true,
+        visibleActions: [],
+        transfer: "active",
+        transferRound: "2",
+        transferBouquets: 1
+      });
+
+      await page.reload({ waitUntil: "networkidle" });
+      const resumed = await report(page);
+      expect(resumed).toMatchObject({
+        round: 2,
+        moves: 1,
+        counts: [0, 0, 10, 0, 9, 7],
+        coins: 50,
+        complete: true,
+        restored: true,
+        upgraded: true,
+        raised: false,
+        activeId: "nextOrderBtn",
+        visibleActions: ["nextOrderBtn"],
+        transfer: "",
+        transferRound: "",
+        transferBouquets: 0
+      });
+      expectGeometry(resumed, config, `${config.label} transfer reload`);
+      expect(resumed.rovingIds).toEqual([]);
+      expect(resumed.selected).toEqual([]);
+      expect(errors, `${config.label} transfer reload console`).toEqual([]);
+      expect(failedRequests, `${config.label} transfer reload requests`).toEqual([]);
+      expect(httpErrors, `${config.label} transfer reload HTTP`).toEqual([]);
     } finally {
       await context.close();
     }
