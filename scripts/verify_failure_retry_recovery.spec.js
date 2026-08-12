@@ -125,9 +125,11 @@ async function uiState(page) {
         && rect.height > 0;
     };
     const boardRect = document.querySelector("#board")?.getBoundingClientRect();
+    const retryRect = document.querySelector("#renewBtn")?.getBoundingClientRect();
     const state = JSON.parse(localStorage.getItem(key) || "{}");
     return {
       state,
+      viewportHeight: innerHeight,
       objective: document.querySelector("#objective")?.innerText.replace(/\s+/g, " ").trim() || "",
       ceremony: document.querySelector("#roundCeremony")?.innerText.replace(/\s+/g, " ").trim() || "",
       cue: document.querySelector("#firstSwapCue")?.textContent.trim() || "",
@@ -151,6 +153,14 @@ async function uiState(page) {
       focusedTile: Boolean(document.activeElement?.classList.contains("tile")),
       failureMarked: document.querySelector("#roundCeremony")?.classList.contains("failed") || false,
       retryVisible: visible(document.querySelector("#renewBtn.visible")),
+      retryTop: retryRect?.top || 0,
+      retryBottom: retryRect?.bottom || 0,
+      retryBoardOverlap: Boolean(
+        boardRect
+        && retryRect
+        && Math.min(boardRect.right, retryRect.right) > Math.max(boardRect.left, retryRect.left)
+        && Math.min(boardRect.bottom, retryRect.bottom) > Math.max(boardRect.top, retryRect.top)
+      ),
       payoffVisible: visible(document.querySelector("#roundOneRestoration")),
       overflowX: document.documentElement.scrollWidth > innerWidth + 1,
       boardBottom: boardRect?.bottom || 0,
@@ -182,6 +192,9 @@ async function assertFailedState(page, round, label) {
   expect(report.idleHints).toHaveLength(0);
   expect(report.failureMarked).toBe(true);
   expect(report.retryVisible).toBe(true);
+  expect(report.retryTop, `${label} retry follows the board`).toBeGreaterThanOrEqual(report.boardBottom);
+  expect(report.retryBottom, `${label} retry remains in the first viewport`).toBeLessThanOrEqual(report.viewportHeight);
+  expect(report.retryBoardOverlap, `${label} retry does not cover the board`).toBe(false);
   expect(report.payoffVisible).toBe(false);
   expect(report.overflowX).toBe(false);
   expect(report.brokenImages).toEqual([]);
