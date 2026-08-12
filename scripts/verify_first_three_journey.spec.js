@@ -236,6 +236,12 @@ async function journeyState(page) {
         transaction: visibleRect(document.querySelector("#payoffTransaction")),
         action: visibleRect(payoffAction)
       },
+      payoffRootTransition: {
+        oldAnimation: getComputedStyle(document.documentElement, "::view-transition-old(root)").animationName,
+        oldOpacity: getComputedStyle(document.documentElement, "::view-transition-old(root)").opacity,
+        newAnimation: getComputedStyle(document.documentElement, "::view-transition-new(root)").animationName,
+        newOpacity: getComputedStyle(document.documentElement, "::view-transition-new(root)").opacity
+      },
       rewardPromise: document.querySelector("#bouquetRewardPromise")?.textContent.trim() || "",
       rewardPromiseAriaLabel: document.querySelector("#bouquetRewardPromise")?.getAttribute("aria-label") || "",
       replayEntryReceipt: replayEntrySurface?.textContent.trim() || "",
@@ -1765,6 +1771,13 @@ async function playCurrentRound(page, label, round, strategy = "optimized", expe
         .toContain(movesHeldLabel);
       expect(settledState.trophyAriaLabel, `${label} round ${round} announces the finishing margin`)
         .toContain(movesHeldLabel);
+      expect(settledState.payoffRootTransition, `${label} round ${round} keeps the ceremony singular`)
+        .toEqual({
+          oldAnimation: "none",
+          oldOpacity: "0",
+          newAnimation: "none",
+          newOpacity: "1"
+        });
       const summary = {
         round,
         startMoves,

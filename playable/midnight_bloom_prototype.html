@@ -2889,6 +2889,21 @@
       view-transition-name: final-harvest-bouquet;
     }
 
+    /* Keep the final-harvest morph on the bouquet itself. Chromium otherwise
+       crossfades the entire altar over the ceremony and briefly duplicates
+       every title, ingredient label, and frame. */
+    ::view-transition-old(root) {
+      animation: none;
+      mix-blend-mode: normal;
+      opacity: 0;
+    }
+
+    ::view-transition-new(root) {
+      animation: none;
+      mix-blend-mode: normal;
+      opacity: 1;
+    }
+
     ::view-transition-group(final-harvest-bouquet) {
       animation-duration: 360ms;
       animation-timing-function: cubic-bezier(.16,.82,.2,1);

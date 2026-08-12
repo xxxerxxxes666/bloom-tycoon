@@ -7401,3 +7401,21 @@
 - Verification: `python3 scripts/verify_project.py`, `git diff --check`, and the credential-shaped scan passed. The combined fast-opening plus receipt suite passed 21/21 locally; the isolated receipt suite passed 11/11 locally, 11/11 on canonical Vercel, and 11/11 on GitHub Pages.
 - Delivery: gameplay commit `15fde14a97ccb4f87060a232beddd18122d8545b` is on `origin/main`. Vercel deployment `dpl_7aQUxfarFBKByojhGx8L5UXPcUbd` is `READY` and explicitly aliased to `https://bloom-tycoon.vercel.app`; GitHub Pages workflow `31628412282` succeeded for the same commit.
 - Public parity: local, canonical Vercel, and GitHub Pages playable HTML all hash to `9c5289270e74def71bbb63f41be563865e4d9e86b679af704410b5e403603311`; both public playable URLs return HTTP 200 and contain the repaired-receipt marker.
+## 2026-08-12 Codex singular final-harvest ceremony handoff
+
+- Read `docs/hermes_execution_charter.md`, `docs/hermes_audit_next_tasks.md`, and `docs/diablo_visual_simplification_audit.md`; fetched `origin/main` and confirmed the worktree was current apart from the longstanding untracked `test-results/` output.
+- Highest-leverage remaining weakness: Chromium's default root view-transition crossfade briefly painted the whole outgoing board over the incoming completion ceremony. On exact `390x844` mobile this visibly duplicated `Bloodroot Compact Complete`, `Bloodroot Compact`, and both ingredient labels at the peak of the final bouquet handoff.
+- Player-visible correction: suppressed the old root snapshot and made the new root immediately authoritative while preserving the named `final-harvest-bouquet` morph. The final bouquet still carries from the board into the ceremony, but the surrounding title, ingredient summary, frame, and greenhouse now render exactly once.
+- Regression contract: the first-three journey state now records the old/new root pseudo-element animation and opacity. Every settled Round 1-3 ceremony must report old root `animation: none; opacity: 0` and new root `animation: none; opacity: 1`.
+- Files changed:
+  - `playable/midnight_bloom_prototype.html`
+  - `scripts/verify_first_three_journey.spec.js`
+  - `docs/codex_build_notes.md`
+- Focused browser verification:
+  - `vesper-thorn` ordinary goal-following journey passed on desktop and exact `390x844` mobile. Round 3 completed `27/27` in six swaps with two moves held on both viewports.
+  - Full optimized plus ordinary goal-following matrix passed `24/24` journeys: eight optimized seeds and four secondary goal-following seeds on desktop and exact mobile.
+  - Optimized envelope remained Round 1 four swaps, Round 2 five to seven swaps, Round 3 five to six swaps. Goal-following Round 3 remained four to six swaps.
+  - Fresh desktop and exact-mobile screenshots show one ceremony title, one bouquet name, one ingredient summary, one greenhouse frame, 64 tiles/eight rows during active play, no horizontal overflow, no broken images, and no console/page/request errors.
+- Browser console/runtime status: no console warnings/errors, uncaught JavaScript errors, or failed requests were observed in the focused or 24-journey local browser runs.
+- Security: no dependencies, assets, accounts, analytics, trackers, backends, credentials, environment files, permissions, currencies, rounds, or systems were added. Changed-file credential scanning is included in the final gate below.
+- Known issues: none found in the corrected completion handoff. The stale audit paragraph naming the already-fixed `vesper-thorn` loss remains historical; current `main` passes that strategy on both viewports.
