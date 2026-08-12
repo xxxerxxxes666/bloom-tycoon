@@ -15139,7 +15139,6 @@
     function isFocusedHarvestHandoffActive(plan = activeRoundPlan()) {
       return [2, 3].includes(plan.round)
         && hasMadeValidMove
-        && roundProgress(plan).earned > 0
         && !tutorialActive
         && !roundComplete
         && !isBouquetFailed(plan)
@@ -21340,7 +21339,11 @@
       isFocusedHarvestHandoffActive()
       && (
         (currentRound === 2 && restoredRoundTwoGuideMoves === 1)
-        || (currentRound === 3 && moves === activeRoundPlan().moves - 1)
+        || (
+          currentRound === 3
+          && moves === activeRoundPlan().moves - 1
+          && roundProgress(activeRoundPlan()).earned > 0
+        )
       )
     ) {
       primeFocusedHarvestHandoff();

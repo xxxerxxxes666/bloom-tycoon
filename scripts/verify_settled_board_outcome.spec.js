@@ -434,6 +434,70 @@ for (const testCase of CASES) {
         expect(settled.overflowY, `${testCase.label} no mobile vertical overflow`).toBe(false);
       }
 
+      if (testCase.mode === "off-objective") {
+        await expect(page.locator("body")).not.toHaveClass(/settled-board-outcome-cue/, { timeout: 5000 });
+        await expect(page.locator("#board .tile.idle-hint")).toHaveCount(2, { timeout: 1500 });
+        const recovery = await report(page);
+        const expectedTargets = testCase.targetIds
+          .map((flowerId) => ["Sol Rot", "Bone Star", "Nightshade", "Bloodroot", "Amber Seed", "Thorn Rose"][flowerId])
+          .join("|");
+        expect(recovery.cue, `${testCase.label} names an objective-useful recovery pair`)
+          .toMatch(new RegExp(`^(?:${expectedTargets}) next (?:↔|↑↓)$`));
+        expect(recovery.cueVisible, `${testCase.label} keeps recovery visible`).toBe(true);
+        expect(recovery.hints, `${testCase.label} exposes one exact recovery pair`).toHaveLength(2);
+        expect(recovery.focused, `${testCase.label} focuses the recovery source`).toBe(recovery.hints[0]);
+        expect(recovery.roving, `${testCase.label} gives recovery sole keyboard entry`)
+          .toEqual([recovery.hints[0]]);
+        expect(recovery.tiles, `${testCase.label} recovery tiles`).toBe(64);
+        expect(recovery.rows, `${testCase.label} recovery rows`).toBe(8);
+        expect(recovery.overflowX, `${testCase.label} recovery has no horizontal overflow`).toBe(false);
+        expect(recovery.brokenImages, `${testCase.label} recovery images`).toEqual([]);
+        await page.screenshot({ path: `work/off-objective-recovery-${testCase.label}.png`, fullPage: false });
+
+        const recoverySave = await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY);
+        await page.reload({ waitUntil: "networkidle" });
+        await page.waitForTimeout(250);
+        const quietReload = await report(page);
+        expect(await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY), `${testCase.label} rescue reload bytes`)
+          .toBe(recoverySave);
+        expect(quietReload.bodyClasses, `${testCase.label} transient rescue does not replay`)
+          .not.toContain("focused-harvest-handoff-cue");
+        expect(quietReload.cue, `${testCase.label} transient rescue copy does not replay`).not.toBe(recovery.cue);
+        expect(quietReload.hints, `${testCase.label} reload starts in the quiet window`).toEqual([]);
+        await expect(page.locator("#board .tile.idle-hint")).toHaveCount(2, { timeout: 8500 });
+        const resumed = await report(page);
+        expect(resumed.hints, `${testCase.label} quiet autonomy restores the deterministic pair`)
+          .toEqual(recovery.hints);
+
+        const [sourceId, destinationId] = resumed.hints;
+        const activate = async (id) => {
+          const tile = page.locator(`#${id}`);
+          if (testCase.input === "keyboard") {
+            await tile.focus();
+            await page.keyboard.press("Space");
+          } else if (testCase.input === "touch") {
+            await tile.tap();
+          } else {
+            await tile.click();
+          }
+        };
+        await activate(sourceId);
+        await activate(destinationId);
+        await page.waitForFunction((key) => {
+          const state = JSON.parse(localStorage.getItem(key) || "{}");
+          return state.moves === 2
+            && document.querySelector("#board")?.getAttribute("aria-busy") === "false";
+        }, SAVE_KEY, { timeout: 12000 });
+        const continued = await report(page);
+        expect(
+          testCase.targetIds.some((flowerId) => (
+            Number(continued.state.counts[flowerId]) > Number(recovery.state.counts[flowerId])
+          )),
+          `${testCase.label} recovery pair advances a named objective`
+        ).toBe(true);
+        expect(continued.state.moves, `${testCase.label} recovery pair spends exactly once`).toBe(2);
+      }
+
       const settledSave = await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY);
       await page.reload({ waitUntil: "networkidle" });
       const reloaded = await report(page);
