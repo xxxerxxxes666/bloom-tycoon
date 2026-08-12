@@ -21299,7 +21299,9 @@
         coins = Math.max(0, Number(state.coins) || coins);
         currentRound = Math.max(1, Number(state.currentRound) || 1);
         roundComplete = Boolean(state.roundComplete || state.firstBouquetComplete);
-        roundOneRestored = Boolean(state.roundOneRestored);
+        // Older saves could already be inside Moonlit/Bloodroot without the
+        // ownership flag introduced by the focused greenhouse economy.
+        roundOneRestored = Boolean(state.roundOneRestored || currentRound > 1);
         roundTwoGreenhouseUpgraded = Boolean(state.roundTwoGreenhouseUpgraded || currentRound > 2);
         roundThreeConservatoryRaised = Boolean(state.roundThreeConservatoryRaised || currentRound > 3);
         freshConservatorySettlement = Boolean(state.freshConservatorySettlement)

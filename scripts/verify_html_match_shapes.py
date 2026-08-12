@@ -511,6 +511,7 @@ def verify_source_hooks():
         "function focusedEconomyBalanceForProgress()",
         "focusedEconomyVersion: FOCUSED_ECONOMY_SAVE_VERSION",
         "savedFocusedEconomyVersion < FOCUSED_ECONOMY_SAVE_VERSION",
+        "roundOneRestored = Boolean(state.roundOneRestored || currentRound > 1);",
         "if (!hasAuthoritativeOwnedWallet)",
         "Accepted swaps render several animated frames; only settled states are authoritative.",
         'if (typeof localStorage === "undefined" || (isResolving && !options.allowDuringResolve))',
