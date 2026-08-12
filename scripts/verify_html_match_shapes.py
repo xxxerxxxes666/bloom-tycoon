@@ -511,13 +511,13 @@ def verify_source_hooks():
         "Raised for ${BLOODROOT_CONSERVATORY_COST}. ${coins} coins remain.",
         "Begin a new growing cycle with your balance intact.",
         "function startOwnedReplayEntryAcknowledgment",
-        "${balance} coins kept · Conservatory owned · New order ready.",
+        "${coins} kept · Conservatory owned",
+        "${coins} coins kept; Conservatory owned; new order ready",
         "ownedReplayEntryActive = true;\n      render();\n      restoredGreenhouseHandoffTimer",
         "const activeOwnedReplayOrder = isOwnedRestorationReplay() && !roundComplete;",
-        "if (activeOwnedReplayOrder && !desktopOwnedReplayReceipt)",
+        "if (ownedReplayEntryActive)",
         "body.owned-replay-entry .next-order-cue",
         "body.owned-replay-entry .bouquet-reward-promise",
-        "body.owned-replay-entry.round-one-active:not(.round-one-complete):not(.first-move-made) .tutorial-command-region > .first-swap-cue",
         "body.restored-greenhouse-handoff.round-three-focus-active .tutorial-command-region > .next-order-cue",
         "body.restored-greenhouse-handoff.round-three-focus-active .tutorial-command-region {",
         "top: 31px;",
@@ -1421,6 +1421,9 @@ def verify_source_hooks():
             f"{dormant_runtime_hits}"
         )
     forbidden = [
+        "body.owned-replay-entry .tutorial-help { display:none!important; }",
+        "body.owned-replay-entry .first-swap-cue { display:none!important; }",
+        '$("firstSwapCue").textContent = `${balance} coins kept',
         "Restored Greenhouse - Moonlit Wreath begins",
         'class="bouquet-stem-count"',
         'filter: "blur(2px) brightness(1.35)"',

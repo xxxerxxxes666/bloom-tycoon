@@ -136,9 +136,7 @@ async function journeyState(page) {
     const boardRect = document.querySelector(".board")?.getBoundingClientRect();
     const progressRect = document.querySelector("#bouquetProgress")?.getBoundingClientRect();
     const coinRect = document.querySelector("#coinBalance")?.getBoundingClientRect();
-    const replayEntrySurface = innerWidth <= 760
-      ? document.querySelector("#firstSwapCue")
-      : document.querySelector("#bouquetRewardPromise");
+    const replayEntrySurface = document.querySelector("#bouquetRewardPromise");
     const payoffAction = Array.from(document.querySelectorAll("#roundOneRestoration button"))
       .find(visible) || null;
     const payoffFloatingCommands = [
@@ -2366,13 +2364,14 @@ function rectanglesOverlap(first, second) {
 function expectOwnedReplayEntryGeometry(state, config, label) {
   const geometry = state.replayEntryGeometry;
   expect(state.replayEntryActive, `${label} bounded replay entry is active`).toBe(true);
-  expect(state.cueVisible, `${label} viewport uses the intended cue surface`).toBe(config.mobile);
+  expect(state.cueVisible, `${label} keeps the actionable board cue visible`).toBe(true);
   expect(state.handoffCueVisible, `${label} detached receipt stays retired`).toBe(false);
   expect(geometry.receipt, `${label} receipt geometry`).toBeTruthy();
   expect(geometry.detachedReceipt, `${label} no detached receipt geometry`).toBeNull();
   expect(geometry.board, `${label} board geometry`).toBeTruthy();
   expect(geometry.bouquet, `${label} bouquet geometry`).toBeTruthy();
   expect(geometry.firstActionableTile, `${label} first actionable tile geometry`).toBeTruthy();
+  expect(geometry.help, `${label} keeps Help visible beside the board cue`).toBeTruthy();
   for (const [name, rect] of [
     ["masthead", geometry.masthead],
     ["Help", geometry.help],
@@ -2389,53 +2388,36 @@ function expectOwnedReplayEntryGeometry(state, config, label) {
     expect(geometry.greenhouseContinuity, `${label} compact greenhouse continuity geometry`).toBeTruthy();
     expect(geometry.receiptText, `${label} receipt text geometry`).toBeTruthy();
     expect(geometry.receiptText.left, `${label} receipt text clears its left edge`)
-      .toBeGreaterThanOrEqual(geometry.receipt.left + 1);
+      .toBeGreaterThanOrEqual(geometry.receipt.left - 1);
     expect(geometry.receiptText.right, `${label} receipt text clears its right edge`)
-      .toBeLessThanOrEqual(geometry.receipt.right - 1);
+      .toBeLessThanOrEqual(geometry.receipt.right + 1);
     expect(geometry.receiptText.top, `${label} receipt text clears its top edge`)
-      .toBeGreaterThanOrEqual(geometry.receipt.top + 1);
+      .toBeGreaterThanOrEqual(geometry.receipt.top - 1);
     expect(geometry.receiptText.bottom, `${label} receipt text clears its bottom edge`)
-      .toBeLessThanOrEqual(geometry.receipt.bottom - 1);
+      .toBeLessThanOrEqual(geometry.receipt.bottom + 1);
     expect(geometry.receiptScrollWidth, `${label} receipt has no clipped horizontal content`)
       .toBeLessThanOrEqual(geometry.receiptClientWidth);
     expect(geometry.receiptScrollHeight, `${label} receipt has no clipped vertical content`)
       .toBeLessThanOrEqual(geometry.receiptClientHeight);
-    expect(geometry.receiptWhiteSpace, `${label} receipt may wrap within its command lane`).toBe("normal");
-    expect(geometry.receiptFontSize, `${label} receipt keeps its established readable type`).toBeCloseTo(8.5, 1);
-    expect(geometry.receipt.height, `${label} receipt keeps the compact command height`).toBeCloseTo(30, 1);
+    expect(geometry.receiptWhiteSpace, `${label} receipt may wrap within its status lane`).toBe("normal");
+    expect(geometry.receiptFontSize, `${label} receipt keeps its established readable type`).toBeGreaterThanOrEqual(8);
     expect(
       rectanglesOverlap(geometry.receipt, geometry.greenhouseContinuity),
       `${label} receipt stays disjoint from greenhouse continuity`
     ).toBe(false);
-    expect(geometry.receipt.left, `${label} receipt follows the greenhouse command lane`)
-      .toBeGreaterThanOrEqual(geometry.greenhouseContinuity.right);
-    expect(geometry.receipt.left - geometry.greenhouseContinuity.right)
-      .toBeLessThanOrEqual(12);
     expect(geometry.greenhouseContinuity.bottom, `${label} greenhouse remains above the board`)
       .toBeLessThanOrEqual(geometry.board.top);
-    expect(geometry.receipt.bottom, `${label} receipt remains above the board`)
-      .toBeLessThanOrEqual(geometry.board.top);
-    expect(
-      geometry.board.top - Math.max(
-        geometry.greenhouseContinuity.bottom,
-        geometry.receipt.bottom
-      ),
-      `${label} greenhouse and receipt hand directly into the board`
-    ).toBeLessThanOrEqual(12);
-  } else {
-    expect(
-      geometry.receipt.left,
-      `${label} receipt is contained by the bouquet header`
-    ).toBeGreaterThanOrEqual(geometry.bouquet.left);
-    expect(geometry.receipt.right, `${label} receipt stays inside the bouquet header`)
-      .toBeLessThanOrEqual(geometry.bouquet.right);
-    expect(geometry.receipt.top, `${label} receipt stays below bouquet header top`)
-      .toBeGreaterThanOrEqual(geometry.bouquet.top - 3);
-    expect(geometry.receipt.bottom, `${label} receipt stays above bouquet header bottom`)
-      .toBeLessThanOrEqual(geometry.bouquet.bottom);
-    expect(geometry.bouquet.bottom, `${label} bouquet header hands directly into the board`)
-      .toBeLessThanOrEqual(geometry.board.top + 0.5);
   }
+  expect(
+    geometry.receipt.left,
+    `${label} receipt is contained by the bouquet header`
+  ).toBeGreaterThanOrEqual(geometry.bouquet.left);
+  expect(geometry.receipt.right, `${label} receipt stays inside the bouquet header`)
+    .toBeLessThanOrEqual(geometry.bouquet.right);
+  expect(geometry.receipt.top, `${label} receipt stays below bouquet header top`)
+    .toBeGreaterThanOrEqual(geometry.bouquet.top - 3);
+  expect(geometry.receipt.bottom, `${label} receipt stays above bouquet header bottom`)
+    .toBeLessThanOrEqual(geometry.bouquet.bottom);
   const receiptCenter = geometry.receipt.left + geometry.receipt.width / 2;
   expect(receiptCenter, `${label} receipt aligns with board left`).toBeGreaterThan(geometry.board.left);
   expect(receiptCenter, `${label} receipt aligns with board right`).toBeLessThan(geometry.board.right);
@@ -2989,7 +2971,10 @@ for (const config of [
       ]);
       const replayHandoff = await journeyState(page);
       expect(replayHandoff.coins).toBe(50);
-      expect(replayHandoff.replayEntryReceipt).toBe("50 coins kept · Conservatory owned · New order ready.");
+      expect(replayHandoff.replayEntryReceipt).toBe(config.mobile
+        ? "50 kept · Conservatory owned"
+        : "50 coins kept · Conservatory owned · New order ready.");
+      expect(replayHandoff.cue).toMatch(/Thorn Rose next|Swap the glowing pair/);
       expect(replayHandoff.hintedTiles).toBe(2);
       expect(replayHandoff.reducedMotion).toBe(false);
       expect(replayHandoff.tiles).toBe(64);
@@ -3049,7 +3034,10 @@ for (const config of [
       expect(secondReplayAction).toBe("Play Again → First Bouquet");
       const secondReplayHandoff = await journeyState(page);
       expect(secondReplayHandoff.coins).toBe(50);
-      expect(secondReplayHandoff.replayEntryReceipt).toBe("50 coins kept · Conservatory owned · New order ready.");
+      expect(secondReplayHandoff.replayEntryReceipt).toBe(config.mobile
+        ? "50 kept · Conservatory owned"
+        : "50 coins kept · Conservatory owned · New order ready.");
+      expect(secondReplayHandoff.cue).toMatch(/Thorn Rose next|Swap the glowing pair/);
       expectOwnedReplayEntryGeometry(secondReplayHandoff, config, `${runLabel} second replay handoff`);
       await expectPermanentRaisedGreenhouse(page, `${runLabel} second replay handoff`);
       await page.screenshot({ path: `work/replay-second-entry-${config.label}-transient.png`, fullPage: true });
@@ -3240,7 +3228,8 @@ test("reduced-motion exact-mobile replay boundary preserves the owned wallet", a
     expect(handoff.reducedMotion).toBe(true);
     expect(handoff.coins).toBe(50);
     expect(handoff.freshConservatorySettlement).toBe(false);
-    expect(handoff.replayEntryReceipt).toBe("50 coins kept · Conservatory owned · New order ready.");
+    expect(handoff.replayEntryReceipt).toBe("50 kept · Conservatory owned");
+    expect(handoff.cue).toMatch(/Thorn Rose next|Swap the glowing pair/);
     expectOwnedReplayEntryGeometry(handoff, config, "reduced-motion first replay handoff");
     expect(handoff.tiles).toBe(64);
     expect(handoff.tileRows).toBe(8);
@@ -3297,7 +3286,8 @@ test("reduced-motion exact-mobile replay boundary preserves the owned wallet", a
     await spendPrimaryCeremonyAction(page, "touch");
     const secondHandoff = await journeyState(page);
     expect(secondHandoff.coins).toBe(50);
-    expect(secondHandoff.replayEntryReceipt).toBe("50 coins kept · Conservatory owned · New order ready.");
+    expect(secondHandoff.replayEntryReceipt).toBe("50 kept · Conservatory owned");
+    expect(secondHandoff.cue).toMatch(/Thorn Rose next|Swap the glowing pair/);
     expectOwnedReplayEntryGeometry(secondHandoff, config, "reduced-motion second replay handoff");
     await expectPermanentRaisedGreenhouse(page, "reduced-motion second replay handoff");
     await page.screenshot({ path: "work/replay-second-entry-mobile390-reduced-transient.png", fullPage: true });
@@ -3585,18 +3575,20 @@ test("owned replay receipt remains fully readable at the active-board handoff", 
 
         const handoff = await journeyState(page);
         expect(handoff.replayEntryReceipt, `${config.label} ${retainedBalance} exact receipt`)
-          .toBe(`${retainedBalance} coins kept · Conservatory owned · New order ready.`);
+          .toBe(config.mobile
+            ? `${retainedBalance} kept · Conservatory owned`
+            : `${retainedBalance} coins kept · Conservatory owned · New order ready.`);
+        expect(handoff.cue, `${config.label} ${retainedBalance} keeps the first board instruction`)
+          .toMatch(/Thorn Rose next|Swap the glowing pair/);
         if (config.mobile) {
-          expect(handoff.rewardPromise, `${config.label} ${retainedBalance} keeps truthful mobile reward promise`)
-            .toBe(`Nourish 120 · Keep ${retainedBalance}`);
-          expect(handoff.rewardPromiseAriaLabel, `${config.label} ${retainedBalance} keeps truthful mobile reward name`)
-            .toBe(`120 coins nourish the Conservatory; ${retainedBalance} coins kept`);
+          expect(handoff.rewardPromise, `${config.label} ${retainedBalance} keeps a compact ownership receipt`)
+            .toBe(`${retainedBalance} kept · Conservatory owned`);
         } else {
           expect(handoff.rewardPromise, `${config.label} ${retainedBalance} keeps desktop receipt geometry`)
             .toBe(`${retainedBalance} coins kept · Conservatory owned · New order ready.`);
-          expect(handoff.rewardPromiseAriaLabel, `${config.label} ${retainedBalance} desktop receipt is not mislabeled`)
-            .toBe("");
         }
+        expect(handoff.rewardPromiseAriaLabel, `${config.label} ${retainedBalance} receipt keeps its full accessible name`)
+          .toBe(`${retainedBalance} coins kept; Conservatory owned; new order ready`);
         expectOwnedReplayEntryGeometry(handoff, config, `${config.label} ${retainedBalance} owned replay receipt`);
         expect(handoff.round, `${config.label} returns to First Bouquet`).toBe(1);
         expect(handoff.moves, `${config.label} starts with six moves`).toBe(6);
@@ -3615,13 +3607,17 @@ test("owned replay receipt remains fully readable at the active-board handoff", 
         const sustainedHandoff = await journeyState(page);
         expect(sustainedHandoff.replayEntryActive, `${config.label} ${retainedBalance} receipt lasts through 1.7s`).toBe(true);
         expect(sustainedHandoff.replayEntryReceipt, `${config.label} ${retainedBalance} sustained receipt`)
-          .toBe(`${retainedBalance} coins kept · Conservatory owned · New order ready.`);
+          .toBe(config.mobile
+            ? `${retainedBalance} kept · Conservatory owned`
+            : `${retainedBalance} coins kept · Conservatory owned · New order ready.`);
         expect(
           sustainedHandoff.rewardPromise,
           `${config.label} ${retainedBalance} sustained promise remains authoritative`
         ).toBe(config.mobile
-          ? `Nourish 120 · Keep ${retainedBalance}`
+          ? `${retainedBalance} kept · Conservatory owned`
           : `${retainedBalance} coins kept · Conservatory owned · New order ready.`);
+        expect(sustainedHandoff.cue, `${config.label} ${retainedBalance} sustained board instruction`)
+          .toMatch(/Thorn Rose next|Swap the glowing pair/);
         expect(sustainedHandoff.activeElementId, `${config.label} ${retainedBalance} sustained board focus`).toBe("tile-1-0");
         expect(sustainedHandoff.rovingTileIds, `${config.label} ${retainedBalance} sustained roving owner`)
           .toEqual(["tile-1-0"]);

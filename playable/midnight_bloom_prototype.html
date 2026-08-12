@@ -6837,34 +6837,13 @@
     body.round-three-focus-active #roundCeremony { display:none!important; }
     body.restored-greenhouse-handoff .next-order-cue { display:flex; width:max-content; max-width:calc(100% - 20px); min-height:30px; margin:7px auto 0; padding:5px 11px; align-items:center; justify-content:center; border:1px solid #77944f; color:#e8ffc5; background:linear-gradient(90deg,#10170d,#25381c,#10170d); box-shadow:0 0 18px #7fcf6536,inset 0 0 10px #000; font:800 13px Georgia,serif; letter-spacing:.07em; text-align:center; text-transform:uppercase; animation:handoff-cue-rise 1.9s ease-out both; }
     body.owned-replay-entry .next-order-cue { display:none!important; }
-    body.owned-replay-entry .tutorial-help { display:none!important; }
-    @media (min-width:761px) {
-      body.owned-replay-entry .first-swap-cue { display:none!important; }
-      body.owned-replay-entry .bouquet-reward-promise {
-        color:#b9d98d;
-        font-weight:900;
-        letter-spacing:.045em;
-        line-height:1.18;
-        overflow-wrap:anywhere;
-        white-space:normal;
-      }
-    }
-    @media (max-width:760px) {
-      body.owned-replay-entry .first-swap-cue {
-        display:flex!important;
-        min-height:30px;
-        padding:3px 8px;
-        border-color:#77944f;
-        color:#e8ffc5;
-        background:linear-gradient(90deg,#10170d,#25381c,#10170d);
-        box-shadow:0 0 12px #7fcf6528,inset 0 0 9px #000;
-        font:900 8.5px/1.05 system-ui,sans-serif;
-        letter-spacing:.01em;
-        white-space:normal;
-      }
-      body.owned-replay-entry .first-swap-cue::before {
-        display:none;
-      }
+    body.owned-replay-entry .bouquet-reward-promise {
+      color:#b9d98d;
+      font-weight:900;
+      letter-spacing:.045em;
+      line-height:1.18;
+      overflow-wrap:anywhere;
+      white-space:normal;
     }
     @media (min-width:761px) and (max-height:760px) {
       body.round-three-focus-active.restored-greenhouse-handoff .next-order-cue {
@@ -9855,19 +9834,6 @@
         white-space: normal;
       }
 
-      body.owned-replay-entry.round-one-active:not(.round-one-complete):not(.first-move-made) .tutorial-command-region > .first-swap-cue {
-        flex: 1 1 0;
-        width: auto;
-        max-width: none;
-        height: 30px;
-        min-height: 30px;
-        margin: 7px 0 0;
-        padding: 3px 8px;
-        font: 900 8.5px/1.05 system-ui, sans-serif;
-        letter-spacing: .01em;
-        white-space: normal;
-      }
-
       .mobile-greenhouse-progress {
         grid-template-columns: 120px;
         justify-content: start;
@@ -10507,7 +10473,6 @@
     let restoredGreenhouseHandoff = false;
     let restoredGreenhouseHandoffTimer = null;
     let ownedReplayEntryActive = false;
-    let ownedReplayEntrySettledCue = "";
     let greenhouseRevivalPulseTimer = null;
     let ownedReplayRenewalTimer = null;
     let ownedReplayRenewalPhase = "";
@@ -16522,16 +16487,23 @@
       }
       if (reward) {
         const activeOwnedReplayOrder = isOwnedRestorationReplay() && !roundComplete;
-        const desktopOwnedReplayReceipt = ownedReplayEntryActive
-          && window.matchMedia("(min-width: 761px)").matches;
-        reward.textContent = desktopOwnedReplayReceipt
-          ? `${coins} coins kept · Conservatory owned · New order ready.`
+        const compactOwnedReplayReceipt = ownedReplayEntryActive
+          && window.matchMedia("(max-width: 760px)").matches;
+        reward.textContent = ownedReplayEntryActive
+          ? compactOwnedReplayReceipt
+            ? `${coins} kept · Conservatory owned`
+            : `${coins} coins kept · Conservatory owned · New order ready.`
           : roundComplete
             ? `Reward · ${plan.reward.coins} coins`
             : activeOwnedReplayOrder
               ? `Nourish ${plan.reward.coins} · Keep ${coins}`
               : `Complete for ${plan.reward.coins} coins`;
-        if (activeOwnedReplayOrder && !desktopOwnedReplayReceipt) {
+        if (ownedReplayEntryActive) {
+          reward.setAttribute(
+            "aria-label",
+            `${coins} coins kept; Conservatory owned; new order ready`
+          );
+        } else if (activeOwnedReplayOrder) {
           reward.setAttribute(
             "aria-label",
             `${plan.reward.coins} coins nourish the Conservatory; ${coins} coins kept`
@@ -19970,10 +19942,6 @@
       restoredGreenhouseHandoffTimer = null;
       restoredGreenhouseHandoff = false;
       ownedReplayEntryActive = false;
-      if (ownedReplayEntrySettledCue && $("firstSwapCue")) {
-        $("firstSwapCue").textContent = ownedReplayEntrySettledCue;
-      }
-      ownedReplayEntrySettledCue = "";
     }
 
     function startRestoredGreenhouseHandoff(message = "Restored Greenhouse · Moonlit Wreath · Match beside thorns", duration = 2200) {
@@ -19987,14 +19955,8 @@
       }, duration);
     }
 
-    function startOwnedReplayEntryAcknowledgment(balance, duration = 2200) {
+    function startOwnedReplayEntryAcknowledgment(duration = 2200) {
       finishRestoredGreenhouseHandoff();
-      if (window.matchMedia("(max-width: 760px)").matches) {
-        ownedReplayEntrySettledCue = $("firstSwapCue").textContent;
-        $("firstSwapCue").textContent = `${balance} coins kept · Conservatory owned · New order ready.`;
-      } else {
-        $("bouquetRewardPromise").textContent = `${balance} coins kept · Conservatory owned · New order ready.`;
-      }
       ownedReplayEntryActive = true;
       render();
       restoredGreenhouseHandoffTimer = window.setTimeout(() => {
@@ -20623,7 +20585,7 @@
         queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
         $("firstSwapCue").textContent = roundStartCueText(plan, firstMove);
       }
-      startOwnedReplayEntryAcknowledgment(coins);
+      startOwnedReplayEntryAcknowledgment();
       armPayoffHandoffInputGuard();
       focusRestoredNextOrderViewport();
       playBloomSound("handoff");
