@@ -6664,6 +6664,7 @@
     body.round-one-active.round-one-refused:not(.round-one-complete) .first-swap-cue,
     body.focused-active-play:not(.tutorial-active):not(.round-one-complete) .first-swap-cue.swap-refused,
     body.focused-active-play.armed-line-relic-cue:not(.round-one-complete) .first-swap-cue,
+    body.round-three-focus-active.round-three-harvest-handoff-cue .first-swap-cue,
     body.focused-active-play.settled-board-outcome-cue .first-swap-cue { display:flex; width:max-content; max-width:calc(100% - 20px); min-height:30px; margin:7px auto 0; padding:5px 10px; align-items:center; gap:8px; border:1px solid #8e6b35; border-radius:999px; color:#fff0b4; background:linear-gradient(90deg,#17100c,#2b1d0d,#17100c); box-shadow:0 0 12px #c58a3326,inset 0 0 9px #000; font:800 14px Georgia,serif; letter-spacing:.035em; text-align:center; }
     .first-swap-cue::before { content:"GLYPH GUIDE"; flex:none; padding-right:8px; border-right:1px solid #76582e; color:#b9965f; font:700 9px/1.1 system-ui,sans-serif; letter-spacing:.12em; }
     body.round-one-active.round-one-black-candle-cue .first-swap-cue::before,
@@ -6671,6 +6672,7 @@
     body.focused-active-play.settled-board-outcome-cue .first-swap-cue::before { content:"HARVEST"; }
     body.focused-active-play.black-candle-thorn-outcome-cue .first-swap-cue::before { content:"BLACK CANDLE"; }
     body.focused-active-play.shuffle-board-outcome-cue .first-swap-cue::before { content:"SHUFFLE"; }
+    body.round-three-focus-active.round-three-harvest-handoff-cue .first-swap-cue::before { content:"NEXT BLOOM"; }
     body.settled-board-outcome-cue .tutorial-panel,
     body.settled-board-outcome-cue .tutorial-help { display:none!important; }
     body.focused-active-play.settled-board-outcome-cue .first-swap-cue { display:flex!important; }
@@ -15132,6 +15134,37 @@
         && !altarReweaveActive;
     }
 
+    function isRoundThreeFirstHarvestHandoffActive(plan = activeRoundPlan()) {
+      return plan.round === 3
+        && hasMadeValidMove
+        && moves === plan.moves - 1
+        && roundProgress(plan).earned > 0
+        && !tutorialActive
+        && !roundComplete
+        && !isBouquetFailed(plan)
+        && !restoredGreenhouseHandoff
+        && !isArmedLineRelicGuidanceActive()
+        && !postRecoveryGuideActive
+        && !altarReweaveActive;
+    }
+
+    function primeRoundThreeFirstHarvestHandoff(plan = activeRoundPlan()) {
+      if (!isRoundThreeFirstHarvestHandoffActive(plan)) {
+        return false;
+      }
+      const usefulMove = objectiveUsefulIdleMove(plan);
+      const [a, b] = usefulMove?.pair || [];
+      if (!a || !b || !isLegalSwap(a, b)) {
+        return false;
+      }
+      clearIdleHint();
+      idleHintCells = new Set([`${a.x},${a.y}`, `${b.x},${b.y}`]);
+      boardFocusCell = clampBoardFocusCell(a);
+      $("firstSwapCue").textContent = targetCueText(usefulMove.target, a, b);
+      queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
+      return true;
+    }
+
     function isRoundOneAgencyHandoffActive(plan = activeRoundPlan()) {
       return isRoundOneFirstTargetAgencyHandoffActive(plan)
         || isRoundOneSecondTargetDiscoveryActive(plan);
@@ -15885,6 +15918,13 @@
         !settledOutcomeOwnsBoardGuidance
           && isRoundTwoThornHandoffActive(activePlan)
           && hasMadeValidMove
+          && idleHintCells.size === 2
+          && !roundComplete
+      );
+      document.body.classList.toggle(
+        "round-three-harvest-handoff-cue",
+        !settledOutcomeOwnsBoardGuidance
+          && isRoundThreeFirstHarvestHandoffActive(activePlan)
           && idleHintCells.size === 2
           && !roundComplete
       );
@@ -19193,10 +19233,12 @@
           if (currentRound === 2 && thornGoalComplete() && tutorialActive) {
             concludeTutorial();
           }
+          const roundThreeFirstHarvestHandoff = outcomeKind === "harvest"
+            && primeRoundThreeFirstHarvestHandoff(activeRoundPlan());
           if (roundOneOpeningHandoff && isRoundOneAgencyHandoffActive()) {
             startRoundOneTargetLiteracy();
           }
-          if (receiptStillOwnsFocus) {
+          if (receiptStillOwnsFocus && !roundThreeFirstHarvestHandoff) {
             boardFocusCell = clampBoardFocusCell(guideBoardFocus);
           }
           if (
@@ -21290,6 +21332,9 @@
           }
         }
       }
+    }
+    if (isRoundThreeFirstHarvestHandoffActive()) {
+      primeRoundThreeFirstHarvestHandoff();
     }
     if (!postRenderFocusTarget && shouldRestoreSavedTutorialPrimaryFocus()) {
       queuePostRenderFocus("tutorialSkipBtn");
