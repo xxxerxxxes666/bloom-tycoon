@@ -1228,7 +1228,8 @@ async function visibleContract(page) {
       visibleCommandSurfaces,
       visibleLiveRegionOwners,
       payoffGeometry: {
-        title: rectFor(document.querySelector(".title")),
+        appTitle: rectFor(document.querySelector(".title")),
+        ceremonyTitle: rectFor(document.querySelector("#restorationTitle")),
         coins: rectFor(document.querySelector("#coinBalance")),
         bouquet: rectFor(document.querySelector("#bouquetTrophy")),
         greenhouse: rectFor(document.querySelector(".restoration-scene")),
@@ -1337,15 +1338,16 @@ function expectPayoffCommandAuthority(contract, label, expectedActions) {
     live: "polite"
   }]);
   expect(contract.buttons, `${label} exact actionable control count`).toHaveLength(expectedActions);
-  expect(contract.payoffGeometry.title, `${label} title remains visible`).not.toBeNull();
+  expect(contract.payoffGeometry.appTitle, `${label} gameplay masthead retires`).toBeNull();
+  expect(contract.payoffGeometry.ceremonyTitle, `${label} ceremony heading remains visible`).not.toBeNull();
   expect(contract.payoffGeometry.coins, `${label} compact wallet remains visible`).not.toBeNull();
   expect(
-    rectanglesOverlap(contract.payoffGeometry.title, contract.payoffGeometry.coins),
-    `${label} title and wallet do not overlap`
+    rectanglesOverlap(contract.payoffGeometry.ceremonyTitle, contract.payoffGeometry.coins),
+    `${label} ceremony heading and wallet do not overlap`
   ).toBe(false);
   if (expectedActions === 1) {
     for (const [name, rect] of Object.entries({
-      title: contract.payoffGeometry.title,
+      heading: contract.payoffGeometry.ceremonyTitle,
       wallet: contract.payoffGeometry.coins,
       bouquet: contract.payoffGeometry.bouquet,
       greenhouse: contract.payoffGeometry.greenhouse,

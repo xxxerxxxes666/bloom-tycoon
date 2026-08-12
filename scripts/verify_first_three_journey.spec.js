@@ -228,7 +228,8 @@ async function journeyState(page) {
       tutorialVisible: visible(document.querySelector("#tutorialPanel")),
       payoffFloatingCommands,
       payoffGeometry: {
-        title: visibleRect(document.querySelector(".title")),
+        appTitle: visibleRect(document.querySelector(".title")),
+        ceremonyTitle: visibleRect(document.querySelector("#restorationTitle")),
         coins: visibleRect(document.querySelector("#coinBalance")),
         bouquet: visibleRect(document.querySelector("#bouquetTrophy")),
         greenhouse: visibleRect(document.querySelector(".restoration-scene")),
@@ -754,15 +755,16 @@ function expectFocusedPayoffNarration(state, context) {
   expect(visibleLiveById.coinBalance?.live, `${context} coin balance is quiet`).toBe("off");
   expect(visibleLiveById.roundOneRestoration?.live, `${context} ceremony subtree owns narration`).toBe("polite");
   expect(state.liveRegionOwners[0].text, `${context} ceremony has no stale Black Candle category`).not.toMatch(/BLACK CANDLE/i);
-  expect(state.payoffGeometry.title, `${context} title remains visible`).not.toBeNull();
+  expect(state.payoffGeometry.appTitle, `${context} gameplay masthead retires`).toBeNull();
+  expect(state.payoffGeometry.ceremonyTitle, `${context} ceremony heading remains visible`).not.toBeNull();
   expect(state.payoffGeometry.coins, `${context} compact wallet remains visible`).not.toBeNull();
   expect(
-    rectanglesOverlap(state.payoffGeometry.title, state.payoffGeometry.coins),
-    `${context} title and compact wallet do not overlap`
+    rectanglesOverlap(state.payoffGeometry.ceremonyTitle, state.payoffGeometry.coins),
+    `${context} ceremony heading and compact wallet do not overlap`
   ).toBe(false);
   if (state.payoffGeometry.action) {
     for (const [name, rect] of Object.entries({
-      title: state.payoffGeometry.title,
+      heading: state.payoffGeometry.ceremonyTitle,
       wallet: state.payoffGeometry.coins,
       bouquet: state.payoffGeometry.bouquet,
       greenhouse: state.payoffGeometry.greenhouse,
