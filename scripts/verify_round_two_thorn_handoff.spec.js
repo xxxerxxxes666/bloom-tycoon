@@ -137,6 +137,21 @@ for (const testCase of CASES) {
     }, SAVE_KEY), { timeout: 5000 }).toBe(beforeFollowup.moves - 1);
     const afterFollowup = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)), SAVE_KEY);
     expect(afterFollowup.counts[targetIndex]).toBeGreaterThan(beforeFollowup.counts[targetIndex]);
+    await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 7000 });
+    await expect(page.locator("#firstSwapCue")).toHaveText(
+      /^(?:(?:Nightshade|Amber Seed) next (?:↑↓|↔)|Swap Black Candle Vine (?:left|right|up|down) - burn this (?:row|column)\.)$/
+    );
+    const chainedHandoff = await page.evaluate((key) => ({
+      save: localStorage.getItem(key),
+      moves: JSON.parse(localStorage.getItem(key)).moves,
+      active: document.activeElement?.id || "",
+      hints: Array.from(document.querySelectorAll("#board .tile.idle-hint")).map((tile) => tile.id),
+      handoffActive: document.body.classList.contains("focused-harvest-handoff-cue"),
+      relicActive: document.body.classList.contains("armed-line-relic-cue")
+    }), SAVE_KEY);
+    expect(chainedHandoff.handoffActive || chainedHandoff.relicActive).toBe(true);
+    expect(chainedHandoff.moves).toBe(7);
+    expect(chainedHandoff.active).toBe(chainedHandoff.hints[0]);
     expect(await page.locator(".tile").count()).toBe(64);
     expect(errors).toEqual([]);
     expect(failedRequests).toEqual([]);

@@ -94,7 +94,7 @@ async function clickPair(page, ids) {
 }
 
 for (const profile of PROFILES) {
-  test(`${profile.label}: first Bloodroot harvest hands directly to the next target`, async ({ browser }) => {
+  test(`${profile.label}: each Bloodroot harvest hands directly to the next target`, async ({ browser }) => {
     const context = await browser.newContext({
       viewport: profile.viewport,
       hasTouch: Boolean(profile.mobile),
@@ -182,6 +182,24 @@ for (const profile of PROFILES) {
       expect(continued.rows).toBe(8);
       expect(continued.overflowX).toBe(false);
       expect(continued.brokenImages).toEqual([]);
+
+      await expect.poll(async () => (await report(page)).hints.length, { timeout: 7000 }).toBe(2);
+      const chained = await report(page);
+      expect(chained.cue).toMatch(/^(Bloodroot|Sol Rot) next (↔|↑↓)$/);
+      expect(chained.cueVisible).toBe(true);
+      expect(chained.active).toBe(chained.hints[0]);
+      expect(chained.roving).toEqual([chained.hints[0]]);
+      expect(chained.visibleCommands).toEqual([{ id: "tutorialHelpBtn", text: "Help" }]);
+      expect(chained.moves).toBe(6);
+      expect(chained.tiles).toBe(64);
+      expect(chained.rows).toBe(8);
+      expect(chained.overflowX).toBe(false);
+      expect(chained.brokenImages).toEqual([]);
+      await page.screenshot({
+        path: `work/round-three-chained-harvest-handoff-${profile.label}.png`,
+        fullPage: true
+      });
+
       expect(problems).toEqual([]);
     } finally {
       await context.close();
