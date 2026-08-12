@@ -21257,16 +21257,10 @@
 
     function recoverCompletedFocusedOrder() {
       const plan = buildRoundPlan(currentRound);
-      const targetsComplete = plan.targets.every((target) => counts[target.flowerId] >= target.needed);
-      const authoredLessonPending = plan.round === 1
-        && !tutorialSkipped
-        && !blackCandleLessonComplete;
       if (
         roundComplete
         || !focusedSliceRound(plan)
-        || !targetsComplete
-        || !thornGoalComplete(plan)
-        || authoredLessonPending
+        || !focusedOrderCompletionReceipt(plan)
       ) {
         return false;
       }
@@ -21274,6 +21268,31 @@
       coins = Math.max(coins, focusedEconomyBalanceForProgress());
       ritualMessage = focusedSliceCompletionMessage(plan, completionCoinPayout(plan));
       tutorialActive = true;
+      return true;
+    }
+
+    function focusedOrderCompletionReceipt(
+      plan = buildRoundPlan(currentRound),
+      lessonComplete = blackCandleLessonComplete
+    ) {
+      return focusedSliceRound(plan)
+        && plan.targets.every((target) => counts[target.flowerId] >= target.needed)
+        && thornGoalComplete(plan)
+        && (plan.round !== 1 || tutorialSkipped || lessonComplete);
+    }
+
+    function rejectUnsupportedFocusedOrderCompletion(lessonComplete = blackCandleLessonComplete) {
+      const plan = buildRoundPlan(currentRound);
+      if (!roundComplete || focusedOrderCompletionReceipt(plan, lessonComplete)) {
+        return false;
+      }
+      roundComplete = false;
+      freshConservatorySettlement = false;
+      blackCandleLessonComplete = lessonComplete;
+      if (!conservatoryFullyOwned()) {
+        coins = focusedEconomyBalanceForProgress();
+      }
+      ritualMessage = "<strong>Saved order reopened.</strong> Finish its bouquet recipe to earn the greenhouse payoff.";
       return true;
     }
 
@@ -21393,10 +21412,14 @@
           || clearedCursedThorns > 0;
         tutorialSkipped = Boolean(state.tutorialSkipped);
         tutorialActive = !tutorialSkipped && Boolean(state.tutorialActive);
-        blackCandleLessonComplete = Boolean(state.blackCandleLessonComplete)
+        const savedBlackCandleLessonComplete = Boolean(state.blackCandleLessonComplete)
           || tutorialSkipped
-          || currentRound !== 1
-          || roundComplete;
+          || currentRound !== 1;
+        blackCandleLessonComplete = savedBlackCandleLessonComplete
+          || (savedFocusedEconomyVersion < FOCUSED_ECONOMY_SAVE_VERSION && roundComplete);
+        if (rejectUnsupportedFocusedOrderCompletion(savedBlackCandleLessonComplete)) {
+          shouldSaveMigratedProgress = true;
+        }
         if (recoverCompletedFocusedOrder()) {
           shouldSaveMigratedProgress = true;
         }

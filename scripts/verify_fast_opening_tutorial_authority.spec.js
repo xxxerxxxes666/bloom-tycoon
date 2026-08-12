@@ -329,7 +329,7 @@ for (const testCase of FAST_BLACK_CANDLE_CASES) {
 
       const formed = await report(page);
       expect(formed.state.moves).toBe(3);
-      expect(formed.state.counts[5], "fast route has already filled Thorn Rose").toBeGreaterThanOrEqual(8);
+      expect(formed.state.counts[5], "the burn still carries the final Thorn Roses").toBeGreaterThanOrEqual(6);
       expect(formed.state.counts[1], "fast route has already filled Bone Star").toBeGreaterThanOrEqual(6);
       expect(formed.state.roundComplete, "objectives wait for the taught activation").toBe(false);
       expect(formed.state.coins, "no reward arrives before the lane burns").toBe(0);
@@ -396,7 +396,7 @@ for (const testCase of FAST_BLACK_CANDLE_CASES) {
   });
 }
 
-test("Skip waives a fast completed Black Candle lesson without another move", async ({ browser }) => {
+test("Skip closes the lesson without discarding its meaningful Black Candle move", async ({ browser }) => {
   const testCase = FAST_BLACK_CANDLE_CASES[0];
   const context = await browser.newContext({ viewport: testCase.viewport });
   const page = await context.newPage();
@@ -405,10 +405,18 @@ test("Skip waives a fast completed Black Candle lesson without another move", as
     await activateHintedPair(page, false);
     await activateHintedPair(page, false);
     await page.locator("#tutorialSkipBtn").click();
+    let skipped = await report(page);
+    expect(skipped.state.moves, "Skip does not charge a lane-burn move").toBe(3);
+    expect(skipped.state.roundComplete).toBe(false);
+    expect(skipped.state.coins).toBe(0);
+    expect(skipped.state.tutorialSkipped).toBe(true);
+    expect(skipped.state.blackCandleLessonComplete).toBe(true);
+    expect(skipped.state.armedLineRelic).toMatchObject({ direction: "horizontal", flowerId: 1 });
+    await activateHintedPair(page, false);
     await expect(page.getByRole("button", { name: "Restore Greenhouse · 100 coins", exact: true }))
       .toBeVisible({ timeout: 12000 });
-    const skipped = await report(page);
-    expect(skipped.state.moves, "Skip does not charge a lane-burn move").toBe(3);
+    skipped = await report(page);
+    expect(skipped.state.moves, "the retained Black Candle spends exactly once").toBe(2);
     expect(skipped.state.roundComplete).toBe(true);
     expect(skipped.state.coins).toBe(120);
     expect(skipped.state.tutorialSkipped).toBe(true);
