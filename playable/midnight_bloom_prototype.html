@@ -21255,6 +21255,28 @@
       return roundThreeConservatoryRaised ? 50 : 50 + roundTemplates[2].reward.coins;
     }
 
+    function recoverCompletedFocusedOrder() {
+      const plan = buildRoundPlan(currentRound);
+      const targetsComplete = plan.targets.every((target) => counts[target.flowerId] >= target.needed);
+      const authoredLessonPending = plan.round === 1
+        && !tutorialSkipped
+        && !blackCandleLessonComplete;
+      if (
+        roundComplete
+        || !focusedSliceRound(plan)
+        || !targetsComplete
+        || !thornGoalComplete(plan)
+        || authoredLessonPending
+      ) {
+        return false;
+      }
+      roundComplete = true;
+      coins = Math.max(coins, focusedEconomyBalanceForProgress());
+      ritualMessage = focusedSliceCompletionMessage(plan, completionCoinPayout(plan));
+      tutorialActive = true;
+      return true;
+    }
+
     function saveProgress(options = {}) {
       // Accepted swaps render several animated frames; only settled states are authoritative.
       if (typeof localStorage === "undefined" || (isResolving && !options.allowDuringResolve)) {
@@ -21375,6 +21397,9 @@
           || tutorialSkipped
           || currentRound !== 1
           || roundComplete;
+        if (recoverCompletedFocusedOrder()) {
+          shouldSaveMigratedProgress = true;
+        }
         if (roundComplete && currentRound <= FOCUSED_LEVEL_COUNT) {
           tutorialActive = true;
         }
