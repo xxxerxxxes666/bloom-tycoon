@@ -6698,6 +6698,7 @@
     body.round-one-active.round-one-black-candle-cue .first-swap-cue::before,
     body.focused-active-play.armed-line-relic-cue .first-swap-cue::before,
     body.focused-active-play.settled-board-outcome-cue .first-swap-cue::before { content:"HARVEST"; }
+    body.focused-active-play.opening-harvest-handoff-cue .first-swap-cue::before { content:"HARVEST > NEXT"; }
     body.focused-active-play.black-candle-thorn-outcome-cue .first-swap-cue::before { content:"BLACK CANDLE"; }
     body.focused-active-play.shuffle-board-outcome-cue .first-swap-cue::before { content:"SHUFFLE"; }
     body.focused-active-play.focused-harvest-handoff-cue .first-swap-cue::before { content:"NEXT BLOOM"; }
@@ -10592,6 +10593,7 @@
     const OWNED_REPLAY_FINAL_TRANSFER_MS = 520;
     const OWNED_REPLAY_FINAL_RENEWAL_MS = 400;
     const SETTLED_BOARD_OUTCOME_MS = 2400;
+    const OPENING_HARVEST_HANDOFF_MS = 1800;
     const PAYOFF_HANDOFF_INPUT_GUARD_MS = 480;
     const TUTORIAL_COMMAND_INPUT_GUARD_MS = 280;
     const TUTORIAL_COMMAND_SETTLED_GUARD_MS = 120;
@@ -16159,6 +16161,10 @@
         Boolean(settledBoardOutcome)
       );
       document.body.classList.toggle(
+        "opening-harvest-handoff-cue",
+        Boolean(settledBoardOutcome?.nextAction)
+      );
+      document.body.classList.toggle(
         "black-candle-thorn-outcome-cue",
         settledBoardOutcome?.kind === "black-candle"
       );
@@ -19466,7 +19472,7 @@
           if (isRoundTwoThornHandoffActive() && idleHintCells.size !== 2) {
             scheduleIdleHint();
           }
-        }, SETTLED_BOARD_OUTCOME_MS);
+        }, outcome.nextAction ? OPENING_HARVEST_HANDOFF_MS : SETTLED_BOARD_OUTCOME_MS);
       });
       return true;
     }
@@ -19669,14 +19675,24 @@
         ? `Black Candle burned the ${result.blackCandleActivation.direction === "vertical" ? "column" : "row"}.`
         : "";
       const tutorialOpening = plan.round === 1
-        && tutorialActive
         && hasMadeValidMove
         && moves === plan.moves - 1
         && roundProgress(plan).earned > 0;
+      const nextTargetIndex = plan.targets.findIndex((target) => targetProgress(target) < target.needed);
+      const nextTarget = plan.targets[nextTargetIndex];
+      const nextTargetDeficit = nextTarget
+        ? Math.max(0, nextTarget.needed - targetProgress(nextTarget))
+        : 0;
+      const nextAction = tutorialOpening && !blackCandle && nextTarget
+        ? nextTargetIndex === 0
+          ? `Next: find ${Math.min(3, nextTargetDeficit)} more.`
+          : `Next: find ${flowers[nextTarget.flowerId][0]}s.`
+        : "";
       return {
         kind: blackCandle ? "black-candle" : "harvest",
         tutorialOpening,
-        text: [laneResult, ...targetResults, thornResult, moveResult].filter(Boolean).join(" ")
+        nextAction,
+        text: [laneResult, ...targetResults, thornResult, nextAction, nextAction ? "" : moveResult].filter(Boolean).join(" ")
       };
     }
 

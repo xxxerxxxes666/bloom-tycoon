@@ -191,7 +191,9 @@ for (const testCase of CASES) {
       expect(settled.tutorialVisible, "the stale tutorial panel remains absent").toBe(false);
       expect(settled.tutorialText).toBe("");
       expect(settled.receiptActive).toBe(true);
-      expect(settled.cue).toBe("Thorn Rose +3, 3 of 8. 5 moves left.");
+      expect(settled.cue).toBe(
+        "Thorn Rose +3, 3 of 8. Next: find 3 more."
+      );
       expect(settled.liveOwners, "the exact earned receipt is the sole command narrator")
         .toEqual(["firstSwapCue"]);
       expect(settled.selected).toEqual([]);

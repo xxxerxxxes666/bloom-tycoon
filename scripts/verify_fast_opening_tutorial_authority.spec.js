@@ -246,7 +246,9 @@ for (const testCase of CASES) {
       expect(settled.tutorialActive).toBe(false);
       expect(settled.tutorialCopy).toBe("");
       expect(settled.receiptActive, "the earned result owns the command lane").toBe(true);
-      expect(settled.cue).toBe("Thorn Rose +3, 3 of 8. 5 moves left.");
+      expect(settled.cue).toBe(
+        "Thorn Rose +3, 3 of 8. Next: find 3 more."
+      );
       expect(settled.liveOwners).toEqual(["firstSwapCue"]);
       expect(settled.selected).toEqual([]);
       expect(settled.active).toMatch(/^tile-/);

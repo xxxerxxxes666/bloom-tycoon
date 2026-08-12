@@ -4,7 +4,7 @@ const BASE_URL = process.env.BLOOM_TEST_URL
   || "http://127.0.0.1:4173/playable/midnight_bloom_prototype.html";
 const SAVE_KEY = "bloomTycoonPlayableStateV1";
 const REFUSAL_COPY = "No bloom \u2014 no match.";
-const OPENING_RECEIPT = "Thorn Rose +3, 3 of 8. 5 moves left.";
+const OPENING_RECEIPT = "Thorn Rose +3, 3 of 8. Next: find 3 more.";
 
 const CASES = [
   { label: "desktop-full-pointer", viewport: { width: 1280, height: 720 }, input: "pointer" },

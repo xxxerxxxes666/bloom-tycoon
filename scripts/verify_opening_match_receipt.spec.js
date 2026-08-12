@@ -91,6 +91,8 @@ async function report(page) {
       rows: new Set(tiles.map((tile) => tile.dataset.y)).size,
       boardWidth: board?.width || 0,
       boardBottom: board?.bottom || 0,
+      cueTop: document.querySelector("#firstSwapCue")?.getBoundingClientRect().top || 0,
+      titleBottom: document.querySelector(".title")?.getBoundingClientRect().bottom || 0,
       scrollY,
       overflowX: document.documentElement.scrollWidth > innerWidth + 1,
       overflowY: document.documentElement.scrollHeight > innerHeight + 1,
@@ -166,7 +168,7 @@ for (const testCase of CASES) {
         const cue = document.querySelector("#firstSwapCue");
         const observer = new MutationObserver(() => {
           const text = cue?.textContent.trim() || "";
-          if (!text.includes("moves left.")) return;
+          if (!text.includes("Next: find")) return;
           const visible = (node) => Boolean(node)
             && !node.hidden
             && getComputedStyle(node).display !== "none"
@@ -193,8 +195,12 @@ for (const testCase of CASES) {
 
       const settled = await report(page);
       expect(settled.cue, `${testCase.label} names the earned flower, count, and move`).toBe(
-        "Thorn Rose +3, 3 of 8. 5 moves left."
+        "Thorn Rose +3, 3 of 8. Next: find 3 more."
       );
+      expect(settled.bodyClasses, `${testCase.label} joins the receipt to its next action`)
+        .toContain("opening-harvest-handoff-cue");
+      expect(settled.cueTop, `${testCase.label} command lane clears the title`)
+        .toBeGreaterThanOrEqual(settled.titleBottom);
       expect(settled.state.moves, `${testCase.label} spends exactly once`).toBe(5);
       expect(settled.state.counts, `${testCase.label} credits only the authored Thorn Rose match`)
         .toEqual([0, 0, 0, 0, 0, 3]);
@@ -211,7 +217,7 @@ for (const testCase of CASES) {
       const chronology = await page.evaluate(() => window.__openingReceiptChronology || []);
       expect(chronology, `${testCase.label} mutates to the result exactly once`).toHaveLength(1);
       expect(chronology[0], `${testCase.label} settles before the result mutation`).toEqual({
-        text: "Thorn Rose +3, 3 of 8. 5 moves left.",
+        text: "Thorn Rose +3, 3 of 8. Next: find 3 more.",
         busy: "false",
         owners: ["firstSwapCue"]
       });
@@ -235,6 +241,8 @@ for (const testCase of CASES) {
       expect(handoff.cue, `${testCase.label} immediately restores the next literal target`).toBe(
         "Find 3 Thorn Roses."
       );
+      expect(handoff.bodyClasses, `${testCase.label} retires the transient harvest handoff`)
+        .not.toContain("opening-harvest-handoff-cue");
       expect(handoff.cueVisible, `${testCase.label} keeps the agency command lane visible`).toBe(true);
       expect(handoff.hintCount, `${testCase.label} preserves the find-it-yourself window`).toBe(0);
       expect(handoff.targetLiteracy, `${testCase.label} reintroduces the target family`).toBe("Thorn Rose");

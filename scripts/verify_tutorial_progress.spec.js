@@ -7420,7 +7420,9 @@ for (const viewport of [
         && state.counts?.[5] === 3
         && document.querySelector("#board")?.getAttribute("aria-busy") === "false";
     }, SAVE_KEY, { timeout: 10000 });
-    await expect(page.locator("#firstSwapCue")).toHaveText("Thorn Rose +3, 3 of 8. 5 moves left.");
+    await expect(page.locator("#firstSwapCue")).toHaveText(
+      "Thorn Rose +3, 3 of 8. Next: find 3 more."
+    );
     await expect(page.locator("#tutorialPanel")).toBeHidden();
     await expect(page.locator(".tile.invalid-swap")).toHaveCount(0);
     const accepted = await activeState(page);
