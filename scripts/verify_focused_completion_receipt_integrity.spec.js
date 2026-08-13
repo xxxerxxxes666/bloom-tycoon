@@ -99,6 +99,29 @@ const VIEWPORTS = [
 
 const DAMAGED_NUMERIC_CASES = [
   {
+    label: "non-finite-round-identity",
+    state: {
+      focusedEconomyVersion: 3,
+      board: FIXTURE_BOARD,
+      currentRound: "Infinity",
+      roundComplete: false,
+      moves: 6,
+      coins: 0,
+      counts: [0, 0, 0, 0, 0, 0],
+      clearedCursedThorns: 0,
+      tutorialSkipped: true,
+      blackCandleLessonComplete: true
+    },
+    expectedRound: 1,
+    expectedMoves: 6,
+    expectedCoins: 0,
+    expectedCounts: [0, 0, 0, 0, 0, 0],
+    expectedClearedThorns: 0,
+    expectedBouquetProgress: "Bouquet · 0/14",
+    forbiddenAction: "Play Again",
+    expectedOwnership: [false, false, false]
+  },
+  {
     label: "round-one-non-finite",
     state: {
       focusedEconomyVersion: 3,
@@ -113,6 +136,7 @@ const DAMAGED_NUMERIC_CASES = [
       blackCandleLessonComplete: true
     },
     expectedMoves: 5,
+    expectedRound: 1,
     expectedCoins: 0,
     expectedCounts: [0, 0, 0, 0, 0, 0],
     expectedClearedThorns: 0,
@@ -138,6 +162,7 @@ const DAMAGED_NUMERIC_CASES = [
       ]
     },
     expectedMoves: 8,
+    expectedRound: 2,
     expectedCoins: 20,
     expectedCounts: [0, 0, 10, 0, 9, 7],
     expectedClearedThorns: 0,
@@ -289,6 +314,7 @@ for (const viewportCase of VIEWPORTS) {
 
         const repaired = await report(page);
         expect(repaired.state.roundComplete).toBe(false);
+        expect(repaired.state.currentRound).toBe(damagedCase.expectedRound);
         expect(repaired.state.moves).toBe(damagedCase.expectedMoves);
         expect(repaired.state.coins).toBe(damagedCase.expectedCoins);
         expect(repaired.state.counts).toEqual(damagedCase.expectedCounts);
@@ -299,7 +325,14 @@ for (const viewportCase of VIEWPORTS) {
         }
         expect(repaired.message).toContain("Saved order repaired.");
         expect(repaired.commands.some((command) => command.includes(damagedCase.forbiddenAction))).toBe(false);
-        expect(repaired.contractRound).toBe(String(damagedCase.state.currentRound));
+        expect(repaired.contractRound).toBe(String(damagedCase.expectedRound));
+        if (damagedCase.expectedOwnership) {
+          expect([
+            repaired.state.roundOneRestored,
+            repaired.state.roundTwoGreenhouseUpgraded,
+            repaired.state.roundThreeConservatoryRaised
+          ]).toEqual(damagedCase.expectedOwnership);
+        }
         expect(repaired.tiles).toBe(64);
         expect(repaired.rows).toBe(8);
         expect(repaired.disabledTiles).toBe(0);
@@ -310,12 +343,19 @@ for (const viewportCase of VIEWPORTS) {
         if (viewportCase.mobile) expect(repaired.overflowY).toBe(false);
         expect(repaired.brokenImages).toEqual([]);
         expect(problems).toEqual([]);
+        if (damagedCase.label === "non-finite-round-identity") {
+          await page.screenshot({
+            path: `/tmp/bloom-non-finite-round-repair-${viewportCase.label}.png`,
+            fullPage: false
+          });
+        }
 
         const repairedSave = repaired.save;
         await page.reload({ waitUntil: "networkidle" });
         const stable = await report(page);
         expect(stable.save).toBe(repairedSave);
         expect(stable.state.roundComplete).toBe(false);
+        expect(stable.state.currentRound).toBe(damagedCase.expectedRound);
         expect(stable.state.moves).toBe(damagedCase.expectedMoves);
         expect(stable.state.coins).toBe(damagedCase.expectedCoins);
         expect(stable.state.counts).toEqual(damagedCase.expectedCounts);

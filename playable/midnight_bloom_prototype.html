@@ -21579,7 +21579,11 @@
         repairedInvalidNumericProgress = repairedInvalidNumericProgress || savedCoinsNeedRepair;
         coins = normalizedCoins;
         const savedRoundNumber = Number(state.currentRound);
-        currentRound = Math.max(1, Math.floor(savedRoundNumber || 1));
+        const savedRoundNeedsRepair = state.currentRound !== undefined && !Number.isFinite(savedRoundNumber);
+        currentRound = savedRoundNeedsRepair
+          ? 1
+          : Math.max(1, Math.floor(savedRoundNumber || 1));
+        repairedInvalidNumericProgress = repairedInvalidNumericProgress || savedRoundNeedsRepair;
         if (currentRound !== savedRoundNumber) {
           shouldSaveMigratedProgress = true;
         }

@@ -210,7 +210,7 @@ for (const profile of PROFILES) {
       expect(current.stored.roundOneRestored).toBe(true);
       expect(current.stored.roundTwoGreenhouseUpgraded).toBe(true);
       expect(current.stored.roundThreeConservatoryRaised).toBe(true);
-      expect(current.stored.coins).toBe(50);
+      expect(current.stored.coins).toBe(230);
       expect(current.greenhouseStage).toBe("bloodroot");
       expect(current.ceremonyTitle).toBe("Bloodroot Compact Complete");
       expect(current.buttons).toEqual(["play again → first bouquet"]);
