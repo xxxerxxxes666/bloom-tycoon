@@ -57,6 +57,10 @@ function ownedReplayTransaction(reward, retainedBalance) {
   return `Reward reinvested · ${reward} coins nourished the Conservatory · ${retainedBalance} coins kept.`;
 }
 
+function ownedReplayBankedTransaction(reward, resultingBalance) {
+  return `Replay reward · +${reward} coins banked · ${resultingBalance} coins in wallet.`;
+}
+
 test.setTimeout(180000);
 
 async function openFresh(page, seedLabel, label) {
@@ -1821,7 +1825,7 @@ async function playFirstThree(page, config, seed, strategy) {
   const finalState = await journeyState(page);
   expect(finalState.round).toBe(1);
   expect(finalState.coins).toBe(50);
-  expect(finalState.focusedEconomyVersion).toBe(2);
+  expect(finalState.focusedEconomyVersion).toBe(3);
   expect(finalState.tiles).toBe(64);
   expect(finalState.overflowX).toBe(false);
   expect(finalState.brokenImages).toEqual([]);
@@ -1909,7 +1913,7 @@ async function playFocusedCycle(page, config, runLabel, strategy, options = {}) 
         const reloaded = await journeyState(page);
         expectFocusedPayoffNarration(reloaded, `${runLabel} round 1 restored reload ${reload + 1}`);
         expect(reloaded.coins, `replayed Round 1 reload ${reload + 1}`).toBe(expectedRestoredCoins);
-        expect(reloaded.focusedEconomyVersion).toBe(2);
+        expect(reloaded.focusedEconomyVersion).toBe(3);
         expect(reloaded.payoffTransaction).toBe(`Restored for 100. ${expectedRestoredCoins} coins remain.`);
         expect(reloaded.visibleButtons).toEqual(["Next Order → Moonlit Wreath"]);
         expect(reloaded.trophyMovesHeld).toBe(result.movesLeft);
@@ -1954,7 +1958,7 @@ async function reloadAndExpectActiveReplayBalance(page, config, expectedCoins, e
     expect(state.round).toBe(1);
     expect(state.roundComplete).toBe(false);
     expect(state.coins).toBe(expectedCoins);
-    expect(state.focusedEconomyVersion).toBe(2);
+    expect(state.focusedEconomyVersion).toBe(3);
     expect(state.replayEntryActive, `replay reload ${reload + 1} settles the bounded acknowledgment`).toBe(false);
     expect(state.handoffCueVisible, `replay reload ${reload + 1} does not resurrect renewal cue`).toBe(false);
     expect(state.hintedTiles, `replay reload ${reload + 1} preserves settled guidance authority`)
@@ -1964,7 +1968,7 @@ async function reloadAndExpectActiveReplayBalance(page, config, expectedCoins, e
       : /Find 3 Thorn Roses/;
     expect(state.cue, `replay reload ${reload + 1} has one clear instruction`).toMatch(expectedCue);
     expect(state.cue).not.toMatch(/coins kept|Conservatory owned|New order ready/);
-    expect(state.rewardPromise).toBe(`Nourish 120 · Keep ${expectedCoins}`);
+    expect(state.rewardPromise).toBe(`Bank 120 · Wallet ${expectedCoins + 120}`);
     await expectVisibleCoinBalance(page, expectedCoins, { pulsing: false });
     await expectPermanentRaisedGreenhouse(page, `replay reload ${reload + 1}`);
     await assertActiveBoard(page, config.mobile);
@@ -2002,7 +2006,7 @@ async function failAndRetryOwnedReplayRoundOne(page, config, expectedCoins, runL
     expect(failed.replayEntryActive, "failure does not resurrect replay entry").toBe(false);
     expect(failed.handoffCueVisible, "failure has no detached replay receipt").toBe(false);
     expect(failed.cue).not.toMatch(/coins kept|Conservatory owned|New order ready/);
-    expect(failed.rewardPromise).toBe(`Nourish 120 · Keep ${expectedCoins}`);
+    expect(failed.rewardPromise).toBe(`Bank 120 · Wallet ${expectedCoins + 120}`);
     expect(failed.ownedRenewalHidden, "failure has no owned-renewal overlay").toBe(true);
     expect(failed.ownedRenewalTransientNodes, "failure has no owned-renewal debris").toBe(0);
     await expectPermanentRaisedGreenhouse(page, `${runLabel} failed replay reload ${reload + 1}`);
@@ -2032,7 +2036,7 @@ async function failAndRetryOwnedReplayRoundOne(page, config, expectedCoins, runL
   expect(retried.replayEntryActive, "Retry does not resurrect replay entry").toBe(false);
   expect(retried.handoffCueVisible, "Retry has no detached replay receipt").toBe(false);
   expect(retried.cue).not.toMatch(/coins kept|Conservatory owned|New order ready/);
-  expect(retried.rewardPromise).toBe(`Nourish 120 · Keep ${expectedCoins}`);
+  expect(retried.rewardPromise).toBe(`Bank 120 · Wallet ${expectedCoins + 120}`);
   expect(retried.ownedRenewalHidden, "Retry clears owned-renewal overlay").toBe(true);
   expect(retried.ownedRenewalTransientNodes, "Retry clears owned-renewal debris").toBe(0);
   await expectPermanentRaisedGreenhouse(page, `${runLabel} retried replay`);
@@ -3347,7 +3351,7 @@ test("reduced-motion exact-mobile replay boundary preserves the owned wallet", a
   }
 });
 
-test("current-v2 and legacy owned profiles preserve every valid wallet without replay accrual", async ({ browser }) => {
+test("current-v2 and legacy owned profiles migrate, bank one replay reward, and remain idempotent", async ({ browser }) => {
   test.setTimeout(600000);
   for (const config of [
     { label: "desktop", viewport: { width: 1280, height: 720 }, mobile: false },
@@ -3427,7 +3431,7 @@ test("current-v2 and legacy owned profiles preserve every valid wallet without r
           await page.reload({ waitUntil: "networkidle" });
           const state = await journeyState(page);
           expect(state.coins, `${config.label} ${profile.label} reload ${reload + 1} preserves the wallet`).toBe(profile.coins);
-          expect(state.focusedEconomyVersion).toBe(2);
+          expect(state.focusedEconomyVersion).toBe(3);
           expect(state.round).toBe(1);
           expect(state.roundComplete).toBe(false);
           expect(state.freshConservatorySettlement).toBe(false);
@@ -3458,7 +3462,7 @@ test("current-v2 and legacy owned profiles preserve every valid wallet without r
           expect(savedAuthority).toEqual({
             board: authoritative.board,
             coins: profile.coins,
-            focusedEconomyVersion: 2,
+            focusedEconomyVersion: 3,
             ownership: authoritative.ownership,
             tutorial: authoritative.tutorial,
             relic: authoritative.relic
@@ -3487,9 +3491,11 @@ test("current-v2 and legacy owned profiles preserve every valid wallet without r
         );
         await page.waitForSelector("#nextOrderBtn:not([hidden])", { timeout: 3000 });
         const completed = await journeyState(page);
-        expect(completed.coins, `${config.label} ${profile.label} reward is diverted without balance loss`)
-          .toBe(profile.coins);
-        expect(completed.payoffTransaction).toBe(ownedReplayTransaction(120, profile.coins));
+        const rewardedBalance = profile.coins + 120;
+        expect(completed.coins, `${config.label} ${profile.label} banks one replay reward`)
+          .toBe(rewardedBalance);
+        expect(completed.focusedEconomyVersion).toBe(3);
+        expect(completed.payoffTransaction).toBe(ownedReplayBankedTransaction(120, rewardedBalance));
         expect(completed.visibleButtons).toEqual(["Next Order → Moonlit Wreath"]);
         expect(completed.tiles).toBe(64);
         expect(completed.tileAriaRows).toBe(8);
@@ -3506,8 +3512,9 @@ test("current-v2 and legacy owned profiles preserve every valid wallet without r
           await page.reload({ waitUntil: "networkidle" });
           const reloaded = await journeyState(page);
           expect(reloaded.coins, `${config.label} ${profile.label} completion reload ${reload + 1}`)
-            .toBe(profile.coins);
-          expect(reloaded.payoffTransaction).toBe(ownedReplayTransaction(120, profile.coins));
+            .toBe(rewardedBalance);
+          expect(reloaded.focusedEconomyVersion).toBe(3);
+          expect(reloaded.payoffTransaction).toBe(ownedReplayBankedTransaction(120, rewardedBalance));
           expect(reloaded.visibleButtons).toEqual(["Next Order → Moonlit Wreath"]);
           expect(reloaded.overflowX).toBe(false);
           expect(reloaded.brokenImages).toEqual([]);
@@ -3521,7 +3528,7 @@ test("current-v2 and legacy owned profiles preserve every valid wallet without r
         const handoff = await journeyState(page);
         expect(handoff.round).toBe(2);
         expect(handoff.roundComplete).toBe(false);
-        expect(handoff.coins, `${config.label} ${profile.label} Next Order handoff`).toBe(profile.coins);
+        expect(handoff.coins, `${config.label} ${profile.label} Next Order handoff`).toBe(rewardedBalance);
         await assertActiveBoard(page, config.mobile);
         for (let reload = 0; reload < 2; reload += 1) {
           await page.reload({ waitUntil: "networkidle" });
@@ -3529,7 +3536,7 @@ test("current-v2 and legacy owned profiles preserve every valid wallet without r
           expect(reloadedHandoff.round).toBe(2);
           expect(reloadedHandoff.roundComplete).toBe(false);
           expect(reloadedHandoff.coins, `${config.label} ${profile.label} handoff reload ${reload + 1}`)
-            .toBe(profile.coins);
+            .toBe(rewardedBalance);
           await assertActiveBoard(page, config.mobile);
         }
       }

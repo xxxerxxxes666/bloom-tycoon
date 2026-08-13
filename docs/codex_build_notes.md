@@ -1,5 +1,13 @@
 # Codex Build Notes
 
+## 2026-08-13 - Mobile keeps the bouquet name on the board
+
+- Player-visible correction: active exact-mobile play previously reduced the current order to generic `Round 1 · Collect`, `Round 2 · Goals`, and `Round 3 · Collect` copy. The desktop contract named each bouquet, but the mobile board did not reveal `First Bouquet`, `Moonlit Wreath`, or `Bloodroot Compact` until the completion ceremony. The compact masthead now carries the real bouquet name through active play while leaving its ingredient counters and Moves authority unchanged.
+- Board-first geometry: the existing masthead slot is reused with no new panel, row, control, timer, or state. `Moonlit Wreath` and the longer `Bloodroot Compact` both fit beside the existing Moves counter without collision or clipping at exact `390x844`; the altar remains `378x378` and wholly inside the first viewport. Desktop retains its existing named order and `600x600` altar.
+- Permanent contract: new `scripts/verify_mobile_order_identity.spec.js` covers all three active orders on desktop `1280x720` and exact mobile `390x844`. It requires the literal bouquet name, rejects the generic `Goals`/`Collect` substitute, measures text containment and Moves non-overlap, and retains 64 enabled tiles/eight rows, loaded visible imagery, no horizontal overflow, and empty browser/page/request-error ledgers.
+- Hermes correction: the cited broad v2/legacy owned-profile journey now expects focused-economy v3, preserves every pre-completion wallet, banks the Round 1 `+120` replay reward exactly once, verifies the new receipt, survives two reloads without re-accrual, and carries the credited wallet into Moonlit Wreath. That full desktop/mobile profile matrix passes.
+- Scope: board/RNG, targets, counts, move budgets, tutorials, focus/input, reward values, wallet transactions, greenhouse ownership, save schema/bytes, ceremonies, assets, timings, rounds, currencies, dependencies, and systems are unchanged. Files changed: `playable/midnight_bloom_prototype.html`, new `scripts/verify_mobile_order_identity.spec.js`, `scripts/verify_first_three_journey.spec.js`, `scripts/verify_html_match_shapes.py`, and this note.
+
 ## 2026-08-13 - Owned replay bouquets bank their rewards
 
 - Player-visible correction: completing a bouquet after the Bloodroot Conservatory was already 100% owned previously claimed that the existing `120`/`150`/`180`-coin reward was reinvested into the finished greenhouse while leaving the wallet unchanged. Owned replay now gives the bouquet a persistent consequence: the active HUD previews `Bank {reward} · Wallet {result}`, the desktop order contract shows the same exact result, and completion credits that reward to the existing coin wallet.

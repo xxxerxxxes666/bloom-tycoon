@@ -10337,7 +10337,7 @@
       <h1 class="title">Bloom Tycoon</h1>
       <div class="objective" id="objective">
         <span class="objective-text">
-          <span>Round 1</span><span class="objective-mobile-verb"> · Collect</span><span class="objective-desktop-order"> · First Bouquet</span>
+          <span>Round 1</span><span class="objective-mobile-verb"> · First Bouquet</span><span class="objective-desktop-order"> · First Bouquet</span>
         </span>
         <span class="objective-separator">·</span>
         <span class="moves-counter">Moves 6</span>
@@ -16765,12 +16765,16 @@
       const moveCounterLabel = lastMove
         ? "Last move. 1 move remaining."
         : `${moves} move${moves === 1 ? "" : "s"} remaining.`;
-      const objectiveVerb = plan.thornGoal ? "Goals" : "Collect";
+      const mobileRoundContext = roundComplete
+        ? "Bouquet Complete"
+        : failed
+          ? "Bouquet Withered"
+          : plan.name;
       const objectiveGoalCount = plan.targets.length + (plan.thornGoal ? 1 : 0);
       const objectiveEl = $("objective");
       objectiveEl.innerHTML = `
         <span class="objective-text">
-          <span>Round ${plan.round}</span><span class="objective-mobile-verb"> · ${roundComplete ? "Bouquet Complete" : failed ? "Bouquet Withered" : objectiveVerb}</span><span class="objective-desktop-order"> · ${plan.name}</span>
+          <span>Round ${plan.round}</span><span class="objective-mobile-verb"> · ${mobileRoundContext}</span><span class="objective-desktop-order"> · ${plan.name}</span>
         </span>
         ${goalMarkup(plan)}
         ${thornObjectiveHintMarkup(plan)}
