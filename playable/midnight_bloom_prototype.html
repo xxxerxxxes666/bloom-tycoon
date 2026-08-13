@@ -10282,6 +10282,50 @@
         line-height: 1 !important;
       }
     }
+
+    /* Saved-board recovery is presentation-only and borrows the existing
+       board command lane until the normal tutorial/order cue takes it back. */
+    body.saved-altar-repair-active .tutorial-command-region > .first-swap-cue {
+      display: flex !important;
+      border-color: #77944f !important;
+      color: #f4e8bd !important;
+      background: linear-gradient(90deg, #0d110a, #24321a, #171109) !important;
+      box-shadow: 0 0 16px #7fcf6538, inset 0 0 9px #000 !important;
+      font-weight: 900 !important;
+      letter-spacing: .045em !important;
+      text-transform: uppercase;
+    }
+
+    body.saved-altar-repair-active .tutorial-command-region > .first-swap-cue::before {
+      content: "REPAIR" !important;
+      border-color: #6f944d !important;
+      color: #b9d98d !important;
+    }
+
+    body.saved-altar-repair-active .tutorial-command-region > .tutorial-panel,
+    body.saved-altar-repair-active .tutorial-command-region > .next-order-cue {
+      display: none !important;
+    }
+
+    @media (max-width: 600px) {
+      body.saved-altar-repair-active .tutorial-command-region > .first-swap-cue {
+        flex: 1 1 0;
+        box-sizing: border-box;
+        width: auto;
+        max-width: none;
+        min-height: 44px !important;
+        margin: 0 0 0 8px;
+        padding: 5px 7px;
+        justify-content: center;
+        font-size: 9px !important;
+        line-height: 1.12;
+        white-space: normal;
+      }
+
+      body.saved-altar-repair-active .tutorial-command-region > .first-swap-cue::before {
+        display: none;
+      }
+    }
   </style>
 </head>
 <body>
@@ -10627,9 +10671,14 @@
     const TUTORIAL_COMMAND_INPUT_GUARD_MS = 280;
     const TUTORIAL_COMMAND_SETTLED_GUARD_MS = 120;
     const TUTORIAL_COMMAND_SETTLED_GUARD_FRAMES = 8;
+    const SAVED_ALTAR_REPAIR_RECEIPT_MS = 2200;
+    const SAVED_ALTAR_REPAIR_RECEIPT_COPY = "SAVED ALTAR REPAIRED · STABLE PLAYABLE BOARD RESTORED.";
 
     let board = [];
     let savedAltarRepairPending = false;
+    let savedAltarRepairReceiptActive = false;
+    let savedAltarRepairReceiptTimer = null;
+    let savedAltarRepairReturnCue = "";
     let selected = null;
     let armedLineRelic = null;
     let blackCandleActivationPresentation = null;
@@ -13349,6 +13398,9 @@
     }
 
     function scheduleIdleHint() {
+      if (savedAltarRepairReceiptActive) {
+        return;
+      }
       clearIdleHint();
       const finalHarvest = finalHarvestEligibility();
       if (finalHarvest && !finalHarvest.guidanceYielded) {
@@ -16038,19 +16090,47 @@
       return focusedSliceRound(plan) && roundComplete;
     }
 
+    function beginSavedAltarRepairReceipt() {
+      const cue = $("firstSwapCue");
+      if (!cue || savedAltarRepairReceiptActive) {
+        return;
+      }
+      savedAltarRepairReturnCue = cue.textContent;
+      savedAltarRepairReceiptActive = true;
+      cue.textContent = SAVED_ALTAR_REPAIR_RECEIPT_COPY;
+      if (savedAltarRepairReceiptTimer && window.clearTimeout) {
+        window.clearTimeout(savedAltarRepairReceiptTimer);
+      }
+      savedAltarRepairReceiptTimer = window.setTimeout(() => {
+        savedAltarRepairReceiptTimer = null;
+        savedAltarRepairReceiptActive = false;
+        cue.textContent = savedAltarRepairReturnCue;
+        savedAltarRepairReturnCue = "";
+        const restoredFocusedCue = primeFocusedHarvestHandoff();
+        render();
+        if (!restoredFocusedCue) {
+          scheduleIdleHint();
+        }
+        scheduleFreshTutorial();
+      }, SAVED_ALTAR_REPAIR_RECEIPT_MS);
+    }
+
     function updateFocusedPayoffLiveRegionOwnership(plan = activeRoundPlan()) {
       const finalHarvestNarration = Boolean(visibleFinalHarvest)
         && ["eligible", "landing"].includes(visibleFinalHarvest.phase);
       const payoffOwnsNarration = focusedPayoffOwnsCommand(plan);
       const nextOrderHandoffOwnsNarration = focusedSliceRound(plan)
         && !payoffOwnsNarration
+        && !savedAltarRepairReceiptActive
         && restoredGreenhouseHandoff;
       const settledBoardOutcomeOwnsNarration = focusedSliceRound(plan)
         && !payoffOwnsNarration
+        && !savedAltarRepairReceiptActive
         && !nextOrderHandoffOwnsNarration
         && Boolean(settledBoardOutcome);
       const tutorialPanelOwnsNarration = focusedSliceRound(plan)
         && !payoffOwnsNarration
+        && !savedAltarRepairReceiptActive
         && !nextOrderHandoffOwnsNarration
         && !settledBoardOutcomeOwnsNarration
         && tutorialActive;
@@ -16060,8 +16140,12 @@
         && getComputedStyle(firstSwapCue).display !== "none"
         && firstSwapCue.getBoundingClientRect().width > 0
         && firstSwapCue.getBoundingClientRect().height > 0;
+      const savedAltarRepairOwnsNarration = focusedSliceRound(plan)
+        && savedAltarRepairReceiptActive
+        && visibleBoardCue;
       const boardCueOwnsNarration = focusedSliceRound(plan)
         && !payoffOwnsNarration
+        && !savedAltarRepairOwnsNarration
         && !settledBoardOutcomeOwnsNarration
         && !tutorialPanelOwnsNarration
         && !finalHarvestNarration
@@ -16073,7 +16157,7 @@
         && (tutorialPanelOwnsNarration || isBouquetFailed(plan) || finalHarvestNarration);
       $("coinBalance")?.setAttribute(
         "aria-live",
-        payoffOwnsNarration || nextOrderHandoffOwnsNarration || tutorialOwnsNarration || settledBoardOutcomeOwnsNarration || boardCueOwnsNarration
+        payoffOwnsNarration || savedAltarRepairOwnsNarration || nextOrderHandoffOwnsNarration || tutorialOwnsNarration || settledBoardOutcomeOwnsNarration || boardCueOwnsNarration
           ? "off"
           : "polite"
       );
@@ -16081,19 +16165,19 @@
         "aria-live",
         payoffOwnsNarration
           ? "polite"
-          : nextOrderHandoffOwnsNarration || tutorialOwnsNarration || settledBoardOutcomeOwnsNarration || boardCueOwnsNarration ? "off" : "polite"
+          : savedAltarRepairOwnsNarration || nextOrderHandoffOwnsNarration || tutorialOwnsNarration || settledBoardOutcomeOwnsNarration || boardCueOwnsNarration ? "off" : "polite"
       );
       $("tutorialPanel")?.setAttribute(
         "aria-live",
         tutorialPanelOwnsNarration
           ? "polite"
-          : payoffOwnsNarration || nextOrderHandoffOwnsNarration || finalHarvestNarration || settledBoardOutcomeOwnsNarration || boardCueOwnsNarration
+          : payoffOwnsNarration || savedAltarRepairOwnsNarration || nextOrderHandoffOwnsNarration || finalHarvestNarration || settledBoardOutcomeOwnsNarration || boardCueOwnsNarration
             ? "off"
             : "polite"
       );
       $("firstSwapCue")?.setAttribute(
         "aria-live",
-        settledBoardOutcomeOwnsNarration || boardCueOwnsNarration || finalHarvestNarration
+        savedAltarRepairOwnsNarration || settledBoardOutcomeOwnsNarration || boardCueOwnsNarration || finalHarvestNarration
           ? "polite"
           : "off"
       );
@@ -16101,6 +16185,13 @@
         "aria-live",
         nextOrderHandoffOwnsNarration ? "polite" : "off"
       );
+      if (firstSwapCue) {
+        firstSwapCue.dataset.commandAuthority = savedAltarRepairOwnsNarration
+          ? "saved-altar-repair"
+          : boardCueOwnsNarration || settledBoardOutcomeOwnsNarration || finalHarvestNarration
+            ? "board-cue"
+            : "off";
+      }
     }
 
     function render() {
@@ -16109,6 +16200,9 @@
         clearIdleHint();
       }
       clearDragPreview({ resetInputs: true });
+      if (savedAltarRepairReceiptActive) {
+        $("firstSwapCue").textContent = SAVED_ALTAR_REPAIR_RECEIPT_COPY;
+      }
       const finalHarvestLanding = finalHarvestTransferActive();
       const roundOneActive = currentRound === 1;
       const roundTwoUpgradePending = currentRound === 2 && roundComplete && !finalHarvestLanding && roundOneRestored && !roundTwoGreenhouseUpgraded;
@@ -16209,6 +16303,7 @@
       document.body.classList.toggle("focused-active-play", focusedSliceRound(activePlan) && (!roundComplete || finalHarvestLanding));
       document.body.classList.toggle("altar-reweave-active", altarReweaveActive && !roundComplete && !isBouquetFailed(activePlan));
       document.body.classList.toggle("post-recovery-guide", postRecoveryGuideActive && !roundComplete && !isBouquetFailed(activePlan));
+      document.body.classList.toggle("saved-altar-repair-active", savedAltarRepairReceiptActive);
       document.body.classList.toggle("armed-line-relic-cue", Boolean(activeRelicGuidance));
       document.body.classList.toggle("focused-slice-failed", activePlan.round <= 3 && isBouquetFailed(activePlan));
       document.body.classList.toggle("shuffle-retired-final-move", shouldRetireShuffleForFinalMove(activePlan));
@@ -16284,6 +16379,7 @@
         : postRecoveryGuideActive ? "guided" : "settled";
       document.body.dataset.altarReweaveSequence = String(altarReweaveSequence);
       document.body.dataset.altarReweaveMotion = prefersReducedMotion() ? "reduced" : "full";
+      document.body.dataset.savedAltarRepairPhase = savedAltarRepairReceiptActive ? "receipt" : "settled";
       document.body.dataset.tutorialPrompt = tutorialActive ? tutorialCopy() : "";
       if (visibleFinalHarvest) {
         document.body.dataset.finalHarvestPhase = visibleFinalHarvest.phase;
@@ -17321,6 +17417,7 @@
     function freshTutorialEligible() {
       return !tutorialSkipped
         && !tutorialActive
+        && !savedAltarRepairReceiptActive
         && currentRound === 1
         && !roundComplete
         && !hasMadeValidMove
@@ -21887,6 +21984,7 @@
     if (savedAltarRepairPending) {
       ritualMessage = "<strong>Saved altar repaired.</strong> A stable playable board was re-woven before play resumed.";
       saveProgress();
+      beginSavedAltarRepairReceipt();
     }
     render();
     applyImageFallbacks(document);
