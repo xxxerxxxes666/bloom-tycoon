@@ -308,7 +308,9 @@ test("Round 1 forecast lifecycle retires and restores only the agency phase", as
 
   await page.reload({ waitUntil: "networkidle" });
   await expect(page.locator("#tutorialCopy")).toHaveText("Find 3 Thorn Roses.");
-  await expectForecast(page, "lifecycle reload", "Match Thorn Rose.");
+  await expect(page.locator(".target-match-forecast-guide, .tile.target-match-result, .target-match-receiver"))
+    .toHaveCount(0);
+  await expect(page.locator("body")).toHaveAttribute("data-target-literacy", "Thorn Rose");
 
   const invalidPair = await page.evaluate(() => {
     const values = new Map(Array.from(document.querySelectorAll("#board .tile"), (tile) => [

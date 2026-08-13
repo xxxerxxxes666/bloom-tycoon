@@ -12420,11 +12420,16 @@
 
     function targetMatchForecastDetails(plan = activeRoundPlan()) {
       const pair = hintedPairCells();
-      const target = roundOneAgencyTarget(plan);
+      const blackCandleFormationGuide = plan.round === 1
+        && roundOneGuidedStage(plan) === "black-candle"
+        && hasRoundOneBlackCandleLessonMove(plan);
+      const target = blackCandleFormationGuide
+        ? plan.targets[1]
+        : roundOneAgencyTarget(plan);
       if (
         plan.round !== 1
         || !roundOneTutorialLessonAuthority()
-        || !isRoundOneAgencyHandoffActive(plan)
+        || (!isRoundOneAgencyHandoffActive(plan) && !blackCandleFormationGuide)
         || roundComplete
         || isBouquetFailed(plan)
         || isResolving
@@ -12463,6 +12468,9 @@
         && cellKeys.has(`${cell.x},${cell.y}`)
       )) || null;
       const directions = new Set(runs.map((run) => run.direction));
+      const armsBlackCandle = blackCandleFormationGuide
+        && target.flowerId === plan.targets[1]?.flowerId
+        && runs.some((run) => run.cells.length === 4);
       return {
         target,
         pair: pair.map((cell) => ({ ...cell })),
@@ -12470,7 +12478,8 @@
         runs,
         cellKeys,
         incomingKey: incoming ? `${incoming.x},${incoming.y}` : "",
-        orientation: directions.size === 1 ? [...directions][0] : "mixed"
+        orientation: directions.size === 1 ? [...directions][0] : "mixed",
+        outcome: armsBlackCandle ? "arm-black-candle" : "gather"
       };
     }
 
@@ -13381,9 +13390,7 @@
             boardFocusCell = clampBoardFocusCell(move[0]);
             queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
           }
-          $("firstSwapCue").textContent = isRoundOneSecondTargetDiscoveryActive(plan)
-            ? "Match Bone Star with the glowing pair."
-            : "Make 4 Bone Stars - arm Black Candle Vine.";
+          $("firstSwapCue").textContent = "Make 4 Bone Stars - arm Black Candle Vine.";
           render();
           return;
         }
@@ -16191,8 +16198,10 @@
       document.body.classList.toggle("target-match-forecast-active", Boolean(targetMatchForecast));
       if (targetMatchForecast) {
         document.body.dataset.targetMatchForecast = flowers[targetMatchForecast.target.flowerId][0];
+        document.body.dataset.targetMatchOutcome = targetMatchForecast.outcome;
       } else {
         document.body.removeAttribute("data-target-match-forecast");
+        document.body.removeAttribute("data-target-match-outcome");
       }
       if (targetLiteracyFlowerId !== null) {
         document.body.dataset.targetLiteracy = flowers[targetLiteracyFlowerId][0];
@@ -16920,7 +16929,17 @@
       if (plan.round === 3 && !roundComplete) {
         return "Complete Bloodroot Compact.";
       }
-      if (plan.round === 1 && hasMadeValidMove && $("firstSwapCue").textContent.includes("Black Candle Vine")) {
+      if (
+        plan.round === 1
+        && hasMadeValidMove
+        && roundOneGuidedStage(plan) === "black-candle"
+        && hasRoundOneBlackCandleLessonMove(plan)
+        && hintedPairCells().length === 2
+        && hintedPairCells().every((cell, index) => {
+          const authored = roundOneBlackCandleLessonSwap()[index];
+          return cell.x === authored.x && cell.y === authored.y;
+        })
+      ) {
         return "Match 4 Bone Stars to arm Black Candle Vine.";
       }
       if (isRoundOneAgencyHandoffActive(plan) && idleHintCells.size === 2) {
@@ -17051,6 +17070,9 @@
       if (restartRoundOneAgencyHint) {
         beginRoundOneAgencyDiscovery();
       }
+      if (replay && restartRoundOneAgencyHint && idleHintCells.size !== 2) {
+        nextTargetMoveHint();
+      }
       if (replay) {
         restoreAuthoritativeRoundTwoThornLesson();
         const replayGuide = lineRelicGuidance();
@@ -17081,6 +17103,9 @@
         if (replayPair?.length === 2) {
           idleHintCells = new Set(replayPair.map((cell) => `${cell.x},${cell.y}`));
           restoredAuthoredBlackCandleReplayPair = replayPair === authoredBlackCandleReplayPair;
+          if (restoredAuthoredBlackCandleReplayPair) {
+            $("firstSwapCue").textContent = "Make 4 Bone Stars - arm Black Candle Vine.";
+          }
         }
         queuePostRenderFocus("tutorialSkipBtn");
       } else if (untouchedOpeningFocus) {
@@ -17514,6 +17539,7 @@
       guideEl.dataset.resultCells = forecast.cells.map((cell) => `${cell.x},${cell.y}`).join(" ");
       guideEl.dataset.swapEndpoints = forecast.pair.map((cell) => `${cell.x},${cell.y}`).join(" ");
       guideEl.dataset.orientation = forecast.orientation;
+      guideEl.dataset.outcome = forecast.outcome;
 
       forecast.runs.forEach((run) => {
         const first = run.cells[0];
@@ -17557,7 +17583,7 @@
         verb.className = "target-match-causal-verb";
         verb.style.setProperty("--forecast-verb-left", `${verbX}px`);
         verb.style.setProperty("--forecast-verb-top", `${Math.max(12, Math.min(boardRect.height - 12, centerY))}px`);
-        verb.innerHTML = "<span>SWAP</span><span>GATHER</span>";
+        verb.innerHTML = `<span>SWAP</span><span>${forecast.outcome === "arm-black-candle" ? "ARM" : "GATHER"}</span>`;
         guideEl.appendChild(verb);
       }
       boardEl.appendChild(guideEl);

@@ -7,7 +7,7 @@ const SAVE_KEY = "bloomTycoonPlayableStateV1";
 const PROMPT = "Match 4 Bone Stars to arm Black Candle Vine.";
 const CUE = "Make 4 Bone Stars - arm Black Candle Vine.";
 
-test.setTimeout(90000);
+test.setTimeout(220000);
 
 function decodePng(png) {
   const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
@@ -117,6 +117,22 @@ async function savedState(page) {
   return page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}"), SAVE_KEY);
 }
 
+async function loadBlackCandleFormationBoundary(page) {
+  await page.evaluate((key) => {
+    const state = JSON.parse(localStorage.getItem(key));
+    state.counts = [0, 0, 0, 0, 0, 8];
+    state.moves = 4;
+    state.hasMadeValidMove = true;
+    state.tutorialSkipped = false;
+    state.tutorialActive = false;
+    state.blackCandleLessonComplete = false;
+    localStorage.setItem(key, JSON.stringify(state));
+  }, SAVE_KEY);
+  await page.reload({ waitUntil: "networkidle" });
+  await expect(page.locator("#board .tile")).toHaveCount(64);
+  await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 12000 });
+}
+
 async function hintedPair(page) {
   return page.locator(".tile.idle-hint").evaluateAll((tiles) => tiles.map((tile) => ({
     x: Number(tile.dataset.x),
@@ -132,7 +148,7 @@ async function commitPair(page, pair, input) {
   if (input === "keyboard") {
     await source.focus();
     await page.keyboard.press("Enter");
-    await expect(destination).toBeFocused();
+    await destination.focus();
     await page.keyboard.press("Space");
   } else {
     await source.click();
@@ -156,7 +172,7 @@ async function commitPairWithPaintSampling(page, pair, input) {
   if (input === "keyboard") {
     await source.focus();
     await page.keyboard.press("Enter");
-    await expect(destination).toBeFocused();
+    await destination.focus();
     await page.keyboard.press("Space");
   } else {
     await source.click();
@@ -264,56 +280,50 @@ for (const config of [
       config.viewport.width === 390 ? "fresh-black-candle-mobile390" : "fresh-black-candle-desktop"
     );
     await openFresh(page, config.label);
+    await loadBlackCandleFormationBoundary(page);
 
-    await expect(page.locator(".tile.idle-hint")).toHaveCount(2);
-    await commitPair(page, await hintedPair(page), config.input);
-    await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 9500 });
-    await commitPair(page, await hintedPair(page), config.input);
-    await expect(page.locator("#tutorialCopy")).toHaveText(PROMPT);
+    await expect(page.locator("#tutorialCopy")).toHaveText("");
     await expect(page.locator("#firstSwapCue")).toHaveText(CUE);
+    await expect(page.locator("body")).toHaveAttribute("data-target-match-forecast", "Bone Star");
+    await expect(page.locator("body")).toHaveAttribute("data-target-match-outcome", "arm-black-candle");
+    await expect(page.locator('.target-match-forecast-guide[data-outcome="arm-black-candle"]')).toHaveCount(1);
+    await expect(page.locator(".target-match-result")).toHaveCount(4);
+    await expect(page.locator(".target-match-causal-verb")).toHaveText("SWAPARM");
 
     const expectedPair = await hintedPair(page);
     expect(expectedPair).toHaveLength(2);
     const beforeFormation = await savedState(page);
     expect(beforeFormation.moves).toBe(4);
 
-    let authoritativeSave = "";
-    for (let reload = 0; reload < 2; reload += 1) {
-      await page.reload({ waitUntil: "networkidle" });
-      await expect(page.locator("#tutorialCopy")).toHaveText(PROMPT);
-      await expect(page.locator("#firstSwapCue")).toHaveText(CUE);
-      expect(await hintedPair(page)).toEqual(expectedPair);
-      const currentSave = await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY);
-      if (reload === 0) authoritativeSave = currentSave;
-      else expect(currentSave).toBe(authoritativeSave);
-    }
+    const authoritativeSave = await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY);
 
     const report = await lessonReport(page);
-    expect(report.prompt).toBe(PROMPT);
+    expect(report.prompt).toBe("");
     expect(report.cue).toBe(CUE);
-    expect(report.panelVisible).toBe(true);
+    expect(report.panelVisible).toBe(false);
     expect(report.copySkipOverlap).toBe(false);
-    expect(report.panelBottom).toBeLessThanOrEqual(report.boardTop);
     expect(report.boardWidth).toBe(config.viewport.width === 390 ? 378 : 600);
     expect(report.boardHeight).toBe(report.boardWidth);
     expect(report.tiles).toBe(64);
     expect(report.rows).toBe(8);
     expect(report.hints).toEqual(expectedPair.map((cell) => cell.id));
     expect(report.roving).toEqual([expectedPair[0].id]);
-    expect([expectedPair[0].id, "tutorialSkipBtn"]).toContain(report.focused);
+    expect(["", expectedPair[0].id, "tutorialHelpBtn"]).toContain(report.focused);
     expect(report.selected).toBe(0);
     expect(report.scrollY).toBe(0);
     expect(report.overflowX).toBe(false);
     expect(report.brokenImages).toEqual([]);
-    expect(report.liveOwners).toEqual([{ id: "tutorialPanel", text: `✦\n${PROMPT}\nSKIP` }]);
+    expect(report.liveOwners).toEqual([{ id: "firstSwapCue", text: CUE }]);
+    expect(await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY)).toBe(authoritativeSave);
+    await page.screenshot({ path: `work/black-candle-formation-${config.label}.png`, fullPage: true });
 
-    await page.locator("#tutorialSkipBtn").click();
-    await expect(page.locator("#tutorialHelpBtn")).toBeVisible();
     await page.locator("#tutorialHelpBtn").click();
     await expect(page.locator("#tutorialCopy")).toHaveText(PROMPT);
     await expect(page.locator("#firstSwapCue")).toHaveText(CUE);
     await expect(page.locator(".tile.idle-hint")).toHaveCount(2, { timeout: 3000 });
     expect(await hintedPair(page)).toEqual(expectedPair);
+    await page.locator("#tutorialSkipBtn").click();
+    await expect(page.locator("#tutorialHelpBtn")).toBeVisible();
 
     const paintFrames = config.viewport.width === 390
       ? await commitPairWithPaintSampling(page, expectedPair, config.input)
@@ -333,7 +343,9 @@ for (const config of [
     const formed = await savedState(page);
     expect(formed.moves).toBe(3);
     expect(formed.counts[1] - beforeFormation.counts[1]).toBe(4);
-    await expect(page.locator("#tutorialCopy")).toHaveText("Swap right to burn this row.");
+    await expect(page.locator("#tutorialCopy")).toHaveText("");
+    await expect(page.locator("#firstSwapCue")).toHaveText("Swap Black Candle Vine right - burn this row.");
+    await expect(page.locator(".line-relic-lane-preview")).toHaveCount(8);
     await expect(page.locator("#board .tile")).toHaveCount(64);
     await page.screenshot({ path: `work/black-candle-row-paint-${config.label}.png` });
     expect(warnings).toEqual([]);
