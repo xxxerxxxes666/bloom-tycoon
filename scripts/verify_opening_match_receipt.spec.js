@@ -158,6 +158,23 @@ async function report(page) {
   }, SAVE_KEY);
 }
 
+async function waitForInstalledSettledReceipt(page, message, expectedCue = null) {
+  const readInstalledReceipt = async () => {
+    const current = await report(page);
+    if (!current.bodyClasses.includes("settled-board-outcome-cue")) return "";
+    return current.cue;
+  };
+
+  // Production first establishes the empty cue as sole-live, then mutates it
+  // to the receipt on the next animation frame. Sample the installed phase,
+  // rather than treating the ownership class alone as completed presentation.
+  if (expectedCue !== null) {
+    await expect.poll(readInstalledReceipt, { message, timeout: 12000 }).toBe(expectedCue);
+    return;
+  }
+  await expect.poll(readInstalledReceipt, { message, timeout: 12000 }).not.toBe("");
+}
+
 async function activateOpeningPair(page, input) {
   const source = page.locator("#tile-1-0");
   const destination = page.locator("#tile-1-1");
@@ -294,10 +311,11 @@ for (const testCase of CASES) {
       expect(committed.brokenImages, `${testCase.label} commit has no broken visible images`).toEqual([]);
       await page.screenshot({ path: `work/opening-match-commit-${testCase.label}.png` });
 
-      await expect.poll(async () => (await report(page)).bodyClasses.includes("settled-board-outcome-cue"), {
-        message: `${testCase.label} exposes the receipt only after settled feedback`,
-        timeout: 12000
-      }).toBe(true);
+      await waitForInstalledSettledReceipt(
+        page,
+        `${testCase.label} exposes the receipt only after settled feedback`,
+        "Thorn Rose +3, 3 of 8. Next: find 3 more."
+      );
 
       const settled = await report(page);
       expect(settled.cue, `${testCase.label} names the earned flower, count, and move`).toBe(
@@ -436,10 +454,7 @@ for (const testCase of CASES) {
       expect(secondCommit.brokenImages, `${testCase.label} second commit has no broken visible images`).toEqual([]);
       await page.screenshot({ path: `work/second-harvest-commit-${testCase.label}.png` });
 
-      await expect.poll(async () => (await report(page)).bodyClasses.includes("settled-board-outcome-cue"), {
-        message: `${testCase.label} exposes the second earned receipt`,
-        timeout: 12000
-      }).toBe(true);
+      await waitForInstalledSettledReceipt(page, `${testCase.label} exposes the second earned receipt`);
       const secondReceipt = await report(page);
       const secondThornRoseCount = secondReceipt.state.counts[5];
       const secondThornRoseCredited = Math.min(8, secondThornRoseCount);
@@ -554,10 +569,11 @@ for (const testCase of RECEIPT_TAB_CASES) {
     try {
       await openFresh(page, `receipt-tab-${testCase.label}`);
       await activateOpeningPair(page, "keyboard");
-      await expect.poll(async () => (await report(page)).bodyClasses.includes("settled-board-outcome-cue"), {
-        message: `${testCase.label} reaches the first receipt`,
-        timeout: 12000
-      }).toBe(true);
+      await waitForInstalledSettledReceipt(
+        page,
+        `${testCase.label} reaches the first receipt`,
+        "Thorn Rose +3, 3 of 8. Next: find 3 more."
+      );
       await expect.poll(async () => (await report(page)).bodyClasses.includes("settled-board-outcome-cue"), {
         message: `${testCase.label} retires the first receipt`,
         timeout: 5000
@@ -570,10 +586,7 @@ for (const testCase of RECEIPT_TAB_CASES) {
       await page.keyboard.press("Enter");
       await page.keyboard.press("Space");
       const secondSwap = { sourceId, destinationId };
-      await expect.poll(async () => (await report(page)).bodyClasses.includes("settled-board-outcome-cue"), {
-        message: `${testCase.label} reaches the second receipt`,
-        timeout: 12000
-      }).toBe(true);
+      await waitForInstalledSettledReceipt(page, `${testCase.label} reaches the second receipt`);
       const beforeTab = await report(page);
       expect(beforeTab.activeId, `${testCase.label} starts from the settled destination`)
         .toBe(secondSwap.destinationId);
