@@ -382,6 +382,16 @@ for (const testCase of CASES) {
       expect(sustainedLiteracy.targetLiteracyTiles, `${testCase.label} sustains the family link before rescue`)
         .toBe(handoff.targetLiteracyTiles);
       expect(sustainedLiteracy.hintCount, `${testCase.label} still withholds the exact pair`).toBe(0);
+      await expect(page.locator("#board .tile.idle-hint")).toHaveCount(2, { timeout: 9000 });
+      const rescue = await report(page);
+      expect(rescue.guideSourceId, `${testCase.label} rescue exposes one exact guide source`).not.toBe("");
+      expect(rescue.activeId, `${testCase.label} transfers held board focus when the rescue appears`)
+        .toBe(rescue.guideSourceId);
+      expect(rescue.rovingIds, `${testCase.label} gives the visible rescue sole keyboard entry`)
+        .toEqual([rescue.guideSourceId]);
+      expect(rescue.state.moves, `${testCase.label} focus transfer spends no move`).toBe(5);
+      expect(rescue.state.counts, `${testCase.label} focus transfer fabricates no flowers`)
+        .toEqual([0, 0, 0, 0, 0, 3]);
       const preGuardState = handoff.state;
       await page.evaluate(() => document.querySelector("#shuffleBtn")?.click());
       const guarded = await report(page);

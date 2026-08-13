@@ -14540,13 +14540,17 @@
 
     function alignPassiveRoundOneRovingEntry(source, plan = activeRoundPlan()) {
       const active = document.activeElement;
+      const boardOwnsFocus = Boolean(boardTileFromElement(active));
       const documentOwnsFocus = !active
         || active === document.body
         || active === document.documentElement;
-      if (!documentOwnsFocus || !source || !isRoundOneAgencyHandoffActive(plan)) {
+      if ((!documentOwnsFocus && !boardOwnsFocus) || !source || !isRoundOneAgencyHandoffActive(plan)) {
         return false;
       }
       boardFocusCell = clampBoardFocusCell(source);
+      if (boardOwnsFocus) {
+        queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
+      }
       return true;
     }
 
