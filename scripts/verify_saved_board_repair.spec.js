@@ -162,7 +162,7 @@ for (const viewportCase of VIEWPORTS) {
           waitUntil: "networkidle"
         });
 
-        const repaired = await report(page);
+        let repaired = await report(page);
         expect(repaired.state).not.toBeNull();
         expect(repaired.state.currentRound).toBe(repairCase.expectedRound);
         expect(repaired.state.moves).toBe(repairCase.expectedMoves);
@@ -183,6 +183,11 @@ for (const viewportCase of VIEWPORTS) {
         if (viewportCase.mobile) expect(repaired.overflowY).toBe(false);
         expect(repaired.brokenImages).toEqual([]);
         expect(problems).toEqual([]);
+
+        if (repairCase.label === "unreadable-json") {
+          await expect.poll(async () => (await report(page)).state?.tutorialActive).toBe(true);
+          repaired = await report(page);
+        }
 
         if (repairCase.label === "invalid-shape") {
           await page.screenshot({
