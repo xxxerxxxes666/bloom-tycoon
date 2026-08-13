@@ -18205,6 +18205,9 @@
           acceptedHarvestCommitCue = "";
         }
         isResolving = false;
+        if (commitWaitsForReceipt) {
+          $("firstSwapCue").textContent = "";
+        }
         if (!roundComplete && result?.blackCandleActivation) {
           pendingSettledBoardOutcome = settledBoardOutcomeForResult(result);
         }

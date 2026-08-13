@@ -1025,6 +1025,7 @@ def verify_source_hooks():
         "acceptedHarvestCommitActive && roundOneActive && !roundComplete",
         "const commitWaitsForReceipt = acceptedHarvestCommitActive",
         "pendingSettledBoardOutcome.returnCue",
+        'if (commitWaitsForReceipt) {\n          $("firstSwapCue").textContent = "";',
         "Bloom cleared. No bouquet progress.",
         "const tutorialOpeningOutcome = outcome?.kind === \"harvest\" && outcome?.tutorialOpening",
         "function settledBoardOutcomeOwnsBoardGuidance",

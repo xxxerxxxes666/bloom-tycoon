@@ -111,6 +111,7 @@ async function stateReport(page) {
         .map((node) => node.id),
       coinLive: document.querySelector("#coinBalance")?.getAttribute("aria-live") || "",
       firstCueLive: document.querySelector("#firstSwapCue")?.getAttribute("aria-live") || "",
+      firstCueText: document.querySelector("#firstSwapCue")?.textContent.trim() || "",
       firstCueVisible: visible(document.querySelector("#firstSwapCue")),
       tutorialLive: document.querySelector("#tutorialPanel")?.getAttribute("aria-live") || ""
     };
@@ -804,6 +805,40 @@ for (const testCase of CASES) {
         .toEqual(["firstSwapCue"]);
 
       const pair = await openingPair(page);
+      await page.evaluate(() => {
+        window.__ownedReplayNarrationChronology = [];
+        const cue = document.querySelector("#firstSwapCue");
+        const visible = (node) => Boolean(node)
+          && !node.hidden
+          && getComputedStyle(node).display !== "none"
+          && node.getBoundingClientRect().width > 0
+          && node.getBoundingClientRect().height > 0;
+        const record = () => {
+          if (cue?.getAttribute("aria-live") !== "polite") return;
+          const text = cue.textContent.trim();
+          const entry = {
+            phase: text ? "result" : "owner",
+            text,
+            owners: Array.from(document.querySelectorAll("[aria-live]"))
+              .filter(visible)
+              .filter((node) => ["polite", "assertive"].includes(node.getAttribute("aria-live")))
+              .map((node) => node.id)
+          };
+          const previous = window.__ownedReplayNarrationChronology.at(-1);
+          if (!previous || previous.phase !== entry.phase || previous.text !== entry.text) {
+            window.__ownedReplayNarrationChronology.push(entry);
+          }
+        };
+        const observer = new MutationObserver(record);
+        observer.observe(cue, {
+          attributes: true,
+          attributeFilter: ["aria-live"],
+          childList: true,
+          characterData: true,
+          subtree: true
+        });
+        window.__ownedReplayNarrationObserver = observer;
+      });
       if (testCase.input === "keyboard") {
         await page.locator(`#${pair.source.id}`).press("Enter");
         await page.locator(`#${pair.destination.id}`).press("Space");
@@ -817,15 +852,41 @@ for (const testCase of CASES) {
       }).toBe("true");
       const resolving = await stateReport(page);
       expect(resolving.firstCueLive, `${testCase.label} defers detailed narration until settlement`).toBe("off");
+      await page.evaluate(() => {
+        window.__ownedReplayNarrationChronology = [];
+      });
       await page.waitForFunction((key) => {
         const state = JSON.parse(localStorage.getItem(key) || "{}");
         return state.moves === 5 && document.querySelector("#board")?.getAttribute("aria-busy") === "false";
       }, SAVE_KEY, { timeout: 12000 });
+      const yielded = await stateReport(page);
+      expect(yielded.firstCueText, `${testCase.label} exposes an empty settled owner`).toBe("");
+      expect(yielded.liveOwners, `${testCase.label} empty board lane solely owns settlement`)
+        .toEqual(["firstSwapCue"]);
+      expect(yielded.coinLive, `${testCase.label} wallet stays quiet at settlement`).toBe("off");
+      await page.waitForFunction(() => (
+        (window.__ownedReplayNarrationChronology || []).some((entry) => (
+          entry.phase === "result"
+          && entry.text === "Thorn Rose +3, 3 of 8. Next: find 3 more."
+        ))
+      ), null, { timeout: 3000 });
       await expect(page.locator("#firstSwapCue"), `${testCase.label} settled receipt becomes visible`)
         .toBeVisible({ timeout: 3000 });
       const settled = await stateReport(page);
       expect(settled.state.moves, `${testCase.label} opening commits once`).toBe(5);
       expect(settled.state.counts[5], `${testCase.label} Thorn Rose progress`).toBeGreaterThan(0);
+      expect(settled.firstCueText, `${testCase.label} reveals the exact settled receipt`).toBe(
+        "Thorn Rose +3, 3 of 8. Next: find 3 more."
+      );
+      const narrationChronology = await page.evaluate(() => window.__ownedReplayNarrationChronology || []);
+      expect(narrationChronology, `${testCase.label} announces one empty owner then one result`).toEqual([
+        { phase: "owner", text: "", owners: ["firstSwapCue"] },
+        {
+          phase: "result",
+          text: "Thorn Rose +3, 3 of 8. Next: find 3 more.",
+          owners: ["firstSwapCue"]
+        }
+      ]);
       expect(settled.liveOwners, `${testCase.label} visible result/follow-up cue remains sole narrator`)
         .toEqual(["firstSwapCue"]);
       expect(settled.coinLive).toBe("off");
