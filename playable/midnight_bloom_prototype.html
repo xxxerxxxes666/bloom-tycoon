@@ -10629,6 +10629,7 @@
     const TUTORIAL_COMMAND_SETTLED_GUARD_FRAMES = 8;
 
     let board = [];
+    let savedAltarRepairPending = false;
     let selected = null;
     let armedLineRelic = null;
     let blackCandleActivationPresentation = null;
@@ -21550,6 +21551,8 @@
         let repairedInvalidNumericProgress = false;
         if (isValidBoard(state.board)) {
           board = state.board;
+        } else if (state.board !== undefined) {
+          savedAltarRepairPending = true;
         }
         armedLineRelic = normalizeArmedLineRelic(state.armedLineRelic);
         if (Array.isArray(state.counts) && state.counts.length === flowers.length) {
@@ -21683,7 +21686,7 @@
         }
         markBouquetFailed();
       } catch (error) {
-        ritualMessage = "Saved ledger was unreadable. Starting from the current altar state.";
+        savedAltarRepairPending = true;
       }
     }
 
@@ -21793,7 +21796,9 @@
       && !tutorialActive
       && !blackCandleLessonComplete
       && !roundComplete;
-    if (!board.length || matches().length || !hasLegalMoves()) {
+    const loadedBoardNeedsRepair = board.length > 0 && (matches().length > 0 || !hasLegalMoves());
+    if (!board.length || loadedBoardNeedsRepair) {
+      savedAltarRepairPending = savedAltarRepairPending || loadedBoardNeedsRepair;
       build();
     }
     if (currentRound === 1 && roundComplete && !tutorialSkipped) {
@@ -21878,6 +21883,10 @@
     } else if (!postRenderFocusTarget && shouldRestoreSettledActiveBoardFocus()) {
       boardFocusCell = clampBoardFocusCell();
       queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
+    }
+    if (savedAltarRepairPending) {
+      ritualMessage = "<strong>Saved altar repaired.</strong> A stable playable board was re-woven before play resumed.";
+      saveProgress();
     }
     render();
     applyImageFallbacks(document);
