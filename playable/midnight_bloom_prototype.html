@@ -10553,6 +10553,7 @@
     const FIRST_GREENHOUSE_RESTORE_COST = 100;
     const RESTORED_ROUND_TWO_GUIDE_LIMIT = 2;
     const ROUND_ONE_AGENCY_HINT_DELAY_MS = 7000;
+    const ROUND_ONE_AGENCY_SELECTION_RECOVERY_MS = 2200;
     const TARGET_LITERACY_DURATION_MS = 1500;
     const FOCUSED_LEVEL_COUNT = 3;
     const WILD_CHAIN_CASCADE_BONUS = 8;
@@ -12422,8 +12423,7 @@
       const target = roundOneAgencyTarget(plan);
       if (
         plan.round !== 1
-        || !tutorialActive
-        || tutorialSkipped
+        || !roundOneTutorialLessonAuthority()
         || !isRoundOneAgencyHandoffActive(plan)
         || roundComplete
         || isBouquetFailed(plan)
@@ -12432,6 +12432,7 @@
         || validSwapCells.size > 0
         || activeSwapCells.size > 0
         || swapGlideCells.size > 0
+        || selected
         || boardDragInputActive()
         || !target
         || pair.length !== 2
@@ -13299,7 +13300,9 @@
         return;
       }
       const hintDelay = roundOneAgencyHint
-        ? (roundOneOrderCorrection ? 650 : ROUND_ONE_AGENCY_HINT_DELAY_MS)
+        ? (roundOneOrderCorrection
+          ? 650
+          : selected ? ROUND_ONE_AGENCY_SELECTION_RECOVERY_MS : ROUND_ONE_AGENCY_HINT_DELAY_MS)
         : currentRound === 1
         ? 350
         : isRoundTwoThornHandoffActive()
@@ -14632,11 +14635,16 @@
       if (!selected || isResolving || thornOutcomeFeedbackActive() || roundComplete || isBouquetFailed()) {
         return false;
       }
+      const restoreRoundOneAgencyDiscovery = isRoundOneAgencyHandoffActive();
       const canceledSource = clampBoardFocusCell(selected);
       selected = null;
       boardFocusCell = canceledSource;
       clearDragPreview();
       queuePostRenderFocus(`tile-${canceledSource.x}-${canceledSource.y}`);
+      if (restoreRoundOneAgencyDiscovery) {
+        beginRoundOneAgencyDiscovery();
+        scheduleIdleHint();
+      }
       render();
       return true;
     }
@@ -17715,6 +17723,9 @@
         ritualMessage = "<strong>Selected.</strong> Tap a glowing adjacent flower to swap.";
         queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
         render();
+        if (isRoundOneAgencyHandoffActive()) {
+          scheduleIdleHint();
+        }
         if (preservedOrderPulse || orderPulseTargets.size) {
           scheduleOrderPulseClear(620);
         }
@@ -17731,6 +17742,9 @@
         }
         queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
         render();
+        if (isRoundOneAgencyHandoffActive()) {
+          scheduleIdleHint();
+        }
         if (preservedOrderPulse || orderPulseTargets.size) {
           scheduleOrderPulseClear(620);
         }

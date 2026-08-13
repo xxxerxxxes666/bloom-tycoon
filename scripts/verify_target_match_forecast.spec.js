@@ -53,7 +53,8 @@ async function completeOpening(page, input) {
   expect(opening).toHaveLength(2);
   await activatePair(page, opening, input);
   await waitForSettledBoard(page);
-  await expect(page.locator("#tutorialCopy")).toHaveText("Find 3 Thorn Roses.");
+  await expect(page.locator("#firstSwapCue")).toHaveText("Find 3 Thorn Roses.");
+  await expect(page.locator("#tutorialCopy")).toHaveText("");
   await expect(page.locator(".target-match-forecast-guide, .tile.target-match-result")).toHaveCount(0);
 }
 
@@ -151,14 +152,15 @@ async function forecastReport(page) {
   });
 }
 
-async function expectForecast(page, label) {
+async function expectForecast(page, label, panelCue = "") {
   await expect(page.locator("#board .target-match-forecast-guide")).toHaveCount(1, { timeout: 15000 });
   const pair = await hintedPair(page);
   expect(pair, `${label} exact actionable pair`).toHaveLength(2);
   const expected = await expectedTargetResult(page, pair);
   expect(expected.length, `${label} useful Thorn result`).toBeGreaterThanOrEqual(3);
   const report = await forecastReport(page);
-  expect(report.cue, `${label} concise truthful cue`).toBe("Match Thorn Rose.");
+  expect(report.cue, `${label} panel ownership`).toBe(panelCue);
+  expect(report.boardCue, `${label} concise truthful cue`).toBe("Match Thorn Rose with the glowing pair.");
   expect(report.bodyTarget).toBe("Thorn Rose");
   expect(report.guide).toMatchObject({ pointerEvents: "none", target: "5", text: "SWAPGATHER" });
   expectForecastPlateContained(report.geometry, `${label} causal plate`);
@@ -253,9 +255,7 @@ for (const config of [
       const destination = page.locator(`#board .tile[data-x="${pair[1].x}"][data-y="${pair[1].y}"]`);
       if (config.input === "touch") await destination.tap();
       else if (config.input === "keyboard") {
-        const dx = pair[1].x - pair[0].x;
-        const dy = pair[1].y - pair[0].y;
-        await page.keyboard.press(dx > 0 ? "ArrowRight" : dx < 0 ? "ArrowLeft" : dy > 0 ? "ArrowDown" : "ArrowUp");
+        await destination.press("Enter");
       }
       else await destination.click();
       await expect(page.locator(".target-match-forecast-guide, .tile.target-match-result, .target-match-receiver")).toHaveCount(0);
@@ -284,15 +284,19 @@ test("Round 1 forecast lifecycle retires and restores only the agency phase", as
   await completeOpening(page, "pointer");
   await expectForecast(page, "lifecycle initial");
 
+  await page.locator("#tutorialHelpBtn").click();
+  await expect(page.locator("#tutorialPanel")).toBeVisible();
   await page.locator("#tutorialSkipBtn").click();
   await expect(page.locator(".target-match-forecast-guide, .tile.target-match-result, .target-match-receiver")).toHaveCount(0);
   await page.reload({ waitUntil: "networkidle" });
   await expect(page.locator(".target-match-forecast-guide, .tile.target-match-result, .target-match-receiver")).toHaveCount(0);
 
+  await openFresh(page, "lifecycle-help-replay");
+  await completeOpening(page, "pointer");
   await page.locator("#tutorialHelpBtn").click();
   await expect(page.locator("#tutorialCopy")).toHaveText("Find 3 Thorn Roses.");
   await expect(page.locator(".target-match-forecast-guide")).toHaveCount(0);
-  await expectForecast(page, "lifecycle Help replay");
+  await expectForecast(page, "lifecycle Help replay", "Match Thorn Rose.");
 
   const pair = await hintedPair(page);
   const wrong = await page.evaluate((pair) => Array.from(document.querySelectorAll("#board .tile"))
@@ -304,7 +308,7 @@ test("Round 1 forecast lifecycle retires and restores only the agency phase", as
 
   await page.reload({ waitUntil: "networkidle" });
   await expect(page.locator("#tutorialCopy")).toHaveText("Find 3 Thorn Roses.");
-  await expectForecast(page, "lifecycle reload");
+  await expectForecast(page, "lifecycle reload", "Match Thorn Rose.");
 
   const invalidPair = await page.evaluate(() => {
     const values = new Map(Array.from(document.querySelectorAll("#board .tile"), (tile) => [
@@ -373,14 +377,13 @@ for (const config of [
     try {
       await openFresh(page, `selection-recovery-${config.label}`);
       await completeOpening(page, config.input);
-      const initial = await expectForecast(page, `${config.label} before abandoned selection`);
-      const hintedKeys = new Set(initial.pair.map((cell) => `${cell.x},${cell.y}`));
-      const wrong = await page.locator("#board .tile").evaluateAll((tiles, keys) => {
-        const hints = new Set(keys);
-        const tile = tiles.find((candidate) => !hints.has(`${candidate.dataset.x},${candidate.dataset.y}`));
+      await expect(page.locator("body")).toHaveAttribute("data-target-literacy", "Thorn Rose");
+      const wrong = await page.locator("#board .tile").evaluateAll((tiles) => {
+        const tile = tiles.find((candidate) => Number(candidate.dataset.flowerId) !== 5);
         return { x: Number(tile.dataset.x), y: Number(tile.dataset.y) };
-      }, [...hintedKeys]);
+      });
       const wrongTile = page.locator(`#board .tile[data-x="${wrong.x}"][data-y="${wrong.y}"]`);
+      const recoveryStartedAt = Date.now();
       if (config.input === "touch") {
         await wrongTile.tap();
       } else if (config.input === "keyboard") {
@@ -397,33 +400,22 @@ for (const config of [
       expect(selectedSave.moves).toBe(5);
       expect(selectedSave.counts[5]).toBe(3);
 
-      await page.waitForTimeout(6000);
+      await page.waitForTimeout(1300);
       await expect(page.locator(".target-match-forecast-guide, .first-action-swap-guide, .tile.idle-hint")).toHaveCount(0);
       await expect(wrongTile).toHaveClass(/\bsel\b/);
-      await page.locator("#board .target-match-forecast-guide").waitFor({ state: "attached", timeout: 6000 });
+      await page.locator("#board .target-match-forecast-guide").waitFor({ state: "attached", timeout: 3500 });
+      const recoveryElapsed = Date.now() - recoveryStartedAt;
+      expect(recoveryElapsed, `${config.label} keeps a deliberate choice window`).toBeGreaterThanOrEqual(1900);
+      expect(recoveryElapsed, `${config.label} does not strand exploration`).toBeLessThan(4500);
       await expect(page.locator("#board .tile.sel")).toHaveCount(0);
       await expect(wrongTile).toBeFocused();
       const recovered = await expectForecast(page, `${config.label} recovered forecast`);
-      expect(recovered.pair.map((cell) => `${cell.x},${cell.y}`).sort()).toEqual(
-        initial.pair.map((cell) => `${cell.x},${cell.y}`).sort()
-      );
       await page.screenshot({
         path: `work/target-match-forecast-selection-recovery-${config.label}.png`,
         fullPage: true
       });
 
-      if (config.input === "keyboard") {
-        const source = page.locator(
-          `#board .tile[data-x="${recovered.pair[0].x}"][data-y="${recovered.pair[0].y}"]`
-        );
-        await source.focus();
-        await page.keyboard.press("Enter");
-        const dx = recovered.pair[1].x - recovered.pair[0].x;
-        const dy = recovered.pair[1].y - recovered.pair[0].y;
-        await page.keyboard.press(dx > 0 ? "ArrowRight" : dx < 0 ? "ArrowLeft" : dy > 0 ? "ArrowDown" : "ArrowUp");
-      } else {
-        await activatePair(page, recovered.pair, config.input);
-      }
+      await activatePair(page, recovered.pair, config.input);
       await waitForSettledBoard(page);
       const settledSave = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)), SAVE_KEY);
       expect(settledSave.moves).toBe(4);
@@ -459,17 +451,56 @@ test("Round 1 nonadjacent reselection restarts abandoned-selection recovery", as
   }, [...hintedKeys]);
   const tile = (cell) => page.locator(`#board .tile[data-x="${cell.x}"][data-y="${cell.y}"]`);
   await tile(wrong[0]).click();
-  await page.waitForTimeout(5600);
+  await page.waitForTimeout(1300);
   await tile(wrong[1]).click();
-  await page.waitForTimeout(1700);
+  await page.waitForTimeout(1300);
   await expect(page.locator(".target-match-forecast-guide, .first-action-swap-guide, .tile.idle-hint")).toHaveCount(0);
   await expect(tile(wrong[1])).toHaveClass(/\bsel\b/);
   await expect(tile(wrong[1])).toBeFocused();
-  await page.locator("#board .target-match-forecast-guide").waitFor({ state: "attached", timeout: 8000 });
+  await page.locator("#board .target-match-forecast-guide").waitFor({ state: "attached", timeout: 3500 });
   await expect(page.locator("#board .tile.sel")).toHaveCount(0);
   await expect(tile(wrong[1])).toBeFocused();
   await expectForecast(page, "reselection recovered forecast");
 });
+
+for (const config of [
+  { label: "desktop-pointer", viewport: { width: 1280, height: 720 }, input: "pointer" },
+  { label: "mobile390-touch", viewport: { width: 390, height: 844 }, input: "touch", mobile: true }
+]) {
+  test(`same-tile cancellation restores Thorn discovery on ${config.label}`, async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: config.viewport,
+      hasTouch: Boolean(config.mobile),
+      isMobile: Boolean(config.mobile)
+    });
+    const page = await context.newPage();
+    try {
+      await openFresh(page, `selection-cancel-${config.label}`);
+      await completeOpening(page, config.input);
+      const tile = page.locator('#board .tile:not([data-flower-id="5"])').first();
+      if (config.input === "touch") await tile.tap();
+      else await tile.click();
+      await expect(tile).toHaveClass(/\bsel\b/);
+      if (config.input === "touch") await tile.tap();
+      else await tile.click();
+
+      await expect(page.locator("#board .tile.sel")).toHaveCount(0);
+      await expect(page.locator("body")).toHaveAttribute("data-target-literacy", "Thorn Rose");
+      const familySize = await page.locator('#board .tile[data-flower-id="5"]').count();
+      await expect(page.locator('#board .tile.target-literacy[data-flower-id="5"]')).toHaveCount(familySize);
+      await expect(page.locator("#firstSwapCue")).toHaveText("Find 3 Thorn Roses.");
+      await page.waitForTimeout(2600);
+      await expect(page.locator(".target-match-forecast-guide, .first-action-swap-guide, .tile.idle-hint")).toHaveCount(0);
+      await expect(page.locator('#board .tile.target-literacy[data-flower-id="5"]')).toHaveCount(familySize);
+      await page.screenshot({
+        path: `work/target-match-selection-cancel-${config.label}.png`,
+        fullPage: true
+      });
+    } finally {
+      await context.close();
+    }
+  });
+}
 
 test("target forecast plate contains every edge placement and match orientation", async ({ browser }) => {
   test.setTimeout(300000);
