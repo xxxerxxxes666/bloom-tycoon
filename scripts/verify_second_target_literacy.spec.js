@@ -462,7 +462,9 @@ test("post-Thorn reloads skip stale celebration and retain the eventual useful B
   const usefulBonePairs = await targetUsefulPairs(page, 1);
   const pairKey = (pair) => pair.map((cell) => `${cell.x},${cell.y}`).sort().join("|");
   expect(usefulBonePairs.map(pairKey)).toContain(pairKey(hintedPair));
-  await expect(page.locator("#tutorialCopy")).toHaveText("Match Bone Star.");
+  await expect(page.locator("#tutorialCopy")).toHaveText(
+    "Match 4 Bone Stars to arm Black Candle Vine."
+  );
 
   for (let reload = 0; reload < 2; reload += 1) {
     await page.reload({ waitUntil: "networkidle" });

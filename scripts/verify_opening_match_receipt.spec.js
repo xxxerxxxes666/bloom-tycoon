@@ -389,7 +389,53 @@ for (const testCase of CASES) {
       expect(restored.tiles, `${testCase.label} reload retains 64 tiles`).toBe(64);
       expect(restored.rows, `${testCase.label} reload retains eight rows`).toBe(8);
 
+      await page.evaluate(() => {
+        const cue = document.querySelector("#firstSwapCue");
+        const snapshots = [];
+        let previousText = cue?.textContent.trim() || "";
+        const capture = () => {
+          const text = cue?.textContent.trim() || "";
+          if (!text || text === previousText) return;
+          previousText = text;
+          snapshots.push({
+            text,
+            busy: document.querySelector("#board")?.getAttribute("aria-busy") || "",
+            commit: document.body.classList.contains("opening-harvest-commit-cue"),
+            receipt: document.body.classList.contains("settled-board-outcome-cue")
+          });
+        };
+        const observer = new MutationObserver(capture);
+        observer.observe(cue, { childList: true, characterData: true, subtree: true });
+        window.__secondHarvestChronology = snapshots;
+        window.__secondHarvestObserver = observer;
+      });
+
       const secondSwap = await activateHintedPair(page, testCase.input);
+      await expect.poll(async () => (await report(page)).bodyClasses.includes("opening-harvest-commit-cue"), {
+        message: `${testCase.label} keeps the second accepted harvest ahead of future guidance`,
+        timeout: 1200
+      }).toBe(true);
+      const secondCommit = await report(page);
+      expect(secondCommit.cue, `${testCase.label} names the accepted player-made match`).toBe(
+        "Thorn Rose matched - 3 flowers rising."
+      );
+      expect(secondCommit.cueLabel, `${testCase.label} keeps accepted-input identity`).toBe("MATCH LOCKED");
+      expect(secondCommit.boardBusy, `${testCase.label} locks the altar at the accepted peak`).toBe("true");
+      expect(secondCommit.cueLive, `${testCase.label} reserves narration for the earned receipt`).toBe("off");
+      expect(secondCommit.helpVisible, `${testCase.label} keeps Help behind the accepted response`).toBe(false);
+      expect(secondCommit.hintCount, `${testCase.label} retires the spent guide immediately`).toBe(0);
+      expect(secondCommit.guideOverlayCount, `${testCase.label} withholds future guide overlays`).toBe(0);
+      expect(secondCommit.tiles, `${testCase.label} second commit retains 64 tiles`).toBe(64);
+      expect(secondCommit.rows, `${testCase.label} second commit retains eight rows`).toBe(8);
+      expect(secondCommit.boardWidth, `${testCase.label} second commit exact altar width`)
+        .toBe(testCase.mobile ? 378 : 600);
+      expect(secondCommit.boardBottom, `${testCase.label} second commit altar remains in the viewport`)
+        .toBeLessThanOrEqual(testCase.viewport.height);
+      expect(secondCommit.overflowX, `${testCase.label} second commit has no horizontal overflow`).toBe(false);
+      expect(secondCommit.overflowY, `${testCase.label} second commit has no vertical overflow`).toBe(false);
+      expect(secondCommit.brokenImages, `${testCase.label} second commit has no broken visible images`).toEqual([]);
+      await page.screenshot({ path: `work/second-harvest-commit-${testCase.label}.png` });
+
       await expect.poll(async () => (await report(page)).bodyClasses.includes("settled-board-outcome-cue"), {
         message: `${testCase.label} exposes the second earned receipt`,
         timeout: 12000
@@ -458,10 +504,35 @@ for (const testCase of CASES) {
       expect(blackCandleHandoff.rows, `${testCase.label} handoff retains eight rows`).toBe(8);
       expect(blackCandleHandoff.overflowX, `${testCase.label} handoff has no horizontal overflow`).toBe(false);
       expect(blackCandleHandoff.brokenImages, `${testCase.label} handoff has no broken visible images`).toEqual([]);
+      const secondHarvestChronology = await page.evaluate(() => {
+        window.__secondHarvestObserver?.disconnect();
+        return window.__secondHarvestChronology || [];
+      });
+      const acceptedCommitIndex = secondHarvestChronology.findIndex(({ text }) => text === secondCommit.cue);
+      expect(acceptedCommitIndex, `${testCase.label} records the accepted-harvest boundary`)
+        .toBeGreaterThanOrEqual(0);
+      const acceptedHarvestChronology = secondHarvestChronology.slice(acceptedCommitIndex);
+      expect(
+        acceptedHarvestChronology.map(({ text }) => text),
+        `${testCase.label} advances commit, receipt, and Black Candle guidance exactly once`
+      ).toEqual([
+        secondCommit.cue,
+        secondReceipt.cue,
+        "Make 4 Bone Stars - arm Black Candle Vine."
+      ]);
+      expect(
+        acceptedHarvestChronology.find(({ text }) => text === secondCommit.cue),
+        `${testCase.label} exposes the accepted harvest while the altar is busy`
+      ).toMatchObject({ busy: "true", commit: true, receipt: false });
+      expect(
+        acceptedHarvestChronology.find(({ text }) => text === secondReceipt.cue),
+        `${testCase.label} exposes the receipt only after settlement`
+      ).toMatchObject({ busy: "false", commit: false, receipt: true });
       await page.screenshot({ path: `work/second-harvest-black-candle-${testCase.label}.png` });
       expect(browserErrors, `${testCase.label} browser warning/error ledger`).toEqual([]);
     } finally {
       await page.evaluate(() => window.__openingReceiptObserver?.disconnect()).catch(() => {});
+      await page.evaluate(() => window.__secondHarvestObserver?.disconnect()).catch(() => {});
       await context.close();
     }
   });

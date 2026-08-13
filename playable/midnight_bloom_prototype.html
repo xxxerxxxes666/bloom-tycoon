@@ -10715,7 +10715,8 @@
     let tutorialReplayReturnsFocusToHelp = false;
     let interactionFeedbackGeneration = 0;
     let isResolving = false;
-    let openingHarvestCommitActive = false;
+    let acceptedHarvestCommitActive = false;
+    let acceptedHarvestCommitCue = "";
     let altarReweaveActive = false;
     let altarReweaveSequence = 0;
     let postRecoveryGuideActive = false;
@@ -12445,6 +12446,28 @@
       const found = matches().filter((match) => match.cells.some(([mx, my]) => movedKeys.has(`${mx},${my}`)));
       swapBoardCells(a, b);
       return found;
+    }
+
+    function acceptedHarvestCommitText(found) {
+      const cellsByFlower = new Map();
+      found.forEach((match) => {
+        if (!cellsByFlower.has(match.val)) {
+          cellsByFlower.set(match.val, new Set());
+        }
+        const cells = cellsByFlower.get(match.val);
+        match.cells.forEach(([x, y]) => cells.add(`${x},${y}`));
+      });
+      const gains = Array.from(cellsByFlower, ([flowerId, cells]) => ({
+        flowerId,
+        count: cells.size
+      })).filter(({ count }) => count > 0);
+      if (gains.length === 1) {
+        const [{ flowerId, count }] = gains;
+        return `${flowers[flowerId][0]} matched - ${count} flowers rising.`;
+      }
+      return `${gains.map(({ flowerId, count }) => (
+        `${flowers[flowerId][0]} +${count}`
+      )).join(" · ")} rising.`;
     }
 
     function targetMatchForecastDetails(plan = activeRoundPlan()) {
@@ -16037,7 +16060,7 @@
         && !settledBoardOutcomeOwnsNarration
         && !tutorialPanelOwnsNarration
         && !finalHarvestNarration
-        && !openingHarvestCommitActive
+        && !acceptedHarvestCommitActive
         && !isBouquetFailed(plan)
         && visibleBoardCue;
       const tutorialOwnsNarration = focusedSliceRound(plan)
@@ -16208,7 +16231,7 @@
       document.body.classList.toggle("first-move-made", hasMadeValidMove);
       document.body.classList.toggle(
         "opening-harvest-commit-cue",
-        openingHarvestCommitActive && isResolving && roundOneActive && !roundComplete
+        acceptedHarvestCommitActive && roundOneActive && !roundComplete
       );
       document.body.classList.toggle(
         "round-one-closing-reserve",
@@ -17871,7 +17894,14 @@
       const activatingRelicGuidance = activatingRelic
         ? lineRelicGuidance(activatingRelic)
         : null;
+      const acceptedHarvestMatches = activatingRelic
+        ? []
+        : previewSwapMatches(source, target);
       const isFirstValidMove = !hasMadeValidMove;
+      const authoredRoundOneLesson = currentRound === 1 && (
+        isFirstValidMove
+        || $("firstSwapCue").textContent.includes("Black Candle Vine")
+      );
       const retiringDelayedOpeningTutorial = isFirstValidMove
         && currentRound === 1
         && tutorialActive
@@ -17924,9 +17954,12 @@
       moves -= 1;
       selected = null;
       isResolving = true;
-      openingHarvestCommitActive = isFirstValidMove && currentRound === 1 && !activatingRelic;
-      if (openingHarvestCommitActive) {
-        $("firstSwapCue").textContent = "Thorn Rose matched - 3 flowers rising.";
+      acceptedHarvestCommitActive = currentRound === 1 && !activatingRelic;
+      acceptedHarvestCommitCue = acceptedHarvestCommitActive
+        ? acceptedHarvestCommitText(acceptedHarvestMatches)
+        : "";
+      if (acceptedHarvestCommitActive) {
+        $("firstSwapCue").textContent = acceptedHarvestCommitCue;
       }
       ritualMessage = "<strong>Swapping.</strong> Flowers trade places.";
       render();
@@ -17935,10 +17968,6 @@
       let result = null;
       let schedulePostResolveIdleHint = false;
       try {
-        const authoredRoundOneLesson = currentRound === 1 && (
-          isFirstValidMove
-          || $("firstSwapCue").textContent.includes("Black Candle Vine")
-        );
         result = await resolveAnimated(activatingRelic
           ? {
               activationRelic: {
@@ -18041,7 +18070,17 @@
           }
         }
       } finally {
-        openingHarvestCommitActive = false;
+        const commitWaitsForReceipt = acceptedHarvestCommitActive
+          && Boolean(pendingSettledBoardOutcome);
+        if (commitWaitsForReceipt) {
+          pendingSettledBoardOutcome.returnCue = $("firstSwapCue").textContent === acceptedHarvestCommitCue
+            ? ""
+            : $("firstSwapCue").textContent;
+          $("firstSwapCue").textContent = acceptedHarvestCommitCue;
+        } else {
+          acceptedHarvestCommitActive = false;
+          acceptedHarvestCommitCue = "";
+        }
         isResolving = false;
         if (!roundComplete && result?.blackCandleActivation) {
           pendingSettledBoardOutcome = settledBoardOutcomeForResult(result);
@@ -19432,7 +19471,11 @@
     }
 
     function clearSettledBoardOutcome({ renderAfter = false, restoreCue = false } = {}) {
-      const returnCue = settledBoardOutcome?.returnCue || "";
+      const returnCue = settledBoardOutcome?.returnCue
+        || pendingSettledBoardOutcome?.returnCue
+        || "";
+      const clearingAcceptedCommit = acceptedHarvestCommitActive
+        && Boolean(pendingSettledBoardOutcome || settledBoardOutcome);
       const clearingShuffleOutcome = pendingSettledBoardOutcome?.kind === "shuffle"
         || settledBoardOutcome?.kind === "shuffle";
       if (settledBoardOutcomeRevealFrame && window.cancelAnimationFrame) {
@@ -19445,6 +19488,10 @@
       settledBoardOutcomeTimer = null;
       pendingSettledBoardOutcome = null;
       settledBoardOutcome = null;
+      if (clearingAcceptedCommit) {
+        acceptedHarvestCommitActive = false;
+        acceptedHarvestCommitCue = "";
+      }
       if (clearingShuffleOutcome && $("firstSwapCue")) {
         $("firstSwapCue").textContent = "";
       }
@@ -19481,19 +19528,29 @@
         return false;
       }
       if (document.hidden || !settledBoardOutcomeCanOwnNarration()) {
+        const deferredCue = pendingSettledBoardOutcome.returnCue || "";
         pendingSettledBoardOutcome = null;
+        acceptedHarvestCommitActive = false;
+        acceptedHarvestCommitCue = "";
+        if (deferredCue) {
+          $("firstSwapCue").textContent = deferredCue;
+        }
         return false;
       }
       settledBoardOutcome = {
         ...pendingSettledBoardOutcome,
         returnCue: pendingSettledBoardOutcome.kind === "shuffle"
           ? ""
-          : $("firstSwapCue").textContent,
+          : Object.hasOwn(pendingSettledBoardOutcome, "returnCue")
+            ? pendingSettledBoardOutcome.returnCue
+            : $("firstSwapCue").textContent,
         heldBoardFocus: { ...clampBoardFocusCell() },
         guideBoardFocus: firstHintFocusCell()
       };
       const outcome = settledBoardOutcome;
       pendingSettledBoardOutcome = null;
+      acceptedHarvestCommitActive = false;
+      acceptedHarvestCommitCue = "";
       $("firstSwapCue").textContent = "";
       // Establish the empty cue as the sole live owner before its one result mutation.
       render();
