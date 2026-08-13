@@ -63,6 +63,8 @@ async function report(page) {
       tutorial: document.querySelector("#tutorialPanel")?.textContent.replace(/\s+/g, " ").trim() || "",
       tutorialVisible: visible(document.querySelector("#tutorialPanel")),
       hintCount: document.querySelectorAll("#board .tile.idle-hint").length,
+      directionalGuideCount: document.querySelectorAll("#board .first-action-swap-guide, #board .swap-path-arrow").length,
+      forecastGuideCount: document.querySelectorAll("#board .target-match-forecast-guide").length,
       guideOverlayCount: document.querySelectorAll(
         "#board .first-action-swap-guide, #board .target-match-forecast-guide, #board .swap-path-arrow"
       ).length,
@@ -79,6 +81,7 @@ async function report(page) {
         .map((button) => button.textContent.replace(/\s+/g, " ").trim()),
       bodyClasses: document.body.className,
       boardBusy: document.querySelector("#board")?.getAttribute("aria-busy") || "",
+      cueLive: document.querySelector("#firstSwapCue")?.getAttribute("aria-live") || "",
       activeId: document.activeElement?.id || "",
       rovingIds: tiles.filter((tile) => tile.tabIndex === 0).map((tile) => tile.id),
       selectedIds: tiles.filter((tile) => tile.classList.contains("sel") || tile.classList.contains("selected"))
@@ -188,6 +191,29 @@ for (const testCase of CASES) {
       });
 
       await activateOpeningPair(page, testCase.input);
+      await expect.poll(async () => (await report(page)).bodyClasses.includes("opening-harvest-commit-cue"), {
+        message: `${testCase.label} acknowledges the accepted opening swap before settlement`,
+        timeout: 1200
+      }).toBe(true);
+      const committed = await report(page);
+      expect(committed.cue, `${testCase.label} names the immediate match consequence`).toBe(
+        "Thorn Rose matched - 3 flowers rising."
+      );
+      expect(committed.boardBusy, `${testCase.label} keeps the altar locked during its accepted response`).toBe("true");
+      expect(committed.cueLive, `${testCase.label} leaves detailed narration to the settled receipt`).toBe("off");
+      expect(committed.hintCount, `${testCase.label} retires the spent guide immediately`).toBe(0);
+      expect(committed.guideOverlayCount, `${testCase.label} retires every spent guide overlay`).toBe(0);
+      expect(committed.tiles, `${testCase.label} commit retains 64 tiles`).toBe(64);
+      expect(committed.rows, `${testCase.label} commit retains eight rows`).toBe(8);
+      expect(committed.boardWidth, `${testCase.label} commit keeps the exact altar width`)
+        .toBe(testCase.mobile ? 378 : 600);
+      expect(committed.boardBottom, `${testCase.label} commit keeps the altar in the first viewport`)
+        .toBeLessThanOrEqual(testCase.viewport.height);
+      expect(committed.overflowX, `${testCase.label} commit has no horizontal overflow`).toBe(false);
+      expect(committed.overflowY, `${testCase.label} commit has no vertical overflow`).toBe(false);
+      expect(committed.brokenImages, `${testCase.label} commit has no broken visible images`).toEqual([]);
+      await page.screenshot({ path: `work/opening-match-commit-${testCase.label}.png` });
+
       await expect.poll(async () => (await report(page)).bodyClasses.includes("settled-board-outcome-cue"), {
         message: `${testCase.label} exposes the receipt only after settled feedback`,
         timeout: 12000
@@ -328,7 +354,9 @@ for (const testCase of CASES) {
         "Make 4 Bone Stars - arm Black Candle Vine."
       );
       expect(blackCandleHandoff.hintCount, `${testCase.label} reveals one exact pair after the receipt`).toBe(2);
-      expect(blackCandleHandoff.guideOverlayCount, `${testCase.label} reveals one directional guide`).toBe(1);
+      expect(blackCandleHandoff.directionalGuideCount, `${testCase.label} reveals one directional guide`).toBe(1);
+      expect(blackCandleHandoff.forecastGuideCount, `${testCase.label} reveals one causal result forecast`).toBe(1);
+      expect(blackCandleHandoff.guideOverlayCount, `${testCase.label} composes direction and result as one lesson`).toBe(2);
       expect(blackCandleHandoff.guidedTileLabels, `${testCase.label} restores both guided endpoint labels`).toHaveLength(2);
       if (testCase.input === "keyboard") {
         expect(blackCandleHandoff.guideSourceId, `${testCase.label} exposes the exact guide source`).not.toBe("");

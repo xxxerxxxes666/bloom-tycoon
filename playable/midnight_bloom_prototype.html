@@ -6690,6 +6690,7 @@
     body.round-one-active.round-one-followup-cue:not(.round-one-complete) .first-swap-cue,
     body.round-one-active.round-one-agency-handoff:not(.tutorial-active):not(.round-one-complete) .first-swap-cue,
     body.round-one-active.round-one-refused:not(.round-one-complete) .first-swap-cue,
+    body.focused-active-play.opening-harvest-commit-cue .first-swap-cue,
     body.focused-active-play:not(.tutorial-active):not(.round-one-complete) .first-swap-cue.swap-refused,
     body.focused-active-play.armed-line-relic-cue:not(.round-one-complete) .first-swap-cue,
     body.focused-active-play.focused-harvest-handoff-cue .first-swap-cue,
@@ -6698,10 +6699,17 @@
     body.round-one-active.round-one-black-candle-cue .first-swap-cue::before,
     body.focused-active-play.armed-line-relic-cue .first-swap-cue::before,
     body.focused-active-play.settled-board-outcome-cue .first-swap-cue::before { content:"HARVEST"; }
+    body.focused-active-play.opening-harvest-commit-cue .first-swap-cue::before { content:"MATCH LOCKED"; }
     body.focused-active-play.opening-harvest-handoff-cue .first-swap-cue::before { content:"HARVEST > NEXT"; }
     body.focused-active-play.black-candle-thorn-outcome-cue .first-swap-cue::before { content:"BLACK CANDLE"; }
     body.focused-active-play.shuffle-board-outcome-cue .first-swap-cue::before { content:"SHUFFLE"; }
     body.focused-active-play.focused-harvest-handoff-cue .first-swap-cue::before { content:"NEXT BLOOM"; }
+    body.focused-active-play.opening-harvest-commit-cue .first-swap-cue {
+      border-color:#c4853f;
+      color:#fff6d2;
+      background:linear-gradient(90deg,#170908,#3a120f,#24140b,#170908);
+      box-shadow:0 0 16px #9b1d225c,inset 0 0 10px #000;
+    }
     body.settled-board-outcome-cue .tutorial-panel,
     body.settled-board-outcome-cue .tutorial-help { display:none!important; }
     body.focused-active-play.settled-board-outcome-cue .first-swap-cue { display:flex!important; }
@@ -10056,7 +10064,8 @@
         white-space: normal;
       }
 
-      body.focused-active-play.settled-board-outcome-cue .tutorial-command-region > .first-swap-cue {
+      body.focused-active-play.settled-board-outcome-cue .tutorial-command-region > .first-swap-cue,
+      body.focused-active-play.opening-harvest-commit-cue .tutorial-command-region > .first-swap-cue {
         min-height: 44px;
         padding: 5px 8px;
         font-size: 10px;
@@ -10689,6 +10698,7 @@
     let tutorialReplayReturnsFocusToHelp = false;
     let interactionFeedbackGeneration = 0;
     let isResolving = false;
+    let openingHarvestCommitActive = false;
     let altarReweaveActive = false;
     let altarReweaveSequence = 0;
     let postRecoveryGuideActive = false;
@@ -16005,6 +16015,7 @@
         && !settledBoardOutcomeOwnsNarration
         && !tutorialPanelOwnsNarration
         && !finalHarvestNarration
+        && !openingHarvestCommitActive
         && !isBouquetFailed(plan)
         && visibleBoardCue;
       const tutorialOwnsNarration = focusedSliceRound(plan)
@@ -16169,6 +16180,10 @@
           && !roundComplete
       );
       document.body.classList.toggle("first-move-made", hasMadeValidMove);
+      document.body.classList.toggle(
+        "opening-harvest-commit-cue",
+        openingHarvestCommitActive && isResolving && roundOneActive && !roundComplete
+      );
       document.body.classList.toggle(
         "round-one-closing-reserve",
         roundOneActive && moves === 2 && !roundComplete && !roundObjectivesComplete(activePlan)
@@ -17883,6 +17898,10 @@
       moves -= 1;
       selected = null;
       isResolving = true;
+      openingHarvestCommitActive = isFirstValidMove && currentRound === 1 && !activatingRelic;
+      if (openingHarvestCommitActive) {
+        $("firstSwapCue").textContent = "Thorn Rose matched - 3 flowers rising.";
+      }
       ritualMessage = "<strong>Swapping.</strong> Flowers trade places.";
       render();
       await delay(165);
@@ -17996,6 +18015,7 @@
           }
         }
       } finally {
+        openingHarvestCommitActive = false;
         isResolving = false;
         if (!roundComplete && result?.blackCandleActivation) {
           pendingSettledBoardOutcome = settledBoardOutcomeForResult(result);
