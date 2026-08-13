@@ -11375,7 +11375,7 @@
       if (!Number.isInteger(x) || !Number.isInteger(y) || !isValidThornCell(x, y)) {
         return null;
       }
-      return { x, y, hp: Math.max(1, Number(thorn.hp) || 1) };
+      return { x, y, hp: Math.max(1, normalizeSavedWholeNumber(thorn.hp, 1)) };
     }
 
     function resetCursedThorns(plan = activeRoundPlan()) {
@@ -21526,6 +21526,15 @@
       }
     }
 
+    function normalizeSavedWholeNumber(value, fallback = 0) {
+      const numeric = Number(value);
+      if (Number.isFinite(numeric)) {
+        return Math.max(0, Math.floor(numeric));
+      }
+      const fallbackNumeric = Number(fallback);
+      return Number.isFinite(fallbackNumeric) ? Math.max(0, Math.floor(fallbackNumeric)) : 0;
+    }
+
     function loadProgress() {
       if (typeof localStorage === "undefined") {
         return;
@@ -21538,21 +21547,37 @@
         const state = JSON.parse(raw);
         const savedFocusedEconomyVersion = Math.max(0, Math.floor(Number(state.focusedEconomyVersion) || 0));
         let shouldSaveMigratedProgress = false;
+        let repairedInvalidNumericProgress = false;
         if (isValidBoard(state.board)) {
           board = state.board;
         }
         armedLineRelic = normalizeArmedLineRelic(state.armedLineRelic);
         if (Array.isArray(state.counts) && state.counts.length === flowers.length) {
-          counts = state.counts.map((count) => Math.max(0, Number(count) || 0));
+          counts = state.counts.map((count) => normalizeSavedWholeNumber(count));
+          repairedInvalidNumericProgress = counts.some((count, index) => count !== state.counts[index]);
         }
         if (Array.isArray(state.cursedThorns)) {
-          cursedThorns = state.cursedThorns
+          const normalizedCursedThorns = state.cursedThorns
             .map(normalizeCursedThorn)
             .filter(Boolean);
+          repairedInvalidNumericProgress = repairedInvalidNumericProgress
+            || JSON.stringify(normalizedCursedThorns) !== JSON.stringify(state.cursedThorns);
+          cursedThorns = normalizedCursedThorns;
         }
-        clearedCursedThorns = Math.max(0, Number(state.clearedCursedThorns) || 0);
-        moves = Math.max(0, Number.isFinite(Number(state.moves)) ? Number(state.moves) : moves);
-        coins = Math.max(0, Number(state.coins) || coins);
+        const normalizedClearedCursedThorns = normalizeSavedWholeNumber(state.clearedCursedThorns);
+        if (state.clearedCursedThorns !== undefined && normalizedClearedCursedThorns !== state.clearedCursedThorns) {
+          repairedInvalidNumericProgress = true;
+        }
+        clearedCursedThorns = normalizedClearedCursedThorns;
+        const normalizedMoves = normalizeSavedWholeNumber(state.moves, moves);
+        if (state.moves !== undefined && normalizedMoves !== state.moves) {
+          repairedInvalidNumericProgress = true;
+        }
+        moves = normalizedMoves;
+        const normalizedCoins = normalizeSavedWholeNumber(state.coins, coins);
+        const savedCoinsNeedRepair = state.coins !== undefined && normalizedCoins !== state.coins;
+        repairedInvalidNumericProgress = repairedInvalidNumericProgress || savedCoinsNeedRepair;
+        coins = normalizedCoins;
         const savedRoundNumber = Number(state.currentRound);
         currentRound = Math.max(1, Math.floor(savedRoundNumber || 1));
         if (currentRound !== savedRoundNumber) {
@@ -21598,10 +21623,17 @@
         const hasAuthoritativeOwnedWallet = conservatoryFullyOwned()
           && Number.isFinite(savedCoins)
           && savedCoins >= 0;
+        if (savedCoinsNeedRepair) {
+          coins = conservatoryFullyOwned() ? 50 : focusedEconomyBalanceForProgress();
+        }
         if (savedFocusedEconomyVersion < FOCUSED_ECONOMY_SAVE_VERSION) {
           if (!hasAuthoritativeOwnedWallet) {
             coins = focusedEconomyBalanceForProgress();
           }
+          shouldSaveMigratedProgress = true;
+        }
+        if (repairedInvalidNumericProgress) {
+          ritualMessage = "<strong>Saved order repaired.</strong> Invalid progress values were cleared before play resumed.";
           shouldSaveMigratedProgress = true;
         }
         hasMadeValidMove = Boolean(state.hasMadeValidMove)

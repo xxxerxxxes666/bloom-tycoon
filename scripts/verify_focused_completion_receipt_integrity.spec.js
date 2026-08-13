@@ -4,6 +4,16 @@ const BASE_URL = process.env.BLOOM_TEST_URL
   || "http://127.0.0.1:4173/playable/midnight_bloom_prototype.html";
 const SAVE_KEY = "bloomTycoonPlayableStateV1";
 const pageUrl = (query) => `${BASE_URL}${BASE_URL.includes("?") ? "&" : "?"}${query}`;
+const FIXTURE_BOARD = [
+  [3, 0, 5, 0, 5, 2, 3, 0],
+  [2, 0, 3, 5, 4, 4, 0, 2],
+  [4, 2, 0, 0, 2, 3, 4, 0],
+  [0, 2, 0, 3, 3, 0, 4, 2],
+  [0, 4, 2, 4, 0, 2, 3, 3],
+  [2, 3, 4, 3, 3, 4, 0, 4],
+  [3, 4, 2, 2, 0, 2, 4, 3],
+  [4, 2, 2, 4, 3, 3, 0, 3]
+];
 
 const CASES = [
   {
@@ -85,6 +95,53 @@ const CASES = [
 const VIEWPORTS = [
   { label: "desktop", viewport: { width: 1280, height: 720 } },
   { label: "mobile390", viewport: { width: 390, height: 844 }, mobile: true }
+];
+
+const DAMAGED_NUMERIC_CASES = [
+  {
+    label: "round-one-non-finite",
+    state: {
+      focusedEconomyVersion: 3,
+      board: FIXTURE_BOARD,
+      currentRound: 1,
+      roundComplete: false,
+      moves: "5.8",
+      coins: "Infinity",
+      counts: ["Infinity", "Infinity", "Infinity", "Infinity", "Infinity", "Infinity"],
+      clearedCursedThorns: "Infinity",
+      blackCandleLessonComplete: true
+    },
+    expectedMoves: 5,
+    expectedCoins: 0,
+    expectedCounts: [0, 0, 0, 0, 0, 0],
+    expectedClearedThorns: 0,
+    forbiddenAction: "Restore Greenhouse"
+  },
+  {
+    label: "round-two-non-finite-thorns",
+    state: {
+      focusedEconomyVersion: 3,
+      board: FIXTURE_BOARD,
+      currentRound: 2,
+      roundComplete: false,
+      roundOneRestored: true,
+      moves: "8.9",
+      coins: "Infinity",
+      counts: [0, 0, 10, 0, 9, 7],
+      clearedCursedThorns: "Infinity",
+      cursedThorns: [
+        { x: 0, y: 1, hp: "Infinity" },
+        { x: 1, y: 1, hp: "Infinity" },
+        { x: 2, y: 1, hp: "Infinity" }
+      ]
+    },
+    expectedMoves: 8,
+    expectedCoins: 20,
+    expectedCounts: [0, 0, 10, 0, 9, 7],
+    expectedClearedThorns: 0,
+    expectedThornHp: [1, 1, 1],
+    forbiddenAction: "Upgrade Greenhouse"
+  }
 ];
 
 test.setTimeout(60000);
@@ -183,6 +240,81 @@ for (const viewportCase of VIEWPORTS) {
         expect(stable.save).toBe(repairedSave);
         expect(stable.state.roundComplete).toBe(false);
         expect(stable.state.coins).toBe(receiptCase.expectedCoins);
+        expect(stable.tiles).toBe(64);
+        expect(stable.rows).toBe(8);
+        expect(stable.boardWidth).toBeCloseTo(viewportCase.mobile ? 378 : 600, 2);
+        expect(stable.boardBottom).toBeLessThanOrEqual(viewportCase.viewport.height);
+        expect(stable.scrollY).toBe(0);
+        expect(stable.overflowX).toBe(false);
+        if (viewportCase.mobile) expect(stable.overflowY).toBe(false);
+        expect(stable.brokenImages).toEqual([]);
+        expect(problems).toEqual([]);
+      } finally {
+        await context.close();
+      }
+    });
+  }
+
+  for (const damagedCase of DAMAGED_NUMERIC_CASES) {
+    test(`${damagedCase.label} repairs to a stable active order on ${viewportCase.label}`, async ({ browser }) => {
+      const context = await browser.newContext({
+        viewport: viewportCase.viewport,
+        hasTouch: Boolean(viewportCase.mobile),
+        isMobile: Boolean(viewportCase.mobile)
+      });
+      const page = await context.newPage();
+      const problems = [];
+      page.on("console", (message) => {
+        if (["warning", "error"].includes(message.type())) problems.push(message.text());
+      });
+      page.on("pageerror", (error) => problems.push(error.message));
+      try {
+        await page.addInitScript(({ key, state, seedKey }) => {
+          if (!sessionStorage.getItem(seedKey)) {
+            localStorage.setItem(key, JSON.stringify(state));
+            sessionStorage.setItem(seedKey, "1");
+          }
+        }, {
+          key: SAVE_KEY,
+          state: damagedCase.state,
+          seedKey: `bloomNumericRepairSeed-${damagedCase.label}`
+        });
+        await page.goto(pageUrl(`damaged=${damagedCase.label}-${viewportCase.label}`), {
+          waitUntil: "networkidle"
+        });
+
+        const repaired = await report(page);
+        expect(repaired.state.roundComplete).toBe(false);
+        expect(repaired.state.moves).toBe(damagedCase.expectedMoves);
+        expect(repaired.state.coins).toBe(damagedCase.expectedCoins);
+        expect(repaired.state.counts).toEqual(damagedCase.expectedCounts);
+        expect(repaired.state.clearedCursedThorns).toBe(damagedCase.expectedClearedThorns);
+        if (damagedCase.expectedThornHp) {
+          expect(repaired.state.cursedThorns.map((thorn) => thorn.hp)).toEqual(damagedCase.expectedThornHp);
+        }
+        expect(repaired.message).toContain("Saved order repaired.");
+        expect(repaired.commands.some((command) => command.includes(damagedCase.forbiddenAction))).toBe(false);
+        expect(repaired.contractRound).toBe(String(damagedCase.state.currentRound));
+        expect(repaired.tiles).toBe(64);
+        expect(repaired.rows).toBe(8);
+        expect(repaired.disabledTiles).toBe(0);
+        expect(repaired.boardWidth).toBeCloseTo(viewportCase.mobile ? 378 : 600, 2);
+        expect(repaired.boardBottom).toBeLessThanOrEqual(viewportCase.viewport.height);
+        expect(repaired.scrollY).toBe(0);
+        expect(repaired.overflowX).toBe(false);
+        if (viewportCase.mobile) expect(repaired.overflowY).toBe(false);
+        expect(repaired.brokenImages).toEqual([]);
+        expect(problems).toEqual([]);
+
+        const repairedSave = repaired.save;
+        await page.reload({ waitUntil: "networkidle" });
+        const stable = await report(page);
+        expect(stable.save).toBe(repairedSave);
+        expect(stable.state.roundComplete).toBe(false);
+        expect(stable.state.moves).toBe(damagedCase.expectedMoves);
+        expect(stable.state.coins).toBe(damagedCase.expectedCoins);
+        expect(stable.state.counts).toEqual(damagedCase.expectedCounts);
+        expect(stable.state.clearedCursedThorns).toBe(damagedCase.expectedClearedThorns);
         expect(stable.tiles).toBe(64);
         expect(stable.rows).toBe(8);
         expect(stable.boardWidth).toBeCloseTo(viewportCase.mobile ? 378 : 600, 2);
