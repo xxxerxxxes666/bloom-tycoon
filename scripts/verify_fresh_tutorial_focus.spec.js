@@ -706,9 +706,19 @@ for (const testCase of POST_OPENING_CASES) {
         const afterSkip = await stateReport(page);
         expect(afterSkip.selectedIds).toEqual([selectedId]);
         expect(afterSkip.rovingIds).toEqual([selectedRovingId]);
+        expect(afterSkip.state.roundComplete).toBe(false);
         expect(afterSkip.state.moves).toBe(5);
+        expect(afterSkip.state.coins).toBe(beforeSelection.state.coins);
         expect(afterSkip.state.counts).toEqual(beforeSelection.state.counts);
         expect(afterSkip.state.board).toEqual(beforeSelection.state.board);
+        expect(afterSkip.tiles).toBe(64);
+        expect(afterSkip.rows).toBe(8);
+        expect(afterSkip.boardWidth).toBeCloseTo(testCase.mobile ? 378 : 600, 1);
+        expect(afterSkip.boardBottom).toBeLessThanOrEqual(testCase.viewport.height);
+        expect(afterSkip.scrollY).toBe(0);
+        expect(afterSkip.overflowX).toBe(false);
+        if (testCase.mobile) expect(afterSkip.overflowY).toBe(false);
+        expect(afterSkip.brokenImages).toEqual([]);
 
         if (testCase.input === "keyboard") {
           await page.keyboard.press("Shift+Tab");

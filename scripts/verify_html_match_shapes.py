@@ -749,7 +749,7 @@ def verify_source_hooks():
         'armPayoffHandoffInputGuard("tutorialSkipBtn", TUTORIAL_COMMAND_INPUT_GUARD_MS, true)',
         "function skipTutorial(event = null)",
         "if (event?.detail === 0)",
-        "const completedBySkip = maybeCompleteRound()",
+        "const completedBySkip = !closingHelpReplay && maybeCompleteRound()",
         "if (completedBySkip)",
         "? focusedPayoffPrimaryButtonId()",
         ': closingKeyboardReplay ? "tutorialHelpBtn" : ""',

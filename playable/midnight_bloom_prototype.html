@@ -13401,7 +13401,14 @@
       if (savedAltarRepairReceiptActive) {
         return;
       }
-      clearIdleHint();
+      const selectedHintPair = selectedGuidedHintPair();
+      if (idleHintTimer && window.clearTimeout) {
+        window.clearTimeout(idleHintTimer);
+      }
+      idleHintTimer = null;
+      if (selectedHintPair.length !== 2) {
+        idleHintCells.clear();
+      }
       const finalHarvest = finalHarvestEligibility();
       if (finalHarvest && !finalHarvest.guidanceYielded) {
         return;
@@ -17325,6 +17332,7 @@
         || null;
       const skippingThornLesson = isAuthoritativeRoundTwoThornLesson();
       const skippingRoundOneAgency = isRoundOneAgencyHandoffActive();
+      const closingHelpReplay = tutorialReplayOwnsNarration;
       const closingKeyboardReplay = tutorialReplayOwnsNarration
         && tutorialReplayReturnsFocusToHelp;
       tutorialSkipped = true;
@@ -17333,8 +17341,10 @@
       tutorialReplayOwnsNarration = false;
       tutorialReplayReturnsFocusToHelp = false;
       ordinaryRefusalHelpReplayActive = false;
-      blackCandleLessonComplete = true;
-      const completedBySkip = maybeCompleteRound();
+      if (!closingHelpReplay) {
+        blackCandleLessonComplete = true;
+      }
+      const completedBySkip = !closingHelpReplay && maybeCompleteRound();
       if (completedBySkip) {
         armedLineRelic = null;
         clearIdleHint();
