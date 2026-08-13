@@ -109,12 +109,14 @@ const DAMAGED_NUMERIC_CASES = [
       coins: "Infinity",
       counts: ["Infinity", "Infinity", "Infinity", "Infinity", "Infinity", "Infinity"],
       clearedCursedThorns: "Infinity",
+      tutorialSkipped: true,
       blackCandleLessonComplete: true
     },
     expectedMoves: 5,
     expectedCoins: 0,
     expectedCounts: [0, 0, 0, 0, 0, 0],
     expectedClearedThorns: 0,
+    expectedBouquetProgress: "Bouquet · 0/14",
     forbiddenAction: "Restore Greenhouse"
   },
   {
@@ -140,6 +142,7 @@ const DAMAGED_NUMERIC_CASES = [
     expectedCounts: [0, 0, 10, 0, 9, 7],
     expectedClearedThorns: 0,
     expectedThornHp: [1, 1, 1],
+    expectedBouquetProgress: "Bouquet · 26/29",
     forbiddenAction: "Upgrade Greenhouse"
   }
 ];
@@ -162,6 +165,7 @@ async function report(page) {
       save: localStorage.getItem(key),
       state,
       message: document.querySelector("#ritualLog")?.textContent.trim() || "",
+      bouquetProgress: document.querySelector("#bouquetProgressLabel")?.textContent.trim() || "",
       commands: [...document.querySelectorAll("button:not(.tile)")]
         .filter(visible)
         .map((button) => button.textContent.trim()),
@@ -289,6 +293,7 @@ for (const viewportCase of VIEWPORTS) {
         expect(repaired.state.coins).toBe(damagedCase.expectedCoins);
         expect(repaired.state.counts).toEqual(damagedCase.expectedCounts);
         expect(repaired.state.clearedCursedThorns).toBe(damagedCase.expectedClearedThorns);
+        expect(repaired.bouquetProgress).toBe(damagedCase.expectedBouquetProgress);
         if (damagedCase.expectedThornHp) {
           expect(repaired.state.cursedThorns.map((thorn) => thorn.hp)).toEqual(damagedCase.expectedThornHp);
         }
@@ -315,6 +320,7 @@ for (const viewportCase of VIEWPORTS) {
         expect(stable.state.coins).toBe(damagedCase.expectedCoins);
         expect(stable.state.counts).toEqual(damagedCase.expectedCounts);
         expect(stable.state.clearedCursedThorns).toBe(damagedCase.expectedClearedThorns);
+        expect(stable.bouquetProgress).toBe(damagedCase.expectedBouquetProgress);
         expect(stable.tiles).toBe(64);
         expect(stable.rows).toBe(8);
         expect(stable.boardWidth).toBeCloseTo(viewportCase.mobile ? 378 : 600, 2);
