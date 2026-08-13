@@ -15997,11 +15997,16 @@
       const finalHarvestNarration = Boolean(visibleFinalHarvest)
         && ["eligible", "landing"].includes(visibleFinalHarvest.phase);
       const payoffOwnsNarration = focusedPayoffOwnsCommand(plan);
+      const nextOrderHandoffOwnsNarration = focusedSliceRound(plan)
+        && !payoffOwnsNarration
+        && restoredGreenhouseHandoff;
       const settledBoardOutcomeOwnsNarration = focusedSliceRound(plan)
         && !payoffOwnsNarration
+        && !nextOrderHandoffOwnsNarration
         && Boolean(settledBoardOutcome);
       const tutorialPanelOwnsNarration = focusedSliceRound(plan)
         && !payoffOwnsNarration
+        && !nextOrderHandoffOwnsNarration
         && !settledBoardOutcomeOwnsNarration
         && tutorialActive;
       const firstSwapCue = $("firstSwapCue");
@@ -16023,7 +16028,7 @@
         && (tutorialPanelOwnsNarration || isBouquetFailed(plan) || finalHarvestNarration);
       $("coinBalance")?.setAttribute(
         "aria-live",
-        payoffOwnsNarration || tutorialOwnsNarration || settledBoardOutcomeOwnsNarration || boardCueOwnsNarration
+        payoffOwnsNarration || nextOrderHandoffOwnsNarration || tutorialOwnsNarration || settledBoardOutcomeOwnsNarration || boardCueOwnsNarration
           ? "off"
           : "polite"
       );
@@ -16031,13 +16036,13 @@
         "aria-live",
         payoffOwnsNarration
           ? "polite"
-          : tutorialOwnsNarration || settledBoardOutcomeOwnsNarration || boardCueOwnsNarration ? "off" : "polite"
+          : nextOrderHandoffOwnsNarration || tutorialOwnsNarration || settledBoardOutcomeOwnsNarration || boardCueOwnsNarration ? "off" : "polite"
       );
       $("tutorialPanel")?.setAttribute(
         "aria-live",
         tutorialPanelOwnsNarration
           ? "polite"
-          : payoffOwnsNarration || finalHarvestNarration || settledBoardOutcomeOwnsNarration || boardCueOwnsNarration
+          : payoffOwnsNarration || nextOrderHandoffOwnsNarration || finalHarvestNarration || settledBoardOutcomeOwnsNarration || boardCueOwnsNarration
             ? "off"
             : "polite"
       );
@@ -16046,6 +16051,10 @@
         settledBoardOutcomeOwnsNarration || boardCueOwnsNarration || finalHarvestNarration
           ? "polite"
           : "off"
+      );
+      $("nextOrderCue")?.setAttribute(
+        "aria-live",
+        nextOrderHandoffOwnsNarration ? "polite" : "off"
       );
     }
 
@@ -20939,7 +20948,9 @@
         $("firstSwapCue").textContent = roundStartCueText(plan, openingMove || []);
       }
       queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
-      if (secondUpgradeNextOrder) {
+      if (restoredGreenhouseNextOrder) {
+        startRestoredGreenhouseHandoff();
+      } else if (secondUpgradeNextOrder) {
         startRestoredGreenhouseHandoff(
           "Moonlit Upgrade · Bloodroot Compact · Match Bloodroot + Sol Rot"
         );
