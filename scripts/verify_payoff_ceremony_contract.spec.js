@@ -2320,8 +2320,8 @@ async function runJourney(page, label, includeRetry) {
     "each earned Thorn head materially dominates the strongest remaining latent socket")
     .toBeGreaterThan(Math.max(...closedFirstPixels.map((head) => head.coloredPixels)) * 2.2);
   expect(Math.min(...earnedPixelHeads.map((head) => head.litPixels)),
-    "each earned Thorn head owns more than twice the painted footprint of any latent socket")
-    .toBeGreaterThan(Math.max(...closedFirstPixels.map((head) => head.litPixels)) * 2);
+    "each earned Thorn head owns at least 2.15x the painted footprint of any latent socket")
+    .toBeGreaterThan(Math.max(...closedFirstPixels.map((head) => head.litPixels)) * 2.15);
   expect(earnedHeadCounts(firstAssembly)).toEqual({ 5: 3 });
   expect(firstAssembly.ingredients.some((ingredient) => ingredient.slotState === "partial")).toBe(false);
   expect(firstAssembly.ingredients.some((ingredient) => ingredient.slotState === "empty")).toBe(true);

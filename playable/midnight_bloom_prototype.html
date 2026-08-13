@@ -9695,15 +9695,17 @@
       }
 
       body.focused-active-play:not(.focused-slice-failed) .live-bouquet-assembly[data-round="1"] .live-bouquet-ingredient[data-slot-state="filled"]::before {
-        opacity: .42;
+        inset: 2%;
+        opacity: .68;
+        box-shadow: 0 0 12px currentColor;
       }
 
       body.focused-active-play:not(.focused-slice-failed) .live-bouquet-assembly[data-round="1"] .live-bouquet-ingredient[data-slot-state="filled"] img {
         filter:
-          brightness(1.26)
-          saturate(1.16)
+          brightness(1.42)
+          saturate(1.28)
           drop-shadow(0 1px 3px #000)
-          drop-shadow(0 0 4px currentColor);
+          drop-shadow(0 0 7px currentColor);
       }
 
       body.focused-active-play:not(.focused-slice-failed) .live-bouquet-assembly[data-high-count="true"]::before {
