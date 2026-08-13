@@ -6,7 +6,6 @@ const BASE_URL = process.env.BLOOM_TEST_URL
 const SAVE_KEY = "bloomTycoonPlayableStateV1";
 const PROMPT = "Match 4 Bone Stars to arm Black Candle Vine.";
 const CUE = "Make 4 Bone Stars - arm Black Candle Vine.";
-
 test.setTimeout(220000);
 
 function decodePng(png) {
