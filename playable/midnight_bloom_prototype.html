@@ -6711,7 +6711,8 @@
       box-shadow:0 0 16px #9b1d225c,inset 0 0 10px #000;
     }
     body.settled-board-outcome-cue .tutorial-panel,
-    body.settled-board-outcome-cue .tutorial-help { display:none!important; }
+    body.settled-board-outcome-cue .tutorial-help,
+    body.opening-harvest-commit-cue .tutorial-help { display:none!important; }
     body.focused-active-play.settled-board-outcome-cue .first-swap-cue { display:flex!important; }
     body.round-one-active.round-one-black-candle-cue .first-swap-cue { position:relative; z-index:12; }
     body.restored-greenhouse-handoff.round-one-active .first-swap-cue { display:none!important; }
@@ -10037,6 +10038,22 @@
 
       .tutorial-command-region > .first-swap-cue::before {
         display: none;
+      }
+
+      body.focused-active-play.opening-harvest-commit-cue .tutorial-command-region > .first-swap-cue {
+        flex: 1 1 0;
+        width: auto;
+        max-width: calc(100% - 10px);
+        margin-right: 5px;
+        margin-left: 5px;
+        gap: 5px;
+      }
+
+      body.focused-active-play.opening-harvest-commit-cue .tutorial-command-region > .first-swap-cue::before {
+        display: block;
+        padding-right: 5px;
+        font-size: 7.5px;
+        letter-spacing: .06em;
       }
 
       .tutorial-command-region > .tutorial-help {

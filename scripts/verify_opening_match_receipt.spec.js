@@ -45,7 +45,14 @@ async function report(page) {
   return page.evaluate((key) => {
     const state = JSON.parse(localStorage.getItem(key) || "{}");
     const tiles = Array.from(document.querySelectorAll("#board .tile"));
-    const board = document.querySelector("#board")?.getBoundingClientRect();
+    const boardEl = document.querySelector("#board");
+    const cueEl = document.querySelector("#firstSwapCue");
+    const commandEl = document.querySelector(".tutorial-command-region");
+    const helpEl = document.querySelector("#tutorialHelpBtn");
+    const board = boardEl?.getBoundingClientRect();
+    const cue = cueEl?.getBoundingClientRect();
+    const command = commandEl?.getBoundingClientRect();
+    const cueBefore = cueEl ? getComputedStyle(cueEl, "::before") : null;
     const exactGuide = document.querySelector("#board .first-action-swap-guide");
     const guidedSource = tiles.find((tile) => (
       tile.getAttribute("aria-label") || ""
@@ -56,10 +63,52 @@ async function report(page) {
       && getComputedStyle(node).visibility !== "hidden"
       && node.getBoundingClientRect().width > 0
       && node.getBoundingClientRect().height > 0;
+    const rectsOverlap = (a, b) => Boolean(a && b)
+      && a.left < b.right
+      && a.right > b.left
+      && a.top < b.bottom
+      && a.bottom > b.top;
+    const mobileGreenhouseEl = [
+      document.querySelector("#mobileGreenhousePlinth"),
+      document.querySelector(".mobile-greenhouse-progress")
+    ].find(visible);
+    const mobileGreenhouse = mobileGreenhouseEl?.getBoundingClientRect();
+    const cueHit = cue
+      ? document.elementFromPoint(cue.left + cue.width / 2, cue.top + cue.height / 2)
+      : null;
+    const cueLabel = (cueBefore?.content || "")
+      .replace(/^(["'])(.*)\1$/, "$2")
+      .trim();
     return {
       state,
-      cue: document.querySelector("#firstSwapCue")?.textContent.trim() || "",
-      cueVisible: visible(document.querySelector("#firstSwapCue")),
+      cue: cueEl?.textContent.trim() || "",
+      cueVisible: visible(cueEl),
+      cueLabel,
+      cueLabelDisplay: cueBefore?.display || "",
+      cueLabelVisibility: cueBefore?.visibility || "",
+      cueLabelOpacity: cueBefore?.opacity || "",
+      cueLabelWidth: Number.parseFloat(cueBefore?.width || "0") || 0,
+      cueLabelHeight: Number.parseFloat(cueBefore?.height || "0") || 0,
+      cuePointerEvents: cueEl ? getComputedStyle(cueEl).pointerEvents : "",
+      cueHitInteractiveId: cueHit?.closest("button, a, input, select, textarea")?.id || "",
+      cueFits: Boolean(cueEl)
+        && cueEl.scrollWidth <= cueEl.clientWidth + 1
+        && cueEl.scrollHeight <= cueEl.clientHeight + 1,
+      cueWithinViewport: Boolean(cue)
+        && cue.left >= 0
+        && cue.top >= 0
+        && cue.right <= innerWidth
+        && cue.bottom <= innerHeight,
+      cueWithinCommand: Boolean(cue && command)
+        && cue.left >= command.left - 1
+        && cue.right <= command.right + 1
+        && cue.top >= command.top - 1
+        && cue.bottom <= command.bottom + 1,
+      cueBoardOverlap: rectsOverlap(cue, board),
+      cueGreenhouseOverlap: rectsOverlap(cue, mobileGreenhouse),
+      helpInDom: Boolean(helpEl),
+      helpVisible: visible(helpEl),
+      helpCueOverlap: visible(helpEl) && rectsOverlap(helpEl.getBoundingClientRect(), cue),
       tutorial: document.querySelector("#tutorialPanel")?.textContent.replace(/\s+/g, " ").trim() || "",
       tutorialVisible: visible(document.querySelector("#tutorialPanel")),
       hintCount: document.querySelectorAll("#board .tile.idle-hint").length,
@@ -93,9 +142,12 @@ async function report(page) {
       tiles: tiles.length,
       rows: new Set(tiles.map((tile) => tile.dataset.y)).size,
       boardWidth: board?.width || 0,
+      boardTop: board?.top || 0,
       boardBottom: board?.bottom || 0,
-      cueTop: document.querySelector("#firstSwapCue")?.getBoundingClientRect().top || 0,
+      cueTop: cue?.top || 0,
+      cueBottom: cue?.bottom || 0,
       titleBottom: document.querySelector(".title")?.getBoundingClientRect().bottom || 0,
+      bouquetProgress: document.querySelector("#bouquetProgressLabel")?.textContent.replace(/\s+/g, " ").trim() || "",
       scrollY,
       overflowX: document.documentElement.scrollWidth > innerWidth + 1,
       overflowY: document.documentElement.scrollHeight > innerHeight + 1,
@@ -157,6 +209,15 @@ for (const testCase of CASES) {
       if (["warning", "error"].includes(message.type())) browserErrors.push(message.text());
     });
     page.on("pageerror", (error) => browserErrors.push(error.message));
+    page.on("requestfailed", (request) => {
+      const failure = request.failure()?.errorText || "";
+      if (failure !== "net::ERR_ABORTED") browserErrors.push(`${request.url()} ${failure}`);
+    });
+    page.on("response", (response) => {
+      if (response.status() >= 400 && new URL(response.url()).origin === new URL(BASE_URL).origin) {
+        browserErrors.push(`${response.status()} ${response.url()}`);
+      }
+    });
 
     try {
       await openFresh(page, testCase.label);
@@ -199,8 +260,27 @@ for (const testCase of CASES) {
       expect(committed.cue, `${testCase.label} names the immediate match consequence`).toBe(
         "Thorn Rose matched - 3 flowers rising."
       );
+      expect(committed.cueLabel, `${testCase.label} renders the distinct commit label`).toBe("MATCH LOCKED");
+      expect(committed.cueLabelDisplay, `${testCase.label} paints the commit label`).not.toBe("none");
+      expect(committed.cueLabelVisibility, `${testCase.label} keeps the commit label visible`).toBe("visible");
+      expect(Number(committed.cueLabelOpacity), `${testCase.label} keeps the commit label opaque`).toBeGreaterThan(0);
+      expect(committed.cueLabelWidth, `${testCase.label} gives the rendered label measurable width`).toBeGreaterThan(0);
+      expect(committed.cueLabelHeight, `${testCase.label} gives the rendered label measurable height`).toBeGreaterThan(0);
       expect(committed.boardBusy, `${testCase.label} keeps the altar locked during its accepted response`).toBe("true");
       expect(committed.cueLive, `${testCase.label} leaves detailed narration to the settled receipt`).toBe("off");
+      expect(committed.cuePointerEvents, `${testCase.label} keeps the transient pointer-inert`).toBe("none");
+      expect(committed.cueHitInteractiveId, `${testCase.label} does not put a command under the receipt hit point`).toBe("");
+      expect(committed.cueFits, `${testCase.label} keeps the complete label and consequence unclipped`).toBe(true);
+      expect(committed.cueWithinViewport, `${testCase.label} keeps the receipt in the viewport`).toBe(true);
+      expect(committed.cueWithinCommand, `${testCase.label} contains the receipt in the existing command lane`).toBe(true);
+      expect(committed.cueBoardOverlap, `${testCase.label} keeps the receipt clear of the altar`).toBe(false);
+      if (testCase.mobile) {
+        expect(committed.cueGreenhouseOverlap, `${testCase.label} keeps the receipt clear of the greenhouse`).toBe(false);
+      }
+      expect(committed.helpInDom, `${testCase.label} preserves semantic Help architecture`).toBe(true);
+      expect(committed.helpVisible, `${testCase.label} prevents Help competing with the accepted response`).toBe(false);
+      expect(committed.helpCueOverlap, `${testCase.label} has no hidden Help collision`).toBe(false);
+      expect(committed.visibleButtons, `${testCase.label} presents one response rather than two actions`).toEqual([]);
       expect(committed.hintCount, `${testCase.label} retires the spent guide immediately`).toBe(0);
       expect(committed.guideOverlayCount, `${testCase.label} retires every spent guide overlay`).toBe(0);
       expect(committed.tiles, `${testCase.label} commit retains 64 tiles`).toBe(64);
@@ -230,8 +310,10 @@ for (const testCase of CASES) {
       expect(settled.state.moves, `${testCase.label} spends exactly once`).toBe(5);
       expect(settled.state.counts, `${testCase.label} credits only the authored Thorn Rose match`)
         .toEqual([0, 0, 0, 0, 0, 3]);
+      expect(settled.bouquetProgress, `${testCase.label} keeps the exact opening bouquet receipt`).toContain("3/14");
       expect(settled.liveOwners, `${testCase.label} receipt is the sole narrator`)
         .toEqual([{ id: "firstSwapCue", live: "polite" }]);
+      expect(settled.helpVisible, `${testCase.label} keeps Help subordinate to the narrated receipt`).toBe(false);
       expect(settled.state.tutorialActive, `${testCase.label} retires stale tutorial authority`).toBe(false);
       expect(settled.tutorialVisible, `${testCase.label} keeps the stale panel absent`).toBe(false);
       expect(settled.tutorial, `${testCase.label} removes stale tutorial copy`).not.toContain("Find 3 Thorn Roses.");
@@ -298,6 +380,9 @@ for (const testCase of CASES) {
         .toEqual([0, 0, 0, 0, 0, 3]);
       expect(restored.bodyClasses, `${testCase.label} reload cannot replay the receipt`)
         .not.toContain("settled-board-outcome-cue");
+      expect(restored.bodyClasses, `${testCase.label} reload cannot replay the commit`)
+        .not.toContain("opening-harvest-commit-cue");
+      expect(restored.cueLabel, `${testCase.label} reload cannot replay the commit label`).not.toBe("MATCH LOCKED");
       expect(restored.cue, `${testCase.label} reload cannot replay result copy`).not.toContain("moves left.");
       expect(restored.state.tutorialActive, `${testCase.label} reload cannot revive stale tutorial authority`).toBe(false);
       expect(restored.tutorialVisible, `${testCase.label} reload keeps the stale panel absent`).toBe(false);
