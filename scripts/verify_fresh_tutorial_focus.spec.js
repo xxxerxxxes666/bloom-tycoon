@@ -98,6 +98,7 @@ async function stateReport(page) {
       disabled: tiles.filter((tile) => tile.disabled).length,
       boardWidth: board?.width || 0,
       boardBottom: board?.bottom || 0,
+      boardBusy: document.querySelector("#board")?.getAttribute("aria-busy") || "",
       scrollY,
       overflowX: document.documentElement.scrollWidth > innerWidth + 1,
       overflowY: document.documentElement.scrollHeight > innerHeight + 1,
@@ -810,6 +811,12 @@ for (const testCase of CASES) {
         await page.locator(`#${pair.source.id}`).tap();
         await page.locator(`#${pair.destination.id}`).tap();
       }
+      await expect.poll(async () => (await stateReport(page)).boardBusy, {
+        message: `${testCase.label} keeps the accepted response quiet while the altar resolves`,
+        timeout: 1200
+      }).toBe("true");
+      const resolving = await stateReport(page);
+      expect(resolving.firstCueLive, `${testCase.label} defers detailed narration until settlement`).toBe("off");
       await page.waitForFunction((key) => {
         const state = JSON.parse(localStorage.getItem(key) || "{}");
         return state.moves === 5 && document.querySelector("#board")?.getAttribute("aria-busy") === "false";

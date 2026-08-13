@@ -16130,11 +16130,15 @@
         && !payoffOwnsNarration
         && !savedAltarRepairReceiptActive
         && restoredGreenhouseHandoff;
+      const settledAcceptedHarvestPending = acceptedHarvestCommitActive
+        && !isResolving
+        && Boolean(pendingSettledBoardOutcome)
+        && settledBoardOutcomeCanOwnNarration(plan, pendingSettledBoardOutcome);
       const settledBoardOutcomeOwnsNarration = focusedSliceRound(plan)
         && !payoffOwnsNarration
         && !savedAltarRepairReceiptActive
         && !nextOrderHandoffOwnsNarration
-        && Boolean(settledBoardOutcome);
+        && (Boolean(settledBoardOutcome) || settledAcceptedHarvestPending);
       const tutorialPanelOwnsNarration = focusedSliceRound(plan)
         && !payoffOwnsNarration
         && !savedAltarRepairReceiptActive
