@@ -250,7 +250,7 @@ for (const profile of PROFILES) {
     await context.close();
   });
 
-  test(`owned replay completion retains its wallet on ${profile.label}`, async ({ browser }) => {
+  test(`interrupted owned replay completion banks its reward once on ${profile.label}`, async ({ browser }) => {
     const context = await browser.newContext({
       viewport: profile.viewport,
       hasTouch: Boolean(profile.mobile),
@@ -272,10 +272,10 @@ for (const profile of PROFILES) {
       if (reload) await page.reload({ waitUntil: "networkidle" });
       const current = await report(page);
       expect(current.stored.roundComplete).toBe(true);
-      expect(current.stored.coins).toBe(7820);
+      expect(current.stored.coins).toBe(8000);
       expect(current.stored.moves).toBe(2);
       expect(current.ceremonyTitle).toBe("Bloodroot Compact Complete");
-      expect(current.transaction).toBe("REWARD REINVESTED · 180 COINS NOURISHED THE CONSERVATORY · 7820 COINS KEPT.");
+      expect(current.transaction).toBe("REPLAY REWARD · +180 COINS BANKED · 8000 COINS IN WALLET.");
       expect(current.buttons).toEqual(["play again → first bouquet"]);
       expect(current.tiles).toBe(64);
       expect(current.rows).toBe(8);
@@ -284,6 +284,44 @@ for (const profile of PROFILES) {
       expect(current.overflowX).toBe(false);
       expect(current.brokenImages).toEqual([]);
       if (profile.mobile) expect(current.scrollY).toBe(0);
+    }
+    expect(errors).toEqual([]);
+    await context.close();
+  });
+
+  test(`completed v2 owned replay migrates one banked reward on ${profile.label}`, async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: profile.viewport,
+      hasTouch: Boolean(profile.mobile),
+      isMobile: Boolean(profile.mobile)
+    });
+    const page = await context.newPage();
+    const errors = watchErrors(page);
+    await openState(page, profile, "owned-replay-v2", interruptedState({
+      currentRound: 3,
+      moves: 2,
+      coins: 50,
+      counts: [13, 0, 0, 14, 0, 0],
+      roundComplete: true,
+      roundOneRestored: true,
+      roundTwoGreenhouseUpgraded: true,
+      roundThreeConservatoryRaised: true
+    }));
+
+    for (let reload = 0; reload < 2; reload += 1) {
+      if (reload) await page.reload({ waitUntil: "networkidle" });
+      const current = await report(page);
+      expect(current.stored.focusedEconomyVersion).toBe(3);
+      expect(current.stored.roundComplete).toBe(true);
+      expect(current.stored.coins).toBe(230);
+      expect(current.transaction).toBe("REPLAY REWARD · +180 COINS BANKED · 230 COINS IN WALLET.");
+      expect(current.buttons).toEqual(["play again → first bouquet"]);
+      expect(current.tiles).toBe(64);
+      expect(current.rows).toBe(8);
+      expect(current.boardWidth).toBe(0);
+      expect(current.boardHeight).toBe(0);
+      expect(current.overflowX).toBe(false);
+      expect(current.brokenImages).toEqual([]);
     }
     expect(errors).toEqual([]);
     await context.close();

@@ -10526,7 +10526,7 @@
     };
 
     const SAVE_KEY = "bloomTycoonPlayableStateV1";
-    const FOCUSED_ECONOMY_SAVE_VERSION = 2;
+    const FOCUSED_ECONOMY_SAVE_VERSION = 3;
     const BOARD_SIZE = 8;
     const MAX_BOARD_BUILD_ATTEMPTS = 650;
     const ROUND_ONE_ORGANIC_FILLER_TEMPLATE = [
@@ -15621,7 +15621,7 @@
     }
 
     function ownedReplayRewardTransaction(plan) {
-      return `Reward reinvested · ${plan.reward.coins} coins nourished the Conservatory · ${coins} coins kept.`;
+      return `Replay reward · +${plan.reward.coins} coins banked · ${coins} coins in wallet.`;
     }
 
     function greenhouseOwnedProgress() {
@@ -15988,14 +15988,14 @@
       $("restorationState").textContent = bouquetTransferActive
         ? transferPresentation.state
         : finalHarvestCommit?.phase === "ceremony" && !ceremony.ownedReplay
-        ? `BOUQUET BOUND · ${ceremony.plan.name.toUpperCase()}`
-        : ownedRenewalPhase === "binding"
-          ? "BOUQUET BOUND · OWNED CONSERVATORY"
-          : ownedRenewalPhase === "transfer"
-            ? `TENDING WITH ${ceremony.plan.name.toUpperCase()}`
-            : ["renewal", "acknowledgment"].includes(ownedRenewalPhase)
-              ? "CONSERVATORY NOURISHED · REMAINS 100% RAISED"
-              : ceremony.state;
+          ? `BOUQUET BOUND · ${ceremony.plan.name.toUpperCase()}`
+          : ownedRenewalPhase === "binding"
+            ? "BOUQUET BOUND · OWNED CONSERVATORY"
+            : ownedRenewalPhase === "transfer"
+              ? `${ceremony.plan.name.toUpperCase()} RECEIVED · REWARD BANKING`
+              : ["renewal", "acknowledgment"].includes(ownedRenewalPhase)
+                ? "REPLAY REWARD BANKED · CONSERVATORY REMAINS 100% RAISED"
+                : ceremony.state;
       $("payoffTransaction").textContent = bouquetTransferActive
         ? transferPresentation.transaction
         : ceremony.transaction;
@@ -16884,6 +16884,7 @@
       }
       if (reward) {
         const activeOwnedReplayOrder = isOwnedRestorationReplay() && !roundComplete;
+        const ownedReplayWalletAfterBouquet = coins + plan.reward.coins;
         const compactOwnedReplayReceipt = ownedReplayEntryActive
           && window.matchMedia("(max-width: 760px)").matches;
         reward.textContent = ownedReplayEntryActive
@@ -16891,9 +16892,11 @@
             ? `${coins} kept · Conservatory owned`
             : `${coins} coins kept · Conservatory owned · New order ready.`
           : roundComplete
-            ? `Reward · ${plan.reward.coins} coins`
+            ? isOwnedRestorationReplay()
+              ? `Banked ${plan.reward.coins} · Wallet ${coins}`
+              : `Reward · ${plan.reward.coins} coins`
             : activeOwnedReplayOrder
-              ? `Nourish ${plan.reward.coins} · Keep ${coins}`
+              ? `Bank ${plan.reward.coins} · Wallet ${ownedReplayWalletAfterBouquet}`
               : `Complete for ${plan.reward.coins} coins`;
         if (ownedReplayEntryActive) {
           reward.setAttribute(
@@ -16903,7 +16906,7 @@
         } else if (activeOwnedReplayOrder) {
           reward.setAttribute(
             "aria-label",
-            `${plan.reward.coins} coins nourish the Conservatory; ${coins} coins kept`
+            `${plan.reward.coins} replay coins bank after the bouquet; wallet becomes ${ownedReplayWalletAfterBouquet}; Conservatory stays owned`
           );
         } else {
           reward.removeAttribute("aria-label");
@@ -19882,16 +19885,17 @@
       };
       const milestone = milestones[plan.round] || milestones[1];
       const alreadyOwned = ownership.stage >= milestone.stage;
+      const replayWallet = roundComplete ? coins : coins + plan.reward.coins;
       return {
         alreadyOwned,
-        action: alreadyOwned ? "Nourish owned conservatory" : milestone.action,
+        action: alreadyOwned ? "Bank replay reward" : milestone.action,
         eyebrow: alreadyOwned ? "Greenhouse owned" : `Then ${milestone.action.split(" ")[0].toLowerCase()}`,
         cost: alreadyOwned ? null : milestone.cost,
-        rewardLabel: alreadyOwned ? "Reward reinvested" : "Exact reward",
-        rewardCopy: alreadyOwned ? `${plan.reward.coins} coins` : `+${plan.reward.coins} coins`,
-        consequenceLabel: alreadyOwned ? "Conservatory nourished" : `Then ${milestone.action.split(" ")[0].toLowerCase()}`,
-        consequenceCopy: alreadyOwned ? `${coins} coins remain` : milestone.action,
-        consequenceDetail: alreadyOwned ? "Restoration remains yours" : `${milestone.cost} coins`,
+        rewardLabel: alreadyOwned ? "Replay reward" : "Exact reward",
+        rewardCopy: `+${plan.reward.coins} coins`,
+        consequenceLabel: alreadyOwned ? "Wallet after bouquet" : `Then ${milestone.action.split(" ")[0].toLowerCase()}`,
+        consequenceCopy: alreadyOwned ? `${replayWallet} coins` : milestone.action,
+        consequenceDetail: alreadyOwned ? "Conservatory stays owned" : `${milestone.cost} coins`,
         ownedLabel: `${ownership.ownedLabel} · ${greenhouseDialPhase(ownership)}`,
         ownedStage: ownership.stage
       };
@@ -20022,14 +20026,10 @@
       if (roundComplete || !targetsComplete || !thornGoalComplete(plan) || authoredLessonPending) {
         return false;
       }
-      const ownedReplayCompletion = isOwnedRestorationReplay();
-      const retainedOwnedReplayBalance = ownedReplayCompletion ? coins : null;
       roundComplete = true;
       retireRoundOneSecondTargetDiscovery({ clearHint: true });
       const streakPayout = completionCoinPayout(plan);
-      coins = ownedReplayCompletion
-        ? retainedOwnedReplayBalance
-        : coins + streakPayout.total;
+      coins += streakPayout.total;
       const completionMessage = focusedSliceCompletionMessage(plan, streakPayout);
       ritualMessage = carryMessage ? `${carryMessage} ${completionMessage}` : completionMessage;
       if (focusedSliceRound(plan)) {
@@ -20066,7 +20066,7 @@
 
     function focusedSliceCompletionMessage(plan, payout) {
       if (isOwnedRestorationReplay()) {
-        return `<strong>${plan.name} fulfilled.</strong> ${payout.total} coins nourish the owned conservatory.`;
+        return `<strong>${plan.name} fulfilled.</strong> +${payout.total} replay coins banked. Wallet ${coins}.`;
       }
       if (plan.round === 1) {
         return `<strong>${plan.name} fulfilled.</strong> +${payout.total} coins. Restore the greenhouse.`;
@@ -21443,6 +21443,7 @@
 
     function recoverCompletedFocusedOrder() {
       const plan = buildRoundPlan(currentRound);
+      const ownedReplayRecovery = isOwnedRestorationReplay();
       if (
         roundComplete
         || !focusedSliceRound(plan)
@@ -21451,7 +21452,9 @@
         return false;
       }
       roundComplete = true;
-      coins = Math.max(coins, focusedEconomyBalanceForProgress());
+      coins = ownedReplayRecovery
+        ? coins + completionCoinPayout(plan).total
+        : Math.max(coins, focusedEconomyBalanceForProgress());
       ritualMessage = focusedSliceCompletionMessage(plan, completionCoinPayout(plan));
       tutorialActive = true;
       return true;
@@ -21603,6 +21606,15 @@
           || currentRound !== 1;
         blackCandleLessonComplete = savedBlackCandleLessonComplete
           || (savedFocusedEconomyVersion < FOCUSED_ECONOMY_SAVE_VERSION && roundComplete);
+        if (
+          savedFocusedEconomyVersion < 3
+          && roundComplete
+          && isOwnedRestorationReplay()
+          && focusedOrderCompletionReceipt(focusedPlan)
+        ) {
+          coins += completionCoinPayout(focusedPlan).total;
+          shouldSaveMigratedProgress = true;
+        }
         if (rejectUnsupportedFocusedOrderCompletion(savedBlackCandleLessonComplete)) {
           shouldSaveMigratedProgress = true;
         }

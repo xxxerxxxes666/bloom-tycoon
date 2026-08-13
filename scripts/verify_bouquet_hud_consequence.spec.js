@@ -824,18 +824,21 @@ async function assertHudState(page, fixture, viewport, reload) {
   const report = await hudReport(page);
   const label = `${viewport.label} ${fixture.label} reload ${reload}`;
   const state = savedState(fixture);
-  const ownedReplayActive = state.roundOneRestored
+  const ownedReplay = state.roundOneRestored
     && state.roundTwoGreenhouseUpgraded
     && state.roundThreeConservatoryRaised
-    && !state.freshConservatorySettlement
-    && !state.roundComplete;
+    && !state.freshConservatorySettlement;
+  const ownedReplayActive = ownedReplay && !state.roundComplete;
+  const authoritativeCoins = report.savedCoins;
   const expectedRewardPromise = state.roundComplete
-    ? `Reward · ${ROUND_CONTRACTS[state.currentRound].reward} coins`
+    ? ownedReplay
+      ? `Banked ${ROUND_CONTRACTS[state.currentRound].reward} · Wallet ${authoritativeCoins}`
+      : `Reward · ${ROUND_CONTRACTS[state.currentRound].reward} coins`
     : ownedReplayActive
-      ? `Nourish ${ROUND_CONTRACTS[state.currentRound].reward} · Keep ${state.coins}`
+      ? `Bank ${ROUND_CONTRACTS[state.currentRound].reward} · Wallet ${authoritativeCoins + ROUND_CONTRACTS[state.currentRound].reward}`
       : `Complete for ${ROUND_CONTRACTS[state.currentRound].reward} coins`;
   const expectedRewardSemantics = ownedReplayActive
-    ? `${ROUND_CONTRACTS[state.currentRound].reward} coins nourish the Conservatory; ${state.coins} coins kept`
+    ? `${ROUND_CONTRACTS[state.currentRound].reward} replay coins bank after the bouquet; wallet becomes ${authoritativeCoins + ROUND_CONTRACTS[state.currentRound].reward}; Conservatory stays owned`
     : expectedRewardPromise;
   const desktopViewport = viewport.width >= 761;
   expect(report.text, `${label} exact consequence`).toBe(fixture.expected);
@@ -896,7 +899,7 @@ async function assertHudState(page, fixture, viewport, reload) {
     expect(report.contract.name, `${label} current order name`).toBe(expectedContract.name);
     expect(report.contract.reward, `${label} exact reward`).toBe(String(expectedContract.reward));
     expect(report.contract.restoration, `${label} greenhouse consequence`).toBe(
-      restorationAlreadyOwned ? "Nourish owned conservatory" : expectedContract.restoration
+      restorationAlreadyOwned ? "Bank replay reward" : expectedContract.restoration
     );
     expect(report.contract.restorationCost, `${label} greenhouse cost`).toBe(
       restorationAlreadyOwned ? "" : String(expectedContract.restorationCost)
@@ -907,16 +910,16 @@ async function assertHudState(page, fixture, viewport, reload) {
     );
     expect(report.contract.rewardText, `${label} truthful desktop reward`).toBe(
       restorationAlreadyOwned
-        ? `REWARD REINVESTED ${expectedContract.reward} coins`
+        ? `REPLAY REWARD +${expectedContract.reward} coins`
         : `EXACT REWARD +${expectedContract.reward} coins`
     );
     expect(report.contract.consequenceText, `${label} truthful desktop consequence`).toBe(
       restorationAlreadyOwned
-        ? `CONSERVATORY NOURISHED ${state.coins} coins remain Restoration remains yours`
+        ? `WALLET AFTER BOUQUET ${authoritativeCoins + expectedContract.reward} coins Conservatory stays owned`
         : `THEN ${expectedContract.restoration.split(" ")[0].toUpperCase()} ${expectedContract.restoration} ${expectedContract.restorationCost} coins`
     );
     if (restorationAlreadyOwned) {
-      expect(report.contract.text, `${label} no wallet-inflation promise`).not.toContain(
+      expect(report.contract.text, `${label} replay reward is explicit`).toContain(
         `+${expectedContract.reward} coins`
       );
     }
@@ -1003,7 +1006,7 @@ async function assertHudState(page, fixture, viewport, reload) {
       `${label} one visible total narration`
     ).toBe(1);
     const visiblePromisePattern = ownedReplayActive
-      ? /Nourish \d+ · Keep \d+/gi
+      ? /Bank \d+ · Wallet \d+/gi
       : /Complete for \d+ coins/gi;
     expect(
       (report.visibleBouquetSurfaceText.match(visiblePromisePattern) || []).length,
@@ -1434,7 +1437,7 @@ for (const viewport of VIEWPORTS) {
 }
 
 for (const viewport of REDUCED_OWNED_PROMISE_VIEWPORTS) {
-  test(`owned replay nourishment promise survives reduced-motion reloads on ${viewport.label}`, async ({ browser }) => {
+  test(`owned replay bank promise survives reduced-motion reloads on ${viewport.label}`, async ({ browser }) => {
     for (const fixture of HUD_CASES.filter((candidate) => candidate.label.includes("owned-replay"))) {
       const context = await browser.newContext({
         viewport: { width: viewport.width, height: viewport.height },
