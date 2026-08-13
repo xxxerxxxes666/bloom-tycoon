@@ -163,12 +163,49 @@ async function commitPair(page, pair, input) {
   return before;
 }
 
-async function commitPairWithPaintSampling(page, pair, input) {
+async function commitPairWithPhaseEvidence(page, pair, input, label) {
   const before = await savedState(page);
   const source = page.locator(`#tile-${pair[0].x}-${pair[0].y}`);
   const destination = page.locator(`#tile-${pair[1].x}-${pair[1].y}`);
-  const boardBox = await page.locator("#board").boundingBox();
+  const board = page.locator("#board");
+  const boardBox = await board.boundingBox();
   expect(boardBox).not.toBeNull();
+  await page.evaluate(() => {
+    const boardNode = document.querySelector("#board");
+    const snapshots = [];
+    let previousSignature = "";
+    const capture = () => {
+      const tiles = Array.from(boardNode.querySelectorAll(".tile"));
+      const state = {
+        busy: boardNode.getAttribute("aria-busy") === "true",
+        cascadeWave: Number(boardNode.dataset.cascadeWave || 0),
+        swapGlide: boardNode.querySelectorAll(".tile.swap-glide").length,
+        harvestFlash: boardNode.querySelectorAll(".tile.harvest-flash").length,
+        refillBorn: boardNode.querySelectorAll(".tile.refill-born").length,
+        relics: boardNode.querySelectorAll('.tile[data-line-relic="black-candle-vine"]').length,
+        lanePreview: boardNode.querySelectorAll(".tile.line-relic-lane-preview").length,
+        tiles: tiles.length,
+        rows: new Set(tiles.map((tile) => tile.dataset.y)).size,
+        disabled: tiles.filter((tile) => tile.disabled).length
+      };
+      const signature = JSON.stringify(state);
+      if (signature !== previousSignature) {
+        snapshots.push({ ...state, at: performance.now() });
+        previousSignature = signature;
+      }
+    };
+    const observer = new MutationObserver(capture);
+    observer.observe(boardNode, {
+      attributes: true,
+      childList: true,
+      subtree: true,
+      attributeFilter: [
+        "aria-busy", "class", "data-cascade-wave", "data-line-relic", "disabled"
+      ]
+    });
+    capture();
+    window.__blackCandleFormationLifecycle = { snapshots, observer, capture };
+  });
   if (input === "keyboard") {
     await source.focus();
     await page.keyboard.press("Enter");
@@ -179,30 +216,38 @@ async function commitPairWithPaintSampling(page, pair, input) {
     await destination.click();
   }
 
-  const frames = [];
-  const deadline = Date.now() + 1700;
-  while (Date.now() < deadline) {
-    const png = await page.screenshot({
-      type: "png",
-      clip: boardBox,
-      animations: "allow"
-    });
-    const state = await page.evaluate(() => ({
-      resolving: document.body.classList.contains("board-resolving"),
-      relics: document.querySelectorAll('.tile[data-line-relic="black-candle-vine"]').length,
-      tiles: document.querySelectorAll("#board .tile").length
-    }));
-    frames.push({ ratios: paintedRowRatios(png), ...state });
-    if (!state.resolving && state.relics === 1 && frames.length >= 8) break;
-    await page.waitForTimeout(16);
-  }
+  await expect(board).toHaveAttribute("aria-busy", "true");
+  const peakPng = await page.screenshot({
+    path: `work/black-candle-formation-peak-${label}.png`,
+    type: "png",
+    clip: boardBox,
+    animations: "allow"
+  });
   await page.waitForFunction(({ key, moves }) => {
     const saved = JSON.parse(localStorage.getItem(key) || "{}");
     return saved.moves === moves - 1
       && document.querySelectorAll("#board .tile").length === 64
       && Array.from(document.querySelectorAll("#board .tile")).every((tile) => !tile.disabled);
   }, { key: SAVE_KEY, moves: before.moves }, { timeout: 12000 });
-  return frames;
+  await expect(board).toHaveAttribute("aria-busy", "false");
+  const settledPng = await page.screenshot({
+    path: `work/black-candle-formation-settled-${label}.png`,
+    type: "png",
+    clip: boardBox,
+    animations: "allow"
+  });
+  const lifecycle = await page.evaluate(() => {
+    const recorder = window.__blackCandleFormationLifecycle;
+    recorder.capture();
+    recorder.observer.disconnect();
+    delete window.__blackCandleFormationLifecycle;
+    return recorder.snapshots;
+  });
+  return {
+    lifecycle,
+    peakRatios: paintedRowRatios(peakPng),
+    settledRatios: paintedRowRatios(settledPng)
+  };
 }
 
 async function lessonReport(page) {
@@ -325,19 +370,46 @@ for (const config of [
     await page.locator("#tutorialSkipBtn").click();
     await expect(page.locator("#tutorialHelpBtn")).toBeVisible();
 
-    const paintFrames = config.viewport.width === 390
-      ? await commitPairWithPaintSampling(page, expectedPair, config.input)
+    const visualEvidence = config.viewport.width === 390
+      ? await commitPairWithPhaseEvidence(page, expectedPair, config.input, config.label)
       : (await commitPair(page, expectedPair, config.input), []);
     if (config.viewport.width === 390) {
-      expect(paintFrames.length, `${config.label} captures several animation frames`).toBeGreaterThanOrEqual(8);
+      const { lifecycle, peakRatios, settledRatios } = visualEvidence;
+      const acceptedIndex = lifecycle.findIndex((phase) => phase.busy && phase.swapGlide === 2);
+      const impactIndex = lifecycle.findIndex((phase, index) => (
+        index > acceptedIndex
+        && phase.busy
+        && phase.cascadeWave === 1
+        && phase.harvestFlash > 0
+      ));
+      const refillIndex = lifecycle.findIndex((phase, index) => (
+        index > impactIndex
+        && phase.busy
+        && phase.refillBorn > 0
+        && phase.relics === 1
+      ));
+      const settledIndex = lifecycle.findIndex((phase, index) => (
+        index > refillIndex
+        && !phase.busy
+        && phase.relics === 1
+        && phase.lanePreview === 8
+        && phase.disabled === 0
+      ));
+      expect(acceptedIndex, `${config.label} exposes the accepted swap peak`).toBeGreaterThanOrEqual(0);
+      expect(impactIndex, `${config.label} exposes the four-Bone impact phase`).toBeGreaterThan(acceptedIndex);
+      expect(refillIndex, `${config.label} exposes the armed-relic refill phase`).toBeGreaterThan(impactIndex);
+      expect(settledIndex, `${config.label} settles on the eight-cell burn forecast`).toBeGreaterThan(refillIndex);
       expect(
-        paintFrames.every((frame) => frame.tiles === 64),
-        `${config.label} retains all controls in every sampled frame`
+        lifecycle.every((phase) => phase.tiles === 64 && phase.rows === 8),
+        `${config.label} retains 64 controls and eight rows through every semantic phase`
       ).toBe(true);
-      const blankFrames = paintFrames.flatMap((frame, frameIndex) => frame.ratios
-        .map((ratio, row) => ({ frame: frameIndex, row, ratio }))
+      const blankPhases = [
+        { phase: "commit-peak", ratios: peakRatios },
+        { phase: "settled", ratios: settledRatios }
+      ].flatMap(({ phase, ratios }) => ratios
+        .map((ratio, row) => ({ phase, row, ratio }))
         .filter(({ ratio }) => ratio < 0.08));
-      expect(blankFrames, `${config.label} keeps visible socket pixels in every row band`).toEqual([]);
+      expect(blankPhases, `${config.label} keeps visible socket pixels at peak and settled states`).toEqual([]);
     }
     await expect(page.locator('.tile[data-line-relic="black-candle-vine"]')).toHaveCount(1);
     const formed = await savedState(page);
