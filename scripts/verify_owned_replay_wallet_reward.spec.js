@@ -48,6 +48,17 @@ function ownedRoundThreeState() {
   };
 }
 
+function damagedCompletedOwnedRoundThreeState() {
+  return {
+    ...ownedRoundThreeState(),
+    focusedEconomyVersion: true,
+    moves: 3,
+    coins: 230,
+    counts: [13, 0, 0, 14, 0, 0],
+    roundComplete: true
+  };
+}
+
 function watchErrors(page) {
   const errors = [];
   page.on("console", (message) => {
@@ -78,6 +89,7 @@ async function report(page) {
     const tiles = [...document.querySelectorAll(".tile")];
     const board = document.querySelector("#board")?.getBoundingClientRect();
     return {
+      raw: localStorage.getItem(key),
       saved: JSON.parse(localStorage.getItem(key) || "{}"),
       rewardPromise: document.querySelector("#bouquetRewardPromise")?.textContent.trim() || "",
       transaction: document.querySelector("#payoffTransaction")?.innerText || "",
@@ -93,6 +105,77 @@ async function report(page) {
         .map((image) => image.currentSrc || image.src)
     };
   }, SAVE_KEY);
+}
+
+for (const profile of PROFILES.filter(({ reducedMotion }) => !reducedMotion)) {
+  test(`malformed economy version cannot duplicate a settled reward on ${profile.label}`, async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: profile.viewport,
+      hasTouch: Boolean(profile.mobile),
+      isMobile: Boolean(profile.mobile)
+    });
+    const page = await context.newPage();
+    const errors = watchErrors(page);
+    await page.addInitScript(({ key, state, marker }) => {
+      if (!sessionStorage.getItem(marker)) {
+        localStorage.setItem(key, JSON.stringify(state));
+        sessionStorage.setItem(marker, "1");
+      }
+    }, {
+      key: SAVE_KEY,
+      state: damagedCompletedOwnedRoundThreeState(),
+      marker: `owned-replay-version-repair-${profile.label}`
+    });
+    await page.goto(`${BASE_URL}?owned-replay-version-repair=${profile.label}`, {
+      waitUntil: "networkidle"
+    });
+    await expect(page.getByRole("button", { name: "Play Again → First Bouquet", exact: true }))
+      .toBeVisible();
+
+    const repaired = await report(page);
+    expect(repaired.saved.focusedEconomyVersion).toBe(3);
+    expect(repaired.saved.coins).toBe(230);
+    expect(repaired.saved.roundComplete).toBe(true);
+    expect(repaired.rewardPromise).toBe("Banked 180 · Wallet 230");
+    expect(repaired.transaction).toBe("REPLAY REWARD · +180 COINS BANKED · 230 COINS IN WALLET.");
+    expect(repaired.ritual).toContain("Saved wallet repaired");
+    expect(repaired.overflowX).toBe(false);
+    expect(repaired.overflowY).toBe(false);
+    expect(repaired.brokenImages).toEqual([]);
+    await page.screenshot({
+      path: `work/owned-replay-version-repaired-${profile.label}.png`,
+      fullPage: true
+    });
+
+    await page.reload({ waitUntil: "networkidle" });
+    const stable = await report(page);
+    expect(stable.raw).toBe(repaired.raw);
+    expect(stable.saved.coins).toBe(230);
+    expect(stable.saved.focusedEconomyVersion).toBe(3);
+    expect(stable.ritual).not.toContain("Saved wallet repaired");
+    expect(stable.transaction).toBe(repaired.transaction);
+
+    const replay = page.getByRole("button", { name: "Play Again → First Bouquet", exact: true });
+    if (profile.mobile) await replay.tap();
+    else await replay.click();
+    await expect(page.locator("#board .tile")).toHaveCount(64);
+    await expect(page.locator("#bouquetRewardPromise")).toHaveText("Bank 120 · Wallet 350", {
+      timeout: 5000
+    });
+    const handoff = await report(page);
+    expect(handoff.saved.currentRound).toBe(1);
+    expect(handoff.saved.roundComplete).toBe(false);
+    expect(handoff.saved.coins).toBe(230);
+    expect(handoff.tiles).toBe(64);
+    expect(handoff.rows).toBe(8);
+    expect(handoff.boardWidth).toBeCloseTo(profile.mobile ? 378 : 600, 0);
+    expect(handoff.boardHeight).toBeCloseTo(profile.mobile ? 378 : 600, 0);
+    expect(handoff.overflowX).toBe(false);
+    expect(handoff.overflowY).toBe(false);
+    expect(handoff.brokenImages).toEqual([]);
+    expect(errors).toEqual([]);
+    await context.close();
+  });
 }
 
 for (const profile of PROFILES) {

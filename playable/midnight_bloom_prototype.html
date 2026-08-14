@@ -21798,6 +21798,25 @@
       return Boolean(fallback);
     }
 
+    function normalizeSavedEconomyVersion(value) {
+      if (value === undefined) {
+        return { version: 0, needsRepair: false, malformed: false };
+      }
+      const numeric = typeof value === "number"
+        || (typeof value === "string" && value.trim() !== "")
+        ? Number(value)
+        : Number.NaN;
+      if (!Number.isFinite(numeric) || numeric < 0) {
+        return {
+          version: FOCUSED_ECONOMY_SAVE_VERSION,
+          needsRepair: true,
+          malformed: true
+        };
+      }
+      const version = Math.floor(numeric);
+      return { version, needsRepair: value !== version, malformed: false };
+    }
+
     function savedBooleanNeedsRepair(value, normalized) {
       return value !== undefined && value !== normalized;
     }
@@ -21841,11 +21860,13 @@
           return;
         }
         const state = JSON.parse(raw);
-        const savedFocusedEconomyVersion = Math.max(0, Math.floor(Number(state.focusedEconomyVersion) || 0));
-        let shouldSaveMigratedProgress = false;
+        const savedEconomyVersion = normalizeSavedEconomyVersion(state.focusedEconomyVersion);
+        const savedFocusedEconomyVersion = savedEconomyVersion.version;
+        let shouldSaveMigratedProgress = savedEconomyVersion.needsRepair;
         let repairedInvalidSavedProgress = false;
         let repairedSavedCountVector = false;
         let repairedSavedMoveBudget = false;
+        const repairedSavedEconomyVersion = savedEconomyVersion.malformed;
         const savedBoolean = (key, fallback = false) => {
           const normalized = normalizeSavedBoolean(state[key], fallback);
           repairedInvalidSavedProgress = repairedInvalidSavedProgress
@@ -21957,6 +21978,9 @@
             pendingSavedRepairReceiptCopy = SAVED_MOVE_REPAIR_RECEIPT_COPY;
           }
           shouldSaveMigratedProgress = true;
+        }
+        if (repairedSavedEconomyVersion && !repairedInvalidSavedProgress) {
+          ritualMessage = "<strong>Saved wallet repaired.</strong> Earned coins were preserved before play resumed.";
         }
         hasMadeValidMove = savedHasMadeValidMove
           || counts.some((count) => count > 0)
