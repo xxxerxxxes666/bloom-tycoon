@@ -173,13 +173,26 @@ for (const profile of VIEWPORTS) {
     await page.screenshot({ path: `work/armed-relic-activated-${profile.label}.png`, fullPage: false });
     await page.reload({ waitUntil: "networkidle" });
     const activatedReload = await report(page);
+    expect(activatedReload.raw).toBe(activated.raw);
     expect(activatedReload.state.moves).toBe(2);
     expect(activatedReload.state.armedLineRelic).toBeNull();
     expect(activatedReload.state.counts.reduce((total, count) => total + count, 0)).toBe(20);
     expect(activatedReload.state.coins).toBe(0);
+    expect(activatedReload.hinted).toEqual(activated.hinted);
+    expect(activatedReload.cue).toBe(activated.cue);
+    expect(activatedReload.activeId).toBe(activated.activeId);
+    expect(activatedReload.roving).toEqual(activated.roving);
     expect(activatedReload.tileCount).toBe(64);
     expect(activatedReload.rows).toBe(8);
     expect(activatedReload.disabled).toBe(0);
+    expect(activatedReload.brokenImages).toEqual([]);
+    expect(activatedReload.viewport.scrollWidth).toBe(activatedReload.viewport.width);
+    if (profile.label === "mobile390") {
+      expect(activatedReload.viewport.scrollHeight).toBeLessThanOrEqual(844);
+    }
+    expect(consoleErrors).toEqual([]);
+    expect(pageErrors).toEqual([]);
+    await page.screenshot({ path: `work/armed-relic-reloaded-${profile.label}.png`, fullPage: false });
     await context.close();
   });
 }

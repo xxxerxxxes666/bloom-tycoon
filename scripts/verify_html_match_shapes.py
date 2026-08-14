@@ -380,6 +380,8 @@ def verify_source_hooks():
         'return `Find ${matchCount} ${flowers[target.flowerId][0]}${matchCount === 1 ? "" : "s"}.`;',
         "function isRoundOneAgencyHandoffActive(plan = activeRoundPlan())",
         'roundOneGuidedStage(plan) === "thorn-followup"',
+        'if (blackCandleLessonComplete) {\n        return "";\n      }',
+        "&& !blackCandleLessonComplete\n        && !roundComplete",
         "writeRoundOneThreeMatchPatch(2, 0, thornTarget.flowerId, { safeBoard: true })",
         "function isPostOnboardingIdleHintActive(plan = activeRoundPlan())",
         "round-two-followup-cue",

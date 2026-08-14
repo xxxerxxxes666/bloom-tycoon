@@ -11982,6 +11982,9 @@
       if (!thornTarget || !boneTarget) {
         return "";
       }
+      if (blackCandleLessonComplete) {
+        return "";
+      }
       const thornProgress = targetProgress(thornTarget);
       const boneProgress = targetProgress(boneTarget);
       if (!hasMadeValidMove && thornProgress <= 0 && boneProgress <= 0) {
@@ -15567,6 +15570,7 @@
         && Boolean(firstTarget && secondTarget)
         && targetProgress(firstTarget) >= firstTarget.needed
         && targetProgress(secondTarget) < secondTarget.needed
+        && !blackCandleLessonComplete
         && !roundComplete
         && !isBouquetFailed(plan)
         && !isArmedLineRelicGuidanceActive()
