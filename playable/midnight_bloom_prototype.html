@@ -12382,18 +12382,54 @@
     }
 
     function normalizeArmedLineRelic(candidate) {
-      if (!candidate || !Number.isInteger(candidate.x) || !Number.isInteger(candidate.y)) {
+      if (!candidate) {
         return null;
       }
-      if (candidate.x < 0 || candidate.x >= BOARD_SIZE || candidate.y < 0 || candidate.y >= BOARD_SIZE) {
+      const serializedInteger = (value) => {
+        if (typeof value === "number") {
+          return Number.isInteger(value) ? value : NaN;
+        }
+        if (typeof value === "string" && value.trim() !== "") {
+          const numeric = Number(value);
+          return Number.isInteger(numeric) ? numeric : NaN;
+        }
+        return NaN;
+      };
+      const x = serializedInteger(candidate.x);
+      const y = serializedInteger(candidate.y);
+      if (!Number.isInteger(x) || !Number.isInteger(y)) {
+        return null;
+      }
+      if (x < 0 || x >= BOARD_SIZE || y < 0 || y >= BOARD_SIZE) {
+        return null;
+      }
+      const savedFlowerId = serializedInteger(candidate.flowerId);
+      const boardFlowerId = board[y]?.[x];
+      const flowerId = Number.isInteger(savedFlowerId)
+        && savedFlowerId >= 0
+        && savedFlowerId < flowers.length
+        ? savedFlowerId
+        : boardFlowerId;
+      if (!Number.isInteger(flowerId) || flowerId < 0 || flowerId >= flowers.length) {
         return null;
       }
       return {
-        x: candidate.x,
-        y: candidate.y,
+        x,
+        y,
         direction: candidate.direction === "vertical" ? "vertical" : "horizontal",
-        flowerId: Number.isInteger(candidate.flowerId) ? candidate.flowerId : board[candidate.y]?.[candidate.x]
+        flowerId
       };
+    }
+
+    function savedArmedLineRelicNeedsRepair(candidate, normalized) {
+      if (candidate === undefined || candidate === null) {
+        return false;
+      }
+      return !normalized
+        || candidate.x !== normalized.x
+        || candidate.y !== normalized.y
+        || candidate.direction !== normalized.direction
+        || candidate.flowerId !== normalized.flowerId;
     }
 
     function lineRelicActivationPair(relic = armedLineRelic) {
@@ -21690,10 +21726,14 @@
         } else if (state.board !== undefined) {
           savedAltarRepairPending = true;
         }
-        armedLineRelic = normalizeArmedLineRelic(state.armedLineRelic);
+        const normalizedArmedLineRelic = normalizeArmedLineRelic(state.armedLineRelic);
+        repairedInvalidNumericProgress = repairedInvalidNumericProgress
+          || savedArmedLineRelicNeedsRepair(state.armedLineRelic, normalizedArmedLineRelic);
+        armedLineRelic = normalizedArmedLineRelic;
         if (Array.isArray(state.counts) && state.counts.length === flowers.length) {
           counts = state.counts.map((count) => normalizeSavedWholeNumber(count));
-          repairedInvalidNumericProgress = counts.some((count, index) => count !== state.counts[index]);
+          repairedInvalidNumericProgress = repairedInvalidNumericProgress
+            || counts.some((count, index) => count !== state.counts[index]);
         }
         if (Array.isArray(state.cursedThorns)) {
           const normalizedCursedThorns = state.cursedThorns
