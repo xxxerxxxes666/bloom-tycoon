@@ -39,8 +39,25 @@ const CASES = [
     expectedProgress: "Bouquet · 9/29"
   },
   {
+    label: "invalid-shape-with-stale-relic",
+    raw: JSON.stringify({
+      ...ROUND_TWO_STATE,
+      board: [[0]],
+      armedLineRelic: { x: 3, y: 4, direction: "horizontal", flowerId: 0 }
+    }),
+    expectedRound: 2,
+    expectedMoves: 8,
+    expectedCoins: 20,
+    expectedCounts: ROUND_TWO_STATE.counts,
+    expectedProgress: "Bouquet · 9/29"
+  },
+  {
     label: "pre-matched",
-    raw: JSON.stringify({ ...ROUND_TWO_STATE, board: MATCHED_BOARD }),
+    raw: JSON.stringify({
+      ...ROUND_TWO_STATE,
+      board: MATCHED_BOARD,
+      armedLineRelic: { x: 3, y: 4, direction: "vertical", flowerId: 0 }
+    }),
     expectedRound: 2,
     expectedMoves: 8,
     expectedCoins: 20,
@@ -204,6 +221,8 @@ async function report(page) {
       scrollY,
       overflowX: document.documentElement.scrollWidth > innerWidth + 1,
       overflowY: document.documentElement.scrollHeight > innerHeight + 1,
+      relics: document.querySelectorAll('.tile[data-line-relic="black-candle-vine"]').length,
+      relicLaneCells: document.querySelectorAll(".tile.line-relic-lane-preview").length,
       brokenImages: [...document.images]
         .filter((image) => visible(image) && (!image.complete || image.naturalWidth === 0))
         .map((image) => image.getAttribute("src"))
@@ -373,6 +392,9 @@ for (const viewportCase of VIEWPORTS) {
         expect(repaired.scrollY).toBe(0);
         expect(repaired.overflowX).toBe(false);
         if (viewportCase.mobile) expect(repaired.overflowY).toBe(false);
+        expect(repaired.state.armedLineRelic).toBeNull();
+        expect(repaired.relics).toBe(0);
+        expect(repaired.relicLaneCells).toBe(0);
         expect(repaired.brokenImages).toEqual([]);
         expect(problems).toEqual([]);
         expect(failedRequests).toEqual([]);
@@ -473,6 +495,9 @@ for (const viewportCase of VIEWPORTS) {
         expect(stable.scrollY).toBe(0);
         expect(stable.overflowX).toBe(false);
         if (viewportCase.mobile) expect(stable.overflowY).toBe(false);
+        expect(stable.state.armedLineRelic).toBeNull();
+        expect(stable.relics).toBe(0);
+        expect(stable.relicLaneCells).toBe(0);
         expect(stable.brokenImages).toEqual([]);
         expect(problems).toEqual([]);
         expect(failedRequests).toEqual([]);

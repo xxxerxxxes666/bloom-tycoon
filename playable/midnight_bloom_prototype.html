@@ -22135,6 +22135,8 @@
     const loadedBoardNeedsRepair = board.length > 0 && (matches().length > 0 || !hasLegalMoves());
     if (!board.length || loadedBoardNeedsRepair) {
       savedAltarRepairPending = savedAltarRepairPending || loadedBoardNeedsRepair;
+      // Black Candles belong to the exact settled altar that formed them.
+      armedLineRelic = null;
       build();
     }
     if (currentRound === 1 && roundComplete && !tutorialSkipped) {
