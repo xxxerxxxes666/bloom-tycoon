@@ -21712,6 +21712,20 @@
       return Number.isFinite(fallbackNumeric) ? Math.max(0, Math.floor(fallbackNumeric)) : 0;
     }
 
+    function normalizeSavedBoolean(value, fallback = false) {
+      if (value === true || value === 1 || value === "1" || value === "true") {
+        return true;
+      }
+      if (value === false || value === 0 || value === "0" || value === "false") {
+        return false;
+      }
+      return Boolean(fallback);
+    }
+
+    function savedBooleanNeedsRepair(value, normalized) {
+      return value !== undefined && value !== normalized;
+    }
+
     function loadProgress() {
       if (typeof localStorage === "undefined") {
         return;
@@ -21724,59 +21738,75 @@
         const state = JSON.parse(raw);
         const savedFocusedEconomyVersion = Math.max(0, Math.floor(Number(state.focusedEconomyVersion) || 0));
         let shouldSaveMigratedProgress = false;
-        let repairedInvalidNumericProgress = false;
+        let repairedInvalidSavedProgress = false;
+        const savedBoolean = (key, fallback = false) => {
+          const normalized = normalizeSavedBoolean(state[key], fallback);
+          repairedInvalidSavedProgress = repairedInvalidSavedProgress
+            || savedBooleanNeedsRepair(state[key], normalized);
+          return normalized;
+        };
+        const savedRoundComplete = savedBoolean("roundComplete");
+        const savedFirstBouquetComplete = savedBoolean("firstBouquetComplete");
+        const savedRoundOneRestored = savedBoolean("roundOneRestored");
+        const savedRoundTwoGreenhouseUpgraded = savedBoolean("roundTwoGreenhouseUpgraded");
+        const savedRoundThreeConservatoryRaised = savedBoolean("roundThreeConservatoryRaised");
+        const savedFreshConservatorySettlement = savedBoolean("freshConservatorySettlement");
+        const savedHasMadeValidMove = savedBoolean("hasMadeValidMove");
+        const savedTutorialSkipped = savedBoolean("tutorialSkipped");
+        const savedTutorialActive = savedBoolean("tutorialActive");
+        const savedBlackCandleLessonComplete = savedBoolean("blackCandleLessonComplete");
         if (isValidBoard(state.board)) {
           board = state.board;
         } else if (state.board !== undefined) {
           savedAltarRepairPending = true;
         }
         const normalizedArmedLineRelic = normalizeArmedLineRelic(state.armedLineRelic);
-        repairedInvalidNumericProgress = repairedInvalidNumericProgress
+        repairedInvalidSavedProgress = repairedInvalidSavedProgress
           || savedArmedLineRelicNeedsRepair(state.armedLineRelic, normalizedArmedLineRelic);
         armedLineRelic = normalizedArmedLineRelic;
         if (Array.isArray(state.counts) && state.counts.length === flowers.length) {
           counts = state.counts.map((count) => normalizeSavedWholeNumber(count));
-          repairedInvalidNumericProgress = repairedInvalidNumericProgress
+          repairedInvalidSavedProgress = repairedInvalidSavedProgress
             || counts.some((count, index) => count !== state.counts[index]);
         }
         if (Array.isArray(state.cursedThorns)) {
           const normalizedCursedThorns = state.cursedThorns
             .map(normalizeCursedThorn)
             .filter(Boolean);
-          repairedInvalidNumericProgress = repairedInvalidNumericProgress
+          repairedInvalidSavedProgress = repairedInvalidSavedProgress
             || JSON.stringify(normalizedCursedThorns) !== JSON.stringify(state.cursedThorns);
           cursedThorns = normalizedCursedThorns;
         }
         const normalizedClearedCursedThorns = normalizeSavedWholeNumber(state.clearedCursedThorns);
         if (state.clearedCursedThorns !== undefined && normalizedClearedCursedThorns !== state.clearedCursedThorns) {
-          repairedInvalidNumericProgress = true;
+          repairedInvalidSavedProgress = true;
         }
         clearedCursedThorns = normalizedClearedCursedThorns;
         const normalizedMoves = normalizeSavedWholeNumber(state.moves, moves);
         if (state.moves !== undefined && normalizedMoves !== state.moves) {
-          repairedInvalidNumericProgress = true;
+          repairedInvalidSavedProgress = true;
         }
         moves = normalizedMoves;
         const normalizedCoins = normalizeSavedWholeNumber(state.coins, coins);
         const savedCoinsNeedRepair = state.coins !== undefined && normalizedCoins !== state.coins;
-        repairedInvalidNumericProgress = repairedInvalidNumericProgress || savedCoinsNeedRepair;
+        repairedInvalidSavedProgress = repairedInvalidSavedProgress || savedCoinsNeedRepair;
         coins = normalizedCoins;
         const savedRoundNumber = Number(state.currentRound);
         const savedRoundNeedsRepair = state.currentRound !== undefined && !Number.isFinite(savedRoundNumber);
         currentRound = savedRoundNeedsRepair
           ? 1
           : Math.max(1, Math.floor(savedRoundNumber || 1));
-        repairedInvalidNumericProgress = repairedInvalidNumericProgress || savedRoundNeedsRepair;
+        repairedInvalidSavedProgress = repairedInvalidSavedProgress || savedRoundNeedsRepair;
         if (currentRound !== savedRoundNumber) {
           shouldSaveMigratedProgress = true;
         }
-        roundComplete = Boolean(state.roundComplete || state.firstBouquetComplete);
+        roundComplete = savedRoundComplete || savedFirstBouquetComplete;
         // Older saves could already be inside Moonlit/Bloodroot without the
         // ownership flag introduced by the focused greenhouse economy.
-        roundOneRestored = Boolean(state.roundOneRestored || currentRound > 1);
-        roundTwoGreenhouseUpgraded = Boolean(state.roundTwoGreenhouseUpgraded || currentRound > 2);
-        roundThreeConservatoryRaised = Boolean(state.roundThreeConservatoryRaised || currentRound > 3);
-        freshConservatorySettlement = Boolean(state.freshConservatorySettlement)
+        roundOneRestored = savedRoundOneRestored || currentRound > 1;
+        roundTwoGreenhouseUpgraded = savedRoundTwoGreenhouseUpgraded || currentRound > 2;
+        roundThreeConservatoryRaised = savedRoundThreeConservatoryRaised || currentRound > 3;
+        freshConservatorySettlement = savedFreshConservatorySettlement
           && currentRound === 3
           && roundComplete
           && conservatoryFullyOwned();
@@ -21819,19 +21849,19 @@
           }
           shouldSaveMigratedProgress = true;
         }
-        if (repairedInvalidNumericProgress) {
+        if (repairedInvalidSavedProgress) {
           ritualMessage = "<strong>Saved order repaired.</strong> Invalid progress values were cleared before play resumed.";
           shouldSaveMigratedProgress = true;
         }
-        hasMadeValidMove = Boolean(state.hasMadeValidMove)
+        hasMadeValidMove = savedHasMadeValidMove
           || counts.some((count) => count > 0)
           || clearedCursedThorns > 0;
-        tutorialSkipped = Boolean(state.tutorialSkipped);
-        tutorialActive = !tutorialSkipped && Boolean(state.tutorialActive);
-        const savedBlackCandleLessonComplete = Boolean(state.blackCandleLessonComplete)
+        tutorialSkipped = savedTutorialSkipped;
+        tutorialActive = !tutorialSkipped && savedTutorialActive;
+        const authoritativeSavedBlackCandleLessonComplete = savedBlackCandleLessonComplete
           || tutorialSkipped
           || currentRound !== 1;
-        blackCandleLessonComplete = savedBlackCandleLessonComplete
+        blackCandleLessonComplete = authoritativeSavedBlackCandleLessonComplete
           || (savedFocusedEconomyVersion < FOCUSED_ECONOMY_SAVE_VERSION && roundComplete);
         if (
           savedFocusedEconomyVersion < 3
@@ -21842,7 +21872,7 @@
           coins += completionCoinPayout(focusedPlan).total;
           shouldSaveMigratedProgress = true;
         }
-        if (rejectUnsupportedFocusedOrderCompletion(savedBlackCandleLessonComplete)) {
+        if (rejectUnsupportedFocusedOrderCompletion(authoritativeSavedBlackCandleLessonComplete)) {
           shouldSaveMigratedProgress = true;
         }
         if (recoverCompletedFocusedOrder()) {

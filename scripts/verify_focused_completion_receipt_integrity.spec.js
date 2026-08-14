@@ -172,6 +172,27 @@ const DAMAGED_NUMERIC_CASES = [
   }
 ];
 
+const DAMAGED_BOOLEAN_STATE = {
+  focusedEconomyVersion: 3,
+  board: FIXTURE_BOARD,
+  currentRound: 1,
+  roundComplete: "false",
+  moves: 6,
+  coins: 0,
+  counts: [0, 0, 0, 0, 0, 0],
+  cursedThorns: [],
+  clearedCursedThorns: 0,
+  roundOneRestored: "false",
+  roundTwoGreenhouseUpgraded: "false",
+  roundThreeConservatoryRaised: "false",
+  freshConservatorySettlement: "false",
+  hasMadeValidMove: "false",
+  restoredRoundTwoGuideMoves: 0,
+  tutorialSkipped: "false",
+  tutorialActive: "true",
+  blackCandleLessonComplete: "false"
+};
+
 test.setTimeout(60000);
 
 async function report(page) {
@@ -190,6 +211,8 @@ async function report(page) {
       save: localStorage.getItem(key),
       state,
       message: document.querySelector("#ritualLog")?.textContent.trim() || "",
+      cue: document.querySelector("#firstSwapCue")?.textContent.trim() || "",
+      hints: [...document.querySelectorAll("#board .tile.idle-hint")].map((tile) => tile.id),
       bouquetProgress: document.querySelector("#bouquetProgressLabel")?.textContent.trim() || "",
       commands: [...document.querySelectorAll("button:not(.tile)")]
         .filter(visible)
@@ -375,6 +398,99 @@ for (const viewportCase of VIEWPORTS) {
       }
     });
   }
+}
+
+for (const viewportCase of VIEWPORTS) {
+  test(`text boolean values cannot fabricate progression on ${viewportCase.label}`, async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: viewportCase.viewport,
+      hasTouch: Boolean(viewportCase.mobile),
+      isMobile: Boolean(viewportCase.mobile)
+    });
+    const page = await context.newPage();
+    const problems = [];
+    page.on("console", (message) => {
+      if (["warning", "error"].includes(message.type())) problems.push(message.text());
+    });
+    page.on("pageerror", (error) => problems.push(error.message));
+    try {
+      await page.addInitScript(({ key, state, marker }) => {
+        if (!sessionStorage.getItem(marker)) {
+          localStorage.setItem(key, JSON.stringify(state));
+          sessionStorage.setItem(marker, "1");
+        }
+      }, {
+        key: SAVE_KEY,
+        state: DAMAGED_BOOLEAN_STATE,
+        marker: `boolean-repair-${viewportCase.label}`
+      });
+      await page.goto(pageUrl(`boolean-repair=${viewportCase.label}`), { waitUntil: "networkidle" });
+
+      const repaired = await report(page);
+      expect(repaired.state).toMatchObject({
+        focusedEconomyVersion: 3,
+        currentRound: 1,
+        roundComplete: false,
+        moves: 6,
+        coins: 0,
+        counts: [0, 0, 0, 0, 0, 0],
+        roundOneRestored: false,
+        roundTwoGreenhouseUpgraded: false,
+        roundThreeConservatoryRaised: false,
+        freshConservatorySettlement: false,
+        hasMadeValidMove: false,
+        tutorialSkipped: false,
+        tutorialActive: true,
+        blackCandleLessonComplete: false
+      });
+      expect(repaired.message).toContain("Saved order repaired.");
+      expect(repaired.bouquetProgress).toBe("Bouquet · 0/14");
+      expect(repaired.cue).toBe("Swap the glowing pair ↑↓");
+      expect(repaired.hints).toHaveLength(2);
+      expect(repaired.commands).toEqual(["Skip"]);
+      expect(repaired.tiles).toBe(64);
+      expect(repaired.rows).toBe(8);
+      expect(repaired.disabledTiles).toBe(0);
+      expect(repaired.boardWidth).toBeCloseTo(viewportCase.mobile ? 378 : 600, 2);
+      expect(repaired.boardBottom).toBeLessThanOrEqual(viewportCase.viewport.height);
+      expect(repaired.scrollY).toBe(0);
+      expect(repaired.overflowX).toBe(false);
+      if (viewportCase.mobile) expect(repaired.overflowY).toBe(false);
+      expect(repaired.brokenImages).toEqual([]);
+      expect(problems).toEqual([]);
+      await page.screenshot({
+        path: `/tmp/bloom-boolean-repair-${viewportCase.label}.png`,
+        fullPage: false
+      });
+
+      const repairedSave = repaired.save;
+      await page.reload({ waitUntil: "networkidle" });
+      const stable = await report(page);
+      expect(stable.save).toBe(repairedSave);
+      expect(stable.state).toMatchObject({
+        roundComplete: false,
+        roundOneRestored: false,
+        roundTwoGreenhouseUpgraded: false,
+        roundThreeConservatoryRaised: false,
+        freshConservatorySettlement: false,
+        hasMadeValidMove: false,
+        tutorialSkipped: false,
+        tutorialActive: true,
+        blackCandleLessonComplete: false
+      });
+      expect(stable.tiles).toBe(64);
+      expect(stable.rows).toBe(8);
+      expect(stable.boardWidth).toBeCloseTo(viewportCase.mobile ? 378 : 600, 2);
+      expect(stable.boardBottom).toBeLessThanOrEqual(viewportCase.viewport.height);
+      expect(stable.scrollY).toBe(0);
+      expect(stable.overflowX).toBe(false);
+      if (viewportCase.mobile) expect(stable.overflowY).toBe(false);
+      expect(stable.brokenImages).toEqual([]);
+      expect(problems).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
 }
 
 test("a current earned receipt remains complete", async ({ page }) => {
