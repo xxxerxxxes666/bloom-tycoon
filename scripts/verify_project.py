@@ -77,7 +77,8 @@ html_checks = {
     "const CURSED_THORN_MAX_HP = 1": "authored one-hit Cursed Thorn health contract",
     "Math.min(\n          CURSED_THORN_MAX_HP": "saved Cursed Thorn health clamp",
     "authoredKeys.has(thornKey(thorn.x, thorn.y))": "saved Cursed Thorn placement boundary",
-    "armedLineRelic = null;\n      build();": "saved altar rebuild retires board-coupled relic"
+    "armedLineRelic = null;\n      build();": "saved altar rebuild retires board-coupled relic",
+    "armedLineRelic && thornAt(armedLineRelic.x, armedLineRelic.y)": "saved thorn-covered relic retirement"
 }
 missing_html = [desc for needle, desc in html_checks.items() if needle not in html]
 if missing_html:

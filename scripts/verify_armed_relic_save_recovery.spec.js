@@ -53,6 +53,43 @@ async function seedDamagedRelicSave(page, label) {
   await page.reload({ waitUntil: "networkidle" });
 }
 
+async function seedThornCoveredRelicSave(page, label) {
+  await page.goto(`${BASE_URL}?armed-relic-thorn-recovery=${label}`, { waitUntil: "networkidle" });
+  await page.evaluate(({ key, board }) => {
+    localStorage.setItem(key, JSON.stringify({
+      focusedEconomyVersion: 3,
+      board,
+      armedLineRelic: {
+        x: 0,
+        y: 1,
+        direction: "horizontal",
+        flowerId: board[1][0]
+      },
+      moves: 8,
+      coins: 20,
+      counts: [0, 0, 3, 0, 3, 2],
+      cursedThorns: [
+        { x: 0, y: 1, hp: 1 },
+        { x: 1, y: 1, hp: 1 },
+        { x: 2, y: 1, hp: 1 }
+      ],
+      clearedCursedThorns: 0,
+      currentRound: 2,
+      roundComplete: false,
+      roundOneRestored: true,
+      roundTwoGreenhouseUpgraded: false,
+      roundThreeConservatoryRaised: false,
+      freshConservatorySettlement: false,
+      hasMadeValidMove: true,
+      restoredRoundTwoGuideMoves: 1,
+      tutorialSkipped: true,
+      tutorialActive: false,
+      blackCandleLessonComplete: true
+    }));
+  }, { key: SAVE_KEY, board: FIXTURE_BOARD });
+  await page.reload({ waitUntil: "networkidle" });
+}
+
 async function report(page) {
   return page.evaluate((key) => {
     const tiles = Array.from(document.querySelectorAll("#board .tile"));
@@ -73,6 +110,8 @@ async function report(page) {
       relics: document.querySelectorAll('.tile[data-line-relic="black-candle-vine"]').length,
       relicDirection: document.querySelector('.tile[data-line-relic="black-candle-vine"]')?.dataset.lineRelicDirection,
       laneCells: document.querySelectorAll(".tile.line-relic-lane-preview").length,
+      thorns: document.querySelectorAll("#board .tile.cursed-thorn").length,
+      thornCoveredRelics: document.querySelectorAll("#board .tile.cursed-thorn.black-candle-vine").length,
       hinted: hinted.map((tile) => ({ x: Number(tile.dataset.x), y: Number(tile.dataset.y) })),
       cue: document.querySelector("#firstSwapCue")?.textContent.trim(),
       ritual: document.querySelector("#ritualLog")?.textContent.trim(),
@@ -193,6 +232,74 @@ for (const profile of VIEWPORTS) {
     expect(consoleErrors).toEqual([]);
     expect(pageErrors).toEqual([]);
     await page.screenshot({ path: `work/armed-relic-reloaded-${profile.label}.png`, fullPage: false });
+    await context.close();
+  });
+
+  test(`${profile.label} retires a saved Black Candle covered by a Cursed Thorn`, async ({ browser }) => {
+    const context = await browser.newContext({ viewport: profile.viewport, reducedMotion: "reduce" });
+    const page = await context.newPage();
+    const consoleErrors = [];
+    const pageErrors = [];
+    page.on("console", (message) => {
+      if (message.type() === "error") consoleErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+
+    await seedThornCoveredRelicSave(page, profile.label);
+    await expect(page.locator("#board .tile")).toHaveCount(64);
+    await expect(page.locator('.tile[data-line-relic="black-candle-vine"]')).toHaveCount(0);
+    await expect(page.locator("#ritualLog")).toContainText("Saved order repaired.");
+
+    const repaired = await report(page);
+    expect(repaired.tileCount).toBe(64);
+    expect(repaired.rows).toBe(8);
+    expect(repaired.disabled).toBe(0);
+    expect(repaired.relics).toBe(0);
+    expect(repaired.laneCells).toBe(0);
+    expect(repaired.thorns).toBe(3);
+    expect(repaired.thornCoveredRelics).toBe(0);
+    expect(repaired.state.armedLineRelic).toBeNull();
+    expect(repaired.state.board).toEqual(FIXTURE_BOARD);
+    expect(repaired.state.moves).toBe(8);
+    expect(repaired.state.coins).toBe(20);
+    expect(repaired.state.counts).toEqual([0, 0, 3, 0, 3, 2]);
+    expect(repaired.state.clearedCursedThorns).toBe(0);
+    expect(repaired.state.cursedThorns).toEqual([
+      { x: 0, y: 1, hp: 1 },
+      { x: 1, y: 1, hp: 1 },
+      { x: 2, y: 1, hp: 1 }
+    ]);
+    expect(repaired.cue).not.toContain("Black Candle Vine");
+    expect(repaired.roving).toHaveLength(1);
+    expect(repaired.viewport.scrollWidth).toBe(repaired.viewport.width);
+    if (profile.label === "mobile390") {
+      expect(repaired.viewport.width).toBe(390);
+      expect(repaired.viewport.height).toBe(844);
+      expect(repaired.viewport.scrollHeight).toBeLessThanOrEqual(844);
+    }
+    expect(repaired.brokenImages).toEqual([]);
+    expect(consoleErrors).toEqual([]);
+    expect(pageErrors).toEqual([]);
+    await page.screenshot({ path: `work/armed-relic-thorn-repaired-${profile.label}.png`, fullPage: false });
+
+    await page.reload({ waitUntil: "networkidle" });
+    const stable = await report(page);
+    expect(stable.raw).toBe(repaired.raw);
+    expect(stable.ritual).not.toContain("Saved order repaired.");
+    expect(stable.relics).toBe(0);
+    expect(stable.laneCells).toBe(0);
+    expect(stable.thorns).toBe(3);
+    expect(stable.state.board).toEqual(FIXTURE_BOARD);
+    expect(stable.state.moves).toBe(8);
+    expect(stable.state.coins).toBe(20);
+    expect(stable.state.counts).toEqual([0, 0, 3, 0, 3, 2]);
+    expect(stable.viewport.scrollWidth).toBe(stable.viewport.width);
+    if (profile.label === "mobile390") {
+      expect(stable.viewport.scrollHeight).toBeLessThanOrEqual(844);
+    }
+    expect(stable.brokenImages).toEqual([]);
+    expect(consoleErrors).toEqual([]);
+    expect(pageErrors).toEqual([]);
     await context.close();
   });
 }

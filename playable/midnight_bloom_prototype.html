@@ -22004,6 +22004,14 @@
           }
           shouldSaveMigratedProgress = true;
         }
+        if (armedLineRelic && thornAt(armedLineRelic.x, armedLineRelic.y)) {
+          // A Cursed Thorn is a blocker, so it cannot also be the source of a
+          // player-earned Black Candle command on the restored altar.
+          armedLineRelic = null;
+          repairedInvalidSavedProgress = true;
+          ritualMessage = "<strong>Saved order repaired.</strong> The blocked Black Candle was cleared before play resumed.";
+          shouldSaveMigratedProgress = true;
+        }
         if (roundComplete && currentRound <= FOCUSED_LEVEL_COUNT) {
           tutorialActive = true;
         }
