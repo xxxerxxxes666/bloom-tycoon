@@ -1,5 +1,16 @@
 # Codex Build Notes
 
+## 2026-08-13 - Partial Thorn saves remain finishable
+
+- Authority: read `docs/hermes_execution_charter.md` and `docs/hermes_audit_next_tasks.md`; continued under the superseding First 60 Seconds / Board-First mandate rather than stale Hold, pause, or numbered-round text. Hermes independently accepted the preceding text-boolean repair, so that surface stayed closed.
+- Highest-leverage weakness: a parseable active Moonlit Wreath save could retain fewer live Cursed Thorns than its remaining `0/3` objective. The old startup guard restored blockers only when the array was empty, so a one- or two-Thorn save loaded as apparently valid and could become impossible to finish after its surviving blockers were cleared.
+- Player-visible correction: active Thorn state now reconciles to the deterministic invariant `cleared + live = needed` before the first render and migration save. It preserves valid surviving blockers, removes invalid/duplicate/excess entries, and fills only missing authored placements; completed and non-Thorn orders retain their established canonical boundaries.
+- Finishable recovery: the damaged one-Thorn fixture immediately reopens with all three authored blockers, `Cursed Thorn 0/3`, the exact `tile-1-2 -> tile-1-3` lesson, and a canonical persisted save. A second reload is byte-identical; the one taught exchange then spends `9 -> 8`, seals all three Thorns, completes the already-filled `26/29` bouquet, and exposes the existing `Upgrade Greenhouse` payoff.
+- Focused browser evidence: the new recovery contract and complete save/receipt integrity suite pass `21/21` on desktop `1280x720` and exact mobile `390x844`. Both changed-flow profiles prove 64 enabled tiles/eight rows, exact `600px`/`378px` altar geometry, three visible blockers, two guide cells, loaded imagery, no horizontal or exact-mobile vertical overflow, and empty console/page-error ledgers.
+- Visual acceptance: inspected `/tmp/bloom-thorn-repair-desktop.png` and `/tmp/bloom-thorn-repair-mobile390.png` at original scale. The Moonlit Wreath name, nine moves, `Bouquet · 26/29`, three ready ingredients, `Thorn 0/3`, restored greenhouse, one lesson action, and full altar remain legible and non-overlapping in the board-first hierarchy.
+- Files changed: `playable/midnight_bloom_prototype.html`, new `scripts/verify_cursed_thorn_save_recovery.spec.js`, and this note. No board/RNG rule, objective, target, move budget, reward, wallet value, greenhouse transaction, tutorial content, input behavior, visual asset, timing, save field/version, round, currency, dependency, endpoint, tracker, backend, account, credential, or permission was added or changed.
+- Delivery and public parity: pending final verification, commit, deployment, canonical-host hash parity, and independent Hermes audit.
+
 ## 2026-08-13 - Text booleans cannot fabricate greenhouse ownership
 
 - Authority: read `docs/hermes_execution_charter.md`, `docs/hermes_audit_next_tasks.md`, and `docs/diablo_visual_simplification_audit.md`; continued under the superseding First 60 Seconds / Board-First mandate rather than stale Hold, pause, or numbered-round text.
