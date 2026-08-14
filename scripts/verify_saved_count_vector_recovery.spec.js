@@ -47,6 +47,18 @@ const CASES = [
     counts: [7, 0, 0, 9],
     expectedCounts: [7, 0, 0, 9, 0, 0],
     expectedText: ["9/14", "7/13"]
+  },
+  {
+    label: "boolean-moonlit-progress",
+    round: 2,
+    moves: 9,
+    coins: 20,
+    counts: [false, true, false, false, false, false],
+    clearedCursedThorns: true,
+    expectedCounts: [0, 0, 0, 0, 0, 0],
+    expectedClearedCursedThorns: 0,
+    expectedThornCount: 3,
+    expectedText: ["0/10", "0/9", "0/7", "0/3"]
   }
 ];
 
@@ -63,7 +75,7 @@ function savedState(testCase) {
     cursedThorns: testCase.round === 2
       ? [0, 1, 2].map((x) => ({ x, y: 1, hp: 1 }))
       : [],
-    clearedCursedThorns: 0,
+    clearedCursedThorns: testCase.clearedCursedThorns ?? 0,
     currentRound: testCase.round,
     roundComplete: false,
     roundOneRestored: testCase.round > 1,
@@ -149,6 +161,10 @@ for (const profile of PROFILES) {
 
       const repaired = await report(page);
       expect(repaired.state.counts, testCase.label).toEqual(testCase.expectedCounts);
+      expect(repaired.state.clearedCursedThorns, testCase.label)
+        .toBe(testCase.expectedClearedCursedThorns ?? 0);
+      expect(repaired.state.cursedThorns, testCase.label)
+        .toHaveLength(testCase.expectedThornCount ?? (testCase.round === 2 ? 3 : 0));
       expect(repaired.ritual, testCase.label).toContain("Saved bouquet repaired");
       expect(repaired.ritual, testCase.label).toContain("Valid flower progress was kept");
       for (const text of testCase.expectedText) {
@@ -174,6 +190,10 @@ for (const profile of PROFILES) {
       const reloaded = await report(page);
       expect(reloaded.serialized, `${testCase.label} repair is byte-stable`).toBe(repaired.serialized);
       expect(reloaded.state.counts, testCase.label).toEqual(testCase.expectedCounts);
+      expect(reloaded.state.clearedCursedThorns, testCase.label)
+        .toBe(testCase.expectedClearedCursedThorns ?? 0);
+      expect(reloaded.state.cursedThorns, testCase.label)
+        .toHaveLength(testCase.expectedThornCount ?? (testCase.round === 2 ? 3 : 0));
       expect(reloaded.ritual, testCase.label).not.toContain("Saved bouquet repaired");
       expect(reloaded.tiles, testCase.label).toBe(64);
       expect(reloaded.enabledTiles, testCase.label).toBe(64);

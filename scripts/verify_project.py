@@ -78,7 +78,8 @@ html_checks = {
     "Math.min(\n          CURSED_THORN_MAX_HP": "saved Cursed Thorn health clamp",
     "authoredKeys.has(thornKey(thorn.x, thorn.y))": "saved Cursed Thorn placement boundary",
     "armedLineRelic = null;\n      build();": "saved altar rebuild retires board-coupled relic",
-    "armedLineRelic && thornAt(armedLineRelic.x, armedLineRelic.y)": "saved thorn-covered relic retirement"
+    "armedLineRelic && thornAt(armedLineRelic.x, armedLineRelic.y)": "saved thorn-covered relic retirement",
+    'typeof value === "boolean" ? Number.NaN : Number(value)': "numeric save fields reject booleans"
 }
 missing_html = [desc for needle, desc in html_checks.items() if needle not in html]
 if missing_html:
