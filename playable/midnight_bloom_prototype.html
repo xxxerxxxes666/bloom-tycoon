@@ -21675,8 +21675,8 @@
       return previousOwnership.some((value, index) => value !== currentOwnership[index]);
     }
 
-    function reconcileFocusedActiveWallet() {
-      if (roundComplete || conservatoryFullyOwned() || !focusedSliceRound()) {
+    function reconcileFocusedWalletReceipt() {
+      if (conservatoryFullyOwned() || !focusedSliceRound()) {
         return false;
       }
       const earnedBalance = focusedEconomyBalanceForProgress();
@@ -21949,8 +21949,8 @@
           ritualMessage = "<strong>Saved greenhouse repaired.</strong> A future upgrade was removed so this order can earn it normally.";
           shouldSaveMigratedProgress = true;
         }
-        if (reconcileFocusedActiveWallet()) {
-          ritualMessage = "<strong>Saved wallet repaired.</strong> Coins now match the greenhouse upgrades this run has earned.";
+        if (reconcileFocusedWalletReceipt()) {
+          ritualMessage = "<strong>Saved wallet repaired.</strong> Coins now match the bouquet rewards and greenhouse upgrades this run has earned.";
           shouldSaveMigratedProgress = true;
         }
         if (reconcileCursedThornsForPlan(focusedPlan)) {
