@@ -14864,6 +14864,14 @@
         cancelInterruptedBoardDrag();
         restoreInterruptedBoardDragFocus();
       }
+      const selectedArrowConfirmsFocusedCounterpart = selected
+        && selected.x + delta.x === cell.x
+        && selected.y + delta.y === cell.y;
+      if (selectedArrowConfirmsFocusedCounterpart) {
+        boardFocusCell = clampBoardFocusCell(cell);
+        tap(cell.x, cell.y);
+        return;
+      }
       const target = clampBoardFocusCell({ x: cell.x + delta.x, y: cell.y + delta.y });
       const boundaryArrowNoop = target.x === cell.x && target.y === cell.y;
       if (boundaryArrowNoop) {

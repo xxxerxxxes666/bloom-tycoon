@@ -116,6 +116,8 @@ async function touchPair(page, pair) {
 async function keyboardPair(page, pair) {
   await tile(page, pair[0]).focus();
   await page.keyboard.press("Enter");
+  await expect(tile(page, pair[0])).toHaveClass(/sel/);
+  await expect(tile(page, pair[1])).toBeFocused();
   const dx = pair[1].x - pair[0].x;
   const dy = pair[1].y - pair[0].y;
   await page.keyboard.press(dx > 0 ? "ArrowRight" : dx < 0 ? "ArrowLeft" : dy > 0 ? "ArrowDown" : "ArrowUp");
@@ -288,31 +290,60 @@ test("exact mobile touch preserves thorns and guides a thorn-useful continuation
   await context.close();
 });
 
-test("keyboard recovery preserves an armed Black Candle and its lane guide wins", async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 720 });
-  const errors = observeRuntime(page);
-  const relic = { x: 7, y: 7, direction: "horizontal", flowerId: 3 };
-  const fixture = await openFixture(page, "keyboard-armed-relic", baseState(3, {
-    board: deterministicLegalBoard(),
-    armedLineRelic: relic
-  }), { preserveArmedRelic: true });
-  expect(fixture.triggerPair.every((cell) => cell.x !== relic.x || cell.y !== relic.y)).toBe(true);
-  await keyboardPair(page, fixture.triggerPair);
-  await waitForActivePhase(page);
-  await waitForGuidedControl(page);
-  const recovered = await savedState(page);
-  expect(recovered.armedLineRelic).toEqual(relic);
-  await expect(page.locator("#board .tile.black-candle-vine")).toHaveCount(1);
-  await expect(page.locator("#board .tile.line-relic-lane-preview")).toHaveCount(8);
-  await expect(page.locator("#firstSwapCue")).toContainText("Black Candle Vine");
-  const guide = await guidedPair(page);
-  expect(guide.some((cell) => cell.x === relic.x && cell.y === relic.y)).toBe(true);
-  await keyboardPair(page, guide);
-  await expect(page.locator("#board .tile:disabled")).toHaveCount(0, { timeout: 7000 });
-  const exercised = await savedState(page);
-  expect(exercised.moves).toBe(recovered.moves - 1);
-  expect(exercised.armedLineRelic).toBeNull();
-  expectNoRuntimeErrors(errors, "keyboard armed relic recovery");
+test("keyboard recovery preserves an armed Black Candle and its lane guide wins", async ({ browser }) => {
+  for (const config of [
+    { label: "desktop", viewport: { width: 1280, height: 720 }, boardSize: 600 },
+    { label: "mobile390", viewport: { width: 390, height: 844 }, boardSize: 378, mobile: true }
+  ]) {
+    const context = await browser.newContext({
+      viewport: config.viewport,
+      isMobile: Boolean(config.mobile),
+      hasTouch: Boolean(config.mobile)
+    });
+    const page = await context.newPage();
+    const errors = observeRuntime(page);
+    const relic = { x: 7, y: 7, direction: "horizontal", flowerId: 3 };
+    const fixture = await openFixture(page, `keyboard-armed-relic-${config.label}`, baseState(3, {
+      board: deterministicLegalBoard(),
+      armedLineRelic: relic
+    }), { preserveArmedRelic: true });
+    expect(fixture.triggerPair.every((cell) => cell.x !== relic.x || cell.y !== relic.y)).toBe(true);
+    await keyboardPair(page, fixture.triggerPair);
+    await waitForActivePhase(page);
+    expect((await savedState(page)).moves).toBe(fixture.moves - 1);
+    await expect(page.locator("#board .tile.sel")).toHaveCount(0);
+    await waitForGuidedControl(page);
+    const recovered = await savedState(page);
+    const report = await boardReport(page);
+    expect(recovered.armedLineRelic).toEqual(relic);
+    expect(report).toMatchObject({
+      tiles: 64,
+      rows: 8,
+      disabled: 0,
+      guideCount: 1,
+      idleHints: 2,
+      overflowX: false,
+      brokenImages: []
+    });
+    expect(report.boardWidth).toBeCloseTo(config.boardSize, 0);
+    expect(report.boardHeight).toBeCloseTo(config.boardSize, 0);
+    if (config.mobile) {
+      expect(report.completeRowsInViewport).toBe(8);
+    }
+    await expect(page.locator("#board .tile.black-candle-vine")).toHaveCount(1);
+    await expect(page.locator("#board .tile.line-relic-lane-preview")).toHaveCount(8);
+    await expect(page.locator("#firstSwapCue")).toContainText("Black Candle Vine");
+    await page.screenshot({ path: `work/dead-board-reweave-${config.label}-keyboard-guided.png` });
+    const guide = await guidedPair(page);
+    expect(guide.some((cell) => cell.x === relic.x && cell.y === relic.y)).toBe(true);
+    await keyboardPair(page, guide);
+    await expect(page.locator("#board .tile:disabled")).toHaveCount(0, { timeout: 7000 });
+    const exercised = await savedState(page);
+    expect(exercised.moves).toBe(recovered.moves - 1);
+    expect(exercised.armedLineRelic).toBeNull();
+    expectNoRuntimeErrors(errors, `${config.label} keyboard armed relic recovery`);
+    await context.close();
+  }
 });
 
 test("reload during reweave restores the atomic settled post-recovery state", async ({ page }) => {
