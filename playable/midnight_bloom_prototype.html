@@ -21787,6 +21787,20 @@
       return value !== undefined && value !== normalized;
     }
 
+    function normalizeSavedCountVector(value) {
+      const savedCounts = Array.isArray(value) ? value : [];
+      return Array.from(
+        { length: flowers.length },
+        (_, index) => normalizeSavedWholeNumber(savedCounts[index])
+      );
+    }
+
+    function savedCountVectorNeedsRepair(value, normalized) {
+      return !Array.isArray(value)
+        || value.length !== flowers.length
+        || normalized.some((count, index) => count !== value[index]);
+    }
+
     function loadProgress() {
       if (typeof localStorage === "undefined") {
         return;
@@ -21800,6 +21814,7 @@
         const savedFocusedEconomyVersion = Math.max(0, Math.floor(Number(state.focusedEconomyVersion) || 0));
         let shouldSaveMigratedProgress = false;
         let repairedInvalidSavedProgress = false;
+        let repairedSavedCountVector = false;
         const savedBoolean = (key, fallback = false) => {
           const normalized = normalizeSavedBoolean(state[key], fallback);
           repairedInvalidSavedProgress = repairedInvalidSavedProgress
@@ -21825,10 +21840,11 @@
         repairedInvalidSavedProgress = repairedInvalidSavedProgress
           || savedArmedLineRelicNeedsRepair(state.armedLineRelic, normalizedArmedLineRelic);
         armedLineRelic = normalizedArmedLineRelic;
-        if (Array.isArray(state.counts) && state.counts.length === flowers.length) {
-          counts = state.counts.map((count) => normalizeSavedWholeNumber(count));
+        if (state.counts !== undefined) {
+          counts = normalizeSavedCountVector(state.counts);
+          repairedSavedCountVector = savedCountVectorNeedsRepair(state.counts, counts);
           repairedInvalidSavedProgress = repairedInvalidSavedProgress
-            || counts.some((count, index) => count !== state.counts[index]);
+            || repairedSavedCountVector;
         }
         if (Array.isArray(state.cursedThorns)) {
           const normalizedCursedThorns = state.cursedThorns
@@ -21911,7 +21927,9 @@
           shouldSaveMigratedProgress = true;
         }
         if (repairedInvalidSavedProgress) {
-          ritualMessage = "<strong>Saved order repaired.</strong> Invalid progress values were cleared before play resumed.";
+          ritualMessage = repairedSavedCountVector
+            ? "<strong>Saved bouquet repaired.</strong> Valid flower progress was kept and malformed slots were cleared."
+            : "<strong>Saved order repaired.</strong> Invalid progress values were cleared before play resumed.";
           shouldSaveMigratedProgress = true;
         }
         hasMadeValidMove = savedHasMadeValidMove
