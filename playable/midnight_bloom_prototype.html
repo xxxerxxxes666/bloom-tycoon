@@ -21675,6 +21675,18 @@
       return previousOwnership.some((value, index) => value !== currentOwnership[index]);
     }
 
+    function reconcileFocusedActiveWallet() {
+      if (roundComplete || conservatoryFullyOwned() || !focusedSliceRound()) {
+        return false;
+      }
+      const earnedBalance = focusedEconomyBalanceForProgress();
+      if (coins === earnedBalance) {
+        return false;
+      }
+      coins = earnedBalance;
+      return true;
+    }
+
     function recoverCompletedFocusedOrder() {
       const plan = buildRoundPlan(currentRound);
       const ownedReplayRecovery = isOwnedRestorationReplay();
@@ -21935,6 +21947,10 @@
             ? coins
             : focusedEconomyBalanceForProgress();
           ritualMessage = "<strong>Saved greenhouse repaired.</strong> A future upgrade was removed so this order can earn it normally.";
+          shouldSaveMigratedProgress = true;
+        }
+        if (reconcileFocusedActiveWallet()) {
+          ritualMessage = "<strong>Saved wallet repaired.</strong> Coins now match the greenhouse upgrades this run has earned.";
           shouldSaveMigratedProgress = true;
         }
         if (reconcileCursedThornsForPlan(focusedPlan)) {
