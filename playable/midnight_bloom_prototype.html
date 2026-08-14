@@ -21781,11 +21781,13 @@
 
     function normalizeSavedWholeNumber(value, fallback = 0) {
       const numeric = typeof value === "boolean" ? Number.NaN : Number(value);
-      if (Number.isFinite(numeric)) {
+      if (Number.isFinite(numeric) && numeric <= Number.MAX_SAFE_INTEGER) {
         return Math.max(0, Math.floor(numeric));
       }
       const fallbackNumeric = Number(fallback);
-      return Number.isFinite(fallbackNumeric) ? Math.max(0, Math.floor(fallbackNumeric)) : 0;
+      return Number.isFinite(fallbackNumeric) && fallbackNumeric <= Number.MAX_SAFE_INTEGER
+        ? Math.max(0, Math.floor(fallbackNumeric))
+        : 0;
     }
 
     function normalizeSavedBoolean(value, fallback = false) {

@@ -80,6 +80,7 @@ html_checks = {
     "armedLineRelic = null;\n      build();": "saved altar rebuild retires board-coupled relic",
     "armedLineRelic && thornAt(armedLineRelic.x, armedLineRelic.y)": "saved thorn-covered relic retirement",
     'typeof value === "boolean" ? Number.NaN : Number(value)': "numeric save fields reject booleans",
+    "numeric <= Number.MAX_SAFE_INTEGER": "numeric save fields reject unsafe finite magnitudes",
     "function normalizeSavedEconomyVersion(value)": "economy migration version authority",
     "version: FOCUSED_ECONOMY_SAVE_VERSION": "malformed economy versions preserve settled wallets"
 }
