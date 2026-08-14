@@ -193,6 +193,9 @@ for (const profile of PROFILES) {
 
       await activate(page.locator("#nextOrderBtn"), profile.mobile);
       await expect(page.locator("#board")).toBeVisible({ timeout: 12000 });
+      await page.waitForFunction(() => [...document.images].every((image) => image.complete), null, {
+        timeout: 12000
+      });
       const continued = await report(page);
       expect(continued.state.currentRound, testCase.label).toBe(testCase.nextRound);
       expect(continued.state.roundComplete, testCase.label).toBe(false);
