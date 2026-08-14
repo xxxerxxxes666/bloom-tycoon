@@ -382,6 +382,7 @@ def verify_source_hooks():
         'roundOneGuidedStage(plan) === "thorn-followup"',
         'if (blackCandleLessonComplete) {\n        return "";\n      }',
         "&& !blackCandleLessonComplete\n        && !roundComplete",
+        "if (blackCandleLessonComplete) {\n              queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);",
         "writeRoundOneThreeMatchPatch(2, 0, thornTarget.flowerId, { safeBoard: true })",
         "function isPostOnboardingIdleHintActive(plan = activeRoundPlan())",
         "round-two-followup-cue",

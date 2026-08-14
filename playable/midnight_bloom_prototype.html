@@ -22041,6 +22041,9 @@
           const hintedFocus = firstHintFocusCell();
           if (hintedFocus) {
             boardFocusCell = hintedFocus;
+            if (blackCandleLessonComplete) {
+              queuePostRenderFocus(`tile-${boardFocusCell.x}-${boardFocusCell.y}`);
+            }
           }
         }
       }
