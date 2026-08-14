@@ -21640,6 +21640,41 @@
       return roundThreeConservatoryRaised ? 50 : 50 + roundTemplates[2].reward.coins;
     }
 
+    function reconcileFocusedGreenhouseOwnership() {
+      const previousOwnership = [
+        roundOneRestored,
+        roundTwoGreenhouseUpgraded,
+        roundThreeConservatoryRaised,
+        freshConservatorySettlement
+      ];
+      if (!conservatoryFullyOwned()) {
+        if (currentRound <= 1) {
+          roundOneRestored = roundComplete && roundOneRestored;
+          roundTwoGreenhouseUpgraded = false;
+          roundThreeConservatoryRaised = false;
+        } else if (currentRound === 2) {
+          roundOneRestored = true;
+          roundTwoGreenhouseUpgraded = roundComplete && roundTwoGreenhouseUpgraded;
+          roundThreeConservatoryRaised = false;
+        } else {
+          roundOneRestored = true;
+          roundTwoGreenhouseUpgraded = true;
+          roundThreeConservatoryRaised = roundComplete && roundThreeConservatoryRaised;
+        }
+      }
+      freshConservatorySettlement = freshConservatorySettlement
+        && currentRound === 3
+        && roundComplete
+        && conservatoryFullyOwned();
+      const currentOwnership = [
+        roundOneRestored,
+        roundTwoGreenhouseUpgraded,
+        roundThreeConservatoryRaised,
+        freshConservatorySettlement
+      ];
+      return previousOwnership.some((value, index) => value !== currentOwnership[index]);
+    }
+
     function recoverCompletedFocusedOrder() {
       const plan = buildRoundPlan(currentRound);
       const ownedReplayRecovery = isOwnedRestorationReplay();
@@ -21893,6 +21928,13 @@
           shouldSaveMigratedProgress = true;
         }
         if (recoverCompletedFocusedOrder()) {
+          shouldSaveMigratedProgress = true;
+        }
+        if (reconcileFocusedGreenhouseOwnership()) {
+          coins = conservatoryFullyOwned() && hasAuthoritativeOwnedWallet
+            ? coins
+            : focusedEconomyBalanceForProgress();
+          ritualMessage = "<strong>Saved greenhouse repaired.</strong> A future upgrade was removed so this order can earn it normally.";
           shouldSaveMigratedProgress = true;
         }
         if (reconcileCursedThornsForPlan(focusedPlan)) {
