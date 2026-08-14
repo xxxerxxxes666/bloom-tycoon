@@ -46,6 +46,30 @@ function fractionalMoonlitState() {
   };
 }
 
+function structuredFutureRoundState() {
+  return {
+    focusedEconomyVersion: 3,
+    board: FIXTURE_BOARD.map((row) => [...row]),
+    armedLineRelic: null,
+    moves: 6,
+    coins: 0,
+    counts: [0, 0, 0, 0, 0, 0],
+    cursedThorns: [],
+    clearedCursedThorns: 0,
+    currentRound: [99],
+    roundComplete: false,
+    roundOneRestored: false,
+    roundTwoGreenhouseUpgraded: false,
+    roundThreeConservatoryRaised: false,
+    freshConservatorySettlement: false,
+    hasMadeValidMove: false,
+    restoredRoundTwoGuideMoves: 0,
+    tutorialSkipped: false,
+    tutorialActive: true,
+    blackCandleLessonComplete: false
+  };
+}
+
 async function report(page) {
   return page.evaluate((key) => {
     const tiles = [...document.querySelectorAll(".tile")];
@@ -63,6 +87,11 @@ async function report(page) {
       greenhouseStage: document.body.dataset.activeGreenhouseStage || "",
       ceremonyTitle: document.querySelector("#restorationTitle")?.innerText || "",
       transaction: document.querySelector("#payoffTransaction")?.innerText || "",
+      objective: document.querySelector(".objective")?.innerText.replace(/\s+/g, " ").trim() || "",
+      bouquet: document.querySelector("#bouquetProgressLabel")?.innerText.trim() || "",
+      cue: document.querySelector("#firstSwapCue")?.innerText.replace(/\s+/g, " ").trim() || "",
+      hintedTiles: tiles.filter((tile) => tile.classList.contains("idle-hint"))
+        .map((tile) => ({ id: tile.id, x: Number(tile.dataset.x), y: Number(tile.dataset.y) })),
       buttons: visibleButtons.map((button) => button.innerText.trim().toLowerCase()),
       tiles: tiles.length,
       rows: new Set(tiles.map((tile) => tile.dataset.y)).size,
@@ -79,6 +108,95 @@ async function report(page) {
 }
 
 for (const profile of PROFILES) {
+  test(`structured future round reopens the honest First Bouquet on ${profile.label}`, async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: profile.viewport,
+      hasTouch: Boolean(profile.mobile),
+      isMobile: Boolean(profile.mobile)
+    });
+    const page = await context.newPage();
+    const browserErrors = [];
+    const requestErrors = [];
+    page.on("console", (message) => {
+      if (["warning", "error"].includes(message.type())) browserErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => browserErrors.push(error.message));
+    page.on("requestfailed", (request) => {
+      const failure = request.failure()?.errorText || "";
+      if (failure !== "net::ERR_ABORTED") requestErrors.push(`${request.url()} ${failure}`);
+    });
+    page.on("response", (response) => {
+      if (response.status() >= 400) requestErrors.push(`${response.status()} ${response.url()}`);
+    });
+    const marker = `structured-future-round-${profile.label}`;
+    await page.addInitScript(({ key, state, markerKey }) => {
+      if (!sessionStorage.getItem(markerKey)) {
+        localStorage.setItem(key, JSON.stringify(state));
+        sessionStorage.setItem(markerKey, "1");
+      }
+    }, { key: SAVE_KEY, state: structuredFutureRoundState(), markerKey: marker });
+
+    await page.goto(`${BASE_URL}?structured-future-round=${profile.label}`, { waitUntil: "networkidle" });
+    await expect(page.locator(".tile")).toHaveCount(64);
+    const repaired = await report(page);
+    expect(repaired.stored.currentRound).toBe(1);
+    expect(repaired.stored.roundComplete).toBe(false);
+    expect(repaired.stored.roundOneRestored).toBe(false);
+    expect(repaired.stored.roundTwoGreenhouseUpgraded).toBe(false);
+    expect(repaired.stored.roundThreeConservatoryRaised).toBe(false);
+    expect(repaired.stored.counts).toEqual([0, 0, 0, 0, 0, 0]);
+    expect(repaired.stored.coins).toBe(0);
+    expect(repaired.stored.moves).toBe(6);
+    expect(repaired.greenhouseStage).toBe("withered");
+    expect(repaired.objective).toContain("ROUND 1 · FIRST BOUQUET");
+    expect(repaired.bouquet).toBe("BOUQUET · 0/14");
+    expect(repaired.cue).toContain("Swap the glowing");
+    expect(repaired.hintedTiles).toHaveLength(2);
+    expect(repaired.buttons).toEqual(["skip"]);
+    expect(repaired.tiles).toBe(64);
+    expect(repaired.rows).toBe(8);
+    expect(repaired.enabledTiles).toBe(64);
+    expect(repaired.boardWidth).toBeCloseTo(profile.mobile ? 378 : 600, 1);
+    expect(repaired.boardHeight).toBeCloseTo(profile.mobile ? 378 : 600, 1);
+    expect(repaired.overflowX).toBe(false);
+    expect(repaired.brokenImages).toEqual([]);
+    if (profile.mobile) expect(repaired.scrollY).toBe(0);
+    const repairedBytes = await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY);
+    await page.screenshot({
+      path: `work/round-identity-${profile.label}-structured-future-repaired.png`,
+      fullPage: true
+    });
+
+    await page.reload({ waitUntil: "networkidle" });
+    expect(await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY)).toBe(repairedBytes);
+    const reloaded = await report(page);
+    expect(reloaded.stored.currentRound).toBe(1);
+    expect(reloaded.hintedTiles).toHaveLength(2);
+    const source = reloaded.hintedTiles.find(({ id }) => id === "tile-1-0") || reloaded.hintedTiles[0];
+    const destination = reloaded.hintedTiles.find(({ id }) => id !== source.id);
+    if (profile.mobile) {
+      await page.locator(`#${source.id}`).tap();
+      await page.locator(`#${destination.id}`).tap();
+    } else {
+      await page.locator(`#${source.id}`).click();
+      await page.locator(`#${destination.id}`).click();
+    }
+    await expect.poll(async () => (await report(page)).stored.moves).toBe(5);
+    const continued = await report(page);
+    expect(continued.stored.currentRound).toBe(1);
+    expect(continued.stored.counts[5]).toBe(3);
+    expect(continued.stored.coins).toBe(0);
+    expect(continued.bouquet).toBe("BOUQUET · 3/14");
+    expect(continued.tiles).toBe(64);
+    expect(continued.rows).toBe(8);
+    expect(continued.enabledTiles).toBe(64);
+    expect(continued.overflowX).toBe(false);
+    expect(continued.brokenImages).toEqual([]);
+    expect(browserErrors).toEqual([]);
+    expect(requestErrors).toEqual([]);
+    await context.close();
+  });
+
   test(`fractional Moonlit round recovers one exact order on ${profile.label}`, async ({ browser }) => {
     const context = await browser.newContext({
       viewport: profile.viewport,

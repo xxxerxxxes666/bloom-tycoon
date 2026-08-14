@@ -21917,7 +21917,10 @@
         const savedCoinsNeedRepair = state.coins !== undefined && normalizedCoins !== state.coins;
         repairedInvalidSavedProgress = repairedInvalidSavedProgress || savedCoinsNeedRepair;
         coins = normalizedCoins;
-        const savedRoundNumber = Number(state.currentRound);
+        const savedRoundNumber = typeof state.currentRound === "number"
+          || (typeof state.currentRound === "string" && state.currentRound.trim() !== "")
+          ? Number(state.currentRound)
+          : Number.NaN;
         const savedRoundNeedsRepair = state.currentRound !== undefined && !Number.isFinite(savedRoundNumber);
         currentRound = savedRoundNeedsRepair
           ? 1

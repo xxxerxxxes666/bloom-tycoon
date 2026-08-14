@@ -533,6 +533,8 @@ def verify_source_hooks():
         "roundOneRestored = savedRoundOneRestored || currentRound > 1;",
         "tutorialSkipped = savedTutorialSkipped;",
         "Math.max(1, Math.floor(savedRoundNumber || 1))",
+        'typeof state.currentRound === "number"',
+        'typeof state.currentRound === "string" && state.currentRound.trim() !== ""',
         "if (recoverCompletedFocusedOrder())",
         "if (!hasAuthoritativeOwnedWallet)",
         "savedFocusedEconomyVersion < 3",
