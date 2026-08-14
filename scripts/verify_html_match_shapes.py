@@ -525,6 +525,8 @@ def verify_source_hooks():
         "focusedEconomyVersion: FOCUSED_ECONOMY_SAVE_VERSION",
         "savedFocusedEconomyVersion < FOCUSED_ECONOMY_SAVE_VERSION",
         "function normalizeSavedWholeNumber(value, fallback = 0)",
+        'typeof value === "number"',
+        'typeof value === "string" && value.trim() !== ""',
         "numeric <= Number.MAX_SAFE_INTEGER",
         "fallbackNumeric <= Number.MAX_SAFE_INTEGER",
         "function normalizeSavedBoolean(value, fallback = false)",

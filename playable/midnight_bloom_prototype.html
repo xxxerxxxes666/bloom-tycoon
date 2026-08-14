@@ -21780,7 +21780,10 @@
     }
 
     function normalizeSavedWholeNumber(value, fallback = 0) {
-      const numeric = typeof value === "boolean" ? Number.NaN : Number(value);
+      const numeric = typeof value === "number"
+        || (typeof value === "string" && value.trim() !== "")
+        ? Number(value)
+        : Number.NaN;
       if (Number.isFinite(numeric) && numeric <= Number.MAX_SAFE_INTEGER) {
         return Math.max(0, Math.floor(numeric));
       }

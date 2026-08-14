@@ -79,8 +79,9 @@ html_checks = {
     "authoredKeys.has(thornKey(thorn.x, thorn.y))": "saved Cursed Thorn placement boundary",
     "armedLineRelic = null;\n      build();": "saved altar rebuild retires board-coupled relic",
     "armedLineRelic && thornAt(armedLineRelic.x, armedLineRelic.y)": "saved thorn-covered relic retirement",
-    'typeof value === "boolean" ? Number.NaN : Number(value)': "numeric save fields reject booleans",
+    'typeof value === "number"': "numeric save fields require primitive scalar values",
     "numeric <= Number.MAX_SAFE_INTEGER": "numeric save fields reject unsafe finite magnitudes",
+    'typeof value === "string" && value.trim() !== ""': "numeric save fields accept non-empty numeric strings",
     'typeof state.currentRound === "number"': "saved round identity rejects structured values",
     "function normalizeSavedEconomyVersion(value)": "economy migration version authority",
     "version: FOCUSED_ECONOMY_SAVE_VERSION": "malformed economy versions preserve settled wallets"
