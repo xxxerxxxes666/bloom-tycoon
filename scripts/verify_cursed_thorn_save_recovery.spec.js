@@ -34,10 +34,31 @@ const DAMAGED_ROUND_TWO_SAVE = {
   blackCandleLessonComplete: true
 };
 
+const DAMAGED_ROUND_TWO_CASES = [
+  {
+    label: "partial-inventory",
+    state: DAMAGED_ROUND_TWO_SAVE
+  },
+  {
+    label: "malformed-health",
+    state: {
+      ...DAMAGED_ROUND_TWO_SAVE,
+      cursedThorns: [
+        { x: 0, y: 1, hp: 999 },
+        { x: 1, y: 1, hp: "oops" },
+        { x: 2, y: 1, hp: -4 }
+      ]
+    }
+  }
+];
+
 const VIEWPORTS = [
   { label: "desktop", viewport: { width: 1280, height: 720 } },
   { label: "mobile390", viewport: { width: 390, height: 844 }, mobile: true }
 ];
+const REPAIR_CASES = VIEWPORTS.flatMap((viewportCase) => (
+  DAMAGED_ROUND_TWO_CASES.map((damageCase) => ({ viewportCase, damageCase }))
+));
 
 test.setTimeout(60000);
 
@@ -79,8 +100,8 @@ async function report(page) {
   }, SAVE_KEY);
 }
 
-for (const viewportCase of VIEWPORTS) {
-  test(`partial Thorn inventory repairs and remains finishable on ${viewportCase.label}`, async ({ browser }) => {
+for (const { viewportCase, damageCase } of REPAIR_CASES) {
+  test(`${damageCase.label} Thorn save repairs and remains finishable on ${viewportCase.label}`, async ({ browser }) => {
     const context = await browser.newContext({
       viewport: viewportCase.viewport,
       hasTouch: Boolean(viewportCase.mobile),
@@ -101,10 +122,10 @@ for (const viewportCase of VIEWPORTS) {
         }
       }, {
         key: SAVE_KEY,
-        state: DAMAGED_ROUND_TWO_SAVE,
-        marker: `partial-thorn-repair-${viewportCase.label}`
+        state: damageCase.state,
+        marker: `${damageCase.label}-thorn-repair-${viewportCase.label}`
       });
-      await page.goto(`${BASE_URL}?partial-thorn-repair=${viewportCase.label}`, {
+      await page.goto(`${BASE_URL}?thorn-repair=${damageCase.label}-${viewportCase.label}`, {
         waitUntil: "networkidle"
       });
       await expect(page.locator(".tile.thorn-teach")).toHaveCount(2, { timeout: 7000 });
@@ -116,6 +137,11 @@ for (const viewportCase of VIEWPORTS) {
         { x: 2, y: 1, hp: 1 }
       ]);
       expect(repaired.state.clearedCursedThorns).toBe(0);
+      expect(repaired.state.moves).toBe(9);
+      expect(repaired.state.counts).toEqual([0, 0, 10, 0, 9, 7]);
+      expect(repaired.state.coins).toBe(20);
+      expect(repaired.state.currentRound).toBe(2);
+      expect(repaired.state.roundComplete).toBe(false);
       expect(repaired.thornCells).toEqual([[0, 1], [1, 1], [2, 1]]);
       expect(repaired.guideCells).toEqual([[1, 2], [1, 3]]);
       expect(repaired.message).toContain("Saved order repaired.");
@@ -130,6 +156,12 @@ for (const viewportCase of VIEWPORTS) {
       if (viewportCase.mobile) expect(repaired.overflowY).toBe(false);
       expect(repaired.brokenImages).toEqual([]);
       expect(problems).toEqual([]);
+      if (damageCase.label === "malformed-health") {
+        await page.screenshot({
+          path: `work/cursed-thorn-health-${viewportCase.label}-repaired.png`,
+          fullPage: false
+        });
+      }
 
       const canonicalSave = repaired.save;
       await page.reload({ waitUntil: "networkidle" });
@@ -168,6 +200,12 @@ for (const viewportCase of VIEWPORTS) {
       expect(completed.overflowX).toBe(false);
       expect(completed.brokenImages).toEqual([]);
       expect(problems).toEqual([]);
+      if (damageCase.label === "malformed-health") {
+        await page.screenshot({
+          path: `work/cursed-thorn-health-${viewportCase.label}-completed.png`,
+          fullPage: false
+        });
+      }
     } finally {
       await context.close();
     }

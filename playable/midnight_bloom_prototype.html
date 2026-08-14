@@ -11422,13 +11422,22 @@
         && y >= 0 && y < BOARD_SIZE;
     }
 
+    const CURSED_THORN_MAX_HP = 1;
+
     function normalizeCursedThorn(thorn) {
       const x = Number(thorn?.x);
       const y = Number(thorn?.y);
       if (!Number.isInteger(x) || !Number.isInteger(y) || !isValidThornCell(x, y)) {
         return null;
       }
-      return { x, y, hp: Math.max(1, normalizeSavedWholeNumber(thorn.hp, 1)) };
+      return {
+        x,
+        y,
+        hp: Math.min(
+          CURSED_THORN_MAX_HP,
+          Math.max(1, normalizeSavedWholeNumber(thorn.hp, 1))
+        )
+      };
     }
 
     function resetCursedThorns(plan = activeRoundPlan()) {

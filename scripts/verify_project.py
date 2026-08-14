@@ -73,7 +73,9 @@ html_checks = {
     'data-unit-index="${unitIndex}"': "one-earned-unit bouquet identity hook",
     'data-crafted-bouquet="true"': "crafted bouquet object marker",
     'data-crafted-bloom-count="${entries.length}"': "crafted bouquet count hook",
-    "dataset.assemblyReady": "payoff action readiness gate"
+    "dataset.assemblyReady": "payoff action readiness gate",
+    "const CURSED_THORN_MAX_HP = 1": "authored one-hit Cursed Thorn health contract",
+    "Math.min(\n          CURSED_THORN_MAX_HP": "saved Cursed Thorn health clamp"
 }
 missing_html = [desc for needle, desc in html_checks.items() if needle not in html]
 if missing_html:
