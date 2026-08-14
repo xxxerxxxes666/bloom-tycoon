@@ -11474,15 +11474,17 @@
       }
       const needed = thornGoalNeeded(plan);
       clearedCursedThorns = Math.min(clearedCursedThorns, needed);
-      const survivingThorns = cursedThorns
-        .map(normalizeCursedThorn)
-        .filter(Boolean)
-        .filter((thorn, index, list) => list.findIndex((candidate) => candidate.x === thorn.x && candidate.y === thorn.y) === index);
       const authoredPlacements = (plan.thornPlacements.length
         ? plan.thornPlacements
         : [{ x: 0, y: 1, hp: 1 }, { x: 1, y: 1, hp: 1 }, { x: 2, y: 1, hp: 1 }])
         .map(normalizeCursedThorn)
         .filter(Boolean);
+      const authoredKeys = new Set(authoredPlacements.map((thorn) => thornKey(thorn.x, thorn.y)));
+      const survivingThorns = cursedThorns
+        .map(normalizeCursedThorn)
+        .filter(Boolean)
+        .filter((thorn) => authoredKeys.has(thornKey(thorn.x, thorn.y)))
+        .filter((thorn, index, list) => list.findIndex((candidate) => candidate.x === thorn.x && candidate.y === thorn.y) === index);
       cursedThorns = [...survivingThorns, ...authoredPlacements]
         .filter((thorn, index, list) => list.findIndex((candidate) => candidate.x === thorn.x && candidate.y === thorn.y) === index)
         .slice(0, Math.max(0, needed - clearedCursedThorns));

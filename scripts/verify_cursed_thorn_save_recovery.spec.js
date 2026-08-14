@@ -49,6 +49,17 @@ const DAMAGED_ROUND_TWO_CASES = [
         { x: 2, y: 1, hp: -4 }
       ]
     }
+  },
+  {
+    label: "displaced-placement",
+    state: {
+      ...DAMAGED_ROUND_TWO_SAVE,
+      cursedThorns: [
+        { x: 7, y: 7, hp: 1 },
+        { x: 7, y: 6, hp: 1 },
+        { x: 6, y: 7, hp: 1 }
+      ]
+    }
   }
 ];
 
@@ -161,6 +172,11 @@ for (const { viewportCase, damageCase } of REPAIR_CASES) {
           path: `work/cursed-thorn-health-${viewportCase.label}-repaired.png`,
           fullPage: false
         });
+      } else if (damageCase.label === "displaced-placement") {
+        await page.screenshot({
+          path: `work/cursed-thorn-placement-${viewportCase.label}-repaired.png`,
+          fullPage: false
+        });
       }
 
       const canonicalSave = repaired.save;
@@ -203,6 +219,11 @@ for (const { viewportCase, damageCase } of REPAIR_CASES) {
       if (damageCase.label === "malformed-health") {
         await page.screenshot({
           path: `work/cursed-thorn-health-${viewportCase.label}-completed.png`,
+          fullPage: false
+        });
+      } else if (damageCase.label === "displaced-placement") {
+        await page.screenshot({
+          path: `work/cursed-thorn-placement-${viewportCase.label}-completed.png`,
           fullPage: false
         });
       }
