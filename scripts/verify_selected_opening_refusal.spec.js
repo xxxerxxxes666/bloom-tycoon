@@ -102,6 +102,19 @@ for (const profile of PROFILES) {
       const destinationId = opening.guideDestination;
       const selectedId = profile.selectedSide === "destination" ? destinationId : sourceId;
       const counterpartId = selectedId === sourceId ? destinationId : sourceId;
+      const selectedCopy = await page.evaluate(({ selectedId, counterpartId }) => {
+        const selectedTile = document.querySelector(`#${selectedId}`);
+        const counterpartTile = document.querySelector(`#${counterpartId}`);
+        const from = { x: Number(selectedTile.dataset.x), y: Number(selectedTile.dataset.y) };
+        const to = { x: Number(counterpartTile.dataset.x), y: Number(counterpartTile.dataset.y) };
+        const direction = to.x < from.x
+          ? "left"
+          : to.x > from.x
+            ? "right"
+            : to.y < from.y ? "above" : "below";
+        const flower = counterpartTile.getAttribute("aria-label").split(" tile,")[0];
+        return `Tap ${flower} ${direction}.`;
+      }, { selectedId, counterpartId });
       expect(sourceId).toMatch(/^tile-/);
       expect(destinationId).toMatch(/^tile-/);
       const wrongId = await page.evaluate(({ selectedId, counterpartId }) => {
@@ -118,7 +131,7 @@ for (const profile of PROFILES) {
       const selected = await report(page);
       expect(selected.selected).toEqual([selectedId]);
       expect(selected.guideMode).toBe("destination");
-      expect(selected.tutorialCopy).toBe("Choose the other glowing flower.");
+      expect(selected.tutorialCopy).toBe(selectedCopy);
       const beforeSave = selected.save;
 
       await activate(page, wrongId, profile.mobile);
@@ -145,7 +158,7 @@ for (const profile of PROFILES) {
       expect(restored.hints).toEqual([sourceId, destinationId].sort());
       expect(restored.guideVisible).toBe(true);
       expect(restored.guideMode).toBe("destination");
-      expect(restored.tutorialCopy).toBe("Choose the other glowing flower.");
+      expect(restored.tutorialCopy).toBe(selectedCopy);
       expect(restored.active).toBe(counterpartId);
       expect(restored.roving).toEqual([counterpartId]);
       expect(restored.visibleButtons).toHaveLength(1);

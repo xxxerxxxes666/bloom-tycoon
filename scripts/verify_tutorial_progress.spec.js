@@ -973,6 +973,13 @@ async function firstActionGuideReport(page) {
         direction: guide.dataset.direction,
         stage: guide.dataset.stage
       } : null,
+      destinationName: (() => {
+        if (!guide) return "";
+        const tile = document.querySelector(
+          `.tile[data-x="${guide.dataset.destinationX}"][data-y="${guide.dataset.destinationY}"]`
+        );
+        return tile?.getAttribute("aria-label")?.split(" tile,")[0] || "";
+      })(),
       hints,
       sourceHalo: rect(sourceHalo),
       destinationHalo: rect(destinationHalo),
@@ -1141,7 +1148,13 @@ function assertSelectedFirstActionGuide(report, pair, selectedCell, label, optio
   if (options.focusDestination !== false) {
     expect(report.focusedCell, `${label} keyboard focus continues at destination`).toEqual(destination);
   }
-  expect(report.tutorialCopy, `${label} visible action copy`).toBe("Choose the other glowing flower.");
+  const destinationDirection = destination.x < selectedCell.x
+    ? "left"
+    : destination.x > selectedCell.x
+      ? "right"
+      : destination.y < selectedCell.y ? "above" : "below";
+  expect(report.tutorialCopy, `${label} visible action copy`)
+    .toBe(`Tap ${report.destinationName} ${destinationDirection}.`);
   expect(report.instructionSurfaces, `${label} one instruction surface`).toBe(1);
   expect(report.visibleNonTileButtons, `${label} Skip remains sole action`).toEqual(["Skip"]);
   expect(report.sourceDisplay, `${label} source choreography retires`).toBe("none");

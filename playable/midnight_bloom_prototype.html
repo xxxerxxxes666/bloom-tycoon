@@ -17161,8 +17161,22 @@
         }
         return "Match the order flowers.";
       }
-      if (plan.round === 1 && selectedMatchesHintedPair(hintedPairCells())) {
-        return "Choose the other glowing flower.";
+      if (
+        plan.round === 1
+        && !tutorialReplayOwnsNarration
+        && selectedMatchesHintedPair(hintedPairCells())
+      ) {
+        const counterpart = hintedPairCells().find((cell) => (
+          cell.x !== selected.x || cell.y !== selected.y
+        ));
+        if (counterpart) {
+          const direction = counterpart.x < selected.x
+            ? "left"
+            : counterpart.x > selected.x
+              ? "right"
+              : counterpart.y < selected.y ? "above" : "below";
+          return `Tap ${flowers[board[counterpart.y][counterpart.x]][0]} ${direction}.`;
+        }
       }
       return "Swap the glowing flowers.";
     }

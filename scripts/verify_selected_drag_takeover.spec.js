@@ -123,6 +123,7 @@ for (const profile of PROFILES) {
         sessionStorage.clear();
       }, SAVE_KEY);
       await page.goto(`${BASE_URL}?selected-drag-takeover=${profile.label}`, { waitUntil: "networkidle" });
+      const selectedCopy = "Tap Thorn Rose below.";
       await expect(page.locator("#tutorialPanel")).toBeVisible({ timeout: 3000 });
       await expect(page.locator(`#${SOURCE_ID}`)).toBeFocused();
 
@@ -160,7 +161,7 @@ for (const profile of PROFILES) {
         expect(canceled.hints).toEqual([SOURCE_ID, TARGET_ID]);
         expect(canceled.guideVisible).toBe(true);
         expect(canceled.guideMode).toBe("destination");
-        expect(canceled.tutorialCopy).toBe("Choose the other glowing flower.");
+        expect(canceled.tutorialCopy).toBe(selectedCopy);
         expect(canceled.active).toBe(profile.from);
         expect(canceled.roving).toEqual([profile.from]);
         if (!profile.mobile) await page.mouse.move(1, 1);
