@@ -10673,12 +10673,15 @@
     const TUTORIAL_COMMAND_SETTLED_GUARD_FRAMES = 8;
     const SAVED_ALTAR_REPAIR_RECEIPT_MS = 2200;
     const SAVED_ALTAR_REPAIR_RECEIPT_COPY = "SAVED ALTAR REPAIRED · STABLE PLAYABLE BOARD RESTORED.";
+    const SAVED_MOVE_REPAIR_RECEIPT_COPY = "MOVES RESTORED · BOUQUET PROGRESS KEPT.";
 
     let board = [];
     let savedAltarRepairPending = false;
     let savedAltarRepairReceiptActive = false;
     let savedAltarRepairReceiptTimer = null;
+    let savedAltarRepairReceiptCopy = SAVED_ALTAR_REPAIR_RECEIPT_COPY;
     let savedAltarRepairReturnCue = "";
+    let pendingSavedRepairReceiptCopy = "";
     let selected = null;
     let armedLineRelic = null;
     let blackCandleActivationPresentation = null;
@@ -16159,14 +16162,15 @@
       return focusedSliceRound(plan) && roundComplete;
     }
 
-    function beginSavedAltarRepairReceipt() {
+    function beginSavedAltarRepairReceipt(copy = SAVED_ALTAR_REPAIR_RECEIPT_COPY) {
       const cue = $("firstSwapCue");
       if (!cue || savedAltarRepairReceiptActive) {
         return;
       }
       savedAltarRepairReturnCue = cue.textContent;
+      savedAltarRepairReceiptCopy = copy;
       savedAltarRepairReceiptActive = true;
-      cue.textContent = SAVED_ALTAR_REPAIR_RECEIPT_COPY;
+      cue.textContent = savedAltarRepairReceiptCopy;
       if (savedAltarRepairReceiptTimer && window.clearTimeout) {
         window.clearTimeout(savedAltarRepairReceiptTimer);
       }
@@ -16274,7 +16278,7 @@
       }
       clearDragPreview({ resetInputs: true });
       if (savedAltarRepairReceiptActive) {
-        $("firstSwapCue").textContent = SAVED_ALTAR_REPAIR_RECEIPT_COPY;
+        $("firstSwapCue").textContent = savedAltarRepairReceiptCopy;
       }
       const finalHarvestLanding = finalHarvestTransferActive();
       const roundOneActive = currentRound === 1;
@@ -21801,6 +21805,21 @@
         || normalized.some((count, index) => count !== value[index]);
     }
 
+    function normalizeSavedMoveBudget(value, plan) {
+      const numeric = typeof value === "number"
+        || (typeof value === "string" && value.trim() !== "")
+        ? Number(value)
+        : Number.NaN;
+      if (!Number.isFinite(numeric) || numeric < 0) {
+        return plan.moves;
+      }
+      return Math.min(plan.moves, Math.floor(numeric));
+    }
+
+    function savedMoveBudgetNeedsRepair(value, normalized) {
+      return value === undefined || value !== normalized;
+    }
+
     function loadProgress() {
       if (typeof localStorage === "undefined") {
         return;
@@ -21815,6 +21834,7 @@
         let shouldSaveMigratedProgress = false;
         let repairedInvalidSavedProgress = false;
         let repairedSavedCountVector = false;
+        let repairedSavedMoveBudget = false;
         const savedBoolean = (key, fallback = false) => {
           const normalized = normalizeSavedBoolean(state[key], fallback);
           repairedInvalidSavedProgress = repairedInvalidSavedProgress
@@ -21859,11 +21879,6 @@
           repairedInvalidSavedProgress = true;
         }
         clearedCursedThorns = normalizedClearedCursedThorns;
-        const normalizedMoves = normalizeSavedWholeNumber(state.moves, moves);
-        if (state.moves !== undefined && normalizedMoves !== state.moves) {
-          repairedInvalidSavedProgress = true;
-        }
-        moves = normalizedMoves;
         const normalizedCoins = normalizeSavedWholeNumber(state.coins, coins);
         const savedCoinsNeedRepair = state.coins !== undefined && normalizedCoins !== state.coins;
         repairedInvalidSavedProgress = repairedInvalidSavedProgress || savedCoinsNeedRepair;
@@ -21905,14 +21920,9 @@
           shouldSaveMigratedProgress = true;
         }
         const focusedPlan = buildRoundPlan(currentRound);
-        if (
-          !roundComplete
-          && focusedSliceRound(focusedPlan)
-          && moves > focusedPlan.moves
-        ) {
-          moves = focusedPlan.moves;
-          shouldSaveMigratedProgress = true;
-        }
+        moves = normalizeSavedMoveBudget(state.moves, focusedPlan);
+        repairedSavedMoveBudget = savedMoveBudgetNeedsRepair(state.moves, moves);
+        repairedInvalidSavedProgress = repairedInvalidSavedProgress || repairedSavedMoveBudget;
         const savedCoins = Number(state.coins);
         const hasAuthoritativeOwnedWallet = conservatoryFullyOwned()
           && Number.isFinite(savedCoins)
@@ -21929,7 +21939,12 @@
         if (repairedInvalidSavedProgress) {
           ritualMessage = repairedSavedCountVector
             ? "<strong>Saved bouquet repaired.</strong> Valid flower progress was kept and malformed slots were cleared."
-            : "<strong>Saved order repaired.</strong> Invalid progress values were cleared before play resumed.";
+            : repairedSavedMoveBudget
+              ? "<strong>Saved moves repaired.</strong> Bouquet progress was kept and this order's move budget was restored."
+              : "<strong>Saved order repaired.</strong> Invalid progress values were cleared before play resumed.";
+          if (repairedSavedMoveBudget && !repairedSavedCountVector) {
+            pendingSavedRepairReceiptCopy = SAVED_MOVE_REPAIR_RECEIPT_COPY;
+          }
           shouldSaveMigratedProgress = true;
         }
         hasMadeValidMove = savedHasMadeValidMove
@@ -22201,6 +22216,9 @@
       ritualMessage = "<strong>Saved altar repaired.</strong> A stable playable board was re-woven before play resumed.";
       saveProgress();
       beginSavedAltarRepairReceipt();
+    } else if (pendingSavedRepairReceiptCopy) {
+      beginSavedAltarRepairReceipt(pendingSavedRepairReceiptCopy);
+      pendingSavedRepairReceiptCopy = "";
     }
     render();
     applyImageFallbacks(document);
