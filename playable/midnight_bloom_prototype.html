@@ -10674,6 +10674,7 @@
     const SAVED_ALTAR_REPAIR_RECEIPT_MS = 2200;
     const SAVED_ALTAR_REPAIR_RECEIPT_COPY = "SAVED ALTAR REPAIRED · STABLE PLAYABLE BOARD RESTORED.";
     const SAVED_MOVE_REPAIR_RECEIPT_COPY = "MOVES RESTORED · BOUQUET PROGRESS KEPT.";
+    const SAVED_PROGRESS_REPAIR_RECEIPT_COPY = "SAVED PROGRESS REPAIRED · INVALID VALUES CLEARED.";
 
     let board = [];
     let savedAltarRepairPending = false;
@@ -11425,8 +11426,8 @@
     const CURSED_THORN_MAX_HP = 1;
 
     function normalizeCursedThorn(thorn) {
-      const x = Number(thorn?.x);
-      const y = Number(thorn?.y);
+      const x = parseSavedPrimitiveNumber(thorn?.x);
+      const y = parseSavedPrimitiveNumber(thorn?.y);
       if (!Number.isInteger(x) || !Number.isInteger(y) || !isValidThornCell(x, y)) {
         return null;
       }
@@ -12417,14 +12418,8 @@
         return null;
       }
       const serializedInteger = (value) => {
-        if (typeof value === "number") {
-          return Number.isInteger(value) ? value : NaN;
-        }
-        if (typeof value === "string" && value.trim() !== "") {
-          const numeric = Number(value);
-          return Number.isInteger(numeric) ? numeric : NaN;
-        }
-        return NaN;
+        const numeric = parseSavedPrimitiveNumber(value);
+        return Number.isInteger(numeric) ? numeric : NaN;
       };
       const x = serializedInteger(candidate.x);
       const y = serializedInteger(candidate.y);
@@ -21779,15 +21774,19 @@
       }
     }
 
-    function normalizeSavedWholeNumber(value, fallback = 0) {
-      const numeric = typeof value === "number"
+    function parseSavedPrimitiveNumber(value) {
+      return typeof value === "number"
         || (typeof value === "string" && value.trim() !== "")
         ? Number(value)
         : Number.NaN;
+    }
+
+    function normalizeSavedWholeNumber(value, fallback = 0) {
+      const numeric = parseSavedPrimitiveNumber(value);
       if (Number.isFinite(numeric) && numeric <= Number.MAX_SAFE_INTEGER) {
         return Math.max(0, Math.floor(numeric));
       }
-      const fallbackNumeric = Number(fallback);
+      const fallbackNumeric = parseSavedPrimitiveNumber(fallback);
       return Number.isFinite(fallbackNumeric) && fallbackNumeric <= Number.MAX_SAFE_INTEGER
         ? Math.max(0, Math.floor(fallbackNumeric))
         : 0;
@@ -21807,10 +21806,7 @@
       if (value === undefined) {
         return { version: 0, needsRepair: false, malformed: false };
       }
-      const numeric = typeof value === "number"
-        || (typeof value === "string" && value.trim() !== "")
-        ? Number(value)
-        : Number.NaN;
+      const numeric = parseSavedPrimitiveNumber(value);
       if (!Number.isFinite(numeric) || numeric < 0) {
         return {
           version: FOCUSED_ECONOMY_SAVE_VERSION,
@@ -21841,10 +21837,7 @@
     }
 
     function normalizeSavedMoveBudget(value, plan) {
-      const numeric = typeof value === "number"
-        || (typeof value === "string" && value.trim() !== "")
-        ? Number(value)
-        : Number.NaN;
+      const numeric = parseSavedPrimitiveNumber(value);
       if (!Number.isFinite(numeric) || numeric < 0) {
         return plan.moves;
       }
@@ -21920,10 +21913,7 @@
         const savedCoinsNeedRepair = state.coins !== undefined && normalizedCoins !== state.coins;
         repairedInvalidSavedProgress = repairedInvalidSavedProgress || savedCoinsNeedRepair;
         coins = normalizedCoins;
-        const savedRoundNumber = typeof state.currentRound === "number"
-          || (typeof state.currentRound === "string" && state.currentRound.trim() !== "")
-          ? Number(state.currentRound)
-          : Number.NaN;
+        const savedRoundNumber = parseSavedPrimitiveNumber(state.currentRound);
         const savedRoundNeedsRepair = state.currentRound !== undefined && !Number.isFinite(savedRoundNumber);
         currentRound = savedRoundNeedsRepair
           ? 1
@@ -21963,7 +21953,7 @@
         moves = normalizeSavedMoveBudget(state.moves, focusedPlan);
         repairedSavedMoveBudget = savedMoveBudgetNeedsRepair(state.moves, moves);
         repairedInvalidSavedProgress = repairedInvalidSavedProgress || repairedSavedMoveBudget;
-        const savedCoins = Number(state.coins);
+        const savedCoins = parseSavedPrimitiveNumber(state.coins);
         const hasAuthoritativeOwnedWallet = conservatoryFullyOwned()
           && Number.isFinite(savedCoins)
           && savedCoins >= 0;
@@ -21982,9 +21972,11 @@
             : repairedSavedMoveBudget
               ? "<strong>Saved moves repaired.</strong> Bouquet progress was kept and this order's move budget was restored."
               : "<strong>Saved order repaired.</strong> Invalid progress values were cleared before play resumed.";
-          if (repairedSavedMoveBudget && !repairedSavedCountVector) {
-            pendingSavedRepairReceiptCopy = SAVED_MOVE_REPAIR_RECEIPT_COPY;
-          }
+          pendingSavedRepairReceiptCopy = repairedSavedCountVector
+            ? SAVED_PROGRESS_REPAIR_RECEIPT_COPY
+            : repairedSavedMoveBudget
+              ? SAVED_MOVE_REPAIR_RECEIPT_COPY
+              : pendingSavedRepairReceiptCopy;
           shouldSaveMigratedProgress = true;
         }
         if (repairedSavedEconomyVersion && !repairedInvalidSavedProgress) {
@@ -22047,11 +22039,12 @@
         if (roundComplete && currentRound <= FOCUSED_LEVEL_COUNT) {
           tutorialActive = true;
         }
+        const savedRestoredRoundTwoGuideMoves = parseSavedPrimitiveNumber(state.restoredRoundTwoGuideMoves);
         restoredRoundTwoGuideMoves = Math.max(0, Math.min(
           RESTORED_ROUND_TWO_GUIDE_LIMIT,
-          Math.floor(Number(state.restoredRoundTwoGuideMoves) || 0)
+          Math.floor(savedRestoredRoundTwoGuideMoves || 0)
         ));
-        if (!Number.isFinite(Number(state.restoredRoundTwoGuideMoves)) && isRestoredRoundTwoWindow() && hasMadeValidMove) {
+        if (!Number.isFinite(savedRestoredRoundTwoGuideMoves) && isRestoredRoundTwoWindow() && hasMadeValidMove) {
           restoredRoundTwoGuideMoves = Math.min(RESTORED_ROUND_TWO_GUIDE_LIMIT, clearedCursedThorns > 0 ? 1 : 0);
         }
         if (!(roundOneRestored && currentRound === 2 && !roundComplete)) {
